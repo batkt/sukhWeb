@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "aos": "^2.3.4",
+    "axios": "^1.12.2",
+    "react-pivottable": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/aos": "^3.0.7"
+  }
+}
