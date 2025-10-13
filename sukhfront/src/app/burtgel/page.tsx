@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -20,22 +20,29 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
-import { Modal, Form, Input, Button } from "antd";
+import uilchilgee from "../../../lib/uilchilgee";
+import { verifySession } from "@/lib/auth";
+import toast from "react-hot-toast";
 
 interface Ajiltan {
-  id: number;
-  davkhar: string;
-  toot: string;
-  gd: string;
-  name: string;
+  _id?: string;
+  id?: number;
+  davkhar?: string;
+  toot?: string;
+  gd?: string;
+  ner: string;
+  ovog?: string;
   register: string;
   utas: string;
-  email: string;
-  tuluv: string;
-  tuukh: string;
-  mashinDugaar: string;
+  email?: string;
+  tuluv?: string;
+  tuukh?: string;
+  mashinDugaar?: string;
   albanTushaal?: string;
   ajildOrsonOgnoo?: string;
+  khayag?: string;
+  nevtrekhNer?: string;
+  baiguullagiinId?: string;
 }
 
 interface FormData {
@@ -63,6 +70,10 @@ export default function Burtgel() {
   const [activeTab, setActiveTab] = useState("ajiltanList");
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [token, setToken] = useState("");
+  const [baiguullagiinId, setBaiguullagiinId] = useState("");
+
   const [formData, setFormData] = useState<FormData>({
     ovog: "",
     ner: "",
@@ -80,67 +91,90 @@ export default function Burtgel() {
     mashinDugaar: "",
   });
 
-  const [ajiltanRecords] = useState<Ajiltan[]>([
-    {
-      id: 1,
-      davkhar: "5",
-      toot: "101",
-      gd: "ГД-01",
-      name: "b a",
-      register: "AB1234",
-      utas: "99001122",
-      email: "bat@dd.com",
-      tuluv: "Идэвхтэй",
-      tuukh: "Шинэ бүртгэл",
-      mashinDugaar: "7878ЙЙБ",
-      albanTushaal: "Харуул",
-      ajildOrsonOgnoo: "2024-01-15",
-    },
-    {
-      id: 2,
-      davkhar: "6",
-      toot: "201",
-      gd: "ГД-02",
-      name: "buynaa adiya",
-      register: "CD5678",
-      utas: "99112233",
-      email: "buynaa@aaa.com",
-      tuluv: "Идэвхгүй",
-      tuukh: "Өмнөх гэрээ дууссан",
-      mashinDugaar: "7845УУБ",
-      albanTushaal: "Цэвэрлэгч",
-      ajildOrsonOgnoo: "2023-06-10",
-    },
-  ]);
+  const [ajiltanRecords, setAjiltanRecords] = useState<Ajiltan[]>([]);
+  const [suugchRecords, setSuugchRecords] = useState<Ajiltan[]>([]);
 
-  const [suugchRecords] = useState<Ajiltan[]>([
-    {
-      id: 1,
-      davkhar: "5",
-      toot: "101",
-      gd: "ГД-01",
-      name: "aaa ddd",
-      register: "УА12345678",
-      utas: "88009988",
-      email: "dq@mail.mn",
-      tuluv: "Идэвхтэй",
-      tuukh: "2020-оноос",
-      mashinDugaar: "7777ААА",
-    },
-    {
-      id: 2,
-      davkhar: "3",
-      toot: "302",
-      gd: "ГД-03",
-      name: "haalgaa haa",
-      register: "УБ98765432",
-      utas: "99887766",
-      email: "haalgaahaa@gmail.com",
-      tuluv: "Идэвхтэй",
-      tuukh: "2021-оноос",
-      mashinDugaar: "5555БББ",
-    },
-  ]);
+  // Get token and user info from session
+  useEffect(() => {
+    const initAuth = () => {
+      try {
+        const session = verifySession();
+        if (session?.isAuthenticated && session?.token) {
+          setToken(session.token);
+          if (session.baiguullagiinId) {
+            setBaiguullagiinId(session.baiguullagiinId);
+          }
+        } else {
+          toast.error("Нэвтрэх шаардлагатай");
+        }
+      } catch (error) {
+        console.error("Session error:", error);
+        toast.error("Нэвтрэх шаардлагатай");
+      }
+    };
+    initAuth();
+  }, []);
+
+  // Fetch Ajiltan data
+  const fetchAjiltan = async () => {
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      const axiosInstance = uilchilgee(token);
+      const response = await axiosInstance.get("/ajiltan");
+
+      if (response.data?.success) {
+        setAjiltanRecords(response.data.result || []);
+      } else {
+        setAjiltanRecords([]);
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
+      toast.error(errorMsg);
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Suugch data
+  const fetchSuugch = async () => {
+    if (!token) return;
+
+    setLoading(true);
+    try {
+      const axiosInstance = uilchilgee(token);
+      // Note: You may need a GET endpoint for listing all suugch
+      // For now, we'll use tokenoorOrshinSuugchAvya which returns current user
+      const response = await axiosInstance.post("/tokenoorOrshinSuugchAvya");
+
+      if (response.data) {
+        // This returns a single suugch, so wrap in array
+        setSuugchRecords([response.data]);
+      } else {
+        setSuugchRecords([]);
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
+      toast.error(errorMsg);
+      console.error("Fetch error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      if (activeTab === "ajiltanList") {
+        fetchAjiltan();
+      } else if (activeTab === "suugchList") {
+        fetchSuugch();
+      }
+    }
+  }, [activeTab, token]);
 
   const activeRecords =
     activeTab === "ajiltanList" ? ajiltanRecords : suugchRecords;
@@ -162,10 +196,118 @@ export default function Burtgel() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    alert("Амжилттай хадгалагдлаа!");
+
+    if (!token) {
+      toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const axiosInstance = uilchilgee(token);
+      const endpoint = activeTab === "ajiltanNemekh" ? "/ajiltan" : "/suugch";
+
+      const payload: any = {
+        ner: formData.ner,
+        ovog: formData.ovog,
+        register: formData.register,
+        khayag: formData.khayag,
+        utas: formData.utas,
+        email: formData.email,
+        nevtrekhNer: formData.nevtrekhNer,
+        nuutsUg: formData.nuutsUg,
+        baiguullagiinId: baiguullagiinId,
+      };
+
+      // Add ajiltan-specific fields
+      if (activeTab === "ajiltanNemekh") {
+        payload.ajildOrsonOgnoo = new Date(
+          formData.ajildOrsonOgnoo
+        ).toISOString();
+        payload.albanTushaal = formData.albanTushaal;
+        payload.barilguud = ["622ca3938e64e5b4f0c36bed"]; // Replace with actual building selection
+      }
+
+      const response = await axiosInstance.post(endpoint, payload);
+
+      if (response.data?.success) {
+        toast.success("Амжилттай хадгалагдлаа!");
+
+        // Reset form
+        setFormData({
+          ovog: "",
+          ner: "",
+          register: "",
+          khayag: "",
+          utas: "",
+          ajildOrsonOgnoo: "",
+          albanTushaal: "",
+          nevtrekhNer: "",
+          nuutsUg: "",
+          davkhar: "",
+          toot: "",
+          gd: "",
+          email: "",
+          mashinDugaar: "",
+        });
+
+        // Refresh the list
+        if (activeTab === "ajiltanNemekh") {
+          await fetchAjiltan();
+          setActiveTab("ajiltanList");
+        } else {
+          await fetchSuugch();
+          setActiveTab("suugchList");
+        }
+      } else {
+        toast.error(response.data?.aldaa || "Алдаа гарлаа");
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
+      toast.error(errorMsg);
+      console.error("Submit error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!selectedRecord || !token) return;
+
+    setLoading(true);
+
+    try {
+      const axiosInstance = uilchilgee(token);
+      const endpoint = activeTab === "ajiltanList" ? "/ajiltan" : "/suugch";
+      const id = selectedRecord._id || selectedRecord.id;
+
+      const response = await axiosInstance.delete(`${endpoint}/${id}`);
+
+      if (response.data?.success) {
+        toast.success("Амжилттай устгагдлаа!");
+        setDeleteOpen(false);
+
+        // Refresh the list
+        if (activeTab === "ajiltanList") {
+          await fetchAjiltan();
+        } else {
+          await fetchSuugch();
+        }
+      } else {
+        toast.error(response.data?.aldaa || "Устгахад алдаа гарлаа");
+      }
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.aldaa || err.message || "Устгахад алдаа гарлаа";
+      toast.error(errorMsg);
+      console.error("Delete error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const tabs = [
@@ -177,7 +319,7 @@ export default function Burtgel() {
 
   return (
     <div className="min-h-screen">
-      <div>
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Бүртгэлийн систем
@@ -194,7 +336,7 @@ export default function Burtgel() {
               onClick={() => setActiveTab(tab)}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold whitespace-nowrap transition-all ${
                 activeTab === tab
-                  ? "bg-bar text-white shadow-lg"
+                  ? "bg-blue-600 text-white shadow-lg"
                   : "bg-transparent text-gray-700 hover:bg-gray-100 shadow"
               }`}
             >
@@ -206,14 +348,19 @@ export default function Burtgel() {
 
         {(activeTab === "ajiltanList" || activeTab === "suugchList") && (
           <>
-            {showSummaryCard ? (
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p className="mt-2 text-gray-600">Уншиж байна...</p>
+              </div>
+            ) : showSummaryCard ? (
               <div
                 onClick={() => setIsExpanded(true)}
-                className="bg-gradient-to-br from-[#f5dcc8] to-[#c7bfee] text-white p-8 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
+                className="bg-gradient-to-br from-blue-400 to-purple-500 text-white p-8 rounded-2xl shadow-xl cursor-pointer hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className="bg-white/20 p-5 rounded-2xl backdrop-blur-sm">
+                    <div className="bg-transparent/20 p-5 rounded-2xl">
                       <Users className="w-12 h-12" />
                     </div>
                     <div>
@@ -248,11 +395,11 @@ export default function Burtgel() {
                           placeholder="Хайх..."
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-white  rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 border border-white rounded-lg hover:bg-gray-50">
+                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                       <Filter className="w-5 h-5" />
                       Шүүлтүүр
                     </button>
@@ -268,9 +415,9 @@ export default function Burtgel() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto bg-trasparent rounded-xl ">
-                  <table className="w-full border-collapse ">
-                    <thead className="bg-transparent border-b border-white border-whitesticky top-0 z-10">
+                <div className="overflow-x-auto bg-transparent rounded-xl shadow-md">
+                  <table className="w-full border-collapse">
+                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                       <tr>
                         <th className="p-4 text-left text-sm font-semibold text-gray-700">
                           #
@@ -282,200 +429,128 @@ export default function Burtgel() {
                           Регистр
                         </th>
                         <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                          Тоот
-                        </th>
-                        <th className="p-4 text-left text-sm font-semibold text-gray-700">
                           Холбоо барих
                         </th>
                         <th className="p-4 text-left text-sm font-semibold text-gray-700">
                           Төлөв
                         </th>
-                        <th className="p-4 text-right text-sm font-semibold text-gray-700"></th>
+                        <th className="p-4 text-right text-sm font-semibold text-gray-700">
+                          Үйлдэл
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecords.map((person: any, index: number) => (
-                        <tr
-                          key={person.id}
-                          className="border-b transition-shadow hover:shadow-md"
-                        >
-                          <td className="p-4 text-gray-600 font-medium">
-                            {index + 1}
+                      {filteredRecords.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="p-8 text-center text-gray-500"
+                          >
+                            Мэдээлэл байхгүй байна
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-[#f5dcc8] to-[#c7bfee] rounded-full flex items-center justify-center text-white font-bold">
-                                {person.name.charAt(0)}
-                              </div>
-                              <div>
-                                <div className="font-semibold text-gray-900">
-                                  {person.name}
+                        </tr>
+                      ) : (
+                        filteredRecords.map((person: any, index: number) => (
+                          <tr
+                            key={person._id || person.id}
+                            className="border-b hover:bg-gray-50"
+                          >
+                            <td className="p-4 text-gray-600 font-medium">
+                              {index + 1}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                                  {(person.ner || person.name)
+                                    ?.charAt(0)
+                                    ?.toUpperCase()}
                                 </div>
-                                {activeTab === "ajiltanList" &&
-                                  person.albanTushaal && (
+                                <div>
+                                  <div className="font-semibold text-gray-900">
+                                    {person.ovog} {person.ner || person.name}
+                                  </div>
+                                  {person.albanTushaal && (
                                     <div className="text-sm text-gray-500">
                                       {person.albanTushaal}
                                     </div>
                                   )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-4 text-gray-900">
-                            {person.register}
-                          </td>
-                          <td className="p-4">
-                            <div className="text-sm">
-                              <div className="font-medium text-gray-900">
-                                {person.davkhar} давхар / {person.toot}
-                              </div>
-                              <div className="text-gray-500">{person.gd}</div>
-                              {person.mashinDugaar && (
-                                <div className="text-gray-500 mt-1">
-                                  {person.mashinDugaar}
                                 </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="text-sm">
-                              <div className="text-gray-900 mb-1">
-                                {person.utas}
                               </div>
-                              <div className="text-gray-600">
-                                {person.email}
+                            </td>
+                            <td className="p-4 text-gray-900">
+                              {person.register}
+                            </td>
+                            <td className="p-4">
+                              <div className="text-sm">
+                                <div className="text-gray-900 mb-1">
+                                  {person.utas}
+                                </div>
+                                {person.email && (
+                                  <div className="text-gray-600">
+                                    {person.email}
+                                  </div>
+                                )}
                               </div>
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                                person.tuluv === "Идэвхтэй"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {person.tuluv}
-                            </span>
-                            {person.tuukh && (
-                              <div className="text-xs text-gray-500 mt-1">
-                                {person.tuukh}
+                            </td>
+                            <td className="p-4">
+                              <span
+                                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  person.tuluv === "Идэвхтэй"
+                                    ? "bg-green-100 text-green-800"
+                                    : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {person.tuluv || "Идэвхтэй"}
+                              </span>
+                            </td>
+                            <td className="p-4">
+                              <div className="flex gap-2 justify-end">
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecord(person);
+                                    setViewOpen(true);
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-green-100 text-green-600"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecord(person);
+                                    setEditOpen(true);
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedRecord(person);
+                                    setDeleteOpen(true);
+                                  }}
+                                  className="p-2 rounded-lg hover:bg-red-100 text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
                               </div>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex gap-2 justify-end">
-                              <button
-                                onClick={() => {
-                                  setSelectedRecord(person);
-                                  setViewOpen(true);
-                                }}
-                                className="p-2 rounded-lg hover:bg-green-100 text-green-600 transition"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                         
-                              <button
-                                onClick={() => {
-                                  setSelectedRecord(person);
-                                  setEditOpen(true);
-                                }}
-                                className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600 transition"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              {/* Delete */}
-                              <button
-                                onClick={() => {
-                                  setSelectedRecord(person);
-                                  setDeleteOpen(true);
-                                }}
-                                className="p-2 rounded-lg hover:bg-red-100 text-red-600 transition"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
-                  <Modal
-                    title="Дэлгэрэнгүй"
-                    open={viewOpen}
-                    onCancel={() => setViewOpen(false)}
-                    footer={null}
-                  >
-                    {selectedRecord && (
-                      <div className="space-y-2">
-                        <p>
-                          <b>Нэр:</b> {selectedRecord.name}
-                        </p>
-                        <p>
-                          <b>Регистр:</b> {selectedRecord.register}
-                        </p>
-                        <p>
-                          <b>Тоот:</b> {selectedRecord.davkhar} давхар /{" "}
-                          {selectedRecord.toot}
-                        </p>
-                        <p>
-                          <b>Утас:</b> {selectedRecord.utas}
-                        </p>
-                        <p>
-                          <b>Email:</b> {selectedRecord.email}
-                        </p>
-                        <p>
-                          <b>Төлөв:</b> {selectedRecord.tuluv}
-                        </p>
-                      </div>
-                    )}
-                  </Modal>
-                  <Modal
-                    title="Мэдээлэл засах"
-                    open={editOpen}
-                    onCancel={() => setEditOpen(false)}
-                    footer={null}
-                  >
-                    {selectedRecord && (
-                      <Form layout="vertical">
-                        <Form.Item label="Нэр">
-                          <Input defaultValue={selectedRecord.name} />
-                        </Form.Item>
-                        <Form.Item label="Регистр">
-                          <Input defaultValue={selectedRecord.register} />
-                        </Form.Item>
-                        <Form.Item label="Утас">
-                          <Input defaultValue={selectedRecord.utas} />
-                        </Form.Item>
-                        <Button type="primary">Хадгалах</Button>
-                      </Form>
-                    )}
-                  </Modal>
-                  <Modal
-                    title="Устгах уу?"
-                    open={deleteOpen}
-                    onCancel={() => setDeleteOpen(false)}
-                    onOk={() => {
-                      console.log("Deleted:", selectedRecord?.id);
-                      setDeleteOpen(false);
-                    }}
-                    okText="Тийм"
-                    cancelText="Үгүй"
-                  >
-                    <p>
-                      Та <b>{selectedRecord?.name}</b> -ийн мэдээллийг устгахдаа
-                      итгэлтэй байна уу?
-                    </p>
-                  </Modal>
                 </div>
               </>
             )}
           </>
         )}
 
-        {activeTab === "ajiltanNemekh" && (
+        {(activeTab === "ajiltanNemekh" || activeTab === "suugchNemekh") && (
           <div className="bg-transparent rounded-xl shadow-md p-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-900">
-              Шинэ ажилтан нэмэх
+              {activeTab === "ajiltanNemekh"
+                ? "Шинэ ажилтан нэмэх"
+                : "Оршин суугч нэмэх"}
             </h2>
             <form onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -492,7 +567,7 @@ export default function Burtgel() {
                       placeholder="Овог"
                       value={formData.ovog}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -510,7 +585,7 @@ export default function Burtgel() {
                       placeholder="Нэр"
                       value={formData.ner}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -528,7 +603,7 @@ export default function Burtgel() {
                       required
                       value={formData.register}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -546,7 +621,7 @@ export default function Burtgel() {
                       placeholder="Утас"
                       value={formData.utas}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -564,42 +639,47 @@ export default function Burtgel() {
                       placeholder="И-мэйл"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Албан тушаал <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="albanTushaal"
-                      required
-                      placeholder="Албан тушаал"
-                      value={formData.albanTushaal}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
+                {activeTab === "ajiltanNemekh" && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Албан тушаал <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                        <input
+                          type="text"
+                          name="albanTushaal"
+                          required
+                          placeholder="Албан тушаал"
+                          value={formData.albanTushaal}
+                          onChange={handleInputChange}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Ажилд орсон огноо <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    name="ajildOrsonOgnoo"
-                    required
-                    value={formData.ajildOrsonOgnoo}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Ажилд орсон огноо{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="date"
+                        name="ajildOrsonOgnoo"
+                        required
+                        value={formData.ajildOrsonOgnoo}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -614,13 +694,13 @@ export default function Burtgel() {
                       placeholder="Хаяг"
                       value={formData.khayag}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="mt-8 pt-6 border-t border-white">
+              <div className="mt-8 pt-6 border-t border-gray-200">
                 <h3 className="text-lg font-semibold mb-4 text-gray-900">
                   Нэвтрэх мэдээлэл
                 </h3>
@@ -638,7 +718,7 @@ export default function Burtgel() {
                         placeholder="Нэвтрэх нэр"
                         value={formData.nevtrekhNer}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -656,7 +736,7 @@ export default function Burtgel() {
                         placeholder="Нууц үг"
                         value={formData.nuutsUg}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
@@ -666,13 +746,21 @@ export default function Burtgel() {
               <div className="mt-8 flex gap-4">
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-bar text-white font-semibold rounded-lg hover:bg-bar/60 transition shadow-md"
+                  disabled={loading}
+                  className="px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-md disabled:opacity-50"
                 >
-                  Хадгалах
+                  {loading ? "Хадгалж байна..." : "Хадгалах"}
                 </button>
                 <button
                   type="button"
-                  className="px-8 py-3 bg-transparent text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
+                  onClick={() =>
+                    setActiveTab(
+                      activeTab === "ajiltanNemekh"
+                        ? "ajiltanList"
+                        : "suugchList"
+                    )
+                  }
+                  className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
                 >
                   Цуцлах
                 </button>

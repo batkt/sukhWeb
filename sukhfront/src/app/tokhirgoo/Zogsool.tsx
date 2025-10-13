@@ -74,7 +74,7 @@ export default function Zogsool() {
 
   return (
     <div>
-      <div className="flex justify-between items-center border-b border-amber-300 pb-3">
+      <div className="flex justify-between items-center border-b border-white pb-3">
         <h2 className="text-lg font-medium">Зогсоол тохиргоо</h2>
         <button
           onClick={addZogsool}
@@ -87,7 +87,7 @@ export default function Zogsool() {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-amber-300 bg-transparent">
+            <tr className="border-b border-white bg-transparent">
               {[
                 "№",
                 "Зогсоолын нэр",
@@ -165,7 +165,7 @@ export default function Zogsool() {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-amber-300 bg-transparent">
+            <tr className="border-b border-white bg-transparent">
               {["№", "Огноо", "Дугаар", "СМС мессеж"].map((col) => (
                 <th key={col} className="py-3 px-4 font-semibold text-gray-700">
                   {col}

@@ -26,7 +26,7 @@ function IlgeesenToo({ text, count }: { text: string; count: number }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center rounded-xl bg-gradient-to-tr from-[#f5dcc8] to-[#c7bfee] dark:from-green-900/40 dark:to-green-700/40 p-3 shadow-sm"
+      className="flex flex-col items-center justify-center rounded-xl bg-white/10 dark:from-green-900/40 dark:to-green-700/40 p-3 shadow-sm"
     >
       <span className="text-sm text-gray-600 dark:text-gray-300">{text}</span>
       <span className="text-lg font-bold text-slate-900 dark:text-green-300">
@@ -81,7 +81,7 @@ export default function KhyanaltFrontend() {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-4 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-slate-900"
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
       >
         Мэдэгдэл
       </motion.h1>
@@ -98,8 +98,8 @@ export default function KhyanaltFrontend() {
             whileTap={{ scale: 0.95 }}
             className={`flex-1 rounded-2xl px-4 py-2 font-semibold transition-all shadow-lg ${
               turul === mur
-                ? "bg-gradient-to-r from-[#f5dcc8] to-[#c7bfee] text-white shadow-md "
-                : "bg-transparent/70 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 hover:bg-green-100 dark:hover:bg-gray-700"
+                ? "bg-bar text-white shadow-md "
+                : "bg-transparent/70 dark:bg-gray-800/60 text-gray-700 dark:text-gray-200 hover:bg-violet-100 dark:hover:bg-gray-700"
             }`}
             onClick={() => setTurul(mur as any)}
           >
@@ -146,7 +146,7 @@ export default function KhyanaltFrontend() {
 
       <div className="grid grid-cols-12 gap-6">
         <motion.div
-          className="col-span-12 md:col-span-4 rounded-2xl bg-transparent/60 dark:bg-gray-800/50 p-4 shadow-md backdrop-blur-sm"
+          className="col-span-12 md:col-span-4 rounded-2xl bg-transparent dark:bg-gray-800/50 p-4 shadow-md backdrop-blur-sm"
           initial={{ opacity: 0, x: -40 }}
           animate={{ opacity: 1, x: 0 }}
         >
@@ -161,12 +161,12 @@ export default function KhyanaltFrontend() {
                 whileTap={{ scale: 0.98 }}
                 className={`flex items-center gap-4 rounded-xl border p-3 cursor-pointer transition-all ${
                   khariltsagch?._id === mur._id
-                    ? "bg-green-50 border-green-300 shadow-sm dark:bg-green-900/40"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-700/40 border-amber-200 dark:border-amber-700"
+                    ? "bg-violet-50 border-violet-300 shadow-sm dark:bg-green-900/40"
+                    : "hover:bg-gray-100 dark:hover:bg-gray-700/40 dark:border-amber-700"
                 }`}
                 onClick={() => khariltsagchSongokh(mur)}
               >
-                <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#f5dcc8] to-[#c7bfee] flex items-center justify-center font-bold text-white">
+                <div className="h-12 w-12 rounded-full bg-bar flex items-center justify-center font-bold text-white">
                   {mur.ner[0]}
                 </div>
                 <div className="flex-1">
@@ -192,14 +192,14 @@ export default function KhyanaltFrontend() {
                 placeholder="Гарчиг"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-3 rounded-xl bg-transparent border-amber-300 dark:border-amber-600"
+                className="mb-3 rounded-xl bg-transparent border-white dark:border-amber-600"
               />
               <Input.TextArea
                 rows={8}
                 placeholder="Мэдэгдэл бичих..."
                 value={msj}
                 onChange={(e) => setMsj(e.target.value)}
-                className="rounded-xl border-amber-300 transparent dark:border-amber-600 "
+                className="rounded-xl border-white transparent dark:border-amber-600 "
                 style={{ marginTop: "10px" }}
               />
               <motion.div

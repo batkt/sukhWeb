@@ -275,209 +275,159 @@ export default function TaskManagementSystem() {
       const hasMultiple = group.duudlagaCount > 1;
 
       return (
-        <div
+        <motion.div
           key={group._id}
-          className="mb-3 rounded-xl bg-transparent p-4 shadow-sm hover:shadow-md transition-all"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-3"
         >
           <div
-            className="flex items-center justify-between cursor-pointer"
+            className="group relative overflow-hidden rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200 p-4 shadow-lg hover:shadow-2xl hover:bg-gray-50 transition-all duration-300 cursor-pointer"
             onClick={() => {
               setDuudlaga(group);
               if (hasMultiple) toggleNameExpansion(group.khariltsagchiinNer);
             }}
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-l from-[#f5dcc8] to-[#c7bfee] text-white font-bold text-lg">
-                {group.khariltsagchiinNer?.charAt(0)}
-              </div>
-              <div>
-                <div className="font-semibold">{group.khariltsagchiinNer}</div>
-                <div className="text-xs text-gray-500">
-                  {group.khariltsagchiinRegister}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+            <div className="relative flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white font-bold text-xl shadow-lg">
+                    {group.khariltsagchiinNer?.charAt(0)}
+                  </div>
+                  {hasMultiple && (
+                    <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold shadow-md">
+                      {group.duudlagaCount}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="font-semibold text-black text-lg">
+                    {group.khariltsagchiinNer}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {group.khariltsagchiinRegister}
+                  </div>
                 </div>
               </div>
+              <Tag
+                color={statusInfo.color}
+                className="!rounded-full !px-3 !py-1 !border-0 !shadow-md"
+              >
+                {statusInfo.text}
+              </Tag>
             </div>
-            <Tag color={statusInfo.color}>{statusInfo.text}</Tag>
           </div>
 
-          {hasMultiple && isExpanded && (
-            <div className="mt-2 ml-6 space-y-2">
-              {group.allDuudlaga
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt).getTime() -
-                    new Date(a.createdAt).getTime()
-                )
-                .map((item) => (
-                  <div
-                    key={item._id}
-                    className="p-2 rounded-lg hover:bg-white transition-all cursor-pointer border-l-2"
-                    onClick={() => setDuudlaga(item)}
-                  >
-                    <Tag color={getStatusInfo(item.tuluv).color}>
-                      {getStatusInfo(item.tuluv).text}
-                    </Tag>
-                    {item.title && <span className="ml-2">{item.title}</span>}
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
+          <AnimatePresence>
+            {hasMultiple && isExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-2 ml-6 space-y-2 overflow-hidden"
+              >
+                {group.allDuudlaga
+                  .sort(
+                    (a, b) =>
+                      new Date(b.createdAt).getTime() -
+                      new Date(a.createdAt).getTime()
+                  )
+                  .map((item) => (
+                    <motion.div
+                      key={item._id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="p-3 rounded-xl bg-transparent backdrop-blur-lg border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDuudlaga(item);
+                      }}
+                    >
+                      <Tag
+                        color={getStatusInfo(item.tuluv).color}
+                        className="!rounded-full !text-xs"
+                      >
+                        {getStatusInfo(item.tuluv).text}
+                      </Tag>
+                      {item.title && (
+                        <span className="ml-2 text-black text-sm">
+                          {item.title}
+                        </span>
+                      )}
+                    </motion.div>
+                  ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       );
     });
   };
 
-  const renderRightPanel = () => {
-    if (!duudlaga)
-      return (
-        <div className="flex h-full items-center justify-center rounded-2xl bg-gradient-to-tr from-card-50 to-card-100 p-8">
-          <div className="text-center">
-            <div className="font-medium text-lg">Өдрийн мэнд</div>
-            <div className="mt-2 text-gray-500">
-              Та харилцагч сонгож дэлгэрэнгүй мэдээлэл үзнэ үү.
-            </div>
-          </div>
-        </div>
-      );
-
-    const khariltsagchDuudlaga = filteredJagsaalt
-      .filter((i) => i.khariltsagchiinNer === duudlaga.khariltsagchiinNer)
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime()
-      );
-
-    return (
-      <div className="flex h-full flex-col rounded-2xl bg-transparent p-5 shadow-lg space-y-4">
-        <div className="rounded-xl bg-gradient-to-r from-[#f5dcc8] to-[#c7bfee] p-4">
-          <div className="font-semibold text-lg">
-            Нэр: {duudlaga.khariltsagchiinNer}
-          </div>
-          <div className="text-sm text-gray-600">
-            Нийт дуудлага: {khariltsagchDuudlaga.length}
-          </div>
-          <div className="text-sm text-gray-600">
-            Утас: {duudlaga.khariltsagchiinUtas}
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-3 overflow-y-auto">
-          {khariltsagchDuudlaga.map((item) => (
-            <div
-              key={item._id}
-              className={`p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border ${
-                item._id === duudlaga._id
-                  ? "border-green-500 bg-green-50"
-                  : "border-amber-200"
-              }`}
-              onClick={() => setDuudlaga(item)}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <Tag color={getStatusInfo(item.tuluv).color}>
-                    {getStatusInfo(item.tuluv).text}
-                  </Tag>
-                  {item.duudlagiinTurul && (
-                    <Tag color="processing" className="ml-2">
-                      {item.duudlagiinTurul}
-                    </Tag>
-                  )}
-                  {item.title && (
-                    <div className="mt-2 font-medium text-gray-900">
-                      {item.title}
-                    </div>
-                  )}
-                  {item.message && (
-                    <div className="text-sm text-gray-600">{item.message}</div>
-                  )}
-                  {item.tailbar && (
-                    <div className="mt-2 p-2 bg-red-50 rounded-md text-red-600 text-xs">
-                      {item.tailbar}
-                    </div>
-                  )}
-                </div>
-                <div className="text-right text-xs text-gray-500">
-                  {moment(item.createdAt).format("MM-DD HH:mm")}
-                </div>
-              </div>
-
-              {item.tuluv === 0 && (
-                <div className="mt-2 flex gap-2">
-                  <Popconfirm
-                    title="Дуудлагыг дуусгах уу?"
-                    okText="Тийм"
-                    cancelText="Үгүй"
-                    onConfirm={() => updateTaskStatus(item._id, 1)}
-                  >
-                    <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-xs cursor-pointer hover:bg-blue-600">
-                      Дуусгах
-                    </div>
-                  </Popconfirm>
-                  <div
-                    className="px-3 py-1 rounded-full bg-red-500 text-white text-xs cursor-pointer hover:bg-red-600"
-                    onClick={() => {
-                      const reason = prompt("Цуцлах шалтгааныг бичнэ үү:");
-                      if (reason) updateTaskStatus(item._id, -1, reason);
-                    }}
-                  >
-                    Цуцлах
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-transparent dark:bg-gray-900">
+    <div className="min-h-screen">
       <motion.h1
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-4 "
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
       >
         Дуудлага
       </motion.h1>
 
-      <div className="flex h-[calc(100vh-4rem)] gap-4 bg-transparent">
-        <div className="flex w-1/3 flex-col space-y-4 bg-transparent rounded-2xl p-4 shadow-lg">
-          <Card className="!bg-transparent !shadow-none !border-none">
+      <div className="flex h-[calc(100vh-10rem)] gap-6 bg-transparent">
+        <motion.div
+          initial={{ opacity: 0, x: -50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex w-1/3 flex-col space-y-4 bg-transparent"
+        >
+          <Card className="!bg-transparent !border-none">
             <div className="grid grid-cols-3 gap-3 bg-transparent">
               {khyanaltiinDun.map((mur, idx) => (
-                <div
+                <motion.div
                   key={idx}
-                  className={`p-3 rounded-3xl cursor-pointer text-center transition-all ${
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className={`p-4 rounded-2xl cursor-pointer text-center transition-all duration-300 bg-transparent border ${
                     mur.status === tuluv
-                      ? "bg-[#f9f7f3] border-2 border-[#a89dd9] shadow-md"
-                      : "border-2 border-[#b8aee3] hover:border-[#9b8fd5]"
+                      ? "border-gray-300 shadow-xl"
+                      : "border-gray-200 hover:bg-transparent hover:shadow-lg"
                   }`}
                   onClick={mur.onClick}
                 >
-                  <div className="text-2xl font-bold text-[#a89dd9]">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: idx * 0.1, type: "spring" }}
+                    className="text-3xl font-bold text-black mb-1 bg-transparent"
+                  >
                     {mur.too}
+                  </motion.div>
+                  <div className="text-xs text-black font-medium bg-transparent">
+                    {mur.utga}
                   </div>
-                  <div className="text-sm text-gray-500">{mur.utga}</div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </Card>
 
-          <div className="grid grid-cols-2 gap-4 mt-2 bg-transparent">
+          <div className="grid grid-cols-2 gap-3 bg-transparent">
             <RangePicker
-              placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+              placeholder={["Эхлэх", "Дуусах"]}
               onChange={(dates) =>
                 setEkhlekhOgnoo(dates as [Dayjs, Dayjs] | null)
               }
               value={ekhlekhOgnoo}
+              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black"
             />
             <Select
-              placeholder="Төрөл сонгох"
+              placeholder="Төрөл"
               value={turulFilter}
               onChange={setTurulFilter}
-              className="!bg-transparent !text-white"
+              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black"
             >
               <Option value="Бүгд">Бүгд</Option>
               <Option value="Сантехник">Сантехник</Option>
@@ -487,23 +437,194 @@ export default function TaskManagementSystem() {
           </div>
 
           <Input
-            placeholder="Хайх /Нэр, Регистр, Утас/"
+            placeholder="Хайх..."
             onChange={({ target }) => setSearchTerm(target.value)}
-            className="!bg-transparent !text-white"
+            className="!h-12 !text-base !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black placeholder:text-gray-500"
           />
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto pr-2 mt-4">
             {filteredJagsaalt.length === 0 ? (
-              <div className="flex items-center justify-center p-8 text-gray-500">
-                Өгөгдөл олдсонгүй
-              </div>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center justify-center h-full"
+              >
+                <div className="text-center p-8 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200">
+                  <div className="text-black text-lg">Өгөгдөл олдсонгүй</div>
+                </div>
+              </motion.div>
             ) : (
               renderCallList()
             )}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="flex-1 bg-transparent">{renderRightPanel()}</div>
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex-1"
+        >
+          {duudlaga ? (
+            <div className="flex h-full flex-col space-y-4 rounded-3xl bg-transparent p-6">
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-gray-200 shadow-xl"
+              >
+                <div className="font-bold text-2xl text-black mb-2">
+                  {duudlaga.khariltsagchiinNer}
+                </div>
+                <div className="flex gap-4 text-black">
+                  <span className="flex items-center gap-2">
+                    {duudlaga.khariltsagchiinUtas}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    {
+                      filteredJagsaalt.filter(
+                        (i) =>
+                          i.khariltsagchiinNer === duudlaga.khariltsagchiinNer
+                      ).length
+                    }{" "}
+                    дуудлага
+                  </span>
+                </div>
+              </motion.div>
+
+              <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                {filteredJagsaalt
+                  .filter(
+                    (i) => i.khariltsagchiinNer === duudlaga.khariltsagchiinNer
+                  )
+                  .sort(
+                    (a, b) =>
+                      new Date(b.updatedAt || b.createdAt).getTime() -
+                      new Date(a.updatedAt || a.createdAt).getTime()
+                  )
+                  .map((item, idx) => (
+                    <motion.div
+                      key={item._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      whileHover={{ scale: 1.02 }}
+                      className={`p-5 rounded-2xl transition-all cursor-pointer ${
+                        item._id === duudlaga._id
+                          ? "bg-white/25 border-2 border-white/50 shadow-2xl"
+                          : "bg-white/10 border border-white/20 hover:bg-white/15"
+                      } backdrop-blur-xl`}
+                      onClick={() => setDuudlaga(item)}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex gap-2 flex-wrap">
+                          <Tag
+                            color={getStatusInfo(item.tuluv).color}
+                            className="!rounded-full !px-3 !py-1 !border-0"
+                          >
+                            {getStatusInfo(item.tuluv).text}
+                          </Tag>
+                          {item.duudlagiinTurul && (
+                            <Tag
+                              color="processing"
+                              className="!rounded-full !px-3 !py-1 !border-0"
+                            >
+                              {item.duudlagiinTurul}
+                            </Tag>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-600 font-mono bg-white/10 px-3 py-1 rounded-full">
+                          {moment(item.createdAt).format("MM-DD HH:mm")}
+                        </div>
+                      </div>
+
+                      {item.title && (
+                        <div className="font-semibold text-gray-700 text-lg mb-2">
+                          {item.title}
+                        </div>
+                      )}
+                      {item.message && (
+                        <div className="text-sm text-gray-500 leading-relaxed">
+                          {item.message}
+                        </div>
+                      )}
+                      {item.tailbar && (
+                        <div className="mt-3 p-3 bg-red-500/20 backdrop-blur-sm rounded-xl text-red-200 text-sm border border-red-400/30">
+                          {item.tailbar}
+                        </div>
+                      )}
+
+                      {item.tuluv === 0 && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.2 }}
+                          className="mt-4 flex gap-3"
+                        >
+                          <Popconfirm
+                            title="Дуудлагыг дуусгах уу?"
+                            okText="Тийм"
+                            cancelText="Үгүй"
+                            onConfirm={() => updateTaskStatus(item._id, 1)}
+                          >
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-sm font-semibold cursor-pointer hover:shadow-lg transition-all text-center"
+                            >
+                              ✓ Дуусгах
+                            </motion.div>
+                          </Popconfirm>
+                          <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-sm font-semibold cursor-pointer hover:shadow-lg transition-all text-center"
+                            onClick={() => {
+                              const reason = prompt(
+                                "Цуцлах шалтгааныг бичнэ үү:"
+                              );
+                              if (reason)
+                                updateTaskStatus(item._id, -1, reason);
+                            }}
+                          >
+                            ✕ Цуцлах
+                          </motion.div>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  ))}
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+              className="flex h-full items-center justify-center rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 p-8 shadow-2xl"
+            >
+              <div className="text-center">
+                <motion.div
+                  animate={{
+                    y: [0, -10, 0],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="text-8xl mb-6"
+                >
+                  👋
+                </motion.div>
+                <div className="font-bold text-3xl text-gray-700 mb-3">
+                  Өдрийн мэнд
+                </div>
+                <div className="text-lg text-gray-500 max-w-md">
+                  Та харилцагч сонгож дэлгэрэнгүй мэдээлэл үзнэ үү
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
       </div>
     </div>
   );

@@ -120,7 +120,7 @@ export default function NevtreltiinTuukh({
 
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b border-amber-300">
+          <tr className="border-b border-white">
             {columns.map((col) => (
               <th
                 key={col.title as string}

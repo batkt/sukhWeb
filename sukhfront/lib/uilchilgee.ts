@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 
-export const url = "http://192.168.1.147:8084";
+export const url = "http://103.143.40.46:8084";
 
 export interface DecodedToken {
   id: string;

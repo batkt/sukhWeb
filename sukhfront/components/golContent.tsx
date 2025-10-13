@@ -126,11 +126,11 @@ export default function GolContent({ children }: GolContentProps) {
                     <div key={i} className="relative group">
                       {item.submenu ? (
                         <span
-                          className={`px-5 py-2 bg-bar text-white rounded-3xl text-sm font-medium transition-all duration-300 cursor-default
+                          className={`px-5 py-2 rounded-3xl text-sm font-medium transition-all duration-300 cursor-default
               ${
                 isActive
                   ? "bg-white/30 backdrop-blur-xl text-black shadow-xl scale-105 border border-white/30"
-                  : "text-black hover:bg-bar/20 hover:scale-105 hover:shadow-md border border-white/20"
+                  : "text-black hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
               }`}
                         >
                           {item.label}
@@ -138,11 +138,11 @@ export default function GolContent({ children }: GolContentProps) {
                       ) : (
                         <a
                           href={`/${item.path}`}
-                          className={`bg-bar px-5 py-2 text-white rounded-3xl text-sm font-medium transition-all duration-300
+                          className={`px-5 py-2 rounded-3xl text-sm font-medium transition-all duration-300
               ${
                 isActive
                   ? "bg-white/30 backdrop-blur-xl text-black shadow-xl scale-105 border border-white/30"
-                  : "text-black hover:bg-bar/20 hover:scale-105 hover:shadow-md border border-white/20"
+                  : "text-black hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
               }`}
                         >
                           {item.label}
@@ -235,8 +235,13 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </nav>
 
-      <main className="max-w-[1600px] mx-auto px-8 py-12">
-        <div className="bg-white/40 backdrop-blur-xl rounded-3xl border border-white/60 shadow-2xl p-12 text-foreground">
+      <main className="flex-1 h-[calc(100vh-90px)] overflow-y-auto scrollable max-w-[1600px] mx-auto px-8 py-12">
+        <div
+          className="relative rounded-[2rem] p-12 
+               bg-white/10 backdrop-blur-2xl border border-white/20 
+               before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-tr 
+               before:from-white/20 before:to-transparent before:opacity-40 before:pointer-events-none"
+        >
           {children}
         </div>
       </main>

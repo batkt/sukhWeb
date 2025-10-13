@@ -54,7 +54,7 @@ export default function EbarimtTokhirgoo() {
           <input
             type="text"
             placeholder="ТИН дугаар"
-            className="w-full border border-amber-300 rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+            className="w-full border border-white rounded-md p-2 focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
@@ -63,7 +63,7 @@ export default function EbarimtTokhirgoo() {
           <input
             type="text"
             placeholder="Дүүрэг"
-            className="w-full border border-amber-300 rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+            className="w-full border border-white rounded-md p-2 focus:ring-2 focus:ring-blue-400"
           />
         </div>
 
@@ -72,7 +72,7 @@ export default function EbarimtTokhirgoo() {
           <input
             type="text"
             placeholder="Хороо"
-            className="w-full border border-amber-300 rounded-md p-2 focus:ring-2 focus:ring-blue-400"
+            className="w-full border border-white rounded-md p-2 focus:ring-2 focus:ring-blue-400"
           />
         </div>
       </div>

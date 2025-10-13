@@ -86,7 +86,7 @@ export default function Shaardlaga() {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-4 "
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
       >
         {t("Шаардлага")}
       </motion.h1>
@@ -95,12 +95,12 @@ export default function Shaardlaga() {
         <motion.div
           initial={{ opacity: 0, x: -25 }}
           animate={{ opacity: 1, x: 0 }}
-          className="col-span-12 md:col-span-4 rounded-2xl bg-card/60 dark:bg-gray-800/50 p-5 shadow-lg backdrop-blur-sm"
+          className="col-span-12 md:col-span-4 rounded-2xl bg-white/30 dark:bg-gray-800/50 p-5 shadow-xl backdrop-blur-md"
         >
           <Input
             type="text"
             placeholder="Хайх/Нэр, Регистр, Утас..."
-            className="rounded-lg mb-4"
+            className="rounded-2xl mb-4 bg-white/40 dark:bg-gray-700/40 backdrop-blur-sm shadow-sm focus:ring-2 focus:ring-violet-300 transition-all"
             onChange={({ target }) => {
               clearTimeout(timeout);
               timeout = setTimeout(() => {
@@ -112,7 +112,7 @@ export default function Shaardlaga() {
             }}
           />
 
-          <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
+          <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1 mt-4">
             {khariltsagchiinMedeelel?.jagsaalt?.map((mur) => {
               const isActive = khariltsagch?._id === mur?._id;
               const isChecked =
@@ -123,24 +123,45 @@ export default function Shaardlaga() {
                 <motion.div
                   key={mur._id}
                   whileHover={{ scale: 1 }}
+                  whileTap={{ scale: 1 }}
                   onClick={() => khariltsagchSongokh(mur)}
-                  className={`flex items-center gap-4 rounded-xl border p-3 cursor-pointer transition-all mt-2
-                  ${
-                    isActive
-                      ? "bg-gradient-to-r from-[#7D7AD8] to-[#9B8FD5] border-[#9B8FD5] shadow"
-                      : "bg-card/80 dark:bg-gray-700/50 hover:shadow"
-                  }`}
+                  className={`flex items-center gap-4 rounded-2xl p-3 cursor-pointer transition-all
+            ${
+              isActive
+                ? "bg-gradient-to-r from-[#7D7AD8]/90 to-[#9B8FD5]/90 border border-[#9B8FD5] shadow-xl"
+                : " dark:bg-gray-700/40  dark:border-gray-600 hover:shadow-lg backdrop-blur-sm"
+            }`}
                 >
-                  <Checkbox checked={isChecked} />
+                  <motion.div
+                    animate={{ scale: isChecked ? 1.1 : 1 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className={`w-5 h-5 rounded-full border-2 ${
+                      isChecked
+                        ? "border-violet-500 bg-violet-500"
+                        : "border-gray-300 dark:border-gray-500 bg-transparent"
+                    } flex items-center justify-center`}
+                  >
+                    {isChecked && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="w-3 h-3  rounded-full"
+                      />
+                    )}
+                  </motion.div>
 
-                  <div className="h-10 w-12 flex items-center justify-center rounded-full bg-gradient-to-tr from-[#f5dcc8] to-[#c7bfee] text-white font-bold">
+                  <div className="h-10 w-12 flex items-center justify-center rounded-full bg-gradient-to-tr from-[#f5dcc8] to-[#c7bfee] text-white font-bold shadow-md">
                     {mur.ner[0]}
                   </div>
 
                   <div className="flex w-full justify-between items-center">
                     <div>
-                      <div className="font-medium">{mur?.ner}</div>
-                      <div className="text-xs text-gray-500">ID: {mur._id}</div>
+                      <div className="font-medium text-gray-900 dark:text-gray-100">
+                        {mur?.ner}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
+                        ID: {mur._id}
+                      </div>
                     </div>
                     <div className="text-sm text-green-600">{mur?.utas}</div>
                   </div>
@@ -150,6 +171,7 @@ export default function Shaardlaga() {
           </div>
         </motion.div>
 
+        {/* Right Panel */}
         <div className="col-span-12 md:col-span-8">
           <AnimatePresence mode="wait">
             {khariltsagch || songogdsonKhariltsagch.length > 0 ? (
@@ -159,13 +181,13 @@ export default function Shaardlaga() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 30 }}
                 transition={{ type: "spring", stiffness: 120 }}
-                className="rounded-2xl bg-card/70 dark:bg-gray-800/60 p-6 shadow-lg backdrop-blur-md"
+                className="rounded-2xl bg-white/30 dark:bg-gray-800/50 p-6 shadow-xl backdrop-blur-md"
               >
                 <Input
                   placeholder={t("Гарчиг")}
                   value={title}
                   onChange={({ target }) => setTitle(target.value)}
-                  className="rounded-lg mb-4"
+                  className="rounded-xl mb-4 bg-white/40 dark:bg-gray-700/40 backdrop-blur-sm shadow-sm"
                 />
 
                 <Upload
@@ -183,7 +205,7 @@ export default function Shaardlaga() {
                 >
                   <Button
                     icon={zurag ? <EditOutlined /> : <UploadOutlined />}
-                    className="mb-4"
+                    className="mb-4 rounded-xl bg-white/40 dark:bg-gray-700/40 shadow-sm backdrop-blur-sm hover:scale-105 transition-transform"
                     style={{ marginTop: "10px" }}
                   >
                     {zurag ? t("Зураг өөрчлөх") : t("Зураг оруулах")}
@@ -196,7 +218,7 @@ export default function Shaardlaga() {
                       ref={ref}
                       width={200}
                       src=""
-                      className="rounded-lg shadow-md"
+                      className="rounded-2xl shadow-lg"
                       style={{ marginTop: "10px" }}
                     />
                   </div>
@@ -207,7 +229,7 @@ export default function Shaardlaga() {
                   placeholder={t("Шаардлагын текст")}
                   value={msj}
                   onChange={({ target }) => onTextChange(target.value)}
-                  className="rounded-lg mb-4"
+                  className="rounded-xl mb-4 bg-white/40 dark:bg-gray-700/40 backdrop-blur-sm shadow-sm"
                 />
 
                 <div className="flex justify-end">
@@ -216,7 +238,7 @@ export default function Shaardlaga() {
                     onClick={send}
                     loading={loading}
                     disabled={loading}
-                    className="rounded-lg px-6 bg-gradient-to-r from-green-500 to-emerald-500 mt-2"
+                    className="rounded-2xl px-6 bg-gradient-to-r from-green-500 to-emerald-500 shadow-lg hover:scale-105 transition-transform"
                   >
                     {t("Илгээх")}
                   </Button>
@@ -228,7 +250,7 @@ export default function Shaardlaga() {
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 30 }}
-                className="rounded-2xl bg-card/70 dark:bg-gray-800/60 p-12 shadow-lg backdrop-blur-md flex items-center justify-center"
+                className="rounded-2xl bg-white/30 dark:bg-gray-800/50 p-12 shadow-xl backdrop-blur-md flex items-center justify-center"
               >
                 <div className="text-center text-gray-600 dark:text-gray-300">
                   <div className="text-lg font-semibold">

@@ -104,75 +104,87 @@ export default function SanalKhuselt() {
   );
 
   return (
-    <div className="min-h-screen   dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen">
       <motion.h1
-        initial={{ opacity: 0, y: -24 }}
+        initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-4 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-slate-900"
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
       >
         {t("Санал хүсэлт")}
       </motion.h1>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className="flex h-[calc(100vh-10rem)] gap-6 bg-transparent">
         <motion.div
-          initial={{ opacity: 0, x: -30 }}
+          initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
-          className="col-span-12 md:col-span-4 rounded-2xl bg-transparent/60 dark:bg-gray-800/50 p-4 shadow-md backdrop-blur-sm"
+          transition={{ duration: 0.5 }}
+          className="flex w-1/3 flex-col space-y-4 bg-transparent"
         >
-          <RangePicker
-            className="w-full rounded-lg"
-            placeholder={[t("Эхлэх огноо"), t("Дуусах огшноо")]}
-            onChange={(dates) => setEkhlekhOgnoo(dates)}
-          />
+          <div className="grid grid-cols-1 gap-3 bg-transparent">
+            <RangePicker
+              placeholder={[t("Эхлэх"), t("Дуусах")]}
+              onChange={(dates) => setEkhlekhOgnoo(dates)}
+              className="!h-10 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black"
+            />
+          </div>
 
-          <div className="grid grid-cols-2 gap-3 mt-2">
+          <div className="grid grid-cols-2 gap-3 bg-transparent">
             {[
-              { ner: "Санал", utga: "sanal" },
-              { ner: "Гомдол", utga: "gomdol" },
+              { ner: t("Санал"), utga: "sanal" },
+              { ner: t("Гомдол"), utga: "gomdol" },
             ].map((status, idx) => (
-              <motion.button
+              <motion.div
                 key={idx}
-                whileHover={{ scale: 1.02 }}
-                onClick={() => turulSongokh(status.utga as "sanal" | "gomdol")}
-                className={`py-2 rounded-xl font-semibold transition-all ${
+                whileHover={{ scale: 1.05, y: -3 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => turulSongokh(status.utga)}
+                className={`p-3 text-center rounded-2xl cursor-pointer transition-all duration-300 border backdrop-blur-xl ${
                   turul === status.utga
-                    ? "bg-gradient-to-l from-[#f0b98c] to-[#b4a5fc] text-white shadow-md"
-                    : "bg-transparent dark:bg-gray-700/40 text-gray-700 dark:text-gray-200 border border-amber-400 dark:border-amber-700"
+                    ? "border-gray-300 bg-white/25 shadow-xl"
+                    : "border-gray-200 bg-transparent hover:shadow-lg"
                 }`}
               >
-                {t(status.ner)}
-              </motion.button>
+                <div className="text-sm font-semibold text-gray-800">
+                  {status.ner}
+                </div>
+              </motion.div>
             ))}
           </div>
 
-          <div className="text-sm text-gray-500 mt-2">{t("Харилцагчид")}</div>
-          <div className="max-h-[54vh] overflow-y-auto space-y-2">
-            {KhariltsagchiinMedeelel.jagsaalt.map((mur) => (
+          <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">
+            {KhariltsagchiinMedeelel.jagsaalt.map((mur, idx) => (
               <motion.div
                 key={mur._id}
-                layout
-                whileHover={{ scale: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                whileHover={{ scale: 1.001 }}
                 onClick={() => setKhariltsagch(mur)}
-                className={`flex w-full items-center gap-3 p-3 rounded-xl cursor-pointer transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all backdrop-blur-xl border ${
                   khariltsagch?._id === mur._id
-                    ? "bg-gradient-to-l from-[#fdd8b9] to-[#7a61f3]"
-                    : "bg-transparent/80 dark:bg-gray-800/60 border border-transparent hover:shadow-sm"
+                    ? "bg-white/25 border-white/50"
+                    : "bg-white/10 border-white/20 hover:bg-white/20"
                 }`}
               >
-                <div className="h-11 w-11 rounded-full bg-gradient-to-l from-[#f0b98c] to-[#b4a5fc] flex items-center justify-center text-white font-bold text-lg">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-300 via-purple-300 to-pink-200 flex items-center justify-center text-white font-bold">
                   {mur.ner[0]}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium">{mur.ner}</div>
+                  <div className="font-medium text-black">{mur.ner}</div>
                   <div className="text-xs text-gray-500">{mur.utas}</div>
                 </div>
-                <div className="text-xs text-gray-400">{mur.register}</div>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        <div className="col-span-12 md:col-span-8">
+        <motion.div
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex-1"
+        >
           <AnimatePresence mode="wait">
             {khariltsagch ? (
               <motion.div
@@ -181,101 +193,97 @@ export default function SanalKhuselt() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 30 }}
                 transition={{ type: "spring", stiffness: 120 }}
-                className="rounded-2xl bg-transparent dark:bg-gray-800/60 p-6 shadow-lg backdrop-blur-md"
+                className="flex h-full flex-col space-y-4 rounded-3xl bg-transparent p-6"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="text-lg font-semibold">
-                      {khariltsagch.ner}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {khariltsagch.utas}
-                    </div>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-gray-200 shadow-xl"
+                >
+                  <div className="font-bold text-2xl text-black mb-2">
+                    {khariltsagch.ner}
                   </div>
-
                   <div className="text-sm text-gray-600">
-                    {t("Сонгогдсон")}: {turul}
+                    {khariltsagch.utas}
                   </div>
-                </div>
+                  <div className="text-sm text-gray-400 mt-1">
+                    {t("Төрөл")}: {turul}
+                  </div>
+                </motion.div>
 
-                <div className="space-y-4">
-                  {sanalGomdolTuukh.length === 0 && (
-                    <div className="text-center text-gray-500 py-12 rounded-lg border border-dashed border-amber-200">
-                      {t(
-                        "Сонгогдсон харилцагчид ямар саналууд/гомдлуудгүй байна."
-                      )}
-                    </div>
-                  )}
-
-                  {sanalGomdolTuukh.map((mur) => (
+                <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+                  {sanalGomdolTuukh.length === 0 ? (
                     <motion.div
-                      key={mur._id}
-                      layout
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 12 }}
-                      className="p-4 rounded-xl bg-transparent dark:from-gray-800/50 dark:to-gray-800/40 shadow-sm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center h-full"
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="font-semibold">
-                          {mur.khariltsagchiinNer}
-                        </div>
-                        <div className="text-xs text-gray-400">
-                          {moment(mur.ognoo).format("YYYY-MM-DD HH:mm")}
-                        </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="font-medium mb-1">
-                          {t("Гарчиг")}: {mur.title}
-                        </div>
-                        <div className="text-gray-700 dark:text-gray-200">
-                          {mur.message}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 mb-3">
-                        {mur.zurguud?.map((img: string, i: number) => (
-                          <Image
-                            key={i}
-                            width={100}
-                            src={img}
-                            alt={`img-${i}`}
-                          />
-                        ))}
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <Popconfirm
-                          title={t("Хүлээж авах уу?")}
-                          onConfirm={() => sanalGomdolAvakh(mur._id)}
-                        >
-                          <button
-                            className={`px-4 py-2 rounded-lg font-semibold transition ${
-                              mur.tuluv
-                                ? "bg-gray-200 text-gray-700 cursor-default"
-                                : "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
-                            }`}
-                            disabled={!!mur.tuluv}
-                          >
-                            {mur.tuluv ? t("Хүлээж авсан") : t("Хүлээж авах")}
-                          </button>
-                        </Popconfirm>
-
-                        {mur.tuluv ? (
-                          <div className="text-sm text-green-600 font-medium">
-                            {t("Хүлээж авсан")}
-                          </div>
-                        ) : (
-                          <div className="text-sm text-gray-400">
-                            {t("Төлөв: Нээлттэй")}
-                          </div>
-                        )}
+                      <div className="text-center p-8 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200 text-gray-600">
+                        {t("Сонгогдсон харилцагчид мэдээлэл алга.")}
                       </div>
                     </motion.div>
-                  ))}
+                  ) : (
+                    sanalGomdolTuukh.map((mur, idx) => (
+                      <motion.div
+                        key={mur._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                        whileHover={{ scale: 1.02 }}
+                        className="p-5 rounded-2xl transition-all bg-white/10 border border-white/20 hover:bg-white/20 backdrop-blur-xl"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="font-semibold text-gray-800">
+                            {mur.khariltsagchiinNer}
+                          </div>
+                          <div className="text-xs text-gray-500 font-mono bg-white/10 px-3 py-1 rounded-full">
+                            {moment(mur.ognoo).format("MM-DD HH:mm")}
+                          </div>
+                        </div>
+
+                        <div className="text-gray-700 text-sm mb-3">
+                          <div className="font-medium">{mur.title}</div>
+                          <div>{mur.message}</div>
+                        </div>
+
+                        {mur.zurguud?.length > 0 && (
+                          <div className="flex gap-2 mb-3">
+                            {mur.zurguud.map((img, i) => (
+                              <Image
+                                key={i}
+                                width={100}
+                                src={img}
+                                alt={`img-${i}`}
+                                className="rounded-xl shadow-md"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          <Popconfirm
+                            title={t("Хүлээж авах уу?")}
+                            onConfirm={() => sanalGomdolAvakh(mur._id)}
+                          >
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              className={`flex-1 px-4 py-2 rounded-xl text-center font-semibold text-sm cursor-pointer transition-all ${
+                                mur.tuluv
+                                  ? "bg-gray-200 text-gray-600 cursor-default"
+                                  : "bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-lg hover:shadow-[0_0_20px_rgba(0,255,128,0.5)]"
+                              }`}
+                            >
+                              {mur.tuluv ? t("Хүлээж авсан") : t("Хүлээж авах")}
+                            </motion.div>
+                          </Popconfirm>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
                 </div>
 
+                {/* Accepted Badge */}
                 <AnimatePresence>
                   {showAcceptedBadge && (
                     <motion.div
@@ -294,19 +302,27 @@ export default function SanalKhuselt() {
               </motion.div>
             ) : (
               <motion.div
-                key="empty"
-                initial={{ opacity: 0, x: 30 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 30 }}
-                className="rounded-2xl bg-transparent dark:bg-gray-800/60 p-12 shadow-lg backdrop-blur-md flex items-center justify-center"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+                className="flex h-full items-center justify-center rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 p-8 shadow-2xl"
               >
-                <div className="text-center text-gray-600 dark:text-gray-300">
-                  {t("Та харилцагчаа сонгоно уу.")}
+                <div className="text-center">
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="text-7xl mb-6"
+                  >
+                    💬
+                  </motion.div>
+                  <div className="font-bold text-2xl text-gray-700 mb-3">
+                    {t("Санал хүсэлтээ харахын тулд харилцагч сонгоно уу")}
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="mn">
-      <body className="min-h-screen bg-card text-foreground font-sans">
+      <body className="h-screen overflow-hidden bg-card text-foreground font-sans">
         <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
