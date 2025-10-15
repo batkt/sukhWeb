@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ChevronDown,
   ChevronUp,
@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import uilchilgee from "../../../lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
-import useJagsaalt from "@/lib/useJagsaalt";
 import toast from "react-hot-toast";
 
 interface Ajiltan {
@@ -65,6 +64,8 @@ interface FormData {
 
 export default function Burtgel() {
   const { token, ajiltan: currentAjiltan } = useAuth();
+  const formRef = useRef<HTMLFormElement>(null);
+
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -72,6 +73,11 @@ export default function Burtgel() {
   const [activeTab, setActiveTab] = useState("ajiltanList");
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [ajiltanRecords, setAjiltanRecords] = useState<Ajiltan[]>([]);
+  const [suugchRecords, setSuugchRecords] = useState<Ajiltan[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredAjiltan, setFilteredAjiltan] = useState<Ajiltan[]>([]);
+  const [filteredSuugch, setFilteredSuugch] = useState<Ajiltan[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     ovog: "",
@@ -90,40 +96,100 @@ export default function Burtgel() {
     mashinDugaar: "",
   });
 
-  // Use useJagsaalt hook for Ajiltan list
-  const {
-    jagsaalt: ajiltanRecords,
-    onSearch: onAjiltanSearch,
-    refresh: refreshAjiltan,
-    isValidating: ajiltanLoading,
-  } = useJagsaalt<Ajiltan>(
-    "/ajiltan",
-    {},
-    {},
-    {},
-    ["ner", "ovog", "register", "utas", "email"],
-    undefined,
-    100
-  );
+  // Fetch Ajiltan data
+  const fetchAjiltan = async () => {
+    if (!token || !currentAjiltan?.baiguullagiinId) return;
 
-  // Use useJagsaalt hook for Suugch list
-  const {
-    jagsaalt: suugchRecords,
-    onSearch: onSuugchSearch,
-    refresh: refreshSuugch,
-    isValidating: suugchLoading,
-  } = useJagsaalt<Ajiltan>(
-    "/suugch",
-    {},
-    {},
-    {},
-    ["ner", "ovog", "register", "utas", "email"],
-    undefined,
-    100
-  );
+    setLoading(true);
+    try {
+      const axiosInstance = uilchilgee(token);
+      const response = await axiosInstance.get(
+        `/ajiltan?baiguullagiinId=${currentAjiltan.baiguullagiinId}`
+      );
+
+      if (response.data?.jagsaalt) {
+        setAjiltanRecords(response.data.jagsaalt);
+        setFilteredAjiltan(response.data.jagsaalt);
+      }
+    } catch (error: any) {
+      console.error("Error fetching ajiltan:", error);
+      toast.error("Ажилтны мэдээлэл татахад алдаа гарлаа");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch Suugch data
+  const fetchSuugch = async () => {
+    if (!token || !currentAjiltan?.baiguullagiinId) return;
+
+    setLoading(true);
+    try {
+      const axiosInstance = uilchilgee(token);
+      const response = await axiosInstance.get(
+        `/suugch?baiguullagiinId=${currentAjiltan.baiguullagiinId}`
+      );
+
+      if (response.data?.jagsaalt) {
+        setSuugchRecords(response.data.jagsaalt);
+        setFilteredSuugch(response.data.jagsaalt);
+      }
+    } catch (error: any) {
+      console.error("Error fetching suugch:", error);
+      toast.error("Оршин суугчдын мэдээлэл татахад алдаа гарлаа");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    if (activeTab === "ajiltanList") {
+      fetchAjiltan();
+    } else if (activeTab === "suugchList") {
+      fetchSuugch();
+    }
+  }, [activeTab, token, currentAjiltan]);
+
+  // Search filter
+  useEffect(() => {
+    if (activeTab === "ajiltanList") {
+      if (searchTerm) {
+        const filtered = ajiltanRecords.filter((item) => {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            item.ner?.toLowerCase().includes(searchLower) ||
+            item.ovog?.toLowerCase().includes(searchLower) ||
+            item.register?.toLowerCase().includes(searchLower) ||
+            item.utas?.toLowerCase().includes(searchLower) ||
+            item.email?.toLowerCase().includes(searchLower)
+          );
+        });
+        setFilteredAjiltan(filtered);
+      } else {
+        setFilteredAjiltan(ajiltanRecords);
+      }
+    } else if (activeTab === "suugchList") {
+      if (searchTerm) {
+        const filtered = suugchRecords.filter((item) => {
+          const searchLower = searchTerm.toLowerCase();
+          return (
+            item.ner?.toLowerCase().includes(searchLower) ||
+            item.ovog?.toLowerCase().includes(searchLower) ||
+            item.register?.toLowerCase().includes(searchLower) ||
+            item.utas?.toLowerCase().includes(searchLower) ||
+            item.email?.toLowerCase().includes(searchLower)
+          );
+        });
+        setFilteredSuugch(filtered);
+      } else {
+        setFilteredSuugch(suugchRecords);
+      }
+    }
+  }, [searchTerm, ajiltanRecords, suugchRecords, activeTab]);
 
   const activeRecords =
-    activeTab === "ajiltanList" ? ajiltanRecords : suugchRecords;
+    activeTab === "ajiltanList" ? filteredAjiltan : filteredSuugch;
   const activeCount = activeRecords.filter(
     (r) => r.tuluv === "Идэвхтэй"
   ).length;
@@ -131,15 +197,9 @@ export default function Burtgel() {
     (r) => r.tuluv === "Идэвхгүй"
   ).length;
   const showSummaryCard = activeRecords.length > 5 && !isExpanded;
-  const isLoading =
-    activeTab === "ajiltanList" ? ajiltanLoading : suugchLoading;
 
-  const handleSearch = (searchTerm: string) => {
-    if (activeTab === "ajiltanList") {
-      onAjiltanSearch(searchTerm);
-    } else {
-      onSuugchSearch(searchTerm);
-    }
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,6 +211,11 @@ export default function Burtgel() {
 
     if (!token) {
       toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    if (formData.nuutsUg && formData.nuutsUg.length < 2) {
+      toast.error("Нууц үг буруу оруулсан байна.");
       return;
     }
 
@@ -178,13 +243,27 @@ export default function Burtgel() {
           formData.ajildOrsonOgnoo
         ).toISOString();
         payload.albanTushaal = formData.albanTushaal;
-        payload.barilguud = ["622ca3938e64e5b4f0c36bed"]; // Replace with actual building selection
+
+        // Set erkh based on albanTushaal
+        switch (formData.albanTushaal) {
+          case "Админ":
+            payload.erkh = "Admin";
+            break;
+          case "Зохион байгуулагч":
+            payload.erkh = "ZokhionBaiguulagch";
+            break;
+          case "Санхүү":
+            payload.erkh = "Sankhuu";
+            break;
+          default:
+            break;
+        }
       }
 
       const response = await axiosInstance.post(endpoint, payload);
 
-      if (response.data?.success) {
-        toast.success("Амжилттай хадгалагдлаа!");
+      if (response.data) {
+        toast.success("Бүртгэл амжилттай хийгдлээ");
 
         // Reset form
         setFormData({
@@ -204,22 +283,22 @@ export default function Burtgel() {
           mashinDugaar: "",
         });
 
-        // Refresh the list
+        formRef.current?.reset();
+
+        // Refresh the list and switch to list view
         if (activeTab === "ajiltanNemekh") {
-          refreshAjiltan();
+          await fetchAjiltan();
           setActiveTab("ajiltanList");
         } else {
-          refreshSuugch();
+          await fetchSuugch();
           setActiveTab("suugchList");
         }
-      } else {
-        toast.error(response.data?.aldaa || "Алдаа гарлаа");
       }
-    } catch (err: any) {
+    } catch (error: any) {
       const errorMsg =
-        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
+        error?.response?.data?.aldaa || error.message || "Алдаа гарлаа";
       toast.error(errorMsg);
-      console.error("Submit error:", err);
+      console.error("Submit error:", error);
     } finally {
       setLoading(false);
     }
@@ -227,6 +306,12 @@ export default function Burtgel() {
 
   const handleDelete = async () => {
     if (!selectedRecord || !token) return;
+
+    // Prevent deleting yourself
+    if (currentAjiltan?._id === selectedRecord._id) {
+      toast.error("Та өөрийгөө устгаж болохгүй!");
+      return;
+    }
 
     setLoading(true);
 
@@ -237,27 +322,52 @@ export default function Burtgel() {
 
       const response = await axiosInstance.delete(`${endpoint}/${id}`);
 
-      if (response.data?.success) {
-        toast.success("Амжилттай устгагдлаа!");
+      if (response.data) {
+        toast.success("Устгагдлаа");
         setDeleteOpen(false);
 
         // Refresh the list
         if (activeTab === "ajiltanList") {
-          refreshAjiltan();
+          await fetchAjiltan();
         } else {
-          refreshSuugch();
+          await fetchSuugch();
         }
-      } else {
-        toast.error(response.data?.aldaa || "Устгахад алдаа гарлаа");
       }
-    } catch (err: any) {
+    } catch (error: any) {
       const errorMsg =
-        err?.response?.data?.aldaa || err.message || "Устгахад алдаа гарлаа";
+        error?.response?.data?.aldaa ||
+        error.message ||
+        "Устгахад алдаа гарлаа";
       toast.error(errorMsg);
-      console.error("Delete error:", err);
+      console.error("Delete error:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEdit = (data: any) => {
+    setFormData({
+      ovog: data.ovog || "",
+      ner: data.ner || "",
+      register: data.register || "",
+      khayag: data.khayag || "",
+      utas: data.utas || "",
+      ajildOrsonOgnoo: data.ajildOrsonOgnoo
+        ? new Date(data.ajildOrsonOgnoo).toISOString().split("T")[0]
+        : "",
+      albanTushaal: data.albanTushaal || "",
+      nevtrekhNer: data.nevtrekhNer || "",
+      nuutsUg: "",
+      davkhar: data.davkhar || "",
+      toot: data.toot || "",
+      gd: data.gd || "",
+      email: data.email || "",
+      mashinDugaar: data.mashinDugaar || "",
+    });
+
+    setActiveTab(
+      activeTab === "ajiltanList" ? "ajiltanNemekh" : "suugchNemekh"
+    );
   };
 
   const tabs = [
@@ -298,7 +408,7 @@ export default function Burtgel() {
 
         {(activeTab === "ajiltanList" || activeTab === "suugchList") && (
           <>
-            {isLoading ? (
+            {loading ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-2 text-gray-600">Уншиж байна...</p>
@@ -343,6 +453,7 @@ export default function Burtgel() {
                         <input
                           type="text"
                           placeholder="Хайх..."
+                          value={searchTerm}
                           onChange={(e) => handleSearch(e.target.value)}
                           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
@@ -464,10 +575,7 @@ export default function Burtgel() {
                                   <Eye className="w-4 h-4" />
                                 </button>
                                 <button
-                                  onClick={() => {
-                                    setSelectedRecord(person);
-                                    setEditOpen(true);
-                                  }}
+                                  onClick={() => handleEdit(person)}
                                   className="p-2 rounded-lg hover:bg-yellow-100 text-yellow-600"
                                 >
                                   <Edit2 className="w-4 h-4" />
@@ -501,7 +609,7 @@ export default function Burtgel() {
                 ? "Шинэ ажилтан нэмэх"
                 : "Оршин суугч нэмэх"}
             </h2>
-            <form onSubmit={handleSubmit}>
+            <form ref={formRef} onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -550,8 +658,14 @@ export default function Burtgel() {
                       name="register"
                       placeholder="РД дугаар"
                       required
+                      maxLength={10}
                       value={formData.register}
-                      onChange={handleInputChange}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          register: e.target.value.toUpperCase(),
+                        })
+                      }
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

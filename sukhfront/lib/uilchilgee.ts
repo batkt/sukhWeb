@@ -1,29 +1,63 @@
-import axios, { AxiosInstance, AxiosError } from "axios";
-import toast from "react-hot-toast";
+import { notification } from "antd";
+import axios, { AxiosError, AxiosInstance } from "axios";
+import { io, Socket } from "socket.io-client";
+import { t } from "i18next";
 
 export const url = "http://103.143.40.46:8084";
 
-export const aldaaBarigch = (e: AxiosError<{ aldaa?: string }>) => {
-  if (
-    e?.response?.data?.aldaa === "jwt expired" ||
-    e?.response?.data?.aldaa === "jwt malformed"
-  ) {
+// Socket connection
+export const socket = (): Socket =>
+  io(url, {
+    transports: ["websocket"],
+  });
+
+// Generic error handler
+export const aldaaBarigch = (e: any): void => {
+  const errorMessage = e?.response?.data?.aldaa;
+
+  if (errorMessage === "jwt expired" || errorMessage === "jwt malformed") {
     window.location.href = "/";
-  } else if (e?.response?.data?.aldaa) {
-    toast.error(e.response.data.aldaa);
-  } else if (e?.message) {
-    toast.error(e.message);
+  } else if (errorMessage) {
+    notification.warning({
+      description: t(errorMessage),
+      message: t("Анхааруулга"),
+    });
   }
 };
 
+// Axios instance for Togloom service
+export const togloomUilchilgee = (token?: string): AxiosInstance => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  return axios.create({
+    baseURL: url,
+    headers,
+  });
+};
+
+// Axios instance for Zogsool service
+export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  return axios.create({
+    baseURL: url,
+    headers,
+  });
+};
+
+// Default Axios instance
 const uilchilgee = (token?: string): AxiosInstance => {
   const headers: Record<string, string> = {
-    "Content-type": "application/json",
+    "Content-Type": "application/json",
   };
-
-  if (token) {
-    headers["Authorization"] = `bearer ${token}`;
-  }
+  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   return axios.create({
     baseURL: url,
