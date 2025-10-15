@@ -20,9 +20,14 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
-import uilchilgee from "../../../lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
+import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
+import createMethod from "../../../tools/function/createMethod";
+import updateMethod from "../../../tools/function/updateMethod";
+import deleteMethod from "../../../tools/function/deleteMethod";
+import useSWR from "swr";
+import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
 
 interface Ajiltan {
   _id?: string;
@@ -60,6 +65,8 @@ interface FormData {
   gd: string;
   email: string;
   mashinDugaar: string;
+  _id?: string;
+  zasakhEsekh?: boolean;
 }
 
 export default function Burtgel() {
@@ -73,11 +80,7 @@ export default function Burtgel() {
   const [activeTab, setActiveTab] = useState("ajiltanList");
   const [isExpanded, setIsExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [ajiltanRecords, setAjiltanRecords] = useState<Ajiltan[]>([]);
-  const [suugchRecords, setSuugchRecords] = useState<Ajiltan[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredAjiltan, setFilteredAjiltan] = useState<Ajiltan[]>([]);
-  const [filteredSuugch, setFilteredSuugch] = useState<Ajiltan[]>([]);
 
   const [formData, setFormData] = useState<FormData>({
     ovog: "",
@@ -96,105 +99,74 @@ export default function Burtgel() {
     mashinDugaar: "",
   });
 
-  // Fetch Ajiltan data
-  const fetchAjiltan = async () => {
-    if (!token || !currentAjiltan?.baiguullagiinId) return;
+  const {
+    ajilchdiinGaralt: ajiltanData,
+    ajiltniiJagsaaltMutate: ajiltanMutate,
+    setAjiltniiKhuudaslalt: setAjiltanKhuudaslalt,
+    isValidating: ajiltanValidating,
+  } = useAjiltniiJagsaalt(
+    token || "",
+    currentAjiltan?.baiguullagiinId || "",
+    undefined,
+    activeTab === "ajiltanList" ? {} : {}
+  );
 
-    setLoading(true);
-    try {
-      const axiosInstance = uilchilgee(token);
-      const response = await axiosInstance.get(
-        `/ajiltan?baiguullagiinId=${currentAjiltan.baiguullagiinId}`
-      );
+  const fetcherSuugch = (url: string) =>
+    uilchilgee(token || "")
+      .get(url, {
+        params: {
+          query: {
+            baiguullagiinId: currentAjiltan?.baiguullagiinId,
+            $or: [
+              { ner: { $regex: searchTerm || "", $options: "i" } },
+              { ovog: { $regex: searchTerm || "", $options: "i" } },
+              { register: { $regex: searchTerm || "", $options: "i" } },
+              { utas: { $regex: searchTerm || "", $options: "i" } },
+              { email: { $regex: searchTerm || "", $options: "i" } },
+            ],
+          },
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 100,
+        },
+      })
+      .then((res) => res.data)
+      .catch((e) => {
+        aldaaBarigch(e);
+        return { jagsaalt: [] };
+      });
 
-      if (response.data?.jagsaalt) {
-        setAjiltanRecords(response.data.jagsaalt);
-        setFilteredAjiltan(response.data.jagsaalt);
-      }
-    } catch (error: any) {
-      console.error("Error fetching ajiltan:", error);
-      toast.error("Ажилтны мэдээлэл татахад алдаа гарлаа");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch Suugch data
-  const fetchSuugch = async () => {
-    if (!token || !currentAjiltan?.baiguullagiinId) return;
-
-    setLoading(true);
-    try {
-      const axiosInstance = uilchilgee(token);
-      const response = await axiosInstance.get(
-        `/suugch?baiguullagiinId=${currentAjiltan.baiguullagiinId}`
-      );
-
-      if (response.data?.jagsaalt) {
-        setSuugchRecords(response.data.jagsaalt);
-        setFilteredSuugch(response.data.jagsaalt);
-      }
-    } catch (error: any) {
-      console.error("Error fetching suugch:", error);
-      toast.error("Оршин суугчдын мэдээлэл татахад алдаа гарлаа");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Initial data fetch
-  useEffect(() => {
-    if (activeTab === "ajiltanList") {
-      fetchAjiltan();
-    } else if (activeTab === "suugchList") {
-      fetchSuugch();
-    }
-  }, [activeTab, token, currentAjiltan]);
-
-  // Search filter
-  useEffect(() => {
-    if (activeTab === "ajiltanList") {
-      if (searchTerm) {
-        const filtered = ajiltanRecords.filter((item) => {
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            item.ner?.toLowerCase().includes(searchLower) ||
-            item.ovog?.toLowerCase().includes(searchLower) ||
-            item.register?.toLowerCase().includes(searchLower) ||
-            item.utas?.toLowerCase().includes(searchLower) ||
-            item.email?.toLowerCase().includes(searchLower)
-          );
-        });
-        setFilteredAjiltan(filtered);
-      } else {
-        setFilteredAjiltan(ajiltanRecords);
-      }
-    } else if (activeTab === "suugchList") {
-      if (searchTerm) {
-        const filtered = suugchRecords.filter((item) => {
-          const searchLower = searchTerm.toLowerCase();
-          return (
-            item.ner?.toLowerCase().includes(searchLower) ||
-            item.ovog?.toLowerCase().includes(searchLower) ||
-            item.register?.toLowerCase().includes(searchLower) ||
-            item.utas?.toLowerCase().includes(searchLower) ||
-            item.email?.toLowerCase().includes(searchLower)
-          );
-        });
-        setFilteredSuugch(filtered);
-      } else {
-        setFilteredSuugch(suugchRecords);
-      }
-    }
-  }, [searchTerm, ajiltanRecords, suugchRecords, activeTab]);
+  const { data: suugchData, mutate: suugchMutate } = useSWR(
+    token && currentAjiltan?.baiguullagiinId && activeTab === "suugchList"
+      ? ["/suugch", searchTerm]
+      : null,
+    fetcherSuugch,
+    { revalidateOnFocus: false }
+  );
 
   const activeRecords =
-    activeTab === "ajiltanList" ? filteredAjiltan : filteredSuugch;
+    activeTab === "ajiltanList"
+      ? ajiltanData?.jagsaalt || []
+      : suugchData?.jagsaalt || [];
+
+  const isValidating = ajiltanValidating;
+
+  useEffect(() => {
+    if (activeTab === "ajiltanList") {
+      setAjiltanKhuudaslalt((prev: any) => ({
+        ...prev,
+        search: searchTerm,
+        khuudasniiDugaar: 1,
+      }));
+    } else if (activeTab === "suugchList") {
+      suugchMutate();
+    }
+  }, [searchTerm, activeTab]);
+
   const activeCount = activeRecords.filter(
-    (r) => r.tuluv === "Идэвхтэй"
+    (r: Ajiltan) => r.tuluv === "Идэвхтэй"
   ).length;
   const inactiveCount = activeRecords.filter(
-    (r) => r.tuluv === "Идэвхгүй"
+    (r: Ajiltan) => r.tuluv === "Идэвхгүй"
   ).length;
   const showSummaryCard = activeRecords.length > 5 && !isExpanded;
 
@@ -222,8 +194,7 @@ export default function Burtgel() {
     setLoading(true);
 
     try {
-      const axiosInstance = uilchilgee(token);
-      const endpoint = activeTab === "ajiltanNemekh" ? "/ajiltan" : "/suugch";
+      const endpoint = activeTab === "ajiltanNemekh" ? "ajiltan" : "suugch";
 
       const payload: any = {
         ner: formData.ner,
@@ -237,14 +208,12 @@ export default function Burtgel() {
         baiguullagiinId: currentAjiltan?.baiguullagiinId,
       };
 
-      // Add ajiltan-specific fields
       if (activeTab === "ajiltanNemekh") {
         payload.ajildOrsonOgnoo = new Date(
           formData.ajildOrsonOgnoo
         ).toISOString();
         payload.albanTushaal = formData.albanTushaal;
 
-        // Set erkh based on albanTushaal
         switch (formData.albanTushaal) {
           case "Админ":
             payload.erkh = "Admin";
@@ -260,45 +229,43 @@ export default function Burtgel() {
         }
       }
 
-      const response = await axiosInstance.post(endpoint, payload);
+      if (formData._id || formData.zasakhEsekh) {
+        payload._id = formData._id;
+        await updateMethod(endpoint, token, payload);
+      } else {
+        await createMethod(endpoint, token, payload);
+      }
 
-      if (response.data) {
-        toast.success("Бүртгэл амжилттай хийгдлээ");
+      toast.success("Бүртгэл амжилттай хийгдлээ");
 
-        // Reset form
-        setFormData({
-          ovog: "",
-          ner: "",
-          register: "",
-          khayag: "",
-          utas: "",
-          ajildOrsonOgnoo: "",
-          albanTushaal: "",
-          nevtrekhNer: "",
-          nuutsUg: "",
-          davkhar: "",
-          toot: "",
-          gd: "",
-          email: "",
-          mashinDugaar: "",
-        });
+      setFormData({
+        ovog: "",
+        ner: "",
+        register: "",
+        khayag: "",
+        utas: "",
+        ajildOrsonOgnoo: "",
+        albanTushaal: "",
+        nevtrekhNer: "",
+        nuutsUg: "",
+        davkhar: "",
+        toot: "",
+        gd: "",
+        email: "",
+        mashinDugaar: "",
+      });
 
-        formRef.current?.reset();
+      formRef.current?.reset();
 
-        // Refresh the list and switch to list view
-        if (activeTab === "ajiltanNemekh") {
-          await fetchAjiltan();
-          setActiveTab("ajiltanList");
-        } else {
-          await fetchSuugch();
-          setActiveTab("suugchList");
-        }
+      if (activeTab === "ajiltanNemekh") {
+        await ajiltanMutate();
+        setActiveTab("ajiltanList");
+      } else {
+        await suugchMutate();
+        setActiveTab("suugchList");
       }
     } catch (error: any) {
-      const errorMsg =
-        error?.response?.data?.aldaa || error.message || "Алдаа гарлаа";
-      toast.error(errorMsg);
-      console.error("Submit error:", error);
+      aldaaBarigch(error);
     } finally {
       setLoading(false);
     }
@@ -316,30 +283,22 @@ export default function Burtgel() {
     setLoading(true);
 
     try {
-      const axiosInstance = uilchilgee(token);
-      const endpoint = activeTab === "ajiltanList" ? "/ajiltan" : "/suugch";
+      const endpoint = activeTab === "ajiltanList" ? "ajiltan" : "suugch";
       const id = selectedRecord._id || selectedRecord.id;
 
-      const response = await axiosInstance.delete(`${endpoint}/${id}`);
+      await deleteMethod(endpoint, token, id);
 
-      if (response.data) {
-        toast.success("Устгагдлаа");
-        setDeleteOpen(false);
+      toast.success("Устгагдлаа");
+      setDeleteOpen(false);
 
-        // Refresh the list
-        if (activeTab === "ajiltanList") {
-          await fetchAjiltan();
-        } else {
-          await fetchSuugch();
-        }
+      // Refresh the list
+      if (activeTab === "ajiltanList") {
+        await ajiltanMutate();
+      } else {
+        await suugchMutate();
       }
     } catch (error: any) {
-      const errorMsg =
-        error?.response?.data?.aldaa ||
-        error.message ||
-        "Устгахад алдаа гарлаа";
-      toast.error(errorMsg);
-      console.error("Delete error:", error);
+      aldaaBarigch(error);
     } finally {
       setLoading(false);
     }
@@ -363,6 +322,8 @@ export default function Burtgel() {
       gd: data.gd || "",
       email: data.email || "",
       mashinDugaar: data.mashinDugaar || "",
+      _id: data._id,
+      zasakhEsekh: true,
     });
 
     setActiveTab(
@@ -379,7 +340,7 @@ export default function Burtgel() {
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Бүртгэлийн систем
@@ -408,7 +369,7 @@ export default function Burtgel() {
 
         {(activeTab === "ajiltanList" || activeTab === "suugchList") && (
           <>
-            {loading ? (
+            {loading || isValidating ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-2 text-gray-600">Уншиж байна...</p>

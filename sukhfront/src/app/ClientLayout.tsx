@@ -2,7 +2,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { parseCookies } from "nookies";
+import { parseCookies, destroyCookie } from "nookies";
 import { Toaster } from "react-hot-toast";
 import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
 
@@ -22,6 +22,27 @@ function parseJwt(token: string) {
   }
 }
 
+function isTokenValid(token: string): boolean {
+  if (!token || token === "undefined" || token === "null") {
+    return false;
+  }
+
+  const payload = parseJwt(token);
+  if (!payload || !payload.id) {
+    return false;
+  }
+
+  // Check if token is expired
+  if (payload.exp) {
+    const currentTime = Math.floor(Date.now() / 1000);
+    if (payload.exp < currentTime) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <SpinnerProvider>
@@ -37,29 +58,35 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const cookies = parseCookies();
-    const token = cookies.tureestoken;
+    const checkAuth = () => {
+      const cookies = parseCookies();
+      const token = cookies.tureestoken;
 
-    if (pathname === "/login") {
-      if (token) router.replace("/khynalt");
+      // If on login page, allow access regardless of token
+      if (pathname === "/login") {
+        setAuthChecked(true);
+        return;
+      }
+
+      // For all other pages, check if token exists and is valid
+      if (!token || !isTokenValid(token)) {
+        // Clean up invalid token
+        if (token) {
+          destroyCookie(null, "tureestoken", { path: "/" });
+          localStorage.removeItem("ajiltan");
+        }
+        router.replace("/login");
+        return;
+      }
+
+      // Token is valid, allow access
       setAuthChecked(true);
-      return;
-    }
+    };
 
-    if (!token) {
-      router.replace("/login");
-      return;
-    }
-
-    const payload = parseJwt(token);
-    if (!payload || !payload.id) {
-      router.replace("/login");
-      return;
-    }
-
-    setAuthChecked(true);
+    checkAuth();
   }, [pathname, router]);
 
+  // Show loading spinner while checking auth
   if (!authChecked || spinnerLoading) {
     return (
       <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[2000]">
