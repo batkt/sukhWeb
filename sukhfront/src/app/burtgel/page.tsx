@@ -21,7 +21,8 @@ import {
   Eye,
 } from "lucide-react";
 import uilchilgee from "../../../lib/uilchilgee";
-import { verifySession } from "@/lib/auth";
+import { useAuth } from "@/lib/useAuth";
+import useJagsaalt from "@/lib/useJagsaalt";
 import toast from "react-hot-toast";
 
 interface Ajiltan {
@@ -63,16 +64,14 @@ interface FormData {
 }
 
 export default function Burtgel() {
+  const { token, ajiltan: currentAjiltan } = useAuth();
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("ajiltanList");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState("");
-  const [baiguullagiinId, setBaiguullagiinId] = useState("");
 
   const [formData, setFormData] = useState<FormData>({
     ovog: "",
@@ -91,90 +90,37 @@ export default function Burtgel() {
     mashinDugaar: "",
   });
 
-  const [ajiltanRecords, setAjiltanRecords] = useState<Ajiltan[]>([]);
-  const [suugchRecords, setSuugchRecords] = useState<Ajiltan[]>([]);
+  // Use useJagsaalt hook for Ajiltan list
+  const {
+    jagsaalt: ajiltanRecords,
+    onSearch: onAjiltanSearch,
+    refresh: refreshAjiltan,
+    isValidating: ajiltanLoading,
+  } = useJagsaalt<Ajiltan>(
+    "/ajiltan",
+    {},
+    {},
+    {},
+    ["ner", "ovog", "register", "utas", "email"],
+    undefined,
+    100
+  );
 
-  // Get token and user info from session
-  useEffect(() => {
-    const initAuth = () => {
-      try {
-        const session = verifySession();
-        if (session?.isAuthenticated && session?.token) {
-          setToken(session.token);
-          if (session.baiguullagiinId) {
-            setBaiguullagiinId(session.baiguullagiinId);
-          }
-        } else {
-          toast.error("Нэвтрэх шаардлагатай");
-        }
-      } catch (error) {
-        console.error("Session error:", error);
-        toast.error("Нэвтрэх шаардлагатай");
-      }
-    };
-    initAuth();
-  }, []);
-
-  // Fetch Ajiltan data
-  const fetchAjiltan = async () => {
-    if (!token) return;
-
-    setLoading(true);
-    try {
-      const axiosInstance = uilchilgee(token);
-      const response = await axiosInstance.get("/ajiltan");
-
-      if (response.data?.success) {
-        setAjiltanRecords(response.data.result || []);
-      } else {
-        setAjiltanRecords([]);
-      }
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
-      toast.error(errorMsg);
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch Suugch data
-  const fetchSuugch = async () => {
-    if (!token) return;
-
-    setLoading(true);
-    try {
-      const axiosInstance = uilchilgee(token);
-      // Note: You may need a GET endpoint for listing all suugch
-      // For now, we'll use tokenoorOrshinSuugchAvya which returns current user
-      const response = await axiosInstance.post("/tokenoorOrshinSuugchAvya");
-
-      if (response.data) {
-        // This returns a single suugch, so wrap in array
-        setSuugchRecords([response.data]);
-      } else {
-        setSuugchRecords([]);
-      }
-    } catch (err: any) {
-      const errorMsg =
-        err?.response?.data?.aldaa || err.message || "Алдаа гарлаа";
-      toast.error(errorMsg);
-      console.error("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (token) {
-      if (activeTab === "ajiltanList") {
-        fetchAjiltan();
-      } else if (activeTab === "suugchList") {
-        fetchSuugch();
-      }
-    }
-  }, [activeTab, token]);
+  // Use useJagsaalt hook for Suugch list
+  const {
+    jagsaalt: suugchRecords,
+    onSearch: onSuugchSearch,
+    refresh: refreshSuugch,
+    isValidating: suugchLoading,
+  } = useJagsaalt<Ajiltan>(
+    "/suugch",
+    {},
+    {},
+    {},
+    ["ner", "ovog", "register", "utas", "email"],
+    undefined,
+    100
+  );
 
   const activeRecords =
     activeTab === "ajiltanList" ? ajiltanRecords : suugchRecords;
@@ -185,12 +131,16 @@ export default function Burtgel() {
     (r) => r.tuluv === "Идэвхгүй"
   ).length;
   const showSummaryCard = activeRecords.length > 5 && !isExpanded;
+  const isLoading =
+    activeTab === "ajiltanList" ? ajiltanLoading : suugchLoading;
 
-  const filteredRecords = activeRecords.filter((record) =>
-    Object.values(record).some((value) =>
-      value?.toString().toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
+  const handleSearch = (searchTerm: string) => {
+    if (activeTab === "ajiltanList") {
+      onAjiltanSearch(searchTerm);
+    } else {
+      onSuugchSearch(searchTerm);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -219,7 +169,7 @@ export default function Burtgel() {
         email: formData.email,
         nevtrekhNer: formData.nevtrekhNer,
         nuutsUg: formData.nuutsUg,
-        baiguullagiinId: baiguullagiinId,
+        baiguullagiinId: currentAjiltan?.baiguullagiinId,
       };
 
       // Add ajiltan-specific fields
@@ -256,10 +206,10 @@ export default function Burtgel() {
 
         // Refresh the list
         if (activeTab === "ajiltanNemekh") {
-          await fetchAjiltan();
+          refreshAjiltan();
           setActiveTab("ajiltanList");
         } else {
-          await fetchSuugch();
+          refreshSuugch();
           setActiveTab("suugchList");
         }
       } else {
@@ -293,9 +243,9 @@ export default function Burtgel() {
 
         // Refresh the list
         if (activeTab === "ajiltanList") {
-          await fetchAjiltan();
+          refreshAjiltan();
         } else {
-          await fetchSuugch();
+          refreshSuugch();
         }
       } else {
         toast.error(response.data?.aldaa || "Устгахад алдаа гарлаа");
@@ -325,7 +275,7 @@ export default function Burtgel() {
             Бүртгэлийн систем
           </h1>
           <p className="text-lg text-gray-600 mb-8">
-            Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
+            Ажилтан болон оршин суугчдын мэдээлэл удирдах
           </p>
         </div>
 
@@ -348,7 +298,7 @@ export default function Burtgel() {
 
         {(activeTab === "ajiltanList" || activeTab === "suugchList") && (
           <>
-            {loading ? (
+            {isLoading ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 <p className="mt-2 text-gray-600">Уншиж байна...</p>
@@ -393,8 +343,7 @@ export default function Burtgel() {
                         <input
                           type="text"
                           placeholder="Хайх..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onChange={(e) => handleSearch(e.target.value)}
                           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                       </div>
@@ -440,7 +389,7 @@ export default function Burtgel() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredRecords.length === 0 ? (
+                      {activeRecords.length === 0 ? (
                         <tr>
                           <td
                             colSpan={6}
@@ -450,7 +399,7 @@ export default function Burtgel() {
                           </td>
                         </tr>
                       ) : (
-                        filteredRecords.map((person: any, index: number) => (
+                        activeRecords.map((person: any, index: number) => (
                           <tr
                             key={person._id || person.id}
                             className="border-b hover:bg-gray-50"

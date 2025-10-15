@@ -1,93 +1,121 @@
 import useSWR from "swr";
 import { useMemo, useState } from "react";
-import uilchilgee from "../../lib/uilchilgee";
-import { aldaaBarigch } from "../../components/aldaaBarigch";
-import { parseCookies } from "nookies";
+import { useAuth } from "@/lib/useAuth";
+import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import { AxiosError } from "axios";
 
-function searchGenerator(keys: any, search: any) {
-  if (keys.length > 0)
-    return keys.map((key: any) => ({
-      [key]: { $regex: search, $options: "i" },
-    }));
+interface SearchQuery {
+  [key: string]: any;
+  $or?: any[];
+}
+
+interface KhuudaslaltState<T> {
+  khuudasniiDugaar: number;
+  khuudasniiKhemjee: number;
+  search: string;
+  jagsaalt: T[];
+}
+
+interface FetcherResponse<T> {
+  jagsaalt: T[];
+  niitKhuudas: number;
+  niitToo: number;
+}
+
+function searchGenerator(keys: string[], search: string) {
+  if (keys.length > 0 && search) {
+    return keys.map((key) => ({ [key]: { $regex: search, $options: "i" } }));
+  }
   return undefined;
 }
 
-const fetcher = async (
-  token: any,
-  url: any,
-  query: any,
+async function fetcher<T>(
+  token: string,
+  url: string,
+  query: SearchQuery,
   order: any,
   select: any,
-  options: any,
-  searchKeys = []
-) => {
+  { search = "", jagsaalt, ...khuudaslalt }: KhuudaslaltState<T>,
+  searchKeys: string[] = []
+): Promise<FetcherResponse<T>> {
   try {
-    const tukhainQuery = {
-      $or: searchGenerator(searchKeys, options.search),
-      ...query,
-    };
-    const requery = JSON.stringify(tukhainQuery);
     const response = await uilchilgee(token).get(url, {
       params: {
-        query: requery,
-        order: JSON.stringify(order),
+        query: {
+          ...query,
+          $or: searchGenerator(searchKeys, search),
+        },
+        order,
         select,
-        ...options,
+        ...khuudaslalt,
       },
     });
     return response.data;
   } catch (error) {
-    aldaaBarigch(error);
+    aldaaBarigch(error as AxiosError<{ aldaa?: string }>);
     throw error;
   }
-};
+}
 
-let timeout: any = null;
+let timeout: NodeJS.Timeout | null = null;
 
-function useJagsaaltGeree(
-  url: any,
-  query: any,
+interface UseJagsaaltReturn<T> {
+  data: FetcherResponse<T> | undefined;
+  mutate: () => void;
+  jagsaalt: T[];
+  next: () => void;
+  refresh: () => void;
+  onSearch: (search: string) => void;
+  isValidating: boolean;
+  setKhuudaslalt: React.Dispatch<React.SetStateAction<KhuudaslaltState<T>>>;
+  khuudaslalt: KhuudaslaltState<T>;
+}
+
+function useJagsaalt<T = any>(
+  url: string,
+  query?: SearchQuery,
   order?: any,
   select?: any,
-  searchKeys?: any,
-  supToken?: any,
-  khuudasniiKhemjee?: any
-) {
-  const cookieData = parseCookies();
-  const token = cookieData.tureestoken;
-  const [khuudaslalt, setKhuudaslalt] = useState({
+  searchKeys: string[] = [],
+  supToken?: string,
+  khuudasniiKhemjee: number = 100
+): UseJagsaaltReturn<T> {
+  const { token: contextToken } = useAuth();
+  const token = supToken || contextToken;
+
+  const [khuudaslalt, setKhuudaslalt] = useState<KhuudaslaltState<T>>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: khuudasniiKhemjee || 500,
+    khuudasniiKhemjee: khuudasniiKhemjee > 0 ? khuudasniiKhemjee : 100,
     search: "",
     jagsaalt: [],
   });
 
-  const { data, mutate, isValidating } = useSWR(
-    (token || supToken) && url && query !== "jagsaaltAvahgui"
-      ? [token || supToken, url, query, order, select, khuudaslalt, searchKeys]
+  const { data, mutate, isValidating } = useSWR<FetcherResponse<T>>(
+    token && url
+      ? [token, url, query, order, select, khuudaslalt, searchKeys]
       : null,
-    ([token, url, query, order, select, options, searchKeys]) =>
-      fetcher(token, url, query, order, select, options, searchKeys),
+    ([tkn, url, query, order, select, khuudaslalt, searchKeys]: [
+      string,
+      string,
+      SearchQuery | undefined,
+      any,
+      any,
+      KhuudaslaltState<T>,
+      string[]
+    ]) =>
+      fetcher<T>(tkn, url, query || {}, order, select, khuudaslalt, searchKeys),
     {
       revalidateOnFocus: false,
+      shouldRetryOnError: false,
     }
   );
 
   function next() {
-    if (data && khuudaslalt?.khuudasniiDugaar < data?.niitKhuudas) {
-      setKhuudaslalt((prev: any) => ({
+    if (data && khuudaslalt.khuudasniiDugaar < data.niitKhuudas) {
+      setKhuudaslalt((prev) => ({
         ...prev,
-        jagsaalt: [...prev.jagsaalt, ...(data?.jagsaalt || [])],
+        jagsaalt: [...prev.jagsaalt, ...(data.jagsaalt || [])],
         khuudasniiDugaar: prev.khuudasniiDugaar + 1,
-      }));
-    }
-  }
-  function prev() {
-    if (data && khuudaslalt?.khuudasniiDugaar > 0) {
-      setKhuudaslalt((prev: any) => ({
-        ...prev,
-        jagsaalt: [...prev.jagsaalt, ...(data?.jagsaalt || [])],
-        khuudasniiDugaar: prev.khuudasniiDugaar - 1,
       }));
     }
   }
@@ -101,8 +129,8 @@ function useJagsaaltGeree(
     mutate();
   }
 
-  function onSearch(search: any) {
-    clearTimeout(timeout);
+  function onSearch(search: string) {
+    if (timeout) clearTimeout(timeout);
     timeout = setTimeout(() => {
       setKhuudaslalt((prev) => ({
         ...prev,
@@ -113,17 +141,15 @@ function useJagsaaltGeree(
     }, 300);
   }
 
-  const jagsaalt = useMemo(
-    () => [...(khuudaslalt?.jagsaalt || []), ...(data?.jagsaalt || [])],
-    [khuudaslalt, data]
-  );
+  const jagsaalt = useMemo(() => {
+    return [...(khuudaslalt.jagsaalt || []), ...(data?.jagsaalt || [])];
+  }, [khuudaslalt, data]);
 
   return {
     data,
     mutate,
     jagsaalt,
     next,
-    prev,
     refresh,
     onSearch,
     isValidating,
@@ -132,4 +158,4 @@ function useJagsaaltGeree(
   };
 }
 
-export default useJagsaaltGeree;
+export default useJagsaalt;

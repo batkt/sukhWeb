@@ -4,6 +4,7 @@ import { Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { verifySession, logout } from "@/lib/auth";
+import { useAuth } from "@/lib/useAuth";
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -12,15 +13,29 @@ interface GolContentProps {
   className?: string;
 }
 
+interface MenuItem {
+  label: string;
+  path: string;
+  submenu?: SubMenuItem[];
+}
+
+interface SubMenuItem {
+  label: string;
+  path: string;
+}
+
 export default function GolContent({ children }: GolContentProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState<string>("");
-  const [showLogout, setShowLogout] = useState(false);
+  const [mounted, setMounted] = useState<boolean>(false);
+  const [showLogout, setShowLogout] = useState<boolean>(false);
 
+  const { ajiltan, token } = useAuth();
   const avatarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -38,21 +53,9 @@ export default function GolContent({ children }: GolContentProps) {
     };
   }, []);
 
-  useEffect(() => {
-    setMounted(true);
-
-    const session = verifySession();
-    if (session.isAuthenticated) {
-      setIsLoggedIn(true);
-      setUserName(session.ner || "AC");
-    } else {
-      setIsLoggedIn(false);
-    }
-  }, []);
-
   if (!mounted) return null;
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
     { label: "Бүртгэл", path: "burtgel" },
@@ -100,9 +103,17 @@ export default function GolContent({ children }: GolContentProps) {
     },
   ];
 
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
+  const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
+  const isLoggedIn = !!token && !!ajiltan;
+
   return (
     <>
-      <nav className="bg-white/30  backdrop-blur-xl shadow-[0_4px_4px_rgba(0,0,0,0.1)]   sticky top-0 z-50 ">
+      <nav className="bg-white/30 backdrop-blur-xl shadow-[0_4px_4px_rgba(0,0,0,0.1)] sticky top-0 z-50">
         <div className="max-w-[1600px] mx-auto px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-12">
@@ -219,7 +230,7 @@ export default function GolContent({ children }: GolContentProps) {
                       <ul className="py-2">
                         <li>
                           <button
-                            onClick={() => logout()}
+                            onClick={handleLogout}
                             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
                             Гарах

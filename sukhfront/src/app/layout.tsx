@@ -1,10 +1,11 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import ClientLayout from "./ClientLayout";
+import { AuthProvider } from "@/lib/useAuth";
 
 export const metadata: Metadata = {
-  title: "SukhFront",
-  description: "Next.js + Tailwind + Typescript project",
+  title: "Амар Сөх",
+  description: "Амар Сөх управления системийн",
 };
 
 export default function RootLayout({
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="mn">
       <body className="h-screen overflow-hidden bg-card text-foreground font-sans">
-        <ClientLayout>{children}</ClientLayout>
+        <AuthProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </AuthProvider>
       </body>
     </html>
   );

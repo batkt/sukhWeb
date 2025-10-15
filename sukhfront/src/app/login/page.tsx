@@ -1,76 +1,18 @@
 "use client";
+
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import uilchilgee, { decodeToken, DecodedToken } from "../../../lib/uilchilgee";
-import { createSession } from "@/lib/auth";
-
-interface LoginResponse {
-  token: string;
-}
+import { useAuth } from "@/lib/useAuth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [clickCount, setClickCount] = useState(0);
-  // const messages = [
-  //   "coffee+energy drink pls!",
-  //   "миний coffee ?",
-  //   "energy drink?",
-  //   "uguhgu yu te tgvel 81 0015 00 1205327905",
-  //   "websiteaas gar ***** **!!!",
-  // ];
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
+  const { newterya } = useAuth();
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  //   if (!email || !password) {
-  //     toast.error("И-мэйл болон нууц үгээ оруулна уу");
-  //     return;
-  //   }
-
-  //   const currentClick = clickCount + 1;
-  //   setClickCount(currentClick);
-
-  //   if (currentClick <= messages.length) {
-  //     toast(messages[currentClick - 1]);
-  //   }
-
-  //   if (currentClick === 5) {
-  //     router.push("/khynalt");
-  //     return;
-  //   }
-
-  //   if (currentClick === 1) {
-  //     try {
-  //       setLoading(true);
-  //       const axiosInstance = uilchilgee();
-
-  //       const response = await axiosInstance.post("/ajiltanNevtrey", {
-  //         nevtrekhNer: email,
-  //         nuutsUg: password,
-  //       });
-
-  //       if (response.data?.success && response.data?.token) {
-  //         const decoded = decodeToken(response.data.token);
-  //         await createSession(response.data.token, decoded);
-  //       } else {
-  //         toast.error("Нэвтрэхэд алдаа гарлаа");
-  //       }
-  //     } catch (error: any) {
-  //       const msg =
-  //         error?.response?.data?.aldaa ||
-  //         error?.message ||
-  //         "Нэвтрэхэд алдаа гарлаа";
-  //       toast.error(msg);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   }
-  // };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -80,28 +22,17 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const axiosInstance = uilchilgee();
 
-      const response = await axiosInstance.post("/ajiltanNevtrey", {
+      await newterya({
         nevtrekhNer: email,
         nuutsUg: password,
       });
 
-      if (response.data?.success && response.data?.token) {
-        const decoded = decodeToken(response.data.token);
-        await createSession(response.data.token, decoded);
-
-        toast.success("Тавтай морил!");
-        router.push("/khynalt");
-      } else {
-        toast.error("Нэвтрэхэд алдаа гарлаа");
-      }
+      // If successful, redirect to dashboard
+      router.push("/khynalt");
     } catch (error: any) {
-      const msg =
-        error?.response?.data?.aldaa ||
-        error?.message ||
-        "Нэвтрэхэд алдаа гарлаа";
-      toast.error(msg);
+      // Error is already handled by newterya function
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +41,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden p-4 bg-card">
       <div className="w-full max-w-md relative z-10 animate-fade-in">
-        <div className="bg-transparent backdrop-blur-2xl rounded-[2rem] border border-border/50 shadow-2xl p-8  transition-all duration-500">
+        <div className="bg-transparent backdrop-blur-2xl rounded-[2rem] border border-border/50 shadow-2xl p-8 transition-all duration-500">
           <div className="text-center mb-10">
             <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Нэвтрэх
@@ -189,22 +120,6 @@ export default function LoginPage() {
               {loading ? "Түр хүлээнэ үү..." : "Нэвтрэх"}
             </button>
           </form>
-
-          {/* <div className="mt-8 text-center">
-            <button
-              onClick={() => router.push("/signup")}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors duration-300
-               focus:outline-none focus:underline"
-            >
-              Бүртгэлгүй юу?{" "}
-              <span
-                className="text-primary font-semibold relative after:content-[''] after:block after:w-0 after:h-[2px] after:bg-primary
-                       after:transition-all after:duration-300 hover:after:w-full"
-              >
-                Бүртгүүлэх
-              </span>
-            </button>
-          </div> */}
         </div>
 
         <p
