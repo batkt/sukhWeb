@@ -64,23 +64,46 @@ export default function Tailan() {
 
         {/* Main heading */}
         <div className="space-y-4">
-          <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
+          <h1 className="text-6xl md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 font-medium">
-            Aналитик тайлангийн шинэ функцууд
+            Гүйцэтгэлийн тайлангийн шинэ функцууд
           </p>
         </div>
 
+        {/* Current time display */}
+        <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Clock className="w-6 h-6 text-blue-600" />
+            <span className="text-lg font-medium text-gray-700">
+              Одоогийн цаг
+            </span>
+          </div>
+          <div className="text-3xl font-bold text-gray-800 mb-2">
+            {formatTime(currentTime)}
+          </div>
+          <div className="text-lg text-gray-600">{formatDate(currentTime)}</div>
+        </div>
+
+        {/* Call to action */}
+        <div className="mt-12">
+          <button className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+            <span>Мэдээлэл авах</span>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+          </button>
+        </div>
+
+        {/* Progress indicator */}
         <div className="mt-8 w-full max-w-md mx-auto">
           <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
             <span>Хөгжүүлэлт</span>
-            <span>65%</span>
+            <span>85%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full animate-pulse"
-              style={{ width: "65%" }}
+              style={{ width: "85%" }}
             ></div>
           </div>
         </div>

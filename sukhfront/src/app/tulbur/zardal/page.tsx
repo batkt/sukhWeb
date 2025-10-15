@@ -68,7 +68,7 @@ export default function Tailan() {
             Тун удахгүй
           </h1>
           <p className="text-xl md:text-2xl text-gray-600 font-medium">
-            Aналитик тайлангийн шинэ функцууд
+            Зардал авах
           </p>
         </div>
 
@@ -86,7 +86,6 @@ export default function Tailan() {
         </div>
       </div>
 
-      {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {[...Array(20)].map((_, i) => (
           <div
