@@ -47,7 +47,7 @@ interface AuthContextType {
     nevtrekhNer: string;
     nuutsUg: string;
     namaigsana?: boolean;
-  }) => Promise<void>;
+  }) => Promise<boolean>;
   garya: () => void;
   isLoading: boolean;
 }
@@ -77,7 +77,8 @@ export const useBarilga = () => {
     );
 
     if (!tukhainBarilga && ajiltan?.erkh !== "Admin") {
-      return toast.error("Ажилтанд барилгын тохиргоо хийгдээгүй байна");
+      toast.error("Ажилтанд барилгын тохиргоо хийгдээгүй байна");
+      return false;
     }
 
     if (tukhainBarilga) {
@@ -87,7 +88,8 @@ export const useBarilga = () => {
       duusakhOgnoo.setHours(0, 0, 0, 0);
 
       if (duusakhOgnoo < today) {
-        return toast.error("Тухайн барилгын лиценз дууссан байна");
+        toast.error("Тухайн барилгын лиценз дууссан байна");
+        return false;
       }
     }
 
@@ -96,6 +98,7 @@ export const useBarilga = () => {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
     });
+    return true;
   };
 
   return { barilgiinId, barilgaSoliyo };
@@ -180,14 +183,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         nevtrekhNer: string;
         nuutsUg: string;
         namaigsana?: boolean;
-      }) => {
+      }): Promise<boolean> => {
         if (!khereglech.nevtrekhNer) {
           toast.error("Нэвтрэх нэр талбарыг бөглөнө үү");
-          return;
+          return false;
         }
         if (!khereglech.nuutsUg) {
           toast.error("Нууц үг талбарыг бөглөнө үү");
-          return;
+          return false;
         }
 
         if (khereglech.namaigsana) {
@@ -208,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               (!result.tsonkhniiErkhuud || result.tsonkhniiErkhuud.length < 1)
             ) {
               toast.error("Хэрэглэгчийн эрхийн тохиргоо хийгдээгүй байна");
-              return;
+              return false;
             }
 
             // Set token in both state and cookie
@@ -257,20 +260,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
                 if (!solikhBarilgaOldsonEsekh) {
                   toast.error("Лицензийн хугацаа дууссан байна!");
-                  return;
+                  return false;
                 }
               } else {
                 toast.error("Лицензийн хугацаа дууссан байна!");
-                return;
+                return false;
               }
             }
 
             toast.success("Амжилттай нэвтэрлээ");
+            return true;
           } else {
             toast.error("Хэрэглэгчийн мэдээлэл буруу байна");
+            return false;
           }
-        } catch (error) {
-          aldaaBarigch(error as AxiosError<{ aldaa?: string }>);
+        } catch (error: any) {
+          const axiosError = error as AxiosError<{ aldaa?: string }>;
+
+          // Check for specific error messages
+          if (axiosError.response?.data?.aldaa) {
+            toast.error(axiosError.response.data.aldaa);
+          } else if (axiosError.response?.status === 401) {
+            toast.error("Нэвтрэх нэр эсвэл нууц үг буруу байна");
+          } else if (axiosError.response?.status === 404) {
+            toast.error("Хэрэглэгч олдсонгүй");
+          } else {
+            aldaaBarigch(error);
+          }
+
+          return false;
         }
       },
       garya: () => {

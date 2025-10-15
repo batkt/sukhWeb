@@ -23,16 +23,18 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      await newterya({
+      const success = await newterya({
         nevtrekhNer: email,
         nuutsUg: password,
       });
 
-      // If successful, redirect to dashboard
-      router.push("/khynalt");
+      // Only redirect if login was successful
+      if (success) {
+        router.push("/khynalt");
+      }
     } catch (error: any) {
-      // Error is already handled by newterya function
       console.error("Login error:", error);
+      toast.error("Нэвтрэхэд алдаа гарлаа");
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,8 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full h-14 rounded-2xl border border-border/50 bg-transparent px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all"
+                disabled={loading}
+                className="w-full h-14 rounded-2xl border border-border/50 bg-transparent px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -84,7 +87,8 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full h-14 rounded-2xl border border-border/50 bg-transparent px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all"
+                disabled={loading}
+                className="w-full h-14 rounded-2xl border border-border/50 bg-transparent px-4 text-base placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -93,7 +97,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full h-14 rounded-full bg-gradient-to-r from-primary to-primary/80 text-white font-semibold shadow-lg
               hover:from-primary/90 hover:to-primary/70 active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary/40
-              transition-all duration-300 ease-in-out disabled:opacity-60 flex items-center justify-center gap-2"
+              transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading && (
                 <svg
@@ -113,7 +117,7 @@ export default function LoginPage() {
                   <path
                     className="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
               )}

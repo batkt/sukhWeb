@@ -79,14 +79,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
         return;
       }
 
-      // Token is valid, allow access
       setAuthChecked(true);
     };
 
     checkAuth();
   }, [pathname, router]);
 
-  // Show loading spinner while checking auth
   if (!authChecked || spinnerLoading) {
     return (
       <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[2000]">
