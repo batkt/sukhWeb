@@ -10,11 +10,15 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { DownloadOutlined } from "@ant-design/icons";
 import {
   useGereeJagsaalt,
   useGereeCRUD,
   Geree as GereeType,
 } from "@/lib/useGeree";
+import { useAuth } from "@/lib/useAuth";
+import uilchilgee from "../../../lib/uilchilgee";
+import { notification } from "antd";
 
 export default function Geree() {
   const [activeTab, setActiveTab] = useState<"list" | "create" | "templates">(
@@ -25,6 +29,8 @@ export default function Geree() {
   const [editingContract, setEditingContract] = useState<GereeType | null>(
     null
   );
+
+  const { token, ajiltan, barilgiinId } = useAuth();
 
   const {
     gereeGaralt,
@@ -47,6 +53,7 @@ export default function Geree() {
   useEffect(() => {
     console.log("Contracts Data:", gereeGaralt);
   }, [gereeGaralt]);
+
   const filteredContracts = Array.isArray(contracts)
     ? contracts.filter(
         (c: GereeType) => filterType === "Бүгд" || c.gereeTurul === filterType
@@ -63,6 +70,121 @@ export default function Geree() {
     utas: "",
     email: "",
   });
+
+  const handleDownloadTemplate = async (templateType: string) => {
+    if (!token) {
+      notification.error({
+        message: "Алдаа",
+        description: "Нэвтрэх шаардлагатай",
+      });
+      return;
+    }
+
+    try {
+      const response = await uilchilgee(token).get("/gereeniiZagvarAvya", {
+        responseType: "blob",
+        params: {
+          templateType: templateType,
+        },
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${templateType}_загвар.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      notification.success({
+        message: "Амжилттай",
+        description: "Загвар амжилттай татагдлаа",
+      });
+    } catch (error) {
+      console.error("Download error:", error);
+      notification.error({
+        message: "Алдаа",
+        description: "Загвар татахад алдаа гарлаа",
+      });
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      notification.error({
+        message: "Алдаа",
+        description: "Нэвтрэх шаардлагатай",
+      });
+      return;
+    }
+
+    try {
+      const query: any = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+      };
+
+      if (barilgiinId) {
+        query.barilgiinId = barilgiinId;
+      }
+
+      if (searchTerm) {
+        query.$or = [
+          { ner: { $regex: searchTerm, $options: "i" } },
+          { gereeniiDugaar: { $regex: searchTerm, $options: "i" } },
+          { register: { $regex: searchTerm, $options: "i" } },
+        ];
+      }
+
+      if (filterType !== "Бүгд") {
+        query.gereeTurul = filterType;
+      }
+
+      const response = await uilchilgee(token).get("/geree", {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          query: query,
+          khuudasniiKhemjee: gereeGaralt?.niitMur || 1000,
+          khuudasniiDugaar: 1,
+        },
+      });
+
+      const { Excel } = require("antd-table-saveas-excel");
+      const excel = new Excel();
+
+      const columns = [
+        { title: "Нэр", dataIndex: "ner", key: "ner" },
+        { title: "Төрөл", dataIndex: "gereeTurul", key: "gereeTurul" },
+        { title: "Огноо", dataIndex: "startDate", key: "startDate" },
+        { title: "Давхар", dataIndex: "davkhar", key: "davkhar" },
+        { title: "Тоот", dataIndex: "toot", key: "toot" },
+        {
+          title: "Регистр",
+          dataIndex: "gereeniiDugaar",
+          key: "gereeniiDugaar",
+        },
+        { title: "Утас", dataIndex: "utas", key: "utas" },
+        { title: "И-мэйл", dataIndex: "email", key: "email" },
+      ];
+
+      excel
+        .addSheet("Гэрээний жагсаалт")
+        .addColumns(columns)
+        .addDataSource(response.data?.jagsaalt || [])
+        .saveAs("Гэрээний_жагсаалт.xlsx");
+
+      notification.success({
+        message: "Амжилттай",
+        description: "Excel файл амжилттай татагдлаа",
+      });
+    } catch (error) {
+      console.error("Excel download error:", error);
+      notification.error({
+        message: "Алдаа",
+        description: "Excel файл татахад алдаа гарлаа",
+      });
+    }
+  };
 
   const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,11 +258,13 @@ export default function Geree() {
       id: 1,
       name: "Үндсэн гэрээний загвар",
       description: "Үндсэн гэрээний загвар файл",
+      type: "Үндсэн гэрээ",
     },
     {
       id: 2,
       name: "Түр гэрээний загвар",
       description: "Түр гэрээний загвар файл",
+      type: "Түр гэрээ",
     },
   ];
 
@@ -151,7 +275,7 @@ export default function Geree() {
         Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
       </p>
 
-      <div className="flex gap-4 mb-8 border-b pt-4 border-white">
+      <div className="flex gap-4 mb-8 pt-4">
         {[
           { label: "Гэрээний жагсаалт", icon: FileText, tab: "list" },
           {
@@ -159,6 +283,7 @@ export default function Geree() {
             icon: Plus,
             tab: "create",
           },
+          { label: "Гэрээний Загвар", icon: FileText, tab: "list2" },
           { label: "Гэрээний загвар", icon: Download, tab: "templates" },
         ].map(({ label, icon: Icon, tab }) => (
           <button
@@ -191,7 +316,7 @@ export default function Geree() {
         ))}
       </div>
 
-      <div className="bg-transparent rounded-2xl shadow-lg p-8">
+      <div className="bg-transparent rounded-2xl p-8">
         {activeTab === "list" && (
           <div>
             <div className="flex gap-4 mb-6">
@@ -202,7 +327,7 @@ export default function Geree() {
                   placeholder="Гэрээ хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 text-slate-900 border border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                 />
               </div>
               <div className="relative">
@@ -210,7 +335,7 @@ export default function Geree() {
                 <select
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="pl-10 pr-8 py-3 border text-slate-900 border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent appearance-none bg-transparent"
+                  className="pl-10 pr-8 py-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent appearance-none bg-transparent"
                 >
                   <option>Бүгд</option>
                   <option>Үндсэн гэрээ</option>
@@ -227,7 +352,7 @@ export default function Geree() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-white">
+                    <tr>
                       <th className="text-left py-4 px-4 font-semibold text-gray-700">
                         Гэрээний нэр
                       </th>
@@ -271,7 +396,7 @@ export default function Geree() {
                       filteredContracts.map((contract: GereeType) => (
                         <tr
                           key={contract._id}
-                          className="border-b border-white hover:bg-gray-50 transition-colors"
+                          className="hover:shadow-lg transition-colors"
                         >
                           <td className="py-4 px-4 text-slate-900">
                             {contract.ner}
@@ -520,6 +645,13 @@ export default function Geree() {
             </form>
           </div>
         )}
+        {activeTab === "list2" && (
+          <div>
+            <h2 className="text-2xl font-bold mb-6 text-gray-900">
+              Гэрээний загварууд
+            </h2>
+          </div>
+        )}
 
         {activeTab === "templates" && (
           <div>
@@ -530,16 +662,19 @@ export default function Geree() {
               {templates.map((template) => (
                 <div
                   key={template.id}
-                  className="border border-white rounded-xl p-6 hover:shadow-lg transition-shadow"
+                  className="rounded-xl p-6 hover:shadow-lg transition-shadow"
                 >
                   <FileText className="w-12 h-12 text-blue-600 mb-4" />
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
                     {template.name}
                   </h3>
                   <p className="text-gray-600 mb-4">{template.description}</p>
-                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4" />
-                    Татаж авах
+                  <button
+                    className="flex items-center space-x-2 rounded-lg px-4 py-2 bg-bar hover:shadow-lg transition-colors text-white font-medium"
+                    onClick={() => handleDownloadTemplate(template.type)}
+                  >
+                    <DownloadOutlined style={{ fontSize: "18px" }} />
+                    <span>Татах</span>
                   </button>
                 </div>
               ))}
