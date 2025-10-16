@@ -9,6 +9,7 @@ import {
   Filter,
   Edit,
   Trash2,
+  RefreshCcw,
 } from "lucide-react";
 import { DownloadOutlined } from "@ant-design/icons";
 import {
@@ -18,12 +19,13 @@ import {
 } from "@/lib/useGeree";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "../../../lib/uilchilgee";
+import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { notification } from "antd";
 
 export default function Geree() {
-  const [activeTab, setActiveTab] = useState<"list" | "create" | "templates">(
-    "list"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "list" | "create" | "templates" | "list2"
+  >("list");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("Бүгд");
   const [editingContract, setEditingContract] = useState<GereeType | null>(
@@ -36,9 +38,14 @@ export default function Geree() {
     gereeGaralt,
     gereeJagsaaltMutate,
     setGereeKhuudaslalt,
-    isValidating,
+    isValidating: isValidatingGeree,
   } = useGereeJagsaalt();
   const { gereeUusgekh, gereeZasakh, gereeUstgakh } = useGereeCRUD();
+  const {
+    zagvaruud,
+    zagvarJagsaaltMutate,
+    isValidating: isValidatingZagvar,
+  } = useGereeniiZagvar();
 
   const contracts = gereeGaralt?.jagsaalt || [];
 
@@ -344,7 +351,7 @@ export default function Geree() {
               </div>
             </div>
 
-            {isValidating ? (
+            {isValidatingGeree ? (
               <div className="text-center py-8 text-gray-500">
                 Уншиж байна...
               </div>
@@ -474,77 +481,6 @@ export default function Geree() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Нэр
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newContract.ner}
-                    onChange={(e) =>
-                      setNewContract({ ...newContract, ner: e.target.value })
-                    }
-                    className="w-full px-4 py-3 border text-slate-900 border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                    placeholder="Овог нэр оруулах"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Гэрээний төрөл
-                  </label>
-                  <select
-                    required
-                    value={newContract.gereeTurul}
-                    onChange={(e) =>
-                      setNewContract({
-                        ...newContract,
-                        gereeTurul: e.target.value as any,
-                      })
-                    }
-                    className="w-full text-slate-900 px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                  >
-                    <option>Үндсэн гэрээ</option>
-                    <option>Түр гэрээ</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Давхар
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newContract.davkhar}
-                    onChange={(e) =>
-                      setNewContract({
-                        ...newContract,
-                        davkhar: e.target.value,
-                      })
-                    }
-                    className="w-full px-4 py-3 text-slate-900 border border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                    placeholder="Давхар оруулах"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Тоот
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newContract.toot}
-                    onChange={(e) =>
-                      setNewContract({ ...newContract, toot: e.target.value })
-                    }
-                    className="w-full px-4 py-3 text-slate-900 border border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-                    placeholder="Тоот оруулах"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Эхлэх огноо
                   </label>
                   <input
@@ -645,11 +581,51 @@ export default function Geree() {
             </form>
           </div>
         )}
+
         {activeTab === "list2" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
-              Гэрээний загварууд
-            </h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Гэрээний загварууд
+              </h2>
+            </div>
+
+            {isValidatingZagvar ? (
+              <div className="text-center py-8 text-gray-500">
+                Уншиж байна...
+              </div>
+            ) : zagvaruud?.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Гэрээний загвар олдсонгүй
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {zagvaruud.map((item: any) => (
+                  <div
+                    key={item._id}
+                    className="rounded-xl border border-gray-100 p-6 hover:shadow-lg transition-all"
+                  >
+                    <FileText className="w-10 h-10 text-violet-600 mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {item.ner}
+                    </h3>
+                    <p className="text-gray-600 text-sm mb-2">
+                      {item.tailbar || "Тайлбар байхгүй"}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Төрөл: {item.turul || "-"}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {item.uusgesenOgnoo
+                        ? new Date(item.uusgesenOgnoo).toLocaleDateString(
+                            "mn-MN"
+                          )
+                        : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
