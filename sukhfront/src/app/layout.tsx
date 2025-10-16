@@ -5,7 +5,7 @@ import { AuthProvider } from "@/lib/useAuth";
 
 export const metadata: Metadata = {
   title: "Амар Сөх",
-  description: "Амар Сөх управления системийн",
+  description: "Амар Сөх",
 };
 
 export default function RootLayout({

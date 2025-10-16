@@ -3,7 +3,6 @@
 import { Settings } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
-import { verifySession, logout } from "@/lib/auth";
 import { useAuth } from "@/lib/useAuth";
 
 interface GolContentProps {
@@ -104,7 +103,6 @@ export default function GolContent({ children }: GolContentProps) {
   ];
 
   const handleLogout = async () => {
-    await logout();
     router.push("/");
   };
 
@@ -249,7 +247,7 @@ export default function GolContent({ children }: GolContentProps) {
       <main className="flex-1 h-[calc(100vh-90px)] overflow-y-auto scrollable max-w-[1600px] mx-auto px-8 py-12">
         <div
           className="relative rounded-[2rem] p-12 
-               bg-white/10 backdrop-blur-2xl border border-white/20 
+               bg-white/20 backdrop-blur-2xl 
                before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-tr 
                before:from-white/20 before:to-transparent before:opacity-40 before:pointer-events-none"
         >

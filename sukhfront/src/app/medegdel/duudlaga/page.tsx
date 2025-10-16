@@ -277,33 +277,31 @@ export default function TaskManagementSystem() {
       return (
         <motion.div
           key={group._id}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-3"
+          className="mb-2"
         >
           <div
-            className="group relative overflow-hidden rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200 p-4 shadow-lg hover:shadow-2xl hover:bg-gray-50 transition-all duration-300 cursor-pointer"
+            className={`group relative overflow-hidden rounded-2xl bg-transparent backdrop-blur-xl  p-3 hover:shadow-lg transition-all duration-300 cursor-pointer`}
             onClick={() => {
               setDuudlaga(group);
               if (hasMultiple) toggleNameExpansion(group.khariltsagchiinNer);
             }}
           >
-            <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-            <div className="relative flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white font-bold text-xl shadow-lg">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white font-bold text-lg shadow-md">
                     {group.khariltsagchiinNer?.charAt(0)}
                   </div>
                   {hasMultiple && (
-                    <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs font-bold shadow-md">
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm">
                       {group.duudlagaCount}
                     </div>
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-black text-lg">
+                  <div className="font-semibold text-black text-sm">
                     {group.khariltsagchiinNer}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -313,7 +311,7 @@ export default function TaskManagementSystem() {
               </div>
               <Tag
                 color={statusInfo.color}
-                className="!rounded-full !px-3 !py-1 !border-0 !shadow-md"
+                className="!rounded-full !px-2 !py-0.5 !border-0 !text-xs shadow-sm"
               >
                 {statusInfo.text}
               </Tag>
@@ -326,7 +324,7 @@ export default function TaskManagementSystem() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mt-2 ml-6 space-y-2 overflow-hidden"
+                className="mt-2 ml-4 space-y-1 overflow-hidden"
               >
                 {group.allDuudlaga
                   .sort(
@@ -337,9 +335,9 @@ export default function TaskManagementSystem() {
                   .map((item) => (
                     <motion.div
                       key={item._id}
-                      initial={{ opacity: 0, x: -20 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="p-3 rounded-xl bg-transparent backdrop-blur-lg border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
+                      className="p-2 rounded-xl bg-transparent backdrop-blur-lg border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer text-xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDuudlaga(item);
@@ -347,12 +345,12 @@ export default function TaskManagementSystem() {
                     >
                       <Tag
                         color={getStatusInfo(item.tuluv).color}
-                        className="!rounded-full !text-xs"
+                        className="!rounded-full !px-2 !py-0.5 !text-[10px]"
                       >
                         {getStatusInfo(item.tuluv).text}
                       </Tag>
                       {item.title && (
-                        <span className="ml-2 text-black text-sm">
+                        <span className="ml-1 text-black text-xs">
                           {item.title}
                         </span>
                       )}
@@ -427,7 +425,7 @@ export default function TaskManagementSystem() {
               placeholder="Төрөл"
               value={turulFilter}
               onChange={setTurulFilter}
-              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black"
+              className="!h-8 !bg-transparent !backdrop-blur-md  !text-black"
             >
               <Option value="Бүгд">Бүгд</Option>
               <Option value="Сантехник">Сантехник</Option>
@@ -439,7 +437,7 @@ export default function TaskManagementSystem() {
           <Input
             placeholder="Хайх..."
             onChange={({ target }) => setSearchTerm(target.value)}
-            className="!h-12 !text-base !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black placeholder:text-gray-500"
+            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-black placeholder:text-gray-500"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
@@ -491,7 +489,7 @@ export default function TaskManagementSystem() {
                 </div>
               </motion.div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+              <div className="flex-1 overflow-y-auto space-y-2 pr-2">
                 {filteredJagsaalt
                   .filter(
                     (i) => i.khariltsagchiinNer === duudlaga.khariltsagchiinNer
@@ -504,51 +502,51 @@ export default function TaskManagementSystem() {
                   .map((item, idx) => (
                     <motion.div
                       key={item._id}
-                      initial={{ opacity: 0, y: 20 }}
+                      initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      whileHover={{ scale: 1.02 }}
-                      className={`p-5 rounded-2xl transition-all cursor-pointer ${
+                      transition={{ delay: idx * 0.04 }}
+                      whileHover={{ scale: 1.01 }}
+                      className={`p-3 rounded-xl transition-all cursor-pointer ${
                         item._id === duudlaga._id
-                          ? "bg-white/25 border-2 border-white/50 shadow-2xl"
+                          ? "bg-white/25 border border-white/50 shadow-md"
                           : "bg-white/10 border border-white/20 hover:bg-white/15"
-                      } backdrop-blur-xl`}
+                      } backdrop-blur-lg`}
                       onClick={() => setDuudlaga(item)}
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex gap-2 flex-wrap">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex gap-1 flex-wrap">
                           <Tag
                             color={getStatusInfo(item.tuluv).color}
-                            className="!rounded-full !px-3 !py-1 !border-0"
+                            className="!rounded-full !px-2 !py-0.5 !border-0 text-xs"
                           >
                             {getStatusInfo(item.tuluv).text}
                           </Tag>
                           {item.duudlagiinTurul && (
                             <Tag
                               color="processing"
-                              className="!rounded-full !px-3 !py-1 !border-0"
+                              className="!rounded-full !px-2 !py-0.5 !border-0 text-xs"
                             >
                               {item.duudlagiinTurul}
                             </Tag>
                           )}
                         </div>
-                        <div className="text-xs text-gray-600 font-mono bg-white/10 px-3 py-1 rounded-full">
+                        <div className="text-[10px] text-gray-600 font-mono bg-white/10 px-2 py-0.5 rounded-full">
                           {moment(item.createdAt).format("MM-DD HH:mm")}
                         </div>
                       </div>
 
                       {item.title && (
-                        <div className="font-semibold text-gray-700 text-lg mb-2">
+                        <div className="font-semibold text-gray-700 text-sm mb-1">
                           {item.title}
                         </div>
                       )}
                       {item.message && (
-                        <div className="text-sm text-gray-500 leading-relaxed">
+                        <div className="text-xs text-gray-500 leading-relaxed">
                           {item.message}
                         </div>
                       )}
                       {item.tailbar && (
-                        <div className="mt-3 p-3 bg-red-500/20 backdrop-blur-sm rounded-xl text-red-200 text-sm border border-red-400/30">
+                        <div className="mt-2 p-2 bg-red-500/20 backdrop-blur-sm rounded-lg text-red-200 text-xs border border-red-400/30">
                           {item.tailbar}
                         </div>
                       )}
@@ -557,8 +555,8 @@ export default function TaskManagementSystem() {
                         <motion.div
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
-                          transition={{ delay: 0.2 }}
-                          className="mt-4 flex gap-3"
+                          transition={{ delay: 0.1 }}
+                          className="mt-3 flex gap-2"
                         >
                           <Popconfirm
                             title="Дуудлагыг дуусгах уу?"
@@ -567,17 +565,17 @@ export default function TaskManagementSystem() {
                             onConfirm={() => updateTaskStatus(item._id, 1)}
                           >
                             <motion.div
-                              whileHover={{ scale: 1.05 }}
+                              whileHover={{ scale: 1.03 }}
                               whileTap={{ scale: 0.95 }}
-                              className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-sm font-semibold cursor-pointer hover:shadow-lg transition-all text-center"
+                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-semibold cursor-pointer text-center"
                             >
                               ✓ Дуусгах
                             </motion.div>
                           </Popconfirm>
                           <motion.div
-                            whileHover={{ scale: 1.05 }}
+                            whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-sm font-semibold cursor-pointer hover:shadow-lg transition-all text-center"
+                            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-xs font-semibold cursor-pointer text-center"
                             onClick={() => {
                               const reason = prompt(
                                 "Цуцлах шалтгааныг бичнэ үү:"

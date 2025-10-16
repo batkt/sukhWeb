@@ -28,7 +28,6 @@ export default function LoginPage() {
         nuutsUg: password,
       });
 
-      // Only redirect if login was successful
       if (success) {
         router.push("/khynalt");
       }

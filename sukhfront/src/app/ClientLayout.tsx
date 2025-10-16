@@ -32,7 +32,6 @@ function isTokenValid(token: string): boolean {
     return false;
   }
 
-  // Check if token is expired
   if (payload.exp) {
     const currentTime = Math.floor(Date.now() / 1000);
     if (payload.exp < currentTime) {
@@ -62,15 +61,12 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
 
-      // If on login page, allow access regardless of token
       if (pathname === "/login") {
         setAuthChecked(true);
         return;
       }
 
-      // For all other pages, check if token exists and is valid
       if (!token || !isTokenValid(token)) {
-        // Clean up invalid token
         if (token) {
           destroyCookie(null, "tureestoken", { path: "/" });
           localStorage.removeItem("ajiltan");

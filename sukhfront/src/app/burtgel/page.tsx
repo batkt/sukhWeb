@@ -23,51 +23,11 @@ import {
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
+import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
-import useSWR from "swr";
 import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
-
-interface Ajiltan {
-  _id?: string;
-  id?: number;
-  davkhar?: string;
-  toot?: string;
-  gd?: string;
-  ner: string;
-  ovog?: string;
-  register: string;
-  utas: string;
-  email?: string;
-  tuluv?: string;
-  tuukh?: string;
-  mashinDugaar?: string;
-  albanTushaal?: string;
-  ajildOrsonOgnoo?: string;
-  khayag?: string;
-  nevtrekhNer?: string;
-  baiguullagiinId?: string;
-}
-
-interface FormData {
-  ovog: string;
-  ner: string;
-  register: string;
-  khayag: string;
-  utas: string;
-  ajildOrsonOgnoo: string;
-  albanTushaal: string;
-  nevtrekhNer: string;
-  nuutsUg: string;
-  davkhar: string;
-  toot: string;
-  gd: string;
-  email: string;
-  mashinDugaar: string;
-  _id?: string;
-  zasakhEsekh?: boolean;
-}
 
 export default function Burtgel() {
   const { token, ajiltan: currentAjiltan } = useAuth();
@@ -82,7 +42,7 @@ export default function Burtgel() {
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<any>({
     ovog: "",
     ner: "",
     register: "",
@@ -99,6 +59,7 @@ export default function Burtgel() {
     mashinDugaar: "",
   });
 
+  // FIX: Only call the hook when we have valid data
   const {
     ajilchdiinGaralt: ajiltanData,
     ajiltniiJagsaaltMutate: ajiltanMutate,
@@ -108,39 +69,19 @@ export default function Burtgel() {
     token || "",
     currentAjiltan?.baiguullagiinId || "",
     undefined,
-    activeTab === "ajiltanList" ? {} : {}
+    {}
   );
 
-  const fetcherSuugch = (url: string) =>
-    uilchilgee(token || "")
-      .get(url, {
-        params: {
-          query: {
-            baiguullagiinId: currentAjiltan?.baiguullagiinId,
-            $or: [
-              { ner: { $regex: searchTerm || "", $options: "i" } },
-              { ovog: { $regex: searchTerm || "", $options: "i" } },
-              { register: { $regex: searchTerm || "", $options: "i" } },
-              { utas: { $regex: searchTerm || "", $options: "i" } },
-              { email: { $regex: searchTerm || "", $options: "i" } },
-            ],
-          },
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 100,
-        },
-      })
-      .then((res) => res.data)
-      .catch((e) => {
-        aldaaBarigch(e);
-        return { jagsaalt: [] };
-      });
-
-  const { data: suugchData, mutate: suugchMutate } = useSWR(
-    token && currentAjiltan?.baiguullagiinId && activeTab === "suugchList"
-      ? ["/suugch", searchTerm]
-      : null,
-    fetcherSuugch,
-    { revalidateOnFocus: false }
+  // Add OrshinSuugch hook
+  const {
+    orshinSuugchGaralt: suugchData,
+    orshinSuugchJagsaaltMutate: suugchMutate,
+    setOrshinSuugchKhuudaslalt: setSuugchKhuudaslalt,
+    isValidating: suugchValidating,
+  } = useOrshinSuugchJagsaalt(
+    token || "",
+    currentAjiltan?.baiguullagiinId || "",
+    {}
   );
 
   const activeRecords =
@@ -148,7 +89,8 @@ export default function Burtgel() {
       ? ajiltanData?.jagsaalt || []
       : suugchData?.jagsaalt || [];
 
-  const isValidating = ajiltanValidating;
+  const isValidating =
+    activeTab === "ajiltanList" ? ajiltanValidating : suugchValidating;
 
   useEffect(() => {
     if (activeTab === "ajiltanList") {
@@ -158,15 +100,30 @@ export default function Burtgel() {
         khuudasniiDugaar: 1,
       }));
     } else if (activeTab === "suugchList") {
-      suugchMutate();
+      setSuugchKhuudaslalt((prev: any) => ({
+        ...prev,
+        search: searchTerm,
+        khuudasniiDugaar: 1,
+      }));
     }
   }, [searchTerm, activeTab]);
 
+  // ADD: Debug logging to see what's happening
+  useEffect(() => {
+    console.log("Debug Info:", {
+      token: !!token,
+      baiguullagiinId: currentAjiltan?.baiguullagiinId,
+      activeTab,
+      ajiltanDataExists: !!ajiltanData,
+      ajiltanDataContent: ajiltanData,
+    });
+  }, [token, currentAjiltan, activeTab, ajiltanData]);
+
   const activeCount = activeRecords.filter(
-    (r: Ajiltan) => r.tuluv === "Идэвхтэй"
+    (r: any) => r.tuluv === "Идэвхтэй"
   ).length;
   const inactiveCount = activeRecords.filter(
-    (r: Ajiltan) => r.tuluv === "Идэвхгүй"
+    (r: any) => r.tuluv === "Идэвхгүй"
   ).length;
   const showSummaryCard = activeRecords.length > 5 && !isExpanded;
 
@@ -194,7 +151,8 @@ export default function Burtgel() {
     setLoading(true);
 
     try {
-      const endpoint = activeTab === "ajiltanNemekh" ? "ajiltan" : "suugch";
+      const endpoint =
+        activeTab === "ajiltanNemekh" ? "ajiltan" : "orshinSuugchBurtgey";
 
       const payload: any = {
         ner: formData.ner,
@@ -274,7 +232,6 @@ export default function Burtgel() {
   const handleDelete = async () => {
     if (!selectedRecord || !token) return;
 
-    // Prevent deleting yourself
     if (currentAjiltan?._id === selectedRecord._id) {
       toast.error("Та өөрийгөө устгаж болохгүй!");
       return;
@@ -283,7 +240,8 @@ export default function Burtgel() {
     setLoading(true);
 
     try {
-      const endpoint = activeTab === "ajiltanList" ? "ajiltan" : "suugch";
+      const endpoint = activeTab === "ajiltanList" ? "ajiltan" : "orshinSuugch";
+
       const id = selectedRecord._id || selectedRecord.id;
 
       await deleteMethod(endpoint, token, id);
@@ -291,7 +249,6 @@ export default function Burtgel() {
       toast.success("Устгагдлаа");
       setDeleteOpen(false);
 
-      // Refresh the list
       if (activeTab === "ajiltanList") {
         await ajiltanMutate();
       } else {
@@ -337,6 +294,17 @@ export default function Burtgel() {
     { label: "Ажилтан нэмэх", icon: Plus, tab: "ajiltanNemekh" },
     { label: "Оршин суугч нэмэх", icon: Plus, tab: "suugchNemekh" },
   ];
+
+  if (!currentAjiltan || !currentAjiltan.baiguullagiinId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Мэдээлэл ачааллаж байна...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -406,7 +374,7 @@ export default function Burtgel() {
               </div>
             ) : (
               <>
-                <div className="bg-transparent rounded-xl shadow-md p-6 mb-6">
+                <div className="bg-transparent rounded-xl p-6 mb-6">
                   <div className="flex gap-4 items-center flex-wrap">
                     <div className="flex-1 min-w-64">
                       <div className="relative">
@@ -436,9 +404,9 @@ export default function Burtgel() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto bg-transparent rounded-xl shadow-md">
+                <div className="overflow-x-auto bg-transparent rounded-xl">
                   <table className="w-full border-collapse">
-                    <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                    <thead className="bg-transparent border-b border-gray-200 sticky top-0 z-10">
                       <tr>
                         <th className="p-4 text-left text-sm font-semibold text-gray-700">
                           #
@@ -784,182 +752,6 @@ export default function Burtgel() {
                         : "suugchList"
                     )
                   }
-                  className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
-                >
-                  Цуцлах
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-        {activeTab === "suugchNemekh" && (
-          <div className="bg-transparent rounded-xl shadow-md p-8">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">
-              Оршин суугч нэмэх
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Овог <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="ovog"
-                      required
-                      placeholder="Овог"
-                      value={formData.ovog}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Нэр <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="ner"
-                      required
-                      placeholder="Нэр"
-                      value={formData.ner}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Регистр <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <IdCard className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="register"
-                      required
-                      placeholder="РД дугаар"
-                      value={formData.register}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Утас <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="tel"
-                      name="utas"
-                      required
-                      placeholder="Утас"
-                      value={formData.utas}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    И-мэйл <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="email"
-                      name="email"
-                      required
-                      placeholder="И-Мэйл"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Хаяг <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      name="khayag"
-                      required
-                      placeholder="Хаяг"
-                      value={formData.khayag}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-white-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-900">
-                  Нэвтрэх мэдээлэл
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Нэвтрэх нэр <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                      <input
-                        type="text"
-                        name="nevtrekhNer"
-                        required
-                        value={formData.nevtrekhNer}
-                        placeholder="Нэвтрэх нэр"
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Нууц үг <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                      <input
-                        type="password"
-                        name="nuutsUg"
-                        required
-                        placeholder="Нууц үг"
-                        value={formData.nuutsUg}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-2 border border-white rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex gap-4">
-                <button
-                  type="submit"
-                  className="px-8 py-3 bg-bar text-white font-semibold rounded-lg hover:bg-bar/70 transition-color shadow-md"
-                >
-                  Хадгалах
-                </button>
-                <button
-                  type="button"
                   className="px-8 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition"
                 >
                   Цуцлах

@@ -1,7 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Plus, Download, Search, Filter } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  FileText,
+  Plus,
+  Download,
+  Search,
+  Filter,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import {
+  useGereeJagsaalt,
+  useGereeCRUD,
+  Geree as GereeType,
+} from "@/lib/useGeree";
 
 export default function Geree() {
   const [activeTab, setActiveTab] = useState<"list" | "create" | "templates">(
@@ -9,54 +22,113 @@ export default function Geree() {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("Бүгд");
-
-  const contracts = [
-    {
-      id: 1,
-      name: "aadjaoi",
-      type: "Үндсэн гэрээ",
-      date: "2025-09-01",
-      davkhar: "2",
-      toot: "31",
-      gereenDugaar: "21009",
-      utas: "99115522",
-      email: "aaaa@aaaa.com",
-      status: "Идэвхтэй",
-    },
-    {
-      id: 2,
-      name: "aadjaoi",
-      type: "Түр гэрээ",
-      date: "2025-09-01",
-      davkhar: "2",
-      toot: "31",
-      gereenDugaar: "21009",
-      utas: "99115522",
-      email: "aaaa@aaaa.com",
-      status: "Идэвхтэй",
-    },
-  ];
-
-  const filteredContracts = contracts.filter(
-    (c) =>
-      (filterType === "Бүгд" || c.type === filterType) &&
-      c.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const [editingContract, setEditingContract] = useState<GereeType | null>(
+    null
   );
 
-  const [newContract, setNewContract] = useState({
+  const {
+    gereeGaralt,
+    gereeJagsaaltMutate,
+    setGereeKhuudaslalt,
+    isValidating,
+  } = useGereeJagsaalt();
+  const { gereeUusgekh, gereeZasakh, gereeUstgakh } = useGereeCRUD();
+
+  const contracts = gereeGaralt?.jagsaalt || [];
+
+  useEffect(() => {
+    setGereeKhuudaslalt((prev) => ({
+      ...prev,
+      search: searchTerm,
+      khuudasniiDugaar: 1,
+    }));
+  }, [searchTerm, setGereeKhuudaslalt]);
+
+  useEffect(() => {
+    console.log("Contracts Data:", gereeGaralt);
+  }, [gereeGaralt]);
+  const filteredContracts = Array.isArray(contracts)
+    ? contracts.filter(
+        (c: GereeType) => filterType === "Бүгд" || c.gereeTurul === filterType
+      )
+    : [];
+
+  const [newContract, setNewContract] = useState<Partial<GereeType>>({
     ner: "",
     gereeTurul: "Үндсэн гэрээ",
     davkhar: "",
     toot: "",
     startDate: "",
-    gereeDugaar: "",
+    gereeniiDugaar: "",
     utas: "",
     email: "",
   });
 
-  const handleCreateContract = (e: React.FormEvent) => {
+  const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Гэрээ үүсгэх: " + JSON.stringify(newContract, null, 2));
+
+    const success = await gereeUusgekh(newContract);
+    if (success) {
+      setNewContract({
+        ner: "",
+        gereeTurul: "Үндсэн гэрээ",
+        davkhar: "",
+        toot: "",
+        startDate: "",
+        gereeniiDugaar: "",
+        utas: "",
+        email: "",
+      });
+      gereeJagsaaltMutate();
+      setActiveTab("list");
+    }
+  };
+
+  const handleUpdateContract = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingContract?._id) return;
+
+    const success = await gereeZasakh(editingContract._id, newContract);
+    if (success) {
+      setEditingContract(null);
+      setNewContract({
+        ner: "",
+        gereeTurul: "Үндсэн гэрээ",
+        davkhar: "",
+        toot: "",
+        startDate: "",
+        gereeniiDugaar: "",
+        utas: "",
+        email: "",
+      });
+      gereeJagsaaltMutate();
+      setActiveTab("list");
+    }
+  };
+
+  const handleEdit = (contract: GereeType) => {
+    setEditingContract(contract);
+    setNewContract({
+      ner: contract.ner,
+      gereeTurul: contract.gereeTurul,
+      davkhar: contract.davkhar,
+      toot: contract.toot,
+      startDate: contract.startDate,
+      gereeniiDugaar: contract.gereeniiDugaar,
+      utas: contract.utas || "",
+      email: contract.email || "",
+    });
+    setActiveTab("create");
+  };
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Та энэ гэрээг устгахдаа итгэлтэй байна уу?")) {
+      const success = await gereeUstgakh(id);
+      if (success) {
+        gereeJagsaaltMutate();
+      }
+    }
   };
 
   const templates = [
@@ -73,7 +145,7 @@ export default function Geree() {
   ];
 
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <h1 className="text-3xl font-bold mb-4 text-slate-900">Гэрээ</h1>
       <p className="text-lg text-gray-600 mb-8">
         Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
@@ -82,12 +154,31 @@ export default function Geree() {
       <div className="flex gap-4 mb-8 border-b pt-4 border-white">
         {[
           { label: "Гэрээний жагсаалт", icon: FileText, tab: "list" },
-          { label: "Гэрээ байгуулах", icon: Plus, tab: "create" },
+          {
+            label: editingContract ? "Гэрээ засах" : "Гэрээ байгуулах",
+            icon: Plus,
+            tab: "create",
+          },
           { label: "Гэрээний загвар", icon: Download, tab: "templates" },
         ].map(({ label, icon: Icon, tab }) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab as any)}
+            onClick={() => {
+              if (tab !== "create") {
+                setEditingContract(null);
+                setNewContract({
+                  ner: "",
+                  gereeTurul: "Үндсэн гэрээ",
+                  davkhar: "",
+                  toot: "",
+                  startDate: "",
+                  gereeniiDugaar: "",
+                  utas: "",
+                  email: "",
+                });
+              }
+              setActiveTab(tab as any);
+            }}
             className={`pb-4 px-6 font-semibold transition-all ${
               activeTab === tab
                 ? "text-slate-900 border-b-2 border-black"
@@ -128,88 +219,133 @@ export default function Geree() {
               </div>
             </div>
 
-            <div className="overflow-x-auto ">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-white">
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Гэрээний нэр
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Төрөл
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Огноо
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Давхар
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Тоот
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Регистр
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      Утас
-                    </th>
-                    <th className="text-left py-4 px-4 font-semibold text-gray-700">
-                      И-мэйл
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredContracts.map((contract) => (
-                    <tr
-                      key={contract.id}
-                      className="border-b border-white hover:bg-gray-50 transition-colors"
-                    >
-                      <td className="py-4 px-4 text-slate-900">
-                        {contract.name}
-                      </td>
-                      <td className="py-4 px-4">
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm ${
-                            contract.type === "Үндсэн гэрээ"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-green-100 text-green-700"
-                          }`}
-                        >
-                          {contract.type}
-                        </span>
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.date}
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.davkhar}
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.toot}
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.gereenDugaar}
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.utas}
-                      </td>
-                      <td className="py-4 px-4 text-gray-600">
-                        {contract.email}
-                      </td>
+            {isValidating ? (
+              <div className="text-center py-8 text-gray-500">
+                Уншиж байна...
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-white">
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Гэрээний нэр
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Төрөл
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Огноо
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Давхар
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Тоот
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Регистр
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Утас
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        И-мэйл
+                      </th>
+                      <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                        Үйлдэл
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredContracts.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={9}
+                          className="text-center py-8 text-gray-500"
+                        >
+                          Гэрээ олдсонгүй
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredContracts.map((contract: GereeType) => (
+                        <tr
+                          key={contract._id}
+                          className="border-b border-white hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-4 px-4 text-slate-900">
+                            {contract.ner}
+                          </td>
+                          <td className="py-4 px-4">
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm ${
+                                contract.gereeTurul === "Үндсэн гэрээ"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-green-100 text-green-700"
+                              }`}
+                            >
+                              {contract.gereeTurul}
+                            </span>
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.startDate}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.davkhar}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.toot}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.gereeniiDugaar}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.utas || "-"}
+                          </td>
+                          <td className="py-4 px-4 text-gray-600">
+                            {contract.email || "-"}
+                          </td>
+                          <td className="py-4 px-4">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEdit(contract)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  contract._id && handleDelete(contract._id)
+                                }
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === "create" && (
           <div>
             <h2 className="text-2xl font-bold mb-6 text-gray-900">
-              Шинэ гэрээ байгуулах
+              {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
             </h2>
-            <form onSubmit={handleCreateContract} className="space-y-6">
+            <form
+              onSubmit={
+                editingContract ? handleUpdateContract : handleCreateContract
+              }
+              className="space-y-6"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -237,7 +373,7 @@ export default function Geree() {
                     onChange={(e) =>
                       setNewContract({
                         ...newContract,
-                        gereeTurul: e.target.value,
+                        gereeTurul: e.target.value as any,
                       })
                     }
                     className="w-full text-slate-900 px-4 py-3 border border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -305,13 +441,13 @@ export default function Geree() {
                     Гэрээний дугаар
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    value={newContract.gereeDugaar}
+                    value={newContract.gereeniiDugaar}
                     onChange={(e) =>
                       setNewContract({
                         ...newContract,
-                        gereeDugaar: e.target.value,
+                        gereeniiDugaar: e.target.value,
                       })
                     }
                     className="w-full px-4 py-3 border text-slate-900 border-white rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
@@ -356,27 +492,29 @@ export default function Geree() {
               <div className="flex justify-end gap-4 pt-4">
                 <button
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setEditingContract(null);
                     setNewContract({
                       ner: "",
                       gereeTurul: "Үндсэн гэрээ",
                       davkhar: "",
                       toot: "",
                       startDate: "",
-                      gereeDugaar: "",
+                      gereeniiDugaar: "",
                       utas: "",
                       email: "",
-                    })
-                  }
-                  className="px-6 py-3 border border-white rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors focus:outline-none"
+                    });
+                    setActiveTab("list");
+                  }}
+                  className="px-6 py-3 border border-white rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                 >
-                  Цэвэрлэх
+                  Болих
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-bar text-white rounded-lg font-semibold hover:bg-bar transition-colors focus:outline-none"
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
                 >
-                  Гэрээ үүсгэх
+                  {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
                 </button>
               </div>
             </form>
@@ -394,12 +532,12 @@ export default function Geree() {
                   key={template.id}
                   className="border border-white rounded-xl p-6 hover:shadow-lg transition-shadow"
                 >
-                  <FileText className="w-12 h-12 text-bar mb-4" />
+                  <FileText className="w-12 h-12 text-blue-600 mb-4" />
                   <h3 className="text-lg font-bold text-gray-900 mb-2">
                     {template.name}
                   </h3>
                   <p className="text-gray-600 mb-4">{template.description}</p>
-                  <button className="w-full px-4 py-2 bg-bar text-white rounded-lg font-semibold hover:bg-bar/10 transition-colors flex items-center justify-center gap-2 focus:outline-none">
+                  <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
                     <Download className="w-4 h-4" />
                     Татаж авах
                   </button>
