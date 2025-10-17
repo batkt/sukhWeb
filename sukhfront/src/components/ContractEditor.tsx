@@ -232,7 +232,12 @@ const CustomTag = Node.create({
 });
 
 interface ContractEditorProps {
-  onSave?: (data: { ner: string; tailbar: string; aguulga: string }) => void;
+  onSave?: (data: {
+    ner: string;
+    tailbar: string;
+    aguulga: string;
+    turul: string;
+  }) => void;
   onBack?: () => void;
   initialData?: any;
   isEditMode?: boolean;
@@ -249,6 +254,7 @@ export default function ContractEditor({
 
   const [templateName, setTemplateName] = useState("");
   const [templateDesc, setTemplateDesc] = useState("");
+  const [templateTuluv, setTemplateTuluv] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(true);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
@@ -261,6 +267,7 @@ export default function ContractEditor({
     if (initialData) {
       setTemplateName(initialData.ner || "");
       setTemplateDesc(initialData.tailbar || "");
+      setTemplateTuluv(initialData.tuluv || "");
     }
   }, [initialData]);
 
@@ -348,6 +355,7 @@ export default function ContractEditor({
       const data = {
         ner: templateName,
         tailbar: templateDesc,
+        turul: templateTuluv,
         aguulga: htmlContent,
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: barilgiinId || undefined,
@@ -487,6 +495,18 @@ export default function ContractEditor({
                     onChange={(e) => setTemplateDesc(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     placeholder="Энэ загварын тухай товч тайлбар"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Төрөл
+                  </label>
+                  <input
+                    type="text"
+                    value={templateTuluv}
+                    onChange={(e) => setTemplateTuluv(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    placeholder="Энэ загварын аль төрөлд хамаарах вэ"
                   />
                 </div>
               </div>
