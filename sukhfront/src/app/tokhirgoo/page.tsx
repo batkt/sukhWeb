@@ -11,7 +11,6 @@ import Dans from "./Dans";
 import EmailTokhirgoo from "./EmailTokhirgoo";
 import TuslamjTokhirgoo from "./TuslamjTokhirgoo";
 
-import KhuviinMedeelel from "./KhuviinMedeelel";
 import Medegdel from "./Medegdel";
 import NevtreltiinTuukh from "./NevtreltiinTuukh";
 import NuutsUgSolikh from "./NuutsUgSolikh";
@@ -129,11 +128,6 @@ function Tokhirgoo() {
       ];
     } else {
       return [
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Хувийн мэдээлэл",
-          tsonkh: KhuviinMedeelel,
-        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Нууц үг солих",

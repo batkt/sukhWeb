@@ -89,7 +89,7 @@ const UtasBurtgel: ForwardRefRenderFunction<
       msgAvakhTsag: formValues.msgAvakhTsag,
     };
 
-    console.log("Mock save:", medegdelTokhirgoo);
+   
     notification.success({ message: t("Амжилттай хадгаллаа (mock)") });
     baiguullagaMutate?.();
     destroy();

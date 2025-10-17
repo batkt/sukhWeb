@@ -24,11 +24,16 @@ const stats = [
   { title: "Нийт", value: 10 },
 ];
 
-// Mock table data
 const mockData: TableItem[] = [
   { id: 1, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
   { id: 2, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
   { id: 3, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
+  { id: 4, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
+  { id: 5, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
+  { id: 6, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
+  { id: 7, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
+  { id: 8, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
+  { id: 9, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
 ];
 
 export default function Ebarimt() {
@@ -86,8 +91,7 @@ export default function Ebarimt() {
           ))}
         </div>
 
-        {/* Filters */}
-        <div className="bg-white/10 rounded-2xl p-6">
+        <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <RangePicker
@@ -164,10 +168,9 @@ export default function Ebarimt() {
           </div>
         </div>
 
-        {/* Table with gradient hover */}
         <motion.div
-          className="rounded-2xl border border-white/40 bg-white/10 backdrop-blur-xl overflow-hidden shadow-lg"
-          whileHover={{ scale: 1.01 }}
+          className="rounded-2xl overflow-hidden shadow-lg"
+          whileHover={{ scale: 1 }}
           transition={{ duration: 0.3 }}
         >
           <div className="overflow-x-auto">
@@ -196,10 +199,7 @@ export default function Ebarimt() {
                   tableData.map((item, index) => (
                     <motion.tr
                       key={item.id}
-                      className="border-b border-white/30 cursor-pointer"
-                      whileHover={{
-                        backgroundColor: "rgba(59, 130, 246, 0.1)",
-                      }}
+                      className="border-b border-white/30 cursor-pointer hover:shadow-lg"
                       transition={{ duration: 0.3 }}
                     >
                       <td className="py-4 px-6 text-gray-900">{index + 1}</td>

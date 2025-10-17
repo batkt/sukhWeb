@@ -15,23 +15,26 @@ interface Query {
   [key: string]: any;
 }
 
-export interface GereeniiZagvar {
+export interface GereeZagvar {
   _id?: string;
   ner: string;
   tailbar?: string;
+  aguulga: string;
   turul?: string;
-  uusgesenOgnoo?: string;
-  baiguullagiinId?: string;
+  baiguullagiinId: string;
   barilgiinId?: string;
+  uusgesenOgnoo?: string;
+  zasvarlasanOgnoo?: string;
+  status?: string;
   [key: string]: any;
 }
 
-interface GereeniiZagvarResponse {
-  khuudasniiDugaar?: number;
-  khuudasniiKhemjee?: number;
-  jagsaalt: GereeniiZagvar[];
-  niitMur?: number;
-  niitKhuudas?: number;
+interface GereeZagvarResponse {
+  khuudasniiDugaar: number;
+  khuudasniiKhemjee: number;
+  jagsaalt: GereeZagvar[];
+  niitMur: number;
+  niitKhuudas: number;
   success?: boolean;
   message?: string;
 }
@@ -50,25 +53,18 @@ const fetcherJagsaalt = async ([
   Khuudaslalt,
   Query,
   string | undefined
-]): Promise<any> => {
+]): Promise<GereeZagvarResponse> => {
   try {
-    const searchQuery = khuudaslalt.search
-      ? {
-          $or: [
-            { ner: { $regex: khuudaslalt.search, $options: "i" } },
-            { tailbar: { $regex: khuudaslalt.search, $options: "i" } },
-            { turul: { $regex: khuudaslalt.search, $options: "i" } },
-          ],
-        }
-      : {};
-
     const response = await uilchilgee(token).get(url, {
       params: {
         baiguullagiinId,
         query: {
           baiguullagiinId,
           ...(barilgiinId ? { barilgiinId } : {}),
-          ...searchQuery,
+          $or: [
+            { ner: { $regex: khuudaslalt.search || "", $options: "i" } },
+            { tailbar: { $regex: khuudaslalt.search || "", $options: "i" } },
+          ],
           ...query,
         },
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
@@ -76,10 +72,9 @@ const fetcherJagsaalt = async ([
       },
     });
 
-    console.log("GereeniiZagvar API Response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("GereeniiZagvar API Error:", error);
+    console.error("GereeZagvar API Error:", error);
     aldaaBarigch(error);
     throw error;
   }
@@ -108,43 +103,28 @@ export function useGereeniiZagvar(
 
   const shouldFetch = !!token && !!baiguullagiinId && baiguullagiinId !== "";
 
-  console.log("useGereeniiZagvar - Should Fetch:", {
-    shouldFetch,
-    token: !!token,
-    baiguullagiinId,
-    barilgiinId,
-    khuudaslalt,
-  });
-
-  const {
-    data,
-    mutate,
-    isValidating,
-  }: SWRResponse<GereeniiZagvarResponse, any> = useSWR(
-    shouldFetch
-      ? [
-          "/gereeniiZagvar",
-          token,
-          baiguullagiinId,
-          khuudaslalt,
-          query,
-          barilgiinId,
-        ]
-      : null,
-    fetcherJagsaalt,
-    {
-      revalidateOnFocus: false,
-      onError: (err: any) => {
-        console.error("SWR Error:", err);
-      },
-      onSuccess: (data: any) => {
-        console.log("SWR Success:", data);
-      },
-    }
-  );
+  const { data, mutate, isValidating }: SWRResponse<GereeZagvarResponse, any> =
+    useSWR(
+      shouldFetch
+        ? [
+            "/gereeniiZagvar",
+            token,
+            baiguullagiinId,
+            khuudaslalt,
+            query,
+            barilgiinId,
+          ]
+        : null,
+      fetcherJagsaalt,
+      {
+        revalidateOnFocus: false,
+        onError: (err: any) => {
+          console.error("SWR Error:", err);
+        },
+      }
+    );
 
   return {
-    zagvarGaralt: data,
     zagvaruud: data?.jagsaalt || [],
     zagvarJagsaaltMutate: mutate,
     setZagvarKhuudaslalt,
@@ -152,11 +132,11 @@ export function useGereeniiZagvar(
   };
 }
 
-export function useGereeniiZagvarCRUD() {
+export function useGereeZagvarCRUD() {
   const { token, ajiltan, barilgiinId } = useAuth();
 
   const zagvarUusgekh = async (
-    zagvarData: Partial<GereeniiZagvar>
+    zagvarData: Partial<GereeZagvar>
   ): Promise<boolean> => {
     if (!token || !ajiltan?.baiguullagiinId) {
       toast.error("Нэвтрэх шаардлагатай");
@@ -164,12 +144,12 @@ export function useGereeniiZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).post<GereeniiZagvarResponse>(
-        "/gereeniiZagvarUusgey",
+      const response = await uilchilgee(token).post<GereeZagvarResponse>(
+        "/gereeniiZagvar",
         {
           ...zagvarData,
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
+          barilgiinId: barilgiinId || undefined,
         }
       );
 
@@ -186,7 +166,7 @@ export function useGereeniiZagvarCRUD() {
 
   const zagvarZasakh = async (
     id: string,
-    zagvarData: Partial<GereeniiZagvar>
+    zagvarData: Partial<GereeZagvar>
   ): Promise<boolean> => {
     if (!token || !ajiltan?.baiguullagiinId) {
       toast.error("Нэвтрэх шаардлагатай");
@@ -194,12 +174,11 @@ export function useGereeniiZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).put<GereeniiZagvarResponse>(
-        `/gereeniiZagvarZasya/${id}`,
+      const response = await uilchilgee(token).put<GereeZagvarResponse>(
+        `/gereeniiZagvar/${id}`,
         {
           ...zagvarData,
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
         }
       );
 
@@ -221,8 +200,8 @@ export function useGereeniiZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).delete<GereeniiZagvarResponse>(
-        `/gereeniiZagvarUstgaya/${id}`,
+      const response = await uilchilgee(token).delete<GereeZagvarResponse>(
+        `/gereeniiZagvar/${id}`,
         {
           data: {
             baiguullagiinId: ajiltan.baiguullagiinId,

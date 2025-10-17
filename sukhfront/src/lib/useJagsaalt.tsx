@@ -142,8 +142,8 @@ function useJagsaalt<T = any>(
   }
 
   const jagsaalt = useMemo(() => {
-    return [...(khuudaslalt.jagsaalt || []), ...(data?.jagsaalt || [])];
-  }, [khuudaslalt, data]);
+    return data?.jagsaalt || [];
+  }, [data]);
 
   return {
     data,

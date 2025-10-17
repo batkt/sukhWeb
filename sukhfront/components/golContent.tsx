@@ -135,11 +135,11 @@ export default function GolContent({ children }: GolContentProps) {
                     <div key={i} className="relative group">
                       {item.submenu ? (
                         <span
-                          className={`px-5 py-2 rounded-3xl text-sm font-medium transition-all duration-300 cursor-default
+                          className={`px-5 py-2 rounded-3xl  text-sm font-medium transition-all duration-300 cursor-default
               ${
                 isActive
-                  ? "bg-white/30 backdrop-blur-xl text-black shadow-xl scale-105 border border-white/30"
-                  : "text-black hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
+                  ? "bg-white/20 backdrop-blur-xl text-slate-900 shadow-xl scale-105 border border-white/30"
+                  : "text-slate-900 hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
               }`}
                         >
                           {item.label}
@@ -150,8 +150,8 @@ export default function GolContent({ children }: GolContentProps) {
                           className={`px-5 py-2 rounded-3xl text-sm font-medium transition-all duration-300
               ${
                 isActive
-                  ? "bg-white/30 backdrop-blur-xl text-black shadow-xl scale-105 border border-white/30"
-                  : "text-black hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
+                  ? "bg-white/20 backdrop-blur-xl text-slate-900 shadow-xl scale-105 border border-white/30"
+                  : "text-slate-900 hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
               }`}
                         >
                           {item.label}
@@ -160,16 +160,16 @@ export default function GolContent({ children }: GolContentProps) {
 
                       {item.submenu && (
                         <div
-                          className="absolute left-0 mt-2 w-52 bg-white/20 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 opacity-0 invisible
-              group-hover:opacity-100 group-hover:visible transition-all duration-300"
+                          className="absolute left-0 mt-2 w-52 bg-white/20 backdrop-strong  rounded-3xl shadow-2xl border border-white/30 opacity-0 invisible
+      group-hover:opacity-100 group-hover:visible transition-all duration-300"
                         >
                           <ul className="py-2">
                             {item.submenu.map((sub, j) => (
                               <li key={j}>
                                 <a
                                   href={`/${item.path}/${sub.path}`}
-                                  className="block px-4 py-2 text-sm text-black rounded-2xl transition-all duration-300
-                      hover:bg-white/30 hover:scale-105 hover:shadow-md"
+                                  className="block px-4 py-2 text-sm  text-slate-900 rounded-2xl transition-all duration-300
+              bg-white/20 backdrop-blur-4xl hover:bg-white/50 hover:scale-105 hover:shadow-lg"
                                 >
                                   {sub.label}
                                 </a>
@@ -224,12 +224,12 @@ export default function GolContent({ children }: GolContentProps) {
                   </div>
 
                   {showLogout && (
-                    <div className="absolute right-0 mt-2 w-40 bg-white border border-amber-200 rounded-2xl shadow-lg transition-all duration-300 z-50">
+                    <div className="absolute right-0 mt-2 w-40 bg-white/40 rounded-2xl backdrop-blur-3xl shadow-lg transition-all duration-300 z-50">
                       <ul className="py-2">
                         <li>
                           <button
                             onClick={handleLogout}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 "
                           >
                             Гарах
                           </button>
@@ -244,14 +244,17 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </nav>
 
-      <main className="flex-1 h-[calc(100vh-90px)] overflow-y-auto scrollable max-w-[1600px] mx-auto px-8 py-12">
+      <main className="flex-1 h-[calc(100vh-90px)] max-w-[1600px] mx-auto px-8 py-12">
         <div
-          className="relative rounded-[2rem] p-12 
-               bg-white/20 backdrop-blur-2xl 
-               before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-tr 
-               before:from-white/20 before:to-transparent before:opacity-40 before:pointer-events-none"
+          className="relative rounded-[2rem] p-6 
+         bg-white/20 backdrop-blur-2xl 
+         before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-tr 
+         before:from-white/20 before:to-transparent before:opacity-40 before:pointer-events-none
+         h-full overflow-hidden"
         >
-          {children}
+          <div className="relative z-10 h-full overflow-y-auto pr-4 custom-scrollbar">
+            {children}
+          </div>
         </div>
       </main>
     </>

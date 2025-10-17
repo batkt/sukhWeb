@@ -54,10 +54,8 @@ const fetcherJagsaalt = async ([
       },
     });
 
-    console.log("OrshinSuugch API Response:", response.data);
     return response.data;
   } catch (error: any) {
-    console.error("OrshinSuugch API Error:", error);
     aldaaBarigch(error);
     throw error;
   }
@@ -76,13 +74,6 @@ export function useOrshinSuugchJagsaalt(
 
   const shouldFetch = !!token && !!baiguullagiinId && baiguullagiinId !== "";
 
-  console.log("useOrshinSuugchJagsaalt - Should Fetch:", {
-    shouldFetch,
-    token: !!token,
-    baiguullagiinId,
-    khuudaslalt,
-  });
-
   const { data, mutate, isValidating, error }: SWRResponse<any, any> = useSWR(
     shouldFetch
       ? ["/orshinSuugch", token, baiguullagiinId, khuudaslalt, query]
@@ -90,12 +81,8 @@ export function useOrshinSuugchJagsaalt(
     fetcherJagsaalt,
     {
       revalidateOnFocus: false,
-      onError: (err: any) => {
-        console.error("SWR Error:", err);
-      },
-      onSuccess: (data: any) => {
-        console.log("SWR Success:", data);
-      },
+      onError: (err: any) => {},
+      onSuccess: (data: any) => {},
     }
   );
 

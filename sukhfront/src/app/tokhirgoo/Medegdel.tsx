@@ -52,7 +52,7 @@ const DugaarTile: React.FC<DugaarTileProps> = ({ baiguullaga }) => {
       msgAvakhTurul: baiguullaga.tokhirgoo?.msgAvakhTurul || "",
       msgAvakhDugaar: ustgasanData,
     };
-    console.log("Mock delete:", medegdelTokhirgoo);
+ 
     notification.success({ message: "Амжилттай устгалаа (mock)" });
   };
 
@@ -112,7 +112,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
   });
 
   const khungulultiinTokhirgooKhadgalya = () => {
-    console.log("Mock save:", medegdelTokhirgoo);
+ 
     notification.success({ message: "Амжилттай засагдлаа (mock)" });
     setSongogdsonTsonkhniiIndex?.(5);
   };

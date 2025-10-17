@@ -70,7 +70,6 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
 
   const tokhirgooKhadgalakh = () => {
     setTimeout(() => {
-      console.log("Mock saved:", emailTokhirgoo);
       notification.success({ message: t("Амжилттай засагдлаа (Mock)") });
       baiguullagaMutate?.();
       setSongogdsonTsonkhniiIndex?.(6);

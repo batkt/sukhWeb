@@ -1,184 +1,231 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "antd";
+import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
+import { useAuth } from "@/lib/useAuth";
+import toast from "react-hot-toast";
 
-function KhuviinMedeelel({
+interface Horoo {
+  _id?: string;
+  ner: string;
+  kod: string;
+}
+
+interface Duureg {
+  _id?: string;
+  ner: string;
+  kod: string;
+  ded?: Horoo[];
+}
+
+interface TatvariinAlbaResponse {
+  jagsaalt: Duureg[];
+}
+
+interface Ajiltan {
+  _id: string;
+  [key: string]: any;
+  selectedHoroo?: string;
+  selectedDuureg?: string;
+  selectedDuuregData?: Duureg;
+  selectedHorooData?: Horoo;
+}
+
+interface Props {
+  ajiltan: Ajiltan;
+  setSongogdsonTsonkhniiIndex: (index: number) => void;
+}
+
+const KhuviinMedeelel: React.FC<Props> = ({
   ajiltan: initialAjiltan,
   setSongogdsonTsonkhniiIndex,
-}: any) {
-  const [state, setState] = useState(initialAjiltan);
-  const zuragRef = useRef<HTMLImageElement>(null);
+}) => {
+  const [state, setState] = useState<Ajiltan>(initialAjiltan);
+  const [tatvariinAlbaData, setTatvariinAlbaData] =
+    useState<TatvariinAlbaResponse | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { token, baiguullaga, baiguullagaMutate } = useAuth();
 
-  function onChange({ target }: any, key: string) {
-    setState((s: any) => ({ ...s, [key]: target.value }));
-  }
+  useEffect(() => {
+    if (!token) return;
+    const fetchTatvariinAlba = async () => {
+      try {
+        const res = await uilchilgee(token).get<TatvariinAlbaResponse>(
+          "/tatvariinAlba"
+        );
+        setTatvariinAlbaData(res.data);
 
-  function khadgalakh() {
-    console.log("Saved", state);
-    setSongogdsonTsonkhniiIndex(1);
-  }
-
-  function zuragSolikh({ target }: any) {
-    const file = target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (zuragRef.current) {
-        zuragRef.current.src = reader.result as string;
+        if (baiguullaga?.duureg && typeof baiguullaga.duureg !== "string") {
+          const duuregObj = baiguullaga.duureg;
+          setState((s) => ({
+            ...s,
+            selectedDuureg: duuregObj._id || "",
+            selectedDuuregData: duuregObj,
+          }));
+        }
+        if (baiguullaga?.horoo && typeof baiguullaga.horoo !== "string") {
+          const horooObj = baiguullaga.horoo;
+          setState((s) => ({
+            ...s,
+            selectedHoroo: horooObj.kod || "",
+            selectedHorooData: horooObj,
+          }));
+        }
+      } catch (err) {
+        aldaaBarigch(err);
       }
     };
-    reader.readAsDataURL(file);
-    setState((s: any) => ({ ...s, zurag: file }));
-  }
+    fetchTatvariinAlba();
+  }, [token, baiguullaga]);
 
-  function zuragUstgakh() {
-    setState((prev: any) => {
-      const copy = { ...prev };
-      delete copy.zurag;
-      return copy;
-    });
-    if (zuragRef.current) {
-      zuragRef.current.src = "/profile.svg";
+  const handleDuuregChange = (duuregId: string) => {
+    const selectedDuuregData = tatvariinAlbaData?.jagsaalt.find(
+      (d) => d._id === duuregId
+    );
+
+    if (selectedDuuregData) {
+      setState((s) => ({
+        ...s,
+        selectedDuureg: duuregId,
+        selectedDuuregData: selectedDuuregData,
+        selectedHoroo: "",
+        selectedHorooData: undefined,
+      }));
     }
-  }
+  };
 
-  const FloatingInput = ({
-    label,
-    value,
-    onChange,
-    type = "text",
-    id,
-  }: {
-    label: string;
-    value: string;
-    onChange: (e: any) => void;
-    type?: string;
-    id: string;
-  }) => (
-    <div className="relative w-full my-3">
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder=" "
-        className="peer w-full rounded-xl border border-amber-100 bg-transparent/5 px-4 pt-5 pb-2 text-gray-800 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none shadow-sm transition"
-      />
-      <label
-        htmlFor={id}
-        className="absolute left-4 top-2 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-gray-700 peer-focus:text-sm cursor-text"
-      >
-        {label}
-      </label>
-    </div>
+  const handleHorooChange = (horooKod: string) => {
+    const selectedHorooData = selectedDistrict?.ded?.find(
+      (h) => h.kod === horooKod
+    );
+
+    if (selectedHorooData) {
+      setState((s) => ({
+        ...s,
+        selectedHoroo: horooKod,
+        selectedHorooData: selectedHorooData,
+      }));
+    }
+  };
+
+  const khadgalakh = async () => {
+    if (!token) {
+      toast.error("Нэвтрэх токен олдсонгүй");
+      return;
+    }
+
+    if (!baiguullaga?._id) {
+      toast.error("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+
+    if (!state.selectedDuuregData) {
+      toast.error("Дүүрэг сонгоно уу");
+      return;
+    }
+
+    if (!state.selectedHorooData) {
+      toast.error("Хороо сонгоно уу");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const payload = {
+        _id: baiguullaga._id,
+        barilguud: {
+          tokhirgoo: {
+            duuregNer: state.selectedDuuregData.ner,
+            districtCode: state.selectedHorooData.ner,
+            sohCode: baiguullaga.tokhirgoo?.sohCode || "СӨХ-001",
+          },
+        },
+      };
+
+      await uilchilgee(token).put(`/baiguullaga/${baiguullaga._id}`, payload);
+
+      baiguullagaMutate();
+
+      toast.success("Амжилттай хадгаллаа");
+      setSongogdsonTsonkhniiIndex(1);
+    } catch (err) {
+      aldaaBarigch(err);
+      toast.error("Хадгалахад алдаа гарлаа");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
+    (d) => d._id === state.selectedDuureg
   );
 
   return (
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12">
-      <h2 className="text-lg font-semibold border-b border-b-gray-300 text-gray-800 pb-4">
-        Хувийн мэдээлэл
-      </h2>
+      {tatvariinAlbaData?.jagsaalt && (
+        <div className="mt-8 space-y-4">
+          <h3 className="text-md font-semibold text-gray-700 mb-2">
+            Хувийн мэдээлэл
+          </h3>
 
-      <div className="grid bg-tra grid-cols-1 md:grid-cols-2 gap-6">
-        <FloatingInput
-          id="ovog"
-          label="Овог"
-          value={state.ovog || ""}
-          onChange={(e) => onChange(e, "ovog")}
-        />
-        <FloatingInput
-          id="ner"
-          label="Нэр"
-          value={state.ner || ""}
-          onChange={(e) => onChange(e, "ner")}
-        />
-        <FloatingInput
-          id="email"
-          label="И-Мэйл"
-          value={state.email || ""}
-          onChange={(e) => onChange(e, "email")}
-        />
-        <FloatingInput
-          id="register"
-          label="Регистрийн дугаар"
-          value={state.register || ""}
-          onChange={(e) => onChange(e, "register")}
-        />
-        <FloatingInput
-          id="hayag"
-          label="Хаяг - Тоот, давхар"
-          value={state.hayag || ""}
-          onChange={(e) => onChange(e, "hayag")}
-        />
-        <FloatingInput
-          id="dugaar"
-          label="Утасны дугаар"
-          value={state.dugaar || ""}
-          onChange={(e) => onChange(e, "dugaar")}
-        />
-        <FloatingInput
-          id="shineNuutsUg"
-          label="Шинэ нууц үг"
-          value={state.shineNuutsUg || ""}
-          onChange={(e) => onChange(e, "shineNuutsUg")}
-          type="password"
-        />
-        <FloatingInput
-          id="shineNuutsUgDavtan"
-          label="Шинэ нууц үг давтан"
-          value={state.shineNuutsUgDavtan || ""}
-          onChange={(e) => onChange(e, "shineNuutsUgDavtan")}
-          type="password"
-        />
-      </div>
-
-      <div className="flex flex-col items-center mt-4">
-        <div className="relative w-32 h-32">
-          <img
-            ref={zuragRef}
-            src={
-              state.zurag ? URL.createObjectURL(state.zurag) : "/profile.svg"
-            }
-            alt="Profile"
-            className="h-full w-full rounded-full object-cover border-2 border-amber-200 shadow-lg"
-          />
-          {state.zurag && (
-            <div
-              className="absolute top-0 right-0 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-red-600 text-white text-xs font-bold shadow"
-              onClick={zuragUstgakh}
-              title="Зураг устгах"
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Дүүрэг
+            </label>
+            <select
+              value={state.selectedDuureg || ""}
+              onChange={(e) => handleDuuregChange(e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              disabled={isLoading}
             >
-              ✕
+              <option value="">Сонгоно уу</option>
+              {tatvariinAlbaData.jagsaalt.map((duureg) => (
+                <option key={duureg._id} value={duureg._id}>
+                  {duureg.ner}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedDistrict?.ded && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Хороо
+              </label>
+              <select
+                value={state.selectedHoroo || ""}
+                onChange={(e) => handleHorooChange(e.target.value)}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                disabled={isLoading}
+              >
+                <option value="">Сонгоно уу</option>
+                {selectedDistrict.ded.map((horoo) => (
+                  <option key={horoo._id} value={horoo.kod}>
+                    {horoo.ner}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
-        </div>
 
-        <div className="mt-3 w-32">
-          <Button type="default" className="w-full rounded-xl shadow-sm">
-            Зураг солих
-            <input
-              type="file"
-              accept="image/*"
-              onChange={zuragSolikh}
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
-          </Button>
+          <div className="flex justify-end mt-4">
+            <Button
+              type="primary"
+              size="large"
+              onClick={khadgalakh}
+              loading={isLoading}
+              disabled={isLoading}
+              className="rounded-xl shadow-lg"
+            >
+              Хадгалах
+            </Button>
+          </div>
         </div>
-      </div>
-
-      <div className="mt-6 flex justify-end">
-        <Button
-          type="primary"
-          size="large"
-          onClick={khadgalakh}
-          className="rounded-xl shadow-lg"
-        >
-          Хадгалах
-        </Button>
-      </div>
+      )}
     </div>
   );
-}
+};
 
 export default KhuviinMedeelel;

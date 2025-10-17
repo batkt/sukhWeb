@@ -80,7 +80,6 @@ const fetcherJagsaalt = async ([
       },
     });
 
-    console.log("Geree API Response:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Geree API Error:", error);
@@ -112,14 +111,6 @@ export function useGereeJagsaalt(
 
   const shouldFetch = !!token && !!baiguullagiinId && baiguullagiinId !== "";
 
-  console.log("useGereeJagsaalt - Should Fetch:", {
-    shouldFetch,
-    token: !!token,
-    baiguullagiinId,
-    barilgiinId,
-    khuudaslalt,
-  });
-
   const { data, mutate, isValidating }: SWRResponse<GereeResponse, any> =
     useSWR(
       shouldFetch
@@ -129,10 +120,10 @@ export function useGereeJagsaalt(
       {
         revalidateOnFocus: false,
         onError: (err: any) => {
-          console.error("SWR Error:", err);
+ 
         },
         onSuccess: (data: any) => {
-          console.log("SWR Success:", data);
+   
         },
       }
     );

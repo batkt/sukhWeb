@@ -8,7 +8,7 @@ import React, {
   useCallback,
 } from "react";
 import { useTranslation } from "react-i18next";
-
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Button,
   DatePicker,
@@ -33,7 +33,6 @@ import dayjs, { Dayjs } from "dayjs";
 import Aos from "aos";
 import _ from "lodash";
 
-// Static data for testing
 const staticAnketData = [
   {
     _id: "1",
@@ -160,7 +159,7 @@ function AsuultOruulakh({
         {fields.length > 0 ? (
           <div className="absolute -right-3 -top-11 rounded-full bg-white dark:bg-gray-900 lg:-right-5 lg:-top-10">
             <CloseCircleOutlined
-              className="dynamic-delete-button text-2xl text-black text-opacity-60 transition-colors hover:text-red-400 dark:text-white dark:text-opacity-50"
+              className="dynamic-delete-button text-2xl text-slate-900 text-opacity-60 transition-colors hover:text-red-400 dark:text-white dark:text-opacity-50"
               onClick={() => {
                 remove(name);
               }}
@@ -191,7 +190,7 @@ function AsuultOruulakh({
                         style={{ width: "100%" }}
                       />
                       <MinusCircleOutlined
-                        className="dynamic-delete-button absolute right-2 top-0 text-xl text-black text-opacity-50 dark:text-white dark:text-opacity-50"
+                        className="dynamic-delete-button absolute right-2 top-0 text-xl text-slate-900 text-opacity-50 dark:text-white dark:text-opacity-50"
                         onClick={() => remove(field.name)}
                       />
                     </div>
@@ -298,7 +297,7 @@ function AnketiinZagvar({
       </div>
       <div className="flex w-full items-center justify-between px-5">
         <div
-          className={`flex w-full flex-col items-center justify-end overflow-hidden rounded-b-xl border border-t-0 border-border bg-secondary bg-opacity-5 p-1 shadow-lg transition-all dark:text-black`}
+          className={`flex w-full flex-col items-center justify-end overflow-hidden rounded-b-xl border border-t-0 border-border bg-secondary bg-opacity-5 p-1 shadow-lg transition-all dark:text-slate-900`}
           style={{
             height:
               kharakh === false
@@ -448,9 +447,14 @@ export default function Page() {
 
   return (
     <div className="min-h-screen dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <h1 className="text-2xl font-bold mb-4 bg-gradient-to-r from-green-500 to-emerald-600 bg-clip-text text-slate-900">
-        {t("Анкетын асуулга бэлдэх")}
-      </h1>
+      <motion.h1
+        initial={{ opacity: 0, y: -30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+      >
+        {"Анкетын асуулга бэлтгэх"}
+      </motion.h1>
       <div className="col-span-12 p-3 md:p-5">
         <div className="absolute right-3 top-3 z-50 hidden lg:flex"></div>
         <div className="flex grid-cols-12 flex-col-reverse gap-5 md:grid">
@@ -589,7 +593,7 @@ export default function Page() {
                   )}
                 </Form.List>
               </div>
-              <Form.Item className="flex justify-end pr-5">
+              <Form.Item className="flex justify-end pr-5 !mt-2">
                 <Button
                   type="primary"
                   onClick={() => form.submit()}

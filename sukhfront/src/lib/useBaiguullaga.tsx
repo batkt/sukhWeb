@@ -10,6 +10,30 @@ export interface Baiguullaga {
   utas?: string;
   email?: string;
   register?: string;
+  duureg?:
+    | string
+    | {
+        _id?: string;
+        ner: string;
+        kod: string;
+        ded?: Array<{
+          _id: string;
+          ner: string;
+          kod: string;
+        }>;
+      };
+  horoo?:
+    | string
+    | {
+        _id?: string;
+        ner: string;
+        kod: string;
+      };
+  tokhirgoo?: {
+    duuregNer?: string;
+    districtCode?: string;
+    sohCode?: string;
+  };
 }
 
 const fetcher = async (

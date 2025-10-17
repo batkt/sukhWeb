@@ -197,7 +197,7 @@ export default function SanalKhuselt() {
           <RangePicker
             placeholder={[t("Эхлэх"), t("Дуусах")]}
             onChange={(dates) => setEkhlekhOgnoo(dates)}
-            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black rounded-xl"
+            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900 rounded-xl"
           />
 
           <div className="grid grid-cols-2 gap-2">
@@ -256,7 +256,7 @@ export default function SanalKhuselt() {
                             </div>
                           </div>
                           <div>
-                            <div className="font-semibold text-black text-xs">
+                            <div className="font-semibold text-slate-900 text-xs">
                               {mur.ner}
                             </div>
                             <div className="text-xs text-gray-500">
@@ -310,7 +310,7 @@ export default function SanalKhuselt() {
                                   {getStatusInfo(item.tuluv).text}
                                 </Tag>
                                 {item.title && (
-                                  <span className="ml-1 text-black text-xs">
+                                  <span className="ml-1 text-slate-900 text-xs">
                                     {item.title}
                                   </span>
                                 )}

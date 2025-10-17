@@ -146,10 +146,7 @@ const TulburTootsoo: React.FC = () => {
     }
   }
 
-  function khungulultKhadgalya() {
-    // Save discount logic
-    console.log("Saving discount...");
-  }
+  function khungulultKhadgalya() {}
 
   const gereeniiColumn: TableColumnsType<GereeData> = useMemo(() => {
     let column: TableColumnsType<GereeData> = [

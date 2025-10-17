@@ -38,25 +38,43 @@ const fetcherJagsaalt = async ([
   string | number | undefined
 ]): Promise<any> => {
   try {
+    // Build the query object
+    const queryObj: any = {
+      baiguullagiinId,
+      erkh: { $nin: ["Admin"] },
+      ...query,
+    };
+
+    // Add barilga filter if provided
+    if (barilgiinId) {
+      queryObj.barilguud = barilgiinId;
+    }
+
+    // Add search filters
+    if (khuudaslalt.search && khuudaslalt.search.trim() !== "") {
+      queryObj.$or = [
+        { ner: { $regex: khuudaslalt.search, $options: "i" } },
+        { register: { $regex: khuudaslalt.search, $options: "i" } },
+        { utas: { $regex: khuudaslalt.search, $options: "i" } },
+      ];
+    }
+
+    console.log("Fetching ajiltan with query:", {
+      baiguullagiinId,
+      queryObj,
+      khuudaslalt,
+    });
+
     const response = await uilchilgee(token).get(url, {
       params: {
-        query: {
-          baiguullagiinId,
-          ...(barilgiinId ? { barilguud: barilgiinId } : {}),
-          erkh: { $nin: ["Admin"] },
-          $or: [
-            { ner: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { register: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { utas: { $regex: khuudaslalt.search || "", $options: "i" } },
-          ],
-          ...query,
-        },
+        query: JSON.stringify(queryObj),
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
       },
     });
 
-    console.log("Ajiltan API Response:", response.data);
+    console.log("Ajiltan response:", response.data);
+
     return response.data;
   } catch (error: any) {
     console.error("Ajiltan API Error:", error);
@@ -77,14 +95,13 @@ export function useAjiltniiJagsaalt(
     search: "",
   });
 
-  const shouldFetch = !!token && !!baiguullagiinId && baiguullagiinId !== "";
-
-  console.log("useAjiltniiJagsaalt - Should Fetch:", {
-    shouldFetch,
-    token: !!token,
-    baiguullagiinId,
-    khuudaslalt,
-  });
+  // More strict validation
+  const shouldFetch =
+    !!token &&
+    !!baiguullagiinId &&
+    baiguullagiinId !== "" &&
+    baiguullagiinId !== "undefined" &&
+    baiguullagiinId !== "null";
 
   const { data, mutate, isValidating, error }: SWRResponse<any, any> = useSWR(
     shouldFetch
@@ -93,6 +110,7 @@ export function useAjiltniiJagsaalt(
     fetcherJagsaalt,
     {
       revalidateOnFocus: false,
+      revalidateOnReconnect: false,
       onError: (err: any) => {
         console.error("SWR Error:", err);
       },

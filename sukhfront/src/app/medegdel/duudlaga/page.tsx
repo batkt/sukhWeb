@@ -301,7 +301,7 @@ export default function TaskManagementSystem() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-black text-sm">
+                  <div className="font-semibold text-slate-900 text-sm">
                     {group.khariltsagchiinNer}
                   </div>
                   <div className="text-xs text-gray-500">
@@ -350,7 +350,7 @@ export default function TaskManagementSystem() {
                         {getStatusInfo(item.tuluv).text}
                       </Tag>
                       {item.title && (
-                        <span className="ml-1 text-black text-xs">
+                        <span className="ml-1 text-slate-900 text-xs">
                           {item.title}
                         </span>
                       )}
@@ -400,11 +400,11 @@ export default function TaskManagementSystem() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: idx * 0.1, type: "spring" }}
-                    className="text-3xl font-bold text-black mb-1 bg-transparent"
+                    className="text-3xl font-bold text-slate-900 mb-1 bg-transparent"
                   >
                     {mur.too}
                   </motion.div>
-                  <div className="text-xs text-black font-medium bg-transparent">
+                  <div className="text-xs text-slate-900 font-medium bg-transparent">
                     {mur.utga}
                   </div>
                 </motion.div>
@@ -419,13 +419,13 @@ export default function TaskManagementSystem() {
                 setEkhlekhOgnoo(dates as [Dayjs, Dayjs] | null)
               }
               value={ekhlekhOgnoo}
-              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black"
+              className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900"
             />
             <Select
               placeholder="Төрөл"
               value={turulFilter}
               onChange={setTurulFilter}
-              className="!h-8 !bg-transparent !backdrop-blur-md  !text-black"
+              className="!h-8 !bg-transparent !backdrop-blur-md  !text-slate-900"
             >
               <Option value="Бүгд">Бүгд</Option>
               <Option value="Сантехник">Сантехник</Option>
@@ -437,7 +437,7 @@ export default function TaskManagementSystem() {
           <Input
             placeholder="Хайх..."
             onChange={({ target }) => setSearchTerm(target.value)}
-            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-black placeholder:text-gray-500"
+            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-slate-900 placeholder:text-gray-500"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
@@ -448,7 +448,9 @@ export default function TaskManagementSystem() {
                 className="flex items-center justify-center h-full"
               >
                 <div className="text-center p-8 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200">
-                  <div className="text-black text-lg">Өгөгдөл олдсонгүй</div>
+                  <div className="text-slate-900 text-lg">
+                    Өгөгдөл олдсонгүй
+                  </div>
                 </div>
               </motion.div>
             ) : (
@@ -470,10 +472,10 @@ export default function TaskManagementSystem() {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-gray-200 shadow-xl"
               >
-                <div className="font-bold text-2xl text-black mb-2">
+                <div className="font-bold text-2xl text-slate-900 mb-2">
                   {duudlaga.khariltsagchiinNer}
                 </div>
-                <div className="flex gap-4 text-black">
+                <div className="flex gap-4 text-slate-900">
                   <span className="flex items-center gap-2">
                     {duudlaga.khariltsagchiinUtas}
                   </span>

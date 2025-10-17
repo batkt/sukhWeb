@@ -78,7 +78,7 @@ export default function NevtreltiinTuukh({
   ) => {
     if (dates && dates[0] && dates[1]) {
       setDateRange([dates[0], dates[1]]);
-      console.log("Filter range:", dateStrings);
+   
     }
   };
 

@@ -180,7 +180,7 @@ export default function SanalKhuselt() {
         transition={{ duration: 0.6, ease: "easeOut" }}
         className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
       >
-        {t("Санал хүсэлт")}
+        {t("Шаардлага")}
       </motion.h1>
 
       <div className="flex h-[calc(100vh-10rem)] gap-6 bg-transparent">
@@ -193,7 +193,7 @@ export default function SanalKhuselt() {
           <RangePicker
             placeholder={[t("Эхлэх"), t("Дуусах")]}
             onChange={(dates) => setEkhlekhOgnoo(dates)}
-            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-black rounded-xl"
+            className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900 rounded-xl"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4 space-y-3">
@@ -218,7 +218,7 @@ export default function SanalKhuselt() {
                   </div>
 
                   <div className="flex-1">
-                    <div className="font-semibold text-black text-sm">
+                    <div className="font-semibold text-slate-900 text-sm">
                       {mur.ner}
                     </div>
                     <div className="text-xs text-gray-500">{mur.utas}</div>
@@ -254,7 +254,7 @@ export default function SanalKhuselt() {
                     className="rounded-2xl bg-transparent backdrop-blur-xl p-4 border border-gray-200 shadow-xl flex justify-between items-center"
                   >
                     <div>
-                      <div className="font-semibold text-black">
+                      <div className="font-semibold text-slate-900">
                         {item.message}
                       </div>
                       <div className="text-xs text-gray-500">

@@ -114,7 +114,7 @@ export default function KhyanaltFrontend() {
                   </div>
 
                   <div className="flex-1">
-                    <div className="font-semibold text-black text-sm">
+                    <div className="font-semibold text-slate-900 text-sm">
                       {mur.ner}
                     </div>
                     <div className="text-xs text-gray-500">{mur.utas}</div>
