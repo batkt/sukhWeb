@@ -8,6 +8,7 @@ export interface Baiguullaga {
   dans?: string;
   khayag?: string;
   utas?: string;
+  bankNer?: string;
   email?: string;
   register?: string;
   duureg?:

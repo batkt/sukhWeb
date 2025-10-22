@@ -18,7 +18,7 @@ export default function TuslamjTokhirgoo() {
   return (
     <div className="max-w-5xl mx-auto space-y-12">
       <div className="flex items-center gap-2 mb-6">
-        <h2 className="text-xl font-semibold border-b border-b-gray-300 text-gray-800 pb-6">
+        <h2 className="text-xl font-semibold border-b border-b-gray-300 text-slate-800 pb-6">
           Гарын авлага
         </h2>
       </div>
@@ -41,7 +41,7 @@ export default function TuslamjTokhirgoo() {
       </div>
 
       <section className="bg-transparent p-8 rounded-2xl shadow-md border">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <h2 className="text-2xl font-semibold mb-6 text-slate-800">
           Сургалтын бичлэгүүд
         </h2>
         <div className="space-y-4">
@@ -66,14 +66,14 @@ export default function TuslamjTokhirgoo() {
               className="flex items-center gap-3 p-4 border rounded-xl hover:bg-gray-50 transition"
             >
               <PlayCircle className="w-6 h-6 text-red-500" />
-              <span className="text-gray-700 font-medium">{video.title}</span>
+              <span className="text-slate-700 font-medium">{video.title}</span>
             </a>
           ))}
         </div>
       </section>
 
       <section className="bg-transparent p-8 rounded-2xl shadow-md border">
-        <h2 className="text-2xl font-semibold mb-6 text-gray-800">
+        <h2 className="text-2xl font-semibold mb-6 text-slate-800">
           Түгээмэл асуулт (FAQ)
         </h2>
         <div className="space-y-4">
@@ -95,11 +95,11 @@ export default function TuslamjTokhirgoo() {
               key={i}
               className="group border rounded-xl p-4 hover:shadow transition"
             >
-              <summary className="flex items-center gap-2 cursor-pointer font-medium text-gray-800">
-                <HelpCircle className="w-5 h-5 text-gray-500" />
+              <summary className="flex items-center gap-2 cursor-pointer font-medium text-slate-800">
+                <HelpCircle className="w-5 h-5 text-slate-500" />
                 {item.q}
               </summary>
-              <p className="mt-2 text-gray-600">{item.a}</p>
+              <p className="mt-2 text-slate-600">{item.a}</p>
             </details>
           ))}
         </div>

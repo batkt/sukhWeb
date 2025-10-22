@@ -98,7 +98,10 @@ export default function Zogsool() {
                 "Огноо",
                 "",
               ].map((col) => (
-                <th key={col} className="py-3 px-4 font-semibold text-gray-700">
+                <th
+                  key={col}
+                  className="py-3 px-4 font-semibold text-slate-700"
+                >
                   {col}
                 </th>
               ))}
@@ -167,7 +170,10 @@ export default function Zogsool() {
           <thead>
             <tr className="border-b border-white bg-transparent">
               {["№", "Огноо", "Дугаар", "СМС мессеж"].map((col) => (
-                <th key={col} className="py-3 px-4 font-semibold text-gray-700">
+                <th
+                  key={col}
+                  className="py-3 px-4 font-semibold text-slate-700"
+                >
                   {col}
                 </th>
               ))}

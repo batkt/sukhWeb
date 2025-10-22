@@ -35,12 +35,12 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
+      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-slate-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
     />
     <label
-      className="absolute left-4 top-2 text-gray-500 text-sm transition-all pointer-events-none
-      peer-placeholder-shown:top-5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base
-      peer-focus:top-2 peer-focus:text-gray-700 peer-focus:text-sm"
+      className="absolute left-4 top-2 text-slate-500 text-sm transition-all pointer-events-none
+      peer-placeholder-shown:top-5 peer-placeholder-shown:text-slate-400 peer-placeholder-shown:text-base
+      peer-focus:top-2 peer-focus:text-slate-700 peer-focus:text-sm"
     >
       {label}
     </label>
@@ -80,7 +80,7 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
     <div className="col-span-12 lg:col-span-6 xl:col-span-4">
       <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
         <div className="px-6 py-4">
-          <h2 className="text-lg font-semibold border-b border-b-gray-300 text-gray-800 pb-2">
+          <h2 className="text-lg font-semibold border-b border-b-gray-300 text-slate-800 pb-2">
             {t("Нэхэмжлэл и-мэйлээр илгээх")}
           </h2>
         </div>

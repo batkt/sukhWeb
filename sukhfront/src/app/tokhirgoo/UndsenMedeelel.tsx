@@ -166,12 +166,12 @@ const KhuviinMedeelel: React.FC<Props> = ({
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12">
       {tatvariinAlbaData?.jagsaalt && (
         <div className="mt-8 space-y-4">
-          <h3 className="text-md font-semibold text-gray-700 mb-2">
+          <h3 className="text-md font-semibold text-slate-700 mb-2">
             Хувийн мэдээлэл
           </h3>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-1">
               Дүүрэг
             </label>
             <select
@@ -191,7 +191,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
 
           {selectedDistrict?.ded && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Хороо
               </label>
               <select

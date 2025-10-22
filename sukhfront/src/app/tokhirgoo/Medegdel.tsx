@@ -20,9 +20,9 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-gray-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
+      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-slate-800 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
     />
-    <label className="absolute left-4 top-2 text-gray-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-gray-400 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-gray-700 peer-focus:text-sm">
+    <label className="absolute left-4 top-2 text-slate-500 text-sm transition-all peer-placeholder-shown:top-5 peer-placeholder-shown:text-slate-400 peer-placeholder-shown:text-base peer-focus:top-2 peer-focus:text-slate-700 peer-focus:text-sm">
       {label}
     </label>
   </div>
@@ -52,13 +52,13 @@ const DugaarTile: React.FC<DugaarTileProps> = ({ baiguullaga }) => {
       msgAvakhTurul: baiguullaga.tokhirgoo?.msgAvakhTurul || "",
       msgAvakhDugaar: ustgasanData,
     };
- 
+
     notification.success({ message: "Амжилттай устгалаа (mock)" });
   };
 
   if (data.length === 0) {
     return (
-      <div className="p-5 text-center text-gray-500">
+      <div className="p-5 text-center text-slate-500">
         Бүртгэлтэй дугаар байхгүй байна
       </div>
     );
@@ -71,7 +71,7 @@ const DugaarTile: React.FC<DugaarTileProps> = ({ baiguullaga }) => {
           key={index}
           className="p-4 hover:bg-gray-50 rounded-xl transition flex items-center justify-between border border-amber-200"
         >
-          <div className="font-medium text-gray-800">{mur}</div>
+          <div className="font-medium text-slate-800">{mur}</div>
           <Popconfirm
             title="Утас устгах уу?"
             okText="Тийм"
@@ -112,7 +112,6 @@ const Medegdel: React.FC<MedegdelProps> = ({
   });
 
   const khungulultiinTokhirgooKhadgalya = () => {
- 
     notification.success({ message: "Амжилттай засагдлаа (mock)" });
     setSongogdsonTsonkhniiIndex?.(5);
   };
@@ -128,7 +127,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-amber-200">
-          <h2 className="text-lg font-semibold text-gray-800">СМС тохиргоо</h2>
+          <h2 className="text-lg font-semibold text-slate-800">СМС тохиргоо</h2>
         </div>
         <div className="p-6 space-y-4">
           <FloatingInput
@@ -165,7 +164,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
 
       <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-amber-200">
-          <h2 className="text-lg font-semibold text-gray-800">
+          <h2 className="text-lg font-semibold text-slate-800">
             Мэдэгдэл илгээх дугаар
           </h2>
           <div

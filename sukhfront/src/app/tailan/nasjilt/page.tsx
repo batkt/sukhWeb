@@ -245,14 +245,14 @@ const NasjiltTailan: React.FC = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+          className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
         >
           Насжилт
         </motion.h1>
 
         <div className="p-4 rounded-lg shadow mb-4 flex flex-wrap gap-4 items-center">
           <div className="flex gap-2 items-center">
-            <Calendar className="w-5 h-5 text-gray-500" />
+            <Calendar className="w-5 h-5 text-slate-500" />
             <input
               type="date"
               value={dateRange.start}
@@ -273,7 +273,7 @@ const NasjiltTailan: React.FC = () => {
           </div>
 
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               placeholder="Харилцагч хайх..."
@@ -364,7 +364,7 @@ const NasjiltTailan: React.FC = () => {
           style={{ maxHeight: "calc(100vh - 250px)" }}
         >
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-gray-800 border-collapse">
+            <table className="w-full text-sm text-slate-800 border-collapse">
               <thead className="backdrop-blur-sm">
                 <tr>
                   <th

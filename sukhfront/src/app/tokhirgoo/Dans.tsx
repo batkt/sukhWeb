@@ -37,16 +37,16 @@ function DansTile({ data, dansMutate, zasya, t }: DansTileProps) {
     <div className="flex items-center justify-between bg-transparent rounded-lg shadow p-4 mb-3 hover:shadow-md transition">
       <div className="flex flex-col sm:flex-row sm:gap-6 w-full">
         <div>
-          <div className="font-medium text-gray-700">{t("Данс")}</div>
-          <div className="text-gray-900">{data.dugaar}</div>
+          <div className="font-medium text-slate-700">{t("Данс")}</div>
+          <div className="text-slate-900">{data.dugaar}</div>
         </div>
         <div>
-          <div className="font-medium text-gray-700">{t("Дансны нэр")}</div>
-          <div className="text-gray-900">{data.dansniiNer}</div>
+          <div className="font-medium text-slate-700">{t("Дансны нэр")}</div>
+          <div className="text-slate-900">{data.dansniiNer}</div>
         </div>
         <div>
-          <div className="font-medium text-gray-700">{t("Валют")}</div>
-          <div className="text-gray-900">{data.valyut}</div>
+          <div className="font-medium text-slate-700">{t("Валют")}</div>
+          <div className="text-slate-900">{data.valyut}</div>
         </div>
       </div>
       <div className="flex gap-2">

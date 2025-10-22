@@ -18,16 +18,38 @@ interface Query {
 export interface Geree {
   _id?: string;
   ner: string;
-  gereeTurul: "Үндсэн гэрээ" | "Түр гэрээ";
+  ovog?: string;
+  register?: string;
+  turul?: "Үндсэн" | "Түр";
   davkhar: string;
-  toot: string;
-  startDate: string;
+  toot: number;
   gereeniiDugaar: string;
-  utas?: string;
+  gereeniiOgnoo?: string;
+  ekhlekhOgnoo?: string;
+  duusakhOgnoo?: string;
+  tulukhOgnoo?: string;
+  khugatsaa?: string;
+  utas?: string[];
   email?: string;
+  mail?: string;
   baiguullagiinId: string;
   barilgiinId: string;
-  register?: string;
+  bairNer?: string;
+  baingiinKhayag?: string;
+  aimag?: string;
+  duureg?: string;
+  horoo?: string;
+  orts?: string;
+  niitTulbur?: number;
+  suhTulbur?: number;
+  suhTulburFormatted?: string;
+  suhTulburUsgeer?: string;
+  uilchilgeeniiZardal?: number;
+  suhNer?: string;
+  suhRegister?: string;
+  suhUtas?: string[];
+  suhMail?: string;
+  temdeglel?: string;
   status?: string;
   [key: string]: any;
 }
@@ -41,6 +63,7 @@ interface GereeResponse {
   success?: boolean;
   message?: string;
 }
+
 const fetcherJagsaalt = async ([
   url,
   token,
@@ -119,12 +142,8 @@ export function useGereeJagsaalt(
       fetcherJagsaalt,
       {
         revalidateOnFocus: false,
-        onError: (err: any) => {
- 
-        },
-        onSuccess: (data: any) => {
-   
-        },
+        onError: (err: any) => {},
+        onSuccess: (data: any) => {},
       }
     );
 
@@ -155,7 +174,7 @@ export function useGereeCRUD() {
         }
       );
 
-      if (response.data.success) {
+      if (response.status === 200 || response.data.success !== false) {
         toast.success(response.data.message || "Гэрээ амжилттай үүсгэгдлээ");
         return true;
       }
@@ -177,9 +196,10 @@ export function useGereeCRUD() {
 
     try {
       const response = await uilchilgee(token).put<GereeResponse>(
-        `/gereeZasya/${id}`,
+        `/geree/${id}`,
         {
           ...gereeData,
+          _id: id,
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: barilgiinId,
         }
@@ -204,10 +224,11 @@ export function useGereeCRUD() {
 
     try {
       const response = await uilchilgee(token).delete<GereeResponse>(
-        `/gereeUstgaya/${id}`,
+        `/geree/${id}`,
         {
           data: {
             baiguullagiinId: ajiltan.baiguullagiinId,
+            
           },
         }
       );

@@ -67,7 +67,7 @@ export default function Tailan() {
           <h1 className="text-6xl md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 font-medium">
+          <p className="text-xl md:text-2xl text-slate-600 font-medium">
             Зогсоол камер
           </p>
         </div>
@@ -76,14 +76,16 @@ export default function Tailan() {
         <div className="mt-12 p-6 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20">
           <div className="flex items-center justify-center gap-4 mb-4">
             <Clock className="w-6 h-6 text-blue-600" />
-            <span className="text-lg font-medium text-gray-700">
+            <span className="text-lg font-medium text-slate-700">
               Одоогийн цаг
             </span>
           </div>
-          <div className="text-3xl font-bold text-gray-800 mb-2">
+          <div className="text-3xl font-bold text-slate-800 mb-2">
             {formatTime(currentTime)}
           </div>
-          <div className="text-lg text-gray-600">{formatDate(currentTime)}</div>
+          <div className="text-lg text-slate-600">
+            {formatDate(currentTime)}
+          </div>
         </div>
 
         <div className="mt-12">
@@ -101,7 +103,7 @@ export default function Tailan() {
 
         {/* Progress indicator */}
         <div className="mt-8 w-full max-w-md mx-auto">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
             <span>Хөгжүүлэлт</span>
             <span>85%</span>
           </div>

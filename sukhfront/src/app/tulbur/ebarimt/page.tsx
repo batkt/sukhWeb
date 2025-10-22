@@ -58,7 +58,7 @@ export default function Ebarimt() {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         И-Баримт
       </motion.h1>
@@ -80,10 +80,10 @@ export default function Ebarimt() {
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
-                <div className="text-3xl font-bold text-gray-900 mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="text-3xl font-bold text-slate-900 mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {stat.value}
                 </div>
-                <div className="text-xs text-gray-600 leading-tight">
+                <div className="text-xs text-slate-600 leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -128,7 +128,7 @@ export default function Ebarimt() {
                   onClick={exceleerTatya}
                   type="primary"
                   size="large"
-                  className="flex-1 md:flex-none rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                  className="flex-1 md:flex-none rounded-xl bg-slate-900 text-white shadow-md hover:shadow-lg transition-all duration-300"
                 >
                   {t("Excel татах")}
                 </Button>
@@ -177,19 +177,19 @@ export default function Ebarimt() {
             <table className="w-full relative z-10">
               <thead>
                 <tr className="bg-white/20 border-b border-white/30">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-800 w-20">
+                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800 w-20">
                     №
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-800">
+                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
                     Огноо
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-800">
+                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
                     Тайлант сар
                   </th>
-                  <th className="py-4 px-6 text-right text-sm font-semibold text-gray-800">
+                  <th className="py-4 px-6 text-right text-sm font-semibold text-slate-800">
                     Дүн
                   </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-gray-800">
+                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
                     Үйлчилгээ
                   </th>
                 </tr>
@@ -202,13 +202,13 @@ export default function Ebarimt() {
                       className="border-b border-white/30 cursor-pointer hover:shadow-lg"
                       transition={{ duration: 0.3 }}
                     >
-                      <td className="py-4 px-6 text-gray-900">{index + 1}</td>
-                      <td className="py-4 px-6 text-gray-600">{item.date}</td>
-                      <td className="py-4 px-6 text-gray-600">{item.month}</td>
-                      <td className="py-4 px-6 text-gray-600 text-right">
+                      <td className="py-4 px-6 text-slate-900">{index + 1}</td>
+                      <td className="py-4 px-6 text-slate-600">{item.date}</td>
+                      <td className="py-4 px-6 text-slate-600">{item.month}</td>
+                      <td className="py-4 px-6 text-slate-600 text-right">
                         {item.total}
                       </td>
-                      <td className="py-4 px-6 text-gray-600">
+                      <td className="py-4 px-6 text-slate-600">
                         {item.service}
                       </td>
                     </motion.tr>
@@ -218,7 +218,7 @@ export default function Ebarimt() {
                     <td colSpan={5} className="py-20 text-center">
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <svg
-                          className="w-16 h-16 text-gray-300"
+                          className="w-16 h-16 text-slate-300"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -230,10 +230,10 @@ export default function Ebarimt() {
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                           />
                         </svg>
-                        <div className="text-gray-500 font-medium">
+                        <div className="text-slate-500 font-medium">
                           Мэдээлэл байхгүй
                         </div>
-                        <div className="text-gray-400 text-sm">
+                        <div className="text-slate-400 text-sm">
                           Шүүлтүүрийг өөрчилж үзнэ үү
                         </div>
                       </div>

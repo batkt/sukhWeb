@@ -344,13 +344,13 @@ const TulburTootsoo: React.FC = () => {
           switch (data) {
             case "turees":
               return (
-                <div className="flex items-center justify-center rounded-lg bg-green-400 px-2 py-1 dark:bg-green-700 dark:text-gray-200">
+                <div className="flex items-center justify-center rounded-lg bg-green-400 px-2 py-1 dark:bg-green-700 dark:text-slate-200">
                   Түрээс
                 </div>
               );
             case "zardal":
               return (
-                <div className="flex items-center justify-center rounded-lg bg-yellow-400 px-2 py-1 dark:bg-yellow-700 dark:text-gray-200">
+                <div className="flex items-center justify-center rounded-lg bg-yellow-400 px-2 py-1 dark:bg-yellow-700 dark:text-slate-200">
                   Зардал
                 </div>
               );
@@ -486,7 +486,7 @@ const TulburTootsoo: React.FC = () => {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         Хөнгөлөлт
       </motion.h1>
@@ -710,7 +710,7 @@ const TulburTootsoo: React.FC = () => {
                     />
                   </Form.Item>
 
-                  <div className="flex-column mt-12 grid text-base dark:text-gray-50">
+                  <div className="flex-column mt-12 grid text-base dark:text-slate-50">
                     <div className="flex justify-between">
                       Нийт талбайн тоо :<a>{tootsoolol.niitTalbai}</a>
                     </div>
@@ -761,7 +761,7 @@ const TulburTootsoo: React.FC = () => {
 
               <div className="col-span-12 md:col-span-8 xl:col-span-9 rounded-2xl bg-transparent dark:bg-gray-800/30 backdrop-blur-md p-6 overflow-auto">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-gray-800 dark:text-gray-100">
+                  <table className="w-full text-sm text-slate-800 dark:text-slate-100">
                     <thead className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm">
                       <tr>
                         <th className="border-b border-white/40 p-3 text-center">
@@ -846,7 +846,7 @@ const TulburTootsoo: React.FC = () => {
 
                 <div className="col-span-12 md:col-span-8 xl:col-span-9 rounded-2xl bg-transparent dark:bg-gray-800/30 backdrop-blur-md p-6 overflow-auto">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-gray-800 dark:text-gray-100">
+                    <table className="w-full text-sm text-slate-800 dark:text-slate-100">
                       <thead className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm">
                         <tr>
                           <th className="border-b border-white/40 p-3 text-center">

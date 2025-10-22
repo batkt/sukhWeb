@@ -110,10 +110,10 @@ function Baaz({ token }: BaazProps) {
           </div>
           <div className="p-6 flex items-center justify-between">
             <div>
-              <div className="text-gray-700   font-medium">
+              <div className="text-slate-700   font-medium">
                 {t("Системийн өгөгдөл")}
               </div>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-slate-500">
                 {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
               </p>
             </div>

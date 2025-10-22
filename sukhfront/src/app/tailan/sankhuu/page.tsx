@@ -272,7 +272,7 @@ const Chart: React.FC<ChartProps> = ({
   );
 };
 
-const Graphic: React.FC = () => {
+const Sankhuu: React.FC = () => {
   useEffect(() => {
     import("aos").then((AOS) => AOS.init({ once: true }));
   }, []);
@@ -290,4 +290,4 @@ const Graphic: React.FC = () => {
   );
 };
 
-export default Graphic;
+export default Sankhuu;

@@ -154,7 +154,7 @@ function Tokhirgoo() {
             />
             <div className="ml-4">
               <h2 className="font-medium text-lg text-slate-900">{`${ajiltan.ovog} ${ajiltan.ner}`}</h2>
-              <p className="text-gray-500 text-sm">{ajiltan.albanTushaal}</p>
+              <p className="text-slate-500 text-sm">{ajiltan.albanTushaal}</p>
             </div>
           </div>
 
@@ -166,7 +166,7 @@ function Tokhirgoo() {
                 className={`flex items-center w-full gap-3 px-4 py-2 rounded-lg text-left transition-all duration-200 ${
                   i === selectedIndex
                     ? "bg-amber-50 text-slate-900 font-semibold"
-                    : "text-gray-600 hover:bg-gray-100"
+                    : "text-slate-600 hover:bg-gray-100"
                 }`}
               >
                 {item.icon}

@@ -304,7 +304,7 @@ export default function TaskManagementSystem() {
                   <div className="font-semibold text-slate-900 text-sm">
                     {group.khariltsagchiinNer}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-slate-500">
                     {group.khariltsagchiinRegister}
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export default function TaskManagementSystem() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         Дуудлага
       </motion.h1>
@@ -437,7 +437,7 @@ export default function TaskManagementSystem() {
           <Input
             placeholder="Хайх..."
             onChange={({ target }) => setSearchTerm(target.value)}
-            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-slate-900 placeholder:text-gray-500"
+            className="!h-10 !text-base !bg-transparent !backdrop-blur-md  !text-slate-900 placeholder:text-slate-500"
           />
 
           <div className="flex-1 overflow-y-auto pr-2 mt-4">
@@ -532,18 +532,18 @@ export default function TaskManagementSystem() {
                             </Tag>
                           )}
                         </div>
-                        <div className="text-[10px] text-gray-600 font-mono bg-white/10 px-2 py-0.5 rounded-full">
+                        <div className="text-[10px] text-slate-600 font-mono bg-white/10 px-2 py-0.5 rounded-full">
                           {moment(item.createdAt).format("MM-DD HH:mm")}
                         </div>
                       </div>
 
                       {item.title && (
-                        <div className="font-semibold text-gray-700 text-sm mb-1">
+                        <div className="font-semibold text-slate-700 text-sm mb-1">
                           {item.title}
                         </div>
                       )}
                       {item.message && (
-                        <div className="text-xs text-gray-500 leading-relaxed">
+                        <div className="text-xs text-slate-500 leading-relaxed">
                           {item.message}
                         </div>
                       )}
@@ -615,10 +615,10 @@ export default function TaskManagementSystem() {
                 >
                   👋
                 </motion.div>
-                <div className="font-bold text-3xl text-gray-700 mb-3">
+                <div className="font-bold text-3xl text-slate-700 mb-3">
                   Өдрийн мэнд
                 </div>
-                <div className="text-lg text-gray-500 max-w-md">
+                <div className="text-lg text-slate-500 max-w-md">
                   Та харилцагч сонгож дэлгэрэнгүй мэдээлэл үзнэ үү
                 </div>
               </div>

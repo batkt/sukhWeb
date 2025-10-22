@@ -56,7 +56,7 @@ export default function KhyanaltFrontend() {
       <motion.h1
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         Мэдэгдэл
       </motion.h1>
@@ -75,7 +75,7 @@ export default function KhyanaltFrontend() {
             className={`flex-1 rounded-2xl px-4 py-2 font-semibold transition-all shadow-lg ${
               turul === m
                 ? "bg-bar text-white shadow-md"
-                : "bg-white/10 text-gray-700 hover:bg-white/20"
+                : "bg-white/10 text-slate-700 hover:bg-white/20"
             }`}
             onClick={() => setTurul(m as any)}
           >
@@ -90,8 +90,8 @@ export default function KhyanaltFrontend() {
           initial={{ opacity: 0, x: 0 }}
           animate={{ opacity: 1, x: 0 }}
         >
-          <h2 className="font-semibold mb-3 text-gray-700">Харилцагчид</h2>
-          <div className="max-h-[300px] overflow-y-auto space-y-3">
+          <h2 className="font-semibold mb-3 text-slate-700">Харилцагчид</h2>
+          <div className="max-h-[350px] overflow-y-auto space-y-3">
             {mockKhariltsagchid.map((mur) => {
               const isActive = khariltsagch?._id === mur._id;
 
@@ -117,7 +117,7 @@ export default function KhyanaltFrontend() {
                     <div className="font-semibold text-slate-900 text-sm">
                       {mur.ner}
                     </div>
-                    <div className="text-xs text-gray-500">{mur.utas}</div>
+                    <div className="text-xs text-slate-500">{mur.utas}</div>
                   </div>
                 </motion.div>
               );

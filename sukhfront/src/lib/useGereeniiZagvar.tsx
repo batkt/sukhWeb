@@ -19,10 +19,14 @@ export interface GereeZagvar {
   _id?: string;
   ner: string;
   tailbar?: string;
-  aguulga: string;
   turul?: string;
+  aguulga: string;
   baiguullagiinId: string;
   barilgiinId?: string;
+  zuunTolgoi?: string;
+  baruunTolgoi?: string;
+  zuunKhul?: string;
+  baruunKhul?: string;
   uusgesenOgnoo?: string;
   zasvarlasanOgnoo?: string;
   status?: string;
@@ -55,18 +59,26 @@ const fetcherJagsaalt = async ([
   string | undefined
 ]): Promise<GereeZagvarResponse> => {
   try {
+    const queryObj: any = {
+      baiguullagiinId,
+      ...query,
+    };
+
+    if (barilgiinId) {
+      queryObj.barilgiinId = barilgiinId;
+    }
+
+    if (khuudaslalt.search && khuudaslalt.search.trim() !== "") {
+      queryObj.$or = [
+        { ner: { $regex: khuudaslalt.search, $options: "i" } },
+        { tailbar: { $regex: khuudaslalt.search, $options: "i" } },
+        { turul: { $regex: khuudaslalt.search, $options: "i" } },
+      ];
+    }
+
     const response = await uilchilgee(token).get(url, {
       params: {
-        baiguullagiinId,
-        query: {
-          baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-          $or: [
-            { ner: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { tailbar: { $regex: khuudaslalt.search || "", $options: "i" } },
-          ],
-          ...query,
-        },
+        query: JSON.stringify(queryObj),
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
       },
@@ -129,6 +141,8 @@ export function useGereeniiZagvar(
     zagvarJagsaaltMutate: mutate,
     setZagvarKhuudaslalt,
     isValidating,
+    niitMur: data?.niitMur || 0,
+    niitKhuudas: data?.niitKhuudas || 0,
   };
 }
 
@@ -144,16 +158,30 @@ export function useGereeZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).post<GereeZagvarResponse>(
-        "/gereeniiZagvar",
-        {
-          ...zagvarData,
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: barilgiinId || undefined,
-        }
-      );
+      const payload: any = {
+        ner: zagvarData.ner,
+        tailbar: zagvarData.tailbar || "",
+        turul: zagvarData.turul || "",
+        aguulga: zagvarData.aguulga || "",
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        zuunTolgoi: zagvarData.zuunTolgoi || "<p></p>",
+        baruunTolgoi: zagvarData.baruunTolgoi || "<p></p>",
+        zuunKhul: zagvarData.zuunKhul || "<p></p>",
+        baruunKhul: zagvarData.baruunKhul || "<p></p>",
+      };
 
-      if (response.data.success) {
+      // Only add barilgiinId if it exists
+      if (barilgiinId) {
+        payload.barilgiinId = barilgiinId;
+      }
+
+      const response = await uilchilgee(token).post("/gereeniiZagvar", payload);
+
+      if (
+        response.data.success ||
+        response.status === 200 ||
+        response.data === "Amjilttai"
+      ) {
         toast.success(response.data.message || "Загвар амжилттай үүсгэгдлээ");
         return true;
       }
@@ -174,15 +202,38 @@ export function useGereeZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).put<GereeZagvarResponse>(
+      const payload: any = {
+        _id: id,
+        ner: zagvarData.ner,
+        tailbar: zagvarData.tailbar || "",
+        turul: zagvarData.turul || "",
+        aguulga: zagvarData.aguulga || "",
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        zuunTolgoi: zagvarData.zuunTolgoi || "<p></p>",
+        baruunTolgoi: zagvarData.baruunTolgoi || "<p></p>",
+        zuunKhul: zagvarData.zuunKhul || "<p></p>",
+        baruunKhul: zagvarData.baruunKhul || "<p></p>",
+      };
+
+      if (zagvarData.barilgiinId) {
+        payload.barilgiinId = zagvarData.barilgiinId;
+      } else if (barilgiinId) {
+        payload.barilgiinId = barilgiinId;
+      }
+
+      console.log("Sending update payload:", payload);
+      console.log("Update URL:", `/gereeniiZagvar/${id}`);
+
+      const response = await uilchilgee(token).put(
         `/gereeniiZagvar/${id}`,
-        {
-          ...zagvarData,
-          baiguullagiinId: ajiltan.baiguullagiinId,
-        }
+        payload
       );
 
-      if (response.data.success) {
+      if (
+        response.data.success ||
+        response.status === 200 ||
+        response.data === "Amjilttai"
+      ) {
         toast.success(response.data.message || "Загвар амжилттай засагдлаа");
         return true;
       }
@@ -200,16 +251,17 @@ export function useGereeZagvarCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).delete<GereeZagvarResponse>(
-        `/gereeniiZagvar/${id}`,
-        {
-          data: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-          },
-        }
-      );
+      const response = await uilchilgee(token).delete(`/gereeniiZagvar/${id}`, {
+        data: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+        },
+      });
 
-      if (response.data.success) {
+      if (
+        response.data.success ||
+        response.status === 200 ||
+        response.data === "Amjilttai"
+      ) {
         toast.success(response.data.message || "Загвар амжилттай устгагдлаа");
         return true;
       }
@@ -226,5 +278,3 @@ export function useGereeZagvarCRUD() {
     zagvarUstgakh,
   };
 }
-
-export default useGereeniiZagvar;

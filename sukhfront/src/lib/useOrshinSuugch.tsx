@@ -17,10 +17,13 @@ interface OrshinSuugch {
   _id?: string;
   id?: number;
   ner: string;
+  davkhar: string;
   ovog: string;
   register?: string;
   utas?: string;
+  soh?: string;
   email?: string;
+  turul?: string;
   khayag?: string;
   nevtrekhNer?: string;
   tuluv?: string;
@@ -36,19 +39,25 @@ const fetcherJagsaalt = async ([
   query,
 ]: [string, string, string | number, Khuudaslalt, Query]): Promise<any> => {
   try {
+    const filter: any = {
+      baiguullagiinId,
+      ...query,
+    };
+
+    if (khuudaslalt.search) {
+      filter.$or = [
+        { ner: { $regex: khuudaslalt.search, $options: "i" } },
+        { ovog: { $regex: khuudaslalt.search, $options: "i" } },
+        { register: { $regex: khuudaslalt.search, $options: "i" } },
+        { utas: { $regex: khuudaslalt.search, $options: "i" } },
+        { turul: { $regex: khuudaslalt.search, $options: "i" } },
+        { email: { $regex: khuudaslalt.search, $options: "i" } },
+      ];
+    }
+
     const response = await uilchilgee(token).get(url, {
       params: {
-        query: {
-          baiguullagiinId,
-          $or: [
-            { ner: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { ovog: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { register: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { utas: { $regex: khuudaslalt.search || "", $options: "i" } },
-            { email: { $regex: khuudaslalt.search || "", $options: "i" } },
-          ],
-          ...query,
-        },
+        query: filter,
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
       },

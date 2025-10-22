@@ -256,7 +256,7 @@ function AnketiinZagvar({
     >
       <div
         key={a._id as string}
-        className="flex w-full cursor-pointer items-center justify-between rounded-xl  bg-secondary bg-opacity-5 p-2 shadow-lg dark:text-gray-200 md:block lg:flex"
+        className="flex w-full cursor-pointer items-center justify-between rounded-xl  bg-secondary bg-opacity-5 p-2 shadow-lg dark:text-slate-200 md:block lg:flex"
       >
         <div>{a.ner as string}</div>
         <div className="flex justify-end gap-2">
@@ -360,7 +360,7 @@ function AnketiinZagvar({
               className={`absolute -bottom-1 right-2 transition-all ${
                 khariult.jagsaalt.length > 0
                   ? "font-medium text-pink-500"
-                  : "text-gray-400"
+                  : "text-slate-400"
               }`}
             >
               {khariult.jagsaalt.length}
@@ -451,7 +451,7 @@ export default function Page() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         {"Анкетын асуулга бэлтгэх"}
       </motion.h1>
@@ -465,7 +465,7 @@ export default function Page() {
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className="font-medium dark:text-gray-100">
+            <span className="font-medium dark:text-slate-100">
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
@@ -510,7 +510,7 @@ export default function Page() {
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className="font-medium dark:text-gray-100 lg:px-5">
+            <span className="font-medium dark:text-slate-100 lg:px-5">
               {t("Анкетын загвар үүсгэх")}
             </span>
             <Form
@@ -609,10 +609,10 @@ export default function Page() {
             className="relative col-span-5 block h-full overflow-y-auto rounded-lg pt-3 dark:bg-gray-900 shadow-md backdrop-blur-sm"
             style={{ height: "calc( 100vh - 8rem)" }}
           >
-            <header className="border-b border-gray-300 pb-5 font-medium dark:text-gray-100 lg:px-5">
+            <header className="border-b border-gray-300 pb-5 font-medium dark:text-slate-100 lg:px-5">
               {t("Анкет харах хэсэг")}
             </header>
-            <header className="border-b border-gray-300 px-6 py-1 text-xl font-medium uppercase text-gray-400 text-opacity-40 dark:text-white dark:text-opacity-40">
+            <header className="border-b border-gray-300 px-6 py-1 text-xl font-medium uppercase text-slate-400 text-opacity-40 dark:text-white dark:text-opacity-40">
               {(data?.ner as string) || t("Анкетын загварын нэр")}
             </header>
             <Form
@@ -628,13 +628,16 @@ export default function Page() {
                   <>
                     <div className="flex flex-col">
                       {fields.map(({ key, name, ...restField }) => (
-                        <div className="px-6 pb-3 dark:text-gray-300" key={key}>
+                        <div
+                          className="px-6 pb-3 dark:text-slate-300"
+                          key={key}
+                        >
                           <div className="flex gap-1 text-base">
                             <p className="font-medium">{name + 1}.</p>
                             {!!data?.asuultuud &&
                               (data.asuultuud as any)[name]?.asuult}
                           </div>
-                          <div className="flex flex-wrap gap-2 py-2 dark:text-gray-200 sm:px-10">
+                          <div className="flex flex-wrap gap-2 py-2 dark:text-slate-200 sm:px-10">
                             <Form.Item
                               {...restField}
                               hidden
@@ -671,7 +674,7 @@ export default function Page() {
                                         <Radio
                                           key={i}
                                           value={a}
-                                          className="dark:text-gray-200"
+                                          className="dark:text-slate-200"
                                         >
                                           {a}
                                         </Radio>

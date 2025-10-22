@@ -95,7 +95,6 @@ export function useAjiltniiJagsaalt(
     search: "",
   });
 
-  // More strict validation
   const shouldFetch =
     !!token &&
     !!baiguullagiinId &&

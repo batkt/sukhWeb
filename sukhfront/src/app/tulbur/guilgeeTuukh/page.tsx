@@ -44,7 +44,7 @@ export default function DansniiKhuulga() {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         Гүйлгээний түүх
       </motion.h1>
@@ -69,7 +69,7 @@ export default function DansniiKhuulga() {
                 <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {stat.value}
                 </div>
-                <div className="text-xs text-gray-600 leading-tight">
+                <div className="text-xs text-slate-600 leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -110,7 +110,7 @@ export default function DansniiKhuulga() {
                 onClick={exceleerTatya}
                 type="primary"
                 size="large"
-                className="flex-1 md:flex-none rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                className="flex-1 md:flex-none rounded-xl bg-slate-900 text-white shadow-md hover:shadow-lg transition-all duration-300"
               >
                 {t("Excel татах")}
               </Button>
@@ -128,19 +128,19 @@ export default function DansniiKhuulga() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-white">
-                  <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">
                     №
                   </th>
-                  <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">
                     Огноо
                   </th>
-                  <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">
                     Тайлант сар
                   </th>
-                  <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">
                     Дүн
                   </th>
-                  <th className="text-left py-4 px-4 font-semibold text-gray-700">
+                  <th className="text-left py-4 px-4 font-semibold text-slate-700">
                     Үйлчилгээ
                   </th>
                 </tr>
@@ -152,13 +152,15 @@ export default function DansniiKhuulga() {
                       key={item.id}
                       className="border-b border-white hover:shadow transition-colors"
                     >
-                      <td className="py-4 px-4 text-gray-900">{index + 1}</td>
-                      <td className="py-4 px-4 text-gray-600">{item.date}</td>
-                      <td className="py-4 px-4 text-gray-600">{item.month}</td>
-                      <td className="py-4 px-4 text-gray-600 text-right">
+                      <td className="py-4 px-4 text-slate-900">{index + 1}</td>
+                      <td className="py-4 px-4 text-slate-600">{item.date}</td>
+                      <td className="py-4 px-4 text-slate-600">{item.month}</td>
+                      <td className="py-4 px-4 text-slate-600 text-right">
                         {item.total}
                       </td>
-                      <td className="py-4 px-4 text-gray-600">{item.action}</td>
+                      <td className="py-4 px-4 text-slate-600">
+                        {item.action}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -166,7 +168,7 @@ export default function DansniiKhuulga() {
                     <td colSpan={5} className="py-20 text-center">
                       <div className="flex flex-col items-center justify-center space-y-3">
                         <svg
-                          className="w-16 h-16 text-gray-300"
+                          className="w-16 h-16 text-slate-300"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -178,10 +180,10 @@ export default function DansniiKhuulga() {
                             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                           />
                         </svg>
-                        <div className="text-gray-500 font-medium">
+                        <div className="text-slate-500 font-medium">
                           Мэдээлэл байхгүй
                         </div>
-                        <div className="text-gray-400 text-sm">
+                        <div className="text-slate-400 text-sm">
                           Шүүлтүүрийг өөрчилж үзнэ үү
                         </div>
                       </div>

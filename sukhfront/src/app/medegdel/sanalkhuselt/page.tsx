@@ -182,7 +182,7 @@ export default function SanalKhuselt() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
       >
         {t("Санал хүсэлт")}
       </motion.h1>
@@ -224,7 +224,7 @@ export default function SanalKhuselt() {
           <div className="flex-1 overflow-y-auto pr-2 mt-2 space-y-2">
             {KhariltsagchiinMedeelel.jagsaalt.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <div className="text-center p-4 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200 text-gray-600">
+                <div className="text-center p-4 rounded-2xl bg-transparent backdrop-blur-xl border border-gray-200 text-slate-600">
                   {t("Өгөгдөл олдсонгүй")}
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function SanalKhuselt() {
                             <div className="font-semibold text-slate-900 text-xs">
                               {mur.ner}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-slate-500">
                               {mur.utas}
                             </div>
                           </div>
@@ -355,7 +355,7 @@ export default function SanalKhuselt() {
               </div>
             </div>
           ) : (
-            <div className="text-gray-500">{t("Санал хүсэлт сонгоно уу")}</div>
+            <div className="text-slate-500">{t("Санал хүсэлт сонгоно уу")}</div>
           )}
         </motion.div>
       </div>

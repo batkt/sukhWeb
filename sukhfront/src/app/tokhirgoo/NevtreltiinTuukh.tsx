@@ -78,7 +78,6 @@ export default function NevtreltiinTuukh({
   ) => {
     if (dates && dates[0] && dates[1]) {
       setDateRange([dates[0], dates[1]]);
-   
     }
   };
 
@@ -112,7 +111,7 @@ export default function NevtreltiinTuukh({
   return (
     <div className="overflow-x-auto bg-transparent rounded-2xl shadow-lg p-2">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold border-b border-b-gray-300 text-gray-800 pb-4">
+        <h2 className="text-lg font-semibold border-b border-b-gray-300 text-slate-800 pb-4">
           {t("Нэвтрэлтийн түүх")}
         </h2>
         <DatePicker.RangePicker value={dateRange} onChange={handleDateChange} />
@@ -124,7 +123,7 @@ export default function NevtreltiinTuukh({
             {columns.map((col) => (
               <th
                 key={col.title as string}
-                className="py-3 px-4 font-semibold text-gray-700"
+                className="py-3 px-4 font-semibold text-slate-700"
               >
                 {col.title as string}
               </th>

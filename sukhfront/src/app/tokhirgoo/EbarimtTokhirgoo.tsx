@@ -16,7 +16,7 @@ export default function EbarimtTokhirgoo() {
 
       <div className="space-y-6 max-w-md pt-5">
         <div className="flex items-center justify-between">
-          <span className="text-gray-700 font-medium">И-Баримт 3.0 эсэх</span>
+          <span className="text-slate-700 font-medium">И-Баримт 3.0 эсэх</span>
           <button
             onClick={() => setEbarimt3(!ebarimt3)}
             className={`w-12 h-6 flex items-center rounded-full p-1 duration-300 ease-in-out ${
@@ -32,7 +32,7 @@ export default function EbarimtTokhirgoo() {
         </div>
 
         <div className="flex items-center justify-between">
-          <span className="text-gray-700 font-medium">НӨАТ төлөх эсэх</span>
+          <span className="text-slate-700 font-medium">НӨАТ төлөх эсэх</span>
           <button
             onClick={() => setVat(!vat)}
             className={`w-12 h-6 flex items-center rounded-full p-1 duration-300 ease-in-out ${
@@ -48,7 +48,7 @@ export default function EbarimtTokhirgoo() {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">
+          <label className="block text-slate-700 font-medium mb-1">
             ТИН дугаар
           </label>
           <input
@@ -59,7 +59,9 @@ export default function EbarimtTokhirgoo() {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Дүүрэг</label>
+          <label className="block text-slate-700 font-medium mb-1">
+            Дүүрэг
+          </label>
           <input
             type="text"
             placeholder="Дүүрэг"
@@ -68,7 +70,7 @@ export default function EbarimtTokhirgoo() {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-medium mb-1">Хороо</label>
+          <label className="block text-slate-700 font-medium mb-1">Хороо</label>
           <input
             type="text"
             placeholder="Хороо"

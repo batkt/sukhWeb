@@ -67,13 +67,13 @@ export default function Tailan() {
           <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
-          <p className="text-xl md:text-2xl text-gray-600 font-medium">
+          <p className="text-xl md:text-2xl text-slate-600 font-medium">
             Aналитик тайлангийн шинэ функцууд
           </p>
         </div>
 
         <div className="mt-8 w-full max-w-md mx-auto">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+          <div className="flex items-center justify-between text-sm text-slate-600 mb-2">
             <span>Хөгжүүлэлт</span>
             <span>65%</span>
           </div>
