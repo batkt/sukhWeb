@@ -33,8 +33,30 @@ export default function Tailan() {
     });
   };
 
+  // Scoped styles to ignore theme and render on white
+  const LocalStyles = () => (
+    <style jsx global>{`
+      .no-theme-scope {
+        --panel-text: #0f172a;
+        --btn-text: #0f172a;
+        --btn-bg: #ffffff;
+        --btn-border: rgba(15, 23, 42, 0.12);
+        --surface-bg: #ffffff;
+        --surface-border: rgba(15, 23, 42, 0.12);
+        color: #0f172a !important;
+        background: #ffffff !important;
+      }
+      .no-theme-scope *,
+      .no-theme-scope
+        :where(th, td, p, span, div, button, input, select, label) {
+        color: #0f172a !important;
+      }
+    `}</style>
+  );
+
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="min-h-[80vh] flex flex-col items-center justify-center relative overflow-hidden no-theme-scope">
+      <LocalStyles />
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-full blur-xl animate-pulse"></div>

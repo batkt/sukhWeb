@@ -251,7 +251,7 @@ const Chart: React.FC<ChartProps> = ({
       <div className="flex flex-col items-center space-y-2">
         <div className="table w-full">
           {tailanGaralt.jagsaalt.map((a) => (
-            <div key={a.ner} className="table-row rounded-md font-normal">
+            <div key={a.ner} className="table-row rounded-2xl font-normal">
               <div className="table-cell w-1/12 p-1">{t(a.ner)}</div>
               <div className="table-cell w-9/12 p-1">
                 <Progress

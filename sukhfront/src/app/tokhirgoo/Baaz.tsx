@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { DownloadOutlined } from "@ant-design/icons";
-import { Button, DatePicker, Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Button, DatePicker } from "antd";
 import type { Dayjs } from "dayjs";
 import locale from "antd/lib/date-picker/locale/mn_MN";
 import { t } from "i18next";
@@ -35,52 +34,7 @@ function Baaz({ token }: BaazProps) {
     niit: 2,
   };
 
-  const columns: ColumnsType<BackItem> = useMemo(
-    () => [
-      {
-        title: "№",
-        width: 60,
-        align: "center",
-        render: (_, __, index) => (
-          <div className="bg-transparent">
-            {(backAwsanTuukh.khuudasniiDugaar - 1) *
-              backAwsanTuukh.khuudasniiKhemjee +
-              index +
-              1}
-          </div>
-        ),
-      },
-      {
-        title: t("Огноо"),
-        dataIndex: "ognoo",
-        align: "center",
-        render: (value: string | Date) => (
-          <div className="bg-transparent">
-            {value ? new Date(value).toLocaleString() : ""}
-          </div>
-        ),
-      },
-      {
-        title: t("Ажилтан"),
-        dataIndex: "ajiltniiNer",
-        align: "center",
-        render: (value: string) => <div className="transparent">{value}</div>,
-      },
-      {
-        title: t("Хэмжээ"),
-        dataIndex: "khemjee",
-        align: "center",
-        render: (value: number) => (
-          <div className="transparent">
-            <span className="font-medium text-blue-600">
-              {formatNumber(value)} MB
-            </span>
-          </div>
-        ),
-      },
-    ],
-    [backAwsanTuukh]
-  );
+  // Columns are rendered in a semantic table below
 
   function backTatya() {
     setLoading(true);
@@ -104,16 +58,21 @@ function Baaz({ token }: BaazProps) {
   return (
     <div className="grid grid-cols-12 gap-6 mt-6 ">
       <div className="col-span-12 lg:col-span-5 xl:col-span-4">
-        <div className="bg-transparent   shadow-md rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-amber-200   flex items-center justify-between">
-            <h2 className="text-lg font-semibold">{t("Мэдээллийн сан")}</h2>
+        <div className="bg-transparent shadow-md rounded-xl overflow-hidden">
+          <div
+            className="px-6 py-4 border-b flex items-center justify-between"
+            style={{ borderColor: "var(--surface-border)" }}
+          >
+            <h2 className="text-lg font-semibold text-theme">
+              {t("Мэдээллийн сан")}
+            </h2>
           </div>
           <div className="p-6 flex items-center justify-between">
             <div>
-              <div className="text-slate-700   font-medium">
+              <div className="text-theme font-medium">
                 {t("Системийн өгөгдөл")}
               </div>
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-theme opacity-70">
                 {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
               </p>
             </div>
@@ -130,33 +89,54 @@ function Baaz({ token }: BaazProps) {
       </div>
 
       <div className="col-span-12 lg:col-span-7 xl:col-span-8">
-        <div className="bg-transparent   shadow-md rounded-xl overflow-hidden">
-          <div className="px-6   border-amber-200   flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <h2 className="text-lg font-semibold">{t("Татсан түүх")}</h2>
+        <div className="bg-transparent shadow-md rounded-xl overflow-hidden">
+          <div
+            className="px-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b"
+            style={{ borderColor: "var(--surface-border)" }}
+          >
+            <h2 className="text-lg font-semibold text-theme">
+              {t("Татсан түүх")}
+            </h2>
             <DatePicker.RangePicker
               locale={locale}
               value={ognoo}
               onChange={(dates) => setOgnoo(dates)}
-              className="w-full md:w-auto bg-transparent"
+              className="w-full md:w-auto bg-transparent "
             />
           </div>
-          <div className="p-6 ">
-            <div className="p-6 bg-transparent">
-              <Table
-                bordered={false}
-                size="middle"
-                dataSource={backAwsanTuukh.jagsaalt}
-                columns={columns}
-                rowKey="_id"
-                pagination={{
-                  current: backAwsanTuukh.khuudasniiDugaar,
-                  pageSize: backAwsanTuukh.khuudasniiKhemjee,
-                  total: backAwsanTuukh.niit,
-                  showSizeChanger: true,
-                }}
-                rowClassName={() => "bg-black"}
-              />
-            </div>
+
+          <div className="table-surface neu-table custom-scrollbar p-2">
+            <table className="table-ui w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th className="text-center">№</th>
+                  <th className="text-center">{t("Огноо")}</th>
+                  <th className="text-center">{t("Ажилтан")}</th>
+                  <th className="text-center">{t("Хэмжээ")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {backAwsanTuukh.jagsaalt.map((row, index) => (
+                  <tr key={row._id}>
+                    <td className="text-center">
+                      {(backAwsanTuukh.khuudasniiDugaar - 1) *
+                        backAwsanTuukh.khuudasniiKhemjee +
+                        index +
+                        1}
+                    </td>
+                    <td className="text-center">
+                      {row.ognoo ? new Date(row.ognoo).toLocaleString() : ""}
+                    </td>
+                    <td className="text-center">{row.ajiltniiNer}</td>
+                    <td className="text-center">
+                      <span className="font-medium text-blue-600">
+                        {formatNumber(row.khemjee)} MB
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

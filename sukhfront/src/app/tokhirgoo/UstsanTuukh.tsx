@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { Card, Table, Button, Select, DatePicker } from "antd";
+import { Card, Button, Select, DatePicker } from "antd";
 import { EyeOutlined, FileExcelOutlined } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
 
@@ -15,7 +15,10 @@ const Admin: React.FC<{ children: React.ReactNode; title?: string }> = ({
 }) => (
   <div>
     {title && (
-      <h1 className="text-lg font-semibold mb-4 border border-b border-b-gray-300 pb-7">
+      <h1
+        className="text-lg font-semibold mb-4 pb-7 text-theme border-b"
+        style={{ borderColor: "var(--surface-border)" }}
+      >
         {title}
       </h1>
     )}
@@ -115,56 +118,7 @@ export default function UstsanTuukh() {
 
   const combinedData = ustsanBarimt.jagsaalt;
 
-  const columns = useMemo(() => {
-    return [
-      {
-        title: t("Устгасан огноо"),
-        dataIndex: "createdAt",
-        align: "center" as const,
-        render: (data: Dayjs) => data.format("YYYY-MM-DD HH:mm"),
-      },
-      {
-        title: t("Төрөл"),
-        dataIndex: "class",
-        align: "left" as const,
-      },
-      {
-        title: t("Устгасан шалтгаан"),
-        dataIndex: "tailbar",
-        align: "left" as const,
-      },
-      {
-        title: t("Төлсөн дүн"),
-        align: "right" as const,
-        render: (row: TableRow) => (
-          <div
-            className={`${
-              row.object.tulsunDun > 0 ? "text-green-600" : "text-red-500"
-            }`}
-          >
-            {row.object.tulsunDun}
-          </div>
-        ),
-      },
-      {
-        title: t("Хийсэн"),
-        align: "left" as const,
-        render: (row: TableRow) => row.guilgeeKhiisenAjiltniiNer,
-      },
-      {
-        title: t("Үзэх"),
-        align: "center" as const,
-        render: (row: TableRow) => (
-          <Button
-            icon={<EyeOutlined />}
-            onClick={() => {
-              alert("Дэлгэрэнгүй мэдээлэл");
-            }}
-          />
-        ),
-      },
-    ];
-  }, []);
+  // Columns replaced by semantic table below
 
   const ognooShuultOnChange = (
     dates: (Dayjs | null)[] | null,
@@ -179,14 +133,19 @@ export default function UstsanTuukh() {
 
   return (
     <Admin title="Устгасан түүх">
-      <Card>
+      <Card className="bg-transparent">
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <RangePicker value={shuukhOgnoo} onChange={ognooShuultOnChange} />
+          <RangePicker
+            value={shuukhOgnoo}
+            onChange={ognooShuultOnChange}
+            className="text-slate-900"
+          />
 
           <Select
             placeholder={t("Ажилтан")}
             style={{ width: 120 }}
             onChange={setAjiltankhaikh}
+            className="text-slate-900"
             allowClear
           >
             <Select.Option value="1">Ажилтан 1</Select.Option>
@@ -196,6 +155,7 @@ export default function UstsanTuukh() {
             placeholder={t("Төрөл")}
             style={{ width: 120 }}
             onChange={setTurul}
+            className="text-slate-900"
             allowClear
           >
             {turluud.map((a) => (
@@ -205,11 +165,49 @@ export default function UstsanTuukh() {
             ))}
           </Select>
         </div>
-        <Table<TableRow>
-          columns={columns}
-          dataSource={combinedData}
-          rowKey={(row) => row._id}
-        />
+        <div className="table-surface neu-table custom-scrollbar">
+          <table className="table-ui w-full text-left">
+            <thead>
+              <tr>
+                <th className="text-center">{t("Устгасан огноо")}</th>
+                <th>{t("Төрөл")}</th>
+                <th>{t("Устгасан шалтгаан")}</th>
+                <th className="text-right">{t("Төлсөн дүн")}</th>
+                <th>{t("Хийсэн")}</th>
+                <th className="text-center">{t("Үзэх")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {combinedData.map((row: TableRow) => (
+                <tr key={row._id}>
+                  <td className="text-center">
+                    {row.createdAt.format("YYYY-MM-DD HH:mm")}
+                  </td>
+                  <td>{row.class}</td>
+                  <td>{row.tailbar}</td>
+                  <td
+                    className={`text-right ${
+                      row.object.tulsunDun > 0
+                        ? "text-green-600"
+                        : "text-red-500"
+                    }`}
+                  >
+                    {row.object.tulsunDun}
+                  </td>
+                  <td>{row.guilgeeKhiisenAjiltniiNer}</td>
+                  <td className="text-center">
+                    <Button
+                      icon={<EyeOutlined />}
+                      onClick={() => {
+                        alert("Дэлгэрэнгүй мэдээлэл");
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <div className="md:hidden">
           <CardList jagsaalt={combinedData} Component={UstsanTuukhTile} />
         </div>

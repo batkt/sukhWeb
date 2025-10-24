@@ -166,7 +166,7 @@ export function useGereeCRUD() {
 
     try {
       const response = await uilchilgee(token).post<GereeResponse>(
-        "/gereeUusgey",
+        "/geree",
         {
           ...gereeData,
           baiguullagiinId: ajiltan.baiguullagiinId,

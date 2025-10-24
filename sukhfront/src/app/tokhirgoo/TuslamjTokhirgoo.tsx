@@ -27,14 +27,14 @@ export default function TuslamjTokhirgoo() {
         <a
           href="/manuals/suh-manual.pdf"
           target="_blank"
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition shadow"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-3xl bg-blue-600 text-white hover:bg-blue-700 transition shadow"
         >
           <FileText className="w-5 h-5" /> PDF татах
         </a>
         <a
           href="/manuals/suh-manual.pptx"
           target="_blank"
-          className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 transition shadow"
+          className="flex items-center justify-center gap-2 px-6 py-3 rounded-3xl bg-green-600 text-white hover:bg-green-700 transition shadow"
         >
           <FileSpreadsheet className="w-5 h-5" /> PPT татах
         </a>

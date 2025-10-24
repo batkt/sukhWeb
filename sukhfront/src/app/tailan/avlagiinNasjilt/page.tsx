@@ -245,12 +245,12 @@ const AvlagiinNasjilt: React.FC = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+          className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
         >
           Нэгтгэл
         </motion.h1>
 
-        <div className="p-4 rounded-lg shadow mb-4 flex flex-wrap gap-4 items-center">
+        <div className="p-4 rounded-2xl shadow mb-4 flex flex-wrap gap-4 items-center">
           <div className="flex gap-2 items-center">
             <Calendar className="w-5 h-5 text-slate-500" />
             <input
@@ -359,160 +359,144 @@ const AvlagiinNasjilt: React.FC = () => {
           </div>
         </div>
 
-        <div
-          className="overflow-hidden rounded-2xl border border-white/30  backdrop-blur-md shadow-xl"
-          style={{ maxHeight: "calc(100vh - 250px)" }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-slate-800 border-collapse">
-              <thead className="backdrop-blur-sm">
-                <tr>
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center"
-                  >
-                    №
-                  </th>
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center min-w-[120px]"
-                  >
-                    Регистер/ТИН
-                  </th>
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center min-w-[150px]"
-                  >
-                    Харилцагч нэр
-                  </th>
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center min-w-[100px]"
-                  >
-                    Талбайн хэмжээ
-                  </th>
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center min-w-[100px]"
-                  >
-                    Түрээс үнэ
-                  </th>
-                  {additionalColumns.map((colKey) => {
-                    const col = availableColumns.find((c) => c.key === colKey);
-                    return (
-                      <th
-                        key={colKey}
-                        rowSpan={2}
-                        className="border-b border-white/40 p-3 text-center min-w-[100px]"
-                      >
-                        {col?.label}
-                      </th>
-                    );
-                  })}
-                  {months.map((month) => (
-                    <th
-                      key={month}
-                      colSpan={services.filter((s) => s.ognoo === month).length}
-                      className="border-b border-white/40 p-3 text-center"
-                    >
-                      {month}
+        <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
+          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+            <div
+              className="custom-scrollbar w-full"
+              style={{ maxHeight: "calc(100vh - 250px)", overflowY: "auto" }}
+            >
+              <table className="table-ui text-sm min-w-full">
+                <thead>
+                  <tr className="text-theme">
+                    <th rowSpan={2} className="p-3 text-center">
+                      №
                     </th>
-                  ))}
-                  <th
-                    rowSpan={2}
-                    className="border-b border-white/40 p-3 text-center min-w-[100px]"
-                  >
-                    Нийт
-                  </th>
-                </tr>
-                <tr>
-                  {services.map((service, idx) => (
-                    <th
-                      key={idx}
-                      className="border-b border-white/40 p-3 text-center min-w-[120px]"
-                    >
-                      {service.tailbar}
+                    <th rowSpan={2} className="p-3 text-center min-w-[120px]">
+                      Регистер/ТИН
                     </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-white/20">
-                {filteredData.map((item, idx) => (
-                  <tr
-                    key={item._id._id}
-                    className="hover:bg-white/20 transition-colors"
-                  >
-                    <td className="p-3 text-center">{idx + 1}</td>
-                    <td className="p-3 text-center">{item._id.register}</td>
-                    <td className="p-3 text-center">{item._id.ner}</td>
-                    <td className="p-3 text-right">
-                      {formatNumber(item._id.talbainKhemjee, 2)}
-                    </td>
-                    <td className="p-3 text-right">
-                      {formatNumber(item._id.talbainNegjUne, 2)}
-                    </td>
-
-                    {additionalColumns.map((colKey) => (
-                      <td key={colKey} className="p-3 text-center">
-                        {colKey === "gereeniiOgnoo" && item._id.gereeniiOgnoo
-                          ? item._id.gereeniiOgnoo.substring(0, 10)
-                          : colKey === "utas" && item._id.utas
-                          ? item._id.utas.join(", ")
-                          : item._id[colKey as keyof Customer] || ""}
-                      </td>
-                    ))}
-
-                    {services.map((service, sIdx) => {
-                      const avlaga = item.avlaga.filter(
-                        (a) =>
-                          a.ognoo.substring(0, 7) === service.ognoo &&
-                          a.tailbar === service.tailbar
-                      );
-                      const sum = avlaga.reduce(
-                        (acc, a) => acc + a.tulukhDun,
-                        0
+                    <th rowSpan={2} className="p-3 text-center min-w-[150px]">
+                      Харилцагч нэр
+                    </th>
+                    <th rowSpan={2} className="p-3 text-center min-w-[100px]">
+                      Талбайн хэмжээ
+                    </th>
+                    <th rowSpan={2} className="p-3 text-center min-w-[100px]">
+                      Түрээс үнэ
+                    </th>
+                    {additionalColumns.map((colKey) => {
+                      const col = availableColumns.find(
+                        (c) => c.key === colKey
                       );
                       return (
-                        <td key={sIdx} className="p-3 text-right">
-                          {sum > 0 ? formatNumber(sum) : ""}
+                        <th
+                          key={colKey}
+                          rowSpan={2}
+                          className="p-3 text-center min-w-[100px]"
+                        >
+                          {col?.label}
+                        </th>
+                      );
+                    })}
+                    {months.map((month) => (
+                      <th
+                        key={month}
+                        colSpan={
+                          services.filter((s) => s.ognoo === month).length
+                        }
+                        className="p-3 text-center"
+                      >
+                        {month}
+                      </th>
+                    ))}
+                    <th rowSpan={2} className="p-3 text-center min-w-[100px]">
+                      Нийт
+                    </th>
+                  </tr>
+                  <tr className="text-theme">
+                    {services.map((service, idx) => (
+                      <th key={idx} className="p-3 text-center min-w-[120px]">
+                        {service.tailbar}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredData.map((item, idx) => (
+                    <tr
+                      key={item._id._id}
+                      className="transition-colors border-b last:border-b-0"
+                    >
+                      <td className="p-3 text-center">{idx + 1}</td>
+                      <td className="p-3 text-center">{item._id.register}</td>
+                      <td className="p-3 text-center">{item._id.ner}</td>
+                      <td className="p-3 text-right">
+                        {formatNumber(item._id.talbainKhemjee, 2)}
+                      </td>
+                      <td className="p-3 text-right">
+                        {formatNumber(item._id.talbainNegjUne, 2)}
+                      </td>
+
+                      {additionalColumns.map((colKey) => (
+                        <td key={colKey} className="p-3 text-center">
+                          {colKey === "gereeniiOgnoo" && item._id.gereeniiOgnoo
+                            ? item._id.gereeniiOgnoo.substring(0, 10)
+                            : colKey === "utas" && item._id.utas
+                            ? item._id.utas.join(", ")
+                            : item._id[colKey as keyof Customer] || ""}
+                        </td>
+                      ))}
+
+                      {services.map((service, sIdx) => {
+                        const avlaga = item.avlaga.filter(
+                          (a) =>
+                            a.ognoo.substring(0, 7) === service.ognoo &&
+                            a.tailbar === service.tailbar
+                        );
+                        const sum = avlaga.reduce(
+                          (acc, a) => acc + a.tulukhDun,
+                          0
+                        );
+                        return (
+                          <td key={sIdx} className="p-3 text-right">
+                            {sum > 0 ? formatNumber(sum) : ""}
+                          </td>
+                        );
+                      })}
+
+                      <td className="p-3 text-right font-semibold">
+                        {formatNumber(item.niitTulukhDun, 2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="font-semibold">
+                    <td colSpan={3} className="p-3">
+                      Нийт
+                    </td>
+                    <td className="p-3 text-right">
+                      {formatNumber(totals.talbainKhemjee, 2)}
+                    </td>
+                    <td
+                      className="p-3"
+                      colSpan={additionalColumns.length + 1}
+                    ></td>
+                    {services.map((service, idx) => {
+                      const key = `${service.ognoo}-${service.tailbar}`;
+                      return (
+                        <td key={idx} className="p-3 text-right">
+                          {formatNumber(totals.services.get(key) || 0)}
                         </td>
                       );
                     })}
-
-                    <td className="p-3 text-right font-semibold">
-                      {formatNumber(item.niitTulukhDun, 2)}
+                    <td className="p-3 text-right">
+                      {formatNumber(totals.total, 2)}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-
-              <tfoot className="backdrop-blur-sm font-semibold">
-                <tr>
-                  <td colSpan={3} className="p-3">
-                    Нийт
-                  </td>
-                  <td className="p-3 text-right">
-                    {formatNumber(totals.talbainKhemjee, 2)}
-                  </td>
-                  <td
-                    className="p-3"
-                    colSpan={additionalColumns.length + 1}
-                  ></td>
-                  {services.map((service, idx) => {
-                    const key = `${service.ognoo}-${service.tailbar}`;
-                    return (
-                      <td key={idx} className="p-3 text-right">
-                        {formatNumber(totals.services.get(key) || 0)}
-                      </td>
-                    );
-                  })}
-                  <td className="p-3 text-right">
-                    {formatNumber(totals.total, 2)}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
+                </tfoot>
+              </table>
+            </div>
           </div>
         </div>
       </div>

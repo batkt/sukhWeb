@@ -28,7 +28,7 @@ import {
 import type { TableColumnsType } from "antd";
 import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
-
+const { RangePicker } = DatePicker;
 interface GereeData {
   _id: string;
   ner: string;
@@ -71,7 +71,7 @@ const TulburTootsoo: React.FC = () => {
     dayjs(),
     dayjs(),
   ]);
-  const formRef = useRef<any>();
+  const formRef = useRef<any>(null);
   const [songogdsonGereenuud, setSongogdsonGereenuud] = useState<GereeData[]>(
     []
   );
@@ -132,7 +132,66 @@ const TulburTootsoo: React.FC = () => {
       },
     ],
   };
-
+  const LocalStyles = () => (
+    <style jsx global>{`
+      /* Scope all overrides so they don't affect other pages */
+      .no-theme-scope {
+        /* Force light/neutral tokens within this scope */
+        --panel-text: #0f172a;
+        --btn-text: #0f172a;
+        --btn-bg: #ffffff;
+        --btn-bg-hover: #f8fafc;
+        --btn-bg-active: #f1f5f9;
+        --btn-border: rgba(15, 23, 42, 0.12);
+        --surface-bg: #ffffff;
+        --surface-border: rgba(15, 23, 42, 0.12);
+        --glass-tint: #ffffff;
+        --glass-tint-2: #ffffff;
+        --glass-border: rgba(15, 23, 42, 0.12);
+        color: #0f172a !important;
+        background: #ffffff !important;
+      }
+      .no-theme-scope *,
+      .no-theme-scope
+        :where(th, td, p, span, div, button, input, select, label) {
+        color: #0f172a !important;
+      }
+      /* Table readability on white */
+      .no-theme-scope .table-ui thead {
+        background: #ffffff !important;
+      }
+      .no-theme-scope .table-ui th,
+      .no-theme-scope .table-ui td {
+        color: #0f172a !important;
+        border-bottom-color: #e5e7eb !important; /* gray-200 */
+      }
+      .no-theme-scope .table-ui tbody tr:hover {
+        background: #f8fafc !important;
+      }
+      /* Inputs: neutral borders */
+      .no-theme-scope input,
+      .no-theme-scope select,
+      .no-theme-scope textarea {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #e5e7eb !important;
+      }
+      /* Buttons: minimal/neu visible on white */
+      .no-theme-scope .btn-minimal,
+      .no-theme-scope .btn-minimal-ghost,
+      .no-theme-scope .btn-neu {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #e5e7eb !important;
+        box-shadow: none !important;
+      }
+      .no-theme-scope .btn-minimal:hover,
+      .no-theme-scope .btn-minimal-ghost:hover,
+      .no-theme-scope .btn-neu:hover {
+        background: #f8fafc !important;
+      }
+    `}</style>
+  );
   function handleChange(value: string[]) {
     // Handle floor selection
   }
@@ -344,13 +403,13 @@ const TulburTootsoo: React.FC = () => {
           switch (data) {
             case "turees":
               return (
-                <div className="flex items-center justify-center rounded-lg bg-green-400 px-2 py-1 dark:bg-green-700 dark:text-slate-200">
+                <div className="flex items-center justify-center rounded-2xl bg-green-400 px-2 py-1 dark:bg-green-700 dark:text-slate-200">
                   Түрээс
                 </div>
               );
             case "zardal":
               return (
-                <div className="flex items-center justify-center rounded-lg bg-yellow-400 px-2 py-1 dark:bg-yellow-700 dark:text-slate-200">
+                <div className="flex items-center justify-center rounded-2xl bg-yellow-400 px-2 py-1 dark:bg-yellow-700 dark:text-slate-200">
                   Зардал
                 </div>
               );
@@ -482,11 +541,12 @@ const TulburTootsoo: React.FC = () => {
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-screen overflow-hidden no-theme-scope -mt-3">
+      <LocalStyles />
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         Хөнгөлөлт
       </motion.h1>
@@ -494,7 +554,7 @@ const TulburTootsoo: React.FC = () => {
         <Tabs size="large" onChange={(v) => setSongogdsonNuur(v)}>
           <Tabs.TabPane tab="Хөнгөлөлт оруулах" key="1">
             <div className="grid w-full grid-cols-12 gap-6">
-              <div className="col-span-12 rounded-md p-5 dark:bg-gray-900 md:col-span-8 xl:col-span-3">
+              <div className="col-span-12 rounded-2xl p-5 bg-white border border-gray-200 md:col-span-8 xl:col-span-3 text-theme h-[560px] custom-scrollbar">
                 <Form
                   onFinish={khungulultKhadgalya}
                   form={form}
@@ -508,11 +568,11 @@ const TulburTootsoo: React.FC = () => {
                 >
                   <Form.Item
                     name="khungulukhTurul"
-                    label="Төрөл"
+                    label={<span className="text-theme">Төрөл</span>}
                     labelAlign="left"
                   >
                     <Select
-                      className="ml-1 mr-3 flex-1"
+                      className="ml-1 mr-3 flex-1 text-theme"
                       defaultValue="turees"
                       onChange={(e) => {
                         setTurul(e);
@@ -561,9 +621,10 @@ const TulburTootsoo: React.FC = () => {
                         },
                       ]}
                     >
-                      <DatePicker.RangePicker
-                        style={{ width: "100%" }}
-                        placeholder={["Эхлэх өдөр", "Дуусах өдөр"]}
+                      <RangePicker
+                        className="w-full sm:w-auto !bg-transparent rounded-xl hover:shadow-md transition-all duration-300 z-9999"
+                        size="large"
+                        value={ekhlekhOgnoo}
                         onChange={(v) => {
                           if (v && v[0] && v[1]) {
                             setOgnoonuud([v[0], v[1]]);
@@ -580,7 +641,7 @@ const TulburTootsoo: React.FC = () => {
                     <Form.Item
                       labelAlign="left"
                       name="ognoonuud"
-                      label="Хөнгөлөх сар"
+                      label={<span className="text-theme">Хөнгөлөх сар</span>}
                       rules={[
                         {
                           required: true,
@@ -591,6 +652,7 @@ const TulburTootsoo: React.FC = () => {
                       <DatePicker.RangePicker
                         allowClear={false}
                         style={{ width: "100%" }}
+                        className="text-theme"
                         picker="month"
                         placeholder={["Эхлэх сар", "Дуусах сар"]}
                         onChange={(v) => {
@@ -630,15 +692,28 @@ const TulburTootsoo: React.FC = () => {
                     </>
                   )}
 
-                  <Form.Item name="turul" label="Нөхцөл" labelAlign="left">
-                    <Select placeholder="Нөхцөл" onChange={nukhtulSongokh}>
+                  <Form.Item
+                    name="turul"
+                    label={<span className="text-theme">Нөхцөл</span>}
+                    labelAlign="left"
+                  >
+                    <Select
+                      className="text-theme"
+                      placeholder="Нөхцөл"
+                      onChange={nukhtulSongokh}
+                    >
                       <Option value="Давхраар">Давхраар</Option>
                       <Option value="Бүгд">Бүгд</Option>
                     </Select>
                   </Form.Item>
 
-                  <Form.Item name="davkhar" label="Давхар" labelAlign="left">
+                  <Form.Item
+                    name="davkhar"
+                    label={<span className="text-theme">Давхар</span>}
+                    labelAlign="left"
+                  >
                     <Select
+                      className="text-theme"
                       mode="multiple"
                       placeholder="Давхар"
                       onChange={handleChange}
@@ -654,10 +729,15 @@ const TulburTootsoo: React.FC = () => {
 
                   {!khonogTootsokhEsekh && (
                     <>
-                      <Form.Item label="Хөнгөлөх төрөл" labelAlign="left">
+                      <Form.Item
+                        label={
+                          <span className="text-theme">Хөнгөлөх төрөл</span>
+                        }
+                        labelAlign="left"
+                      >
                         <Select
                           placeholder="Хөнгөлөх төрөл"
-                          className="w-32"
+                          className="w-32 text-theme"
                           value={khungulukh}
                           onChange={(v) => {
                             setKhungulukh(v);
@@ -678,14 +758,17 @@ const TulburTootsoo: React.FC = () => {
                       </Form.Item>
                       <Form.Item
                         label={
-                          khungulukh === "khuvi"
-                            ? "Хөнгөлөх хувь"
-                            : "Хөнгөлөх дүн"
+                          <span className="text-theme">
+                            {khungulukh === "khuvi"
+                              ? "Хөнгөлөх хувь"
+                              : "Хөнгөлөх дүн"}
+                          </span>
                         }
                         name="khungulukhKhuvi"
                         labelAlign="left"
                       >
                         <Input
+                          className="text-theme"
                           onKeyDown={focuser}
                           type="number"
                           placeholder={
@@ -700,17 +783,18 @@ const TulburTootsoo: React.FC = () => {
                   )}
 
                   <Form.Item
-                    label="Шалтгаан"
+                    label={<span className="text-theme">Шалтгаан</span>}
                     name="shaltgaan"
                     labelAlign="left"
                   >
                     <Input.TextArea
+                      className="text-theme"
                       onKeyDown={focuser}
                       placeholder="Шалтгаан"
                     />
                   </Form.Item>
 
-                  <div className="flex-column mt-12 grid text-base dark:text-slate-50">
+                  <div className="flex-column mt-12 grid text-theme dark:text-slate-50">
                     <div className="flex justify-between">
                       Нийт талбайн тоо :<a>{tootsoolol.niitTalbai}</a>
                     </div>
@@ -759,70 +843,74 @@ const TulburTootsoo: React.FC = () => {
                 </Form>
               </div>
 
-              <div className="col-span-12 md:col-span-8 xl:col-span-9 rounded-2xl bg-transparent dark:bg-gray-800/30 backdrop-blur-md p-6 overflow-auto">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-slate-800 dark:text-slate-100">
-                    <thead className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm">
-                      <tr>
-                        <th className="border-b border-white/40 p-3 text-center">
-                          #
-                        </th>
-                        {gereeniiColumn.map((col) => (
-                          <th
-                            key={col.title as string}
-                            className="border-b border-white/40 p-3 text-center"
-                          >
-                            {typeof col.title === "function"
-                              ? col.title({})
-                              : col.title}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/20">
-                      {gereeniiMedeelel.jagsaalt.map((row, index) => (
-                        <tr
-                          key={row._id}
-                          className={`hover:bg-white/20 transition-colors ${
-                            selectedRowKeys.includes(row._id)
-                              ? "bg-white/20"
-                              : ""
-                          }`}
-                          onClick={() => {
-                            const selected = [...selectedRowKeys];
-                            const idx = selected.indexOf(row._id);
-                            if (idx > -1) selected.splice(idx, 1);
-                            else selected.push(row._id);
-                            setRowKeys(selected);
-                            setSongogdsonGereenuud(
-                              selected.map(
-                                (key) =>
-                                  gereeniiMedeelel.jagsaalt.find(
-                                    (r) => r._id === key
-                                  )!
-                              )
-                            );
-                          }}
-                        >
-                          <td className="p-3 text-center">{index + 1}</td>
-                          <td className="p-3 text-center">{row.ner}</td>
-                          <td className="p-3 text-center">
-                            {row.gereeniiDugaar}
-                          </td>
-                          <td className="p-3 text-center">
-                            {row.talbainDugaar}
-                          </td>
-                          <td className="p-3 text-center">{row.davkhar}</td>
-                          <td className="p-3 text-center">
-                            {row.talbainKhemjee} м2
-                          </td>
-                          <td className="p-3 text-center">
-                            {row.sariinTurees?.toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              <div className="col-span-12 md:col-span-8 xl:col-span-9">
+                <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
+                  <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar w-full">
+                      <table className="table-ui text-sm min-w-full">
+                        <thead>
+                          <tr className="text-theme">
+                            <th className="p-3 text-xs font-semibold text-center">
+                              #
+                            </th>
+                            {gereeniiColumn.map((col) => (
+                              <th
+                                key={col.title as string}
+                                className="p-3 text-xs font-semibold text-center"
+                              >
+                                {typeof col.title === "function"
+                                  ? col.title({})
+                                  : col.title}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {gereeniiMedeelel.jagsaalt.map((row, index) => (
+                            <tr
+                              key={row._id}
+                              className={`transition-colors border-b last:border-b-0 ${
+                                selectedRowKeys.includes(row._id)
+                                  ? "bg-white/20"
+                                  : ""
+                              }`}
+                              onClick={() => {
+                                const selected = [...selectedRowKeys];
+                                const idx = selected.indexOf(row._id);
+                                if (idx > -1) selected.splice(idx, 1);
+                                else selected.push(row._id);
+                                setRowKeys(selected);
+                                setSongogdsonGereenuud(
+                                  selected.map(
+                                    (key) =>
+                                      gereeniiMedeelel.jagsaalt.find(
+                                        (r) => r._id === key
+                                      )!
+                                  )
+                                );
+                              }}
+                            >
+                              <td className="p-3 text-center">{index + 1}</td>
+                              <td className="p-3 text-center">{row.ner}</td>
+                              <td className="p-3 text-center">
+                                {row.gereeniiDugaar}
+                              </td>
+                              <td className="p-3 text-center">
+                                {row.talbainDugaar}
+                              </td>
+                              <td className="p-3 text-center">{row.davkhar}</td>
+                              <td className="p-3 text-center">
+                                {row.talbainKhemjee} м2
+                              </td>
+                              <td className="p-3 text-center">
+                                {row.sariinTurees?.toLocaleString()}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -836,6 +924,7 @@ const TulburTootsoo: React.FC = () => {
                     style={{ marginBottom: "20px" }}
                     size="middle"
                     value={ekhlekhOgnoo}
+                    className="text-theme"
                     onChange={(dates) => {
                       if (dates && dates[0] && dates[1]) {
                         setEkhlekhOgnoo([dates[0], dates[1]]);
@@ -844,70 +933,76 @@ const TulburTootsoo: React.FC = () => {
                   />
                 </div>
 
-                <div className="col-span-12 md:col-span-8 xl:col-span-9 rounded-2xl bg-transparent dark:bg-gray-800/30 backdrop-blur-md p-6 overflow-auto">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm text-slate-800 dark:text-slate-100">
-                      <thead className="bg-white/50 dark:bg-gray-700/50 backdrop-blur-sm">
-                        <tr>
-                          <th className="border-b border-white/40 p-3 text-center">
-                            #
-                          </th>
-                          {gereeniiColumn.map((col) => (
-                            <th
-                              key={col.title as string}
-                              className="border-b border-white/40 p-3 text-center"
-                            >
-                              {typeof col.title === "function"
-                                ? col.title({})
-                                : col.title}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/20">
-                        {gereeniiMedeelel.jagsaalt.map((row, index) => (
-                          <tr
-                            key={row._id}
-                            className={`hover:bg-white/20 transition-colors ${
-                              selectedRowKeys.includes(row._id)
-                                ? "bg-white/20"
-                                : ""
-                            }`}
-                            onClick={() => {
-                              const selected = [...selectedRowKeys];
-                              const idx = selected.indexOf(row._id);
-                              if (idx > -1) selected.splice(idx, 1);
-                              else selected.push(row._id);
-                              setRowKeys(selected);
-                              setSongogdsonGereenuud(
-                                selected.map(
-                                  (key) =>
-                                    gereeniiMedeelel.jagsaalt.find(
-                                      (r) => r._id === key
-                                    )!
-                                )
-                              );
-                            }}
-                          >
-                            <td className="p-3 text-center">{index + 1}</td>
-                            <td className="p-3 text-center">{row.ner}</td>
-                            <td className="p-3 text-center">
-                              {row.gereeniiDugaar}
-                            </td>
-                            <td className="p-3 text-center">
-                              {row.talbainDugaar}
-                            </td>
-                            <td className="p-3 text-center">{row.davkhar}</td>
-                            <td className="p-3 text-center">
-                              {row.talbainKhemjee} м2
-                            </td>
-                            <td className="p-3 text-center">
-                              {row.sariinTurees?.toLocaleString()}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                <div className="col-span-12 md:col-span-8 xl:col-span-9">
+                  <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
+                    <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                      <div className="max-h-[280px] overflow-y-auto custom-scrollbar w-full">
+                        <table className="table-ui text-sm min-w-full">
+                          <thead>
+                            <tr className="text-theme">
+                              <th className="p-3 text-xs font-semibold text-center">
+                                #
+                              </th>
+                              {gereeniiColumn.map((col) => (
+                                <th
+                                  key={col.title as string}
+                                  className="p-3 text-xs font-semibold text-center"
+                                >
+                                  {typeof col.title === "function"
+                                    ? col.title({})
+                                    : col.title}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {gereeniiMedeelel.jagsaalt.map((row, index) => (
+                              <tr
+                                key={row._id}
+                                className={`transition-colors border-b last:border-b-0 ${
+                                  selectedRowKeys.includes(row._id)
+                                    ? "bg-white/20"
+                                    : ""
+                                }`}
+                                onClick={() => {
+                                  const selected = [...selectedRowKeys];
+                                  const idx = selected.indexOf(row._id);
+                                  if (idx > -1) selected.splice(idx, 1);
+                                  else selected.push(row._id);
+                                  setRowKeys(selected);
+                                  setSongogdsonGereenuud(
+                                    selected.map(
+                                      (key) =>
+                                        gereeniiMedeelel.jagsaalt.find(
+                                          (r) => r._id === key
+                                        )!
+                                    )
+                                  );
+                                }}
+                              >
+                                <td className="p-3 text-center">{index + 1}</td>
+                                <td className="p-3 text-center">{row.ner}</td>
+                                <td className="p-3 text-center">
+                                  {row.gereeniiDugaar}
+                                </td>
+                                <td className="p-3 text-center">
+                                  {row.talbainDugaar}
+                                </td>
+                                <td className="p-3 text-center">
+                                  {row.davkhar}
+                                </td>
+                                <td className="p-3 text-center">
+                                  {row.talbainKhemjee} м2
+                                </td>
+                                <td className="p-3 text-center">
+                                  {row.sariinTurees?.toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -542,7 +542,7 @@ export default function ContractEditor({
             <div key={key} className="mb-2">
               <button
                 onClick={() => toggleCategory(key)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-gray-100 rounded-lg"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-gray-100 rounded-2xl"
               >
                 <span>{category.label}</span>
                 {openCategories[key] ? (
@@ -574,7 +574,7 @@ export default function ContractEditor({
         <div className="bg-transparent border-b border-gray-200 px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => (onBack ? onBack() : router.push("/geree"))}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
             title="Буцах"
           >
             <ArrowLeft size={20} />
@@ -615,7 +615,7 @@ export default function ContractEditor({
                     type="text"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     placeholder="Жишээ: Орон сууцны түрээсийн гэрээ"
                   />
                 </div>
@@ -627,7 +627,7 @@ export default function ContractEditor({
                     type="text"
                     value={templateDesc}
                     onChange={(e) => setTemplateDesc(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     placeholder="Энэ загварын тухай товч тайлбар"
                   />
                 </div>
@@ -639,7 +639,7 @@ export default function ContractEditor({
                     type="text"
                     value={templateTuluv}
                     onChange={(e) => setTemplateTuluv(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
                     placeholder="Энэ загварын аль төрөлд хамаарах вэ"
                   />
                 </div>
@@ -751,7 +751,7 @@ export default function ContractEditor({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save size={18} />
               {isSaving ? "Хадгалж байна..." : "Хадгалах"}

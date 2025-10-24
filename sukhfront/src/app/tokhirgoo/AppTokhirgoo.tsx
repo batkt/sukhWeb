@@ -22,7 +22,7 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
 
   return (
     <div className="col-span-12 lg:col-span-6 xxl:col-span-4">
-      <div className="bg-transparent dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+      <div className="bg-transparent dark:bg-gray-800 rounded-2xl shadow overflow-hidden">
         <div className="flex items-center border-b border-amber-200 dark:border-amber-700 px-5 py-3">
           <h2 className=" text-lg font-semibold dark:text-slate-200">
             Аппликейшин тохиргоо

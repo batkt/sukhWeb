@@ -245,12 +245,12 @@ const NasjiltTailan: React.FC = () => {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+          className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
         >
           Насжилт
         </motion.h1>
 
-        <div className="p-4 rounded-lg shadow mb-4 flex flex-wrap gap-4 items-center">
+        <div className="p-4 rounded-2xl shadow mb-4 flex flex-wrap gap-4 items-center">
           <div className="flex gap-2 items-center">
             <Calendar className="w-5 h-5 text-slate-500" />
             <input

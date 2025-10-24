@@ -5,6 +5,7 @@ import { Button } from "antd";
 import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
+import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 
 interface Horoo {
   _id?: string;
@@ -126,7 +127,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
     }
 
     if (!state.selectedHorooData) {
-      toast.error("Хороо сонгоно уу");
+      toast.error("Хороо сонго уу");
       return;
     }
 
@@ -163,50 +164,48 @@ const KhuviinMedeelel: React.FC<Props> = ({
   );
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12">
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full">
       {tatvariinAlbaData?.jagsaalt && (
         <div className="mt-8 space-y-4">
-          <h3 className="text-md font-semibold text-slate-700 mb-2">
+          <h2 className="text-md font-semibold text-theme mb-2 border-b">
             Хувийн мэдээлэл
-          </h3>
+          </h2>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-theme mb-1">
               Дүүрэг
             </label>
-            <select
+     
+            <TusgaiZagvar
               value={state.selectedDuureg || ""}
-              onChange={(e) => handleDuuregChange(e.target.value)}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              onChange={(v) => handleDuuregChange(v)}
+              options={(tatvariinAlbaData?.jagsaalt || []).map((duureg) => ({
+                value: duureg._id || "",
+                label: duureg.ner,
+              }))}
+              placeholder="Сонгоно уу"
               disabled={isLoading}
-            >
-              <option value="">Сонгоно уу</option>
-              {tatvariinAlbaData.jagsaalt.map((duureg) => (
-                <option key={duureg._id} value={duureg._id}>
-                  {duureg.ner}
-                </option>
-              ))}
-            </select>
+              className="w-full z-9999"
+            />
           </div>
 
           {selectedDistrict?.ded && (
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">
+              <label className="block text-sm font-medium text-theme mb-1">
                 Хороо
               </label>
-              <select
+   
+              <TusgaiZagvar
                 value={state.selectedHoroo || ""}
-                onChange={(e) => handleHorooChange(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                onChange={(v) => handleHorooChange(v)}
+                options={(selectedDistrict.ded || []).map((horoo) => ({
+                  value: horoo.kod,
+                  label: horoo.ner,
+                }))}
+                placeholder="Сонгоно уу"
                 disabled={isLoading}
-              >
-                <option value="">Сонгоно уу</option>
-                {selectedDistrict.ded.map((horoo) => (
-                  <option key={horoo._id} value={horoo.kod}>
-                    {horoo.ner}
-                  </option>
-                ))}
-              </select>
+                className="w-full"
+              />
             </div>
           )}
 

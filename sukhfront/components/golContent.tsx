@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
+import UnguSongokh from "./ungu/unguSongokh";
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -25,7 +26,15 @@ interface SubMenuItem {
 }
 
 const ModalPortal = ({ children }: { children: React.ReactNode }) => {
-  return createPortal(children, document.body);
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = document.getElementById("modal-root") || document.body;
+    setTarget(el);
+  }, []);
+
+  if (!target) return null;
+  return createPortal(children, target);
 };
 
 export default function GolContent({ children }: GolContentProps) {
@@ -78,12 +87,8 @@ export default function GolContent({ children }: GolContentProps) {
       label: "Төлбөр тооцоо",
       path: "tulbur",
       submenu: [
-        { label: "И-Баримт", path: "ebarimt" },
         { label: "Дансны хуулга", path: "dansKhuulga" },
         { label: "Гүйлгээний түүх", path: "guilgeeTuukh" },
-        { label: "Нэхэмжлэх", path: "nekhemjlekh" },
-        { label: "Хөнгөлөлт", path: "khungulult" },
-        { label: "Зардал", path: "zardal" },
       ],
     },
     {
@@ -97,14 +102,14 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Гүйцэтгэлийн тайлан", path: "guitsetgel" },
       ],
     },
-    {
-      label: "Зогсоол",
-      path: "zogsool",
-      submenu: [
-        { label: "Жагсаалт", path: "jagsaalt" },
-        { label: "Камер касс", path: "camera" },
-      ],
-    },
+    // {
+    //   label: "Зогсоол",
+    //   path: "zogsool",
+    //   submenu: [
+    //     { label: "Жагсаалт", path: "jagsaalt" },
+    //     { label: "Камер касс", path: "camera" },
+    //   ],
+    // },
   ];
 
   const handleLogout = async () => {
@@ -117,7 +122,7 @@ export default function GolContent({ children }: GolContentProps) {
   return (
     <>
       <div className="min-h-screen flex flex-col">
-        <nav className="bg-transparent frosted-strong sticky top-0 z-[40]">
+        <nav className="neu-nav sticky top-0 z-[60]">
           <div className="max-w-[1600px] mx-auto px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-12">
@@ -128,58 +133,61 @@ export default function GolContent({ children }: GolContentProps) {
                   onClick={() => router.push("/khynalt")}
                 />
                 <div className="flex items-center gap-3">
-                  <span className="text-4xl font-extrabold text-slate-900 font-serif italic">
+                  <span className="text-4xl font-extrabold font-serif italic text-[color:var(--panel-text)]">
                     Амар Сөх
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 relative">
                   {menuItems.map((item, i) => {
-                    const isActive = pathname === `/${item.path}`;
-
+                    const isParentActive = pathname.startsWith(`/${item.path}`);
                     return (
-                      <div key={i} className="relative group">
+                      <div key={i} className="relative group ">
                         {item.submenu ? (
                           <span
-                            className={`px-5 py-2 rounded-3xl  text-sm font-medium transition-all duration-300 cursor-default
-              ${
-                isActive
-                  ? "bg-white/20 backdrop-blur-xl text-slate-900 shadow-xl scale-105 border border-white/30"
-                  : "text-slate-900 hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
-              }`}
+                            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 cursor-default text-[color:var(--panel-text)] ${
+                              isParentActive
+                                ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm scale-105"
+                                : "hover:menu-surface"
+                            }`}
                           >
                             {item.label}
                           </span>
                         ) : (
                           <a
                             href={`/${item.path}`}
-                            className={`px-5 py-2 rounded-3xl text-sm font-medium transition-all duration-300
-              ${
-                isActive
-                  ? "bg-white/20 backdrop-blur-xl text-slate-900 shadow-xl scale-105 border border-white/30"
-                  : "text-slate-900 hover:bg-white/20 hover:scale-105 hover:shadow-md border border-white/20"
-              }`}
+                            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] ${
+                              isParentActive
+                                ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm scale-105"
+                                : "hover:menu-surface"
+                            }`}
                           >
                             {item.label}
                           </a>
                         )}
 
                         {item.submenu && (
-                          <div
-                            className="absolute left-0 mt-2 w-52 bg-transparent frosted-strong rounded-3xl shadow-2xl border border-white/20 opacity-0 invisible
-      group-hover:opacity-100 group-hover:visible transition-all duration-300"
-                          >
+                          <div className="absolute left-0 mt-2 w-52 rounded-2xl  shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 menu-surface z-[70]">
                             <ul className="py-2">
-                              {item.submenu.map((sub, j) => (
-                                <li key={j}>
-                                  <a
-                                    href={`/${item.path}/${sub.path}`}
-                                    className="block px-4 py-2 text-sm text-slate-900 rounded-2xl transition-all duration-300 frosted-hover"
-                                  >
-                                    {sub.label}
-                                  </a>
-                                </li>
-                              ))}
+                              {item.submenu.map((sub, j) => {
+                                const subPath = `/${item.path}/${sub.path}`;
+                                const isSubActive =
+                                  pathname.startsWith(subPath);
+                                return (
+                                  <li key={j}>
+                                    <a
+                                      href={subPath}
+                                      className={`block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                        isSubActive
+                                          ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                                          : "hover:translate-x-0.5 hover:menu-surface/80"
+                                      }`}
+                                    >
+                                      {sub.label}
+                                    </a>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                         )}
@@ -190,18 +198,15 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
 
               <div className="flex items-center gap-4">
+                <UnguSongokh />
                 <button
                   onClick={() => router.push("/tokhirgoo")}
-                  className="inline-flex items-center justify-center gap-2 text-sm font-medium h-10 w-10 rounded-full text-slate-900 
-                  transition-all duration-300 hover:bg-black/10 hover:text-slate-900/80 hover:scale-105 hover:shadow-md"
+                  className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
                 >
                   <Settings className="w-5 h-5" />
                 </button>
 
-                <button
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-full text-slate-900
-                  transition-all duration-300 hover:bg-black/10 hover:text-slate-900/80 hover:scale-105 hover:shadow-md"
-                >
+                <button className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="24"
@@ -223,18 +228,18 @@ export default function GolContent({ children }: GolContentProps) {
                   <div className="relative" ref={avatarRef}>
                     <div
                       onClick={() => setShowLogout(!showLogout)}
-                      className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center cursor-pointer select-none"
+                      className="w-10 h-10 rounded-full bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] text-[#1e3a8a] flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
                     >
                       {userName.charAt(0).toUpperCase()}
                     </div>
 
                     {showLogout && (
-                      <div className="absolute right-0 mt-2 w-40 bg-transparent frosted-strong rounded-2xl shadow-lg transition-all duration-300 z-50">
+                      <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[80]">
                         <ul className="py-2">
                           <li>
                             <button
                               onClick={handleLogout}
-                              className="w-full text-left px-4 py-2 text-sm text-slate-700 bg-white/50 rounded-2xl hover:bg-white"
+                              className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)]"
                             >
                               Гарах
                             </button>
@@ -251,14 +256,8 @@ export default function GolContent({ children }: GolContentProps) {
 
         <main className="flex-1 relative h-[calc(100vh-80px)]">
           <div className="max-w-[1600px] h-full mx-auto px-8 py-6">
-            {" "}
-            <div
-              className="relative rounded-[2rem] p-6 bg-transparent frosted-strong
-        before:absolute before:inset-0 before:rounded-[2rem] before:bg-gradient-to-tr
-        before:from-white/6 before:to-transparent before:opacity-30 before:pointer-events-none
-        h-[calc(100vh-140px)] overflow-hidden"
-            >
-              <div className="relative z-[30] h-full pr-4">{children}</div>
+            <div className="neu-panel rounded-[2rem] p-6 h-[calc(100vh-140px)] overflow-hidden">
+              {children}
             </div>
           </div>
         </main>

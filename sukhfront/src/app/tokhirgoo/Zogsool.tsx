@@ -74,7 +74,10 @@ export default function Zogsool() {
 
   return (
     <div>
-      <div className="flex justify-between items-center border-b border-white pb-3">
+      <div
+        className="flex justify-between items-center border-b pb-3"
+        style={{ borderColor: "var(--surface-border)" }}
+      >
         <h2 className="text-lg font-medium">Зогсоол тохиргоо</h2>
         <button
           onClick={addZogsool}
@@ -84,10 +87,10 @@ export default function Zogsool() {
         </button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto table-surface neu-table custom-scrollbar">
+        <table className="table-ui w-full text-left">
           <thead>
-            <tr className="border-b border-white bg-transparent">
+            <tr>
               {[
                 "№",
                 "Зогсоолын нэр",
@@ -98,10 +101,7 @@ export default function Zogsool() {
                 "Огноо",
                 "",
               ].map((col) => (
-                <th
-                  key={col}
-                  className="py-3 px-4 font-semibold text-slate-700"
-                >
+                <th key={col} className="py-3 px-4 font-semibold text-theme">
                   {col}
                 </th>
               ))}
@@ -109,10 +109,7 @@ export default function Zogsool() {
           </thead>
           <tbody>
             {paginatedZogsool.map((record, idx) => (
-              <tr
-                key={record.key}
-                className="border-b border-amber-200 hover:bg-gray-50 transition-colors"
-              >
+              <tr key={record.key}>
                 <td className="py-3 px-4">{(page - 1) * pageSize + idx + 1}</td>
                 <td className="py-3 px-4">{record.ner}</td>
                 <td className="py-3 px-4">{record.ajiltniiNer}</td>
@@ -165,15 +162,12 @@ export default function Zogsool() {
       <div className="mt-10 mb-5 flex justify-between items-center">
         <h2 className="text-md font-medium">СМС тохиргоо</h2>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto table-surface neu-table custom-scrollbar">
+        <table className="table-ui w-full text-left">
           <thead>
-            <tr className="border-b border-white bg-transparent">
+            <tr>
               {["№", "Огноо", "Дугаар", "СМС мессеж"].map((col) => (
-                <th
-                  key={col}
-                  className="py-3 px-4 font-semibold text-slate-700"
-                >
+                <th key={col} className="py-3 px-4 font-semibold text-theme">
                   {col}
                 </th>
               ))}
@@ -181,10 +175,7 @@ export default function Zogsool() {
           </thead>
           <tbody>
             {smsData.slice(0, 5).map((record, idx) => (
-              <tr
-                key={record.key}
-                className="border-b border-amber-200 hover:bg-gray-50 transition-colors"
-              >
+              <tr key={record.key}>
                 <td className="py-3 px-4">{idx + 1}</td>
                 <td className="py-3 px-4">
                   {moment(record.createdAt).format("YYYY-MM-DD, HH:mm")}

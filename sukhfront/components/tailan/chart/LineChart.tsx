@@ -32,13 +32,13 @@ ChartJS.register(
 
 export const options: ChartOptions<"line"> = {
   responsive: true,
+  maintainAspectRatio: false,
   plugins: {
     legend: {
       position: "top",
     },
     title: {
       display: true,
-      text: "Chart.js Line Chart",
     },
     tooltip: {
       callbacks: {

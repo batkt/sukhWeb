@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, DatePicker, Select, Table, Button } from "antd";
+import { Card, DatePicker, Select, Button } from "antd";
 import dayjs, { Dayjs } from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -18,7 +18,10 @@ const Admin: React.FC<{ children: React.ReactNode; title?: string }> = ({
 }) => (
   <div>
     {title && (
-      <h1 className="text-lg font-semibold mb-4 border border-b border-b-gray-300 pb-7">
+      <h1
+        className="text-lg font-semibold mb-4 pb-7 text-theme border-b"
+        style={{ borderColor: "var(--surface-border)" }}
+      >
         {title}
       </h1>
     )}
@@ -86,55 +89,7 @@ export default function ZassanTuukh() {
     });
   }, [ajiltankhaikh, turul, shuukhOgnoo]);
 
-  const columns = useMemo(
-    () => [
-      {
-        title: "Огноо",
-        dataIndex: "classOgnoo",
-        key: "classOgnoo",
-        align: "center" as const,
-        render: (a: Dayjs) => a.format("YYYY-MM-DD"),
-      },
-      {
-        title: "Төрөл",
-        dataIndex: "className",
-        key: "className",
-        align: "left" as const,
-      },
-      {
-        title: "Дугаар",
-        dataIndex: "classDugaar",
-        key: "classDugaar",
-        align: "center" as const,
-      },
-      {
-        title: "Зассан ажилтан",
-        dataIndex: "ajiltniiNer",
-        key: "ajiltniiNer",
-        align: "left" as const,
-      },
-      {
-        title: "Зассан огноо",
-        dataIndex: "createdAt",
-        key: "createdAt",
-        align: "center" as const,
-        render: (a: Dayjs) => a.format("YYYY-MM-DD HH:mm"),
-      },
-      {
-        title: "Үзэх",
-        key: "action",
-        align: "center" as const,
-        render: (_: any, record: any) => (
-          <Button
-            shape="circle"
-            icon={<EyeOutlined />}
-            onClick={() => alert(JSON.stringify(record, null, 2))}
-          />
-        ),
-      },
-    ],
-    []
-  );
+  // Columns are rendered manually via a semantic table below
 
   const ognooShuultOnChange = (
     dates: [Dayjs | null, Dayjs | null] | null,
@@ -149,16 +104,17 @@ export default function ZassanTuukh() {
 
   return (
     <Admin title="Зассан түүх">
-      <Card className="rounded-md">
+      <Card className="rounded-2xl bg-transparent">
         <div className="flex flex-col-reverse gap-3 sm:flex-row mb-4">
           <RangePicker
             style={{ marginBottom: "10px" }}
             size="middle"
             value={shuukhOgnoo}
             onChange={ognooShuultOnChange}
+            className="text-slate-900"
           />
           <Select
-            className="w-full sm:w-36"
+            className="w-full sm:w-36 text-slate-900"
             placeholder="Ажилтан"
             allowClear
             onChange={setAjiltankhaikh}
@@ -170,7 +126,7 @@ export default function ZassanTuukh() {
             ))}
           </Select>
           <Select
-            className="w-full sm:w-36"
+            className="w-full sm:w-36 text-slate-900"
             placeholder="Төрөл"
             allowClear
             onChange={setTurul}
@@ -183,15 +139,42 @@ export default function ZassanTuukh() {
           </Select>
         </div>
 
-        <Table
-          columns={columns}
-          dataSource={filteredData}
-          rowKey={(row) => row._id}
-          size="small"
-          bordered
-          pagination={{ pageSize: 5 }}
-          className="hidden md:block bg-transparent"
-        />
+        <div className="hidden md:block table-surface neu-table custom-scrollbar p-2">
+          <table className="table-ui w-full text-left text-sm">
+            <thead>
+              <tr>
+                <th className="text-center">Огноо</th>
+                <th>Төрөл</th>
+                <th className="text-center">Дугаар</th>
+                <th>Зассан ажилтан</th>
+                <th className="text-center">Зассан огноо</th>
+                <th className="text-center">Үзэх</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map((row) => (
+                <tr key={row._id}>
+                  <td className="text-center">
+                    {row.classOgnoo.format("YYYY-MM-DD")}
+                  </td>
+                  <td>{row.className}</td>
+                  <td className="text-center">{row.classDugaar}</td>
+                  <td>{row.ajiltniiNer}</td>
+                  <td className="text-center">
+                    {row.createdAt.format("YYYY-MM-DD HH:mm")}
+                  </td>
+                  <td className="text-center">
+                    <Button
+                      shape="circle"
+                      icon={<EyeOutlined />}
+                      onClick={() => alert(JSON.stringify(row, null, 2))}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <div className="md:hidden mt-4">
           <CardList jagsaalt={filteredData} Component={UstsanTuukhTile} />

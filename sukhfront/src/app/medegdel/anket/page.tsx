@@ -121,7 +121,7 @@ function AsuultOruulakh({
   const [hide, setHide] = React.useState(true);
   return (
     <Form.Item
-      className="block rounded-md border px-2 py-4 shadow-lg"
+      className="block rounded-2xl border px-2 py-4 shadow-lg"
       key={fieldKey}
     >
       <div className="relative space-y-3">
@@ -331,7 +331,7 @@ function AnketiinZagvar({
                         _id: b._id,
                       });
                     }}
-                    className={`flex w-full cursor-pointer justify-between rounded-md border p-2 py-1 ${
+                    className={`flex w-full cursor-pointer justify-between rounded-2xl border p-2 py-1 ${
                       data?._id === b._id ? "bg-blue-200" : "bg-white"
                     } border-border`}
                     key={i}
@@ -451,7 +451,7 @@ export default function Page() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         {"Анкетын асуулга бэлтгэх"}
       </motion.h1>
@@ -471,7 +471,7 @@ export default function Page() {
             <div className="mt-5 w-full px-5">
               <DatePicker.RangePicker
                 onClick={(e) => e.stopPropagation()}
-                className="flex w-full rounded-md md:w-auto"
+                className="flex w-full rounded-2xl md:w-auto"
                 size="middle"
                 allowClear={true}
                 placeholder={["Эхлэх огноо", "Дуусах огноо"]}
@@ -606,7 +606,7 @@ export default function Page() {
           </div>
 
           <div
-            className="relative col-span-5 block h-full overflow-y-auto rounded-lg pt-3 dark:bg-gray-900 shadow-md backdrop-blur-sm"
+            className="relative col-span-5 block h-full overflow-y-auto rounded-2xl pt-3 dark:bg-gray-900 shadow-md backdrop-blur-sm"
             style={{ height: "calc( 100vh - 8rem)" }}
           >
             <header className="border-b border-gray-300 pb-5 font-medium dark:text-slate-100 lg:px-5">

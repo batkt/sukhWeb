@@ -1,35 +1,33 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
-  FileText,
   Download,
   Search,
   Filter,
   Edit,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
   Settings,
   X,
   Eye,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import formatNumberNershil from "../../../tools/function/formatNumberNershil";
-import { ModalPortal } from "../../../components/golContent";
+import { motion, AnimatePresence } from "framer-motion";
 import { DownloadOutlined } from "@ant-design/icons";
-import { createPortal } from "react-dom";
 import {
   useGereeJagsaalt,
   useGereeCRUD,
   Geree as GereeType,
 } from "@/lib/useGeree";
-import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
+import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import uilchilgee from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
-import { notification } from "antd";
-
+import { notification, DatePicker, Spin } from "antd";
+import dayjs, { Dayjs } from "dayjs";
+import { ModalPortal } from "../../../components/golContent";
+import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 export const ALL_COLUMNS = [
   { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
@@ -62,12 +60,14 @@ export const ALL_COLUMNS = [
 ];
 
 export default function Geree() {
+  const router = useRouter();
   const DEFAULT_HIDDEN = ["mail", "aimag", "duureg", "horoo"];
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showList2Modal, setShowList2Modal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
-  const [showExtraColumns, setShowExtraColumns] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     ALL_COLUMNS.filter(
       (col) => col.default && !DEFAULT_HIDDEN.includes(col.key)
@@ -90,6 +90,7 @@ export default function Geree() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
+  const columnMenuRef = useRef<HTMLDivElement | null>(null);
   const mongoliaProvinces = [
     "Улаанбаатар",
     "Архангай",
@@ -141,7 +142,8 @@ export default function Geree() {
     Баянгол: ["1-р хороо", "2-р хороо", "3-р хороо", "4-р хороо", "5-р хороо"],
   };
 
-  const { token, ajiltan, barilgiinId } = useAuth();
+  const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
+  const { zardluud } = useAshiglaltiinZardluud();
 
   const {
     gereeGaralt,
@@ -155,7 +157,6 @@ export default function Geree() {
     zagvarJagsaaltMutate,
     isValidating: isValidatingZagvar,
   } = useGereeniiZagvar();
-  const router = useRouter();
   const contracts = gereeGaralt?.jagsaalt || [];
 
   useEffect(() => {
@@ -165,6 +166,19 @@ export default function Geree() {
       khuudasniiDugaar: 1,
     }));
   }, [searchTerm, setGereeKhuudaslalt]);
+  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (
+        columnMenuRef.current &&
+        !columnMenuRef.current.contains(e.target as Node)
+      ) {
+        setShowColumnSelector(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, []);
 
   const filteredContracts = Array.isArray(contracts)
     ? contracts.filter(
@@ -184,10 +198,13 @@ export default function Geree() {
     utas: [""],
     mail: "",
     khayag: "",
+    aimag: "",
+    duureg: "",
+    horoo: "",
     baingiinKhayag: "",
     gereeniiDugaar: "",
     gereeniiOgnoo: "",
-    turul: "",
+    turul: "Үндсэн",
     ekhlekhOgnoo: "",
     duusakhOgnoo: "",
     tulukhOgnoo: "",
@@ -218,6 +235,70 @@ export default function Geree() {
     tooluuriinDugaar: "",
     baritsaaAvakhDun: 0,
   });
+
+  // Compute next contract number from existing list
+  const computeNextGereeDugaar = () => {
+    const nums = (contracts || [])
+      .map((c: any) =>
+        parseInt(String(c?.gereeniiDugaar || "").replace(/[^0-9]/g, ""), 10)
+      )
+      .filter((n: number) => !isNaN(n));
+    const max = nums.length ? Math.max(...nums) : 0;
+    return String(max + 1);
+  };
+
+  // Sum utilization expenses
+  const uilchilgeeNiit = (zardluud || []).reduce(
+    (sum: number, z: any) =>
+      sum + (Number(z?.tariff) || 0) + (Number(z?.suuriKhuraamj) || 0),
+    0
+  );
+
+  // Validation helpers
+  const hasAnyPhone = (arr: any) =>
+    Array.isArray(arr) && arr.some((x) => String(x || "").trim() !== "");
+  const isStepValid = (step: number) => {
+    if (step === 1) {
+      const baseValid =
+        String(newContract.ovog || "").trim() !== "" &&
+        String(newContract.ner || "").trim() !== "" &&
+        String(newContract.register || "").trim() !== "" &&
+        hasAnyPhone(newContract.utas) &&
+        String(newContract.aimag || "").trim() !== "";
+      const ubExtraValid =
+        newContract.aimag !== "Улаанбаатар" ||
+        (String(newContract.duureg || "").trim() !== "" &&
+          String(newContract.horoo || "").trim() !== "");
+      return baseValid && ubExtraValid;
+    }
+    if (step === 2) {
+      return (
+        String(newContract.gereeniiDugaar || "").trim() !== "" &&
+        String(newContract.gereeniiOgnoo || "").trim() !== "" &&
+        String(newContract.ekhlekhOgnoo || "").trim() !== "" &&
+        String(newContract.duusakhOgnoo || "").trim() !== "" &&
+        String(newContract.tulukhOgnoo || "").trim() !== "" &&
+        Number(newContract.khugatsaa) > 0
+      );
+    }
+    if (step === 3) {
+      return (
+        String(newContract.suhNer || "").trim() !== "" &&
+        String(newContract.suhRegister || "").trim() !== "" &&
+        hasAnyPhone(newContract.suhUtas)
+      );
+    }
+    if (step === 4) {
+      return (
+        newContract.suhTulbur !== undefined &&
+        newContract.suhTulbur !== null &&
+        String(newContract.suhTulbur) !== "" &&
+        !isNaN(Number(newContract.suhTulbur))
+      );
+    }
+    return true;
+  };
+  const isFormValid = () => [1, 2, 3, 4].every((s) => isStepValid(s));
 
   const renderCellValue = (contract: any, columnKey: string) => {
     switch (columnKey) {
@@ -377,50 +458,18 @@ export default function Geree() {
   const handleCreateContract = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!isFormValid()) {
+      notification.error({
+        message: "Талбар хүрэлцэхгүй",
+        description: "Бүх шаардлагатай талбарыг зөв бөглөнө үү",
+      });
+      return;
+    }
+
     const success = await gereeUusgekh(newContract);
     if (success) {
-      setNewContract({
-        ovog: "",
-        ner: "",
-        register: "",
-        utas: [""],
-        mail: "",
-        khayag: "",
-        baingiinKhayag: "",
-        gereeniiDugaar: "",
-        gereeniiOgnoo: "",
-        turul: "",
-        ekhlekhOgnoo: "",
-        duusakhOgnoo: "",
-        tulukhOgnoo: "",
-        khugatsaa: 0,
-        suhNer: "",
-        suhRegister: "",
-        suhUtas: [""],
-        suhMail: "",
-        suhGariinUseg: "",
-        suhTamga: "",
-        suhTulbur: "",
-        suhTulburUsgeer: "",
-        suhKhugatsaa: 0,
-        sukhKhungulult: 0,
-        uilchilgeeniiZardal: 0,
-        uilchilgeeniiZardalUsgeer: "",
-        niitTulbur: 0,
-        niitTulburUsgeer: "",
-        bairNer: "",
-        orts: "",
-        toot: 0,
-        talbainKhemjee: "",
-        zoriulalt: "",
-        davkhar: "",
-        burtgesenAjiltan: "",
-        temdeglel: "",
-        actOgnoo: "",
-        tooluuriinDugaar: "",
-        baritsaaAvakhDun: 0,
-      });
-      gereeJagsaaltMutate();
+      setShowCreateModal(false);
+      await gereeJagsaaltMutate();
     }
   };
 
@@ -448,16 +497,37 @@ export default function Geree() {
 
   const handleEdit = (contract: any) => {
     setEditingContract(contract);
-    setNewContract({
-      ner: contract.ner,
-      gereeTurul: contract.gereeTurul,
-      davkhar: contract.davkhar,
-      toot: contract.toot,
-      startDate: contract.startDate,
-      gereeniiDugaar: contract.gereeniiDugaar,
-      utas: contract.utas || "",
-      email: contract.email || "",
-    });
+    setCurrentStep(1);
+    setNewContract((prev: any) => ({
+      ...prev,
+      ner: contract.ner || "",
+      gereeTurul: contract.gereeTurul || "",
+      davkhar: contract.davkhar || "",
+      toot: contract.toot || "",
+      startDate: contract.startDate || "",
+      gereeniiDugaar: contract.gereeniiDugaar || "",
+      // Always store as array for inputs that use .join(", ")
+      utas: Array.isArray(contract.utas)
+        ? contract.utas
+        : contract.utas
+        ? String(contract.utas)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [""],
+      // Prefill SÖH phones too (array-safe)
+      suhUtas: Array.isArray(contract.suhUtas)
+        ? contract.suhUtas
+        : contract.suhUtas
+        ? String(contract.suhUtas)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [""],
+      // Form binds to "mail", not "email"
+      mail: contract.mail || contract.email || "",
+    }));
+    setShowCreateModal(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -539,1063 +609,1140 @@ export default function Geree() {
     },
   ];
 
+  // Keep derived fields in sync when modal opens or data loads
+  useEffect(() => {
+    if (showCreateModal && !editingContract) {
+      setNewContract((prev: any) => ({
+        ...prev,
+        gereeniiDugaar: prev.gereeniiDugaar || computeNextGereeDugaar(),
+        uilchilgeeniiZardal: uilchilgeeNiit,
+        // SÖХ defaults if empty
+        suhNer: prev.suhNer || baiguullaga?.ner || "",
+        suhRegister: prev.suhRegister || baiguullaga?.register || "",
+        suhUtas:
+          (prev.suhUtas && prev.suhUtas.length && prev.suhUtas) ||
+          (baiguullaga?.utas ? [String(baiguullaga.utas)] : [""]),
+        suhMail: prev.suhMail || baiguullaga?.email || "",
+      }));
+    }
+  }, [showCreateModal, editingContract, uilchilgeeNiit, baiguullaga]);
+
+  // Step 4: Fetch recent invoices (нэхэмжлэх) for the organization
+  const [invLoading, setInvLoading] = useState(false);
+  const [invItems, setInvItems] = useState<any[]>([]);
+  useEffect(() => {
+    const run = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      if (currentStep !== 4) return;
+      try {
+        setInvLoading(true);
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 10,
+            query: { baiguullagiinId: ajiltan.baiguullagiinId },
+          },
+        });
+        const data = resp.data;
+        const list = Array.isArray(data?.jagsaalt)
+          ? data.jagsaalt
+          : Array.isArray(data)
+          ? data
+          : [];
+        setInvItems(list);
+      } catch (e) {
+        setInvItems([]);
+      } finally {
+        setInvLoading(false);
+      }
+    };
+    run();
+  }, [currentStep, token, ajiltan?.baiguullagiinId]);
+
   return (
     <div className="min-h-screen">
-      <motion.h1
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
-      >
-        {"Гэрээ"}
-      </motion.h1>
-      <p className="text-lg text-slate-600 mb-8">
-        Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
-      </p>
-
-      <div className="flex gap-3 mb-8 pt-4 flex-wrap">
-        <button
-          onClick={() => {
-            setEditingContract(null);
-            setNewContract({
-              ovog: "",
-              ner: "",
-              register: "",
-              utas: [""],
-              mail: "",
-              khayag: "",
-              baingiinKhayag: "",
-              gereeniiDugaar: "",
-              gereeniiOgnoo: "",
-              turul: "",
-              ekhlekhOgnoo: "",
-              duusakhOgnoo: "",
-              tulukhOgnoo: "",
-              khugatsaa: 0,
-              suhNer: "",
-              suhRegister: "",
-              suhUtas: [""],
-              suhMail: "",
-              suhGariinUseg: "",
-              suhTamga: "",
-              suhTulbur: "",
-              suhTulburUsgeer: "",
-              suhKhugatsaa: 0,
-              sukhKhungulult: 0,
-              uilchilgeeniiZardal: 0,
-              uilchilgeeniiZardalUsgeer: "",
-              niitTulbur: 0,
-              niitTulburUsgeer: "",
-              bairNer: "",
-              orts: "",
-              toot: 0,
-              talbainKhemjee: "",
-              zoriulalt: "",
-              davkhar: "",
-              burtgesenAjiltan: "",
-              temdeglel: "",
-              actOgnoo: "",
-              tooluuriinDugaar: "",
-              baritsaaAvakhDun: 0,
-            });
-            setShowCreateModal(true);
-          }}
-          className="px-4 py-2 bg-bar text-white rounded-lg font-semibold hover:bg-violet-400 transition-colors"
-        >
-          {editingContract ? "Гэрээ засах" : "Гэрээ байгуулах"}
-        </button>
-        <button
-          onClick={() => setShowList2Modal(true)}
-          className="px-4 py-2 btn rounded-lg font-semibold"
-        >
-          Гэрээний Загвар
-        </button>
-        <button
-          onClick={() => setShowTemplatesModal(true)}
-          className="px-4 py-2 btn rounded-lg font-semibold"
-        >
-          Гэрээний загвар татах
-        </button>
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="text-3xl font-bold text-theme"
+          >
+            Гэрээ
+          </motion.h1>
+          <p className="text-sm mt-1 text-subtle">
+            Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
+          </p>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              setEditingContract(null);
+              setCurrentStep(1);
+              setNewContract({
+                ovog: "",
+                ner: "",
+                register: "",
+                utas: [""],
+                mail: "",
+                khayag: "",
+                aimag: "",
+                duureg: "",
+                horoo: "",
+                baingiinKhayag: "",
+                // Auto next contract number
+                gereeniiDugaar: computeNextGereeDugaar(),
+                gereeniiOgnoo: "",
+                turul: "Үндсэн",
+                ekhlekhOgnoo: "",
+                duusakhOgnoo: "",
+                tulukhOgnoo: "",
+                khugatsaa: 0,
+                // Prefill from organization (SÖХ info)
+                suhNer: baiguullaga?.ner || "",
+                suhRegister: baiguullaga?.register || "",
+                suhUtas: baiguullaga?.utas ? [String(baiguullaga.utas)] : [""],
+                suhMail: baiguullaga?.email || "",
+                suhGariinUseg: "",
+                suhTamga: "",
+                suhTulbur: "",
+                suhTulburUsgeer: "",
+                suhKhugatsaa: 0,
+                sukhKhungulult: 0,
+                // Auto from utilization expenses
+                uilchilgeeniiZardal: uilchilgeeNiit,
+                uilchilgeeniiZardalUsgeer: "",
+                niitTulbur: 0,
+                niitTulburUsgeer: "",
+                bairNer: "",
+                orts: "",
+                toot: 0,
+                talbainKhemjee: "",
+                zoriulalt: "",
+                davkhar: "",
+                burtgesenAjiltan: "",
+                temdeglel: "",
+                actOgnoo: "",
+                tooluuriinDugaar: "",
+                baritsaaAvakhDun: 0,
+              });
+              setShowCreateModal(true);
+            }}
+            className="btn-minimal"
+          >
+            Гэрээ байгуулах
+          </button>
+          <button
+            onClick={() => setShowList2Modal(true)}
+            className="btn-minimal"
+          >
+            Гэрээний Загвар
+          </button>
+          <button
+            onClick={() => setShowTemplatesModal(true)}
+            className="btn-minimal"
+          >
+            Гэрээний загвар татах
+          </button>
+        </div>
       </div>
 
-      <div className="bg-transparent rounded-2xl p-8">
-        <div>
-          <div className="flex gap-4 mb-6 flex-wrap items-start">
-            <div className="flex-1 min-w-[300px] relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-900 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Гэрээ хайх..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-              />
-            </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-900 w-5 h-5" />
-              <select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                className="pl-10 pr-8 py-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent appearance-none"
-              >
-                <option>Бүгд</option>
-                <option>homeowner</option>
-                <option>renter</option>
-              </select>
-            </div>
-            <div className="relative flex items-center gap-2">
-              <button
-                onClick={() => setShowColumnSelector(!showColumnSelector)}
-                className="px-4 py-3 bg-bar text-white rounded-lg font-semibold hover:bg-violet-400 transition-colors flex items-center gap-2"
-              >
-                <Settings className="w-5 h-5" />
-                Багана сонгох
-              </button>
+      <div className="flex items-center gap-4 w-full">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[color:var(--panel-text)] opacity-50" />
+          <input
+            type="text"
+            placeholder="Хайх..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-2xl neo-input:focus border-transparent backdrop-blur-xl transition-all text-theme"
+          />
+        </div>
 
-              <button
-                onClick={() => setShowExtraColumns(true)}
-                className="px-4 py-3 bg-transparent btn rounded-lg font-semibold transition-colors flex items-center gap-2"
-                title="Бусад талбарууд"
-              >
-                <FileText className="w-4 h-4 icon" />
-                Бусад талбарууд
-              </button>
-            </div>
-          </div>
+        <div className="relative" ref={columnMenuRef}>
+          <button
+            onClick={() => setShowColumnSelector((s) => !s)}
+            className="btn-neu"
+            aria-expanded={showColumnSelector}
+            aria-haspopup="menu"
+          >
+            <Settings className="w-5 h-5" />
+            Багана сонгох
+          </button>
 
-          {isValidatingGeree ? (
-            <div className="text-center py-8 text-slate-500">
-              Уншиж байна...
-            </div>
-          ) : (
-            <div>
-              <div className="rounded-2xl bg-transparent shadow-sm overflow-hidden table-wrapper">
-                {" "}
-                <div className="h-[330px] overflow-y-auto custom-scrollbar">
-                  <table className="table-custom w-full min-w-[900px]">
-                    <thead className="sticky top-0 shadow-sm z-10">
-                      <tr>
-                        {visibleColumns.map((columnKey) => {
-                          const column = ALL_COLUMNS.find(
-                            (col) => col.key === columnKey
-                          );
-                          return (
-                            <th
-                              key={columnKey}
-                              className="p-4 text-left text-sm font-semibold whitespace-nowrap"
-                            >
-                              {column?.label}
-                            </th>
-                          );
-                        })}
-                        <th className="p-4 text-left text-sm font-semibold text-slate-700 whitespace-nowrap">
-                          Үйлдэл
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {currentContracts.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={visibleColumns.length + 1}
-                            className="p-8 text-center text-slate-500"
-                          >
-                            Гэрээ олдсонгүй
-                          </td>
-                        </tr>
-                      ) : (
-                        currentContracts.map((contract: any, idx: number) => (
-                          <tr
-                            key={contract._id || idx}
-                            className="bg-transparent hover:shadow-md transition-all border-b last:border-b-0"
-                          >
-                            {visibleColumns.map((columnKey) => (
-                              <td
-                                key={columnKey}
-                                className="p-4 text-slate-600 font-medium whitespace-nowrap"
-                              >
-                                {renderCellValue(contract, columnKey)}
-                              </td>
-                            ))}
-                            <td className="p-4 whitespace-nowrap">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleEdit(contract)}
-                                  className="p-2 text-blue-400 hover:bg-blue-50 rounded-lg transition-colors icon"
-                                  title="Засах"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    contract._id && handleDelete(contract._id)
-                                  }
-                                  className="p-2 text-red-400 hover:bg-red-50 rounded-lg transition-colors icon"
-                                  title="Устгах"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
+          {showColumnSelector && (
+            <div
+              role="menu"
+              className="absolute right-0 mt-2 w-64 rounded-xl menu-surface p-3 z-[80]"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-semibold text-theme">Багана</span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="text-xs px-2 py-1"
+                    onClick={() =>
+                      setVisibleColumns(ALL_COLUMNS.map((c) => c.key))
+                    }
+                  >
+                    Бүгд
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs px-2 py-1"
+                    onClick={() =>
+                      setVisibleColumns(
+                        ALL_COLUMNS.filter(
+                          (c) => c.default && !DEFAULT_HIDDEN.includes(c.key)
+                        ).map((c) => c.key)
+                      )
+                    }
+                  >
+                    Үндсэн
+                  </button>
+                  <button
+                    type="button"
+                    className=" text-xs px-2 py-1"
+                    onClick={() => setVisibleColumns([])}
+                  >
+                    Цэвэрлэх
+                  </button>
                 </div>
               </div>
-
-              <div className="flex flex-col sm:flex-row w-full px-4 gap-3">
-                <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
-                  <select
-                    value={rowsPerPage}
-                    onChange={(e) => {
-                      setRowsPerPage(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="border border-gray-300 rounded-lg text-sm px-2 py-1 focus:outline-none"
-                  >
-                    <option value={10}>10</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
+              <div className="max-h-70 overflow-y-auto space-y-1">
+                {ALL_COLUMNS.map((col) => {
+                  const checked = visibleColumns.includes(col.key);
+                  return (
+                    <label
+                      key={col.key}
+                      className="flex items-center gap-2 text-sm text-theme hover:menu-surface/80 px-2 py-1.5 rounded-2xl cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() =>
+                          setVisibleColumns((prev) =>
+                            prev.includes(col.key)
+                              ? prev.filter((k) => k !== col.key)
+                              : [...prev, col.key]
+                          )
+                        }
+                        style={{ accentColor: "var(--panel-text)" }}
+                      />
+                      {col.label}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
+      </div>
 
-        <AnimatePresence>
-          {showCreateModal &&
-            createPortal(
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                onClick={() => setShowCreateModal(false)}
-              >
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <motion.div
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl p-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-slate-900">
-                      {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
-                    </h2>
-                    <button
-                      onClick={() => setShowCreateModal(false)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <form
-                    onSubmit={
-                      editingContract
-                        ? handleUpdateContract
-                        : handleCreateContract
-                    }
-                    className="space-y-6"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-y-auto custom-scrollbar max-h-[55vh]">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Овог
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.ovog}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              ovog: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Нэр
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.ner}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              ner: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Регистр
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.register}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              register: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Утас
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.utas.join(", ")}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              utas: e.target.value
-                                .split(",")
-                                .map((s) => s.trim()),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          И-мэйл
-                        </label>
-                        <input
-                          type="email"
-                          value={newContract.mail}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              mail: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Аймаг
-                        </label>
-                        <select
-                          value={newContract.khayag}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              khayag: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
+      {isValidatingGeree ? (
+        <div className="text-center py-8 text-subtle">Уншиж байна...</div>
+      ) : (
+        <div>
+          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+            <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+              <div className="overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-sm min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                        №
+                      </th>
+                      {visibleColumns.map((columnKey) => {
+                        const column = ALL_COLUMNS.find(
+                          (col) => col.key === columnKey
+                        );
+                        return (
+                          <th
+                            key={columnKey}
+                            className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap"
+                          >
+                            {column?.label}
+                          </th>
+                        );
+                      })}
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Үйлдэл
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentContracts.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={visibleColumns.length + 2}
+                          className="p-8 text-center text-subtle"
                         >
-                          <option value="">Сонгох...</option>
-                          {mongoliaProvinces.map((province) => (
-                            <option key={province} value={province}>
-                              {province}
-                            </option>
+                          Гэрээ олдсонгүй
+                        </td>
+                      </tr>
+                    ) : (
+                      currentContracts.map((contract: any, idx: number) => (
+                        <tr
+                          key={contract._id || idx}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-3 text-center text-theme">
+                            {startIndex + idx + 1}
+                          </td>
+                          {visibleColumns.map((columnKey) => (
+                            <td
+                              key={columnKey}
+                              className="p-3 text-theme whitespace-nowrap text-center"
+                            >
+                              {renderCellValue(contract, columnKey)}
+                            </td>
                           ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Дүүрэг
-                        </label>
-                        <select
-                          value={newContract.ner}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              ner: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        >
-                          <option value="">Сонгох...</option>
-                          {(districts[newContract.khayag] || []).map(
-                            (district) => (
-                              <option key={district} value={district}>
-                                {district}
-                              </option>
-                            )
-                          )}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Хороо
-                        </label>
-                        <select
-                          value={newContract.ner}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              ner: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        >
-                          <option value="">Сонгох...</option>
-                          {(subDistricts[newContract.ner] || []).map(
-                            (subDistrict) => (
-                              <option key={subDistrict} value={subDistrict}>
-                                {subDistrict}
-                              </option>
-                            )
-                          )}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Байнгын хаяг
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.baingiinKhayag}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              baingiinKhayag: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Гэрээний дугаар
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.gereeniiDugaar}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              gereeniiDugaar: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Гэрээний огноо
-                        </label>
-                        <input
-                          type="date"
-                          value={newContract.gereeniiOgnoo}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              gereeniiOgnoo: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Төрөл
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.turul}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              turul: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Эхлэх огноо
-                        </label>
-                        <input
-                          type="date"
-                          value={newContract.ekhlekhOgnoo}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              ekhlekhOgnoo: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Дуусах огноо
-                        </label>
-                        <input
-                          type="date"
-                          value={newContract.duusakhOgnoo}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              duusakhOgnoo: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Төлөх огноо
-                        </label>
-                        <input
-                          type="date"
-                          value={newContract.tulukhOgnoo}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              tulukhOgnoo: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Хугацаа (сар)
-                        </label>
-                        <input
-                          type="number"
-                          value={newContract.khugatsaa}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              khugatsaa: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          СӨХ-ийн нэр
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.suhNer}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              suhNer: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          СӨХ-ийн регистр
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.suhRegister}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              suhRegister: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          СӨХ-ийн утас
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.suhUtas.join(", ")}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              suhUtas: e.target.value
-                                .split(",")
-                                .map((s) => s.trim()),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          СӨХ-ийн и-мэйл
-                        </label>
-                        <input
-                          type="email"
-                          value={newContract.suhMail}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              suhMail: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          СӨХ төлбөр
-                        </label>
-                        <input
-                          type="number"
-                          value={newContract.suhTulbur}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              suhTulbur: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Үйлчилгээний зардал
-                        </label>
-                        <input
-                          type="number"
-                          value={newContract.uilchilgeeniiZardal}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              uilchilgeeniiZardal: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Нийт төлбөр
-                        </label>
-                        <input
-                          type="number"
-                          value={newContract.niitTulbur}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              niitTulbur: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Байрны нэр
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.bairNer}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              bairNer: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Орц
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.orts}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              orts: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Тоот
-                        </label>
-                        <input
-                          type="number"
-                          value={newContract.toot}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              toot: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Давхар
-                        </label>
-                        <input
-                          type="text"
-                          value={newContract.davkhar}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              davkhar: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Тэмдэглэл
-                        </label>
-                        <textarea
-                          value={newContract.temdeglel}
-                          onChange={(e) =>
-                            setNewContract((prev: any) => ({
-                              ...prev,
-                              temdeglel: e.target.value,
-                            }))
-                          }
-                          className="w-full p-3 text-slate-900 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent border border-gray-300"
-                          rows={3}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-end gap-4 pt-4">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingContract(null);
-                          setNewContract({
-                            ovog: "",
-                            ner: "",
-                            register: "",
-                            utas: [""],
-                            mail: "",
-                            khayag: "",
-                            baingiinKhayag: "",
-                            gereeniiDugaar: "",
-                            gereeniiOgnoo: "",
-                            turul: "",
-                            ekhlekhOgnoo: "",
-                            duusakhOgnoo: "",
-                            tulukhOgnoo: "",
-                            khugatsaa: 0,
-                            suhNer: "",
-                            suhRegister: "",
-                            suhUtas: [""],
-                            suhMail: "",
-                            suhGariinUseg: "",
-                            suhTamga: "",
-                            suhTulbur: "",
-                            suhTulburUsgeer: "",
-                            suhKhugatsaa: 0,
-                            sukhKhungulult: 0,
-                            uilchilgeeniiZardal: 0,
-                            uilchilgeeniiZardalUsgeer: "",
-                            niitTulbur: 0,
-                            niitTulburUsgeer: "",
-                            bairNer: "",
-                            orts: "",
-                            toot: 0,
-                            talbainKhemjee: "",
-                            zoriulalt: "",
-                            davkhar: "",
-                            burtgesenAjiltan: "",
-                            temdeglel: "",
-                            actOgnoo: "",
-                            tooluuriinDugaar: "",
-                            baritsaaAvakhDun: 0,
-                          });
-                          setShowCreateModal(false);
-                        }}
-                        className="px-6 py-3 border border-gray-300 rounded-lg text-slate-700 font-semibold hover:bg-gray-50 transition-colors"
-                      >
-                        Болих
-                      </button>
-                      <button
-                        type="submit"
-                        className="px-6 py-3 bg-bar text-white rounded-lg font-semibold hover:shadow-md transition-colors"
-                      >
-                        {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
-                      </button>
-                    </div>
-                  </form>
-                </motion.div>
-              </motion.div>,
-              document.body
-            )}
+                          <td className="p-3 whitespace-nowrap">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => handleEdit(contract)}
+                                className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  contract._id && handleDelete(contract._id)
+                                }
+                                className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-          {showList2Modal &&
-            createPortal(
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                onClick={() => setShowList2Modal(false)}
-              >
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <motion.div
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl p-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-slate-900">
-                      Гэрээний Загвар
-                    </h2>
-                    <button
-                      onClick={() => setShowList2Modal(false)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
-                    {(zagvaruud || []).map((z: any) => (
-                      <div
-                        key={z._id}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div>
-                          <div className="font-semibold text-slate-900">
-                            {z.ner}
-                          </div>
-                          <div className="text-sm text-slate-600">
-                            {z.turul}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handlePreviewTemplate(z._id)}
-                            className="p-2 hover:bg-gray-100 rounded-lg"
-                            title="Харах"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEditTemplate(z._id)}
-                            className="p-2 hover:bg-gray-100 rounded-lg"
-                            title="Засах"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTemplate(z._id)}
-                            className="p-2 hover:bg-red-50 rounded-lg text-red-500"
-                            title="Устгах"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              </motion.div>,
-              document.body
-            )}
+            <div className="flex flex-col sm:flex-row w-full px-1 gap-3 mt-3">
+              <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
+                <PageSongokh
+                  value={rowsPerPage}
+                  onChange={(v) => {
+                    setRowsPerPage(v);
+                    setCurrentPage(1);
+                  }}
+                  className=""
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-          {showTemplatesModal &&
-            createPortal(
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                onClick={() => setShowTemplatesModal(false)}
-              >
-                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-                <motion.div
-                  initial={{ scale: 0.95, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.95, opacity: 0 }}
-                  onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-lg rounded-2xl bg-white shadow-2xl p-6"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-slate-900">
-                      Гэрээний загвар татах
-                    </h2>
-                    <button
-                      onClick={() => setShowTemplatesModal(false)}
-                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => handleDownloadTemplate("Үндсэн гэрээ")}
-                      className="w-full flex items-center gap-2 px-4 py-3 btn rounded-lg font-semibold"
-                    >
-                      <Download className="w-4 h-4" />
-                      Үндсэн гэрээ загвар
-                    </button>
-                    <button
-                      onClick={() => handleDownloadTemplate("Түр гэрээ")}
-                      className="w-full flex items-center gap-2 px-4 py-3 btn rounded-lg font-semibold"
-                    >
-                      <Download className="w-4 h-4" />
-                      Түр гэрээ загвар
-                    </button>
-                  </div>
-                </motion.div>
-              </motion.div>,
-              document.body
-            )}
-          {showExtraColumns &&
-            createPortal(
-              <div
-                className="fixed inset-0 z-50 flex items-center justify-center"
-                onClick={() => setShowExtraColumns(false)}
-              >
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="relative w-full max-w-md p-6 rounded-2xl bg-transparent frosted-plate shadow-2xl z-60"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-white/95">
-                      Бусад талбарууд
-                    </h3>
-                    <button
-                      onClick={() => setShowExtraColumns(false)}
-                      className="p-2 rounded-md"
-                    >
-                      <X className="w-5 h-5 text-white/85" />
-                    </button>
-                  </div>
-
-                  <div className="space-y-2 max-h-64 overflow-y-auto">
-                    {ALL_COLUMNS.filter(
-                      (c) => !visibleColumns.includes(c.key)
-                    ).map((column) => (
-                      <label
-                        key={column.key}
-                        className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/6"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleColumns.includes(column.key)}
-                          onChange={() => toggleColumn(column.key)}
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm text-white/90">
-                          {column.label}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end gap-3 mt-4">
-                    <button
-                      onClick={() => setShowExtraColumns(false)}
-                      className="px-4 py-2 rounded-lg border border-white/10 text-white/90"
-                    >
-                      Хаах
-                    </button>
-                  </div>
-                </div>
-              </div>,
-              document.body
-            )}
-          {/* preview modal stays as is */}
-          {showPreviewModal && previewTemplate && (
+      <AnimatePresence>
+        {showCreateModal && (
+          <ModalPortal>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setShowPreviewModal(false)}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
             >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full h-full overflow-hidden"
+                className="relative w-full max-w-5xl h-[85vh] max-h-[90vh] rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
               >
-                <div className="flex justify-between items-center p-6 border-b">
+                <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
-                    {previewTemplate.ner}
+                    {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
                   </h2>
                   <button
-                    onClick={() => setShowPreviewModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    onClick={() => setShowCreateModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-                  <div className="mb-4">
-                    <p className="text-sm text-slate-600 mb-2">
-                      <strong>Тайлбар:</strong>{" "}
-                      {previewTemplate.tailbar || "Байхгүй"}
-                    </p>
-                    <p className="text-sm text-slate-600">
-                      <strong>Төрөл:</strong>{" "}
-                      {previewTemplate.turul || "Байхгүй"}
-                    </p>
+                <form
+                  onSubmit={
+                    editingContract
+                      ? handleUpdateContract
+                      : handleCreateContract
+                  }
+                  className="flex-1 flex flex-col"
+                >
+                  <div className="flex items-center gap-3 px-6 my-6">
+                    {[
+                      "Хувийн мэдээлэл",
+                      "Гэрээний дугаар",
+                      "СӨХ мэдээлэл",
+                      "Төлбөр",
+                    ].map((label, i) => {
+                      const step = i + 1;
+                      const active = currentStep === step;
+                      const done = currentStep > step;
+                      return (
+                        <div key={label} className="flex items-center gap-2">
+                          <div
+                            className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                              active
+                                ? "bg-sky-700 text-white"
+                                : done
+                                ? "bg-blue-200 text-slate-800"
+                                : "bg-gray-200 text-slate-700"
+                            }`}
+                          >
+                            {step}
+                          </div>
+                          <span
+                            className={`text-sm ${
+                              active
+                                ? "text-slate-900 font-semibold"
+                                : "text-slate-600"
+                            }`}
+                          >
+                            {label}
+                          </span>
+                          {step < 4 && (
+                            <div className="w-8 h-[2px] bg-gray-200 mx-2" />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+                  <div className="flex-1 overflow-y-auto px-6 space-y-6">
+                    <div className="min-h-[60vh]">
+                      {currentStep === 1 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Гэрээний төрөл
+                            </label>
+                            <TusgaiZagvar
+                              tone="neutral"
+                              value={newContract.turul}
+                              onChange={(val) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  turul: val,
+                                }))
+                              }
+                              options={[
+                                { value: "Үндсэн", label: "Үндсэн" },
+                                { value: "Түр", label: "Түр" },
+                              ]}
+                              className="w-full"
+                              placeholder="Сонгох..."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Овог
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.ovog}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  ovog: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.ner}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  ner: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Регистр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.register}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  register: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Утас
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.utas.join(", ")}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  utas: e.target.value
+                                    .split(",")
+                                    .map((s) => s.trim()),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              И-мэйл
+                            </label>
+                            <input
+                              type="email"
+                              value={newContract.mail}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  mail: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Аймаг
+                            </label>
+                            <TusgaiZagvar
+                              tone="neutral"
+                              value={newContract.aimag}
+                              onChange={(val) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  aimag: val,
+                                  khayag: val,
+                                  duureg: "",
+                                  horoo: "",
+                                }))
+                              }
+                              options={mongoliaProvinces.map((p) => ({
+                                value: p,
+                                label: p,
+                              }))}
+                              className="w-full"
+                              placeholder="Сонгох..."
+                            />
+                          </div>
+                          {newContract.aimag === "Улаанбаатар" && (
+                            <>
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                  Дүүрэг
+                                </label>
+                                <TusgaiZagvar
+                                  tone="neutral"
+                                  value={newContract.duureg}
+                                  onChange={(val) =>
+                                    setNewContract((prev: any) => ({
+                                      ...prev,
+                                      duureg: val,
+                                      horoo: "",
+                                    }))
+                                  }
+                                  options={(
+                                    districts[newContract.aimag] || []
+                                  ).map((d) => ({ value: d, label: d }))}
+                                  className="w-full"
+                                  placeholder="Сонгох..."
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">
+                                  Хороо
+                                </label>
+                                <TusgaiZagvar
+                                  tone="neutral"
+                                  value={newContract.horoo}
+                                  onChange={(val) =>
+                                    setNewContract((prev: any) => ({
+                                      ...prev,
+                                      horoo: val,
+                                    }))
+                                  }
+                                  options={(
+                                    subDistricts[newContract.duureg] || []
+                                  ).map((sd) => ({ value: sd, label: sd }))}
+                                  className="w-full"
+                                  placeholder="Сонгох..."
+                                />
+                              </div>
+                            </>
+                          )}
+                          {newContract.turul !== "Үндсэн" && (
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Байнгын хаяг
+                              </label>
+                              <input
+                                type="text"
+                                value={newContract.baingiinKhayag}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    baingiinKhayag: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Step 2: Гэрээний дугаар, огноо, хугацаа */}
+                      {currentStep === 2 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Гэрээний дугаар
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.gereeniiDugaar}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  gereeniiDugaar: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Гэрээний огноо
+                            </label>
+                            <DatePicker
+                              className="w-full"
+                              value={
+                                newContract.gereeniiOgnoo
+                                  ? dayjs(newContract.gereeniiOgnoo)
+                                  : null
+                              }
+                              onChange={(d) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  gereeniiOgnoo: d
+                                    ? d.format("YYYY-MM-DD")
+                                    : "",
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Эхлэх/Дуусах огноо
+                            </label>
+                            <DatePicker.RangePicker
+                              className="w-full"
+                              value={
+                                newContract.ekhlekhOgnoo &&
+                                newContract.duusakhOgnoo
+                                  ? [
+                                      dayjs(newContract.ekhlekhOgnoo),
+                                      dayjs(newContract.duusakhOgnoo),
+                                    ]
+                                  : null
+                              }
+                              onChange={(vals) => {
+                                const [start, end] = (vals || []) as Dayjs[];
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  ekhlekhOgnoo: start
+                                    ? start.format("YYYY-MM-DD")
+                                    : "",
+                                  duusakhOgnoo: end
+                                    ? end.format("YYYY-MM-DD")
+                                    : "",
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Төлөх огноо
+                            </label>
+                            <DatePicker
+                              className="w-full"
+                              value={
+                                newContract.tulukhOgnoo
+                                  ? dayjs(newContract.tulukhOgnoo)
+                                  : null
+                              }
+                              onChange={(d) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  tulukhOgnoo: d ? d.format("YYYY-MM-DD") : "",
+                                }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Хугацаа (сар)
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.khugatsaa}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  khugatsaa: Number(e.target.value),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {/* Step 3: СӨХ мэдээлэл */}
+                      {currentStep === 3 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              СӨХ-ийн нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.suhNer}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  suhNer: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              СӨХ-ийн регистр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.suhRegister}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  suhRegister: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              СӨХ-ийн утас
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.suhUtas.join(", ")}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  suhUtas: e.target.value
+                                    .split(",")
+                                    .map((s) => s.trim()),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              СӨХ-ийн и-мэйл
+                            </label>
+                            <input
+                              type="email"
+                              value={newContract.suhMail}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  suhMail: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
 
-                  <div className="bg-white border border-gray-300 rounded-lg p-8">
-                    <div
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{
-                        __html: previewTemplate.aguulga || "",
-                      }}
-                    />
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Байрны нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.bairNer}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  bairNer: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Орц
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.orts}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  orts: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Тоот
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.toot}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  toot: Number(e.target.value),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Давхар
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.davkhar}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  davkhar: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Тэмдэглэл
+                            </label>
+                            <textarea
+                              value={newContract.temdeglel}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  temdeglel: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              rows={3}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {currentStep === 4 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Үйлчилгээний зардал
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.uilchilgeeniiZardal}
+                              readOnly
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                              Ашиглалтын зардлуудын нийлбэр автоматаар
+                              тооцоологдоно
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Барьцааны дүн
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.baritsaaAvakhDun}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  baritsaaAvakhDun: Number(e.target.value),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Хугацаа (сар)
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.khugatsaa}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  khugatsaa: Number(e.target.value),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-slate-700 mb-2">
+                              Нэхэмжлэхийн сүүлийн бичилтүүд
+                            </label>
+                            <div className="rounded-2xl border border-gray-200 p-3">
+                              {invLoading ? (
+                                <div className="flex items-center gap-2 text-slate-600">
+                                  <Spin size="small" /> Ачааллаж байна...
+                                </div>
+                              ) : invItems.length === 0 ? (
+                                <div className="text-slate-500 text-sm">
+                                  Мэдээлэл олдсонгүй
+                                </div>
+                              ) : (
+                                <ul className="space-y-2">
+                                  {invItems
+                                    .slice(0, 5)
+                                    .map((it: any, idx: number) => (
+                                      <li
+                                        key={idx}
+                                        className="flex items-center justify-between text-sm"
+                                      >
+                                        <span className="text-slate-700 truncate pr-2">
+                                          {it.ner ||
+                                            it.turul ||
+                                            it.turulNer ||
+                                            "Нэхэмжлэх"}
+                                        </span>
+                                        <span className="font-semibold text-slate-900">
+                                          {(
+                                            it.niitTulbur ??
+                                            it.niitDun ??
+                                            it.total ??
+                                            0
+                                          ).toLocaleString()}
+                                          ₮
+                                        </span>
+                                      </li>
+                                    ))}
+                                </ul>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex justify-between px-6 py-4 border-t sticky bottom-4 left-0 right-0">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCurrentStep((s: number) => Math.max(1, s - 1))
+                        }
+                        className="btn-minimal btn-minimal-ghost btn-back"
+                        disabled={currentStep === 1}
+                      >
+                        Буцах
+                      </button>
+                      {currentStep < 4 ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentStep((s: number) => Math.min(4, s + 1));
+                          }}
+                          className="btn-minimal btn-next"
+                        >
+                          Дараах
+                        </button>
+                      ) : (
+                        <button
+                          type="submit"
+                          disabled={!isFormValid()}
+                          className="btn-minimal btn-save h-11 min-w-[140px]"
+                        >
+                          {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
-                  <button
-                    onClick={() => setShowPreviewModal(false)}
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-slate-700 font-semibold hover:bg-gray-100 transition-colors"
-                  >
-                    Хаах
-                  </button>
+                </form>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showList2Modal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              onClick={() => setShowList2Modal(false)}
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    Гэрээний Загвар
+                  </h3>
                   <button
                     onClick={() => {
-                      handleEditTemplate(previewTemplate._id);
-                      setShowPreviewModal(false);
+                      setShowList2Modal(false);
+                      router.push("/geree/zagvar/gereeniiZagvar");
                     }}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                    className="btn-minimal"
                   >
-                    Засах
+                    Шинэ загвар
                   </button>
+                </div>
+                <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                  {(zagvaruud || []).map((z: any) => (
+                    <div
+                      key={z._id}
+                      className="flex items-center justify-between p-3 rounded-2xl border"
+                    >
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {z.ner}
+                        </div>
+                        <div className="text-sm text-slate-600">{z.turul}</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handlePreviewTemplate(z._id)}
+                          className="p-2 hover:bg-blue-100 rounded-2xl"
+                          title="Харах"
+                        >
+                          <Eye className="w-4 h-4 text-blue-500" />
+                        </button>
+                        <button
+                          onClick={() => handleEditTemplate(z._id)}
+                          className="p-2 hover:bg-blue-100 rounded-2xl"
+                          title="Засах"
+                        >
+                          <Edit className="w-4 h-4 action-edit" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTemplate(z._id)}
+                          className="p-2 hover:bg-red-50 rounded-2xl action-delete"
+                          title="Устгах"
+                        >
+                          <Trash2 className="w-4 h-4 action-delete" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </ModalPortal>
+        )}
+        {showTemplatesModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              onClick={() => setShowTemplatesModal(false)}
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    Гэрээний загвар татах
+                  </h3>
+                  <button
+                    onClick={() => setShowTemplatesModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {templates.map((t: any) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between p-4 rounded-xl border border-gray-200"
+                    >
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          {t.name}
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          {t.description}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDownloadTemplate(t.type)}
+                        className="btn-minimal"
+                      >
+                        <Download className="w-4 h-4" />
+                        Татах
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -34,7 +34,7 @@ function DansTile({ data, dansMutate, zasya, t }: DansTileProps) {
   };
 
   return (
-    <div className="flex items-center justify-between bg-transparent rounded-lg shadow p-4 mb-3 hover:shadow-md transition">
+    <div className="flex items-center justify-between bg-transparent rounded-2xl shadow p-4 mb-3 hover:shadow-md transition">
       <div className="flex flex-col sm:flex-row sm:gap-6 w-full">
         <div>
           <div className="font-medium text-slate-700">{t("Данс")}</div>
@@ -148,7 +148,7 @@ function Dans() {
     corporateState: Partial<DansItem>;
     setCorporateState: React.Dispatch<React.SetStateAction<Partial<DansItem>>>;
   }) => (
-    <div className="bg-transparent rounded-lg shadow p-5 mb-6">
+    <div className="bg-transparent rounded-2xl shadow p-5 mb-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">{title}</h2>
         <Button
@@ -180,6 +180,7 @@ function Dans() {
                 corporateNevtrekhNer: e.target.value,
               })
             }
+            className="text-theme"
           />
           <Input.Password
             placeholder={t("Нэвтрэх нууц үг")}
@@ -190,6 +191,7 @@ function Dans() {
                 corporateNuutsUg: e.target.value,
               })
             }
+            className="text-theme"
           />
           <Button loading={loadingCheck} onClick={checkTdbConnection}>
             {t("Шалгах")}

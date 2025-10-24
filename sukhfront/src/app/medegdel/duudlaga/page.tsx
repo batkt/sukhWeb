@@ -370,7 +370,7 @@ export default function TaskManagementSystem() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         Дуудлага
       </motion.h1>
@@ -548,7 +548,7 @@ export default function TaskManagementSystem() {
                         </div>
                       )}
                       {item.tailbar && (
-                        <div className="mt-2 p-2 bg-red-500/20 backdrop-blur-sm rounded-lg text-red-200 text-xs border border-red-400/30">
+                        <div className="mt-2 p-2 bg-red-500/20 backdrop-blur-sm rounded-2xl text-red-200 text-xs border border-red-400/30">
                           {item.tailbar}
                         </div>
                       )}

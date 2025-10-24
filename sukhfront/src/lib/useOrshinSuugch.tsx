@@ -35,12 +35,21 @@ const fetcherJagsaalt = async ([
   url,
   token,
   baiguullagiinId,
+  barilgiinId,
   khuudaslalt,
   query,
-]: [string, string, string | number, Khuudaslalt, Query]): Promise<any> => {
+]: [
+  string,
+  string,
+  string | number,
+  string | number | null | undefined,
+  Khuudaslalt,
+  Query
+]): Promise<any> => {
   try {
     const filter: any = {
       baiguullagiinId,
+      ...(barilgiinId ? { barilgiinId } : {}),
       ...query,
     };
 
@@ -57,6 +66,8 @@ const fetcherJagsaalt = async ([
 
     const response = await uilchilgee(token).get(url, {
       params: {
+        baiguullagiinId,
+        ...(barilgiinId ? { barilgiinId } : {}),
         query: filter,
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
@@ -73,7 +84,8 @@ const fetcherJagsaalt = async ([
 export function useOrshinSuugchJagsaalt(
   token: string,
   baiguullagiinId: string | number,
-  query: Query = {}
+  query: Query = {},
+  barilgiinId?: string | number | null
 ) {
   const [khuudaslalt, setOrshinSuugchKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
@@ -85,7 +97,14 @@ export function useOrshinSuugchJagsaalt(
 
   const { data, mutate, isValidating, error }: SWRResponse<any, any> = useSWR(
     shouldFetch
-      ? ["/orshinSuugch", token, baiguullagiinId, khuudaslalt, query]
+      ? [
+          "/orshinSuugch",
+          token,
+          baiguullagiinId,
+          barilgiinId,
+          khuudaslalt,
+          query,
+        ]
       : null,
     fetcherJagsaalt,
     {

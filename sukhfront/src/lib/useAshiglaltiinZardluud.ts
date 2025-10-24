@@ -12,6 +12,10 @@ interface ZardalItem {
   nuatBodokhEsekh?: boolean;
   baiguullagiinId?: string;
   barilgiinId?: string;
+  zardliinTurul?: string; // e.g., "Лифт"
+  bodokhArga?: string; // e.g., "тогтмол"
+  tariffUsgeer?: string; // e.g., "₮"
+  nuatNemekhEsekh?: boolean; // API expects this
 }
 
 interface UseAshiglaltiinZardluudReturn {
@@ -24,20 +28,30 @@ interface UseAshiglaltiinZardluudReturn {
   deleteZardal: (id: string) => Promise<void>;
 }
 
-export function useAshiglaltiinZardluud(): UseAshiglaltiinZardluudReturn {
-  const { token, ajiltan } = useAuth();
+export function useAshiglaltiinZardluud(overrides?: {
+  token?: string;
+  baiguullagiinId?: string | number;
+  barilgiinId?: string | number | null;
+}): UseAshiglaltiinZardluudReturn {
+  const auth = useAuth();
+  const token = overrides?.token ?? auth.token;
+  const currentOrg =
+    overrides?.baiguullagiinId ?? auth.ajiltan?.baiguullagiinId;
+  const currentBarilga =
+    overrides?.barilgiinId ?? auth.barilgiinId ?? undefined;
   const [pageSize] = useState(100);
 
-  const shouldFetch = !!token && !!ajiltan?.baiguullagiinId;
+  const shouldFetch = !!token && !!currentOrg;
 
   const { data, error, mutate } = useSWR(
     shouldFetch
-      ? [`/ashiglaltiinZardluud`, token, ajiltan.baiguullagiinId]
+      ? ["/ashiglaltiinZardluud", token, currentOrg, currentBarilga]
       : null,
-    async ([url, token, baiguullagiinId]) => {
+    async ([url, token, baiguullagiinId, barilgiinId]) => {
       const response = await uilchilgee(token).get(url, {
         params: {
           baiguullagiinId,
+          barilgiinId,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: pageSize,
         },
@@ -46,32 +60,60 @@ export function useAshiglaltiinZardluud(): UseAshiglaltiinZardluudReturn {
     }
   );
 
-  const addZardal = async (zardalData: Partial<ZardalItem>) => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
+  const addZardal = async (
+    zardalData: Partial<ZardalItem> & { lift?: string | null }
+  ) => {
+    if (!token || !currentOrg) return;
 
     await uilchilgee(token).post("/ashiglaltiinZardluud", {
-      ...zardalData,
-      baiguullagiinId: ajiltan.baiguullagiinId,
-      barilgiinId: ajiltan.barilguud?.[0] || "",
+      ner: zardalData.ner ?? "Лифт",
+      turul: zardalData.turul ?? "лифт",
+      zardliinTurul:
+        zardalData.zardliinTurul ??
+        ((zardalData as any).lift === "Лифт" ? "Лифт" : "Энгийн"),
+      bodokhArga: zardalData.bodokhArga ?? "тогтмол",
+      tariff: zardalData.tariff ?? 50000,
+      tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
+      suuriKhuraamj: zardalData.suuriKhuraamj ?? 0,
+      nuatNemekhEsekh:
+        zardalData.nuatNemekhEsekh ??
+        (typeof zardalData.nuatBodokhEsekh === "boolean"
+          ? zardalData.nuatBodokhEsekh
+          : false),
+      baiguullagiinId: String(currentOrg),
+      barilgiinId: auth.ajiltan?.barilguud?.[0] || "",
     });
 
     mutate();
   };
 
-  const updateZardal = async (id: string, zardalData: Partial<ZardalItem>) => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
+  const updateZardal = async (
+    id: string,
+    zardalData: Partial<ZardalItem> & { lift?: string | null }
+  ) => {
+    if (!token || !currentOrg) return;
 
     await uilchilgee(token).put(`/ashiglaltiinZardluud/${id}`, {
       ...zardalData,
-      baiguullagiinId: ajiltan.baiguullagiinId,
-      barilgiinId: ajiltan.barilguud?.[0] || "",
+      zardliinTurul:
+        zardalData.zardliinTurul ??
+        ((zardalData as any).lift === "Лифт" ? "Лифт" : "Энгийн"),
+      bodokhArga: zardalData.bodokhArga ?? "тогтмол",
+      tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
+      nuatNemekhEsekh:
+        zardalData.nuatNemekhEsekh ??
+        (typeof zardalData.nuatBodokhEsekh === "boolean"
+          ? zardalData.nuatBodokhEsekh
+          : undefined),
+      baiguullagiinId: String(currentOrg),
+      barilgiinId: auth.ajiltan?.barilguud?.[0] || "",
     });
 
     mutate();
   };
 
   const deleteZardal = async (id: string) => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
+    if (!token || !currentOrg) return;
 
     await uilchilgee(token).delete(`/ashiglaltiinZardluud/${id}`);
     mutate();

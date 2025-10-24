@@ -18,8 +18,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { ModalPortal } from "../../../components/golContent";
 import { AnimatePresence, motion } from "framer-motion";
-import { createPortal } from "react-dom";
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
@@ -28,53 +28,9 @@ import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import { aldaaBarigch } from "../../../lib/uilchilgee";
-import { ModalPortal } from "../../../components/golContent";
+
 import formatNumber from "../../../tools/function/formatNumber";
-
-const Modal = ({ isOpen, onClose, title, children }: any) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  return createPortal(
-    <div className="fixed inset-0 z-[9999]">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[850px] max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden pointer-events-auto">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gray-50">
-            <h2 className="text-xl font-bold text-slate-800">{title}</h2>
-            <button
-              onClick={onClose}
-              type="button"
-              className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-            >
-              <X className="w-6 h-6 text-slate-500" />
-            </button>
-          </div>
-          <div
-            className="p-6 overflow-y-auto"
-            style={{ maxHeight: "calc(85vh - 180px)" }}
-          >
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-};
+import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 export default function Burtgel() {
   const { token, ajiltan: currentAjiltan } = useAuth();
@@ -97,8 +53,8 @@ export default function Burtgel() {
   const [showSuugchModal, setShowSuugchModal] = useState(false);
   const [showZardalModal, setShowZardalModal] = useState(false);
   const [selectedZardalRecord, setSelectedZardalRecord] = useState<any>(null);
+  const [showTootModal, setShowTootModal] = useState(false);
 
-  // First, define an interface for your form data
   interface FormData {
     ovog: string;
     ner: string;
@@ -360,12 +316,48 @@ export default function Burtgel() {
     try {
       const endpoint = activeTab === "ajiltanList" ? "ajiltan" : "orshinSuugch";
       const id = record._id || record.id;
+
+      // optimistic UI: remove from table immediately
+      if (activeTab === "ajiltanList") {
+        // @ts-ignore SWR mutate signature
+        ajiltanMutate(
+          (prev: any) =>
+            prev
+              ? {
+                  ...prev,
+                  jagsaalt: (prev.jagsaalt || []).filter(
+                    (i: any) => (i._id || i.id) !== id
+                  ),
+                }
+              : prev,
+          false
+        );
+      } else {
+        // @ts-ignore
+        suugchMutate(
+          (prev: any) =>
+            prev
+              ? {
+                  ...prev,
+                  jagsaalt: (prev.jagsaalt || []).filter(
+                    (i: any) => (i._id || i.id) !== id
+                  ),
+                }
+              : prev,
+          false
+        );
+      }
+
       await deleteMethod(endpoint, token, id);
       toast.success("Устгагдлаа");
-      // refresh list
+
+      // revalidate to sync with server
       if (activeTab === "ajiltanList") await ajiltanMutate();
       else await suugchMutate();
     } catch (error: any) {
+      // rollback by revalidating
+      if (activeTab === "ajiltanList") await ajiltanMutate();
+      else await suugchMutate();
       aldaaBarigch(error);
     } finally {
       setLoading(false);
@@ -549,6 +541,54 @@ export default function Burtgel() {
     }
   };
 
+  const Modal = ({ isOpen, onClose, title, children }: any) => {
+    useEffect(() => {
+      document.body.style.overflow = isOpen ? "hidden" : "";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+      <ModalPortal>
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
+              onClick={onClose}
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-[850px] max-height-[85vh] max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+              >
+                <div className="flex items-center justify-between p-6">
+                  <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+                  <button
+                    onClick={onClose}
+                    type="button"
+                    className="p-2 rounded-2xl hover:bg-gray-100"
+                  >
+                    <X className="w-6 h-6 text-slate-600" />
+                  </button>
+                </div>
+                <div className="p-6">{children}</div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </ModalPortal>
+    );
+  };
+
   if (!currentAjiltan || !currentAjiltan.baiguullagiinId) {
     return (
       <div className="min-h-screen bg-transparent">
@@ -562,394 +602,225 @@ export default function Burtgel() {
 
   return (
     <div className="min-h-screen">
-      <div className="mb-8">
-        <motion.h1
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
-        >
-          Бүртгэл
-        </motion.h1>
-        <p className="text-lg text-slate-600">
-          Ажилтан болон оршин суугчдын мэдээлэл удирдах
-        </p>
-      </div>
-      <div className="flex gap-6 mb-8 flex-wrap">
-        <div className="flex items-center gap-2 relative">
-          <button
-            onClick={() => setActiveTab("ajiltanList")}
-            className={`px-3 py-2 font-semibold transition-all relative ${
-              activeTab === "ajiltanList"
-                ? "text-slate-900"
-                : "text-slate-700 hover:text-slate-600"
-            }`}
+      <div className="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <motion.h1
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="text-3xl font-bold text-theme"
           >
-            <FileText className="w-5 h-5 inline mr-1" />
-            Ажилтны жагсаалт
-            {activeTab === "ajiltanList" && (
-              <span className="absolute left-0 bottom-0 w-full h-0.5 bg-black rounded-full transition-all"></span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setShowAjiltanModal(true)}
-            className="px-3 py-2 text-slate-700 font-semibold rounded transition-all hover:text-blue-600 flex items-center gap-1 hover:shadow-[0_0_10px_#3b82f6]"
-            title="Ажилтан нэмэх"
-          >
-            <Plus className="w-5 h-5" />
-          </button>
+            Бүртгэл
+          </motion.h1>
+          <p className="text-sm mt-1 text-theme/70">
+            Ажилтан болон оршин суугчдын мэдээлэл удирдах
+          </p>
         </div>
-
-        <div className="flex items-center gap-2 relative">
-          <button
-            onClick={() => setActiveTab("suugchList")}
-            className={`px-3 py-2 font-semibold transition-all relative ${
-              activeTab === "suugchList"
-                ? "text-slate-900"
-                : "text-slate-700 hover:text-slate-600"
-            }`}
-          >
-            <Users className="w-5 h-5 inline mr-1" />
-            Оршин суугчдын жагсаалт
-            {activeTab === "suugchList" && (
-              <span className="absolute left-0 bottom-0 w-full h-0.5 bg-black rounded-full transition-all"></span>
-            )}
-          </button>
-
+        <div className="flex gap-2 flex-wrap">
+          {/* these now follow theme via globals (.btn-minimal) */}
           <button
             onClick={() => setShowSuugchModal(true)}
-            className="px-3 py-2 text-slate-700 font-semibold rounded transition-all hover:text-blue-600 flex items-center gap-1 hover:shadow-[0_0_10px_#3b82f6]"
+            className="btn-minimal"
             title="Оршин суугч нэмэх"
           >
-            <Plus className="w-5 h-5" />
+            Оршин суугч нэмэх
           </button>
-        </div>
-
-        <div className="flex items-center gap-2 relative">
           <button
-            onClick={() => setActiveTab("tootList")}
-            className={`px-3 py-2 font-semibold transition-all relative ${
-              activeTab === "tootList"
-                ? "text-slate-900"
-                : "text-slate-700 hover:text-slate-600"
-            }`}
+            onClick={() => setShowAjiltanModal(true)}
+            className="btn-minimal"
+            title="Ажилтан нэмэх"
           >
-            <FileText className="w-5 h-5 inline mr-1" />
+            Ажилтан нэмэх
+          </button>
+          <button
+            onClick={() => {
+              fetchTootBurtgel();
+              fetchAshiglaltiinZardluud();
+              setShowTootModal(true);
+            }}
+            className="btn-minimal"
+          >
             Тоот бүртгэл
-            {activeTab === "tootList" && (
-              <span className="absolute left-0 bottom-0 w-full h-0.5 bg-black rounded-full transition-all"></span>
-            )}
           </button>
         </div>
       </div>
+
+      <div className="mb-6 flex gap-2 tabbar">
+        <button
+          onClick={() => {
+            setActiveTab("ajiltanList");
+            setCurrentPage(1);
+            setSearchTerm("");
+          }}
+          className={`tab-btn px-6 py-3 font-semibold text-sm ${
+            activeTab === "ajiltanList" ? "is-active" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            Ажилтан
+          </div>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveTab("suugchList");
+            setCurrentPage(1);
+            setSearchTerm("");
+          }}
+          className={`tab-btn px-6 py-3 font-semibold text-sm ${
+            activeTab === "suugchList" ? "is-active" : ""
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Home className="w-4 h-4" />
+            Оршин суугч
+          </div>
+        </button>
+      </div>
+
       {loading || isValidating ? (
         <div className="text-center py-8">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <p className="mt-2 text-slate-600">Уншиж байна...</p>
         </div>
-      ) : activeTab === "tootList" ? (
-        <>
-          <div className="rounded-3xl p-4 mb-4 bg-transparent/50">
-            <div className="flex gap-3 flex-wrap items-end">
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  СӨХ (Барилга)
-                </label>
-                <select
-                  value={selectedBarilga}
-                  onChange={(e) => {
-                    setSelectedBarilga(e.target.value);
-                    setSelectedOrts("");
-                    setSelectedDavkhar("");
-                  }}
-                  className="w-full px-3 py-2 text-sm rounded-lg border"
-                >
-                  <option value="">Бүгд</option>
-                  {getFilterOptions().barilgaOptions.map((soh: string) => (
-                    <option key={soh} value={soh}>
-                      {soh}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Орц (Тоот эхний үсэг)
-                </label>
-                <select
-                  value={selectedOrts}
-                  onChange={(e) => setSelectedOrts(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border"
-                  disabled={!selectedBarilga}
-                >
-                  <option value="">Бүгд</option>
-                  {getFilterOptions().ortsOptions.map((orts: string) => (
-                    <option key={orts} value={orts}>
-                      {orts}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2">
-                  Давхар
-                </label>
-                <select
-                  value={selectedDavkhar}
-                  onChange={(e) => setSelectedDavkhar(e.target.value)}
-                  className="w-full px-3 py-2 text-sm rounded-lg border"
-                  disabled={!selectedBarilga}
-                >
-                  <option value="">Бүгд</option>
-                  {getFilterOptions().davkharOptions.map((davkhar: string) => (
-                    <option key={davkhar} value={davkhar}>
-                      {davkhar}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-2xl backdrop-blur-md shadow-xl">
-            <div className="max-h-[330px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-sm text-slate-800">
-                <thead className="bg-white/50">
-                  <tr>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      #
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Нэр
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Байр
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Ашиглалтын зардал
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Нийт дүн
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoadingToot ? (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                      </td>
-                    </tr>
-                  ) : getFilteredTootList().length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={5}
-                        className="p-8 text-center text-slate-500"
-                      >
-                        Мэдээлэл байхгүй байна
-                      </td>
-                    </tr>
-                  ) : (
-                    getFilteredTootList().map((item: any, index: number) => {
-                      const totalCharges = calculateTotalChargesForResident(
-                        ashiglaltiinZardluud,
-                        item.davkhar
-                      );
-
-                      return (
-                        <tr
-                          key={item._id}
-                          className="bg-transparent hover:shadow-md transition-all border-b last:border-b-0"
-                        >
-                          <td className="p-4 text-slate-600 font-medium">
-                            {index + 1}
-                          </td>
-                          <td className="p-4">
-                            <div className="font-semibold text-slate-900">
-                              {item.ovog} {item.ner}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              {item.soh}
-                            </div>
-                          </td>
-                          <td className="p-4 text-slate-900">
-                            <div className="font-medium">
-                              {item.toot || "-"}
-                            </div>
-                            <div className="text-xs text-slate-500">
-                              Давхар: {item.davkhar || "-"}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <button
-                              onClick={() => {
-                                setSelectedZardalRecord(item);
-                                setShowZardalModal(true);
-                              }}
-                              className="flex items-center gap-2 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-all text-sm font-medium"
-                            >
-                              <span>
-                                {ashiglaltiinZardluud.length} зардлын төрөл
-                              </span>
-                              <ChevronDown className="w-4 h-4" />
-                            </button>
-                          </td>
-                          <td className="p-4">
-                            <div className="font-bold text-blue-600 text-lg">
-                              {formatNumber(totalCharges, 0)}₮
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
       ) : (
         <>
-          <div className="rounded-3xl p-6 mb-4">
-            <div className="flex gap-4 items-center flex-wrap">
-              <div className="flex-1 min-w-64">
-                <div className="relative">
-                  <Search className="absolute left-4 top-4 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Хайх..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-xl transition-all"
-                  />
-                </div>
+          <div className="flex gap-4 items-center flex-wrap mb-4">
+            <div className="flex-1 min-w-64">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-theme/50" />
+                <input
+                  type="text"
+                  placeholder="Хайх..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-transparent bg-transparent text-theme backdrop-blur-xl focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
+                />
               </div>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-2xl backdrop-blur-md shadow-xl">
-            <div className="max-h-[330px] overflow-y-auto custom-scrollbar">
-              <table className="w-full text-sm text-slate-800">
-                <thead className="bg-white/50">
-                  <tr>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      #
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Нэр
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Регистр
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Холбоо барих
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Төлөв
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-slate-700">
-                      Үйлдэл
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeRecords.length === 0 ? (
+          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+            <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+              <div className="overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-sm min-w-full">
+                  <thead>
                     <tr>
-                      <td
-                        colSpan={6}
-                        className="p-8 text-center text-slate-500"
-                      >
-                        Мэдээлэл байхгүй байна
-                      </td>
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                        №
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Нэр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Регистр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Холбоо барих
+                      </th>
+                      {activeTab === "ajiltanList" && (
+                        <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                          Албан тушаал
+                        </th>
+                      )}
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        {activeTab === "suugchList" ? "Төлөв" : "Эрх"}
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Үйлдэл
+                      </th>
                     </tr>
-                  ) : (
-                    activeRecords.map((person: any, index: number) => (
-                      <tr
-                        key={person._id}
-                        className="bg-transparent hover:shadow-md transition-all border-b last:border-b-0"
-                      >
-                        <td className="p-4 text-slate-600 font-medium">
-                          {index + 1}
+                  </thead>
+                  <tbody>
+                    {activeRecords.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={activeTab === "ajiltanList" ? 7 : 6}
+                          className="p-8 text-center text-theme/60"
+                        >
+                          Мэдээлэл байхгүй байна
                         </td>
-                        <td className="p-4">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                {person.ner}
-                              </div>
+                      </tr>
+                    ) : (
+                      activeRecords.map((person: any, index: number) => (
+                        <tr
+                          key={person._id}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-3 text-center text-theme">
+                            {(currentPage - 1) * pageSize + index + 1}
+                          </td>
+                          <td className="p-3 text-theme whitespace-nowrap text-center">
+                            <div className="font-semibold text-theme">
+                              {person.ovog} {person.ner}
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-slate-900">
-                          {person.register}
-                        </td>
-                        <td className="p-4">
-                          <div className="text-sm">
-                            <div className="text-slate-900 mb-1">
+                          </td>
+                          <td className="p-3 text-theme whitespace-nowrap text-center">
+                            {person.register}
+                          </td>
+                          <td className="p-3 text-center">
+                            <div className="text-sm text-theme">
                               {person.utas}
                             </div>
                             {person.email && (
-                              <div className="text-slate-600">
+                              <div className="text-xs text-theme/70">
                                 {person.email}
                               </div>
                             )}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold  ${
-                              person.tuluv === "Төлсөн"
-                                ? "bg-green-100/80 text-green-800"
-                                : person.tuluv === "Төлөөгүй"
-                                ? "bg-red-100/80 text-red-800"
-                                : "bg-gray-100/80 text-slate-800"
-                            }`}
-                          >
-                            {person.tuluv || "Төлсөн"}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEdit(person)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Засах"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => confirmDelete(person)}
-                              className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                              title="Устгах"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                          </td>
+                          {activeTab === "ajiltanList" && (
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                                {person.albanTushaal || "-"}
+                              </span>
+                            </td>
+                          )}
+                          <td className="p-3 text-center">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                              {activeTab === "suugchList"
+                                ? person.tuluv || "Төлсөн"
+                                : person.erkh || "-"}
+                            </span>
+                          </td>
+                          <td className="p-3 whitespace-nowrap">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(person)}
+                                className="p-2 rounded-2xl action-edit hover:menu-surface/80 transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => confirmDelete(person)}
+                                className="p-2 rounded-2xl action-delete hover:menu-surface/80 transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row w-full px-4 gap-3">
-            <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
-              <select
-                value={pageSize}
-                onChange={(e) => {
-                  setPageSize(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                className="border border-gray-300 rounded-lg text-sm px-2 py-1 focus:outline-none"
-              >
-                <option value={10}>10</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
+            <div className="flex flex-col sm:flex-row w-full px-1 gap-3 mt-3">
+              <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
+                <PageSongokh
+                  value={pageSize}
+                  onChange={(v) => {
+                    setPageSize(v);
+                    setCurrentPage(1);
+                  }}
+                  className=""
+                />
+              </div>
             </div>
           </div>
         </>
@@ -972,7 +843,11 @@ export default function Burtgel() {
               email: "",
             });
           }}
-          title={formData.zasakhEsekh ? "Засах" : "Шинэ ажилтан нэмэх"}
+          title={
+            formData.zasakhEsekh
+              ? "Ажилтны мэдээлэл засах"
+              : "Шинэ ажилтан нэмэх"
+          }
         >
           <form
             ref={formRef}
@@ -995,7 +870,7 @@ export default function Burtgel() {
                     placeholder="Овог"
                     value={formData.ovog}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1013,7 +888,7 @@ export default function Burtgel() {
                     placeholder="Нэр"
                     value={formData.ner}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1037,7 +912,7 @@ export default function Burtgel() {
                         register: e.target.value.toUpperCase(),
                       })
                     }
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1055,7 +930,7 @@ export default function Burtgel() {
                     placeholder="Утас"
                     value={formData.utas}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1073,7 +948,7 @@ export default function Burtgel() {
                     placeholder="И-мэйл"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1091,7 +966,7 @@ export default function Burtgel() {
                     placeholder="Албан тушаал"
                     value={formData.albanTushaal}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1106,7 +981,7 @@ export default function Burtgel() {
                   required
                   value={formData.ajildOrsonOgnoo}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                  className="w-full px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                 />
               </div>
 
@@ -1123,7 +998,7 @@ export default function Burtgel() {
                     placeholder="Хаяг"
                     value={formData.khayag}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1147,7 +1022,7 @@ export default function Burtgel() {
                       placeholder="Нэвтрэх нэр"
                       value={formData.nevtrekhNer}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1165,25 +1040,25 @@ export default function Burtgel() {
                       placeholder="Нууц үг"
                       value={formData.nuutsUg}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex gap-3 justify-end">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-slate-900 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg disabled:opacity-50"
+                className="btn-minimal btn-save"
               >
                 {loading ? "Хадгалж байна..." : "Хадгалах"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowAjiltanModal(false)}
-                className="px-6 py-3 bg-transparent/80 text-slate-700 font-semibold rounded-xl hover:bg-transparent transition-all backdrop-blur-xl border border-gray-200/50"
+                className="btn-minimal-ghost btn-cancel min-w-[120px]"
               >
                 Цуцлах
               </button>
@@ -1209,7 +1084,11 @@ export default function Burtgel() {
               email: "",
             });
           }}
-          title={formData.zasakhEsekh ? "Засах" : "Оршин суугч нэмэх"}
+          title={
+            formData.zasakhEsekh
+              ? "Оршин суугчийн мэдээлэл засах"
+              : "Оршин суугч нэмэх"
+          }
         >
           <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1226,7 +1105,7 @@ export default function Burtgel() {
                     placeholder="Овог"
                     value={formData.ovog}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1244,7 +1123,7 @@ export default function Burtgel() {
                     placeholder="Нэр"
                     value={formData.ner}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1268,7 +1147,7 @@ export default function Burtgel() {
                         register: e.target.value.toUpperCase(),
                       })
                     }
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1286,7 +1165,7 @@ export default function Burtgel() {
                     placeholder="Утас"
                     value={formData.utas}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1304,7 +1183,7 @@ export default function Burtgel() {
                     placeholder="И-мэйл"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1322,7 +1201,7 @@ export default function Burtgel() {
                     placeholder="Хаяг"
                     value={formData.khayag}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1346,7 +1225,7 @@ export default function Burtgel() {
                       placeholder="Нэвтрэх нэр"
                       value={formData.nevtrekhNer}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1364,25 +1243,25 @@ export default function Burtgel() {
                       placeholder="Нууц үг"
                       value={formData.nuutsUg}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all"
+                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex gap-3 justify-end">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-6 py-3 bg-slate-900 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg disabled:opacity-50"
+                className="btn-minimal btn-save"
               >
                 {loading ? "Хадгалж байна..." : "Хадгалах"}
               </button>
               <button
                 type="button"
                 onClick={() => setShowSuugchModal(false)}
-                className="px-6 py-3 bg-transparent/80 text-slate-700 font-semibold rounded-xl hover:bg-transparent transition-all backdrop-blur-xl border border-gray-200/50"
+                className="btn-minimal-ghost btn-cancel min-w-[120px]"
               >
                 Цуцлах
               </button>
@@ -1391,6 +1270,140 @@ export default function Burtgel() {
         </Modal>
       )}
 
+      {showTootModal && (
+        <ModalPortal>
+          <AnimatePresence>
+            {/* ...existing overlay... */}
+            <motion.div
+              key="toot-modal"
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className={`fixed left-1/2 top-1/2 z-[1101] -translate-x-1/2 -translate-y-1/2 w-[1000px] max-w-[95vw] max-h-[1000px] menu-surface rounded-2xl overflow-hidden ${
+                showZardalModal ? "pointer-events-none" : ""
+              }`}
+              aria-hidden={showZardalModal}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-theme">
+                  Тоот бүртгэл
+                </h3>
+                <button
+                  onClick={() => setShowTootModal(false)}
+                  className="p-2 rounded-2xl hover:menu-surface/80"
+                >
+                  <X className="w-5 h-5 text-theme/70" />
+                </button>
+              </div>
+
+              <div className="p-4" style={{ maxHeight: "calc(85vh - 64px)" }}>
+                <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+                  <div className="max-h-[330px] overflow-y-auto custom-scrollbar w-full">
+                    <table className="table-ui text-sm min-w-full">
+                      <thead>
+                        <tr>
+                          <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                            №
+                          </th>
+                          <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                            Нэр
+                          </th>
+                          <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                            Байр
+                          </th>
+                          <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                            Ашиглалтын зардал
+                          </th>
+                          <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                            Нийт дүн
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {isLoadingToot ? (
+                          <tr>
+                            <td colSpan={5} className="p-8 text-center ">
+                              <div className="inline-block animate-spin  rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                            </td>
+                          </tr>
+                        ) : getFilteredTootList().length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={5}
+                              className="p-8 text-center text-slate-500 "
+                            >
+                              Мэдээлэл байхгүй байна
+                            </td>
+                          </tr>
+                        ) : (
+                          getFilteredTootList().map(
+                            (item: any, index: number) => {
+                              const totalCharges =
+                                calculateTotalChargesForResident(
+                                  ashiglaltiinZardluud,
+                                  item.davkhar
+                                );
+                              return (
+                                <tr
+                                  key={item._id}
+                                  className="table-ui hover:bg-gray-100 transition-all border-b last:border-b-0"
+                                >
+                                  <td className="p-3 text-center text-slate-900">
+                                    {index + 1}
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <div className="font-semibold text-slate-900">
+                                      {item.ovog} {item.ner}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                      {item.soh}
+                                    </div>
+                                  </td>
+                                  <td className="p-3 text-center text-slate-900">
+                                    <div className="font-medium">
+                                      {item.toot || "-"}
+                                    </div>
+                                    <div className="text-xs text-slate-500">
+                                      Давхар: {item.davkhar || "-"}
+                                    </div>
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <button
+                                      onClick={() => {
+                                        setSelectedZardalRecord(item);
+                                        setShowZardalModal(true);
+                                      }}
+                                      className="inline-flex items-center gap-2 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl transition-all text-sm font-medium"
+                                    >
+                                      <span>
+                                        {ashiglaltiinZardluud.length} зардлын
+                                        төрөл
+                                      </span>
+                                      <ChevronDown className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <div className="font-bold text-blue-600 text-lg">
+                                      {formatNumber(totalCharges, 0)}₮
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </ModalPortal>
+      )}
+
+      {/* Zardal modal can be themed similarly if desired */}
       {showZardalModal && selectedZardalRecord && (
         <ModalPortal>
           <AnimatePresence>
@@ -1400,7 +1413,7 @@ export default function Burtgel() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000]"
                   onClick={() => {
                     setShowZardalModal(false);
                     setSelectedZardalRecord(null);
@@ -1411,52 +1424,57 @@ export default function Burtgel() {
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
-                  className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[85vh] bg-white rounded-xl shadow-2xl overflow-hidden"
+                  className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[1000px] bg-white rounded-xl shadow-2xl overflow-hidden z-[2001]"
+                  role="dialog"
+                  aria-modal="true"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* Header */}
                   <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                     <h2 className="text-xl font-bold text-slate-800">
                       Ашиглалтын зардлын дэлгэрэнгүй
                     </h2>
-                    <button
-                      onClick={() => {
-                        setShowZardalModal(false);
-                        setSelectedZardalRecord(null);
-                      }}
-                      className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                    >
-                      <X className="w-6 h-6 text-slate-500" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => window.print()}
+                        className="btn-minimal btn-print"
+                      >
+                        Хэвлэх
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowZardalModal(false);
+                          setSelectedZardalRecord(null);
+                        }}
+                        className="p-2 hover:bg-gray-200 rounded-2xl transition-colors"
+                      >
+                        <X className="w-6 h-6 text-slate-500" />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Content area with scrolling */}
                   <div
                     className="overflow-y-auto p-6"
                     style={{ maxHeight: "calc(85vh - 180px)" }}
                   >
                     <div className="space-y-6">
-                      {/* Resident Info */}
-                      <div className="p-4 rounded-xl border border-gray-200 bg-white shadow-sm">
-                        <div className="text-sm text-slate-500 mb-1">
-                          Оршин суугч
-                        </div>
-                        <div className="font-bold text-lg text-slate-900">
-                          {selectedZardalRecord.ovog} {selectedZardalRecord.ner}
-                        </div>
-                        <div className="text-sm text-slate-600 mt-2">
-                          <span className="font-medium">СӨХ:</span>{" "}
-                          {selectedZardalRecord.soh}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          <span className="font-medium">Байр:</span>{" "}
-                          {selectedZardalRecord.toot || "-"} |{" "}
-                          <span className="font-medium">Давхар:</span>{" "}
-                          {selectedZardalRecord.davkhar || "-"}
-                        </div>
+                      <div className="text-sm text-slate-500 mb-1">
+                        Оршин суугч
+                      </div>
+                      <div className="font-bold text-lg text-slate-900">
+                        {selectedZardalRecord.ovog} {selectedZardalRecord.ner}
+                      </div>
+                      <div className="text-sm text-slate-600 mt-2">
+                        <span className="font-medium">СӨХ:</span>{" "}
+                        {selectedZardalRecord.soh}
+                      </div>
+                      <div className="text-sm text-slate-600">
+                        <span className="font-medium">Байр:</span>{" "}
+                        {selectedZardalRecord.toot || "-"} |{" "}
+                        <span className="font-medium">Давхар:</span>{" "}
+                        {selectedZardalRecord.davkhar || "-"}
                       </div>
 
-                      {/* Expenses List */}
                       <div>
                         <h4 className="font-semibold text-slate-900 mb-3">
                           Зардлын жагсаалт
@@ -1478,7 +1496,7 @@ export default function Burtgel() {
                               return (
                                 <div
                                   key={zardal._id}
-                                  className={`flex justify-between items-center p-3 rounded-lg transition-all ${
+                                  className={`flex justify-between items-center p-3 rounded-2xl transition-all ${
                                     isExempted
                                       ? "bg-green-50 border border-green-200"
                                       : "bg-gray-50 hover:bg-gray-100"
@@ -1528,7 +1546,6 @@ export default function Burtgel() {
                         </div>
                       </div>
 
-                      {/* Total Amount */}
                       <div className="pt-4 border-t border-gray-200">
                         <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow-sm">
                           <span className="text-lg font-semibold text-slate-900">
@@ -1547,19 +1564,6 @@ export default function Burtgel() {
                         </div>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="p-6 border-t border-gray-100 bg-gray-50">
-                    <button
-                      onClick={() => {
-                        setShowZardalModal(false);
-                        setSelectedZardalRecord(null);
-                      }}
-                      className="w-full px-6 py-3 bg-slate-900 text-white font-semibold rounded-xl hover:scale-105 transition-all shadow-lg"
-                    >
-                      Хаах
-                    </button>
                   </div>
                 </motion.div>
               </>

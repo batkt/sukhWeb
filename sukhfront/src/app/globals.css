@@ -19,54 +19,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
-  --card: #fcfbf899;
-  --button: #1a1a1a;
-  --border: oklch(0.922 0 0);
-  --primary: oklch(0.205 0 0);
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --btn-bg: rgba(255, 255, 255, 0.06);
-  --btn-bg-hover: rgba(255, 255, 255, 0.1);
-  --btn-bg-active: rgba(255, 255, 255, 0.12);
-  --btn-text: rgba(255, 255, 255, 0.95);
-  --btn-border: rgba(255, 255, 255, 0.08);
-
-  --icon-color: rgba(255, 255, 255, 0.92);
-  --icon-muted: rgba(255, 255, 255, 0.6);
-
-  --table-header-bg: rgba(255, 255, 255, 0.06);
-  --table-header-text: rgba(255, 255, 255, 0.95);
-  --table-row-hover: rgba(255, 255, 255, 0.03);
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -169,7 +121,79 @@
   }
 }
 
+/* Theme background (default colorful) */
 :root {
+  --gradient-bg: radial-gradient(
+      ellipse at top right,
+      #806bdf 0%,
+      #6c59bb 0%,
+      rgba(200, 190, 230, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at right 40%, #f64770 0%, transparent 20%),
+    radial-gradient(ellipse at right 45%, #f6bb32 0%, transparent 30%),
+    radial-gradient(ellipse at right 100%, #f5dcc8 0%, transparent 35%),
+    radial-gradient(ellipse at 88% 30%, #5cbf9b 0%, transparent 25%),
+    radial-gradient(ellipse at bottom right, #f5dcc8 0%, transparent 35%),
+    radial-gradient(
+      ellipse at bottom right,
+      #f64770 0%,
+      #f6bb32 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center bottom,
+      #f6bb32 0%,
+      #f64770 0%,
+      #f5dcc8 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      #806bdf 0%,
+      #6c59bb 0%,
+      rgba(200, 190, 230, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at 20% 80%, #f64770 0%, transparent 20%),
+    radial-gradient(ellipse at 36% 80%, #f6bb32 0%, transparent 30%),
+    radial-gradient(ellipse at 36% 100%, #f5dcc8 0%, transparent 35%),
+    radial-gradient(ellipse at 36% 100%, #5cbf9b 0%, transparent 25%),
+    radial-gradient(ellipse at top left, #f5dcc8 0%, transparent 35%),
+    radial-gradient(
+      ellipse at top left,
+      #f64770 0%,
+      #f6bb32 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center top,
+      #f6bb32 0%,
+      #f64770 0%,
+      #f5dcc8 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse 100% 70% at center,
+      #f5dcc8 15%,
+      #fce8d0 25%,
+      #f9e8d8 50%,
+      rgba(250, 240, 230, 0.6) 75%,
+      transparent 100%
+    ),
+    linear-gradient(135deg, #fdfcfb 0%, #f9f7f3 100%);
+
+  /* Glass defaults */
+  --glass-tint: rgba(255, 255, 255, 0.14);
+  --glass-tint-2: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.45);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: rgba(8, 18, 24, 0.16);
+  --panel-text: #0f172a;
+}
+
+/* White-gray */
+[data-theme="white-gray"] {
   --gradient-bg: radial-gradient(
       ellipse at top right,
       #e6e9ed 0%,
@@ -229,180 +253,460 @@
       transparent 100%
     ),
     linear-gradient(135deg, #f8f9fa 0%, #e6e9ed 100%);
+
+  --glass-tint: rgba(255, 255, 255, 0.18);
+  --glass-tint-2: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --panel-text: #0f172a;
 }
 
-.deed {
-  position: absolute;
-  width: 704px;
-  height: 916px;
-  left: 1400px;
-  top: -171px;
-  background: var(--gradient-bg);
-  mix-blend-mode: darken;
-  filter: blur(188.8px);
+/* Dark-gray */
+[data-theme="dark-gray"] {
+  --gradient-bg: radial-gradient(
+      ellipse at top right,
+      #4a5568 0%,
+      #2d3748 0%,
+      rgba(74, 85, 104, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at right 40%, #1a202c 0%, transparent 20%),
+    radial-gradient(ellipse at right 45%, #4a5568 0%, transparent 30%),
+    radial-gradient(ellipse at right 100%, #718096 0%, transparent 35%),
+    radial-gradient(ellipse at 88% 30%, #2d3748 0%, transparent 25%),
+    radial-gradient(ellipse at bottom right, #718096 0%, transparent 35%),
+    radial-gradient(
+      ellipse at bottom right,
+      #1a202c 0%,
+      #4a5568 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center bottom,
+      #4a5568 0%,
+      #1a202c 0%,
+      #718096 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      #4a5568 0%,
+      #2d3748 0%,
+      rgba(74, 85, 104, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at 20% 80%, #1a202c 0%, transparent 20%),
+    radial-gradient(ellipse at 36% 80%, #4a5568 0%, transparent 30%),
+    radial-gradient(ellipse at 36% 100%, #718096 0%, transparent 35%),
+    radial-gradient(ellipse at 36% 100%, #2d3748 0%, transparent 25%),
+    radial-gradient(ellipse at top left, #718096 0%, transparent 35%),
+    radial-gradient(
+      ellipse at top left,
+      #1a202c 0%,
+      #4a5568 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center top,
+      #4a5568 0%,
+      #1a202c 0%,
+      #718096 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse 100% 70% at center,
+      #718096 15%,
+      #4a5568 25%,
+      #2d3748 50%,
+      rgba(26, 32, 44, 0.6) 75%,
+      transparent 100%
+    ),
+    linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+
+  --glass-tint: rgba(17, 25, 40, 0.45);
+  --glass-tint-2: rgba(17, 25, 40, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.25);
+  --glass-shadow: rgba(0, 0, 0, 0.28);
+  --panel-text: #e5e7eb;
 }
 
-.deed .ellipse {
-  position: absolute;
-  mix-blend-mode: darken;
-  filter: blur(188.8px);
-  background: var(--gradient-bg);
+/* Dark-green */
+[data-theme="dark-green"] {
+  --gradient-bg: radial-gradient(
+      ellipse at top right,
+      #2f7c57 0%,
+      #1e5a3e 0%,
+      rgba(47, 124, 87, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at right 40%, #0f3d2a 0%, transparent 20%),
+    radial-gradient(ellipse at right 45%, #3d9970 0%, transparent 30%),
+    radial-gradient(ellipse at right 100%, #5cb88a 0%, transparent 35%),
+    radial-gradient(ellipse at 88% 30%, #1e5a3e 0%, transparent 25%),
+    radial-gradient(ellipse at bottom right, #5cb88a 0%, transparent 35%),
+    radial-gradient(
+      ellipse at bottom right,
+      #0f3d2a 0%,
+      #3d9970 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center bottom,
+      #3d9970 0%,
+      #0f3d2a 0%,
+      #5cb88a 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      #2f7c57 0%,
+      #1e5a3e 0%,
+      rgba(47, 124, 87, 0.4) 35%,
+      transparent 85%
+    ),
+    radial-gradient(ellipse at 20% 80%, #0f3d2a 0%, transparent 20%),
+    radial-gradient(ellipse at 36% 80%, #3d9970 0%, transparent 30%),
+    radial-gradient(ellipse at 36% 100%, #5cb88a 0%, transparent 35%),
+    radial-gradient(ellipse at 36% 100%, #1e5a3e 0%, transparent 25%),
+    radial-gradient(ellipse at top left, #5cb88a 0%, transparent 35%),
+    radial-gradient(
+      ellipse at top left,
+      #0f3d2a 0%,
+      #3d9970 0%,
+      transparent 15%
+    ),
+    radial-gradient(
+      ellipse at center top,
+      #3d9970 0%,
+      #0f3d2a 0%,
+      #5cb88a 0%,
+      transparent 25%
+    ),
+    radial-gradient(
+      ellipse 100% 70% at center,
+      #5cb88a 15%,
+      #3d9970 25%,
+      #1e5a3e 50%,
+      rgba(15, 61, 42, 0.6) 75%,
+      transparent 100%
+    ),
+    linear-gradient(135deg, #0f3d2a 0%, #1e5a3e 100%);
+
+  --glass-tint: rgba(24, 58, 44, 0.45);
+  --glass-tint-2: rgba(24, 58, 44, 0.25);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+  --glass-shadow: rgba(6, 24, 18, 0.28);
+  --panel-text: #e6fffa;
 }
 
-.ellipse33 {
-  width: 651px;
-  height: 619px;
-  left: 1453px;
-  top: -171px;
-}
-.ellipse34 {
-  width: 432px;
-  height: 345px;
-  left: 1544px;
-  top: 275px;
-}
-.ellipse36 {
-  width: 287px;
-  height: 273px;
-  left: 1400px;
-  top: 250px;
-}
-.ellipse35 {
-  width: 313px;
-  height: 297px;
-  left: 1582px;
-  top: 448px;
+/* Ensure input text is readable on dark-gray and dark-green themes (AntD + native) */
+[data-theme="dark-gray"] input,
+[data-theme="dark-gray"] textarea,
+[data-theme="dark-gray"] .ant-input,
+[data-theme="dark-gray"] .ant-input-password input,
+[data-theme="dark-gray"] .ant-input-number-input,
+[data-theme="dark-gray"] .ant-select-single .ant-select-selection-item,
+[data-theme="dark-gray"] .ant-select-single .ant-select-selection-placeholder,
+[data-theme="dark-gray"] .ant-select-selection-search-input,
+[data-theme="dark-gray"] .ant-picker input,
+[data-theme="dark-gray"] .ant-picker-input > input,
+[data-theme="dark-green"] input,
+[data-theme="dark-green"] textarea,
+[data-theme="dark-green"] .ant-input,
+[data-theme="dark-green"] .ant-input-password input,
+[data-theme="dark-green"] .ant-input-number-input,
+[data-theme="dark-green"] .ant-select-single .ant-select-selection-item,
+[data-theme="dark-green"] .ant-select-single .ant-select-selection-placeholder,
+[data-theme="dark-green"] .ant-select-selection-search-input,
+[data-theme="dark-green"] .ant-picker input,
+[data-theme="dark-green"] .ant-picker-input > input {
+  color: #0f172a !important; /* slate-900 for visibility on light inputs */
+  caret-color: #0f172a !important;
 }
 
-.frosted {
-  /* subtle frosted card — still transparent but strongly blurs background */
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.06),
-    rgba(255, 255, 255, 0.02)
+[data-theme="dark-gray"] input::placeholder,
+[data-theme="dark-green"] input::placeholder,
+[data-theme="dark-gray"] textarea::placeholder,
+[data-theme="dark-green"] textarea::placeholder,
+[data-theme="dark-gray"] .ant-select-single .ant-select-selection-placeholder,
+[data-theme="dark-green"] .ant-select-single .ant-select-selection-placeholder {
+  color: rgba(15, 23, 42, 0.6) !important; /* slate-900 at 60% */
+}
+
+/* Ensure input text is readable on dark-black theme as well (AntD + native) */
+[data-theme="dark-black"] input,
+[data-theme="dark-black"] textarea,
+[data-theme="dark-black"] .ant-input,
+[data-theme="dark-black"] .ant-input-password input,
+[data-theme="dark-black"] .ant-input-number-input,
+[data-theme="dark-black"] .ant-select-single .ant-select-selection-item,
+[data-theme="dark-black"] .ant-select-single .ant-select-selection-placeholder,
+[data-theme="dark-black"] .ant-select-selection-search-input,
+[data-theme="dark-black"] .ant-picker input,
+[data-theme="dark-black"] .ant-picker-input > input {
+  color: #0f172a !important; /* slate-900 to contrast white/light inputs */
+  caret-color: #0f172a !important;
+}
+[data-theme="dark-black"] input::placeholder,
+[data-theme="dark-black"] textarea::placeholder,
+[data-theme="dark-black"] .ant-select-single .ant-select-selection-placeholder {
+  color: rgba(15, 23, 42, 0.6) !important; /* slate-900 at 60% */
+}
+
+/* New theme: dark-blackish gradient */
+[data-theme="dark-black"] {
+  --gradient-bg: linear-gradient(135deg, #0b0b10 0%, #161620 50%, #1c1c28 100%);
+  --surface-bg: #0f0f16; /* deep near-black surface */
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --panel-text: #e5e7eb; /* slate-200 for contrast */
+  --glass-tint: rgba(10, 10, 16, 0.55);
+  --glass-tint-2: rgba(12, 12, 20, 0.35);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-shadow: rgba(0, 0, 0, 0.35);
+}
+
+/* New theme: blue gradient */
+[data-theme="blue-gradient"] {
+  --gradient-bg: linear-gradient(
+    135deg,
+    #e6f0ff 0%,
+    #d7e7ff 30%,
+    #c7ddff 60%,
+    #b7d2ff 100%
   );
-  -webkit-backdrop-filter: blur(32px) saturate(140%) contrast(1.02);
-  backdrop-filter: blur(32px) saturate(140%) contrast(1.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 10px 40px rgba(8, 18, 24, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.02);
-  color: inherit;
-  -webkit-font-smoothing: subpixel-antialiased;
-  /* ensures background doesn't show through sharp edges on some browsers */
+  --surface-bg: #ffffff; /* light surfaces */
+  --surface-border: rgba(15, 23, 42, 0.12);
+  --panel-text: #0f172a; /* slate-900 */
+  --glass-tint: rgba(255, 255, 255, 0.9);
+  --glass-tint-2: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: rgba(14, 30, 60, 0.12);
+}
+
+/* Ensure page reads the variable background */
+html,
+body {
+  background: var(--gradient-bg);
+}
+
+.neu-panel {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden; /* clip blur edges */
+  isolation: isolate; /* proper stacking for effects */
+  background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%);
+  box-shadow: 0 18px 48px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
+  color: var(--panel-text);
   background-clip: padding-box;
 }
 
-.frosted-strong {
-  /* heavy frosted glass — use for navbars, large panels */
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.03)
-  );
-  -webkit-backdrop-filter: blur(56px) saturate(160%) contrast(1.06);
-  backdrop-filter: blur(56px) saturate(160%) contrast(1.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 60px rgba(8, 18, 24, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  color: inherit;
+.neu-table {
+  position: relative;
+  border-radius: 1.25rem;
+  overflow: hidden; /* clip blur edges */
+  isolation: isolate; /* proper stacking for effects */
+  background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%);
+
+  color: var(--panel-text);
+  background-clip: padding-box;
+}
+.neu-nav {
+  position: relative;
+  /* let dropdowns overflow the navbar */
+  overflow: visible; /* was hidden */
+  isolation: isolate;
+  background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(160%);
+  /* use a bottom hairline instead of a full border box */
+  border: none;
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--glass-border), transparent 45%);
+  box-shadow: 0 10px 30px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
+  color: var(--panel-text);
   background-clip: padding-box;
 }
 
-.frosted-plate {
-  /* inner cards — readable but frosty */
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05),
-    rgba(255, 255, 255, 0.015)
-  );
-  -webkit-backdrop-filter: blur(28px) saturate(130%);
-  backdrop-filter: blur(28px) saturate(130%);
+/* Surfaces inherit themed text color so labels/icons follow the background */
+.neu-nav a,
+.neu-nav span,
+.neu-nav button,
+.menu-surface a,
+.menu-surface span,
+.menu-surface button,
+.neu-panel a,
+.neu-panel span,
+.neu-panel button {
+  color: inherit;
+}
+
+/* Themed focus rings for interactive surfaces */
+.menu-surface:focus-visible,
+.neu-nav :is(a, button):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Unify .btn border with tokens (remove hard-coded gray-200 override) */
+/* ...existing code... */
+.btn {
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: 1px solid var(--btn-border);
+}
+/* ...existing code... */
+
+/* Optional: round dropdown surface by default */
+.menu-surface {
+  background: var(--surface-bg, #fff) !important;
+  color: var(--panel-text, #0f172a) !important;
+  border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  box-shadow: 0 8px 26px rgba(12, 32, 39, 0.08);
-  color: inherit;
-  background-clip: padding-box;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 10px 26px var(--glass-shadow, rgba(0, 0, 0, 0.18)),
+    inset 0 1px 0 var(--glass-highlight, rgba(255, 255, 255, 0.4));
 }
 
-/* maximal blur + slight tint so background text becomes unreadable */
-.frosted-opaque {
-  background: rgba(
-    255,
-    255,
-    255,
-    0.06
-  ); /* subtle tint to hide strong artifacts */
-  -webkit-backdrop-filter: blur(88px) saturate(180%) contrast(1.08);
-  backdrop-filter: blur(88px) saturate(180%) contrast(1.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 22px 80px rgba(8, 18, 24, 0.2);
-  color: inherit;
-  background-clip: padding-box;
+.aimr-surface {
+  background: var(--surface-bg, #fff) !important;
+  color: var(--panel-text, #0f172a) !important;
+  border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
+  border-radius: 1rem;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
 }
 
-/* hover helper kept */
-.frosted-hover:hover {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
-  transition: all 160ms ease;
+/* AntD dropdowns/menus follow themed surfaces */
+.ant-select-dropdown,
+.ant-dropdown .ant-dropdown-menu {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 0.75rem !important;
+}
+.ant-select-item,
+.ant-dropdown-menu-item,
+.ant-dropdown-menu-submenu-title {
+  color: var(--panel-text) !important;
 }
 
-@layer utilities {
-  .bg-card {
-    background: var(--gradient-bg);
-  }
-
-  .bg-bar {
-    background-color: #7d7ad8;
-  }
+.page-surface {
+  background: var(--surface-bg, #fff) !important;
+  color: var(--panel-text, #0f172a) !important;
+  border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
+  border-radius: 1rem;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+}
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  border: 1px solid transparent;
+  transition: color 120ms ease, background-color 120ms ease,
+    border-color 120ms ease;
 }
 
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.badge-paid {
+  background: rgba(34, 197, 94, 0.12) !important; /* green */
+  color: #166534 !important; /* green-800 */
+  border-color: rgba(16, 185, 129, 0.25) !important;
+}
+.badge-unpaid {
+  background: rgba(239, 68, 68, 0.12) !important; /* red */
+  color: #7f1d1d !important; /* red-900 */
+  border-color: rgba(239, 68, 68, 0.25) !important;
+}
+.badge-unknown {
+  background: rgba(148, 163, 184, 0.16) !important; /* slate */
+  color: #5b6a7e !important; /* slate-600 */
+  border-color: rgba(148, 163, 184, 0.25) !important;
 }
 
-@keyframes gradient-x {
-  0%,
-  100% {
-    background-size: 200% 200%;
-    background-position: left center;
-  }
-  50% {
-    background-size: 200% 200%;
-    background-position: right center;
-  }
+/* Ensure icons inside badges follow text color */
+.badge-status svg {
+  color: currentColor !important;
+  width: 14px;
+  height: 14px;
+}
+:root {
+  --surface-bg: #ffffff; /* default for colorful */
+  --surface-border: rgba(15, 23, 42, 0.08);
+}
+[data-theme="white-gray"] {
+  --surface-bg: #ffffff;
+  --surface-border: rgba(15, 23, 42, 0.12);
+}
+[data-theme="dark-gray"] {
+  --surface-bg: #0f172a; /* gray-900 */
+  --surface-border: rgba(255, 255, 255, 0.16);
+}
+[data-theme="dark-green"] {
+  --surface-bg: #0f2a1e; /* deep green */
+  --surface-border: rgba(255, 255, 255, 0.16);
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0px);
-    opacity: 0.7;
-  }
-  50% {
-    transform: translateY(-20px);
-    opacity: 1;
-  }
+/* Dark-black surface tokens (append here to win cascade over :root) */
+[data-theme="dark-black"] {
+  --surface-bg: #0f0f16; /* deep near-black surface */
+  --surface-border: rgba(255, 255, 255, 0.14);
 }
 
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
+/* DROPDOWNS: theme-colored, NOT transparent; optional blur behind */
+.menu-surface {
+  background: var(--surface-bg) !important; /* solid */
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 1rem;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 10px 26px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
 }
 
-.animate-gradient-x {
-  animation: gradient-x 3s ease infinite;
+.modal-surface {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  border-radius: 1rem;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
+.action-edit,
+.action-edit svg {
+  color: #2563eb !important;
+} /* tailwind blue-600 */
+.action-delete,
+.action-delete svg {
+  color: #dc2626 !important;
+} /* tailwind red-600 */
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
+/* Optional hover bg without changing text color */
+.action-edit:hover,
+.action-delete:hover {
+  background: color-mix(in oklch, var(--glass-tint-2), white 8%);
 }
-
+/* Optional helper if any dropdown still hides behind things */
+.dropdown-elev {
+  z-index: 90;
+}
 /* Buttons that visually match the frosted background */
 .btn {
   display: inline-flex;
@@ -464,7 +768,7 @@
 
 /* Optional: make the table background explicit */
 .table-custom {
-  background-color: #ffffff;
+  background-color: #f5eeeed7;
 }
 
 /* If you want header text dark as well (recommended for white header bg) */
@@ -475,4 +779,801 @@
 
 .fg-btn {
   @apply inline-flex items-center;
+}
+
+/* ...existing code... */
+:root {
+  /* ...existing vars... */
+  --bar-bg: #0042f8; /* indigo-600 */
+  --btn-bg: #f8fafc; /* slate-50 */
+  --btn-text: #0f172a; /* slate-900 */
+}
+
+/* Primary action background that looks good on white/gray */
+.bg-bar {
+  background-color: var(--bar-bg) !important;
+}
+
+/* Neutral button that is visible on white backgrounds */
+.btn {
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
+  border: 1px solid #e5e7eb; /* gray-200 */
+}
+
+/* Ensure table text is dark on white bg */
+.table-custom,
+.table-custom th,
+.table-custom td {
+  color: #0f172a !important; /* slate-900 */
+}
+
+/* Make sure generic 'icon' class doesn’t force white (if it exists) */
+.icon {
+  color: inherit;
+}
+
+/* Neumorphism button */
+:root {
+  --neu-bg: #eef2f7; /* surface */
+  --neu-text: #0f172a; /* slate-900 */
+  --neu-light: #ffffff; /* top-left highlight */
+  --neu-dark: rgba(13, 32, 56, 0.14); /* bottom-right shadow (soft blue tint) */
+}
+
+.btn-neu {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 14px;
+  background: var(--neu-bg);
+  color: var(--neu-text);
+  border: 1px solid rgba(255, 255, 255, 0.7); /* subtle rim */
+  box-shadow: -8px -8px 16px var(--neu-light), 8px 8px 16px var(--neu-dark);
+  transition: transform 120ms ease, box-shadow 160ms ease, color 120ms ease;
+}
+.btn-neu {
+  position: relative;
+  z-index: 0;
+} /* allow pseudo-element glow */
+
+/* Under-glow (only beneath the button) */
+.btn-neu-glow-under {
+  --neo-under-r: 255; /* amber */
+  --neo-under-g: 184;
+  --neo-under-b: 60;
+  --neo-under-a1: 0.42; /* inner intensity */
+  --neo-under-a2: 0.18; /* outer feather */
+}
+.btn-neu-glow-under::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -8px; /* how far the glow drops below */
+  width: 70%; /* smaller than button */
+  height: 16px; /* small halo strip */
+  pointer-events: none;
+  z-index: -1;
+  /* elliptical halo that fades outward */
+  background: radial-gradient(
+    120% 140% at 50% 0%,
+    rgba(
+        var(--neo-under-r),
+        var(--neo-under-g),
+        var(--neo-under-b),
+        var(--neo-under-a1)
+      )
+      0%,
+    rgba(
+        var(--neo-under-r),
+        var(--neo-under-g),
+        var(--neo-under-b),
+        var(--neo-under-a2)
+      )
+      45%,
+    transparent 70%
+  );
+  filter: blur(10px);
+}
+.btn-neu-glow-under:hover::after {
+  filter: blur(12px);
+  opacity: 1;
+}
+.btn-neu-glow-under:active::after,
+.btn-neu-glow-under.is-active::after {
+  filter: blur(8px);
+  opacity: 0.9;
+}
+
+/* Optional: thin warm rim on the bottom edge */
+.btn-neu-glow-under::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  mask: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 1) 0%,
+    rgba(0, 0, 0, 0) 55%
+  ); /* show only bottom */
+  box-shadow: 0 -1px 0 0 rgba(255, 184, 60, 0.55) inset;
+}
+
+.btn-neu:hover {
+  box-shadow: -10px -10px 20px var(--neu-light), 10px 10px 20px var(--neu-dark);
+  transform: translateY(-1px);
+}
+
+.btn-neu:active,
+.btn-neu.is-active,
+.btn-neu[aria-pressed="true"] {
+  box-shadow: inset 8px 8px 16px var(--neu-dark),
+    inset -8px -8px 16px var(--neu-light);
+  transform: translateY(0);
+}
+
+.btn-neu:focus-visible {
+  outline: none;
+  box-shadow: -8px -8px 16px var(--neu-light), 8px 8px 16px var(--neu-dark),
+    0 0 0 4px rgba(59, 130, 246, 0.15); /* soft focus ring */
+}
+
+.btn-neu .icon {
+  color: currentColor; /* keep icon color in sync */
+}
+
+/* Small size (optional) */
+.btn-neu-sm {
+  padding: 0.4rem 0.7rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
+/* Sizes */
+.btn-neu-lg {
+  padding: 0.9rem 1.25rem;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Primary (more contrast for CTAs) */
+.btn-neu-primary {
+  background: linear-gradient(145deg, #f3f6fb, #e6ecf4);
+  border-color: rgba(15, 23, 42, 0.06);
+  box-shadow: -10px -10px 20px var(--neu-light), 10px 10px 20px var(--neu-dark);
+}
+.btn-neu-primary:hover {
+  box-shadow: -12px -12px 24px var(--neu-light), 12px 12px 24px var(--neu-dark);
+}
+.btn-neu-primary:active,
+.btn-neu-primary.is-active,
+.btn-neu-primary[aria-pressed="true"] {
+  box-shadow: inset 10px 10px 20px var(--neu-dark),
+    inset -10px -10px 20px var(--neu-light);
+}
+
+/* Neumorphism glow — soft outer halo like the screenshot */
+@keyframes neo-glow-pulse {
+  0%,
+  100% {
+    --neo-glow-alpha: 0.22;
+    --neo-glow-alpha-2: 0.12;
+  }
+  50% {
+    --neo-glow-alpha: 0.33;
+    --neo-glow-alpha-2: 0.2;
+  }
+}
+
+.btn-neu,
+.btn-neu-primary {
+  /* keep original shadow via a variable so we can append glow */
+  --btn-neu-elev: -10px -10px 20px var(--neu-light),
+    10px 10px 20px var(--neu-dark);
+  box-shadow: var(--btn-neu-elev);
+}
+
+/* Base glow variant (amber by default) */
+.btn-neu-glow {
+  --neo-glow-r: 255; /* glow color (RGB) */
+  --neo-glow-g: 170;
+  --neo-glow-b: 40;
+  --neo-glow-alpha: 0.26; /* main halo */
+  --neo-glow-alpha-2: 0.14; /* outer halo */
+  position: relative;
+  /* keep elevation + add layered glow rings */
+  box-shadow: var(--btn-neu-elev),
+    0 0 0 2px rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.1),
+    0 6px 20px
+      rgba(
+        var(--neo-glow-r),
+        var(--neo-glow-g),
+        var(--neo-glow-b),
+        var(--neo-glow-alpha)
+      ),
+    0 0 40px 14px
+      rgba(
+        var(--neo-glow-r),
+        var(--neo-glow-g),
+        var(--neo-glow-b),
+        var(--neo-glow-alpha-2)
+      );
+  /* extra soft glow that extends further out */
+  filter: drop-shadow(
+      0 0 10px
+        rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.25)
+    )
+    drop-shadow(
+      0 0 28px
+        rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.18)
+    );
+}
+
+.btn-neu-glow:hover {
+  --neo-glow-alpha: 0.34;
+  --neo-glow-alpha-2: 0.22;
+  transform: translateY(-1px);
+}
+
+.btn-neu-glow:active,
+.btn-neu-glow.is-active {
+  --neo-glow-alpha: 0.22;
+  --neo-glow-alpha-2: 0.12;
+  box-shadow: inset 10px 10px 20px var(--neu-dark),
+    inset -10px -10px 20px var(--neu-light),
+    0 0 0 2px rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.1),
+    0 6px 20px
+      rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.2),
+    0 0 30px 10px
+      rgba(var(--neo-glow-r), var(--neo-glow-g), var(--neo-glow-b), 0.14);
+}
+
+/* Optional pulsing animation */
+.btn-neu-glow-pulse {
+  animation: neo-glow-pulse 2.4s ease-in-out infinite;
+}
+
+/* Quick color utilities */
+.btn-neu-glow-amber {
+  --neo-glow-r: 255;
+  --neo-glow-g: 180;
+  --neo-glow-b: 60;
+}
+.btn-neu-glow-blue {
+  --neo-glow-r: 80;
+  --neo-glow-g: 160;
+  --neo-glow-b: 255;
+}
+.btn-neu-glow-green {
+  --neo-glow-r: 68;
+  --neo-glow-g: 214;
+  --neo-glow-b: 120;
+}
+.btn-neu-glow-rose {
+  --neo-glow-r: 255;
+  --neo-glow-g: 130;
+  --neo-glow-b: 150;
+}
+
+/* Circular version (for icon or round actions) */
+.btn-neu-round {
+  border-radius: 9999px;
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0;
+  justify-content: center;
+}
+
+/* Minimalist filled button (blueish tone matching the background) */
+.btn-minimal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  background: linear-gradient(
+    145deg,
+    #ebf0fc,
+    #dce5f8
+  ); /* soft blue-gray gradient */
+  color: #0f172a; /* slate-900 for contrast */
+  border: 1px solid rgba(59, 130, 246, 0.12); /* subtle indigo rim */
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  transition: transform 120ms ease, background 140ms ease, box-shadow 140ms ease;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08); /* very soft blue shadow */
+}
+
+.btn-minimal:hover {
+  background: linear-gradient(145deg, #e4ecfa, #d4dfed);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.14);
+}
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Button focus overrides (keep button-specific shadows + add ring) */
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.btn-neu:focus-visible {
+  box-shadow: -8px -8px 16px var(--neu-light), 8px 8px 16px var(--neu-dark),
+    0 0 0 4px var(--focus-ring);
+}
+
+.btn-neu-primary:focus-visible {
+  box-shadow: -10px -10px 20px var(--neu-light), 10px 10px 20px var(--neu-dark),
+    0 0 0 4px var(--focus-ring);
+}
+
+.btn-neu-pro:focus-visible {
+  box-shadow: 0 14px 34px rgba(14, 30, 60, 0.16),
+    -12px -12px 24px var(--neu-light), 12px 12px 24px var(--neu-dark),
+    0 0 0 4px var(--focus-ring);
+}
+
+.btn-minimal:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.btn-minimal-ghost:focus-visible {
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+/* Accent button focus (keep accent color ring) */
+.btn-neu-accent-blue:focus-visible,
+.btn-neu-accent-violet:focus-visible,
+.btn-neu-accent-amber:focus-visible {
+  outline: none;
+  box-shadow: -10px -10px 20px var(--neu-light), 10px 10px 20px var(--neu-dark),
+    0 0 0 4px
+      rgba(var(--neo-accent-r), var(--neo-accent-g), var(--neo-accent-b), 0.28);
+}
+
+/* Input focus ring (neu style) */
+.neu-input:focus {
+  outline: none;
+  box-shadow: inset 6px 6px 12px rgba(13, 32, 56, 0.08),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.8), 0 0 0 4px var(--focus-ring);
+}
+
+/* Standard input focus */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.btn-minimal:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+}
+
+.btn-minimal:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Large size for primary actions */
+.btn-minimal-lg {
+  padding: 0.85rem 1.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* Ghost variant (same fill but lighter, for secondary actions) */
+.btn-minimal-ghost {
+  background: linear-gradient(145deg, #f4f7fb, #eef2f7);
+  border-color: rgba(15, 23, 42, 0.08);
+  box-shadow: 0 2px 6px rgba(13, 32, 56, 0.05);
+}
+.btn-minimal-ghost:hover {
+  background: linear-gradient(145deg, #f0f4f9, #e8ecf1);
+  box-shadow: 0 4px 12px rgba(13, 32, 56, 0.08);
+}
+
+/* Live background: soft teal/gray gradient + animated color blobs */
+@keyframes bg-blobs-pan {
+  0%,
+  100% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2%, 1%, 0) scale(1.03);
+  }
+}
+
+html,
+body {
+  /* was a fixed linear-gradient; tie it to the theme variable */
+  background: var(--gradient-bg);
+  color: var(--neu-text);
+  min-height: 100vh;
+}
+.frosted-dropdown {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(100px) saturate(180%);
+  -webkit-backdrop-filter: blur(100px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(14, 30, 60, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 1px 3px rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Enhanced blur support check */
+@supports (backdrop-filter: blur(100px)) or
+  (-webkit-backdrop-filter: blur(100px)) {
+  .frosted-dropdown {
+    background: rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* Fallback for browsers without backdrop-filter */
+@supports not (
+  (backdrop-filter: blur(100px)) or (-webkit-backdrop-filter: blur(100px))
+) {
+  .frosted-dropdown {
+    background: rgba(248, 250, 252, 0.92);
+  }
+}
+/* soft moving blobs (cooler tones to match teal/gray bg) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -2;
+  pointer-events: none;
+  background: radial-gradient(
+      40% 32% at 15% 20%,
+      rgba(139, 190, 218, 0.2),
+      transparent 60%
+    ),
+    radial-gradient(
+      36% 28% at 85% 25%,
+      rgba(96, 165, 250, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      42% 34% at 50% 85%,
+      rgba(147, 197, 253, 0.14),
+      transparent 65%
+    ),
+    radial-gradient(
+      30% 26% at 75% 80%,
+      rgba(186, 230, 253, 0.1),
+      transparent 70%
+    );
+  filter: blur(42px) saturate(115%);
+  animation: bg-blobs-pan 22s ease-in-out infinite;
+}
+
+/* ultra subtle grain for depth */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: radial-gradient(
+      circle at 25% 20%,
+      rgba(0, 0, 0, 0.08) 0 1px,
+      transparent 1px
+    ),
+    radial-gradient(
+      circle at 75% 60%,
+      rgba(0, 0, 0, 0.08) 0 1px,
+      transparent 1px
+    );
+  background-size: 3px 3px, 4px 4px;
+}
+
+/* Reduced motion: keep it still */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+/* Neumorphism vars updated for the cooler bg */
+:root {
+  --neu-bg: #d8e3ec; /* cooler off-white surface */
+  --neu-text: #0f172a; /* slate-900 */
+  --neu-light: rgba(255, 255, 255, 0.85); /* softer top-left highlight */
+  --neu-dark: rgba(13, 42, 66, 0.16); /* cooler bottom-right shadow */
+  --focus-ring: rgba(59, 130, 246, 0.32); /* blue focus ring */
+}
+
+/* Buttons now pop with stronger blue gradient and clearer shadow */
+
+/* Final override: make minimal + ghost use role variables */
+.btn-minimal,
+.btn-minimal-ghost {
+  background: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-border) !important;
+  border-radius: 0.75rem;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-minimal:hover,
+.btn-minimal-ghost:hover {
+  background: var(--btn-bg-hover) !important;
+}
+.btn-minimal:active,
+.btn-minimal-ghost:active {
+  background: var(--btn-bg-active) !important;
+}
+
+/* Role tokens (keep here so they apply last) */
+.btn-save {
+  --btn-bg: linear-gradient(145deg, #dce3fc, #bbd0f7);
+  --btn-bg-hover: #bbd5f7;
+  --btn-bg-active: #a7aff3;
+  --btn-text: #06225f;
+  --btn-border: rgba(16, 41, 185, 0.35);
+}
+.btn-cancel {
+  --btn-bg: linear-gradient(145deg, #fef2f2, #fee2e2);
+  --btn-bg-hover: #fee2e2;
+  --btn-bg-active: #fecaca;
+  --btn-text: #7f1d1d;
+  --btn-border: rgba(239, 68, 68, 0.28);
+}
+.btn-print {
+  /* Gray-blackish look with good contrast */
+  --btn-bg: linear-gradient(
+    145deg,
+    #1f2937,
+    #0f172a
+  ); /* slate-800 → slate-900 */
+  --btn-bg-hover: #0f172a; /* slate-900 */
+  --btn-bg-active: #020617; /* slate-950 */
+  --btn-text: #e5e7eb; /* slate-200 for contrast */
+  --btn-border: rgba(255, 255, 255, 0.16);
+}
+
+/* Wizard navigation roles */
+.btn-next {
+  --btn-bg: linear-gradient(145deg, #dbeafe, #bfdbfe); /* light sky-blue */
+  --btn-bg-hover: #cfe0fd;
+  --btn-bg-active: #bcd1fb;
+  --btn-text: #0b3868; /* deep blue text */
+  --btn-border: rgba(59, 130, 246, 0.28);
+}
+.btn-back {
+  --btn-bg: linear-gradient(145deg, #f3f4f6, #e5e7eb); /* neutral gray */
+  --btn-bg-hover: #e5e7eb;
+  --btn-bg-active: #d1d5db;
+  --btn-text: #334155; /* slate-700 */
+  --btn-border: rgba(100, 116, 139, 0.24);
+}
+
+.btn-minimal:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* Tabs – tokens (default colorful) */
+:root {
+  --tab-active-from: #dbeafe; /* light blue */
+  --tab-active-to: #bfdbfe;
+  --tab-accent: #3b82f6; /* border underline */
+  --tab-active-text: #1e3a8a;
+  --tab-inactive-text: rgba(15, 23, 42, 0.7);
+  --tab-inactive-hover-text: rgba(15, 23, 42, 0.9);
+  --tab-border: color-mix(in oklch, var(--glass-border), transparent 35%);
+}
+
+/* White-gray */
+[data-theme="white-gray"] {
+  --tab-active-from: #f8fafc;
+  --tab-active-to: #e2e8f0;
+  --tab-accent: #94a3b8;
+  --tab-active-text: #0f172a;
+  --tab-inactive-text: #475569;
+  --tab-inactive-hover-text: #0f172a;
+}
+
+/* Dark-gray */
+[data-theme="dark-gray"] {
+  --tab-active-from: #334155;
+  --tab-active-to: #1f2937;
+  --tab-accent: #93c5fd;
+  --tab-active-text: #e5e7eb;
+  --tab-inactive-text: #cbd5e1;
+  --tab-inactive-hover-text: #f1f5f9;
+}
+
+/* Dark-green */
+[data-theme="dark-green"] {
+  --tab-active-from: #173f2d;
+  --tab-active-to: #0f2a1e;
+  --tab-accent: #34d399;
+  --tab-active-text: #e6fffa;
+  --tab-inactive-text: #bfffea;
+  --tab-inactive-hover-text: #ecfeff;
+}
+
+/* Tab components */
+.tabbar {
+  border-bottom: 1px solid var(--tab-border);
+}
+.tab-btn {
+  border-bottom: 2px solid transparent;
+  border-radius: 0.75rem 0.75rem 0 0;
+  color: var(--tab-inactive-text);
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.tab-btn:hover {
+  color: var(--tab-inactive-hover-text);
+  background: color-mix(in oklch, var(--glass-tint), transparent 60%);
+}
+.tab-btn.is-active {
+  color: var(--tab-active-text);
+  background: linear-gradient(
+    135deg,
+    var(--tab-active-from),
+    var(--tab-active-to)
+  );
+  border-bottom-color: var(--tab-accent);
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white, transparent 30%);
+}
+
+/* Theme button tokens */
+:root {
+  --btn-bg: rgba(255, 255, 255, 0.14);
+  --btn-bg-hover: rgba(255, 255, 255, 0.18);
+  --btn-bg-active: rgba(255, 255, 255, 0.12);
+  --btn-text: var(--panel-text);
+  --btn-border: color-mix(in oklch, var(--glass-border), transparent 40%);
+  --focus-ring: rgba(96, 165, 250, 0.32);
+}
+[data-theme="white-gray"] {
+  --btn-bg: rgba(255, 255, 255, 0.85);
+  --btn-bg-hover: rgba(255, 255, 255, 0.92);
+  --btn-bg-active: rgba(255, 255, 255, 0.8);
+  --btn-text: #0f172a;
+  --btn-border: rgba(15, 23, 42, 0.12);
+}
+[data-theme="dark-gray"] {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-bg-hover: rgba(255, 255, 255, 0.12);
+  --btn-bg-active: rgba(255, 255, 255, 0.06);
+  --btn-text: #e5e7eb;
+  --btn-border: rgba(255, 255, 255, 0.18);
+}
+[data-theme="dark-green"] {
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-bg-hover: rgba(255, 255, 255, 0.12);
+  --btn-bg-active: rgba(255, 255, 255, 0.06);
+  --btn-text: #e6fffa;
+  --btn-border: rgba(255, 255, 255, 0.18);
+}
+
+/* Utilities for themed text */
+.text-theme {
+  color: var(--panel-text) !important;
+}
+.text-subtle {
+  color: var(--panel-text) !important;
+  opacity: 0.7;
+}
+
+/* Base: make all input-like controls follow themed text by default */
+input,
+textarea,
+select,
+.ant-input,
+.ant-input-password input,
+.ant-input-number-input,
+.ant-select-single .ant-select-selection-item,
+.ant-select-selection-search-input,
+.ant-picker input,
+.ant-picker-input > input {
+  color: var(--panel-text);
+}
+
+/* Make btn-neu follow theme and remove any glow */
+.btn-neu {
+  background: linear-gradient(
+    145deg,
+    var(--btn-bg),
+    var(--btn-bg-active)
+  ) !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-border) !important;
+  box-shadow: -8px -8px 16px var(--neu-light), 8px 8px 16px var(--neu-dark) !important; /* soft neu effect */
+  filter: none !important;
+}
+.btn-neu:hover {
+  background: var(--btn-bg-hover) !important;
+}
+.btn-neu:active {
+  background: var(--btn-bg-active) !important;
+}
+.btn-neu::before,
+.btn-neu::after {
+  content: none !important;
+} /* kill glow pseudo elements */
+
+/* Table: theme text + hover without forcing white rows */
+.table-ui {
+  color: var(--panel-text);
+}
+.table-ui thead {
+  background: color-mix(in oklch, var(--glass-tint), transparent 68%);
+}
+.table-ui th,
+.table-ui td {
+  color: var(--panel-text);
+  border-bottom: 1px solid
+    color-mix(in oklch, var(--glass-border), transparent 40%);
+}
+.table-ui tbody tr {
+  background: transparent;
+  transition: background 0.18s ease;
+}
+.table-ui tbody tr:hover {
+  background: color-mix(in oklch, var(--glass-tint-2), white 8%);
+}
+
+/* Let specific panels overflow (for dropdowns) */
+.neu-panel.allow-overflow {
+  overflow: visible;
+}
+
+/* Table should span container width */
+.table-surface {
+  width: 100%;
+  height: 2000px;
+}
+
+.table-ui {
+  width: 100%;
+  table-layout: auto;
+}
+
+/* Themed buttons (ensure they win cascade) */
+.btn-minimal {
+  background: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-border) !important;
+  border-radius: 0.75rem;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-minimal:hover {
+  background: var(--btn-bg-hover) !important;
+}
+.btn-minimal:active {
+  background: var(--btn-bg-active) !important;
+}
+.btn-minimal:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important;
+}
+
+.btn-neu {
+  background: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-border) !important;
+  box-shadow: none !important; /* no glow */
+}
+.btn-neu:hover {
+  background: var(--btn-bg-hover) !important;
+}
+.btn-neu:active {
+  background: var(--btn-bg-active) !important;
+}
+.btn-neu::before,
+.btn-neu::after {
+  content: none !important;
 }

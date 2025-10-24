@@ -31,6 +31,7 @@ interface AppProps {
 
 export default function App({ data }: AppProps) {
   const options: ChartOptions<"bar"> = {
+    maintainAspectRatio: false,
     indexAxis: "y",
     elements: {
       bar: {

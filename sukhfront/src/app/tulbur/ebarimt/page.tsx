@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DatePicker, Select, Button, Spin } from "antd";
 import moment from "moment";
 import { motion } from "framer-motion";
@@ -53,12 +53,93 @@ export default function Ebarimt() {
   };
   const t = (text: string) => text;
 
+  // Scoped light overrides: ignore global theme and ensure readability on white
+  const LocalStyles = () => (
+    <style jsx global>{`
+      .no-theme-scope {
+        --panel-text: #0f172a;
+        --btn-text: #0f172a;
+        --btn-bg: #ffffff;
+        --btn-bg-hover: #f8fafc;
+        --btn-bg-active: #f1f5f9;
+        --btn-border: rgba(15, 23, 42, 0.12);
+        --surface-bg: #ffffff;
+        --surface-border: rgba(15, 23, 42, 0.12);
+        color: #0f172a !important;
+        background: #ffffff !important;
+      }
+      .no-theme-scope *,
+      .no-theme-scope
+        :where(th, td, p, span, div, button, input, select, label) {
+        color: #0f172a !important;
+      }
+      /* AntD inputs */
+      .no-theme-scope .ant-picker,
+      .no-theme-scope .ant-select-selector {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: #e5e7eb !important;
+      }
+      .no-theme-scope .ant-picker:hover,
+      .no-theme-scope .ant-picker-focused,
+      .no-theme-scope .ant-select-selector:hover,
+      .no-theme-scope .ant-select-focused .ant-select-selector {
+        border-color: #bfdbfe !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+      }
+      .no-theme-scope .ant-picker-input > input,
+      .no-theme-scope .ant-picker input,
+      .no-theme-scope .ant-select-selection-item,
+      .no-theme-scope .ant-select-selection-search-input {
+        color: #0f172a !important;
+      }
+      .no-theme-scope .ant-picker-input > input::placeholder,
+      .no-theme-scope .ant-picker input::placeholder,
+      .no-theme-scope .ant-select-selection-placeholder {
+        color: rgba(15, 23, 42, 0.6) !important;
+      }
+      .no-theme-scope .ant-select-arrow {
+        color: #0f172a !important;
+      }
+
+      /* Overlays in body: force light while this component is mounted */
+      body.force-light-dropdown .ant-select-dropdown,
+      body.force-light-dropdown .ant-dropdown .ant-dropdown-menu,
+      body.force-light-dropdown .ant-picker-dropdown {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 0.75rem !important;
+      }
+      body.force-light-dropdown .ant-select-item,
+      body.force-light-dropdown .ant-dropdown-menu-item,
+      body.force-light-dropdown .ant-dropdown-menu-submenu-title {
+        color: #0f172a !important;
+      }
+      body.force-light-dropdown .ant-select-item-option-active {
+        background: #f1f5f9 !important;
+      }
+      body.force-light-dropdown .ant-select-item-option-selected {
+        background: #e5effe !important;
+        color: #0b3868 !important;
+      }
+    `}</style>
+  );
+
+  useEffect(() => {
+    document.body.classList.add("force-light-dropdown");
+    return () => {
+      document.body.classList.remove("force-light-dropdown");
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen no-theme-scope">
+      <LocalStyles />
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 bg-slate-900 bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         И-Баримт
       </motion.h1>
@@ -80,10 +161,10 @@ export default function Ebarimt() {
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
-                <div className="text-3xl font-bold text-slate-900 mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                   {stat.value}
                 </div>
-                <div className="text-xs text-slate-600 leading-tight">
+                <div className="text-xs text-theme leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -95,13 +176,14 @@ export default function Ebarimt() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <RangePicker
-                className="w-full sm:w-auto !bg-transparent border border-white/40 rounded-xl hover:shadow-md transition-all duration-300"
+                className="w-full sm:w-auto rounded-xl hover:shadow-md transition-all duration-300"
                 size="large"
                 value={ekhlekhOgnoo}
+                placeholder={["Эхлэх өдөр", "Дуусах өдөр"]}
                 onChange={setEkhlekhOgnoo}
               />
               <Select
-                className="w-full sm:w-48 !bg-transparent border border-white/40 backdrop-blur-lg rounded-xl hover:shadow-md transition-all duration-300"
+                className="text-[color:var(--panel-text)]"
                 size="large"
                 placeholder={t("Үйлчилгээ")}
                 onChange={(v) => setUilchilgeeAvi(v)}
@@ -128,7 +210,7 @@ export default function Ebarimt() {
                   onClick={exceleerTatya}
                   type="primary"
                   size="large"
-                  className="flex-1 md:flex-none rounded-xl bg-slate-900 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                  className="btn-minimal"
                 >
                   {t("Excel татах")}
                 </Button>
@@ -141,7 +223,7 @@ export default function Ebarimt() {
                 <Button
                   title={t("Сүүлд илгээгдсэн огноо")}
                   size="large"
-                  className="flex-1 md:flex-none rounded-xl border border-white/40 bg-white/10 backdrop-blur-xl shadow-md hover:shadow-lg transition-all duration-300"
+                  className="btn-minimal"
                 >
                   {moment(eBarimtMedeelel.extraInfo.lastSentDate).format(
                     "YYYY-MM-DD"
@@ -157,7 +239,7 @@ export default function Ebarimt() {
                   danger
                   onClick={ebarimtIlgeeye}
                   size="large"
-                  className="flex-1 md:flex-none rounded-xl border border-white/40 bg-gradient-to-r from-red-400/80 to-pink-400/80 text-white shadow-md hover:shadow-lg transition-all duration-300"
+                  className="btn-minimal"
                 >
                   <Spin spinning={loading}>
                     {loading ? "" : t("Татварт илгээх")}
@@ -173,75 +255,73 @@ export default function Ebarimt() {
           whileHover={{ scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="overflow-x-auto">
-            <table className="w-full relative z-10">
-              <thead>
-                <tr className="bg-white/20 border-b border-white/30">
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800 w-20">
-                    №
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
-                    Огноо
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
-                    Тайлант сар
-                  </th>
-                  <th className="py-4 px-6 text-right text-sm font-semibold text-slate-800">
-                    Дүн
-                  </th>
-                  <th className="py-4 px-6 text-left text-sm font-semibold text-slate-800">
-                    Үйлчилгээ
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData.length > 0 ? (
-                  tableData.map((item, index) => (
-                    <motion.tr
-                      key={item.id}
-                      className="border-b border-white/30 cursor-pointer hover:shadow-lg"
-                      transition={{ duration: 0.3 }}
-                    >
-                      <td className="py-4 px-6 text-slate-900">{index + 1}</td>
-                      <td className="py-4 px-6 text-slate-600">{item.date}</td>
-                      <td className="py-4 px-6 text-slate-600">{item.month}</td>
-                      <td className="py-4 px-6 text-slate-600 text-right">
-                        {item.total}
-                      </td>
-                      <td className="py-4 px-6 text-slate-600">
-                        {item.service}
-                      </td>
-                    </motion.tr>
-                  ))
-                ) : (
+          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+            <div className="max-h-[330px] overflow-y-auto custom-scrollbar w-full">
+              <table className="table-ui text-sm min-w-full">
+                <thead>
                   <tr>
-                    <td colSpan={5} className="py-20 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <svg
-                          className="w-16 h-16 text-slate-300"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <div className="text-slate-500 font-medium">
-                          Мэдээлэл байхгүй
-                        </div>
-                        <div className="text-slate-400 text-sm">
-                          Шүүлтүүрийг өөрчилж үзнэ үү
-                        </div>
-                      </div>
-                    </td>
+                    <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                      №
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-semibold">
+                      Огноо
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-semibold">
+                      Тайлант сар
+                    </th>
+                    <th className="py-4 px-6 text-right text-sm font-semibold">
+                      Дүн
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-semibold">
+                      Үйлчилгээ
+                    </th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tableData.length > 0 ? (
+                    tableData.map((item, index) => (
+                      <motion.tr
+                        key={item.id}
+                        className="border-b border-white/30 cursor-pointer hover:shadow-lg"
+                        transition={{ duration: 0.3 }}
+                      >
+                        <td className="py-4 px-6">{index + 1}</td>
+                        <td className="py-4 px-6">{item.date}</td>
+                        <td className="py-4 px-6">{item.month}</td>
+                        <td className="py-4 px-6 text-right">{item.total}</td>
+                        <td className="py-4 px-6">{item.service}</td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="py-20 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <svg
+                            className="w-16 h-16 text-slate-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div className="text-slate-500 font-medium">
+                            Мэдээлэл байхгүй
+                          </div>
+                          <div className="text-slate-400 text-sm">
+                            Шүүлтүүрийг өөрчилж үзнэ үү
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </motion.div>
       </div>

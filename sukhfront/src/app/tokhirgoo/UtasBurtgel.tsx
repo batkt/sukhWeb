@@ -89,7 +89,6 @@ const UtasBurtgel: ForwardRefRenderFunction<
       msgAvakhTsag: formValues.msgAvakhTsag,
     };
 
-   
     notification.success({ message: t("Амжилттай хадгаллаа (mock)") });
     baiguullagaMutate?.();
     destroy();
@@ -142,6 +141,7 @@ const UtasBurtgel: ForwardRefRenderFunction<
                   style={{ minWidth: "293px" }}
                 >
                   <InputNumber
+                    className="text-theme"
                     style={{ width: "100%" }}
                     placeholder="Утасны дугаар"
                   />
@@ -160,7 +160,7 @@ const UtasBurtgel: ForwardRefRenderFunction<
       </Form.List>
 
       <Form.Item label={t("Хүлээн авах цаг")} name="msgAvakhTsag">
-        <Select placeholder="Хүлээн авах цаг">
+        <Select placeholder="Хүлээн авах цаг" className="text-theme">
           {["07:00", "09:30", "20:00", "22:00"].map((time) => (
             <Select.Option key={time}>{time}</Select.Option>
           ))}
