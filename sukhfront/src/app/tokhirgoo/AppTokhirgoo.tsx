@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, DatePicker, notification } from "antd";
+import { Button, notification } from "antd";
+import { DatePickerInput } from "@mantine/dates";
 import { SolutionOutlined } from "@ant-design/icons";
 import moment from "moment";
 
@@ -9,9 +10,9 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
   const [isLocked, setIsLocked] = useState(
     !!baiguullaga?.tokhirgoo?.khereglegchEkhlekhOgnoo
   );
-  const [startDate, setStartDate] = useState<any>(
+  const [startDate, setStartDate] = useState<Date | null>(
     baiguullaga?.tokhirgoo?.khereglegchEkhlekhOgnoo
-      ? moment(baiguullaga.tokhirgoo.khereglegchEkhlekhOgnoo)
+      ? moment(baiguullaga.tokhirgoo.khereglegchEkhlekhOgnoo).toDate()
       : null
   );
 
@@ -35,12 +36,12 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
               <div className="font-medium">Ашиглаж эхлэх огноо</div>
             </div>
             <div className="ml-auto w-1/2 !bg-transparent">
-              <DatePicker
+              <DatePickerInput
                 disabled={isLocked}
                 style={{ width: "100%" }}
-                value={startDate}
-                onChange={setStartDate}
-                prefix={<SolutionOutlined />}
+                value={startDate ?? undefined}
+                onChange={(v) => setStartDate((v as Date | null) ?? null)}
+                locale="mn"
               />
             </div>
           </div>

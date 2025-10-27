@@ -1,6 +1,11 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
+import { MantineProvider } from "@mantine/core";
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+import dayjs from "dayjs";
+import "dayjs/locale/mn";
 import { useRouter, usePathname } from "next/navigation";
 import { parseCookies, destroyCookie } from "nookies";
 import { Toaster } from "react-hot-toast";
@@ -44,9 +49,11 @@ function isTokenValid(token: string): boolean {
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
-    <SpinnerProvider>
-      <LayoutContent>{children}</LayoutContent>
-    </SpinnerProvider>
+    <MantineProvider>
+      <SpinnerProvider>
+        <LayoutContent>{children}</LayoutContent>
+      </SpinnerProvider>
+    </MantineProvider>
   );
 }
 
@@ -57,6 +64,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    // Set global locale for date handling to Mongolian
+    try {
+      dayjs.locale("mn");
+    } catch (_) {}
+
     const checkAuth = () => {
       const cookies = parseCookies();
       const token = cookies.tureestoken;

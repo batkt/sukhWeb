@@ -25,6 +25,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# ESLint cache
+.eslintcache
+
 # env files
 .env*
 !.env.example

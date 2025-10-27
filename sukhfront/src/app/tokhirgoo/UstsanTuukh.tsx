@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { Card, Button, Select, DatePicker } from "antd";
+import { Card, Button, Select } from "antd";
+import { DatePickerInput } from "@mantine/dates";
 import { EyeOutlined, FileExcelOutlined } from "@ant-design/icons";
 import dayjs, { Dayjs } from "dayjs";
 
-const { RangePicker } = DatePicker;
+// Mantine DatePickerInput replaces AntD RangePicker
 
 const t = (text: string) => text;
 
@@ -89,9 +90,11 @@ export default function UstsanTuukh() {
   const [turul, setTurul] = useState<string>();
   const ref = useRef<any>(null);
   const [shineBagana, setShineBagana] = useState([]);
-  const [shuukhOgnoo, setShuukhOgnoo] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, "month"),
-    dayjs(),
+  const [shuukhOgnoo, setShuukhOgnoo] = useState<
+    [string | null, string | null]
+  >([
+    dayjs().subtract(1, "month").format("YYYY-MM-DD"),
+    dayjs().format("YYYY-MM-DD"),
   ]);
 
   const turluud = [
@@ -106,8 +109,12 @@ export default function UstsanTuukh() {
       "object.turul": turul,
       createdAt: shuukhOgnoo
         ? {
-            $gte: shuukhOgnoo[0].format("YYYY-MM-DD 00:00:00"),
-            $lte: shuukhOgnoo[1].format("YYYY-MM-DD 23:59:59"),
+            $gte: dayjs(shuukhOgnoo[0] || undefined).format(
+              "YYYY-MM-DD 00:00:00"
+            ),
+            $lte: dayjs(shuukhOgnoo[1] || undefined).format(
+              "YYYY-MM-DD 23:59:59"
+            ),
           }
         : undefined,
     }),
@@ -121,13 +128,15 @@ export default function UstsanTuukh() {
   // Columns replaced by semantic table below
 
   const ognooShuultOnChange = (
-    dates: (Dayjs | null)[] | null,
-    dateStrings: [string, string]
+    dates: [string | null, string | null] | undefined
   ) => {
     if (!dates || !dates[0] || !dates[1]) {
-      setShuukhOgnoo([dayjs().subtract(1, "month"), dayjs()]);
+      setShuukhOgnoo([
+        dayjs().subtract(1, "month").format("YYYY-MM-DD"),
+        dayjs().format("YYYY-MM-DD"),
+      ]);
     } else {
-      setShuukhOgnoo([dates[0], dates[1]] as [Dayjs, Dayjs]);
+      setShuukhOgnoo([dates[0], dates[1]]);
     }
   };
 
@@ -135,10 +144,13 @@ export default function UstsanTuukh() {
     <Admin title="Устгасан түүх">
       <Card className="bg-transparent">
         <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <RangePicker
+          <DatePickerInput
+            type="range"
             value={shuukhOgnoo}
             onChange={ognooShuultOnChange}
+            valueFormat="YYYY-MM-DD"
             className="text-slate-900"
+            locale="mn"
           />
 
           <Select

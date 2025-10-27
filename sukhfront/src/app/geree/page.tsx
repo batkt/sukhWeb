@@ -21,13 +21,27 @@ import {
 } from "@/lib/useGeree";
 import { useAuth } from "@/lib/useAuth";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
+import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import uilchilgee from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
-import { notification, DatePicker, Spin } from "antd";
-import dayjs, { Dayjs } from "dayjs";
+import toast from "react-hot-toast";
+import { DatePickerInput } from "@mantine/dates";
+import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
+import {
+  isValidName,
+  isValidRegister,
+  areValidPhones,
+  explainRegisterRule,
+  explainPhoneRule,
+  normalizeRegister,
+} from "@/lib/validation";
+import createMethod from "../../../tools/function/createMethod";
+import updateMethod from "../../../tools/function/updateMethod";
+import deleteMethod from "../../../tools/function/deleteMethod";
 export const ALL_COLUMNS = [
   { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
@@ -63,7 +77,14 @@ export default function Geree() {
   const router = useRouter();
   const DEFAULT_HIDDEN = ["mail", "aimag", "duureg", "horoo"];
 
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  // Which section to show: contracts, residents, or employees
+  const [activeTab, setActiveTab] = useState<
+    "contracts" | "residents" | "employees"
+  >("contracts");
+
+  // Separate modals to avoid layout differences breaking sticky footers
+  const [showContractModal, setShowContractModal] = useState(false);
+  const [showResidentModal, setShowResidentModal] = useState(false);
   const [showList2Modal, setShowList2Modal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -144,6 +165,25 @@ export default function Geree() {
 
   const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
   const { zardluud } = useAshiglaltiinZardluud();
+  // Residents list
+  const {
+    orshinSuugchGaralt,
+    orshinSuugchJagsaaltMutate,
+    setOrshinSuugchKhuudaslalt,
+    isValidating: isValidatingSuugch,
+  } = useOrshinSuugchJagsaalt(token || "", ajiltan?.baiguullagiinId || "", {});
+  // Employees list
+  const {
+    ajilchdiinGaralt,
+    ajiltniiJagsaaltMutate,
+    setAjiltniiKhuudaslalt,
+    isValidating: isValidatingAjiltan,
+  } = useAjiltniiJagsaalt(
+    token || "",
+    ajiltan?.baiguullagiinId || "",
+    undefined,
+    {}
+  );
 
   const {
     gereeGaralt,
@@ -159,14 +199,72 @@ export default function Geree() {
   } = useGereeniiZagvar();
   const contracts = gereeGaralt?.jagsaalt || [];
 
+  // Pagination for residents/employees
+  const [resPage, setResPage] = useState(1);
+  const [resPageSize, setResPageSize] = useState(10);
+  const [empPage, setEmpPage] = useState(1);
+  const [empPageSize, setEmpPageSize] = useState(10);
+
+  // Editing flags
+  const [editingResident, setEditingResident] = useState<any | null>(null);
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
+  const [newEmployee, setNewEmployee] = useState<any>({
+    ovog: "",
+    ner: "",
+    register: "",
+    utas: "",
+    email: "",
+    albanTushaal: "",
+    ajildOrsonOgnoo: "",
+    nevtrekhNer: "",
+    nuutsUg: "",
+  });
+
   useEffect(() => {
-    setGereeKhuudaslalt((prev) => ({
-      ...prev,
-      search: searchTerm,
-      khuudasniiDugaar: 1,
-    }));
-  }, [searchTerm, setGereeKhuudaslalt]);
+    if (activeTab === "contracts") {
+      setGereeKhuudaslalt((prev) => ({
+        ...prev,
+        search: searchTerm,
+        khuudasniiDugaar: 1,
+      }));
+    } else if (activeTab === "residents") {
+      setOrshinSuugchKhuudaslalt((prev: any) => ({
+        ...prev,
+        search: searchTerm,
+        khuudasniiDugaar: 1,
+      }));
+    } else if (activeTab === "employees") {
+      setAjiltniiKhuudaslalt((prev: any) => ({
+        ...prev,
+        search: searchTerm,
+        khuudasniiDugaar: 1,
+      }));
+    }
+  }, [
+    activeTab,
+    searchTerm,
+    setGereeKhuudaslalt,
+    setOrshinSuugchKhuudaslalt,
+    setAjiltniiKhuudaslalt,
+  ]);
   useEffect(() => setMounted(true), []);
+  // Initialize both lists on first load (warm SWR caches)
+  useEffect(() => {
+    setOrshinSuugchKhuudaslalt({
+      khuudasniiDugaar: 1,
+      khuudasniiKhemjee: resPageSize,
+      search: "",
+    });
+    setAjiltniiKhuudaslalt({
+      khuudasniiDugaar: 1,
+      khuudasniiKhemjee: empPageSize,
+      search: "",
+    });
+    orshinSuugchJagsaaltMutate();
+    ajiltniiJagsaaltMutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (
@@ -236,6 +334,24 @@ export default function Geree() {
     baritsaaAvakhDun: 0,
   });
 
+  // Separate state for resident add modal
+  const [newResident, setNewResident] = useState<any>({
+    ovog: "",
+    ner: "",
+    register: "",
+    utas: [""],
+    mail: "",
+    khayag: "",
+    aimag: "Улаанбаатар",
+    duureg: "",
+    horoo: "",
+    // Resident account fields
+    nevtrekhNer: "",
+    nuutsUg: "",
+    // Resident type: Үндсэн | Түр
+    turul: "Үндсэн",
+  });
+
   // Compute next contract number from existing list
   const computeNextGereeDugaar = () => {
     const nums = (contracts || [])
@@ -269,7 +385,12 @@ export default function Geree() {
         newContract.aimag !== "Улаанбаатар" ||
         (String(newContract.duureg || "").trim() !== "" &&
           String(newContract.horoo || "").trim() !== "");
-      return baseValid && ubExtraValid;
+      const namesOk =
+        isValidName(newContract.ovog || "") &&
+        isValidName(newContract.ner || "");
+      const regOk = isValidRegister(newContract.register || "");
+      const phonesOk = areValidPhones(newContract.utas || []);
+      return baseValid && ubExtraValid && namesOk && regOk && phonesOk;
     }
     if (step === 2) {
       return (
@@ -288,17 +409,9 @@ export default function Geree() {
         hasAnyPhone(newContract.suhUtas)
       );
     }
-    if (step === 4) {
-      return (
-        newContract.suhTulbur !== undefined &&
-        newContract.suhTulbur !== null &&
-        String(newContract.suhTulbur) !== "" &&
-        !isNaN(Number(newContract.suhTulbur))
-      );
-    }
     return true;
   };
-  const isFormValid = () => [1, 2, 3, 4].every((s) => isStepValid(s));
+  const isFormValid = () => [1, 2, 3].every((s) => isStepValid(s));
 
   const renderCellValue = (contract: any, columnKey: string) => {
     switch (columnKey) {
@@ -351,10 +464,7 @@ export default function Geree() {
 
   const handleDownloadTemplate = async (templateType: string) => {
     if (!token) {
-      notification.error({
-        message: "Алдаа",
-        description: "Нэвтрэх шаардлагатай",
-      });
+      toast.error("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -375,25 +485,16 @@ export default function Geree() {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      notification.success({
-        message: "Амжилттай",
-        description: "Загвар амжилттай татагдлаа",
-      });
+      toast.success("Загвар амжилттай татагдлаа");
     } catch (error) {
       console.error("Download error:", error);
-      notification.error({
-        message: "Алдаа",
-        description: "Загвар татахад алдаа гарлаа",
-      });
+      toast.error("Загвар татахад алдаа гарлаа");
     }
   };
 
   const handleDownloadExcel = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      notification.error({
-        message: "Алдаа",
-        description: "Нэвтрэх шаардлагатай",
-      });
+      toast.error("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -427,8 +528,23 @@ export default function Geree() {
         },
       });
 
-      const { Excel } = require("antd-table-saveas-excel");
-      const excel = new Excel();
+      // Lazy load Excel export lib at runtime to avoid bundling failure if missing
+      let ExcelCtor: any = null;
+      try {
+        // Use eval to avoid static resolution during bundling
+        const req = eval("require");
+        const mod = req("antd-table-saveas-excel");
+        ExcelCtor = mod?.Excel;
+      } catch (e) {
+        ExcelCtor = null;
+      }
+      if (!ExcelCtor) {
+        toast.error(
+          "Excel экспорт хийх боломжгүй байна. 'antd-table-saveas-excel' санг суулгана уу."
+        );
+        return;
+      }
+      const excel = new ExcelCtor();
 
       const columns = ALL_COLUMNS.map((col) => ({
         title: col.label,
@@ -442,16 +558,212 @@ export default function Geree() {
         .addDataSource(response.data?.jagsaalt || [])
         .saveAs("Гэрээний_жагсаалт.xlsx");
 
-      notification.success({
-        message: "Амжилттай",
-        description: "Excel файл амжилттай татагдлаа",
-      });
+      toast.success("Excel файл амжилттай татагдлаа");
     } catch (error) {
       console.error("Excel download error:", error);
-      notification.error({
-        message: "Алдаа",
-        description: "Excel файл татахад алдаа гарлаа",
+      toast.error("Excel файл татахад алдаа гарлаа");
+    }
+  };
+
+  const handleCreateResident = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validate basic fields
+    if (!isValidName(newResident.ovog) || !isValidName(newResident.ner)) {
+      toast.error(
+        "Овог, Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+      );
+      return;
+    }
+    if (!isValidRegister(newResident.register)) {
+      toast.error(explainRegisterRule());
+      return;
+    }
+    if (!areValidPhones(newResident.utas || [])) {
+      toast.error(explainPhoneRule());
+      return;
+    }
+    if (!newResident.nuutsUg || String(newResident.nuutsUg).length < 2) {
+      toast.error("Нууц үг хамгийн багадаа 2 тэмдэгт байх ёстой.");
+      return;
+    }
+
+    try {
+      const firstPhone = Array.isArray(newResident.utas)
+        ? newResident.utas.find((p: any) => String(p || "").trim() !== "") || ""
+        : String(newResident.utas || "");
+
+      const payload: any = {
+        ner: newResident.ner,
+        ovog: newResident.ovog,
+        register: newResident.register,
+        utas: firstPhone,
+        email: newResident.mail,
+        mail: newResident.mail,
+        khayag: newResident.khayag,
+        nevtrekhNer: newResident.nevtrekhNer || firstPhone,
+        nuutsUg: newResident.nuutsUg,
+        turul: newResident.turul,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        baiguullagiinNer: baiguullaga?.ner,
+        erkh: "OrshinSuugch",
+        taniltsuulgaKharakhEsekh: true,
+      };
+
+      if (newResident.aimag) payload.aimag = newResident.aimag;
+      // Prefer user selections; fallback to organization profile
+      const deriveStr = (val: any) =>
+        typeof val === "string"
+          ? val
+          : typeof val?.ner === "string"
+          ? val.ner
+          : "";
+      payload.duureg = newResident.duureg || deriveStr(baiguullaga?.duureg);
+      payload.horoo = newResident.horoo || deriveStr(baiguullaga?.horoo);
+      // Auto-fill building code/name for resident
+      payload.soh =
+        (baiguullaga as any)?.tokhirgoo?.sohCode || baiguullaga?.ner || "";
+      if (barilgiinId) payload.barilgiinId = barilgiinId;
+
+      if (editingResident?._id) {
+        await updateMethod("orshinSuugch", token || "", {
+          ...payload,
+          _id: editingResident._id,
+        });
+      } else {
+        await createMethod("orshinSuugchBurtgey", token || "", payload);
+      }
+      toast.success("Оршин суугч нэмэгдлээ");
+      setShowResidentModal(false);
+      setEditingResident(null);
+      setCurrentStep(1);
+      await orshinSuugchJagsaaltMutate();
+      setActiveTab("residents");
+    } catch (err) {
+      toast.error("Нэмэхэд алдаа гарлаа");
+    }
+  };
+
+  const handleEditResident = (p: any) => {
+    setEditingResident(p);
+    setNewResident({
+      ovog: p.ovog || "",
+      ner: p.ner || "",
+      register: p.register || "",
+      utas: p.utas ? [p.utas] : [""],
+      mail: p.mail || p.email || "",
+      khayag: p.khayag || "",
+      aimag: p.aimag || "Улаанбаатар",
+      duureg: p.duureg || "",
+      horoo: p.horoo || "",
+      nevtrekhNer: p.nevtrekhNer || p.utas || "",
+      nuutsUg: "",
+      turul: p.turul || "Үндсэн",
+    });
+    setShowResidentModal(true);
+  };
+
+  const handleDeleteResident = async (p: any) => {
+    if (!token) {
+      toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
+      return;
+    try {
+      await deleteMethod("orshinSuugch", token, p._id || p.id);
+      toast.success("Устгагдлаа");
+      await orshinSuugchJagsaaltMutate();
+    } catch (e) {
+      toast.error("Устгахад алдаа гарлаа");
+    }
+  };
+
+  const handleCreateOrUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token) {
+      toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+    try {
+      const payload: any = {
+        ovog: newEmployee.ovog,
+        ner: newEmployee.ner,
+        register: newEmployee.register,
+        utas: newEmployee.utas,
+        email: newEmployee.email,
+        mail: newEmployee.email,
+        albanTushaal: newEmployee.albanTushaal,
+        ajildOrsonOgnoo: newEmployee.ajildOrsonOgnoo
+          ? new Date(newEmployee.ajildOrsonOgnoo).toISOString()
+          : undefined,
+        nevtrekhNer: newEmployee.nevtrekhNer || newEmployee.utas,
+        nuutsUg: newEmployee.nuutsUg,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+      };
+      if (barilgiinId) payload.barilgiinId = barilgiinId;
+
+      if (editingEmployee?._id) {
+        await updateMethod("ajiltan", token, {
+          ...payload,
+          _id: editingEmployee._id,
+        });
+      } else {
+        await createMethod("ajiltan", token, payload);
+      }
+
+      toast.success("Ажилтны мэдээлэл хадгалагдлаа");
+      setShowEmployeeModal(false);
+      setEditingEmployee(null);
+      setNewEmployee({
+        ovog: "",
+        ner: "",
+        register: "",
+        utas: "",
+        email: "",
+        albanTushaal: "",
+        ajildOrsonOgnoo: "",
+        nevtrekhNer: "",
+        nuutsUg: "",
       });
+      await ajiltniiJagsaaltMutate();
+      setActiveTab("employees");
+    } catch (err) {
+      toast.error("Хадгалахад алдаа гарлаа");
+    }
+  };
+
+  const handleEditEmployee = (p: any) => {
+    setEditingEmployee(p);
+    setNewEmployee({
+      ovog: p.ovog || "",
+      ner: p.ner || "",
+      register: p.register || "",
+      utas: p.utas || "",
+      email: p.email || p.mail || "",
+      albanTushaal: p.albanTushaal || "",
+      ajildOrsonOgnoo: p.ajildOrsonOgnoo
+        ? new Date(p.ajildOrsonOgnoo).toISOString().split("T")[0]
+        : "",
+      nevtrekhNer: p.nevtrekhNer || p.utas || "",
+      nuutsUg: "",
+    });
+    setShowEmployeeModal(true);
+  };
+
+  const handleDeleteEmployee = async (p: any) => {
+    if (!token) {
+      toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
+      return;
+    try {
+      await deleteMethod("ajiltan", token, p._id || p.id);
+      toast.success("Устгагдлаа");
+      await ajiltniiJagsaaltMutate();
+    } catch (e) {
+      toast.error("Устгахад алдаа гарлаа");
     }
   };
 
@@ -459,16 +771,29 @@ export default function Geree() {
     e.preventDefault();
 
     if (!isFormValid()) {
-      notification.error({
-        message: "Талбар хүрэлцэхгүй",
-        description: "Бүх шаардлагатай талбарыг зөв бөглөнө үү",
-      });
+      toast.error("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
+      return;
+    }
+
+    // Friendly format errors
+    if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
+      toast.error(
+        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+      );
+      return;
+    }
+    if (!isValidRegister(newContract.register)) {
+      toast.error(explainRegisterRule());
+      return;
+    }
+    if (!areValidPhones(newContract.utas || [])) {
+      toast.error(explainPhoneRule());
       return;
     }
 
     const success = await gereeUusgekh(newContract);
     if (success) {
-      setShowCreateModal(false);
+      setShowContractModal(false);
       await gereeJagsaaltMutate();
     }
   };
@@ -477,6 +802,25 @@ export default function Geree() {
     e.preventDefault();
 
     if (!editingContract?._id) return;
+
+    if (!isFormValid()) {
+      toast.error("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
+      return;
+    }
+    if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
+      toast.error(
+        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+      );
+      return;
+    }
+    if (!isValidRegister(newContract.register)) {
+      toast.error(explainRegisterRule());
+      return;
+    }
+    if (!areValidPhones(newContract.utas || [])) {
+      toast.error(explainPhoneRule());
+      return;
+    }
 
     const success = await gereeZasakh(editingContract._id, newContract);
     if (success) {
@@ -527,7 +871,7 @@ export default function Geree() {
       // Form binds to "mail", not "email"
       mail: contract.mail || contract.email || "",
     }));
-    setShowCreateModal(true);
+    setShowContractModal(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -545,10 +889,7 @@ export default function Geree() {
 
   const handleDeleteTemplate = async (templateId: string) => {
     if (!token) {
-      notification.error({
-        message: "Алдаа",
-        description: "Нэвтрэх шаардлагатай",
-      });
+      toast.error("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -556,27 +897,18 @@ export default function Geree() {
       try {
         await uilchilgee(token).delete(`/gereeniiZagvar/${templateId}`);
 
-        notification.success({
-          message: "Амжилттай",
-          description: "Загвар амжилттай устгагдлаа",
-        });
+        toast.success("Загвар амжилттай устгагдлаа");
 
         zagvarJagsaaltMutate();
       } catch (error) {
         console.error("Delete error:", error);
-        notification.error({
-          message: "Алдаа",
-          description: "Загвар устгахад алдаа гарлаа",
-        });
+        toast.error("Загвар устгахад алдаа гарлаа");
       }
     }
   };
   const handlePreviewTemplate = async (templateId: string) => {
     if (!token) {
-      notification.error({
-        message: "Алдаа",
-        description: "Нэвтрэх шаардлагатай",
-      });
+      toast.error("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -588,10 +920,7 @@ export default function Geree() {
       setShowPreviewModal(true);
     } catch (error) {
       console.error("Preview error:", error);
-      notification.error({
-        message: "Алдаа",
-        description: "Загвар харахад алдаа гарлаа",
-      });
+      toast.error("Загвар харахад алдаа гарлаа");
     }
   };
   const templates = [
@@ -611,54 +940,25 @@ export default function Geree() {
 
   // Keep derived fields in sync when modal opens or data loads
   useEffect(() => {
-    if (showCreateModal && !editingContract) {
+    if (showContractModal) {
       setNewContract((prev: any) => ({
         ...prev,
         gereeniiDugaar: prev.gereeniiDugaar || computeNextGereeDugaar(),
         uilchilgeeniiZardal: uilchilgeeNiit,
-        // SÖХ defaults if empty
-        suhNer: prev.suhNer || baiguullaga?.ner || "",
-        suhRegister: prev.suhRegister || baiguullaga?.register || "",
-        suhUtas:
-          (prev.suhUtas && prev.suhUtas.length && prev.suhUtas) ||
-          (baiguullaga?.utas ? [String(baiguullaga.utas)] : [""]),
-        suhMail: prev.suhMail || baiguullaga?.email || "",
+        // SӨХ info is auto-fetched from organization and read-only
+        suhNer: baiguullaga?.ner || "",
+        suhRegister: baiguullaga?.register || "",
+        suhUtas: baiguullaga?.utas
+          ? Array.isArray(baiguullaga.utas)
+            ? baiguullaga.utas.map((u: any) => String(u))
+            : [String(baiguullaga.utas)]
+          : [],
+        suhMail: baiguullaga?.email || "",
       }));
     }
-  }, [showCreateModal, editingContract, uilchilgeeNiit, baiguullaga]);
+  }, [showContractModal, uilchilgeeNiit, baiguullaga]);
 
-  // Step 4: Fetch recent invoices (нэхэмжлэх) for the organization
-  const [invLoading, setInvLoading] = useState(false);
-  const [invItems, setInvItems] = useState<any[]>([]);
-  useEffect(() => {
-    const run = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      if (currentStep !== 4) return;
-      try {
-        setInvLoading(true);
-        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 10,
-            query: { baiguullagiinId: ajiltan.baiguullagiinId },
-          },
-        });
-        const data = resp.data;
-        const list = Array.isArray(data?.jagsaalt)
-          ? data.jagsaalt
-          : Array.isArray(data)
-          ? data
-          : [];
-        setInvItems(list);
-      } catch (e) {
-        setInvItems([]);
-      } finally {
-        setInvLoading(false);
-      }
-    };
-    run();
-  }, [currentStep, token, ajiltan?.baiguullagiinId]);
+  // Removed Step 4 (Төлбөр) and related invoice fetch.
 
   return (
     <div className="min-h-screen">
@@ -673,79 +973,163 @@ export default function Geree() {
             Гэрээ
           </motion.h1>
           <p className="text-sm mt-1 text-subtle">
-            Гэрээг удирдах, шинэ гэрээ байгуулах болон загварууд
+            Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
+          <div className="mt-3 flex gap-2 tabbar">
+            <button
+              onClick={() => setActiveTab("contracts")}
+              className={`tab-btn px-5 py-2 text-sm font-semibold ${
+                activeTab === "contracts" ? "is-active" : ""
+              }`}
+            >
+              Гэрээ
+            </button>
+            <button
+              onClick={() => setActiveTab("residents")}
+              className={`tab-btn px-5 py-2 text-sm font-semibold ${
+                activeTab === "residents" ? "is-active" : ""
+              }`}
+            >
+              Оршин суугч
+            </button>
+            <button
+              onClick={() => setActiveTab("employees")}
+              className={`tab-btn px-5 py-2 text-sm font-semibold ${
+                activeTab === "employees" ? "is-active" : ""
+              }`}
+            >
+              Ажилтан
+            </button>
+          </div>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => {
-              setEditingContract(null);
-              setCurrentStep(1);
-              setNewContract({
-                ovog: "",
-                ner: "",
-                register: "",
-                utas: [""],
-                mail: "",
-                khayag: "",
-                aimag: "",
-                duureg: "",
-                horoo: "",
-                baingiinKhayag: "",
-                // Auto next contract number
-                gereeniiDugaar: computeNextGereeDugaar(),
-                gereeniiOgnoo: "",
-                turul: "Үндсэн",
-                ekhlekhOgnoo: "",
-                duusakhOgnoo: "",
-                tulukhOgnoo: "",
-                khugatsaa: 0,
-                // Prefill from organization (SÖХ info)
-                suhNer: baiguullaga?.ner || "",
-                suhRegister: baiguullaga?.register || "",
-                suhUtas: baiguullaga?.utas ? [String(baiguullaga.utas)] : [""],
-                suhMail: baiguullaga?.email || "",
-                suhGariinUseg: "",
-                suhTamga: "",
-                suhTulbur: "",
-                suhTulburUsgeer: "",
-                suhKhugatsaa: 0,
-                sukhKhungulult: 0,
-                // Auto from utilization expenses
-                uilchilgeeniiZardal: uilchilgeeNiit,
-                uilchilgeeniiZardalUsgeer: "",
-                niitTulbur: 0,
-                niitTulburUsgeer: "",
-                bairNer: "",
-                orts: "",
-                toot: 0,
-                talbainKhemjee: "",
-                zoriulalt: "",
-                davkhar: "",
-                burtgesenAjiltan: "",
-                temdeglel: "",
-                actOgnoo: "",
-                tooluuriinDugaar: "",
-                baritsaaAvakhDun: 0,
-              });
-              setShowCreateModal(true);
-            }}
-            className="btn-minimal"
-          >
-            Гэрээ байгуулах
-          </button>
-          <button
-            onClick={() => setShowList2Modal(true)}
-            className="btn-minimal"
-          >
-            Гэрээний Загвар
-          </button>
-          <button
-            onClick={() => setShowTemplatesModal(true)}
-            className="btn-minimal"
-          >
-            Гэрээний загвар татах
-          </button>
+          {activeTab === "contracts" && (
+            <>
+              <button
+                onClick={() => {
+                  setEditingContract(null);
+                  setCurrentStep(1);
+                  setNewContract({
+                    ovog: "",
+                    ner: "",
+                    register: "",
+                    utas: [""],
+                    mail: "",
+                    khayag: "",
+                    aimag: "",
+                    duureg: "",
+                    horoo: "",
+                    baingiinKhayag: "",
+                    // Auto next contract number
+                    gereeniiDugaar: computeNextGereeDugaar(),
+                    gereeniiOgnoo: "",
+                    turul: "Үндсэн",
+                    ekhlekhOgnoo: "",
+                    duusakhOgnoo: "",
+                    tulukhOgnoo: "",
+                    khugatsaa: 0,
+                    // Prefill from organization (SÖХ info)
+                    suhNer: baiguullaga?.ner || "",
+                    suhRegister: baiguullaga?.register || "",
+                    suhUtas: baiguullaga?.utas
+                      ? [String(baiguullaga.utas)]
+                      : [""],
+                    suhMail: baiguullaga?.email || "",
+                    suhGariinUseg: "",
+                    suhTamga: "",
+                    suhTulbur: "",
+                    suhTulburUsgeer: "",
+                    suhKhugatsaa: 0,
+                    sukhKhungulult: 0,
+                    // Auto from utilization expenses
+                    uilchilgeeniiZardal: uilchilgeeNiit,
+                    uilchilgeeniiZardalUsgeer: "",
+                    niitTulbur: 0,
+                    niitTulburUsgeer: "",
+                    bairNer: "",
+                    orts: "",
+                    toot: 0,
+                    talbainKhemjee: "",
+                    zoriulalt: "",
+                    davkhar: "",
+                    burtgesenAjiltan: "",
+                    temdeglel: "",
+                    actOgnoo: "",
+                    tooluuriinDugaar: "",
+                    baritsaaAvakhDun: 0,
+                    // login fields (unused for contract mode)
+                    nevtrekhNer: "",
+                    nuutsUg: "",
+                  });
+                  setShowContractModal(true);
+                }}
+                className="btn-minimal"
+              >
+                Гэрээ байгуулах
+              </button>
+              <button
+                onClick={() => setShowList2Modal(true)}
+                className="btn-minimal"
+              >
+                Гэрээний Загвар
+              </button>
+              <button
+                onClick={() => setShowTemplatesModal(true)}
+                className="btn-minimal"
+              >
+                Гэрээний загвар татах
+              </button>
+            </>
+          )}
+          {activeTab === "residents" && (
+            <button
+              onClick={() => {
+                setCurrentStep(1);
+                setEditingContract(null);
+                setEditingResident(null);
+                setNewResident({
+                  ovog: "",
+                  ner: "",
+                  register: "",
+                  utas: [""],
+                  mail: "",
+                  khayag: "",
+                  aimag: "Улаанбаатар",
+                  duureg: "",
+                  horoo: "",
+                  nevtrekhNer: "",
+                  nuutsUg: "",
+                  turul: "Үндсэн",
+                });
+                setShowResidentModal(true);
+              }}
+              className="btn-minimal"
+            >
+              Оршин суугч нэмэх
+            </button>
+          )}
+          {activeTab === "employees" && (
+            <button
+              onClick={() => {
+                setEditingEmployee(null);
+                setNewEmployee({
+                  ovog: "",
+                  ner: "",
+                  register: "",
+                  utas: "",
+                  email: "",
+                  albanTushaal: "",
+                  ajildOrsonOgnoo: "",
+                  nevtrekhNer: "",
+                  nuutsUg: "",
+                });
+                setShowEmployeeModal(true);
+              }}
+              className="btn-minimal"
+            >
+              Ажилтан нэмэх
+            </button>
+          )}
         </div>
       </div>
 
@@ -760,91 +1144,197 @@ export default function Geree() {
             className="w-full pl-12 pr-4 py-3 rounded-2xl neo-input:focus border-transparent backdrop-blur-xl transition-all text-theme"
           />
         </div>
-
-        <div className="relative" ref={columnMenuRef}>
-          <button
-            onClick={() => setShowColumnSelector((s) => !s)}
-            className="btn-neu"
-            aria-expanded={showColumnSelector}
-            aria-haspopup="menu"
-          >
-            <Settings className="w-5 h-5" />
-            Багана сонгох
-          </button>
-
-          {showColumnSelector && (
-            <div
-              role="menu"
-              className="absolute right-0 mt-2 w-64 rounded-xl menu-surface p-3 z-[80]"
+        {activeTab === "contracts" && (
+          <div className="relative" ref={columnMenuRef}>
+            <button
+              onClick={() => setShowColumnSelector((s) => !s)}
+              className="btn-neu"
+              aria-expanded={showColumnSelector}
+              aria-haspopup="menu"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-theme">Багана</span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="text-xs px-2 py-1"
-                    onClick={() =>
-                      setVisibleColumns(ALL_COLUMNS.map((c) => c.key))
-                    }
-                  >
-                    Бүгд
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs px-2 py-1"
-                    onClick={() =>
-                      setVisibleColumns(
-                        ALL_COLUMNS.filter(
-                          (c) => c.default && !DEFAULT_HIDDEN.includes(c.key)
-                        ).map((c) => c.key)
-                      )
-                    }
-                  >
-                    Үндсэн
-                  </button>
-                  <button
-                    type="button"
-                    className=" text-xs px-2 py-1"
-                    onClick={() => setVisibleColumns([])}
-                  >
-                    Цэвэрлэх
-                  </button>
+              <Settings className="w-5 h-5" />
+              Багана сонгох
+            </button>
+
+            {showColumnSelector && (
+              <div
+                role="menu"
+                className="absolute right-0 mt-2 w-64 rounded-xl menu-surface p-3 z-[80]"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-theme">
+                    Багана
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      className="text-xs px-2 py-1"
+                      onClick={() =>
+                        setVisibleColumns(ALL_COLUMNS.map((c) => c.key))
+                      }
+                    >
+                      Бүгд
+                    </button>
+                    <button
+                      type="button"
+                      className="text-xs px-2 py-1"
+                      onClick={() =>
+                        setVisibleColumns(
+                          ALL_COLUMNS.filter(
+                            (c) => c.default && !DEFAULT_HIDDEN.includes(c.key)
+                          ).map((c) => c.key)
+                        )
+                      }
+                    >
+                      Үндсэн
+                    </button>
+                    <button
+                      type="button"
+                      className=" text-xs px-2 py-1"
+                      onClick={() => setVisibleColumns([])}
+                    >
+                      Цэвэрлэх
+                    </button>
+                  </div>
+                </div>
+                <div className="max-h-70 overflow-y-auto space-y-1">
+                  {ALL_COLUMNS.map((col) => {
+                    const checked = visibleColumns.includes(col.key);
+                    return (
+                      <label
+                        key={col.key}
+                        className="flex items-center gap-2 text-sm text-theme hover:menu-surface/80 px-2 py-1.5 rounded-2xl cursor-pointer transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() =>
+                            setVisibleColumns((prev) =>
+                              prev.includes(col.key)
+                                ? prev.filter((k) => k !== col.key)
+                                : [...prev, col.key]
+                            )
+                          }
+                          style={{ accentColor: "var(--panel-text)" }}
+                        />
+                        {col.label}
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
-              <div className="max-h-70 overflow-y-auto space-y-1">
-                {ALL_COLUMNS.map((col) => {
-                  const checked = visibleColumns.includes(col.key);
-                  return (
-                    <label
-                      key={col.key}
-                      className="flex items-center gap-2 text-sm text-theme hover:menu-surface/80 px-2 py-1.5 rounded-2xl cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() =>
-                          setVisibleColumns((prev) =>
-                            prev.includes(col.key)
-                              ? prev.filter((k) => k !== col.key)
-                              : [...prev, col.key]
-                          )
-                        }
-                        style={{ accentColor: "var(--panel-text)" }}
-                      />
-                      {col.label}
-                    </label>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {isValidatingGeree ? (
-        <div className="text-center py-8 text-subtle">Уншиж байна...</div>
-      ) : (
-        <div>
+      {activeTab === "contracts" &&
+        (isValidatingGeree ? (
+          <div className="text-center py-8 text-subtle">Уншиж байна...</div>
+        ) : (
+          <div>
+            <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+              <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar w-full">
+                  <table className="table-ui text-sm min-w-full">
+                    <thead>
+                      <tr>
+                        <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                          №
+                        </th>
+                        {visibleColumns.map((columnKey) => {
+                          const column = ALL_COLUMNS.find(
+                            (col) => col.key === columnKey
+                          );
+                          return (
+                            <th
+                              key={columnKey}
+                              className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap"
+                            >
+                              {column?.label}
+                            </th>
+                          );
+                        })}
+                        <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                          Үйлдэл
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {currentContracts.length === 0 ? (
+                        <tr>
+                          <td
+                            colSpan={visibleColumns.length + 2}
+                            className="p-8 text-center text-subtle"
+                          >
+                            Гэрээ олдсонгүй
+                          </td>
+                        </tr>
+                      ) : (
+                        currentContracts.map((contract: any, idx: number) => (
+                          <tr
+                            key={contract._id || idx}
+                            className="transition-colors border-b last:border-b-0"
+                          >
+                            <td className="p-3 text-center text-theme">
+                              {startIndex + idx + 1}
+                            </td>
+                            {visibleColumns.map((columnKey) => (
+                              <td
+                                key={columnKey}
+                                className="p-3 text-theme whitespace-nowrap text-center"
+                              >
+                                {renderCellValue(contract, columnKey)}
+                              </td>
+                            ))}
+                            <td className="p-3 whitespace-nowrap">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={() => handleEdit(contract)}
+                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  title="Засах"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    contract._id && handleDelete(contract._id)
+                                  }
+                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  title="Устгах"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 mt-3">
+                <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
+                  <PageSongokh
+                    value={rowsPerPage}
+                    onChange={(v) => {
+                      setRowsPerPage(v);
+                      setCurrentPage(1);
+                    }}
+                    className=""
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+
+      {activeTab === "residents" &&
+        (isValidatingSuugch ? (
+          <div className="text-center py-8 text-subtle">Уншиж байна...</div>
+        ) : (
           <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
             <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
               <div className="overflow-y-auto custom-scrollbar w-full">
@@ -854,97 +1344,225 @@ export default function Geree() {
                       <th className="p-3 text-xs font-semibold text-theme text-center w-12">
                         №
                       </th>
-                      {visibleColumns.map((columnKey) => {
-                        const column = ALL_COLUMNS.find(
-                          (col) => col.key === columnKey
-                        );
-                        return (
-                          <th
-                            key={columnKey}
-                            className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap"
-                          >
-                            {column?.label}
-                          </th>
-                        );
-                      })}
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Нэр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Регистр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Холбоо барих
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Төлөв
+                      </th>
                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Үйлдэл
                       </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentContracts.length === 0 ? (
+                    {!(orshinSuugchGaralt?.jagsaalt || []).length ? (
                       <tr>
-                        <td
-                          colSpan={visibleColumns.length + 2}
-                          className="p-8 text-center text-subtle"
-                        >
-                          Гэрээ олдсонгүй
+                        <td colSpan={6} className="p-8 text-center text-subtle">
+                          Мэдээлэл байхгүй
                         </td>
                       </tr>
                     ) : (
-                      currentContracts.map((contract: any, idx: number) => (
-                        <tr
-                          key={contract._id || idx}
-                          className="transition-colors border-b last:border-b-0"
-                        >
-                          <td className="p-3 text-center text-theme">
-                            {startIndex + idx + 1}
-                          </td>
-                          {visibleColumns.map((columnKey) => (
-                            <td
-                              key={columnKey}
-                              className="p-3 text-theme whitespace-nowrap text-center"
-                            >
-                              {renderCellValue(contract, columnKey)}
+                      (orshinSuugchGaralt?.jagsaalt || []).map(
+                        (p: any, idx: number) => (
+                          <tr
+                            key={p._id || idx}
+                            className="transition-colors border-b last:border-b-0"
+                          >
+                            <td className="p-3 text-center text-theme">
+                              {idx + 1}
                             </td>
-                          ))}
-                          <td className="p-3 whitespace-nowrap">
-                            <div className="flex gap-2 justify-center">
-                              <button
-                                onClick={() => handleEdit(contract)}
-                                className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
-                                title="Засах"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() =>
-                                  contract._id && handleDelete(contract._id)
-                                }
-                                className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
-                                title="Устгах"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                              {p.ovog} {p.ner}
+                            </td>
+                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                              {p.register}
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="text-sm text-theme">{p.utas}</div>
+                              {p.email && (
+                                <div className="text-xs text-theme/70">
+                                  {p.email}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                                {p.tuluv || "Төлсөн"}
+                              </span>
+                            </td>
+                            <td className="p-3 whitespace-nowrap">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditResident(p)}
+                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  title="Засах"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteResident(p)}
+                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  title="Устгах"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      )
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
-
             <div className="flex flex-col sm:flex-row w-full px-1 gap-3 mt-3">
               <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
                 <PageSongokh
-                  value={rowsPerPage}
+                  value={resPageSize}
                   onChange={(v) => {
-                    setRowsPerPage(v);
-                    setCurrentPage(1);
+                    setResPageSize(v);
+                    setResPage(1);
+                    setOrshinSuugchKhuudaslalt({
+                      khuudasniiDugaar: 1,
+                      khuudasniiKhemjee: v,
+                      search: searchTerm,
+                    });
                   }}
                   className=""
                 />
               </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+
+      {activeTab === "employees" &&
+        (isValidatingAjiltan ? (
+          <div className="text-center py-8 text-subtle">Уншиж байна...</div>
+        ) : (
+          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+            <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+              <div className="overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-sm min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                        №
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Нэр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Регистр
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Холбоо барих
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Албан тушаал
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Эрх
+                      </th>
+                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Үйлдэл
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!(ajilchdiinGaralt?.jagsaalt || []).length ? (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-subtle">
+                          Мэдээлэл байхгүй
+                        </td>
+                      </tr>
+                    ) : (
+                      (ajilchdiinGaralt?.jagsaalt || []).map(
+                        (p: any, idx: number) => (
+                          <tr
+                            key={p._id || idx}
+                            className="transition-colors border-b last:border-b-0"
+                          >
+                            <td className="p-3 text-center text-theme">
+                              {idx + 1}
+                            </td>
+                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                              {p.ovog} {p.ner}
+                            </td>
+                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                              {p.register}
+                            </td>
+                            <td className="p-3 text-center">
+                              <div className="text-sm text-theme">{p.utas}</div>
+                              {p.email && (
+                                <div className="text-xs text-theme/70">
+                                  {p.email}
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {p.albanTushaal || "-"}
+                            </td>
+                            <td className="p-3 text-center">{p.erkh || "-"}</td>
+                            <td className="p-3 whitespace-nowrap">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleEditEmployee(p)}
+                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  title="Засах"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteEmployee(p)}
+                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  title="Устгах"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row w-full px-1 gap-3 mt-3">
+              <div className="flex items-end gap-2 sm:ml-auto !mt-2 sm:mt-0">
+                <PageSongokh
+                  value={empPageSize}
+                  onChange={(v) => {
+                    setEmpPageSize(v);
+                    setEmpPage(1);
+                    setAjiltniiKhuudaslalt({
+                      khuudasniiDugaar: 1,
+                      khuudasniiKhemjee: v,
+                      search: searchTerm,
+                    });
+                  }}
+                  className=""
+                />
+              </div>
+            </div>
+          </div>
+        ))}
 
       <AnimatePresence>
-        {showCreateModal && (
+        {showContractModal && (
           <ModalPortal>
             <motion.div
               initial={{ opacity: 0 }}
@@ -965,7 +1583,7 @@ export default function Geree() {
                     {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
                   </h2>
                   <button
-                    onClick={() => setShowCreateModal(false)}
+                    onClick={() => setShowContractModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   >
                     <X className="w-5 h-5" />
@@ -980,70 +1598,73 @@ export default function Geree() {
                   }
                   className="flex-1 flex flex-col"
                 >
-                  <div className="flex items-center gap-3 px-6 my-6">
-                    {[
-                      "Хувийн мэдээлэл",
-                      "Гэрээний дугаар",
-                      "СӨХ мэдээлэл",
-                      "Төлбөр",
-                    ].map((label, i) => {
-                      const step = i + 1;
-                      const active = currentStep === step;
-                      const done = currentStep > step;
-                      return (
-                        <div key={label} className="flex items-center gap-2">
-                          <div
-                            className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
-                              active
-                                ? "bg-sky-700 text-white"
-                                : done
-                                ? "bg-blue-200 text-slate-800"
-                                : "bg-gray-200 text-slate-700"
-                            }`}
-                          >
-                            {step}
+                  {
+                    <div className="flex justify-center gap-3 px-6 my-10">
+                      {[
+                        "Хувийн мэдээлэл",
+                        "Гэрээний дугаар",
+                        "СӨХ мэдээлэл",
+                      ].map((label, i) => {
+                        const step = i + 1;
+                        const active = currentStep === step;
+                        const done = currentStep > step;
+                        return (
+                          <div key={label} className="flex items-center gap-2">
+                            <div
+                              className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                                active
+                                  ? "bg-sky-700 text-white"
+                                  : done
+                                  ? "bg-blue-200 text-slate-800"
+                                  : "bg-gray-200 text-slate-700"
+                              }`}
+                            >
+                              {step}
+                            </div>
+                            <span
+                              className={`text-sm ${
+                                active
+                                  ? "text-slate-900 font-semibold"
+                                  : "text-slate-600"
+                              }`}
+                            >
+                              {label}
+                            </span>
+                            {step < 3 && (
+                              <div className="w-8 h-[2px] bg-gray-200 mx-2" />
+                            )}
                           </div>
-                          <span
-                            className={`text-sm ${
-                              active
-                                ? "text-slate-900 font-semibold"
-                                : "text-slate-600"
-                            }`}
-                          >
-                            {label}
-                          </span>
-                          {step < 4 && (
-                            <div className="w-8 h-[2px] bg-gray-200 mx-2" />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-6 space-y-6">
+                        );
+                      })}
+                    </div>
+                  }
+                  <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-40">
                     <div className="min-h-[60vh]">
                       {currentStep === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Гэрээний төрөл
-                            </label>
-                            <TusgaiZagvar
-                              tone="neutral"
-                              value={newContract.turul}
-                              onChange={(val) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  turul: val,
-                                }))
-                              }
-                              options={[
-                                { value: "Үндсэн", label: "Үндсэн" },
-                                { value: "Түр", label: "Түр" },
-                              ]}
-                              className="w-full"
-                              placeholder="Сонгох..."
-                            />
-                          </div>
+                          {
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Гэрээний төрөл
+                              </label>
+                              <TusgaiZagvar
+                                tone="neutral"
+                                value={newContract.turul}
+                                onChange={(val) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    turul: val,
+                                  }))
+                                }
+                                options={[
+                                  { value: "Үндсэн", label: "Үндсэн" },
+                                  { value: "Түр", label: "Түр" },
+                                ]}
+                                className="w-full"
+                                placeholder="Сонгох..."
+                              />
+                            </div>
+                          }
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Овог
@@ -1084,11 +1705,15 @@ export default function Geree() {
                             </label>
                             <input
                               type="text"
+                              maxLength={10}
+                              placeholder="УК00000000"
                               value={newContract.register}
                               onChange={(e) =>
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  register: e.target.value,
+                                  register: normalizeRegister(
+                                    e.target.value.slice(0, 10)
+                                  ),
                                 }))
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
@@ -1100,16 +1725,19 @@ export default function Geree() {
                               Утас
                             </label>
                             <input
-                              type="text"
-                              value={newContract.utas.join(", ")}
-                              onChange={(e) =>
+                              type="tel"
+                              inputMode="numeric"
+                              maxLength={8}
+                              value={(newContract.utas?.[0] as any) || ""}
+                              onChange={(e) => {
+                                const digits = e.target.value
+                                  .replace(/\D/g, "")
+                                  .slice(0, 8);
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  utas: e.target.value
-                                    .split(",")
-                                    .map((s) => s.trim()),
-                                }))
-                              }
+                                  utas: [digits],
+                                }));
+                              }}
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               required
                             />
@@ -1219,7 +1847,8 @@ export default function Geree() {
                           )}
                         </div>
                       )}
-                      {/* Step 2: Гэрээний дугаар, огноо, хугацаа */}
+                      {null}
+
                       {currentStep === 2 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
@@ -1242,18 +1871,19 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Гэрээний огноо
                             </label>
-                            <DatePicker
+                            <DatePickerInput
                               className="w-full"
+                              locale="mn"
                               value={
                                 newContract.gereeniiOgnoo
-                                  ? dayjs(newContract.gereeniiOgnoo)
+                                  ? new Date(newContract.gereeniiOgnoo)
                                   : null
                               }
-                              onChange={(d) =>
+                              onChange={(value) =>
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  gereeniiOgnoo: d
-                                    ? d.format("YYYY-MM-DD")
+                                  gereeniiOgnoo: value
+                                    ? dayjs(value).format("YYYY-MM-DD")
                                     : "",
                                 }))
                               }
@@ -1263,26 +1893,31 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Эхлэх/Дуусах огноо
                             </label>
-                            <DatePicker.RangePicker
+                            <DatePickerInput
                               className="w-full"
+                              type="range"
+                              locale="mn"
                               value={
                                 newContract.ekhlekhOgnoo &&
                                 newContract.duusakhOgnoo
                                   ? [
-                                      dayjs(newContract.ekhlekhOgnoo),
-                                      dayjs(newContract.duusakhOgnoo),
+                                      new Date(newContract.ekhlekhOgnoo),
+                                      new Date(newContract.duusakhOgnoo),
                                     ]
-                                  : null
+                                  : undefined
                               }
                               onChange={(vals) => {
-                                const [start, end] = (vals || []) as Dayjs[];
+                                const [start, end] = (vals || [null, null]) as [
+                                  Date | null,
+                                  Date | null
+                                ];
                                 setNewContract((prev: any) => ({
                                   ...prev,
                                   ekhlekhOgnoo: start
-                                    ? start.format("YYYY-MM-DD")
+                                    ? dayjs(start).format("YYYY-MM-DD")
                                     : "",
                                   duusakhOgnoo: end
-                                    ? end.format("YYYY-MM-DD")
+                                    ? dayjs(end).format("YYYY-MM-DD")
                                     : "",
                                 }));
                               }}
@@ -1292,17 +1927,20 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Төлөх огноо
                             </label>
-                            <DatePicker
+                            <DatePickerInput
                               className="w-full"
+                              locale="mn"
                               value={
                                 newContract.tulukhOgnoo
-                                  ? dayjs(newContract.tulukhOgnoo)
+                                  ? new Date(newContract.tulukhOgnoo)
                                   : null
                               }
-                              onChange={(d) =>
+                              onChange={(value) =>
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  tulukhOgnoo: d ? d.format("YYYY-MM-DD") : "",
+                                  tulukhOgnoo: value
+                                    ? dayjs(value).format("YYYY-MM-DD")
+                                    : "",
                                 }))
                               }
                             />
@@ -1325,257 +1963,138 @@ export default function Geree() {
                           </div>
                         </div>
                       )}
-                      {/* Step 3: СӨХ мэдээлэл */}
+
                       {currentStep === 3 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              СӨХ-ийн нэр
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.suhNer}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  suhNer: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              СӨХ-ийн регистр
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.suhRegister}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  suhRegister: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              СӨХ-ийн утас
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.suhUtas.join(", ")}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  suhUtas: e.target.value
-                                    .split(",")
-                                    .map((s) => s.trim()),
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              СӨХ-ийн и-мэйл
-                            </label>
-                            <input
-                              type="email"
-                              value={newContract.suhMail}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  suhMail: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
+                        <div className="grid grid-cols-1 gap-6">
+                          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                            <div className="text-sm text-slate-600 mb-3">
+                              СӨХ мэдээлэл байгууллагын мэдээллээс автоматаар
+                              бөглөгдөнө.
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-slate-500">
+                                  СӨХ-ийн нэр
+                                </span>
+                                <span className="font-medium text-slate-900 truncate ml-2">
+                                  {newContract.suhNer || "-"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-slate-500">
+                                  СӨХ-ийн регистр
+                                </span>
+                                <span className="font-medium text-slate-900 truncate ml-2">
+                                  {newContract.suhRegister || "-"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-slate-500">
+                                  СӨХ-ийн утас
+                                </span>
+                                <span className="font-medium text-slate-900 truncate ml-2">
+                                  {(newContract.suhUtas || []).join(", ") ||
+                                    "-"}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-slate-500">
+                                  СӨХ-ийн и-мэйл
+                                </span>
+                                <span className="font-medium text-slate-900 truncate ml-2">
+                                  {newContract.suhMail || "-"}
+                                </span>
+                              </div>
+                            </div>
                           </div>
 
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Байрны нэр
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.bairNer}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  bairNer: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Орц
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.orts}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  orts: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Тоот
-                            </label>
-                            <input
-                              type="number"
-                              value={newContract.toot}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  toot: Number(e.target.value),
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Давхар
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.davkhar}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  davkhar: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Тэмдэглэл
-                            </label>
-                            <textarea
-                              value={newContract.temdeglel}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  temdeglel: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              rows={3}
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {currentStep === 4 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Үйлчилгээний зардал
-                            </label>
-                            <input
-                              type="number"
-                              value={newContract.uilchilgeeniiZardal}
-                              readOnly
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">
-                              Ашиглалтын зардлуудын нийлбэр автоматаар
-                              тооцоологдоно
-                            </p>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Барьцааны дүн
-                            </label>
-                            <input
-                              type="number"
-                              value={newContract.baritsaaAvakhDun}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  baritsaaAvakhDun: Number(e.target.value),
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Хугацаа (сар)
-                            </label>
-                            <input
-                              type="number"
-                              value={newContract.khugatsaa}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  khugatsaa: Number(e.target.value),
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-slate-700 mb-2">
-                              Нэхэмжлэхийн сүүлийн бичилтүүд
-                            </label>
-                            <div className="rounded-2xl border border-gray-200 p-3">
-                              {invLoading ? (
-                                <div className="flex items-center gap-2 text-slate-600">
-                                  <Spin size="small" /> Ачааллаж байна...
-                                </div>
-                              ) : invItems.length === 0 ? (
-                                <div className="text-slate-500 text-sm">
-                                  Мэдээлэл олдсонгүй
-                                </div>
-                              ) : (
-                                <ul className="space-y-2">
-                                  {invItems
-                                    .slice(0, 5)
-                                    .map((it: any, idx: number) => (
-                                      <li
-                                        key={idx}
-                                        className="flex items-center justify-between text-sm"
-                                      >
-                                        <span className="text-slate-700 truncate pr-2">
-                                          {it.ner ||
-                                            it.turul ||
-                                            it.turulNer ||
-                                            "Нэхэмжлэх"}
-                                        </span>
-                                        <span className="font-semibold text-slate-900">
-                                          {(
-                                            it.niitTulbur ??
-                                            it.niitDun ??
-                                            it.total ??
-                                            0
-                                          ).toLocaleString()}
-                                          ₮
-                                        </span>
-                                      </li>
-                                    ))}
-                                </ul>
-                              )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Байрны нэр
+                              </label>
+                              <input
+                                type="text"
+                                value={newContract.bairNer}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    bairNer: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Орц
+                              </label>
+                              <input
+                                type="text"
+                                value={newContract.orts}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    orts: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Тоот
+                              </label>
+                              <input
+                                type="number"
+                                value={newContract.toot}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    toot: Number(e.target.value),
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Давхар
+                              </label>
+                              <input
+                                type="text"
+                                value={newContract.davkhar}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    davkhar: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Тэмдэглэл
+                              </label>
+                              <textarea
+                                value={newContract.temdeglel}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    temdeglel: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                rows={3}
+                              />
                             </div>
                           </div>
                         </div>
                       )}
                     </div>
 
-                    <div className="flex justify-between px-6 py-4 border-t sticky bottom-4 left-0 right-0">
+                    <div className="flex justify-between px-6 py-4 border-t sticky bottom-12 left-0 right-0">
                       <button
                         type="button"
                         onClick={() =>
@@ -1586,11 +2105,11 @@ export default function Geree() {
                       >
                         Буцах
                       </button>
-                      {currentStep < 4 ? (
+                      {currentStep < 3 ? (
                         <button
                           type="button"
                           onClick={() => {
-                            setCurrentStep((s: number) => Math.min(4, s + 1));
+                            setCurrentStep((s: number) => Math.min(3, s + 1));
                           }}
                           className="btn-minimal btn-next"
                         >
@@ -1600,12 +2119,513 @@ export default function Geree() {
                         <button
                           type="submit"
                           disabled={!isFormValid()}
-                          className="btn-minimal btn-save h-11 min-w-[140px]"
+                          className="btn-minimal btn-save h-11"
                         >
                           {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
                         </button>
                       )}
                     </div>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showResidentModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-4xl h-[120vh] max-h-[95vh] rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    {editingResident
+                      ? "Оршин суугчийн мэдээлэл засах"
+                      : "Оршин суугч нэмэх"}
+                  </h2>
+                  <button
+                    onClick={() => setShowResidentModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={handleCreateResident}
+                  className="flex-1 flex flex-col"
+                >
+                  <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-28">
+                    <div className="min-h-[55vh] grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Төрөл
+                        </label>
+                        <TusgaiZagvar
+                          tone="neutral"
+                          value={newResident.turul}
+                          onChange={(val) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              turul: val,
+                            }))
+                          }
+                          options={[
+                            { value: "Үндсэн", label: "Үндсэн" },
+                            { value: "Түр", label: "Түр" },
+                          ]}
+                          className="w-full"
+                          placeholder="Сонгох..."
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Овог
+                        </label>
+                        <input
+                          type="text"
+                          value={newResident.ovog}
+                          onChange={(e) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              ovog: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Нэр
+                        </label>
+                        <input
+                          type="text"
+                          value={newResident.ner}
+                          onChange={(e) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              ner: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Регистр
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={10}
+                          placeholder="УК00000000"
+                          value={newResident.register}
+                          onChange={(e) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              register: normalizeRegister(
+                                e.target.value.slice(0, 10)
+                              ),
+                            }))
+                          }
+                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Утас
+                        </label>
+                        <input
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={8}
+                          value={(newResident.utas?.[0] as any) || ""}
+                          onChange={(e) => {
+                            const digits = e.target.value
+                              .replace(/\D/g, "")
+                              .slice(0, 8);
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              utas: [digits],
+                            }));
+                          }}
+                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          И-мэйл
+                        </label>
+                        <input
+                          type="email"
+                          value={newResident.mail}
+                          onChange={(e) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              mail: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Аймаг
+                        </label>
+                        <TusgaiZagvar
+                          tone="neutral"
+                          value={newResident.aimag}
+                          onChange={(val) =>
+                            setNewResident((prev: any) => ({
+                              ...prev,
+                              aimag: val,
+                              khayag: val,
+                              duureg: "",
+                              horoo: "",
+                            }))
+                          }
+                          options={mongoliaProvinces.map((p) => ({
+                            value: p,
+                            label: p,
+                          }))}
+                          className="w-full"
+                          placeholder="Сонгох..."
+                        />
+                      </div>
+                      {newResident.aimag === "Улаанбаатар" && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Дүүрэг
+                            </label>
+                            <TusgaiZagvar
+                              tone="neutral"
+                              value={newResident.duureg}
+                              onChange={(val) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  duureg: val,
+                                  horoo: "",
+                                }))
+                              }
+                              options={(districts[newResident.aimag] || []).map(
+                                (d) => ({ value: d, label: d })
+                              )}
+                              className="w-full"
+                              placeholder="Сонгох..."
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Хороо
+                            </label>
+                            <TusgaiZagvar
+                              tone="neutral"
+                              value={newResident.horoo}
+                              onChange={(val) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  horoo: val,
+                                }))
+                              }
+                              options={(
+                                subDistricts[newResident.duureg] || []
+                              ).map((sd) => ({ value: sd, label: sd }))}
+                              className="w-full"
+                              placeholder="Сонгох..."
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-slate-500">
+                                    СӨХ-ийн нэр
+                                  </span>
+                                  <span className="font-medium text-slate-900 truncate ml-2">
+                                    {baiguullaga?.ner || "-"}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      <div className="md:col-span-2 mt-2 pt-4 border-t border-gray-200">
+                        <h3 className="text-lg font-semibold mb-4 text-slate-900">
+                          Нэвтрэх мэдээлэл
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Нэвтрэх нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newResident.nevtrekhNer}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  nevtrekhNer: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              placeholder="Нэвтрэх нэр"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Нууц үг
+                            </label>
+                            <input
+                              type="password"
+                              value={newResident.nuutsUg}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  nuutsUg: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              placeholder="Нууц үг"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end px-6 py-4 border-t sticky bottom-5 left-0 right-0 gap-2">
+                      <button
+                        type="submit"
+                        className="btn-minimal btn-save h-11"
+                      >
+                        {editingResident ? "Хадгалах" : "Хадгалах"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowResidentModal(false)}
+                        className="btn-minimal-ghost btn-cancel min-w-[100px]"
+                      >
+                        Цуцлах
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showEmployeeModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b">
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
+                  </h2>
+                  <button
+                    onClick={() => setShowEmployeeModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <form
+                  onSubmit={handleCreateOrUpdateEmployee}
+                  className="p-6 space-y-4"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Овог
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.ovog}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            ovog: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Нэр
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.ner}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            ner: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Регистр
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.register}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            register: normalizeRegister(e.target.value),
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Утас
+                      </label>
+                      <input
+                        type="tel"
+                        value={newEmployee.utas}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            utas: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        И-мэйл
+                      </label>
+                      <input
+                        type="email"
+                        value={newEmployee.email}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            email: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Албан тушаал
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.albanTushaal}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            albanTushaal: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Ажилд орсон огноо
+                      </label>
+                      <input
+                        type="date"
+                        value={newEmployee.ajildOrsonOgnoo}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            ajildOrsonOgnoo: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Нэвтрэх нэр
+                      </label>
+                      <input
+                        type="text"
+                        value={newEmployee.nevtrekhNer}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            nevtrekhNer: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Нууц үг
+                      </label>
+                      <input
+                        type="password"
+                        value={newEmployee.nuutsUg}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({
+                            ...p,
+                            nuutsUg: e.target.value,
+                          }))
+                        }
+                        className="w-full p-3 rounded-2xl border"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button type="submit" className="btn-minimal btn-save">
+                      {editingEmployee ? "Хадгалах" : "Хадгалах"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowEmployeeModal(false)}
+                      className="btn-minimal-ghost btn-cancel"
+                    >
+                      Цуцлах
+                    </button>
                   </div>
                 </form>
               </motion.div>

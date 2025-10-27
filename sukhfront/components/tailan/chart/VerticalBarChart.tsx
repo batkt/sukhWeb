@@ -1,10 +1,11 @@
 import _ from "lodash";
 import React from "react";
 import { Bar } from "react-chartjs-2";
-import formatNumberNershil from "tools/function/formatNumberNershil";
-import formatNumber from "tools/function/formatNumber";
-export default function App({ t, data }) {
-  const options = {
+import formatNumberNershil from "../../../tools/function/formatNumberNershil";
+import formatNumber from "../../../tools/function/formatNumber";
+type Props = { t: (key: string) => string; data: any };
+export default function App({ t, data }: Props) {
+  const options: any = {
     indexAxis: "y",
     elements: {
       bar: {
@@ -24,14 +25,18 @@ export default function App({ t, data }) {
     scales: {
       xAxes: [
         {
-          barThickness: 6, 
-          maxBarThickness: 8, 
+          barThickness: 6,
+          maxBarThickness: 8,
         },
       ],
       yAxes: [
         {
           ticks: {
-            callback: function (label, index, labels) {
+            callback: function (
+              label: number | string,
+              index: number,
+              labels: any
+            ) {
               if (_.isNumber(label)) return formatNumberNershil(label);
               return t(label);
             },
@@ -41,7 +46,7 @@ export default function App({ t, data }) {
     },
     tooltips: {
       callbacks: {
-        label: function (tooltipItem, data) {
+        label: function (tooltipItem: any, data: any) {
           const { datasetIndex } = tooltipItem;
           const { datasets } = data;
           if (_.isNumber(tooltipItem?.yLabel))

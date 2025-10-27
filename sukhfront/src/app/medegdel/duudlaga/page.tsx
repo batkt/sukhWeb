@@ -1,20 +1,11 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  Tag,
-  Input,
-  notification,
-  Popconfirm,
-  DatePicker,
-  Card,
-  Select,
-} from "antd";
+import { Tag, Input, notification, Popconfirm, Card, Select } from "antd";
 import moment from "moment";
-import type { Dayjs } from "dayjs";
 import { motion, AnimatePresence } from "framer-motion";
+import { DatePickerInput } from "@mantine/dates";
 
-const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 interface DuudlagaItem {
@@ -148,7 +139,9 @@ const formatNumber = (
 export default function TaskManagementSystem() {
   const [tuluv, setTuluv] = useState<string>("Идэвхтэй");
   const [duudlaga, setDuudlaga] = useState<DuudlagaItem | null>(null);
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<[Dayjs, Dayjs] | null>(null);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
+    [Date | null, Date | null] | null
+  >(null);
   const [turulFilter, setTurulFilter] = useState<string>("Бүгд");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
@@ -229,14 +222,15 @@ export default function TaskManagementSystem() {
             item.message,
           ].some((f) => f?.toLowerCase().includes(searchTerm.toLowerCase()))
         : true;
-      const dateMatch = ekhlekhOgnoo
-        ? moment(item.createdAt).isBetween(
-            moment(ekhlekhOgnoo[0].toDate()),
-            moment(ekhlekhOgnoo[1].toDate()),
-            "day",
-            "[]"
-          )
-        : true;
+      const dateMatch =
+        ekhlekhOgnoo && ekhlekhOgnoo[0] && ekhlekhOgnoo[1]
+          ? moment(item.createdAt).isBetween(
+              moment(ekhlekhOgnoo[0]),
+              moment(ekhlekhOgnoo[1]),
+              "day",
+              "[]"
+            )
+          : true;
       return statusMatch && typeMatch && searchMatch && dateMatch;
     });
   }, [mockData, tuluv, turulFilter, searchTerm, ekhlekhOgnoo]);
@@ -413,13 +407,17 @@ export default function TaskManagementSystem() {
           </Card>
 
           <div className="grid grid-cols-2 gap-3 bg-transparent">
-            <RangePicker
-              placeholder={["Эхлэх", "Дуусах"]}
+            <DatePickerInput
+              type="range"
+              placeholder={"Огноо"}
               onChange={(dates) =>
-                setEkhlekhOgnoo(dates as [Dayjs, Dayjs] | null)
+                setEkhlekhOgnoo(
+                  (dates || [null, null]) as [Date | null, Date | null]
+                )
               }
-              value={ekhlekhOgnoo}
+              value={ekhlekhOgnoo ?? undefined}
               className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900"
+              locale="mn"
             />
             <Select
               placeholder="Төрөл"

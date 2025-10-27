@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Card, DatePicker, Select, Button } from "antd";
-import dayjs, { Dayjs } from "dayjs";
+import { Card, Select, Button } from "antd";
+import { DatePickerInput } from "@mantine/dates";
+import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { EyeOutlined } from "@ant-design/icons";
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
-
-const { RangePicker } = DatePicker;
 
 const Admin: React.FC<{ children: React.ReactNode; title?: string }> = ({
   children,
@@ -70,16 +69,18 @@ const turluud = [
 export default function ZassanTuukh() {
   const [ajiltankhaikh, setAjiltankhaikh] = useState<string>();
   const [turul, setTurul] = useState<string>();
-  const [shuukhOgnoo, setShuukhOgnoo] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(1, "month"),
-    dayjs(),
+  const [shuukhOgnoo, setShuukhOgnoo] = useState<[Date | null, Date | null]>([
+    dayjs().subtract(1, "month").toDate(),
+    new Date(),
   ]);
 
   const filteredData = useMemo(() => {
     return mockData.filter((row) => {
       const inDateRange =
-        row.classOgnoo.isSameOrAfter(shuukhOgnoo[0], "day") &&
-        row.classOgnoo.isSameOrBefore(shuukhOgnoo[1], "day");
+        shuukhOgnoo[0] && shuukhOgnoo[1]
+          ? row.classOgnoo.isSameOrAfter(dayjs(shuukhOgnoo[0]), "day") &&
+            row.classOgnoo.isSameOrBefore(dayjs(shuukhOgnoo[1]), "day")
+          : true;
       const matchesAjiltan = ajiltankhaikh
         ? row.ajiltniiNer ===
           mockAjiltan.find((a) => a._id === ajiltankhaikh)?.ner
@@ -91,12 +92,9 @@ export default function ZassanTuukh() {
 
   // Columns are rendered manually via a semantic table below
 
-  const ognooShuultOnChange = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    _dateStrings: [string, string]
-  ) => {
+  const ognooShuultOnChange = (dates: [Date | null, Date | null] | null) => {
     if (!dates || !dates[0] || !dates[1]) {
-      setShuukhOgnoo([dayjs().subtract(1, "month"), dayjs()]);
+      setShuukhOgnoo([dayjs().subtract(1, "month").toDate(), new Date()]);
     } else {
       setShuukhOgnoo([dates[0]!, dates[1]!]);
     }
@@ -106,12 +104,15 @@ export default function ZassanTuukh() {
     <Admin title="Зассан түүх">
       <Card className="rounded-2xl bg-transparent">
         <div className="flex flex-col-reverse gap-3 sm:flex-row mb-4">
-          <RangePicker
+          <DatePickerInput
+            type="range"
             style={{ marginBottom: "10px" }}
-            size="middle"
             value={shuukhOgnoo}
-            onChange={ognooShuultOnChange}
+            onChange={(v) =>
+              ognooShuultOnChange(v as [Date | null, Date | null])
+            }
             className="text-slate-900"
+            locale="mn"
           />
           <Select
             className="w-full sm:w-36 text-slate-900"

@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { DatePicker, Tooltip } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { DatePickerInput } from "@mantine/dates";
+import { Tooltip } from "@mantine/core";
 import { Settings, MoreHorizontal } from "lucide-react";
 import moment from "moment";
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -62,9 +62,9 @@ export default function NevtreltiinTuukh({
 }: Props) {
   const { t } = useTranslation();
 
-  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().startOf("month"),
-    dayjs().endOf("month"),
+  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
+    dayjs().startOf("month").format("YYYY-MM-DD"),
+    dayjs().endOf("month").format("YYYY-MM-DD"),
   ]);
 
   const [page, setPage] = useState(1);
@@ -73,31 +73,29 @@ export default function NevtreltiinTuukh({
   const { jagsaalt, total } = useJagsaalt(page, pageSize);
 
   const handleDateChange = (
-    dates: [Dayjs | null, Dayjs | null] | null,
-    dateStrings: [string, string]
+    dates: [string | null, string | null] | undefined
   ) => {
-    if (dates && dates[0] && dates[1]) {
-      setDateRange([dates[0], dates[1]]);
-    }
+    setDateRange((dates || [null, null]) as [string | null, string | null]);
   };
 
-  const columns: ColumnsType<RecordType> = useMemo(
+  const columns = useMemo(
     () => [
       {
         title: "#",
-        render: (_text, _record, index) => (page - 1) * pageSize + index + 1,
+        render: (_text: unknown, _record: RecordType, index: number) =>
+          (page - 1) * pageSize + index + 1,
       },
       {
         title: t("Огноо"),
         dataIndex: "ognoo",
-        render: (ognoo) => moment(ognoo).format("YYYY-MM-DD, HH:mm"),
+        render: (ognoo: string) => moment(ognoo).format("YYYY-MM-DD, HH:mm"),
       },
       { title: t("Веб хөтөч"), dataIndex: "browser" },
       { title: t("Ажилтны нэр"), dataIndex: "ajiltniiNer" },
       {
         title: t("Байршил"),
-        render: (_, record) => (
-          <Tooltip title={`${record.bairshilKhot}, ${record.bairshilUls}`}>
+        render: (_: unknown, record: RecordType) => (
+          <Tooltip label={`${record.bairshilKhot}, ${record.bairshilUls}`}>
             {record.bairshilKhot}, {record.bairshilUls}
           </Tooltip>
         ),
@@ -117,10 +115,13 @@ export default function NevtreltiinTuukh({
         >
           {t("Нэвтрэлтийн түүх")}
         </h2>
-        <DatePicker.RangePicker
+        <DatePickerInput
+          type="range"
           value={dateRange}
           onChange={handleDateChange}
           className="text-slate-900"
+          locale="mn"
+          valueFormat="YYYY-MM-DD"
         />
       </div>
 

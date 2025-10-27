@@ -2,9 +2,7 @@
 
 import React, { useState } from "react";
 import { DownloadOutlined } from "@ant-design/icons";
-import { Button, DatePicker } from "antd";
-import type { Dayjs } from "dayjs";
-import locale from "antd/lib/date-picker/locale/mn_MN";
+import { DatePickerInput } from "@mantine/dates";
 import { t } from "i18next";
 
 const formatNumber = (num: number) => num.toLocaleString();
@@ -22,7 +20,7 @@ interface BaazProps {
 
 function Baaz({ token }: BaazProps) {
   const [loading, setLoading] = useState(false);
-  const [ognoo, setOgnoo] = useState<[Dayjs | null, Dayjs | null] | null>(null);
+  const [ognoo, setOgnoo] = useState<[Date | null, Date | null] | null>(null);
 
   const backAwsanTuukh = {
     jagsaalt: [
@@ -76,14 +74,15 @@ function Baaz({ token }: BaazProps) {
                 {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
               </p>
             </div>
-            <Button
-              type="primary"
-              loading={loading}
-              icon={<DownloadOutlined />}
+            <button
+              className="btn-minimal"
+              disabled={loading}
               onClick={backTatya}
             >
-              {t("Татах")}
-            </Button>
+              <span className="inline-flex items-center gap-2">
+                <DownloadOutlined /> {t("Татах")}
+              </span>
+            </button>
           </div>
         </div>
       </div>
@@ -97,10 +96,13 @@ function Baaz({ token }: BaazProps) {
             <h2 className="text-lg font-semibold text-theme">
               {t("Татсан түүх")}
             </h2>
-            <DatePicker.RangePicker
-              locale={locale}
-              value={ognoo}
-              onChange={(dates) => setOgnoo(dates)}
+            <DatePickerInput
+              type="range"
+              locale="mn"
+              value={ognoo || undefined}
+              onChange={(dates) =>
+                setOgnoo((dates || null) as [Date | null, Date | null] | null)
+              }
               className="w-full md:w-auto bg-transparent "
             />
           </div>

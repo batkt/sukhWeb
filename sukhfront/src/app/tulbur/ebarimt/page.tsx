@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { DatePicker, Select, Button, Spin } from "antd";
+import { Select, Button, Spin } from "antd";
+import { DatePickerInput } from "@mantine/dates";
 import moment from "moment";
 import { motion } from "framer-motion";
-const { RangePicker } = DatePicker;
 
 type TableItem = {
   id: number;
@@ -37,7 +37,9 @@ const mockData: TableItem[] = [
 ];
 
 export default function Ebarimt() {
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<any>(null);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
+    [Date | null, Date | null] | null
+  >(null);
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined
   );
@@ -175,12 +177,17 @@ export default function Ebarimt() {
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <RangePicker
+              <DatePickerInput
+                type="range"
                 className="w-full sm:w-auto rounded-xl hover:shadow-md transition-all duration-300"
-                size="large"
-                value={ekhlekhOgnoo}
-                placeholder={["Эхлэх өдөр", "Дуусах өдөр"]}
-                onChange={setEkhlekhOgnoo}
+                value={ekhlekhOgnoo ?? undefined}
+                placeholder={"Огноо"}
+                onChange={(v) =>
+                  setEkhlekhOgnoo(
+                    (v || [null, null]) as [Date | null, Date | null]
+                  )
+                }
+                locale="mn"
               />
               <Select
                 className="text-[color:var(--panel-text)]"

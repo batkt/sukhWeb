@@ -71,7 +71,7 @@ export default function GolContent({ children }: GolContentProps) {
   const menuItems: MenuItem[] = [
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
-    { label: "Бүртгэл", path: "burtgel" },
+    // { label: "Бүртгэл", path: "burtgel" },
     {
       label: "Мэдэгдэл",
       path: "medegdel",

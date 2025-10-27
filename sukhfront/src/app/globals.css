@@ -689,6 +689,72 @@ body {
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
+[data-theme="dark-black"] .mantine-DatePickerInput-root input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+}
+[data-theme="dark-black"] .mantine-DatePickerInput-root input::placeholder {
+  color: rgba(229, 231, 235, 0.7) !important; /* slate-200 at 70% */
+}
+[data-theme="dark-black"] .mantine-DatePickerInput-root input:focus,
+[data-theme="dark-black"] .mantine-DatePickerInput-root input:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important; /* same as btn-minimal */
+}
+/* Calendar dropdown + text */
+[data-theme="dark-black"] .mantine-Popover-dropdown {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 0.75rem !important;
+}
+/* Ensure input elements from Mantine use dark surface */
+[data-theme="dark-black"] .mantine-Input-input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+}
+/* Popover content paper inside calendar */
+[data-theme="dark-black"] .mantine-Popover-dropdown .mantine-Paper-root {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+}
+[data-theme="dark-black"] .mantine-CalendarHeader-label,
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-black"] .mantine-Month-day {
+  color: var(--panel-text) !important; /* unify header + weekdays + days text */
+}
+/* Avoid red weekends on dark-black; keep same text color */
+[data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-black"] .mantine-Month-day[data-weekend] {
+  color: var(--panel-text) !important;
+}
+/* Selected day */
+[data-theme="dark-black"] .mantine-Month-day[data-selected] {
+  background: rgba(99, 102, 241, 0.22) !important; /* indigo hint */
+  color: var(--panel-text) !important;
+}
+/* Range states */
+[data-theme="dark-black"] .mantine-Month-day[data-in-range],
+[data-theme="dark-black"] .mantine-Month-day[data-first-in-range],
+[data-theme="dark-black"] .mantine-Month-day[data-last-in-range] {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: var(--panel-text) !important;
+}
+/* Hover */
+[data-theme="dark-black"] .mantine-Month-day {
+  /* Increase day cell height/size for better touch/visual spacing */
+  min-height: 2.25rem !important; /* ~36px -> 36px+ */
+  min-width: 2.25rem !important;
+  line-height: 2.25rem !important;
+}
+[data-theme="dark-black"] .mantine-Month-day:hover {
+  /* No white background on hover; highlight text only */
+  background: transparent !important;
+  color: color-mix(in oklch, var(--panel-text), white 18%) !important;
+}
 .action-edit,
 .action-edit svg {
   color: #2563eb !important;
@@ -724,6 +790,7 @@ body {
   transition: transform 140ms ease, background 140ms ease, box-shadow 140ms ease;
   cursor: pointer;
 }
+
 .btn:hover {
   background: var(--btn-bg-hover);
   transform: translateY(-2px);

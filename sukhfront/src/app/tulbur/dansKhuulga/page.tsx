@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { DatePicker, Select, Button } from "antd";
+import { DatePickerInput } from "@mantine/dates";
+import { Select } from "@mantine/core";
 import { motion } from "framer-motion";
 import EbarimtPage from "../ebarimt/page";
 import ZardalPage from "../zardal/page";
-const { RangePicker } = DatePicker;
+// Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
 
 type TableItem = {
   id: number;
@@ -30,8 +31,10 @@ const mockData: TableItem[] = [
   { id: 3, date: "2025-10-09", month: "10", total: 3200, action: "Тайлбар 3" },
 ];
 
+type DateRangeValue = [string | null, string | null] | undefined;
+
 export default function DansniiKhuulga() {
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<any>(null);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined
   );
@@ -103,154 +106,149 @@ export default function DansniiKhuulga() {
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <RangePicker
-                className="w-full sm:w-auto   rounded-xl hover:shadow-md transition-all duration-300"
-                size="large"
+              <DatePickerInput
+                type="range"
+                locale="mn"
                 value={ekhlekhOgnoo}
-                onChange={setEkhlekhOgnoo}
+                onChange={(v) => setEkhlekhOgnoo(v)}
+                className="w-full sm:w-auto rounded-xl hover:shadow-md transition-all duration-300"
               />
               <Select
-                className="w-full sm:w-48   rounded-xl hover:shadow-md transition-all duration-300"
-                size="large"
+                data={[
+                  { value: "421030635", label: t("421030635") },
+                  { value: "421030636", label: t("421030636") },
+                ]}
                 placeholder={t("Данс")}
-                onChange={(v: string) => setUilchilgeeAvi(v)}
-                allowClear
-              >
-                <Select.Option key="khaan" value="421030635">
-                  {t("421030635")}
-                </Select.Option>
-                <Select.Option key="tdb" value="421030636">
-                  {t("421030636")}
-                </Select.Option>
-              </Select>
+                allowDeselect
+                onChange={(v) => setUilchilgeeAvi(v || undefined)}
+                className="w-full sm:w-48 rounded-xl hover:shadow-md transition-all duration-300"
+                nothingFoundMessage={t("Хайлт олдсонгүй")}
+              />
             </div>
             <div className="flex items-center gap-3">
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
+                <button
                   onClick={() => setIsEbarimtOpen(true)}
-                  size="large"
                   className="btn-minimal"
                 >
                   И-баримт
-                </Button>
+                </button>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
+                <button
                   onClick={() => setIsZardalOpen(true)}
-                  size="large"
                   className="btn-minimal"
                 >
                   Зардал
-                </Button>
+                </button>
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
+                <button
                   onClick={exceleerTatya}
-                  type="primary"
-                  size="large"
-                  className="flex-1 md:flex-none rounded-xl text-theme  text-white shadow-md hover:shadow-lg transition-all duration-300"
+                  className="flex-1 md:flex-none rounded-xl text-theme  text-white shadow-md hover:shadow-lg transition-all duration-300 bg-blue-600 px-4 py-2"
                 >
                   {t("Excel татах")}
-                </Button>
+                </button>
               </motion.div>
             </div>
           </div>
         </div>
 
-        {/* Table (themed) */}
-        <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.3 }}>
-          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
-            <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-              <div className="max-h-[330px] overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-sm min-w-full table-fixed">
-                  <colgroup>
-                    <col style={{ width: "6%" }} />
-                    <col style={{ width: "22%" }} />
-                    <col style={{ width: "22%" }} />
-                    <col style={{ width: "22%" }} />
-                    <col style={{ width: "28%" }} />
-                  </colgroup>
-                  <thead>
-                    <tr className="text-theme">
-                      <th className="p-3 text-xs font-semibold text-center w-12 whitespace-nowrap sticky top-0 z-10 bg-white/90 backdrop-blur">
-                        №
-                      </th>
-                      <th className="p-3 text-xs font-semibold text-center whitespace-nowrap sticky top-0 z-10 bg-white/90 backdrop-blur">
-                        Огноо
-                      </th>
-                      <th className="p-3 text-xs font-semibold text-center whitespace-nowrap sticky top-0 z-10 bg-white/90 backdrop-blur">
-                        Тайлант сар
-                      </th>
-                      <th className="p-3 text-xs font-semibold text-center whitespace-nowrap sticky top-0 z-10 bg-white/90 backdrop-blur">
-                        Дүн
-                      </th>
-                      <th className="p-3 text-xs font-semibold text-center whitespace-nowrap sticky top-0 z-10 bg-white/90 backdrop-blur">
-                        Үйлчилгээ
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredData.length > 0 ? (
-                      filteredData.map((item, index) => (
-                        <tr
-                          key={item.id}
-                          className="transition-colors border-b last:border-b-0"
-                        >
-                          <td className="p-3 text-center whitespace-nowrap">
-                            {index + 1}
-                          </td>
-                          <td className="p-3 text-center whitespace-nowrap">{item.date}</td>
-                          <td className="p-3 text-center whitespace-nowrap">
-                            {item.month}
-                          </td>
-                          <td className="p-3 text-right whitespace-nowrap">
-                            {item.total.toLocaleString("mn-MN")}
-                          </td>
-                          <td className="p-3 truncate text-center">{item.action}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center">
-                          <div className="flex flex-col items-center justify-center space-y-3">
-                            <svg
-                              className="w-16 h-16 text-slate-300"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            <div className="text-slate-500 font-medium">
-                              Мэдээлэл байхгүй
-                            </div>
-                            <div className="text-slate-400 text-sm">
-                              Шүүлтүүрийг өөрчилж үзнэ үү
-                            </div>
-                          </div>
+        <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+            <div className="overflow-y-auto custom-scrollbar w-full">
+              <table className="table-ui text-sm min-w-full">
+                <colgroup>
+                  <col style={{ width: "6%" }} />
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "28%" }} />
+                </colgroup>
+                <thead>
+                  <tr className="text-theme">
+                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      №
+                    </th>
+                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Огноо
+                    </th>
+                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Тайлант сар
+                    </th>
+                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Дүн
+                    </th>
+                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Үйлчилгээ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.length > 0 ? (
+                    filteredData.map((item, index) => (
+                      <tr
+                        key={item.id}
+                        className="transition-colors border-b last:border-b-0"
+                      >
+                        <td className="p-3 text-center whitespace-nowrap">
+                          {index + 1}
+                        </td>
+                        <td className="p-3 text-center whitespace-nowrap">
+                          {item.date}
+                        </td>
+                        <td className="p-3 text-center whitespace-nowrap">
+                          {item.month}
+                        </td>
+                        <td className="p-3 text-right whitespace-nowrap">
+                          {item.total.toLocaleString("mn-MN")}
+                        </td>
+                        <td className="p-3 truncate text-center">
+                          {item.action}
                         </td>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="p-8 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <svg
+                            className="w-16 h-16 text-slate-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div className="text-slate-500 font-medium">
+                            Мэдээлэл байхгүй
+                          </div>
+                          <div className="text-slate-400 text-sm">
+                            Шүүлтүүрийг өөрчилж үзнэ үү
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {isEbarimtOpen && (

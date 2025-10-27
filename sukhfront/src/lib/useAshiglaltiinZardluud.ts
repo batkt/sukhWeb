@@ -22,7 +22,7 @@ interface UseAshiglaltiinZardluudReturn {
   zardluud: ZardalItem[];
   isLoading: boolean;
   error: any;
-  mutate: () => Promise<void>;
+  mutate: () => Promise<any>;
   addZardal: (data: Partial<ZardalItem>) => Promise<void>;
   updateZardal: (id: string, data: Partial<ZardalItem>) => Promise<void>;
   deleteZardal: (id: string) => Promise<void>;
@@ -51,12 +51,53 @@ export function useAshiglaltiinZardluud(overrides?: {
       const response = await uilchilgee(token).get(url, {
         params: {
           baiguullagiinId,
-          barilgiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: pageSize,
         },
       });
-      return response.data?.jagsaalt || [];
+      const list: ZardalItem[] = response.data?.jagsaalt || [];
+      if (!Array.isArray(list) || list.length === 0) return [] as ZardalItem[];
+
+      // Prefer branch-specific entries; fallback to org-level (no barilgiinId)
+      const keyOf = (it: any) =>
+        `${String(it.zardliinTurul || "").trim()}::${String(
+          it.ner || ""
+        ).trim()}`;
+      const groups = new Map<string, ZardalItem[]>();
+      for (const it of list) {
+        const k = keyOf(it);
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k)!.push(it);
+      }
+      const pickLatest = (arr: ZardalItem[]) =>
+        [...arr].sort(
+          (a: any, b: any) =>
+            new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+        )[0];
+
+      const chosen: ZardalItem[] = [];
+      const barilgaStr = barilgiinId ? String(barilgiinId) : "";
+      for (const [, arr] of groups) {
+        const branchMatches = barilgaStr
+          ? arr.filter((x) => String(x?.barilgiinId || "") === barilgaStr)
+          : [];
+        if (branchMatches.length > 0) {
+          chosen.push(pickLatest(branchMatches));
+          continue;
+        }
+        const orgDefaults = arr.filter(
+          (x) => x?.barilgiinId == null || String(x.barilgiinId) === ""
+        );
+        if (orgDefaults.length > 0) {
+          chosen.push(pickLatest(orgDefaults));
+        } else {
+          chosen.push(pickLatest(arr));
+        }
+      }
+
+      return chosen;
     }
   );
 
@@ -81,7 +122,7 @@ export function useAshiglaltiinZardluud(overrides?: {
           ? zardalData.nuatBodokhEsekh
           : false),
       baiguullagiinId: String(currentOrg),
-      barilgiinId: auth.ajiltan?.barilguud?.[0] || "",
+      ...(currentBarilga ? { barilgiinId: String(currentBarilga) } : {}),
     });
 
     mutate();
@@ -106,7 +147,7 @@ export function useAshiglaltiinZardluud(overrides?: {
           ? zardalData.nuatBodokhEsekh
           : undefined),
       baiguullagiinId: String(currentOrg),
-      barilgiinId: auth.ajiltan?.barilguud?.[0] || "",
+      ...(currentBarilga ? { barilgiinId: String(currentBarilga) } : {}),
     });
 
     mutate();

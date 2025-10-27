@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { Button, Tag, DatePicker, notification } from "antd";
+import { DatePickerInput } from "@mantine/dates";
+import { Tag, notification } from "antd";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import moment from "moment";
 
-const { RangePicker } = DatePicker;
+// Mantine DatePickerInput replaces AntD RangePicker
 
 type TurulType = "sanal" | "gomdol";
 
@@ -44,7 +45,9 @@ export default function SanalKhuselt() {
   const [turul, setTurul] = useState<TurulType>("sanal");
   const [khariltsagch, setKhariltsagch] = useState<Khariltsagch | null>(null);
   const [expandedName, setExpandedName] = useState<string | null>(null);
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<any>(null);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
+    [string | null, string | null] | undefined
+  >(undefined);
 
   const KhariltsagchiinMedeelel: { jagsaalt: Khariltsagch[] } = {
     jagsaalt: [
@@ -190,9 +193,17 @@ export default function SanalKhuselt() {
           transition={{ duration: 0.5 }}
           className="flex w-1/3 flex-col space-y-4 bg-transparent"
         >
-          <RangePicker
-            placeholder={[t("Эхлэх"), t("Дуусах")]}
-            onChange={(dates) => setEkhlekhOgnoo(dates)}
+          <DatePickerInput
+            type="range"
+            locale="mn"
+            valueFormat="YYYY-MM-DD"
+            placeholder={`${t("Эхлэх")} – ${t("Дуусах")}`}
+            value={ekhlekhOgnoo}
+            onChange={(dates) =>
+              setEkhlekhOgnoo(
+                (dates || [null, null]) as [string | null, string | null]
+              )
+            }
             className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900 rounded-xl"
           />
 
@@ -268,13 +279,12 @@ export default function SanalKhuselt() {
                       {getStatusInfo(item.tuluv).text}
                     </Tag>
                     {item.tuluv === 0 && (
-                      <Button
-                        type="link"
+                      <button
                         onClick={() => sanalGomdolAvakh(item._id)}
-                        className="text-blue-500"
+                        className="btn-minimal text-blue-600 underline"
                       >
                         {t("Хүлээж авах")}
-                      </Button>
+                      </button>
                     )}
                   </motion.div>
                 ))}

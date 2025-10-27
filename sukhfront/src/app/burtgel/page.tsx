@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   ChevronDown,
   Users,
@@ -23,17 +23,86 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
+import { useGereeJagsaalt } from "@/lib/useGeree";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import { aldaaBarigch } from "../../../lib/uilchilgee";
+import {
+  isValidName,
+  isValidRegister,
+  isValidPhone,
+  explainRegisterRule,
+  explainPhoneRule,
+  normalizeRegister,
+} from "@/lib/validation";
 
 import formatNumber from "../../../tools/function/formatNumber";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
+type ModalProps = {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+};
+
+const PageModal = ({ isOpen, onClose, title, children }: ModalProps) => {
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <ModalPortal>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
+            onClick={onClose}
+          >
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-[850px] max-height-[85vh] max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between p-6">
+                <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+                <button
+                  onClick={onClose}
+                  type="button"
+                  className="p-2 rounded-2xl hover:bg-gray-100"
+                >
+                  <X className="w-6 h-6 text-slate-600" />
+                </button>
+              </div>
+              <div className="p-6">{children}</div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </ModalPortal>
+  );
+};
+
 export default function Burtgel() {
-  const { token, ajiltan: currentAjiltan } = useAuth();
+  const {
+    token,
+    ajiltan: currentAjiltan,
+    baiguullaga,
+    barilgiinId,
+  } = useAuth();
   const formRef = useRef<HTMLFormElement>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
@@ -55,6 +124,15 @@ export default function Burtgel() {
   const [selectedZardalRecord, setSelectedZardalRecord] = useState<any>(null);
   const [showTootModal, setShowTootModal] = useState(false);
 
+  // Contracts for structured address options (bairNer/orts/toot) scoped by org/branch
+  const { gereeGaralt } = useGereeJagsaalt(
+    {},
+    token || undefined,
+    currentAjiltan?.baiguullagiinId,
+    undefined
+  );
+  const gereeList = (gereeGaralt?.jagsaalt || []) as any[];
+
   interface FormData {
     ovog: string;
     ner: string;
@@ -68,6 +146,7 @@ export default function Burtgel() {
     email: string;
     _id?: string;
     zasakhEsekh?: boolean;
+    temdeglel?: string;
   }
 
   const {
@@ -142,13 +221,82 @@ export default function Burtgel() {
     nevtrekhNer: "",
     nuutsUg: "",
     email: "",
+    temdeglel: "",
   });
+
+  // Derived org/branch strings for auto-fill and display
+  const derivedBaiguullagiinId = useMemo(
+    () => currentAjiltan?.baiguullagiinId || "",
+    [currentAjiltan?.baiguullagiinId]
+  );
+  const derivedDuuregStr = useMemo(() => {
+    // Prefer org fields
+    const d: any = baiguullaga?.duureg;
+    let val = "";
+    if (d) {
+      if (typeof d === "string") val = d;
+      else if (typeof d?.ner === "string" && d.ner.trim()) val = d.ner;
+    }
+    if (!val && typeof baiguullaga?.tokhirgoo?.duuregNer === "string") {
+      val = baiguullaga?.tokhirgoo?.duuregNer || "";
+    }
+    // Fallback: try parse from selected building label if it contains commas
+    if (!val && (selectedBarilga || "").includes(",")) {
+      const tokens = (selectedBarilga || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (tokens.length >= 1) val = tokens[0];
+    }
+    return val;
+  }, [baiguullaga, selectedBarilga]);
+  const derivedHorooStr = useMemo(() => {
+    const h: any = baiguullaga?.horoo;
+    let val = "";
+    if (h) {
+      if (typeof h === "string") val = h;
+      else if (typeof h?.ner === "string" && h.ner.trim()) val = h.ner;
+    }
+    // Fallback: parse 2nd token from selected building label
+    if (!val && (selectedBarilga || "").includes(",")) {
+      const tokens = (selectedBarilga || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (tokens.length >= 2) val = tokens[1];
+    }
+    return val;
+  }, [baiguullaga, selectedBarilga]);
+  const derivedSohStr = useMemo(() => {
+    // Prefer selected building; if label contains commas like "Duureg, Horoo, SOH-001",
+    // pick the last token as the SÖH code.
+    if (selectedBarilga) {
+      if (selectedBarilga.includes(",")) {
+        const tokens = selectedBarilga
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (tokens.length) return tokens[tokens.length - 1];
+      }
+      return selectedBarilga;
+    }
+    return (baiguullaga?.tokhirgoo?.sohCode ||
+      baiguullaga?.ner ||
+      "") as string;
+  }, [selectedBarilga, baiguullaga]);
+
+  // Address picks for resident modal
+  const [selectedTootModal, setSelectedTootModal] = useState<string>("");
   const fetchAshiglaltiinZardluud = async () => {
     if (!token || !currentAjiltan?.baiguullagiinId) return;
 
     try {
       const response = await fetch(
-        `http://103.143.40.46:8084/ashiglaltiinZardluud?baiguullagiinId=${currentAjiltan.baiguullagiinId}&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
+        `http://103.143.40.46:8084/ashiglaltiinZardluud?baiguullagiinId=${
+          currentAjiltan.baiguullagiinId
+        }&${
+          barilgiinId ? `barilgiinId=${barilgiinId}&` : ""
+        }khuudasniiDugaar=1&khuudasniiKhemjee=100`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -164,26 +312,40 @@ export default function Burtgel() {
   };
 
   const getFilterOptions = () => {
+    // Prefer contracts as the authoritative source of building structure
+    const src =
+      Array.isArray(gereeList) && gereeList.length > 0
+        ? gereeList
+        : tootBurtgelList; // fallback to resident list if no contracts
+
     const barilgaOptions = [
-      ...new Set(tootBurtgelList.map((item: any) => item.soh).filter(Boolean)),
+      ...new Set(
+        src.map((item: any) => item.bairNer || item.soh).filter((v: any) => !!v)
+      ),
     ];
+
     const ortsOptions = selectedBarilga
       ? [
           ...new Set(
-            tootBurtgelList
-              .filter((item: any) => item.soh === selectedBarilga)
-              .map((item: any) => item.toot?.charAt(0))
-              .filter(Boolean)
+            src
+              .filter(
+                (item: any) => (item.bairNer || item.soh) === selectedBarilga
+              )
+              .map((item: any) => item.orts)
+              .filter((v: any) => !!v)
           ),
         ]
       : [];
+
     const davkharOptions = selectedBarilga
       ? [
           ...new Set(
-            tootBurtgelList
-              .filter((item: any) => item.soh === selectedBarilga)
+            src
+              .filter(
+                (item: any) => (item.bairNer || item.soh) === selectedBarilga
+              )
               .map((item: any) => item.davkhar)
-              .filter(Boolean)
+              .filter((v: any) => !!v)
           ),
         ]
       : [];
@@ -250,6 +412,13 @@ export default function Burtgel() {
     }
   }, [activeTab]);
 
+  // Ensure toot list is available when opening resident modal
+  useEffect(() => {
+    if (showSuugchModal && tootBurtgelList.length === 0) {
+      fetchTootBurtgel();
+    }
+  }, [showSuugchModal]);
+
   useEffect(() => {
     if (activeTab === "ajiltanList") {
       setAjiltanKhuudaslalt((prev: any) => ({
@@ -281,6 +450,32 @@ export default function Burtgel() {
       }));
     }
   }, [currentPage, pageSize, activeTab]);
+
+  // Ensure both lists are initialized when page loads (warm up SWR caches)
+  useEffect(() => {
+    setAjiltanKhuudaslalt((prev: any) => ({
+      ...prev,
+      khuudasniiDugaar: 1,
+      khuudasniiKhemjee: pageSize,
+    }));
+    setSuugchKhuudaslalt({
+      khuudasniiDugaar: 1,
+      khuudasniiKhemjee: pageSize,
+      search: "",
+    });
+    // Optionally trigger network revalidation immediately
+    // This ensures both ajiltan and orshin suugch lists are fetched on first load
+    ajiltanMutate();
+    suugchMutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // When opening resident modal, auto-sync SӨХ (building) from derived value and lock it
+  useEffect(() => {
+    if (showSuugchModal) {
+      setSelectedBarilga(derivedSohStr || "");
+    }
+  }, [showSuugchModal, derivedSohStr]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -404,6 +599,28 @@ export default function Burtgel() {
       return;
     }
 
+    // Core field validations (applies to both Employee and Resident forms)
+    if (!isValidName(formData.ovog)) {
+      toast.error(
+        "Овог талбар зөвхөн үсэг байх ёстой (тоо, тэмдэгт хориглоно)."
+      );
+      return;
+    }
+    if (!isValidName(formData.ner)) {
+      toast.error(
+        "Нэр талбар зөвхөн үсэг байх ёстой (тоо, тэмдэгт хориглоно)."
+      );
+      return;
+    }
+    if (!isValidRegister(formData.register)) {
+      toast.error(explainRegisterRule());
+      return;
+    }
+    if (!isValidPhone(formData.utas)) {
+      toast.error(explainPhoneRule());
+      return;
+    }
+
     if (formData.nuutsUg && formData.nuutsUg.length < 2) {
       toast.error("Нууц үг буруу оруулсан байна.");
       return;
@@ -419,13 +636,53 @@ export default function Burtgel() {
         ner: formData.ner,
         ovog: formData.ovog,
         register: formData.register,
+        // Build khayag from structured selections when available
         khayag: formData.khayag,
         utas: formData.utas,
+        // Backend uses `mail`; keep `email` too for compatibility
         email: formData.email,
-        nevtrekhNer: formData.nevtrekhNer,
+        mail: formData.email,
+        // Default login to phone if not provided
+        nevtrekhNer: formData.nevtrekhNer || formData.utas,
         nuutsUg: formData.nuutsUg,
         baiguullagiinId: currentAjiltan?.baiguullagiinId,
+        baiguullagiinNer: baiguullaga?.ner,
+        erkh: "OrshinSuugch",
+        taniltsuulgaKharakhEsekh: true,
       };
+
+      // Auto-fill organization/branch scoped fields so backend required fields are satisfied
+      if (!isAjiltan) {
+        // Structured address: building(СӨХ) + орц + тоот from toot registry
+        const { barilgaOptions, ortsOptions } = getFilterOptions();
+        // If user selected structured address, set SÖH/building code
+        if (derivedSohStr) payload.soh = derivedSohStr;
+        if (selectedTootModal) payload.toot = selectedTootModal;
+        // Derive davkhar from toot registry when possible
+        const matched = tootBurtgelList.find(
+          (i: any) =>
+            (!selectedBarilga || i.soh === selectedBarilga) &&
+            String(i.toot) === String(selectedTootModal)
+        );
+        if (matched?.davkhar) payload.davkhar = matched.davkhar;
+        // Fill district, khoroo, and soh (building name)
+        if (derivedDuuregStr) payload.duureg = derivedDuuregStr;
+        if (derivedHorooStr) payload.horoo = derivedHorooStr;
+        if (!payload.soh && derivedSohStr) payload.soh = derivedSohStr;
+        if (barilgiinId) payload.barilgiinId = barilgiinId;
+        if (formData.temdeglel) payload.temdeglel = formData.temdeglel;
+        // Validate required fields before sending
+        if (!payload.soh || !payload.duureg || !payload.horoo) {
+          setLoading(false);
+          toast.error(
+            "Дүүрэг, Хороо, СӨХ мэдээлэл дутуу байна. Байрыг сонгоно уу."
+          );
+          return;
+        }
+      } else {
+        // For employees, include branch context if available
+        if (barilgiinId) payload.barilgiinId = barilgiinId;
+      }
 
       if (isAjiltan) {
         payload.ajildOrsonOgnoo = new Date(
@@ -468,7 +725,11 @@ export default function Burtgel() {
         nevtrekhNer: "",
         nuutsUg: "",
         email: "",
+        temdeglel: "",
       });
+      setSelectedTootModal("");
+      setSelectedOrts("");
+      setSelectedBarilga("");
 
       formRef.current?.reset();
       setShowAjiltanModal(false);
@@ -541,53 +802,7 @@ export default function Burtgel() {
     }
   };
 
-  const Modal = ({ isOpen, onClose, title, children }: any) => {
-    useEffect(() => {
-      document.body.style.overflow = isOpen ? "hidden" : "";
-      return () => {
-        document.body.style.overflow = "";
-      };
-    }, [isOpen]);
-
-    if (!isOpen) return null;
-
-    return (
-      <ModalPortal>
-        <AnimatePresence>
-          {isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
-              onClick={onClose}
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-[850px] max-height-[85vh] max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
-              >
-                <div className="flex items-center justify-between p-6">
-                  <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-                  <button
-                    onClick={onClose}
-                    type="button"
-                    className="p-2 rounded-2xl hover:bg-gray-100"
-                  >
-                    <X className="w-6 h-6 text-slate-600" />
-                  </button>
-                </div>
-                <div className="p-6">{children}</div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </ModalPortal>
-    );
-  };
+  // removed inline Modal (moved to module scope as PageModal)
 
   if (!currentAjiltan || !currentAjiltan.baiguullagiinId) {
     return (
@@ -826,7 +1041,7 @@ export default function Burtgel() {
         </>
       )}
       {showAjiltanModal && (
-        <Modal
+        <PageModal
           isOpen={showAjiltanModal}
           onClose={() => {
             setShowAjiltanModal(false);
@@ -870,7 +1085,7 @@ export default function Burtgel() {
                     placeholder="Овог"
                     value={formData.ovog}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -888,7 +1103,7 @@ export default function Burtgel() {
                     placeholder="Нэр"
                     value={formData.ner}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -912,7 +1127,7 @@ export default function Burtgel() {
                         register: e.target.value.toUpperCase(),
                       })
                     }
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -930,7 +1145,7 @@ export default function Burtgel() {
                     placeholder="Утас"
                     value={formData.utas}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -948,7 +1163,7 @@ export default function Burtgel() {
                     placeholder="И-мэйл"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -966,7 +1181,7 @@ export default function Burtgel() {
                     placeholder="Албан тушаал"
                     value={formData.albanTushaal}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -981,7 +1196,7 @@ export default function Burtgel() {
                   required
                   value={formData.ajildOrsonOgnoo}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
+                  className="w-full px-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                 />
               </div>
 
@@ -998,9 +1213,42 @@ export default function Burtgel() {
                     placeholder="Хаяг"
                     value={formData.khayag}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Read-only auto-filled info to satisfy backend required fields */}
+            <div className="mt-4 p-4 rounded-2xl border border-gray-200 bg-gray-50/60">
+              <div className="text-sm font-semibold text-slate-800 mb-2">
+                Автоматаар бөглөгдөх мэдээлэл
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500">Байгууллага ID</span>
+                  <span className="font-medium break-all">
+                    {derivedBaiguullagiinId || "-"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500">Дүүрэг</span>
+                  <span className="font-medium">{derivedDuuregStr || "-"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500">Хороо</span>
+                  <span className="font-medium">{derivedHorooStr || "-"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-slate-500">СӨХ (Байр)</span>
+                  <span className="font-medium">{derivedSohStr || "-"}</span>
+                </div>
+                {barilgiinId && (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500">Салбар ID</span>
+                    <span className="font-medium break-all">{barilgiinId}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1022,7 +1270,7 @@ export default function Burtgel() {
                       placeholder="Нэвтрэх нэр"
                       value={formData.nevtrekhNer}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                      className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1040,7 +1288,7 @@ export default function Burtgel() {
                       placeholder="Нууц үг"
                       value={formData.nuutsUg}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
+                      className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1064,10 +1312,10 @@ export default function Burtgel() {
               </button>
             </div>
           </form>
-        </Modal>
+        </PageModal>
       )}
       {showSuugchModal && (
-        <Modal
+        <PageModal
           isOpen={showSuugchModal}
           onClose={() => {
             setShowSuugchModal(false);
@@ -1082,6 +1330,7 @@ export default function Burtgel() {
               nevtrekhNer: "",
               nuutsUg: "",
               email: "",
+              temdeglel: "",
             });
           }}
           title={
@@ -1105,7 +1354,7 @@ export default function Burtgel() {
                     placeholder="Овог"
                     value={formData.ovog}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1123,7 +1372,7 @@ export default function Burtgel() {
                     placeholder="Нэр"
                     value={formData.ner}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1147,7 +1396,7 @@ export default function Burtgel() {
                         register: e.target.value.toUpperCase(),
                       })
                     }
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1165,7 +1414,7 @@ export default function Burtgel() {
                     placeholder="Утас"
                     value={formData.utas}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
@@ -1183,27 +1432,180 @@ export default function Burtgel() {
                     placeholder="И-мэйл"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
+                    className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
                   />
                 </div>
               </div>
 
+              {/* SӨХ info auto-filled from organization (baiguullagiinId) */}
+              <div className="md:col-span-2">
+                <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                  <div className="text-sm text-slate-600 mb-3">
+                    СӨХ мэдээлэл байгууллагын мэдээллээс автоматаар бөглөгдөнө.
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">СӨХ-ийн нэр</span>
+                      <span className="font-medium text-slate-900 truncate ml-2">
+                        {baiguullaga?.ner || "-"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">СӨХ-ийн регистр</span>
+                      <span className="font-medium text-slate-900 truncate ml-2">
+                        {baiguullaga?.register || "-"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">СӨХ-ийн утас</span>
+                      <span className="font-medium text-slate-900 truncate ml-2">
+                        {Array.isArray(baiguullaga?.utas)
+                          ? (baiguullaga?.utas as unknown as string[]).join(
+                              ", "
+                            )
+                          : baiguullaga?.utas || "-"}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-slate-500">СӨХ-ийн и-мэйл</span>
+                      <span className="font-medium text-slate-900 truncate ml-2">
+                        {baiguullaga?.email || "-"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Structured address selection: Байр(СӨХ) -> Орц -> Тоот */}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Хаяг <span className="text-red-500">*</span>
+                  Байр (СӨХ)
                 </label>
-                <div className="relative">
-                  <Home className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    name="khayag"
-                    required
-                    placeholder="Хаяг"
-                    value={formData.khayag}
-                    onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-2xl transition-all text-theme"
-                  />
-                </div>
+                <select
+                  value={selectedBarilga}
+                  onChange={() => {}}
+                  disabled
+                  className="w-full px-4 py-2 rounded-2xl border border-gray-200 bg-gray-50 text-theme cursor-not-allowed"
+                >
+                  <option value={derivedSohStr || ""}>
+                    {derivedSohStr || "-"}
+                  </option>
+                </select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Автоматаар бөглөгдөх, засах боломжгүй
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Орц
+                </label>
+                <select
+                  value={selectedOrts}
+                  onChange={(e) => {
+                    setSelectedOrts(e.target.value);
+                    setSelectedTootModal("");
+                  }}
+                  className="w-full px-4 py-2 rounded-2xl border border-gray-200 bg-white text-theme"
+                  disabled={!selectedBarilga}
+                >
+                  <option value="">Сонгох</option>
+                  {getFilterOptions().ortsOptions.map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Тоот
+                </label>
+                <select
+                  value={selectedTootModal}
+                  onChange={(e) => setSelectedTootModal(e.target.value)}
+                  className="w-full px-4 py-2 rounded-2xl border border-gray-200 bg-white text-theme"
+                  disabled={!selectedBarilga || !selectedOrts}
+                >
+                  <option value="">Сонгох</option>
+                  {(Array.isArray(gereeList) && gereeList.length > 0
+                    ? gereeList
+                        .filter(
+                          (g: any) =>
+                            (g.bairNer || g.soh) === selectedBarilga &&
+                            String(g.orts || "") === String(selectedOrts || "")
+                        )
+                        .map((g: any) => ({ key: g._id, toot: g.toot }))
+                    : tootBurtgelList
+                        .filter(
+                          (i: any) =>
+                            (!selectedBarilga || i.soh === selectedBarilga) &&
+                            (!selectedOrts ||
+                              String(i.toot || "").startsWith(selectedOrts))
+                        )
+                        .map((i: any) => ({ key: i._id, toot: i.toot }))
+                  )
+                    .filter((x: any) => !!x.toot)
+                    .reduce((acc: any[], curr: any) => {
+                      if (!acc.find((a) => a.toot === curr.toot))
+                        acc.push(curr);
+                      return acc;
+                    }, [])
+                    .map((opt: any) => (
+                      <option
+                        key={String(opt.key) + String(opt.toot)}
+                        value={opt.toot}
+                      >
+                        {opt.toot}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              {/* Read-only derived Давхар and optional Тэмдэглэл */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Давхар
+                </label>
+                <input
+                  type="text"
+                  value={(() => {
+                    const matched = (
+                      Array.isArray(gereeList) && gereeList.length > 0
+                        ? gereeList.find(
+                            (g: any) =>
+                              (g.bairNer || g.soh) === selectedBarilga &&
+                              String(g.toot || "") ===
+                                String(selectedTootModal || "")
+                          )
+                        : tootBurtgelList.find(
+                            (i: any) =>
+                              (!selectedBarilga || i.soh === selectedBarilga) &&
+                              String(i.toot) === String(selectedTootModal)
+                          )
+                    ) as any;
+                    return matched?.davkhar || "-";
+                  })()}
+                  readOnly
+                  className="w-full px-4 py-2 rounded-2xl border border-gray-200 bg-gray-50 text-theme"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Тэмдэглэл
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.temdeglel}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      temdeglel: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-3 rounded-2xl border border-gray-200 bg-white text-theme"
+                  placeholder="Тэмдэглэл бичих..."
+                />
               </div>
             </div>
 
@@ -1225,7 +1627,7 @@ export default function Burtgel() {
                       placeholder="Нэвтрэх нэр"
                       value={formData.nevtrekhNer}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
+                      className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1243,7 +1645,7 @@ export default function Burtgel() {
                       placeholder="Нууц үг"
                       value={formData.nuutsUg}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 rounded-xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
+                      className="w-full pl-10 pr-4 py-2 rounded-2xl focus:ring-2 focus:ring-blue-500 backdrop-blur-xl transition-all text-theme"
                     />
                   </div>
                 </div>
@@ -1267,7 +1669,7 @@ export default function Burtgel() {
               </button>
             </div>
           </form>
-        </Modal>
+        </PageModal>
       )}
 
       {showTootModal && (
@@ -1424,7 +1826,7 @@ export default function Burtgel() {
                   initial={{ scale: 0.95, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
-                  className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[1000px] bg-white rounded-xl shadow-2xl overflow-hidden z-[2001]"
+                  className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[1000px] bg-white rounded-2xl shadow-2xl overflow-hidden z-[2001]"
                   role="dialog"
                   aria-modal="true"
                   onClick={(e) => e.stopPropagation()}
@@ -1547,7 +1949,7 @@ export default function Burtgel() {
                       </div>
 
                       <div className="pt-4 border-t border-gray-200">
-                        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow-sm">
+                        <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-sm">
                           <span className="text-lg font-semibold text-slate-900">
                             Нийт дүн:
                           </span>

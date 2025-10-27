@@ -38,16 +38,18 @@ const fetcherJagsaalt = async ([
   string | number | undefined
 ]): Promise<any> => {
   try {
-    // Build the query object
+    // Build the query object (do not include org/branch in query)
     const queryObj: any = {
-      baiguullagiinId,
       erkh: { $nin: ["Admin"] },
       ...query,
     };
-
-    // Add barilga filter if provided
-    if (barilgiinId) {
-      queryObj.barilguud = barilgiinId;
+    // Ensure org/branch are also present inside query for backends
+    // that only filter by the nested query object.
+    if (baiguullagiinId != null && baiguullagiinId !== "") {
+      queryObj.baiguullagiinId = baiguullagiinId;
+    }
+    if (barilgiinId != null && barilgiinId !== "") {
+      queryObj.barilgiinId = barilgiinId;
     }
 
     // Add search filters
@@ -59,14 +61,18 @@ const fetcherJagsaalt = async ([
       ];
     }
 
-    console.log("Fetching ajiltan with query:", {
+    console.log("Fetching ajiltan with:", {
       baiguullagiinId,
+      barilgiinId,
       queryObj,
       khuudaslalt,
     });
 
     const response = await uilchilgee(token).get(url, {
       params: {
+        baiguullagiinId,
+        ...(barilgiinId ? { barilgiinId } : {}),
+        // Keep stringified query to preserve existing API behavior
         query: JSON.stringify(queryObj),
         khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
@@ -75,7 +81,38 @@ const fetcherJagsaalt = async ([
 
     console.log("Ajiltan response:", response.data);
 
-    return response.data;
+    // Client-side guard: strictly enforce org/branch
+    const raw = response.data || {};
+    const list = Array.isArray(raw?.jagsaalt)
+      ? raw.jagsaalt
+      : Array.isArray(raw)
+      ? raw
+      : [];
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    const filtered = list.filter((it: any) => {
+      const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
+      if (!orgOk) return false;
+      if (!barilgiinId) return true;
+      // Some records may not have barilgiinId; allow them only when no branch filter.
+      return (
+        it?.barilgiinId == null || toStr(it.barilgiinId) === toStr(barilgiinId)
+      );
+    });
+    if (Array.isArray(raw?.jagsaalt)) {
+      return {
+        ...raw,
+        jagsaalt: filtered,
+        niitMur: filtered.length,
+        // Estimate pages based on page size if present
+        niitKhuudas: raw?.khuudasniiKhemjee
+          ? Math.max(
+              1,
+              Math.ceil(filtered.length / Number(raw.khuudasniiKhemjee))
+            )
+          : raw?.niitKhuudas ?? 1,
+      };
+    }
+    return filtered;
   } catch (error: any) {
     console.error("Ajiltan API Error:", error);
     aldaaBarigch(error);

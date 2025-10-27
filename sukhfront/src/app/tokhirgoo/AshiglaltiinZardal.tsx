@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Button,
-  Popconfirm,
-  Tooltip,
-  Modal,
-  Input,
-  Select,
-  Spin,
-  Switch,
-} from "antd";
+  Modal as MModal,
+  Tooltip as MTooltip,
+  Switch as MSwitch,
+  NumberInput as MNumberInput,
+  Badge,
+  Button as MButton,
+  TextInput as MTextInput,
+  Textarea as MTextarea,
+  Select as MSelect,
+  Loader,
+} from "@mantine/core";
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import formatNumber from "../../../tools/function/formatNumber";
 import { useAuth } from "@/lib/useAuth";
@@ -47,7 +49,7 @@ interface ZardalFormData {
 }
 
 export default function AshiglaltiinZardluud() {
-  const { token, ajiltan } = useAuth();
+  const { token, ajiltan, barilgiinId } = useAuth();
 
   const {
     zardluud: ashiglaltiinZardluud,
@@ -59,10 +61,16 @@ export default function AshiglaltiinZardluud() {
   } = useAshiglaltiinZardluud();
 
   const [isSaving, setIsSaving] = useState(false);
+  // Per-row inline edit state for tariff so we don't save on every keystroke
+  const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
+    {}
+  );
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
   const [liftModalOpen, setLiftModalOpen] = useState<boolean>(false);
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
   const [isSavingLift, setIsSavingLift] = useState<boolean>(false);
+  const [singleFloor, setSingleFloor] = useState<number | null>(null);
+  const [bulkText, setBulkText] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
@@ -81,22 +89,29 @@ export default function AshiglaltiinZardluud() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ choloolugdokhDavkhar: floors }),
+        body: JSON.stringify({
+          choloolugdokhDavkhar: floors,
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
+        }),
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const result = await response.text();
-
-      toast.success("Lift давхруудыг амжилттай хадгаллаа");
+      // Success messaging depends on enabling vs disabling
+      if (floors.length > 0) {
+        toast.success("Лифт давхруудыг амжилттай хадгаллаа");
+      } else {
+        toast.success("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+      }
 
       setLiftFloors(floors);
       setLiftEnabled(floors.length > 0);
       setLiftModalOpen(false);
     } catch (error) {
-      toast.error("Lift давхруудыг хадгалах үед алдаа гарлаа");
+      toast.error("Лифт тохиргоо хадгалах үед алдаа гарлаа");
     } finally {
       setIsSavingLift(false);
     }
@@ -120,12 +135,54 @@ export default function AshiglaltiinZardluud() {
 
   const [pageSize] = useState(100);
 
+  // Scheduler state for monthly invoice (Нэхэмжлэх) push
+  const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
+  const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
+
+  const saveInvoiceSchedule = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      toast.error("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!invoiceDay || invoiceDay < 1 || invoiceDay > 31) {
+      toast.error("Огноог 1-31 хооронд сонгоно уу");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://103.143.40.46:8084/nekhemjlekhCron", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          nekhemjlekhUusgekhOgnoo: invoiceDay,
+          idevkhitei: invoiceActive,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      toast.success("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
+    } catch (e) {
+      toast.error("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
+    }
+  };
+
   const fetchLiftFloors = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
       const response = await fetch(
-        `http://103.143.40.46:8084/liftShalgaya?baiguullagiinId=${ajiltan.baiguullagiinId}&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
+        `http://103.143.40.46:8084/liftShalgaya?baiguullagiinId=${
+          ajiltan.baiguullagiinId
+        }&${
+          barilgiinId ? `barilgiinId=${barilgiinId}&` : ""
+        }khuudasniiDugaar=1&khuudasniiKhemjee=100`,
         {
           method: "GET",
           headers: {
@@ -175,6 +232,43 @@ export default function AshiglaltiinZardluud() {
     }
   }, [token, ajiltan?.baiguullagiinId]);
 
+  const toUniqueSorted = (values: (string | number)[]) => {
+    const nums = values
+      .map((v) => Number(String(v).trim()))
+      .filter((n) => Number.isFinite(n) && n > 0) as number[];
+    const uniq = Array.from(new Set(nums));
+    uniq.sort((a, b) => a - b);
+    return uniq.map((n) => String(n));
+  };
+
+  const expandRangeToken = (token: string): number[] => {
+    const t = token.trim().replace(/\s+/g, "");
+    if (!t) return [];
+    const m = t.match(/^(\d+)-(\d+)$/);
+    if (m) {
+      const start = Number(m[1]);
+      const end = Number(m[2]);
+      if (Number.isFinite(start) && Number.isFinite(end)) {
+        const a = Math.min(start, end);
+        const b = Math.max(start, end);
+        const out: number[] = [];
+        for (let i = a; i <= b; i++) out.push(i);
+        return out;
+      }
+    }
+    const n = Number(t);
+    return Number.isFinite(n) ? [n] : [];
+  };
+
+  const parseBulk = (text: string): string[] => {
+    const tokens = text
+      .split(/[,;\n\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const expanded = tokens.flatMap(expandRangeToken);
+    return toUniqueSorted(expanded);
+  };
+
   const openAddModal = (isUilchilgee = false) => {
     setEditingItem(null);
     setIsUilchilgeeModal(isUilchilgee);
@@ -215,6 +309,7 @@ export default function AshiglaltiinZardluud() {
       const payload = {
         ...formData,
         lift: formData.lift ?? null, // send null if not selected
+        ...(barilgiinId ? { barilgiinId } : {}),
       };
 
       if (editingItem) {
@@ -257,6 +352,7 @@ export default function AshiglaltiinZardluud() {
           body: JSON.stringify({
             ...item,
             tariff: newTariff,
+            ...(barilgiinId ? { barilgiinId } : {}),
           }),
         }
       );
@@ -273,11 +369,22 @@ export default function AshiglaltiinZardluud() {
     }
   };
 
+  const saveTariff = async (item: ZardalItem, isUilchilgee = false) => {
+    const newTariff = editedTariffs[item._id];
+    if (newTariff === undefined) return;
+    await handleTariffChange(item, newTariff, isUilchilgee);
+    // Clear edited state for this row after successful save
+    setEditedTariffs((prev) => {
+      const { [item._id]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
   if (!ajiltan || !ajiltan.baiguullagiinId) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <Spin size="large" />
+          <Loader size="lg" />
           <p className="mt-4 text-slate-600">Мэдээлэл ачааллаж байна...</p>
         </div>
       </div>
@@ -296,16 +403,16 @@ export default function AshiglaltiinZardluud() {
                 <span className="text-sm font-medium text-theme">
                   Лифт идэвхтэй:
                 </span>
-                <Switch
+                <MSwitch
                   checked={liftEnabled}
-                  onChange={async (checked) => {
+                  onChange={async (e) => {
+                    const checked = e.currentTarget.checked;
                     if (checked) {
                       setLiftModalOpen(true);
                     } else {
                       await saveLiftSettings([]);
                     }
                   }}
-                  className="bg-gray-200"
                 />
               </div>
 
@@ -350,92 +457,141 @@ export default function AshiglaltiinZardluud() {
               className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-green-500 p-2 text-white hover:bg-green-600 transition-colors"
               onClick={() => openAddModal(false)}
             >
-              <Tooltip title="Нэмэх">
+              <MTooltip label="Нэмэх">
                 <PlusOutlined />
-              </Tooltip>
+              </MTooltip>
             </div>
           </div>
 
-          <Modal
-            title={
+          <div className="box">
+            <div className="flex items-center gap-4 p-5">
+              <div className="font-medium text-theme flex-1">
+                Нэхэмжлэх илгээх тохиргоо
+              </div>
               <div className="flex items-center gap-2">
+                <span className="text-sm text-theme">Идэвхтэй</span>
+                <MSwitch
+                  checked={invoiceActive}
+                  onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-4 px-5 pb-5">
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Өдөр (сар бүр)
+                </label>
+                <MNumberInput
+                  min={1}
+                  max={31}
+                  placeholder="Нэхэмжлэх өдөр"
+                  value={invoiceDay ?? undefined}
+                  onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                />
+              </div>
+              <MButton
+                className="bg-blue-500 hover:bg-blue-600 mt-6 text-white"
+                onClick={saveInvoiceSchedule}
+              >
+                Хадгалах
+              </MButton>
+            </div>
+          </div>
+
+          <MModal
+            title={
+              <div className="flex items-center justify-between gap-2">
                 <span className="text-lg font-semibold">
-                  Лифт давхруудыг оруулах
+                  Лифт хөнгөлөх давхрууд
                 </span>
               </div>
             }
-            open={liftModalOpen}
-            onOk={() => {
-              const input = document.querySelector(
-                'input[placeholder="Жишээ: 1, 2, 3..."]'
-              ) as HTMLInputElement;
-              const value = input?.value.trim();
-
-              let finalFloors = [...liftFloors];
-              if (value && !finalFloors.includes(value)) {
-                finalFloors = [...finalFloors, value];
-              }
-
-              saveLiftSettings(finalFloors);
-              setLiftEnabled(true);
-            }}
-            onCancel={() => {
+            opened={liftModalOpen}
+            onClose={() => {
               setLiftModalOpen(false);
               if (liftFloors.length === 0) {
                 setLiftEnabled(false);
               }
             }}
-            confirmLoading={isSavingLift}
-            okText="Хадгалах"
-            cancelText="Болих"
-            width={520}
-            okButtonProps={{
-              disabled: liftFloors.length === 0,
-              className: liftFloors.length === 0 ? "opacity-50" : "",
-            }}
             className="modal-blur"
+            size="lg"
           >
             <div className="space-y-4">
               <div className="bg-transparent backdrop-blur-sm p-4 rounded-3xl border border-gray-200">
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    Давхар нэмэх
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Давхрын дугаар оруулах..."
-                      className="flex-1 text-theme"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          const input = e.target as HTMLInputElement;
-                          const value = input.value.trim();
-
-                          if (value && !liftFloors.includes(value)) {
-                            setLiftFloors([...liftFloors, value]);
-                            input.value = "";
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Давхар нэмэх
+                    </label>
+                    <div className="flex gap-2">
+                      <MNumberInput
+                        min={1}
+                        placeholder="Жишээ: 7"
+                        className="flex-1"
+                        value={singleFloor ?? undefined}
+                        onChange={(v) => setSingleFloor((v as number) ?? null)}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter") return;
+                          if (singleFloor && singleFloor > 0) {
+                            setLiftFloors(
+                              toUniqueSorted([...liftFloors, singleFloor])
+                            );
+                            setSingleFloor(null);
                           }
-                          input.focus();
-                        }
-                      }}
-                    />
-                    <Button
-                      type="primary"
-                      onClick={(e) => {
-                        const input = e.currentTarget
-                          .previousElementSibling as HTMLInputElement;
-                        const value = input.value.trim();
-                        if (value && !liftFloors.includes(value)) {
-                          setLiftFloors([...liftFloors, value]);
-                          input.value = "";
-                        }
-                        input.focus();
-                      }}
-                      className="bg-blue-500 hover:bg-blue-600"
-                    >
-                      Нэмэх
-                    </Button>
+                        }}
+                      />
+                      <MButton
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        onClick={() => {
+                          if (singleFloor && singleFloor > 0) {
+                            setLiftFloors(
+                              toUniqueSorted([...liftFloors, singleFloor])
+                            );
+                            setSingleFloor(null);
+                          }
+                        }}
+                      >
+                        Нэмэх
+                      </MButton>
+                    </div>
                   </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Бөөнөөр оруулах
+                    </label>
+                    <MTextarea
+                      autosize
+                      minRows={2}
+                      maxRows={4}
+                      placeholder="Жишээ: 1-5, 7, 9-11"
+                      value={bulkText}
+                      onChange={(e) => setBulkText(e.currentTarget.value)}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <MButton
+                        onClick={() => {
+                          if (!bulkText.trim()) return;
+                          const parsed = parseBulk(bulkText);
+                          setLiftFloors(
+                            toUniqueSorted([...liftFloors, ...parsed])
+                          );
+                          setBulkText("");
+                        }}
+                      >
+                        Нэмэх
+                      </MButton>
+                      <MButton
+                        variant="default"
+                        onClick={() => setBulkText("")}
+                      >
+                        Цэвэрлэх
+                      </MButton>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-slate-500 mt-2">
+                  Формат: "1-5, 7, 9-11" эсвэл зай/мөрөөр тусгаарлаж болно.
+                  Давхрууд автоматаар цэгцлэгдэж, давхардал арилна.
                 </div>
               </div>
 
@@ -445,52 +601,73 @@ export default function AshiglaltiinZardluud() {
                     <h3 className="font-medium text-slate-800">
                       Сонгосон давхрууд ({liftFloors.length})
                     </h3>
-                    <Button
-                      danger
-                      type="link"
+                    <MButton
+                      variant="subtle"
+                      color="red"
                       onClick={() => setLiftFloors([])}
-                      size="small"
+                      size="xs"
                     >
                       Бүгдийг арилгах
-                    </Button>
+                    </MButton>
                   </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {liftFloors.map((floor) => (
-                      <div
+                  <div className="flex flex-wrap gap-2">
+                    {toUniqueSorted(liftFloors).map((floor) => (
+                      <Badge
                         key={floor}
-                        className="flex items-center justify-between bg-white/80 backdrop-blur-sm px-3 py-2 rounded-2xl border border-gray-200"
-                      >
-                        <span className="font-medium">{floor}</span>
-                        <button
-                          onClick={() =>
-                            setLiftFloors(liftFloors.filter((f) => f !== floor))
-                          }
-                          className="text-theme hover:text-red-500 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        >
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        color="blue"
+                        variant="filled"
+                        className="px-3 py-1 rounded-2xl"
+                        rightSection={
+                          <button
+                            aria-label="remove"
+                            className="ml-2 text-white/80 hover:text-white"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setLiftFloors(
+                                liftFloors.filter((f) => f !== floor)
+                              );
+                            }}
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+                            ×
+                          </button>
+                        }
+                      >
+                        Давхар {floor}
+                      </Badge>
                     ))}
                   </div>
                 </div>
               )}
             </div>
-          </Modal>
+            <div className="mt-4 flex justify-end gap-2">
+              <MButton
+                variant="default"
+                onClick={() => {
+                  setLiftModalOpen(false);
+                  if (liftFloors.length === 0) {
+                    setLiftEnabled(false);
+                  }
+                }}
+              >
+                Болих
+              </MButton>
+              <MButton
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                loading={isSavingLift}
+                disabled={liftFloors.length === 0}
+                onClick={() => {
+                  if (liftFloors.length === 0) return;
+                  saveLiftSettings(liftFloors);
+                  setLiftEnabled(true);
+                }}
+              >
+                Хадгалах
+              </MButton>
+            </div>
+          </MModal>
           {isLoadingAshiglaltiin ? (
             <div className="flex justify-center items-center p-10">
-              <Spin />
+              <Loader />
             </div>
           ) : ashiglaltiinZardluud.length === 0 ? (
             <div className="p-8 text-center text-theme">
@@ -509,37 +686,55 @@ export default function AshiglaltiinZardluud() {
                       </div>
                     )}
                   </div>
-                  <div className="ml-auto">
-                    <Input
-                      type="number"
-                      value={mur.tariff}
-                      onChange={(e) =>
-                        handleTariffChange(mur, Number(e.target.value), false)
-                      }
+                  <div className="ml-auto flex items-center gap-2">
+                    <MNumberInput
                       className="w-32 text-right text-theme"
-                      suffix="₮"
+                      value={
+                        editedTariffs[mur._id] !== undefined
+                          ? editedTariffs[mur._id]
+                          : mur.tariff
+                      }
+                      onChange={(v) =>
+                        setEditedTariffs((prev) => ({
+                          ...prev,
+                          [mur._id]: Number(v as number),
+                        }))
+                      }
+                      rightSection={
+                        <span className="text-slate-500 pr-1">₮</span>
+                      }
                     />
-                  </div>
-                  <div className="ml-5 flex space-x-2">
-                    <Popconfirm
-                      title={`Зардал устгах уу? (${mur.ner})`}
-                      okText="Тийм"
-                      cancelText="Үгүй"
-                      onConfirm={() => deleteZardal(mur._id)}
+                    <MButton
+                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      disabled={
+                        editedTariffs[mur._id] === undefined ||
+                        editedTariffs[mur._id] === mur.tariff
+                      }
+                      onClick={() => saveTariff(mur, false)}
                     >
-                      <div className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors">
-                        <Tooltip title="Устгах">
-                          <DeleteOutlined />
-                        </Tooltip>
-                      </div>
-                    </Popconfirm>
+                      Хадгалах
+                    </MButton>
+                  </div>
+                  <div className="ml-3 flex space-x-2">
+                    <div
+                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
+                      onClick={() => {
+                        if (confirm(`Зардал устгах уу? (${mur.ner})`)) {
+                          deleteZardal(mur._id);
+                        }
+                      }}
+                    >
+                      <MTooltip label="Устгах">
+                        <DeleteOutlined />
+                      </MTooltip>
+                    </div>
                     <div
                       className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-yellow-500 p-2 text-white hover:bg-yellow-600 transition-colors"
                       onClick={() => openEditModal(mur, false)}
                     >
-                      <Tooltip title="Засах">
+                      <MTooltip label="Засах">
                         <EditOutlined />
-                      </Tooltip>
+                      </MTooltip>
                     </div>
                   </div>
                 </div>
@@ -549,24 +744,20 @@ export default function AshiglaltiinZardluud() {
         </div>
       </div>
 
-      <Modal
+      <MModal
         title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
-        open={isModalOpen}
-        onOk={handleSave}
-        onCancel={() => setIsModalOpen(false)}
-        confirmLoading={isSaving}
-        okText="Хадгалах"
-        cancelText="Болих"
+        opened={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
       >
         <div className="space-y-4 mt-4">
           <div>
             <label className="block text-sm font-medium mb-1">
               Зардлын нэр
             </label>
-            <Input
+            <MTextInput
               value={formData.ner}
               onChange={(e) =>
-                setFormData({ ...formData, ner: e.target.value })
+                setFormData({ ...formData, ner: e.currentTarget.value })
               }
               placeholder="Зардлын нэр оруулах"
               className="text-theme"
@@ -575,15 +766,18 @@ export default function AshiglaltiinZardluud() {
 
           <div>
             <label className="block text-sm font-medium mb-1">Төрөл</label>
-            <Select
+            <MSelect
               value={formData.turul}
-              onChange={(value) => setFormData({ ...formData, turul: value })}
+              onChange={(value) =>
+                setFormData({ ...formData, turul: value ?? "" })
+              }
               className="w-full"
-              options={expenseTypes.map((type) => ({
+              data={expenseTypes.map((type) => ({
                 label: type,
                 value: type,
               }))}
               placeholder="Сонгох"
+              searchable
             />
           </div>
 
@@ -591,32 +785,32 @@ export default function AshiglaltiinZardluud() {
             <label className="block text-sm font-medium mb-1">
               Зардлын төрөл
             </label>
-            <Select
-              allowClear
+            <MSelect
+              clearable
               value={formData.lift ?? undefined}
               onChange={(value) =>
                 setFormData({ ...formData, lift: (value as string) ?? null })
               }
-              onClear={() => setFormData({ ...formData, lift: null })}
               className="w-full"
-              options={[
+              data={[
                 { label: "Лифт", value: "Лифт" },
                 { label: "Энгийн", value: "Энгийн" },
               ]}
               placeholder="Сонгох (Лифт)"
+              searchable
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Тариф (₮)</label>
-            <Input
-              type="number"
+            <MNumberInput
               value={formData.tariff}
-              onChange={(e) =>
-                setFormData({ ...formData, tariff: Number(e.target.value) })
+              onChange={(v) =>
+                setFormData({ ...formData, tariff: Number(v as number) })
               }
               placeholder="0"
               className="text-theme"
+              rightSection={<span className="text-slate-500 pr-1">₮</span>}
             />
           </div>
 
@@ -624,17 +818,17 @@ export default function AshiglaltiinZardluud() {
             <label className="block text-sm font-medium mb-1">
               Суурь хураамж
             </label>
-            <Input
-              type="number"
+            <MNumberInput
               value={formData.suuriKhuraamj}
-              onChange={(e) =>
+              onChange={(v) =>
                 setFormData({
                   ...formData,
-                  suuriKhuraamj: Number(e.target.value),
+                  suuriKhuraamj: Number(v as number),
                 })
               }
               placeholder="0"
               className="text-theme"
+              rightSection={<span className="text-slate-500 pr-1">₮</span>}
             />
           </div>
 
@@ -649,8 +843,20 @@ export default function AshiglaltiinZardluud() {
             />
             <label className="text-sm font-medium">НӨАТ бодох</label>
           </div>
+          <div className="mt-6 flex justify-end gap-2">
+            <MButton variant="default" onClick={() => setIsModalOpen(false)}>
+              Болих
+            </MButton>
+            <MButton
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+              loading={isSaving}
+              onClick={handleSave}
+            >
+              Хадгалах
+            </MButton>
+          </div>
         </div>
-      </Modal>
+      </MModal>
     </>
   );
 }

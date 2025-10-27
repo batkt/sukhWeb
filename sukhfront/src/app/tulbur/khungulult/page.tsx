@@ -15,7 +15,6 @@ import {
 } from "@ant-design/icons";
 import {
   Button,
-  DatePicker,
   Form,
   Input,
   Popconfirm,
@@ -25,10 +24,9 @@ import {
   Tabs,
   Switch,
 } from "antd";
+import { DatePickerInput, MonthPickerInput } from "@mantine/dates";
 import type { TableColumnsType } from "antd";
-import type { Dayjs } from "dayjs";
 import dayjs from "dayjs";
-const { RangePicker } = DatePicker;
 interface GereeData {
   _id: string;
   ner: string;
@@ -67,15 +65,17 @@ interface KhungulultData {
 }
 
 const TulburTootsoo: React.FC = () => {
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<[Dayjs, Dayjs]>([
-    dayjs(),
-    dayjs(),
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<[Date | null, Date | null]>([
+    new Date(),
+    new Date(),
   ]);
   const formRef = useRef<any>(null);
   const [songogdsonGereenuud, setSongogdsonGereenuud] = useState<GereeData[]>(
     []
   );
-  const [ognoonuud, setOgnoonuud] = useState<[Dayjs, Dayjs] | null>(null);
+  const [ognoonuud, setOgnoonuud] = useState<[Date | null, Date | null] | null>(
+    null
+  );
   const [khonogTootsokhEsekh, setKhonogTootsokhEsekh] =
     useState<boolean>(false);
   const [turul, setTurul] = useState<string>("turees");
@@ -621,20 +621,26 @@ const TulburTootsoo: React.FC = () => {
                         },
                       ]}
                     >
-                      <RangePicker
+                      <DatePickerInput
+                        type="range"
                         className="w-full sm:w-auto !bg-transparent rounded-xl hover:shadow-md transition-all duration-300 z-9999"
-                        size="large"
                         value={ekhlekhOgnoo}
                         onChange={(v) => {
-                          if (v && v[0] && v[1]) {
-                            setOgnoonuud([v[0], v[1]]);
+                          const dates = (v || [null, null]) as [
+                            Date | null,
+                            Date | null
+                          ];
+                          setEkhlekhOgnoo(dates);
+                          if (dates[0] && dates[1]) {
+                            setOgnoonuud([dates[0], dates[1]]);
                             form.setFieldValue(
                               "khungulultKhonog",
-                              v[1].diff(v[0], "d") + 1
+                              dayjs(dates[1]).diff(dayjs(dates[0]), "d") + 1
                             );
                             khungulukhDunTootsoolyo();
                           }
                         }}
+                        locale="mn"
                       />
                     </Form.Item>
                   ) : (
@@ -649,17 +655,19 @@ const TulburTootsoo: React.FC = () => {
                         },
                       ]}
                     >
-                      <DatePicker.RangePicker
-                        allowClear={false}
+                      <MonthPickerInput
+                        type="range"
                         style={{ width: "100%" }}
                         className="text-theme"
-                        picker="month"
-                        placeholder={["Эхлэх сар", "Дуусах сар"]}
+                        placeholder={"Сар"}
                         onChange={(v) => {
-                          if (v && v[0] && v[1]) {
-                            setOgnoonuud([v[0], v[1]]);
-                          }
+                          const dates = (v || [null, null]) as [
+                            Date | null,
+                            Date | null
+                          ];
+                          setOgnoonuud(dates);
                         }}
+                        locale="mn"
                       />
                     </Form.Item>
                   )}
@@ -920,16 +928,17 @@ const TulburTootsoo: React.FC = () => {
             <div className="grid w-full grid-cols-12 gap-6">
               <div className="box col-span-12 p-5 md:col-span-8 xl:col-span-12">
                 <div className="mt-5 flex w-full flex-row justify-between">
-                  <DatePicker.RangePicker
+                  <DatePickerInput
+                    type="range"
                     style={{ marginBottom: "20px" }}
-                    size="middle"
                     value={ekhlekhOgnoo}
                     className="text-theme"
                     onChange={(dates) => {
-                      if (dates && dates[0] && dates[1]) {
-                        setEkhlekhOgnoo([dates[0], dates[1]]);
-                      }
+                      setEkhlekhOgnoo(
+                        (dates || [null, null]) as [Date | null, Date | null]
+                      );
                     }}
+                    locale="mn"
                   />
                 </div>
 

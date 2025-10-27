@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DatePicker, Progress, Select } from "antd";
-import local from "antd/lib/date-picker/locale/mn_MN";
-import dayjs, { Dayjs } from "dayjs";
+import { DatePickerInput } from "@mantine/dates";
+import { Select, Progress } from "@mantine/core";
+import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import {
   Chart as ChartJS,
@@ -62,9 +62,9 @@ const Chart: React.FC<ChartProps> = ({
   defaultTailan = "borluulaltiinTailanAvya",
 }) => {
   const { t } = useTranslation();
-  const [ognoo, setOgnoo] = useState<[Dayjs | null, Dayjs | null]>([
-    dayjs().startOf("month"),
-    dayjs().endOf("month"),
+  const [ognoo, setOgnoo] = useState<[Date | null, Date | null]>([
+    dayjs().startOf("month").toDate(),
+    dayjs().endOf("month").toDate(),
   ]);
   const [tailan, setTailan] = useState(defaultTailan);
   const [tailanTurul, setTailanTurul] = useState(defaultTurul);
@@ -194,51 +194,46 @@ const Chart: React.FC<ChartProps> = ({
     <div className="box col-span-12 p-2 md:col-span-6">
       <div className="flex w-full flex-col space-y-1 pb-5 md:flex-row md:justify-between md:space-y-0">
         <div className="flex flex-col gap-1 md:flex-row">
-          <Select placeholder={t("Тайлан")} onChange={setTailan} value={tailan}>
-            {tailanguud.map((a) => (
-              <Select.Option key={a.service} value={a.service}>
-                {t(a.ner)}
-              </Select.Option>
-            ))}
-          </Select>
+          <Select
+            placeholder={t("Тайлан")}
+            value={tailan}
+            onChange={(v) => v && setTailan(v)}
+            data={tailanguud.map((a) => ({
+              value: a.service,
+              label: t(a.ner),
+            }))}
+          />
           <Select
             placeholder={t("График төрөл")}
             value={tailanTurul}
-            onChange={setTailanTurul}
-          >
-            {[
-              { val: "line", lab: "Шугаман" },
-              { val: "bar", lab: "Босоо багана" },
-              { val: "barHorizontal", lab: "Хэвтээ багана" },
-            ].map((a) => (
-              <Select.Option key={a.val} value={a.val}>
-                {t(a.lab)}
-              </Select.Option>
-            ))}
-          </Select>
+            onChange={(v) =>
+              v && setTailanTurul(v as "line" | "bar" | "barHorizontal")
+            }
+            data={[
+              { value: "line", label: t("Шугаман") },
+              { value: "bar", label: t("Босоо багана") },
+              { value: "barHorizontal", label: t("Хэвтээ багана") },
+            ]}
+          />
           <Select
             placeholder={t("Нарийвчлал")}
             value={nariivchlal}
-            onChange={setNariivchlal}
-          >
-            {[
-              { val: "day", lab: "Өдөр" },
-              { val: "month", lab: "Сар" },
-              { val: "year", lab: "Жил" },
-            ].map((a) => (
-              <Select.Option key={a.val} value={a.val}>
-                {t(a.lab)}
-              </Select.Option>
-            ))}
-          </Select>
+            onChange={(v) => v && setNariivchlal(v)}
+            data={[
+              { value: "day", label: t("Өдөр") },
+              { value: "month", label: t("Сар") },
+              { value: "year", label: t("Жил") },
+            ]}
+          />
         </div>
 
-        <DatePicker.RangePicker
+        <DatePickerInput
+          type="range"
           value={ognoo}
-          onChange={(dates, dateStrings) => {
-            if (dates) setOgnoo(dates as [Dayjs | null, Dayjs | null]);
-          }}
-          locale={local}
+          onChange={(dates) =>
+            setOgnoo((dates || [null, null]) as [Date | null, Date | null])
+          }
+          locale="mn"
         />
       </div>
 
@@ -255,10 +250,9 @@ const Chart: React.FC<ChartProps> = ({
               <div className="table-cell w-1/12 p-1">{t(a.ner)}</div>
               <div className="table-cell w-9/12 p-1">
                 <Progress
-                  size="small"
-                  trailColor={a.ungu}
-                  strokeColor={a.ungu}
-                  percent={Number(((a.dun * 100) / total).toFixed(0))}
+                  size="sm"
+                  color={a.ungu}
+                  value={Number(((a.dun * 100) / total).toFixed(0))}
                 />
               </div>
               <div className="table-cell w-2/12 p-1 text-right">

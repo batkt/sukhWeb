@@ -80,30 +80,102 @@ const fetcherJagsaalt = async ([
   string | undefined
 ]): Promise<any> => {
   try {
-    const response = await uilchilgee(token).get(url, {
-      params: {
-        baiguullagiinId,
-        query: {
-          baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-          $or: [
-            { ner: { $regex: khuudaslalt.search || "", $options: "i" } },
-            {
-              gereeniiDugaar: {
-                $regex: khuudaslalt.search || "",
-                $options: "i",
-              },
-            },
-            { register: { $regex: khuudaslalt.search || "", $options: "i" } },
-          ],
-          ...query,
-        },
-        khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
-        khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
-      },
-    });
+    // Build unified query object
+    const queryObj: any = {
+      ...query,
+    };
+    // Ensure org/branch also exist in nested query (some backends read only nested query)
+    if (baiguullagiinId != null && baiguullagiinId !== "") {
+      queryObj.baiguullagiinId = baiguullagiinId;
+    }
+    if (barilgiinId != null && barilgiinId !== "") {
+      queryObj.barilgiinId = barilgiinId;
+    }
+    // Add search filters
+    const search = khuudaslalt.search || "";
+    queryObj.$or = [
+      { ner: { $regex: search, $options: "i" } },
+      { gereeniiDugaar: { $regex: search, $options: "i" } },
+      { register: { $regex: search, $options: "i" } },
+    ];
 
-    return response.data;
+    const paramsBase: any = {
+      baiguullagiinId,
+      khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
+      khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
+      query: JSON.stringify(queryObj),
+    };
+    if (barilgiinId) paramsBase.barilgiinId = barilgiinId;
+
+    // Primary fetch (branch-scoped if barilgiinId exists)
+    const response = await uilchilgee(token).get(url, { params: paramsBase });
+    const data = response.data;
+    const list = Array.isArray(data?.jagsaalt)
+      ? data.jagsaalt
+      : Array.isArray(data)
+      ? data
+      : [];
+
+    // If branch-scoped query returns empty, try org-wide fallback
+    if (barilgiinId && (!list || list.length === 0)) {
+      const resp2 = await uilchilgee(token).get(url, {
+        params: {
+          ...paramsBase,
+          barilgiinId: undefined,
+          query: JSON.stringify({ ...queryObj, barilgiinId: undefined }),
+        },
+      });
+      const d2 = resp2.data;
+      const l2 = Array.isArray(d2?.jagsaalt)
+        ? d2.jagsaalt
+        : Array.isArray(d2)
+        ? d2
+        : [];
+      // Client-side enforcement for org
+      const toStr = (v: any) => (v == null ? "" : String(v));
+      const filtered2 = l2.filter(
+        (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
+      );
+      if (Array.isArray(d2?.jagsaalt)) {
+        return {
+          ...d2,
+          jagsaalt: filtered2,
+          niitMur: filtered2.length,
+          niitKhuudas: d2?.khuudasniiKhemjee
+            ? Math.max(
+                1,
+                Math.ceil(filtered2.length / Number(d2.khuudasniiKhemjee))
+              )
+            : d2?.niitKhuudas ?? 1,
+        } as GereeResponse;
+      }
+      return filtered2 as Geree[];
+    }
+
+    // Client-side enforcement for org/branch
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    const filtered = list.filter((it: any) => {
+      const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
+      if (!orgOk) return false;
+      if (!barilgiinId) return true;
+      return (
+        it?.barilgiinId == null || toStr(it.barilgiinId) === toStr(barilgiinId)
+      );
+    });
+    if (Array.isArray(data?.jagsaalt)) {
+      return {
+        ...data,
+        jagsaalt: filtered,
+        niitMur: filtered.length,
+        niitKhuudas: data?.khuudasniiKhemjee
+          ? Math.max(
+              1,
+              Math.ceil(filtered.length / Number(data.khuudasniiKhemjee))
+            )
+          : data?.niitKhuudas ?? 1,
+      } as GereeResponse;
+    }
+    return filtered as Geree[];
   } catch (error: any) {
     console.error("Geree API Error:", error);
     aldaaBarigch(error);
@@ -165,14 +237,11 @@ export function useGereeCRUD() {
     }
 
     try {
-      const response = await uilchilgee(token).post<GereeResponse>(
-        "/geree",
-        {
-          ...gereeData,
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: barilgiinId,
-        }
-      );
+      const response = await uilchilgee(token).post<GereeResponse>("/geree", {
+        ...gereeData,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: barilgiinId,
+      });
 
       if (response.status === 200 || response.data.success !== false) {
         toast.success(response.data.message || "Гэрээ амжилттай үүсгэгдлээ");
@@ -228,7 +297,6 @@ export function useGereeCRUD() {
         {
           data: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            
           },
         }
       );

@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { DatePicker, notification, Tag } from "antd";
+import { DatePickerInput } from "@mantine/dates";
+import { notification, Tag } from "antd";
 import Aos from "aos";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 
-const { RangePicker } = DatePicker;
+// Mantine DatePickerInput is used instead of AntD RangePicker
 
 type TurulType = "sanal" | "gomdol";
 
@@ -43,7 +44,9 @@ export default function SanalKhuselt() {
   const { t } = useTranslation();
 
   const [turul, setTurul] = useState<TurulType>("sanal");
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<any>(null);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
+    [string | null, string | null] | undefined
+  >(undefined);
   const [khariltsagch, setKhariltsagch] = useState<Khariltsagch | null>(null);
   const [expandedName, setExpandedName] = useState<string | null>(null);
   const [showAcceptedBadge, setShowAcceptedBadge] = useState(false);
@@ -194,9 +197,17 @@ export default function SanalKhuselt() {
           transition={{ duration: 0.5 }}
           className="flex w-1/3 flex-col space-y-3 bg-transparent"
         >
-          <RangePicker
-            placeholder={[t("Эхлэх"), t("Дуусах")]}
-            onChange={(dates) => setEkhlekhOgnoo(dates)}
+          <DatePickerInput
+            type="range"
+            locale="mn"
+            valueFormat="YYYY-MM-DD"
+            placeholder={`${t("Эхлэх")} – ${t("Дуусах")}`}
+            value={ekhlekhOgnoo}
+            onChange={(dates) =>
+              setEkhlekhOgnoo(
+                (dates || [null, null]) as [string | null, string | null]
+              )
+            }
             className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900 rounded-xl"
           />
 

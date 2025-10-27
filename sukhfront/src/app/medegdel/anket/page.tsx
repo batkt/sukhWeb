@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Button,
-  DatePicker,
   Form,
   FormInstance,
   Input,
@@ -20,6 +19,7 @@ import {
   Radio,
   Select,
 } from "antd";
+import { DatePickerInput } from "@mantine/dates";
 import {
   CloseCircleOutlined,
   DeleteOutlined,
@@ -221,7 +221,7 @@ type AnketiinZagvarProps = {
   anketUstgay: (data: Record<string, unknown>) => void;
   data: Record<string, unknown> | undefined;
   anketIlgeeye: (data: Record<string, unknown>) => void;
-  ognoo: [Dayjs, Dayjs];
+  ognoo: [Date | null, Date | null];
 };
 
 function AnketiinZagvar({
@@ -236,12 +236,14 @@ function AnketiinZagvar({
 
   // Filter static data based on date range
   const khariult = useMemo(() => {
-    const filtered = staticKhariultData.filter(
-      (k) =>
+    const filtered = staticKhariultData.filter((k) => {
+      if (!ognoo[0] || !ognoo[1]) return k.asuultiinId === a._id;
+      return (
         k.asuultiinId === a._id &&
-        dayjs(k.ognoo).isAfter(ognoo[0]) &&
-        dayjs(k.ognoo).isBefore(ognoo[1])
-    );
+        dayjs(k.ognoo).isAfter(dayjs(ognoo[0])) &&
+        dayjs(k.ognoo).isBefore(dayjs(ognoo[1]))
+      );
+    });
     return { jagsaalt: filtered };
   }, [a._id, ognoo]);
 
@@ -374,9 +376,9 @@ function AnketiinZagvar({
 
 export default function Page() {
   const { t } = useTranslation();
-  const [ognoo, setOgnoo] = useState<[Dayjs, Dayjs]>([
-    dayjs(new Date()).subtract(1, "month"),
-    dayjs(new Date()),
+  const [ognoo, setOgnoo] = useState<[Date | null, Date | null]>([
+    dayjs(new Date()).subtract(1, "month").toDate(),
+    new Date(),
   ]);
   const [data, setData] = useState<Record<string, unknown> | undefined>(
     undefined
@@ -469,18 +471,18 @@ export default function Page() {
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
-              <DatePicker.RangePicker
+              <DatePickerInput
+                type="range"
                 onClick={(e) => e.stopPropagation()}
                 className="flex w-full rounded-2xl md:w-auto"
-                size="middle"
-                allowClear={true}
-                placeholder={["Эхлэх огноо", "Дуусах огноо"]}
+                placeholder={"Огноо"}
                 value={ognoo}
                 onChange={(dates) => {
-                  if (dates && dates[0] && dates[1]) {
-                    setOgnoo([dates[0], dates[1]]);
-                  }
+                  setOgnoo(
+                    (dates || [null, null]) as [Date | null, Date | null]
+                  );
                 }}
+                locale="mn"
               />
             </div>
             <div

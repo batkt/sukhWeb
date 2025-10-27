@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@mantine/core": "^8.3.5",
+    "@mantine/dates": "^8.3.5",
+    "@mantine/hooks": "^8.3.5",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tiptap/extension-text-align": "^3.7.2",
     "@tiptap/react": "^3.7.2",
@@ -16,6 +19,7 @@
     "antd": "^5.27.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dayjs": "^1.11.18",
     "framer-motion": "^12.23.22",
     "i18next": "^25.5.3",
     "jwt-decode": "^4.0.0",

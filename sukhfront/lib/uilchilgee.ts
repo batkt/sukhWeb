@@ -1,5 +1,5 @@
-import { notification } from "antd";
-import axios, { AxiosError, AxiosInstance } from "axios";
+import toast from "react-hot-toast";
+import axios, { AxiosInstance } from "axios";
 import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
 
@@ -18,10 +18,8 @@ export const aldaaBarigch = (e: any): void => {
   if (errorMessage === "jwt expired" || errorMessage === "jwt malformed") {
     window.location.href = "/";
   } else if (errorMessage) {
-    notification.warning({
-      description: t(errorMessage),
-      message: t("Анхааруулга"),
-    });
+    // Show warning toast in Mongolian
+    toast.error(t(errorMessage));
   }
 };
 

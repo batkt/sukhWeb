@@ -252,11 +252,11 @@ const InvoiceModal = ({
               ...(barilgiinId ? { barilgiinId } : {}),
               khuudasniiDugaar: 1,
               khuudasniiKhemjee: 50,
-              query: {
+              query: JSON.stringify({
                 baiguullagiinId,
                 ...(barilgiinId ? { barilgiinId } : {}),
                 orshinSuugchId: String(resident._id || ""),
-              },
+              }),
             },
           });
           const gList = Array.isArray(gResp.data?.jagsaalt)
@@ -278,13 +278,13 @@ const InvoiceModal = ({
             ...(barilgiinId ? { barilgiinId } : {}),
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 10,
-            query: {
+            query: JSON.stringify({
               baiguullagiinId,
               ...(barilgiinId ? { barilgiinId } : {}),
               ...(gereeniiId
                 ? { gereeniiId }
                 : { orshinSuugchId: String(resident._id || "") }),
-            },
+            }),
           },
         });
         const data = resp.data;
@@ -303,10 +303,22 @@ const InvoiceModal = ({
           : Array.isArray(latest?.zardluud)
           ? latest.zardluud
           : [];
+        const pickAmount = (obj: any) => {
+          const n = (v: any) => {
+            const num = Number(v);
+            return Number.isFinite(num) ? num : null;
+          };
+          const dun = n(obj?.dun);
+          if (dun !== null && dun > 0) return dun;
+          const td = n(obj?.tulukhDun);
+          if (td !== null && td > 0) return td;
+          const tar = n(obj?.tariff);
+          return tar ?? 0;
+        };
         const norm = (z: any, idx: number) => ({
           _id: z._id || `inv-${idx}`,
           ner: z.ner || z.name || "",
-          tariff: Number(z.dun ?? z.tulukhDun ?? z.tariff ?? 0),
+          tariff: pickAmount(z),
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
         });
@@ -325,11 +337,23 @@ const InvoiceModal = ({
 
   const backendRows: Zardal[] | null = React.useMemo(() => {
     const raw = (gereeData as any)?.zardluud || [];
+    const pickAmount = (obj: any) => {
+      const n = (v: any) => {
+        const num = Number(v);
+        return Number.isFinite(num) ? num : null;
+      };
+      const dun = n(obj?.dun);
+      if (dun !== null && dun > 0) return dun;
+      const td = n(obj?.tulukhDun);
+      if (td !== null && td > 0) return td;
+      const tar = n(obj?.tariff);
+      return tar ?? 0;
+    };
     return Array.isArray(raw)
       ? raw.map((r: any, idx: number) => ({
           _id: r._id || `row-${idx}`,
           ner: r.ner || r.name || "",
-          tariff: Number(r.dun ?? r.tulukhDun ?? r.tariff ?? 0),
+          tariff: pickAmount(r),
           turul: r.turul,
           zardliinTurul: r.zardliinTurul,
         }))
@@ -359,14 +383,24 @@ const InvoiceModal = ({
                 .toLowerCase() === "лифт"
           )
         : [];
+      const pickAmount = (obj: any) => {
+        const n = (v: any) => {
+          const num = Number(v);
+          return Number.isFinite(num) ? num : null;
+        };
+        const dun = n(obj?.dun);
+        if (dun !== null && dun > 0) return dun;
+        const td = n(obj?.tulukhDun);
+        if (td !== null && td > 0) return td;
+        const tar = n(obj?.tariff);
+        return tar ?? 0;
+      };
       const liftTariffAbs =
-        liftEntries.length > 0
-          ? Math.abs(Number(liftEntries[0]?.tariff ?? 0))
-          : 0;
+        liftEntries.length > 0 ? Math.abs(pickAmount(liftEntries[0])) : 0;
 
       const nonLift = backendRows.filter((z) => !isLiftItem(z));
 
-      if (liftTariffAbs > 0) {
+      if (isLiftExempt && liftTariffAbs > 0) {
         return [
           ...nonLift,
           {
@@ -783,12 +817,32 @@ export default function InvoicingZardluud() {
       barilga: selectedBarilga || undefined,
       turul: selectedTurul || undefined,
     });
-  }, [selectedDavkhar, selectedBarilga, searchTerm]);
+  }, [selectedDavkhar, selectedBarilga, selectedTurul, searchTerm]);
 
   const residents = orshinSuugchGaralt?.jagsaalt || [];
 
   const displayResidents = useMemo(() => {
     let items = [...residents];
+
+    // Final guard: enforce org/branch scoping on client in case backend over-returns
+    const orgItems = items.filter(
+      (r: any) =>
+        String(r?.baiguullagiinId || "") ===
+        String(ajiltan?.baiguullagiinId || "")
+    );
+    let branchItems = orgItems;
+    if (barilgiinId) {
+      branchItems = orgItems.filter(
+        (r: any) =>
+          r?.barilgiinId == null ||
+          String(r.barilgiinId) === String(barilgiinId)
+      );
+      // If branch filter yields nothing, fall back to org-only
+      if (branchItems.length === 0) {
+        branchItems = orgItems;
+      }
+    }
+    items = branchItems;
 
     const q = (searchTerm || "").trim().toLowerCase();
     if (q) {
@@ -825,21 +879,25 @@ export default function InvoicingZardluud() {
   const totalRecords = displayResidents.length;
 
   useEffect(() => {
-    if (residents.length > 0) {
+    if (displayResidents.length > 0) {
       const uniqueDavkhar = [
-        ...new Set(residents.map((r: any) => r.davkhar).filter(Boolean)),
+        ...new Set(displayResidents.map((r: any) => r.davkhar).filter(Boolean)),
       ];
       const uniqueBarilga = [
-        ...new Set(residents.map((r: any) => r.barilga).filter(Boolean)),
+        ...new Set(displayResidents.map((r: any) => r.barilga).filter(Boolean)),
       ];
       const uniqueTurul = [
-        ...new Set(residents.map((r: any) => r.turul).filter(Boolean)),
+        ...new Set(displayResidents.map((r: any) => r.turul).filter(Boolean)),
       ];
       setDavkharList(uniqueDavkhar as string[]);
       setBarilgaList(uniqueBarilga as string[]);
       setTurulList(uniqueTurul as string[]);
+    } else {
+      setDavkharList([]);
+      setBarilgaList([]);
+      setTurulList([]);
     }
-  }, [residents]);
+  }, [displayResidents]);
 
   const handleSelectAll = () => {
     if (selectedExpenses.length === displayResidents.length) {
@@ -876,12 +934,14 @@ export default function InvoicingZardluud() {
         const gereeResp = await uilchilgee(token).get(`/geree`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 100,
-            query: {
+            query: JSON.stringify({
               baiguullagiinId: ajiltan.baiguullagiinId,
+              ...(barilgiinId ? { barilgiinId } : {}),
               orshinSuugchId: String(resident?._id || ""),
-            },
+            }),
           },
         });
         const gListRaw = Array.isArray(gereeResp.data?.jagsaalt)
@@ -919,10 +979,12 @@ export default function InvoicingZardluud() {
       const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 10,
           query: {
             baiguullagiinId: ajiltan.baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
             ...(gereeniiId
               ? { gereeniiId }
               : { orshinSuugchId: String(resident._id || "") }),
@@ -958,26 +1020,44 @@ export default function InvoicingZardluud() {
       if (!token || !ajiltan?.baiguullagiinId) return;
       try {
         const resp = await fetch(
-          `${API_URL}/liftShalgaya?baiguullagiinId=${ajiltan.baiguullagiinId}&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
+          `${API_URL}/liftShalgaya?baiguullagiinId=${ajiltan.baiguullagiinId}&${
+            barilgiinId ? `barilgiinId=${barilgiinId}&` : ""
+          }khuudasniiDugaar=1&khuudasniiKhemjee=100`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!resp.ok) return;
         const data = await resp.json();
         const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
-        const sorted = [...list].sort(
-          (a, b) =>
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime()
-        );
-        const mostRecent = sorted[0];
-        const floors: string[] = Array.isArray(mostRecent?.choloolugdokhDavkhar)
-          ? mostRecent.choloolugdokhDavkhar.map((f: any) => String(f))
+        // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
+        const toStr = (v: any) => (v == null ? "" : String(v));
+        const branchMatches = barilgiinId
+          ? list.filter(
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId)
+            )
+          : [];
+        const pickLatest = (arr: any[]) =>
+          [...arr].sort(
+            (a, b) =>
+              new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+              new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+          )[0];
+        let chosen =
+          branchMatches.length > 0 ? pickLatest(branchMatches) : null;
+        if (!chosen) {
+          const orgDefaults = list.filter(
+            (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
+          );
+          chosen =
+            orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
+        }
+        const floors: string[] = Array.isArray(chosen?.choloolugdokhDavkhar)
+          ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
           : [];
         setLiftFloors(floors);
       } catch {}
     };
     fetchLiftFloors();
-  }, [token, ajiltan?.baiguullagiinId]);
+  }, [token, ajiltan?.baiguullagiinId, barilgiinId]);
 
   const isLoading = isLoadingExpenses || isLoadingResidents;
 
@@ -1163,13 +1243,14 @@ export default function InvoicingZardluud() {
                           <td className="p-3">
                             <div className="flex justify-center">
                               <span
-                                className={`badge-status ${
-                                  resident.tuluv === "Төлсөн"
-                                    ? "badge-paid"
+                                className={
+                                  "px-3 py-1 rounded-full text-xs font-medium " +
+                                  (resident.tuluv === "Төлсөн"
+                                    ? "bg-green-100 text-green-700"
                                     : resident.tuluv === "Төлөөгүй"
-                                    ? "badge-unpaid"
-                                    : "badge-unknown"
-                                }`}
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-slate-100 text-slate-700")
+                                }
                               >
                                 {resident.tuluv || "Тодорхойгүй"}
                               </span>
