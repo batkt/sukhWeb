@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
+import ThemedLogo from "@/components/ui/ThemedLogo";
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -126,12 +127,14 @@ export default function GolContent({ children }: GolContentProps) {
           <div className="max-w-[1600px] mx-auto px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-12">
-                <img
-                  src="/logo.png"
-                  alt="Logo"
-                  className="w-12 h-12 rounded-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                <button
+                  type="button"
                   onClick={() => router.push("/khynalt")}
-                />
+                  className="rounded-2xl hover:scale-105 transition-transform duration-300"
+                  aria-label="Go to dashboard"
+                >
+                  <ThemedLogo size={48} />
+                </button>
                 <div className="flex items-center gap-3">
                   <span className="text-4xl font-extrabold font-serif italic text-[color:var(--panel-text)]">
                     Амар Сөх
@@ -204,24 +207,6 @@ export default function GolContent({ children }: GolContentProps) {
                   className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
                 >
                   <Settings className="w-5 h-5" />
-                </button>
-
-                <button className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="lucide lucide-bell w-5 h-5"
-                  >
-                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
-                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
-                  </svg>
                 </button>
 
                 {isLoggedIn && (

@@ -30,6 +30,8 @@ import toast from "react-hot-toast";
 import { DatePickerInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import LordIcon from "@/components/ui/LordIcon";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import {
   isValidName,
@@ -87,6 +89,13 @@ export default function Geree() {
   const [showResidentModal, setShowResidentModal] = useState(false);
   const [showList2Modal, setShowList2Modal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  // Container refs for modal panels to scope Enter key primary lookup
+  const contractRef = useRef<HTMLDivElement | null>(null);
+  const residentRef = useRef<HTMLDivElement | null>(null);
+  const employeeRef = useRef<HTMLDivElement | null>(null);
+  const list2Ref = useRef<HTMLDivElement | null>(null);
+  const templatesRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -107,7 +116,7 @@ export default function Geree() {
     null
   );
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
-  const [showPreviewModal, setShowPreviewModal] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
@@ -219,6 +228,33 @@ export default function Geree() {
     ajildOrsonOgnoo: "",
     nevtrekhNer: "",
     nuutsUg: "",
+  });
+
+  // Keyboard shortcuts for all modals
+  useModalHotkeys({
+    isOpen: showContractModal,
+    onClose: () => setShowContractModal(false),
+    container: contractRef.current,
+  });
+  useModalHotkeys({
+    isOpen: showResidentModal,
+    onClose: () => setShowResidentModal(false),
+    container: residentRef.current,
+  });
+  useModalHotkeys({
+    isOpen: showEmployeeModal,
+    onClose: () => setShowEmployeeModal(false),
+    container: employeeRef.current,
+  });
+  useModalHotkeys({
+    isOpen: showList2Modal,
+    onClose: () => setShowList2Modal(false),
+    container: list2Ref.current,
+  });
+  useModalHotkeys({
+    isOpen: showTemplatesModal,
+    onClose: () => setShowTemplatesModal(false),
+    container: templatesRef.current,
   });
 
   useEffect(() => {
@@ -1572,6 +1608,7 @@ export default function Geree() {
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
+                ref={contractRef}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -1586,7 +1623,11 @@ export default function Geree() {
                     onClick={() => setShowContractModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/jtqpkhoh.json"
+                      trigger="hover"
+                      size={24}
+                    />
                   </button>
                 </div>
 
@@ -2112,6 +2153,7 @@ export default function Geree() {
                             setCurrentStep((s: number) => Math.min(3, s + 1));
                           }}
                           className="btn-minimal btn-next"
+                          data-modal-primary
                         >
                           Дараах
                         </button>
@@ -2120,6 +2162,7 @@ export default function Geree() {
                           type="submit"
                           disabled={!isFormValid()}
                           className="btn-minimal btn-save h-11"
+                          data-modal-primary
                         >
                           {editingContract ? "Хадгалах" : "Гэрээ үүсгэх"}
                         </button>
@@ -2141,6 +2184,7 @@ export default function Geree() {
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
+                ref={residentRef}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -2157,7 +2201,11 @@ export default function Geree() {
                     onClick={() => setShowResidentModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/jtqpkhoh.json"
+                      trigger="hover"
+                      size={24}
+                    />
                   </button>
                 </div>
 
@@ -2413,6 +2461,7 @@ export default function Geree() {
                       <button
                         type="submit"
                         className="btn-minimal btn-save h-11"
+                        data-modal-primary
                       >
                         {editingResident ? "Хадгалах" : "Хадгалах"}
                       </button>
@@ -2440,6 +2489,7 @@ export default function Geree() {
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
+                ref={employeeRef}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -2454,7 +2504,11 @@ export default function Geree() {
                     onClick={() => setShowEmployeeModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   >
-                    <X className="w-5 h-5" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/jtqpkhoh.json"
+                      trigger="hover"
+                      size={24}
+                    />
                   </button>
                 </div>
                 <form
@@ -2567,17 +2621,24 @@ export default function Geree() {
                       <label className="block text-sm font-medium text-slate-700 mb-1">
                         Ажилд орсон огноо
                       </label>
-                      <input
-                        type="date"
-                        value={newEmployee.ajildOrsonOgnoo}
-                        onChange={(e) =>
+                      <DatePickerInput
+                        value={
+                          newEmployee.ajildOrsonOgnoo
+                            ? new Date(newEmployee.ajildOrsonOgnoo)
+                            : null
+                        }
+                        onChange={(v) =>
                           setNewEmployee((p: any) => ({
                             ...p,
-                            ajildOrsonOgnoo: e.target.value,
+                            ajildOrsonOgnoo: v
+                              ? new Date(v).toISOString().slice(0, 10)
+                              : "",
                           }))
                         }
-                        className="w-full p-3 rounded-2xl border"
+                        placeholder="Огноо сонгох"
+                        className="w-full"
                         required
+                        clearable
                       />
                     </div>
                     <div>
@@ -2616,7 +2677,11 @@ export default function Geree() {
                     </div>
                   </div>
                   <div className="flex justify-end gap-2">
-                    <button type="submit" className="btn-minimal btn-save">
+                    <button
+                      type="submit"
+                      className="btn-minimal btn-save"
+                      data-modal-primary
+                    >
                       {editingEmployee ? "Хадгалах" : "Хадгалах"}
                     </button>
                     <button
@@ -2643,6 +2708,7 @@ export default function Geree() {
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
+                ref={list2Ref}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -2653,15 +2719,29 @@ export default function Geree() {
                   <h3 className="text-xl font-semibold text-slate-900">
                     Гэрээний Загвар
                   </h3>
-                  <button
-                    onClick={() => {
-                      setShowList2Modal(false);
-                      router.push("/geree/zagvar/gereeniiZagvar");
-                    }}
-                    className="btn-minimal"
-                  >
-                    Шинэ загвар
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowList2Modal(false)}
+                      className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                      data-modal-primary
+                      title="Хаах"
+                    >
+                      <LordIcon
+                        src="https://cdn.lordicon.com/jtqpkhoh.json"
+                        trigger="hover"
+                        size={22}
+                      />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowList2Modal(false);
+                        router.push("/geree/zagvar/gereeniiZagvar");
+                      }}
+                      className="btn-minimal"
+                    >
+                      Шинэ загвар
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-3 max-h-[70vh] overflow-y-auto">
                   {(zagvaruud || []).map((z: any) => (
@@ -2681,21 +2761,33 @@ export default function Geree() {
                           className="p-2 hover:bg-blue-100 rounded-2xl"
                           title="Харах"
                         >
-                          <Eye className="w-4 h-4 text-blue-500" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/tyounuzx.json"
+                            trigger="hover"
+                            size={20}
+                          />
                         </button>
                         <button
                           onClick={() => handleEditTemplate(z._id)}
                           className="p-2 hover:bg-blue-100 rounded-2xl"
                           title="Засах"
                         >
-                          <Edit className="w-4 h-4 action-edit" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/wuvorxbv.json"
+                            trigger="hover"
+                            size={20}
+                          />
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(z._id)}
                           className="p-2 hover:bg-red-50 rounded-2xl action-delete"
                           title="Устгах"
                         >
-                          <Trash2 className="w-4 h-4 action-delete" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/kfzfxczd.json"
+                            trigger="hover"
+                            size={20}
+                          />
                         </button>
                       </div>
                     </div>
@@ -2716,6 +2808,7 @@ export default function Geree() {
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
+                ref={templatesRef}
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
@@ -2729,8 +2822,13 @@ export default function Geree() {
                   <button
                     onClick={() => setShowTemplatesModal(false)}
                     className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                    data-modal-primary
                   >
-                    <X className="w-5 h-5" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/jtqpkhoh.json"
+                      trigger="hover"
+                      size={22}
+                    />
                   </button>
                 </div>
 
@@ -2752,7 +2850,11 @@ export default function Geree() {
                         onClick={() => handleDownloadTemplate(t.type)}
                         className="btn-minimal"
                       >
-                        <Download className="w-4 h-4" />
+                        <LordIcon
+                          src="https://cdn.lordicon.com/lecprnjb.json"
+                          trigger="hover"
+                          size={20}
+                        />
                         Татах
                       </button>
                     </div>

@@ -1,29 +1,19 @@
 "use client";
 import { motion, AnimatePresence } from "framer-motion";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import {
   Calendar,
-  Mail,
-  Printer,
-  Send,
-  Plus,
-  Edit2,
   Eye,
   Search,
-  DollarSign,
-  Phone,
-  MapPin,
-  Building2,
-  CreditCard,
-  TrendingUp,
-  Edit,
-  X,
   History,
   ChevronLeft,
   ChevronRight,
+  Printer,
 } from "lucide-react";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import LordIcon from "@/components/ui/LordIcon";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "../../../lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "../../../lib/useGeree";
@@ -32,6 +22,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import toast from "react-hot-toast";
 import { url as API_URL } from "../../../../lib/uilchilgee";
 import uilchilgee from "../../../../lib/uilchilgee";
+import { DatePickerInput } from "@mantine/dates";
 
 const formatNumber = (num: number) => {
   return num?.toLocaleString("mn-MN") || "0";
@@ -203,6 +194,8 @@ const InvoiceModal = ({
   liftFloors,
   barilgiinId,
 }: InvoiceModalProps) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useModalHotkeys({ isOpen, onClose, container: containerRef.current });
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
   const { gereeGaralt } = useGereeJagsaalt(
     { orshinSuugchId: String(resident?._id || "") },
@@ -500,12 +493,18 @@ const InvoiceModal = ({
               exit={{ scale: 0.95, opacity: 0 }}
               className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[1000px] bg-white rounded-3xl shadow-2xl overflow-hidden z-[9999]"
               onClick={(e) => e.stopPropagation()}
+              ref={containerRef}
             >
               <div className="invoice-modal">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-blue-100 rounded-xl">
-                      <Building2 className="w-6 h-6 text-blue-600" />
+                      {/* Placeholder Lordicon, replace src with preferred asset */}
+                      <LordIcon
+                        src="https://cdn.lordicon.com/wloilxuq.json"
+                        size={24}
+                        trigger="hover"
+                      />
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-slate-800">
@@ -520,8 +519,13 @@ const InvoiceModal = ({
                     onClick={onClose}
                     className="btn-minimal btn-minimal-ghost"
                     title="Хаах"
+                    data-modal-primary
                   >
-                    <X className="w-6 h-6 text-slate-500" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/zmkotitn.json"
+                      size={20}
+                      trigger="hover"
+                    />
                   </button>
                 </div>
 
@@ -533,17 +537,29 @@ const InvoiceModal = ({
                       </h3>
                       <div className="space-y-2 text-sm text-slate-600">
                         <p className="flex items-center gap-2">
-                          <Mail className="w-4 h-4" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/aycieyht.json"
+                            size={18}
+                            trigger="hover"
+                          />
                           <span className="font-medium">Имэйл:</span>{" "}
                           {baiguullaga?.email || "-"}
                         </p>
                         <p className="flex items-center gap-2">
-                          <Phone className="w-4 h-4" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/iltqorsz.json"
+                            size={18}
+                            trigger="hover"
+                          />
                           <span className="font-medium">Утас:</span>{" "}
                           {baiguullaga?.utas || "-"}
                         </p>
                         <p className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
+                          <LordIcon
+                            src="https://cdn.lordicon.com/surcxhka.json"
+                            size={18}
+                            trigger="hover"
+                          />
                           <span className="font-medium">Хаяг:</span>{" "}
                           {baiguullaga?.khayag || "-"}
                         </p>
@@ -709,13 +725,19 @@ const InvoiceModal = ({
                     <button
                       onClick={() => window.print()}
                       className="btn-minimal btn-print"
+                      data-prevent-enter
                     >
-                      <Printer className="w-4 h-4" />
+                      <LordIcon
+                        src="https://cdn.lordicon.com/pkmkagva.json"
+                        size={18}
+                        trigger="hover"
+                      />
                       Хэвлэх
                     </button>
                     <button
                       onClick={onClose}
                       className="btn-minimal btn-cancel"
+                      data-modal-primary
                     >
                       Хаах
                     </button>
@@ -738,7 +760,8 @@ export default function InvoicingZardluud() {
   const [selectedTurul, setSelectedTurul] = useState("");
   const [selectedTuluv, setSelectedTuluv] = useState("");
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
-  const [selectedDate, setSelectedDate] = useState("");
+  // Align DatePickerInput value/onChange with string-based dates used across the app
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
@@ -750,6 +773,7 @@ export default function InvoicingZardluud() {
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const historyRef = useRef<HTMLDivElement | null>(null);
   const [historyResident, setHistoryResident] = useState<any>(null);
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -792,7 +816,7 @@ export default function InvoicingZardluud() {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-            },
+            },  
           }
         );
         const data = await response.json();
@@ -1068,6 +1092,13 @@ export default function InvoicingZardluud() {
     };
   }, [isModalOpen, isHistoryOpen]);
 
+  // Modal keyboard shortcuts for history modal as well
+  useModalHotkeys({
+    isOpen: isHistoryOpen,
+    onClose: () => setIsHistoryOpen(false),
+    container: historyRef.current,
+  });
+
   if (!ajiltan || !ajiltan.baiguullagiinId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -1092,11 +1123,14 @@ export default function InvoicingZardluud() {
 
       <div className="rounded-2xl p-6">
         <div className="mb-6 flex flex-wrap items-center gap-3">
-          <input
-            type="date"
+          <DatePickerInput
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="btn-neu bg-white border border-gray-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+            onChange={(v: string | null) => setSelectedDate(v)}
+            placeholder="Огноо сонгох"
+            className="w-[220px]"
+            clearable
+            locale="mn"
+            valueFormat="YYYY-MM-DD"
           />
           <TusgaiZagvar
             value={selectedTurul}
@@ -1139,17 +1173,6 @@ export default function InvoicingZardluud() {
             ]}
             placeholder="Бүх барилга"
           />
-
-          <div className="relative">
-            <Search className="absolute left-4 top-3 w-5 h-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Оршин суугч хайх..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-2xl neo-input:focus backdrop-blur-xl transition-all bg-white border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
-            />
-          </div>
         </div>
 
         {isLoading ? (
@@ -1320,6 +1343,7 @@ export default function InvoicingZardluud() {
                 exit={{ scale: 0.95, opacity: 0 }}
                 className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[900px] max-w-[95vw] max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
+                ref={historyRef}
               >
                 <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
                   <div>
@@ -1336,8 +1360,13 @@ export default function InvoicingZardluud() {
                   <button
                     onClick={() => setIsHistoryOpen(false)}
                     className="p-2 rounded-2xl hover:bg-gray-100"
+                    data-modal-primary
                   >
-                    <X className="w-5 h-5 text-slate-600" />
+                    <LordIcon
+                      src="https://cdn.lordicon.com/zmkotitn.json"
+                      size={18}
+                      trigger="hover"
+                    />
                   </button>
                 </div>
 

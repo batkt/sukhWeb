@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@mantine/dates";
@@ -13,6 +13,7 @@ import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "../../../../lib/uilchilgee";
 import toast from "react-hot-toast";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -36,6 +37,8 @@ export default function DansniiKhuulga() {
   );
   const [isNekhemjlekhOpen, setIsNekhemjlekhOpen] = useState(false);
   const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
+  const nekhemjlekhRef = useRef<HTMLDivElement | null>(null);
+  const khungulultRef = useRef<HTMLDivElement | null>(null);
 
   // Paid history modal state
   // History modal removed; showing org-scoped list directly
@@ -155,6 +158,18 @@ export default function DansniiKhuulga() {
     };
   }, [isNekhemjlekhOpen, isKhungulultOpen]);
 
+  // Keyboard: Esc to close, Enter to trigger primary action within modal
+  useModalHotkeys({
+    isOpen: isNekhemjlekhOpen,
+    onClose: () => setIsNekhemjlekhOpen(false),
+    container: nekhemjlekhRef.current,
+  });
+  useModalHotkeys({
+    isOpen: isKhungulultOpen,
+    onClose: () => setIsKhungulultOpen(false),
+    container: khungulultRef.current,
+  });
+
   return (
     <div className="min-h-screen">
       <motion.h1
@@ -168,7 +183,7 @@ export default function DansniiKhuulga() {
       <div className="space-y-6">
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto ">
               <DatePickerInput
                 type="range"
                 locale="mn"
@@ -360,12 +375,14 @@ export default function DansniiKhuulga() {
               exit={{ scale: 0.98, opacity: 0 }}
               className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
+              ref={nekhemjlekhRef}
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
                 <div className="font-semibold"></div>
                 <button
                   onClick={() => setIsNekhemjlekhOpen(false)}
                   className="btn-cancel btn-minimal"
+                  data-modal-primary
                 >
                   Хаах
                 </button>
@@ -394,12 +411,14 @@ export default function DansniiKhuulga() {
               exit={{ scale: 0.98, opacity: 0 }}
               className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
+              ref={khungulultRef}
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
                 <div className="font-semibold"></div>
                 <button
                   onClick={() => setIsKhungulultOpen(false)}
                   className="btn-cancel btn-minimal"
+                  data-modal-primary
                 >
                   Хаах
                 </button>

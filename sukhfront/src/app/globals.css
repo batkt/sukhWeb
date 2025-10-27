@@ -1644,3 +1644,26 @@ select,
 .btn-neu::after {
   content: none !important;
 }
+
+/* Make Mantine DatePickerInput look like .btn-minimal (colors, text, size) */
+.mantine-DatePickerInput-root .mantine-Input-input {
+  background: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+  border: 1px solid var(--btn-border) !important;
+  border-radius: 0.75rem !important; /* same as .btn-minimal */
+  padding: 0.65rem 1rem !important; /* same vertical/horizontal as .btn-minimal */
+  line-height: 1.2 !important;
+  height: auto !important; /* let padding define height, like buttons */
+}
+.mantine-DatePickerInput-root .mantine-Input-input::placeholder {
+  color: color-mix(in oklch, var(--btn-text), transparent 35%) !important;
+}
+.mantine-DatePickerInput-root .mantine-Input-input:focus,
+.mantine-DatePickerInput-root .mantine-Input-input:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--focus-ring) !important; /* same ring as .btn-minimal */
+}
+/* Calendar icon/sections should follow btn text color */
+.mantine-DatePickerInput-root .mantine-Input-section {
+  color: var(--btn-text) !important;
+}
