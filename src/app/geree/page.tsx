@@ -24,7 +24,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import uilchilgee from "../../../lib/uilchilgee";
+import uilchilgee, { socket } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import toast from "react-hot-toast";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -870,9 +870,43 @@ export default function Geree() {
     if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
       return;
     try {
+      // 1) Find related contracts for this resident from the loaded contracts
+      const related = Array.isArray(contracts)
+        ? contracts.filter(
+            (c: any) => String(c?.orshinSuugchId || "") === String(p?._id || "")
+          )
+        : [];
+
+ 
+      for (const c of related) {
+        try {
+ 
+          if (c?._id) await gereeUstgakh(c._id);
+        } catch (err) {
+ 
+          console.error("Failed to delete related contract", c?._id, err);
+        }
+      }
+
+ 
       await deleteMethod("orshinSuugch", token, p._id || p.id);
+ 
+      try {
+        const s = socket();
+        s.emit("orshinSuugch.deleted", { id: p._id || p.id });
+        for (const c of related) {
+          if (c?._id) s.emit("geree.deleted", { id: c._id });
+        }
+      } catch (err) {
+ 
+        console.error("Socket emit failed", err);
+      }
+
       openSuccessOverlay("Устгагдлаа");
+
+    
       await orshinSuugchJagsaaltMutate();
+      await gereeJagsaaltMutate();
     } catch (e) {
       toast.error("Устгахад алдаа гарлаа");
     }
@@ -1504,15 +1538,6 @@ export default function Geree() {
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    contract._id && handleDelete(contract._id)
-                                  }
-                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
-                                  title="Устгах"
-                                >
-                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </div>
                             </td>
