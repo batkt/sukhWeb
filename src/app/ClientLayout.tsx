@@ -12,6 +12,8 @@ import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
 import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
 import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { mutate } from "swr";
+import { socket } from "../../lib/uilchilgee";
 
 function parseJwt(token: string) {
   try {
@@ -111,6 +113,36 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     checkAuth();
   }, [pathname, router]);
+
+  // Initialize socket listeners for real-time updates (refresh SWR caches)
+  useEffect(() => {
+    try {
+      const s = socket();
+
+      const onResidentDeleted = (data: any) => {
+        // Revalidate any SWR keys that start with "/orshinSuugch" and "/geree"
+        try {
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
+          );
+          mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
+        } catch (err) {
+          // If predicate-based mutate is unavailable, swallow the error.
+        }
+      };
+
+      s.on("orshinSuugch.deleted", onResidentDeleted);
+      s.on("geree.deleted", onResidentDeleted);
+
+      return () => {
+        s.off("orshinSuugch.deleted", onResidentDeleted);
+        s.off("geree.deleted", onResidentDeleted);
+        s.disconnect();
+      };
+    } catch (e) {
+      // ignore socket init errors in SSR/edge cases
+    }
+  }, []);
 
   if (!authChecked || spinnerLoading) {
     return (
