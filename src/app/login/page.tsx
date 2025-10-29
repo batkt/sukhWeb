@@ -1,7 +1,7 @@
 "use client";
+import React, { useEffect, useRef, useState } from "react";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -23,7 +23,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [introDone, setIntroDone] = useState<boolean>(false);
-  const [cardFocused, setCardFocused] = useState<boolean>(false);
   const [showLoader, setShowLoader] = useState<boolean>(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const logoTargetRef = useRef<HTMLDivElement>(null);
@@ -50,7 +49,6 @@ export default function LoginPage() {
     };
   }, [showLoader, prefersReduced]);
 
-  // Measure the destination for the flying logo and run intro (skips for reduced motion)
   useEffect(() => {
     if (prefersReduced) {
       setIntroDone(true);
@@ -61,19 +59,18 @@ export default function LoginPage() {
       if (!containerRef.current || !logoTargetRef.current) return;
       const containerRect = containerRef.current.getBoundingClientRect();
       const targetRect = logoTargetRef.current.getBoundingClientRect();
-      const size = 88; // flying logo size
+      const size = 88;
       const x =
         targetRect.left - containerRect.left + targetRect.width / 2 - size / 2;
       const y =
         targetRect.top - containerRect.top + targetRect.height / 2 - size / 2;
       setLogoTarget({ x, y });
-      // center of the container/viewport
+
       const cx = containerRect.width / 2 - size / 2;
       const cy = Math.max(24, containerRect.height * 0.12);
       setCenterPos({ x: cx, y: cy });
     };
 
-    // Calculate once DOM is painted
     const raf = requestAnimationFrame(calcTarget);
     window.addEventListener("resize", calcTarget);
     return () => {
@@ -84,34 +81,36 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (prefersReduced) return;
-    if (showLoader) return; // wait until loader finishes
+    if (showLoader) return;
     if (!logoTarget || !centerPos) return;
     (async () => {
+      // Modern intro: fade in + scale with subtle rotation
       await controls.start({
-        opacity: [0, 1, 1, 1, 1],
-        scale: [0.9, 1.02, 1.02, 1, 1],
-        x: [
-          centerPos.x,
-          centerPos.x - 36,
-          centerPos.x + 36,
-          centerPos.x,
-          logoTarget.x,
-        ],
-        y: [
-          centerPos.y,
-          centerPos.y - 8,
-          centerPos.y - 8,
-          centerPos.y,
-          logoTarget.y,
-        ],
-        rotateZ: [-10, -2, 2, 0, 0],
-        rotateY: [-12, -4, 4, 0, 0],
+        opacity: [0, 1],
+        scale: [0.3, 1.15, 1],
+        rotate: [180, -10, 0],
+        x: centerPos.x,
+        y: centerPos.y,
         transition: {
-          duration: 1.5,
-          ease: "easeOut",
-          times: [0, 0.25, 0.5, 0.7, 1],
+          duration: 0.8,
+          ease: [0.34, 1.56, 0.64, 1], // elastic ease
         },
       });
+
+      // Wait a moment
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      // Slide to target position
+      await controls.start({
+        x: logoTarget.x,
+        y: logoTarget.y,
+        scale: 1,
+        transition: {
+          duration: 0.6,
+          ease: [0.16, 1, 0.3, 1], // smooth ease out
+        },
+      });
+
       setIntroDone(true);
     })();
   }, [controls, logoTarget, centerPos, prefersReduced, showLoader]);
@@ -139,7 +138,7 @@ export default function LoginPage() {
         }, 900);
         return;
       }
-      // If login attempt didn't throw but wasn't successful, show error feedback
+
       openErrorOverlay("Нэвтрэх нэр эсвэл нууц үг буруу байна");
     } catch (error: any) {
       console.error("Login error:", error);
@@ -153,7 +152,6 @@ export default function LoginPage() {
     <div
       ref={containerRef}
       className="min-h-screen flex items-center justify-center relative overflow-hidden p-4 bg-card"
-      style={{ perspective: 1000 }}
     >
       <AnimatePresence>
         {showLoader && (
@@ -196,18 +194,22 @@ export default function LoginPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
       <AnimatePresence>
         {!introDone && (
           <motion.div
             className="absolute z-20 top-0 left-0"
             initial={{
               opacity: 0,
-              scale: 0.85,
-              rotateZ: -8,
-              rotateY: -14,
+              scale: 0.3,
+              rotate: 180,
             }}
             animate={controls}
-            exit={{ opacity: 0 }}
+            exit={{
+              opacity: 0,
+              scale: 0.8,
+              transition: { duration: 0.3 },
+            }}
           >
             <ThemedLogo
               size={88}
@@ -215,11 +217,16 @@ export default function LoginPage() {
               bgMode="theme"
               radius={24}
               bgStrength="strong"
+              style={{
+                background: "#000",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* Decorative gradient blobs */}
       <motion.span
         aria-hidden
         className="pointer-events-none absolute -top-24 -left-16 w-80 h-80 rounded-full"
@@ -263,47 +270,71 @@ export default function LoginPage() {
 
       <motion.div
         className="w-full max-w-md relative z-10"
-        initial={{ y: 16, opacity: 0 }}
+        initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <motion.div
-          layout
-          className="neu-panel rounded-[2rem] transition-all duration-500"
+          className="bg-white rounded-3xl shadow-2xl border border-slate-200/60 overflow-hidden"
+          initial={{ y: 0 }}
           animate={{
-            paddingTop: cardFocused ? 44 : 32,
-            paddingBottom: cardFocused ? 56 : 32,
-            y: cardFocused ? -2 : 0,
-            scale: cardFocused ? 1.005 : 1,
+            y: [0, -8, 0],
           }}
-          transition={{ type: "spring", stiffness: 260, damping: 24 }}
-          style={{ paddingLeft: 32, paddingRight: 32 }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+          whileHover={{
+            y: -4,
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+            transition: { duration: 0.3 },
+          }}
+          style={{
+            padding: "48px 40px 32px",
+          }}
         >
-          <div className="text-center mb-10 flex flex-col items-center gap-4">
+          <div className="text-center mb-8 flex flex-col items-center gap-3">
             <div
               ref={logoTargetRef}
               className="w-[88px] h-[88px] flex items-center justify-center"
             >
               {introDone && (
                 <motion.div
-                  initial={{ scale: 0.9, rotate: -3, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  initial={{
+                    scale: 0.5,
+                    rotate: -180,
+                    opacity: 0,
+                  }}
+                  animate={{
+                    scale: 1,
+                    rotate: 0,
+                    opacity: 1,
+                  }}
+                  transition={{
+                    duration: 0.5,
+                    ease: [0.34, 1.56, 0.64, 1],
+                  }}
                 >
-                  <ThemedLogo size={88} bgMode="theme" bgStrength="strong" />
+                  <ThemedLogo
+                    size={88}
+                    bgMode="theme"
+                    bgStrength="strong"
+                    withBg
+                    style={{
+                      background: "#000",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  />
                 </motion.div>
               )}
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-theme">
-              Нэвтрэх
-            </h1>
-            <p className="text-muted-foreground text-base">
-              Амар СӨХ тавтай морилно уу
-            </p>
+            <h1 className="text-3xl font-bold text-slate-900">Нэвтрэх</h1>
+            <p className="text-slate-500 text-sm">Амар СӨХ тавтай морилно уу</p>
           </div>
 
           <motion.form
-            className="space-y-6"
+            className="space-y-5"
             onSubmit={handleSubmit}
             initial="hidden"
             animate="show"
@@ -316,7 +347,7 @@ export default function LoginPage() {
             }}
           >
             <motion.div
-              className="space-y-2 group"
+              className="space-y-2"
               variants={{
                 hidden: { y: 8, opacity: 0 },
                 show: { y: 0, opacity: 1 },
@@ -324,31 +355,29 @@ export default function LoginPage() {
             >
               <label
                 htmlFor="email"
-                className="text-sm font-medium group-focus-within:text-primary transition-colors"
+                className="text-sm font-medium text-slate-700"
               >
                 Нэвтрэх нэр
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-subtle">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-5 h-5" />
                 </div>
                 <input
                   type="text"
                   id="email"
-                  placeholder="Нэвтрэх нэр"
+                  placeholder="aaa@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  onFocus={() => setCardFocused(true)}
-                  onBlur={() => setCardFocused(false)}
                   required
                   disabled={loading}
-                  className="w-full  h-14 rounded-2xl border border-border/50 bg-transparent pl-12 pr-4 text-base placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-12 rounded-2xl border border-slate-300 bg-white pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </motion.div>
 
             <motion.div
-              className="space-y-2 group"
+              className="space-y-2"
               variants={{
                 hidden: { y: 8, opacity: 0 },
                 show: { y: 0, opacity: 1 },
@@ -356,30 +385,28 @@ export default function LoginPage() {
             >
               <label
                 htmlFor="password"
-                className="text-sm font-medium group-focus-within:text-primary transition-colors placeholder:text-gray-400"
+                className="text-sm font-medium text-slate-700"
               >
                 Нууц үг
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-subtle">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
-                  placeholder="********"
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  onFocus={() => setCardFocused(true)}
-                  onBlur={() => setCardFocused(false)}
                   required
                   disabled={loading}
-                  className="w-full h-14 rounded-2xl border border-border/50 bg-transparent pl-12 pr-12 text-base placeholder:text-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed text-theme"
+                  className="w-full h-12 rounded-2xl border border-slate-300 bg-white pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-subtle hover-surface rounded-r-2xl"
+                  onClick={() => setShowPassword((v: boolean) => !v)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                   aria-label={showPassword ? "Нууц үг нуух" : "Нууц үг харах"}
                 >
                   {showPassword ? (
@@ -394,13 +421,29 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="btn-minimal w-full h-14 rounded-full font-semibold shadow-lg transition-all duration-300 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full h-12 rounded-2xl text-slate-900 font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
               variants={{
                 hidden: { y: 8, opacity: 0 },
                 show: { y: 0, opacity: 1 },
               }}
-              whileHover={{ y: -2 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
+              style={{
+                background: "linear-gradient(145deg, #f0f0f3, #caccd1)",
+                boxShadow: "6px 6px 12px #b8babe, -6px -6px 12px #ffffff",
+              }}
+              onMouseDown={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "inset 3px 3px 7px #b8babe, inset -3px -3px 7px #ffffff";
+              }}
+              onMouseUp={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "6px 6px 12px #b8babe, -6px -6px 12px #ffffff";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow =
+                  "6px 6px 12px #b8babe, -6px -6px 12px #ffffff";
+              }}
             >
               {loading && (
                 <svg
@@ -427,19 +470,17 @@ export default function LoginPage() {
               {loading ? "Түр хүлээнэ үү..." : "Нэвтрэх"}
             </motion.button>
           </motion.form>
+
+          <motion.p
+            className="text-center text-xs text-slate-400 mt-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            ЗЭВТАБС ХХК Хөгжүүлэв
+          </motion.p>
         </motion.div>
-
-        <motion.p
-          className="text-center text-sm text-muted-foreground mt-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-        >
-          Zevtabs© 2025
-        </motion.p>
       </motion.div>
-
-      {/* Success feedback handled by global success overlay */}
     </div>
   );
 }

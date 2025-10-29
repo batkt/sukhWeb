@@ -135,19 +135,19 @@ export default function GolContent({ children }: GolContentProps) {
           <div className="max-w-[1600px] mx-auto px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-12">
-                <button
-                  type="button"
-                  onClick={() => router.push("/khynalt")}
-                  className="rounded-2xl hover:scale-105 transition-transform duration-300"
-                  aria-label="Go to dashboard"
-                >
-                  <ThemedLogo size={48} />
-                </button>
-                <div className="flex items-center gap-3">
+                <ThemedLogo
+                  size={48}
+                  withBg
+                  style={{
+                    background: "#000",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                />
+                {/* <div className="flex items-center gap-3">
                   <span className="text-4xl font-extrabold font-serif italic text-[color:var(--panel-text)]">
                     Амар Сөх
                   </span>
-                </div>
+                </div> */}
 
                 <div className="flex items-center gap-2 relative">
                   {menuItems.map((item, i) => {

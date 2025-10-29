@@ -7,6 +7,8 @@ type ThemedLogoProps = {
   size?: number; // px
   className?: string;
   alt?: string;
+  /** Inline SVG React component. When provided it will be rendered inline and colored via CSS color/currentColor. */
+  IconComponent?: React.FC<React.SVGProps<SVGSVGElement>>;
   // Paths to light/dark assets under public/
   lightSrc?: string; // defaults to "/logo.svg"
   darkSrc?: string; // optional; if omitted, only lightSrc is rendered
@@ -38,6 +40,7 @@ export default function ThemedLogo({
   size = 48,
   className,
   alt = "Logo",
+  IconComponent,
   lightSrc = "/logoSukh.png",
   darkSrc,
   withBg = true,
@@ -54,16 +57,9 @@ export default function ThemedLogo({
     justifyContent: "center",
     borderRadius: withBg ? radius : undefined,
     padding: withBg ? padding : 0,
-
-    background: withBg
-      ? bgMode === "theme"
-        ? "var(--surface-bg)"
-        : bgStrength === "strong"
-        ? "var(--logo-bg-strong)"
-        : bgStrength === "weak"
-        ? "var(--logo-bg-weak)"
-        : "var(--logo-bg)"
-      : undefined,
+    // Use a CSS variable for the effective logo background so we can
+    // control light vs dark behavior via theme selectors in global styles.
+    background: withBg ? "var(--themed-logo-bg)" : undefined,
     border: withBg ? "1px solid var(--surface-border)" : undefined,
     // Subtle elevation so it reads on light backgrounds
     boxShadow: withBg ? "0 8px 20px var(--glass-shadow)" : undefined,
@@ -71,8 +67,15 @@ export default function ThemedLogo({
   };
 
   return (
-    <span className={className} style={wrapperStyle}>
-      {darkSrc ? (
+    <span className={`${className || ""} themed-logo-bg`} style={wrapperStyle}>
+      {IconComponent ? (
+        // Render inline SVG so the glyph uses currentColor
+        <span
+          style={{ color: style?.color ?? "var(--panel-text)", lineHeight: 0 }}
+        >
+          <IconComponent width={dim} height={dim} />
+        </span>
+      ) : darkSrc ? (
         <>
           <span className="logo-variant logo-light">
             <Image src={lightSrc} alt={alt} width={dim} height={dim} priority />
@@ -102,6 +105,18 @@ export default function ThemedLogo({
         [data-theme="dark-green"] .logo-variant.logo-dark,
         .dark .logo-variant.logo-dark {
           display: inline-flex;
+        }
+        /* Default: on light themes make the logo background black so it reads well */
+        .themed-logo-bg {
+          --themed-logo-bg: #000;
+        }
+        /* On dark themes, let the logo follow the theme (use the primary/brand color)
+           so it feels integrated. We prefer var(--primary) which is set per-theme. */
+        [data-theme="dark-black"] .themed-logo-bg,
+        [data-theme="dark-gray"] .themed-logo-bg,
+        [data-theme="dark-green"] .themed-logo-bg,
+        .dark .themed-logo-bg {
+          --themed-logo-bg: var(--primary);
         }
       `}</style>
     </span>

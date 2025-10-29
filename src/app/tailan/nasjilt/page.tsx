@@ -135,11 +135,30 @@ const NasjiltTailan: React.FC = () => {
   const mockData = useMemo(() => generateMockData(), []);
 
   const filteredData = useMemo(() => {
+    const matches = async () => {};
+    // lazy-load search util
+    let match: (it: any, q: string) => boolean;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      match = require("@/tools/function/matchesSearch").default;
+    } catch (e) {
+      // fallback: simple contains on name/register
+      match = (it: any, q: string) => {
+        if (!q) return true;
+        const qq = q.toLowerCase();
+        return (
+          String(it._id?.ner || "")
+            .toLowerCase()
+            .includes(qq) ||
+          String(it._id?.register || "")
+            .toLowerCase()
+            .includes(qq)
+        );
+      };
+    }
+
     return mockData.filter((item) => {
-      const matchesSearch =
-        searchTerm === "" ||
-        item._id.ner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item._id.register.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = match(item, searchTerm || "");
 
       const matchesCustomer =
         selectedCustomers.length === 0 ||

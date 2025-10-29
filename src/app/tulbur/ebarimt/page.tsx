@@ -515,7 +515,7 @@ export default function Ebarimt() {
                               />
                             </svg>
                             <div className="text-slate-500 font-medium">
-                              Мэдээлэл байхгүй
+                              Хайсан мэдээлэл алга байна
                             </div>
                             <div className="text-slate-400 text-sm">
                               Шүүлтүүрийг өөрчилж үзнэ үү

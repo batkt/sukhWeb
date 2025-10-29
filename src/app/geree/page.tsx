@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useState, useEffect, useRef } from "react";
 import {
   Download,
@@ -877,20 +878,16 @@ export default function Geree() {
           )
         : [];
 
- 
       for (const c of related) {
         try {
- 
           if (c?._id) await gereeUstgakh(c._id);
         } catch (err) {
- 
           console.error("Failed to delete related contract", c?._id, err);
         }
       }
 
- 
       await deleteMethod("orshinSuugch", token, p._id || p.id);
- 
+
       try {
         const s = socket();
         s.emit("orshinSuugch.deleted", { id: p._id || p.id });
@@ -898,13 +895,11 @@ export default function Geree() {
           if (c?._id) s.emit("geree.deleted", { id: c._id });
         }
       } catch (err) {
- 
         console.error("Socket emit failed", err);
       }
 
       openSuccessOverlay("Устгагдлаа");
 
-    
       await orshinSuugchJagsaaltMutate();
       await gereeJagsaaltMutate();
     } catch (e) {
@@ -1197,26 +1192,32 @@ export default function Geree() {
     <div className="min-h-screen">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <motion.h1
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            className="text-3xl font-bold text-theme"
-          >
-            Гэрээ
-          </motion.h1>
+          <div className="flex items-center gap-3 mb-1">
+            <motion.h1
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="text-3xl font-bold text-theme"
+            >
+              Гэрээ
+            </motion.h1>
+            <div
+              style={{ width: 64, height: 64 }}
+              className="flex items-center"
+            >
+              <DotLottieReact
+                src="https://lottie.host/97f6cb84-58da-46ef-811a-44e3203445c1/rQ76j6FHd8.lottie"
+                loop
+                autoplay
+                style={{ width: "100%", height: "100%" }}
+              />
+            </div>
+          </div>
           <p className="text-sm mt-1 text-subtle">
             Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
 
-          <div className="flex mt-3 w-48 pointer-events-none select-none justify-start">
-            <DotLottieReact
-              src="https://lottie.host/97f6cb84-58da-46ef-811a-44e3203445c1/rQ76j6FHd8.lottie"
-              loop
-              autoplay
-              style={{ width: "100%", height: "50%" }}
-            />
-          </div>
+          <div className="flex mt-3 w-48 pointer-events-none select-none justify-start"></div>
           <div className="mt-3 flex flex-wrap items-center gap-2 tabbar">
             {/* Tabs */}
             <button
@@ -1478,7 +1479,7 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-                <div className="max-h-[43vh] overflow-y-auto custom-scrollbar w-full">
+                <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
                   <table className="table-ui text-sm min-w-full">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
@@ -1576,7 +1577,7 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[43vh] overflow-y-auto custom-scrollbar w-full">
+              <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
                 <table className="table-ui text-sm min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
@@ -1602,7 +1603,7 @@ export default function Geree() {
                     {!(orshinSuugchGaralt?.jagsaalt || []).length ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-subtle">
-                          Мэдээлэл байхгүй
+                          Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (
@@ -1686,7 +1687,7 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[43vh] overflow-y-auto custom-scrollbar w-full">
+              <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
                 <table className="table-ui text-sm min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
@@ -1715,7 +1716,7 @@ export default function Geree() {
                     {!(ajilchdiinGaralt?.jagsaalt || []).length ? (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-subtle">
-                          Мэдээлэл байхгүй
+                          Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (

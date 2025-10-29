@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import LordIcon from "@/components/ui/LordIcon";
+import matchesSearch from "../../../tools/function/matchesSearch";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "../../../lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "../../../lib/useGeree";
@@ -656,7 +657,8 @@ const InvoiceModal = ({
                             >
                               {row.tariff == null
                                 ? "-"
-                                : formatNumber(Number(row.tariff))}₮
+                                : formatNumber(Number(row.tariff))}
+                              ₮
                             </td>
                             <td
                               className={`py-2 px-3 text-right ${
@@ -667,7 +669,8 @@ const InvoiceModal = ({
                             >
                               {row.tariff == null
                                 ? "-"
-                                : formatNumber(Number(row.tariff))}₮
+                                : formatNumber(Number(row.tariff))}
+                              ₮
                             </td>
                           </tr>
                         ))}
@@ -858,15 +861,9 @@ export default function InvoicingZardluud() {
     }
     items = branchItems;
 
-    const q = (searchTerm || "").trim().toLowerCase();
-    if (q) {
-      items = items.filter((r: any) => {
-        const hayag =
-          r.khayag || [r.duureg, r.horoo, r.davkhar].filter(Boolean).join(", ");
-        return [r.ovog, r.ner, r.register, r.toot, r.utas, hayag]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(q));
-      });
+    // Use deep-search helper for broader, nested matching
+    if (searchTerm && String(searchTerm).trim() !== "") {
+      items = items.filter((r: any) => matchesSearch(r, searchTerm));
     }
 
     if (selectedTuluv) {
@@ -1208,7 +1205,7 @@ export default function InvoicingZardluud() {
                           colSpan={8}
                           className="p-8 text-center text-slate-900/60"
                         >
-                          Мэдээлэл байхгүй байна
+                          Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (

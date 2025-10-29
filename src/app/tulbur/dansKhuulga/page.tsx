@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import EbarimtPage from "../ebarimt/page";
 import ZardalPage from "../zardal/page";
 import { useAuth } from "@/lib/useAuth";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import useJagsaalt from "@/lib/useJagsaalt";
@@ -125,6 +126,11 @@ export default function DansniiKhuulga() {
       const d = new Date(val);
       return isNaN(d.getTime()) ? null : d;
     };
+    // If no account (данс) selected, don't show any bank rows
+    if (!selectedDansId) {
+      setFilteredData([]);
+      return;
+    }
 
     const start = ekhlekhOgnoo?.[0] ? toDate(ekhlekhOgnoo[0]) : null;
     const end = ekhlekhOgnoo?.[1] ? toDate(ekhlekhOgnoo[1]) : null;
@@ -150,8 +156,10 @@ export default function DansniiKhuulga() {
         : r.kholbosonGereeniiId
         ? [String(r.kholbosonGereeniiId)]
         : [];
-      const account =
-        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || "";
+      // bank API uses `dansniiDugaar` or `accNum`/`dugaar` depending on source
+      const account = String(
+        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || ""
+      );
       return {
         id: r._id || `bank-${idx}`,
         date: d ? d.toLocaleDateString("mn-MN") : "-",
@@ -163,17 +171,40 @@ export default function DansniiKhuulga() {
         raw: r,
       } as TableItem & { raw?: any };
     });
+    // Resolve selectedDansId (may be _id) to the actual account number (dugaar)
+    const selectedAccount = (() => {
+      if (!selectedDansId) return undefined;
+      // try to find by _id first
+      const byId = (dansList || []).find(
+        (d: any) => String(d._id) === String(selectedDansId)
+      );
+      if (byId && byId.dugaar) return String(byId.dugaar);
+      // fallback: maybe the option stored dugaar directly
+      const byDugaar = (dansList || []).find(
+        (d: any) => String(d.dugaar) === String(selectedDansId)
+      );
+      if (byDugaar && byDugaar.dugaar) return String(byDugaar.dugaar);
+      return String(selectedDansId);
+    })();
 
     const filtered = mapped.filter((m) => {
-      // account filter: support matching by several possible fields
-      if (selectedDansId) {
-        const raw = m.raw || {};
-        const acct = String(raw.dansId || raw.dugaar || raw.accountId || "");
-        if (acct !== String(selectedDansId)) return false;
-      }
+      // account filter: compare the normalized account string on the mapped item
+      if (
+        selectedAccount &&
+        String(m.account || "") !== String(selectedAccount)
+      )
+        return false;
       if (start || end) {
         const raw = m.raw || {};
-        const dateVal = raw.ognoo || raw.createdAt || raw.date || null;
+        // use the same date fields we used when mapping rows
+        const dateVal =
+          raw.postDate ||
+          raw.tranDate ||
+          raw.ognoo ||
+          raw.createdAt ||
+          raw.date ||
+          raw.togtoo ||
+          null;
         if (!dateVal) return false;
         const d = new Date(dateVal);
         if (start && d < start) return false;
@@ -223,13 +254,24 @@ export default function DansniiKhuulga() {
 
   return (
     <div className="min-h-screen">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
-      >
-        Дансны хуулга
-      </motion.h1>
+      <div className="flex items-center gap-3 mb-1">
+        <motion.h1
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="text-3xl font-bold text-theme"
+        >
+          Дансны хуулга
+        </motion.h1>
+        <div style={{ width: 100, height: 100 }} className="flex items-center">
+          <DotLottieReact
+            src="https://lottie.host/2fd97978-2462-4da6-ae45-e16cff8aa0e2/WS8rp6nk36.lottie"
+            loop
+            autoplay
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
+      </div>
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -395,10 +437,7 @@ export default function DansniiKhuulga() {
                           />
                         </svg>
                         <div className="text-slate-500 font-medium">
-                          Мэдээлэл байхгүй
-                        </div>
-                        <div className="text-slate-400 text-sm">
-                          Шүүлтүүрийг өөрчилж үзнэ үү
+                          Хайсан мэдээлэл алга байна
                         </div>
                       </div>
                     </td>

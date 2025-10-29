@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import useSWR from "swr";
 import { createPortal } from "react-dom";
@@ -174,13 +175,23 @@ export default function DansniiKhuulga() {
 
   return (
     <div className="min-h-screen">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
-      >
-        Гүйлгээний түүх
-      </motion.h1>
+      <div className="flex items-center gap-3 mb-6">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-3xl font-bold text-theme bg-clip-text text-transparent drop-shadow-sm"
+        >
+          Гүйлгээний түүх
+        </motion.h1>
+        <div style={{ width: 44, height: 44 }} className="flex items-center">
+          <DotLottieReact
+            src="https://lottie.host/740ab27b-f4f0-49c5-a202-a23a70cd8e50/eNy8Ct6t4y.lottie"
+            loop
+            autoplay
+            style={{ width: 44, height: 44 }}
+          />
+        </div>
+      </div>
 
       <div className="space-y-6">
         <div className="rounded-2xl p-6">
@@ -290,7 +301,7 @@ export default function DansniiKhuulga() {
                   ) : filteredItems.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="p-8 text-center text-theme/60">
-                        Мэдээлэл байхгүй байна
+                        Хайсан мэдээлэл алга байна
                       </td>
                     </tr>
                   ) : (

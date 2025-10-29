@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import matchesSearch from "../../../tools/function/matchesSearch";
 import { Tag, Input, Popconfirm, Card, Select } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
@@ -211,15 +212,7 @@ export default function TaskManagementSystem() {
       const typeMatch =
         turulFilter === "Бүгд" ||
         item.duudlagiinTurul?.toLowerCase() === turulFilter.toLowerCase();
-      const searchMatch = searchTerm
-        ? [
-            item.khariltsagchiinNer,
-            item.khariltsagchiinRegister,
-            item.khariltsagchiinUtas,
-            item.title,
-            item.message,
-          ].some((f) => f?.toLowerCase().includes(searchTerm.toLowerCase()))
-        : true;
+      const searchMatch = matchesSearch(item, searchTerm);
       const dateMatch =
         ekhlekhOgnoo && ekhlekhOgnoo[0] && ekhlekhOgnoo[1]
           ? moment(item.createdAt).isBetween(

@@ -954,7 +954,7 @@ export default function Burtgel() {
                           colSpan={activeTab === "ajiltanList" ? 7 : 6}
                           className="p-8 text-center text-theme/60"
                         >
-                          Мэдээлэл байхгүй байна
+                          Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (
@@ -1735,7 +1735,7 @@ export default function Burtgel() {
                               colSpan={5}
                               className="p-8 text-center text-slate-500 "
                             >
-                              Мэдээлэл байхгүй байна
+                              Хайсан мэдээлэл алга байна
                             </td>
                           </tr>
                         ) : (
