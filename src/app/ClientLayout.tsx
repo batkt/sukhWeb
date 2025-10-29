@@ -14,6 +14,8 @@ import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { mutate } from "swr";
 import { socket } from "../../lib/uilchilgee";
+import { SocketProvider } from "../context/SocketContext";
+import type { Socket } from "socket.io-client";
 
 function parseJwt(token: string) {
   try {
@@ -115,16 +117,17 @@ function LayoutContent({ children }: { children: ReactNode }) {
   }, [pathname, router]);
 
   // Initialize socket listeners for real-time updates (refresh SWR caches)
+  const [skt, setSkt] = useState<Socket | null>(null);
+
   useEffect(() => {
     try {
       const s = socket();
+      setSkt(s);
 
       const onResidentDeleted = (data: any) => {
         // Revalidate any SWR keys that start with "/orshinSuugch" and "/geree"
         try {
-          mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
-          );
+          mutate((key: any) => Array.isArray(key) && key[0] === "/orshinSuugch");
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
         } catch (err) {
           // If predicate-based mutate is unavailable, swallow the error.
@@ -135,9 +138,13 @@ function LayoutContent({ children }: { children: ReactNode }) {
       s.on("geree.deleted", onResidentDeleted);
 
       return () => {
-        s.off("orshinSuugch.deleted", onResidentDeleted);
-        s.off("geree.deleted", onResidentDeleted);
-        s.disconnect();
+        try {
+          s.off("orshinSuugch.deleted", onResidentDeleted);
+          s.off("geree.deleted", onResidentDeleted);
+          s.disconnect();
+        } catch (e) {
+          // ignore during cleanup
+        }
       };
     } catch (e) {
       // ignore socket init errors in SSR/edge cases
@@ -170,10 +177,10 @@ function LayoutContent({ children }: { children: ReactNode }) {
   }
 
   return (
-    <>
+    <SocketProvider socket={skt}>
       {children}
       <SuccessOverlayHost />
       <ErrorOverlayHost />
-    </>
+    </SocketProvider>
   );
 }

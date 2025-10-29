@@ -185,6 +185,42 @@ export default function DansniiKhuulga() {
     setFilteredData(filtered as TableItem[]);
   }, [bankRows, selectedDansId, ekhlekhOgnoo]);
 
+  // Dashboard statistics derived from filteredData for admin
+  const stats = useMemo(() => {
+    const totalCount = filteredData.length;
+    const totalSum = filteredData.reduce((s, r) => s + (r.total || 0), 0);
+    const uniqueAccounts = new Set(
+      filteredData.map((f) => String(f.account || "")).filter(Boolean)
+    ).size;
+    const withContracts = filteredData.filter(
+      (f) => (f.contractIds?.length || 0) > 0
+    ).length;
+    const withoutContracts = totalCount - withContracts;
+    const maxAmount = filteredData.reduce(
+      (m, r) => Math.max(m, r.total || 0),
+      0
+    );
+    const latestDate = (() => {
+      let latest: Date | null = null;
+      for (const r of filteredData) {
+        const raw = (r as any).raw || {};
+        const dateVal =
+          raw.ognoo || raw.createdAt || raw.date || r.date || null;
+        const d = dateVal ? new Date(dateVal) : null;
+        if (d && (!latest || d > latest)) latest = d;
+      }
+      return latest ? latest.toLocaleDateString("mn-MN") : "-";
+    })();
+
+    return [
+      { title: "Гэрээ холбогдсон", value: withContracts },
+
+      { title: "Холбогдоогүй", value: withoutContracts },
+      { title: "Хамгийн их гүйлгээ", value: `${formatNumber(maxAmount, 0)} ₮` },
+      { title: "Нийт дүн", value: `${formatNumber(totalSum, 0)} ₮` },
+    ];
+  }, [filteredData]);
+
   return (
     <div className="min-h-screen">
       <motion.h1
@@ -196,15 +232,8 @@ export default function DansniiKhuulga() {
       </motion.h1>
 
       <div className="space-y-6">
-        {/* Simple live stats derived from current table */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { title: "Нийт мөр", value: filteredData.length },
-            {
-              title: "Нийт дүн",
-              value: filteredData.reduce((s, r) => s + (r.total || 0), 0),
-            },
-          ].map((stat, idx) => (
+          {stats.map((stat, idx) => (
             <motion.div
               key={idx}
               className="relative group rounded-2xl"
