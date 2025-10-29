@@ -44,7 +44,7 @@ interface ZardalFormData {
   ner: string;
   turul: string;
   tariff: number;
-  lift: string | null; // only 'Лифт' or null
+  lift: string | null;
   suuriKhuraamj?: number;
   nuatBodokhEsekh?: boolean;
 }
@@ -62,7 +62,6 @@ export default function AshiglaltiinZardluud() {
   } = useAshiglaltiinZardluud();
 
   const [isSaving, setIsSaving] = useState(false);
-  // Per-row inline edit state for tariff so we don't save on every keystroke
   const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
     {}
   );
@@ -76,81 +75,12 @@ export default function AshiglaltiinZardluud() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
-  const saveLiftSettings = async (floors: string[]) => {
-    if (!token) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
 
-    setIsSavingLift(true);
-
-    try {
-      const payload = {
-        choloolugdokhDavkhar: floors,
-        baiguullagiinId: ajiltan?.baiguullagiinId,
-        ...(barilgiinId ? { barilgiinId } : {}),
-      } as any;
-
-      // Prefer PUT to update existing record; fall back to POST if not found/allowed
-      let ok = false;
-      let lastError: any = null;
-
-      if (liftRecordId) {
-        try {
-          const putRes = await fetch(
-            `http://103.143.40.46:8084/liftShalgaya/${liftRecordId}`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(payload),
-            }
-          );
-          if (putRes.ok) {
-            ok = true;
-          } else {
-            lastError = new Error(`HTTP error! status: ${putRes.status}`);
-          }
-        } catch (e) {
-          lastError = e;
-        }
-      }
-
-      if (!ok) {
-        // Try create new as a fallback (some backends only support POST create + GET latest)
-        const postRes = await fetch("http://103.143.40.46:8084/liftShalgaya", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!postRes.ok) {
-          throw lastError || new Error(`HTTP error! status: ${postRes.status}`);
-        }
-      }
-
-      // Success messaging depends on enabling vs disabling
-      if (floors.length > 0) {
-        openSuccessOverlay("Лифт давхруудыг амжилттай хадгаллаа");
-      } else {
-        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
-      }
-
-      // After save, re-fetch the latest record to sync id and values
-      await fetchLiftFloors();
-      setLiftFloors(floors);
-      setLiftEnabled(floors.length > 0);
-      setLiftModalOpen(false);
-    } catch (error) {
-      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
-    } finally {
-      setIsSavingLift(false);
-    }
-  };
+  const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
+  const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
+  const [invoiceScheduleId, setInvoiceScheduleId] = useState<string | null>(
+    null
+  );
 
   const [formData, setFormData] = useState<ZardalFormData>({
     ner: "",
@@ -158,7 +88,7 @@ export default function AshiglaltiinZardluud() {
     tariff: 0,
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
-    lift: null, // not selected by default
+    lift: null,
   });
 
   const [expenseTypes] = useState<string[]>([
@@ -170,9 +100,85 @@ export default function AshiglaltiinZardluud() {
 
   const [pageSize] = useState(100);
 
-  // Scheduler state for monthly invoice (Нэхэмжлэх) push
-  const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
-  const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
+  const fetchInvoiceSchedule = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+
+    try {
+      // Fetch from the correct GET endpoint
+      const response = await fetch(
+        `http://103.143.40.46:8084/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (
+          result.success &&
+          result.data &&
+          Array.isArray(result.data) &&
+          result.data.length > 0
+        ) {
+          // Get the most recent schedule (last item in array or sort by createdAt)
+          const latestSchedule = result.data[result.data.length - 1];
+
+          if (latestSchedule.nekhemjlekhUusgekhOgnoo) {
+            setInvoiceDay(latestSchedule.nekhemjlekhUusgekhOgnoo);
+            setInvoiceActive(latestSchedule.idevkhitei ?? true);
+            setInvoiceScheduleId(latestSchedule._id);
+
+            // Also save to localStorage as backup
+            localStorage.setItem(
+              `invoiceScheduleId_${ajiltan.baiguullagiinId}`,
+              latestSchedule._id
+            );
+            localStorage.setItem(
+              `invoiceDay_${ajiltan.baiguullagiinId}`,
+              latestSchedule.nekhemjlekhUusgekhOgnoo.toString()
+            );
+            localStorage.setItem(
+              `invoiceActive_${ajiltan.baiguullagiinId}`,
+              latestSchedule.idevkhitei.toString()
+            );
+            return;
+          }
+        }
+      }
+
+      // Fallback: load from localStorage if API fails
+      const savedDay = localStorage.getItem(
+        `invoiceDay_${ajiltan.baiguullagiinId}`
+      );
+      const savedActive = localStorage.getItem(
+        `invoiceActive_${ajiltan.baiguullagiinId}`
+      );
+
+      if (savedDay) {
+        setInvoiceDay(parseInt(savedDay));
+        setInvoiceActive(savedActive === "true");
+      }
+    } catch (error) {
+      console.error("Failed to fetch invoice schedule:", error);
+
+      // Fallback: load from localStorage
+      const savedDay = localStorage.getItem(
+        `invoiceDay_${ajiltan.baiguullagiinId}`
+      );
+      const savedActive = localStorage.getItem(
+        `invoiceActive_${ajiltan.baiguullagiinId}`
+      );
+
+      if (savedDay) {
+        setInvoiceDay(parseInt(savedDay));
+        setInvoiceActive(savedActive === "true");
+      }
+    }
+  };
 
   const saveInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
@@ -201,6 +207,26 @@ export default function AshiglaltiinZardluud() {
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
+
+      const result = await res.json();
+      const data = result.data || result;
+
+      // Save to localStorage for persistence
+      if (data._id) {
+        localStorage.setItem(
+          `invoiceScheduleId_${ajiltan.baiguullagiinId}`,
+          data._id
+        );
+        setInvoiceScheduleId(data._id);
+      }
+      localStorage.setItem(
+        `invoiceDay_${ajiltan.baiguullagiinId}`,
+        invoiceDay.toString()
+      );
+      localStorage.setItem(
+        `invoiceActive_${ajiltan.baiguullagiinId}`,
+        invoiceActive.toString()
+      );
 
       openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
     } catch (e) {
@@ -259,12 +285,85 @@ export default function AshiglaltiinZardluud() {
       setLiftFloors([]);
       setLiftEnabled(false);
       setLiftRecordId(null);
-    } catch (error) {}
+    } catch (error) {
+      console.error("Failed to fetch lift floors:", error);
+    }
+  };
+
+  const saveLiftSettings = async (floors: string[]) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    setIsSavingLift(true);
+
+    try {
+      const payload = {
+        choloolugdokhDavkhar: floors,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        ...(barilgiinId ? { barilgiinId } : {}),
+      } as any;
+
+      let ok = false;
+      let lastError: any = null;
+
+      if (liftRecordId) {
+        try {
+          const putRes = await fetch(
+            `http://103.143.40.46:8084/liftShalgaya/${liftRecordId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (putRes.ok) {
+            ok = true;
+          } else {
+            lastError = new Error(`HTTP error! status: ${putRes.status}`);
+          }
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      if (!ok) {
+        const postRes = await fetch("http://103.143.40.46:8084/liftShalgaya", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!postRes.ok) {
+          throw lastError || new Error(`HTTP error! status: ${postRes.status}`);
+        }
+      }
+
+      if (floors.length > 0) {
+        openSuccessOverlay("Лифт давхруудыг амжилттай хадгаллаа");
+      } else {
+        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+      }
+
+      await fetchLiftFloors();
+      setLiftModalOpen(false);
+    } catch (error) {
+      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
+    } finally {
+      setIsSavingLift(false);
+    }
   };
 
   useEffect(() => {
     if (token && ajiltan?.baiguullagiinId) {
       fetchLiftFloors();
+      fetchInvoiceSchedule();
     }
   }, [token, ajiltan?.baiguullagiinId]);
 
@@ -314,7 +413,7 @@ export default function AshiglaltiinZardluud() {
       tariff: 0,
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
-      lift: null, // can select 'Лифт' or leave null
+      lift: null,
     });
     setIsModalOpen(true);
   };
@@ -344,7 +443,7 @@ export default function AshiglaltiinZardluud() {
     try {
       const payload = {
         ...formData,
-        lift: formData.lift ?? null, // send null if not selected
+        lift: formData.lift ?? null,
         ...(barilgiinId ? { barilgiinId } : {}),
       };
 
@@ -398,7 +497,6 @@ export default function AshiglaltiinZardluud() {
       }
 
       openSuccessOverlay("Амжилттай шинэчиллээ");
-
       refreshZardluud();
     } catch (error) {
       openErrorOverlay("Шинэчлэхэд алдаа гарлаа");
@@ -437,7 +535,7 @@ export default function AshiglaltiinZardluud() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-2xl">
                 <span className="text-sm font-medium text-theme">
-                  Лифт идэвхтэй:
+                  {liftEnabled ? "Лифт идэвхтэй:" : "Лифт идэвхгүй:"}
                 </span>
                 <MSwitch
                   checked={liftEnabled}
@@ -446,6 +544,7 @@ export default function AshiglaltiinZardluud() {
                     if (checked) {
                       setLiftModalOpen(true);
                     } else {
+                      setLiftEnabled(false);
                       await saveLiftSettings([]);
                     }
                   }}
@@ -456,7 +555,7 @@ export default function AshiglaltiinZardluud() {
                 <div className="flex items-center gap-2 px-4 py-2 rounded-3xl">
                   <button
                     onClick={() => setLiftModalOpen(true)}
-                    className="px-3 py-1.5 text-sm font-medium bg-theme rounded-3xl action-edit hover:bg-blue-700 transition-colors shadow-sm"
+                    className="btn-minimal btn-save"
                   >
                     Засах
                   </button>
@@ -490,7 +589,7 @@ export default function AshiglaltiinZardluud() {
               Нийт: {ashiglaltiinZardluud.length}
             </div>
             <div
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-green-500 p-2 text-white hover:bg-green-600 transition-colors"
+              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-blue-500 p-2 text-theme hover:bg-blue-600 transition-colors"
               onClick={() => openAddModal(false)}
             >
               <MTooltip label="Нэмэх">
@@ -512,26 +611,28 @@ export default function AshiglaltiinZardluud() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-4 px-5 pb-5">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Өдөр (сар бүр)
-                </label>
-                <MNumberInput
-                  min={1}
-                  max={31}
-                  placeholder="Нэхэмжлэх өдөр"
-                  value={invoiceDay ?? undefined}
-                  onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                />
+            {invoiceActive && (
+              <div className="flex items-center gap-4 px-5 pb-5">
+                <div>
+                  <label className="block text-sm font-medium text-theme mb-1">
+                    Өдөр (сар бүр)
+                  </label>
+                  <MNumberInput
+                    min={1}
+                    max={31}
+                    placeholder="Нэхэмжлэх өдөр"
+                    value={invoiceDay ?? undefined}
+                    onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                  />
+                </div>
+                <MButton
+                  className="btn-minimal btn-save mt-6"
+                  onClick={saveInvoiceSchedule}
+                >
+                  Хадгалах
+                </MButton>
               </div>
-              <MButton
-                className="bg-blue-500 hover:bg-blue-600 mt-6 text-white"
-                onClick={saveInvoiceSchedule}
-              >
-                Хадгалах
-              </MButton>
-            </div>
+            )}
           </div>
 
           <MModal
@@ -563,7 +664,7 @@ export default function AshiglaltiinZardluud() {
                       <MNumberInput
                         min={1}
                         placeholder="Жишээ: 7"
-                        className="flex-1"
+                        className="flex-1 bg-white"
                         value={singleFloor ?? undefined}
                         onChange={(v) => setSingleFloor((v as number) ?? null)}
                         onKeyDown={(e) => {
@@ -668,7 +769,7 @@ export default function AshiglaltiinZardluud() {
                           </button>
                         }
                       >
-                        Давхар {floor}
+                        {floor}
                       </Badge>
                     ))}
                   </div>
@@ -684,11 +785,12 @@ export default function AshiglaltiinZardluud() {
                     setLiftEnabled(false);
                   }
                 }}
+                className="btn-minimal btn-cancel"
               >
                 Болих
               </MButton>
               <MButton
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                className="btn-minimal btn-save"
                 loading={isSavingLift}
                 onClick={() => {
                   // Allow saving an empty list to disable without toggling the switch
@@ -712,7 +814,7 @@ export default function AshiglaltiinZardluud() {
             ashiglaltiinZardluud.map((mur) => (
               <div key={mur._id} className="box">
                 <div className="flex items-center p-5">
-                  <div className="border-l-2 border-green-500 pl-4 flex-1">
+                  <div className="border-l-2 border-blue-500 pl-4 flex-1">
                     <div className="font-medium text-theme">{mur.ner}</div>
                     <div className="text-theme text-sm">{mur.turul}</div>
                     {mur.suuriKhuraamj !== undefined && (
@@ -740,7 +842,7 @@ export default function AshiglaltiinZardluud() {
                       }
                     />
                     <MButton
-                      className="bg-blue-500 hover:bg-blue-600 text-white"
+                      className="btn-minimal btn-save"
                       disabled={
                         editedTariffs[mur._id] === undefined ||
                         editedTariffs[mur._id] === mur.tariff
@@ -795,7 +897,7 @@ export default function AshiglaltiinZardluud() {
                 setFormData({ ...formData, ner: e.currentTarget.value })
               }
               placeholder="Зардлын нэр оруулах"
-              className="text-theme"
+              className="text-sm"
             />
           </div>
 
@@ -879,11 +981,15 @@ export default function AshiglaltiinZardluud() {
             <label className="text-sm font-medium">НӨАТ бодох</label>
           </div>
           <div className="mt-6 flex justify-end gap-2">
-            <MButton variant="default" onClick={() => setIsModalOpen(false)}>
+            <MButton
+              variant="default"
+              onClick={() => setIsModalOpen(false)}
+              className="btn-cancel btn-minimal"
+            >
               Болих
             </MButton>
             <MButton
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="btn-minimal btn-save"
               loading={isSaving}
               onClick={handleSave}
             >

@@ -15,6 +15,7 @@ import { message } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { set } from "lodash";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -400,17 +401,7 @@ export default function DansniiKhuulga() {
               onClick={(e) => e.stopPropagation()}
               ref={nekhemjlekhRef}
             >
-              <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
-                <div className="font-semibold"></div>
-                <button
-                  onClick={() => setIsNekhemjlekhOpen(false)}
-                  className="btn-cancel btn-minimal"
-                  data-modal-primary
-                >
-                  Хаах
-                </button>
-              </div>
-              <div className="p-2 overflow-auto max-h-[calc(90vh-48px)]">
+              <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
                 <NekhemjlekhPage />
               </div>
             </motion.div>
@@ -432,7 +423,7 @@ export default function DansniiKhuulga() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
+              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
               ref={khungulultRef}
             >

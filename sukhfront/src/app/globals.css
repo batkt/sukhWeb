@@ -1,3 +1,25 @@
+/* Minimal button: already present, ensure consistency */
+.btn-minimal {
+  background: linear-gradient(145deg, #ebf0fc, #dce5f8) !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(59, 130, 246, 0.12) !important;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  transition: transform 120ms, background 140ms, box-shadow 140ms;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+}
+.btn-minimal:hover {
+  background: linear-gradient(145deg, #e4ecfa, #d4dfed);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.14);
+}
+.btn-minimal:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+}
 @import "tailwindcss";
 .scrollable::-webkit-scrollbar {
   width: 8px;
@@ -1405,6 +1427,15 @@ body::after {
   --btn-bg-active: #020617; /* slate-950 */
   --btn-text: #e5e7eb; /* slate-200 for contrast */
   --btn-border: rgba(255, 255, 255, 0.16);
+}
+
+ 
+.btn-download {
+  --btn-bg: linear-gradient(145deg, #dddff7, #c0bff0);
+  --btn-bg-hover: #bfc4f0;
+  --btn-bg-active: #9ea5e8;
+  --btn-text: #060d4e; /* deep teal */
+  --btn-border: rgba(6, 7, 78, 0.16);
 }
 
 /* Wizard navigation roles */

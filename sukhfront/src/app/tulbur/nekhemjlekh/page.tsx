@@ -393,18 +393,26 @@ const InvoiceModal = ({
 
       const nonLift = backendRows.filter((z) => !isLiftItem(z));
 
-      if (isLiftExempt && liftTariffAbs > 0) {
-        return [
-          ...nonLift,
-          {
-            _id: "lift-discount-display",
-            ner: "Лифт хөнгөлөлт",
-            tariff: -liftTariffAbs,
-            discount: true as const,
-          } as any,
-        ];
+      // If user is lift-exempt, we show a negative line for the lift discount
+      // (and hide the original lift lines). Otherwise include the lift rows
+      // as normal so their tariffs are visible on the invoice.
+      if (isLiftExempt) {
+        if (liftTariffAbs > 0) {
+          return [
+            ...nonLift,
+            {
+              _id: "lift-discount-display",
+              ner: "Лифт хөнгөлөлт",
+              tariff: -liftTariffAbs,
+              discount: true as const,
+            } as any,
+          ];
+        }
+        return nonLift;
       }
-      return nonLift;
+
+      // Not exempt: include all backend rows (including lift entries)
+      return backendRows;
     }
 
     const parseNum = (v: any) => {
@@ -498,14 +506,6 @@ const InvoiceModal = ({
               <div className="invoice-modal">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 rounded-xl">
-                      {/* Placeholder Lordicon, replace src with preferred asset */}
-                      <LordIcon
-                        src="https://cdn.lordicon.com/wloilxuq.json"
-                        size={24}
-                        trigger="hover"
-                      />
-                    </div>
                     <div>
                       <h2 className="text-xl font-bold text-slate-800">
                         Үйлчилгээний нэхэмжлэх
@@ -516,16 +516,26 @@ const InvoiceModal = ({
                     </div>
                   </div>
                   <button
-                    onClick={onClose}
-                    className="btn-minimal btn-minimal-ghost"
+                    onClick={() => onClose()}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                    aria-label="Хаах"
                     title="Хаах"
-                    data-modal-primary
                   >
-                    <LordIcon
-                      src="https://cdn.lordicon.com/zmkotitn.json"
-                      size={20}
-                      trigger="hover"
-                    />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-slate-700"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
                   </button>
                 </div>
 
@@ -537,29 +547,14 @@ const InvoiceModal = ({
                       </h3>
                       <div className="space-y-2 text-sm text-slate-600">
                         <p className="flex items-center gap-2">
-                          <LordIcon
-                            src="https://cdn.lordicon.com/aycieyht.json"
-                            size={18}
-                            trigger="hover"
-                          />
                           <span className="font-medium">Имэйл:</span>{" "}
                           {baiguullaga?.email || "-"}
                         </p>
                         <p className="flex items-center gap-2">
-                          <LordIcon
-                            src="https://cdn.lordicon.com/iltqorsz.json"
-                            size={18}
-                            trigger="hover"
-                          />
                           <span className="font-medium">Утас:</span>{" "}
                           {baiguullaga?.utas || "-"}
                         </p>
                         <p className="flex items-center gap-2">
-                          <LordIcon
-                            src="https://cdn.lordicon.com/surcxhka.json"
-                            size={18}
-                            trigger="hover"
-                          />
                           <span className="font-medium">Хаяг:</span>{" "}
                           {baiguullaga?.khayag || "-"}
                         </p>
@@ -661,7 +656,7 @@ const InvoiceModal = ({
                             >
                               {row.tariff == null
                                 ? "-"
-                                : formatNumber(Number(row.tariff))}
+                                : formatNumber(Number(row.tariff))}₮
                             </td>
                             <td
                               className={`py-2 px-3 text-right ${
@@ -672,7 +667,7 @@ const InvoiceModal = ({
                             >
                               {row.tariff == null
                                 ? "-"
-                                : formatNumber(Number(row.tariff))}
+                                : formatNumber(Number(row.tariff))}₮
                             </td>
                           </tr>
                         ))}
@@ -727,11 +722,6 @@ const InvoiceModal = ({
                       className="btn-minimal btn-print"
                       data-prevent-enter
                     >
-                      <LordIcon
-                        src="https://cdn.lordicon.com/pkmkagva.json"
-                        size={18}
-                        trigger="hover"
-                      />
                       Хэвлэх
                     </button>
                     <button
@@ -816,7 +806,7 @@ export default function InvoicingZardluud() {
           {
             headers: {
               Authorization: `Bearer ${token}`,
-            },  
+            },
           }
         );
         const data = await response.json();
@@ -1361,13 +1351,7 @@ export default function InvoicingZardluud() {
                     onClick={() => setIsHistoryOpen(false)}
                     className="p-2 rounded-2xl hover:bg-gray-100"
                     data-modal-primary
-                  >
-                    <LordIcon
-                      src="https://cdn.lordicon.com/zmkotitn.json"
-                      size={18}
-                      trigger="hover"
-                    />
-                  </button>
+                  ></button>
                 </div>
 
                 <div className="relative p-6">

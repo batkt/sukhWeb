@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "../../../../lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
+import formatNumber from "../../../../tools/function/formatNumber";
 
 type TableItem = {
   id?: string | number;
@@ -306,7 +307,7 @@ export default function Ebarimt() {
   }, []);
 
   return (
-    <div className="min-h-screen no-theme-scope">
+    <div>
       <LocalStyles />
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
@@ -444,90 +445,93 @@ export default function Ebarimt() {
           whileHover={{ scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
-            <div className="max-h-[330px] overflow-y-auto custom-scrollbar w-full">
-              <table className="table-ui text-sm min-w-full">
-                <thead>
-                  <tr>
-                    <th className="p-3 text-xs font-semibold text-theme text-center w-12">
-                      №
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                      Огноо
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                      Төрөл
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                      ДДТД
-                    </th>
-                    <th className="py-4 px-6 text-right text-sm font-semibold whitespace-nowrap">
-                      Дүн
-                    </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                      Үйлчилгээ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(isLoading ? [] : tableData).length > 0 ? (
-                    tableData.map((item, index) => (
-                      <motion.tr
-                        key={String(item.id)}
-                        className="border-b border-white/30 cursor-pointer hover:shadow-lg"
-                        transition={{ duration: 0.3 }}
-                      >
-                        <td className="py-4 px-6">{index + 1}</td>
-                        <td className="py-4 px-6 whitespace-nowrap">
-                          {item.date}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
-                          {item.type === "B2C_RECEIPT"
-                            ? "Иргэн"
-                            : item.type === "B2B_RECEIPT"
-                            ? "ААН"
-                            : item.type || "-"}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
-                          {item.ddtd || item.receiptId || "-"}
-                        </td>
-                        <td className="py-4 px-6 text-right whitespace-nowrap">
-                          {(item.total || 0).toLocaleString("mn-MN")}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
-                          {item.service}
-                        </td>
-                      </motion.tr>
-                    ))
-                  ) : (
+          <div className="overflow-hidden rounded-2xl">
+            <div className="rounded-3xl p-6 mb-4 allow-overflow bg-white border border-gray-200">
+              <div className="overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-sm min-w-full">
+                  <thead>
                     <tr>
-                      <td colSpan={6} className="py-20 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <svg
-                            className="w-16 h-16 text-slate-300"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div className="text-slate-500 font-medium">
-                            Мэдээлэл байхгүй
-                          </div>
-                          <div className="text-slate-400 text-sm">
-                            Шүүлтүүрийг өөрчилж үзнэ үү
-                          </div>
-                        </div>
-                      </td>
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                        №
+                      </th>
+                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                        Огноо
+                      </th>
+                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                        Төрөл
+                      </th>
+                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                        ДДТД
+                      </th>
+                      <th className="py-4 px-6 text-right text-sm font-semibold whitespace-nowrap">
+                        Дүн
+                      </th>
+                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                        Үйлчилгээ
+                      </th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {(isLoading ? [] : tableData).length > 0 ? (
+                      tableData.map((item, index) => (
+                        <motion.tr
+                          key={String(item.id)}
+                          className="border-b border-white/30 cursor-pointer hover:shadow-lg"
+                          transition={{ duration: 0.3 }}
+                        >
+                          <td className="py-4 px-6">{index + 1}</td>
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            {item.date}
+                          </td>
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            {item.type === "B2C_RECEIPT"
+                              ? "Иргэн"
+                              : item.type === "B2B_RECEIPT"
+                              ? "ААН"
+                              : item.type || "-"}
+                          </td>
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            {item.ddtd || item.receiptId || "-"}
+                          </td>
+                          <td className="p-3 text-right whitespace-nowrap">
+                            {formatNumber(item.total ?? 0, 0)} ₮
+                          </td>
+
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            {item.service}
+                          </td>
+                        </motion.tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="py-20 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-3">
+                            <svg
+                              className="w-16 h-16 text-slate-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <div className="text-slate-500 font-medium">
+                              Мэдээлэл байхгүй
+                            </div>
+                            <div className="text-slate-400 text-sm">
+                              Шүүлтүүрийг өөрчилж үзнэ үү
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </motion.div>

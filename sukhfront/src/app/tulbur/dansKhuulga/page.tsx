@@ -10,14 +10,24 @@ import { useAuth } from "@/lib/useAuth";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import useJagsaalt from "@/lib/useJagsaalt";
+import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import formatNumber from "../../../../tools/function/formatNumber";
 // Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
 
 type TableItem = {
   id: string | number;
   date: string;
   month: string;
+  // numerical value in minor units (assumed) or main units depending on backend
   total: number;
+  // human readable description / purpose of transaction
   action: string;
+  // linked contract ids (array or single)
+  contractIds?: string[];
+  // transferred account / destination account number
+  account?: string;
+  raw?: any;
 };
 
 type DateRangeValue = [string | null, string | null] | undefined;
@@ -45,7 +55,7 @@ export default function DansniiKhuulga() {
     () =>
       (dansList || []).map((d: any) => ({
         value: String(d._id || d.dugaar || ""),
-        // Always show account number (dugaar) as label per requirement
+
         label: String(d.dugaar || "-") || "-",
       })),
     [dansList]
@@ -55,6 +65,10 @@ export default function DansniiKhuulga() {
     alert("Excel татах товч дарлаа!");
   };
   const t = (text: string) => text;
+
+  // Bank transfers (банкны гүйлгээ) fetched from /bankniiGuilgee
+  const [bankRows, setBankRows] = useState<any[]>([]);
+  const [isLoadingBankRows, setIsLoadingBankRows] = useState(false);
 
   // Modal Portal Helper
   const ModalPortal = ({ children }: { children: React.ReactNode }) => {
@@ -73,6 +87,103 @@ export default function DansniiKhuulga() {
       document.body.style.overflow = "";
     };
   }, [isEbarimtOpen, isZardalOpen]);
+
+  useEffect(() => {
+    const fetchBankTransfers = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      setIsLoadingBankRows(true);
+      try {
+        const resp = await uilchilgee(token).get("/bankniiGuilgee", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 200,
+          },
+        });
+        const list = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+        setBankRows(list);
+      } catch (e) {
+        console.error("bankniiGuilgee fetch error", e);
+        openErrorOverlay("Банкны гүйлгээ татахад алдаа гарлаа");
+      } finally {
+        setIsLoadingBankRows(false);
+      }
+    };
+
+    fetchBankTransfers();
+  }, [token, ajiltan?.baiguullagiinId, barilgiinId]);
+
+  // Map bankRows to table items and apply filters (date range + selected account)
+  useEffect(() => {
+    const toDate = (val: any) => {
+      if (!val) return null;
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    const start = ekhlekhOgnoo?.[0] ? toDate(ekhlekhOgnoo[0]) : null;
+    const end = ekhlekhOgnoo?.[1] ? toDate(ekhlekhOgnoo[1]) : null;
+
+    const mapped = (bankRows || []).map((r: any, idx: number) => {
+      const dateVal =
+        r.postDate ||
+        r.tranDate ||
+        r.ognoo ||
+        r.createdAt ||
+        r.date ||
+        r.togtoo ||
+        null;
+      const d = dateVal ? new Date(dateVal) : null;
+      const month = d
+        ? d.toLocaleDateString("mn-MN", { year: "numeric", month: "2-digit" })
+        : r.sar || "";
+      const total =
+        Number(r.amount ?? r.kholbosonDun ?? r.niitTulbur ?? r.total ?? 0) || 0;
+      const action = r.description || r.ner || r.tovch || "Банкны гүйлгээ";
+      const contractIds = Array.isArray(r.kholbosonGereeniiId)
+        ? r.kholbosonGereeniiId
+        : r.kholbosonGereeniiId
+        ? [String(r.kholbosonGereeniiId)]
+        : [];
+      const account =
+        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || "";
+      return {
+        id: r._id || `bank-${idx}`,
+        date: d ? d.toLocaleDateString("mn-MN") : "-",
+        month,
+        total,
+        action,
+        contractIds,
+        account,
+        raw: r,
+      } as TableItem & { raw?: any };
+    });
+
+    const filtered = mapped.filter((m) => {
+      // account filter: support matching by several possible fields
+      if (selectedDansId) {
+        const raw = m.raw || {};
+        const acct = String(raw.dansId || raw.dugaar || raw.accountId || "");
+        if (acct !== String(selectedDansId)) return false;
+      }
+      if (start || end) {
+        const raw = m.raw || {};
+        const dateVal = raw.ognoo || raw.createdAt || raw.date || null;
+        if (!dateVal) return false;
+        const d = new Date(dateVal);
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+      }
+      return true;
+    });
+
+    setFilteredData(filtered as TableItem[]);
+  }, [bankRows, selectedDansId, ekhlekhOgnoo]);
 
   return (
     <div className="min-h-screen">
@@ -183,90 +294,89 @@ export default function DansniiKhuulga() {
           </div>
         </div>
 
-        <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
-          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-            <div className="overflow-y-auto custom-scrollbar w-full">
-              <table className="table-ui text-sm min-w-full">
-                <colgroup>
-                  <col style={{ width: "6%" }} />
-                  <col style={{ width: "22%" }} />
-                  <col style={{ width: "22%" }} />
-                  <col style={{ width: "22%" }} />
-                  <col style={{ width: "28%" }} />
-                </colgroup>
-                <thead>
-                  <tr className="text-theme">
-                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      №
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      Огноо
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      Тайлант сар
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      Дүн
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      Үйлчилгээ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.length > 0 ? (
-                    filteredData.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className="transition-colors border-b last:border-b-0"
-                      >
-                        <td className="p-3 text-center whitespace-nowrap">
-                          {index + 1}
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap">
-                          {item.date}
-                        </td>
-                        <td className="p-3 text-center whitespace-nowrap">
-                          {item.month}
-                        </td>
-                        <td className="p-3 text-right whitespace-nowrap">
-                          {item.total.toLocaleString("mn-MN")}
-                        </td>
-                        <td className="p-3 truncate text-center">
-                          {item.action}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="p-8 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <svg
-                            className="w-16 h-16 text-slate-300"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div className="text-slate-500 font-medium">
-                            Мэдээлэл байхгүй
-                          </div>
-                          <div className="text-slate-400 text-sm">
-                            Шүүлтүүрийг өөрчилж үзнэ үү
-                          </div>
-                        </div>
+        <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+          <div className="overflow-y-auto custom-scrollbar w-full">
+            <table className="table-ui text-sm min-w-full">
+              <colgroup>
+                <col style={{ width: "6%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "22%" }} />
+                <col style={{ width: "30%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "12%" }} />
+              </colgroup>
+              <thead>
+                <tr className="text-theme">
+                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    №
+                  </th>
+                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    Огноо
+                  </th>
+
+                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    Гүйлгээний утга
+                  </th>
+                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    Гүйлгээний дүн
+                  </th>
+                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    Шилжүүлсэн данс
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.length > 0 ? (
+                  filteredData.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      className="transition-colors border-b last:border-b-0"
+                    >
+                      <td className="p-3 text-center whitespace-nowrap">
+                        {index + 1}
+                      </td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        {item.date}
+                      </td>
+
+                      <td className="p-3 truncate text-left">{item.action}</td>
+                      <td className="p-3 text-right whitespace-nowrap">
+                        {formatNumber(item.total ?? 0, 0)} ₮
+                      </td>
+                      <td className="p-3 text-center whitespace-nowrap">
+                        {item.account || "-"}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <svg
+                          className="w-16 h-16 text-slate-300"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                        <div className="text-slate-500 font-medium">
+                          Мэдээлэл байхгүй
+                        </div>
+                        <div className="text-slate-400 text-sm">
+                          Шүүлтүүрийг өөрчилж үзнэ үү
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -285,19 +395,10 @@ export default function DansniiKhuulga() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl bg-white dark:bg-slate-900"
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
-                <div className="font-semibold">И-баримт</div>
-                <button
-                  onClick={() => setIsEbarimtOpen(false)}
-                  className="btn-minimal btn-cancel"
-                >
-                  Хаах
-                </button>
-              </div>
-              <div className="p-2 max-h-[calc(90vh-48px)]">
+              <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
                 <EbarimtPage />
               </div>
             </motion.div>
