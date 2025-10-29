@@ -44,7 +44,7 @@ export default function GolContent({ children }: GolContentProps) {
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
 
-  const { ajiltan, token } = useAuth();
+  const { ajiltan, token, garya } = useAuth();
   const avatarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -73,17 +73,17 @@ export default function GolContent({ children }: GolContentProps) {
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
     // { label: "Бүртгэл", path: "burtgel" },
-    {
-      label: "Мэдэгдэл",
-      path: "medegdel",
-      submenu: [
-        { label: "Шаардлага", path: "shaardlaga" },
-        { label: "Санал хүсэлт", path: "sanalkhuselt" },
-        { label: "Мэдэгдэл", path: "medegdel" },
-        { label: "Дуудлага", path: "duudlaga" },
-        { label: "Анкет", path: "anket" },
-      ],
-    },
+    // {
+    //   label: "Мэдэгдэл",
+    //   path: "medegdel",
+    //   submenu: [
+    //     { label: "Шаардлага", path: "shaardlaga" },
+    //     { label: "Санал хүсэлт", path: "sanalkhuselt" },
+    //     { label: "Мэдэгдэл", path: "medegdel" },
+    //     { label: "Дуудлага", path: "duudlaga" },
+    //     { label: "Анкет", path: "anket" },
+    //   ],
+    // },
     {
       label: "Төлбөр тооцоо",
       path: "tulbur",
@@ -114,7 +114,15 @@ export default function GolContent({ children }: GolContentProps) {
   ];
 
   const handleLogout = async () => {
-    router.push("/");
+    try {
+      setShowLogout(false);
+      // Clear auth using central logout to remove cookies/localStorage
+      garya();
+      // Fallback in case full page reload doesn't happen
+      router.replace("/login");
+    } catch (_) {
+      router.replace("/login");
+    }
   };
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";

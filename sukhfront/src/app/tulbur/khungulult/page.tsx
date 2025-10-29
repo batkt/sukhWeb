@@ -27,6 +27,7 @@ import {
 import { DatePickerInput, MonthPickerInput } from "@mantine/dates";
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 interface GereeData {
   _id: string;
   ner: string;
@@ -205,7 +206,10 @@ const TulburTootsoo: React.FC = () => {
     }
   }
 
-  function khungulultKhadgalya() {}
+  function khungulultKhadgalya() {
+    // TODO: Hook up real API call; for now, show success overlay
+    openSuccessOverlay("Хөнгөлөлт амжилттай хадгалагдлаа");
+  }
 
   const gereeniiColumn: TableColumnsType<GereeData> = useMemo(() => {
     let column: TableColumnsType<GereeData> = [
@@ -572,6 +576,7 @@ const TulburTootsoo: React.FC = () => {
                     labelAlign="left"
                   >
                     <Select
+                      popupClassName="tusgaiZagvar"
                       className="ml-1 mr-3 flex-1 text-theme"
                       defaultValue="turees"
                       onChange={(e) => {
@@ -706,6 +711,7 @@ const TulburTootsoo: React.FC = () => {
                     labelAlign="left"
                   >
                     <Select
+                      popupClassName="tusgaiZagvar"
                       className="text-theme"
                       placeholder="Нөхцөл"
                       onChange={nukhtulSongokh}
@@ -721,6 +727,7 @@ const TulburTootsoo: React.FC = () => {
                     labelAlign="left"
                   >
                     <Select
+                      popupClassName="tusgaiZagvar"
                       className="text-theme"
                       mode="multiple"
                       placeholder="Давхар"
@@ -744,6 +751,7 @@ const TulburTootsoo: React.FC = () => {
                         labelAlign="left"
                       >
                         <Select
+                          popupClassName="tusgaiZagvar"
                           placeholder="Хөнгөлөх төрөл"
                           className="w-32 text-theme"
                           value={khungulukh}

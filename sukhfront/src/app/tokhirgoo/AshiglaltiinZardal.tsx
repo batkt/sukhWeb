@@ -16,7 +16,8 @@ import {
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import formatNumber from "../../../tools/function/formatNumber";
 import { useAuth } from "@/lib/useAuth";
-import toast from "react-hot-toast";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 
 interface ZardalItem {
@@ -68,6 +69,7 @@ export default function AshiglaltiinZardluud() {
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
   const [liftModalOpen, setLiftModalOpen] = useState<boolean>(false);
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
+  const [liftRecordId, setLiftRecordId] = useState<string | null>(null);
   const [isSavingLift, setIsSavingLift] = useState<boolean>(false);
   const [singleFloor, setSingleFloor] = useState<number | null>(null);
   const [bulkText, setBulkText] = useState<string>("");
@@ -76,42 +78,75 @@ export default function AshiglaltiinZardluud() {
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
   const saveLiftSettings = async (floors: string[]) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
     setIsSavingLift(true);
 
     try {
-      const response = await fetch("http://103.143.40.46:8084/liftShalgaya", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          choloolugdokhDavkhar: floors,
-          baiguullagiinId: ajiltan?.baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-        }),
-      });
+      const payload = {
+        choloolugdokhDavkhar: floors,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        ...(barilgiinId ? { barilgiinId } : {}),
+      } as any;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      // Prefer PUT to update existing record; fall back to POST if not found/allowed
+      let ok = false;
+      let lastError: any = null;
+
+      if (liftRecordId) {
+        try {
+          const putRes = await fetch(
+            `http://103.143.40.46:8084/liftShalgaya/${liftRecordId}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+          if (putRes.ok) {
+            ok = true;
+          } else {
+            lastError = new Error(`HTTP error! status: ${putRes.status}`);
+          }
+        } catch (e) {
+          lastError = e;
+        }
+      }
+
+      if (!ok) {
+        // Try create new as a fallback (some backends only support POST create + GET latest)
+        const postRes = await fetch("http://103.143.40.46:8084/liftShalgaya", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!postRes.ok) {
+          throw lastError || new Error(`HTTP error! status: ${postRes.status}`);
+        }
       }
 
       // Success messaging depends on enabling vs disabling
       if (floors.length > 0) {
-        toast.success("Лифт давхруудыг амжилттай хадгаллаа");
+        openSuccessOverlay("Лифт давхруудыг амжилттай хадгаллаа");
       } else {
-        toast.success("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
       }
 
+      // After save, re-fetch the latest record to sync id and values
+      await fetchLiftFloors();
       setLiftFloors(floors);
       setLiftEnabled(floors.length > 0);
       setLiftModalOpen(false);
     } catch (error) {
-      toast.error("Лифт тохиргоо хадгалах үед алдаа гарлаа");
+      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
     } finally {
       setIsSavingLift(false);
     }
@@ -141,11 +176,11 @@ export default function AshiglaltiinZardluud() {
 
   const saveInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
     if (!invoiceDay || invoiceDay < 1 || invoiceDay > 31) {
-      toast.error("Огноог 1-31 хооронд сонгоно уу");
+      openErrorOverlay("Огноог 1-31 хооронд сонгоно уу");
       return;
     }
 
@@ -167,9 +202,9 @@ export default function AshiglaltiinZardluud() {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
 
-      toast.success("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
+      openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
     } catch (e) {
-      toast.error("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
+      openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
     }
   };
 
@@ -214,7 +249,7 @@ export default function AshiglaltiinZardluud() {
           Array.isArray(mostRecent.choloolugdokhDavkhar)
         ) {
           const floors = mostRecent.choloolugdokhDavkhar.map(String);
-
+          setLiftRecordId(mostRecent._id ?? null);
           setLiftFloors(floors);
           setLiftEnabled(floors.length > 0);
           return;
@@ -223,6 +258,7 @@ export default function AshiglaltiinZardluud() {
 
       setLiftFloors([]);
       setLiftEnabled(false);
+      setLiftRecordId(null);
     } catch (error) {}
   };
 
@@ -300,7 +336,7 @@ export default function AshiglaltiinZardluud() {
 
   const handleSave = async () => {
     if (!formData.ner || !formData.turul) {
-      toast.error("Нэр болон төрлийг бөглөнө үү");
+      openErrorOverlay("Нэр болон төрлийг бөглөнө үү");
       return;
     }
 
@@ -314,14 +350,14 @@ export default function AshiglaltiinZardluud() {
 
       if (editingItem) {
         await updateZardal(editingItem._id, payload);
-        toast.success("Амжилттай шинэчиллээ");
+        openSuccessOverlay("Амжилттай шинэчиллээ");
       } else {
         await addZardal(payload);
-        toast.success("Амжилттай нэмлээ");
+        openSuccessOverlay("Амжилттай нэмлээ");
       }
       setIsModalOpen(false);
     } catch (error) {
-      toast.error("Хадгалахад алдаа гарлаа");
+      openErrorOverlay("Хадгалахад алдаа гарлаа");
     } finally {
       setIsSaving(false);
     }
@@ -333,7 +369,7 @@ export default function AshiglaltiinZardluud() {
     isUilchilgee = false
   ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -361,11 +397,11 @@ export default function AshiglaltiinZardluud() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      toast.success("Амжилттай шинэчиллээ");
+      openSuccessOverlay("Амжилттай шинэчиллээ");
 
       refreshZardluud();
     } catch (error) {
-      toast.error("Шинэчлэхэд алдаа гарлаа");
+      openErrorOverlay("Шинэчлэхэд алдаа гарлаа");
     }
   };
 
@@ -373,7 +409,7 @@ export default function AshiglaltiinZardluud() {
     const newTariff = editedTariffs[item._id];
     if (newTariff === undefined) return;
     await handleTariffChange(item, newTariff, isUilchilgee);
-    // Clear edited state for this row after successful save
+
     setEditedTariffs((prev) => {
       const { [item._id]: _, ...rest } = prev;
       return rest;
@@ -654,14 +690,13 @@ export default function AshiglaltiinZardluud() {
               <MButton
                 className="bg-blue-500 hover:bg-blue-600 text-white"
                 loading={isSavingLift}
-                disabled={liftFloors.length === 0}
                 onClick={() => {
-                  if (liftFloors.length === 0) return;
+                  // Allow saving an empty list to disable without toggling the switch
                   saveLiftSettings(liftFloors);
-                  setLiftEnabled(true);
+                  setLiftEnabled(liftFloors.length > 0);
                 }}
               >
-                Хадгалах
+                {liftFloors.length === 0 ? "Идэвхгүй болгох" : "Хадгалах"}
               </MButton>
             </div>
           </MModal>

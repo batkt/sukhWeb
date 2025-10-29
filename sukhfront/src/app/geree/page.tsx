@@ -27,12 +27,14 @@ import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import uilchilgee from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import toast from "react-hot-toast";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { DatePickerInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import LordIcon from "@/components/ui/LordIcon";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import {
   isValidName,
   isValidRegister,
@@ -45,10 +47,10 @@ import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 export const ALL_COLUMNS = [
-  { key: "ovog", label: "Овог", default: true },
+  // { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
   { key: "register", label: "Регистр", default: true },
-  { key: "utas", label: "Утас", default: true },
+  { key: "utas", label: "Холбоо барих", default: true },
   { key: "mail", label: "И-мэйл", default: false },
   { key: "aimag", label: "Аймаг", default: false },
   { key: "duureg", label: "Дүүрэг", default: false },
@@ -521,7 +523,7 @@ export default function Geree() {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success("Загвар амжилттай татагдлаа");
+      openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (error) {
       console.error("Download error:", error);
       toast.error("Загвар татахад алдаа гарлаа");
@@ -594,7 +596,7 @@ export default function Geree() {
         .addDataSource(response.data?.jagsaalt || [])
         .saveAs("Гэрээний_жагсаалт.xlsx");
 
-      toast.success("Excel файл амжилттай татагдлаа");
+      openSuccessOverlay("Excel файл амжилттай татагдлаа");
     } catch (error) {
       console.error("Excel download error:", error);
       toast.error("Excel файл татахад алдаа гарлаа");
@@ -669,7 +671,7 @@ export default function Geree() {
       } else {
         await createMethod("orshinSuugchBurtgey", token || "", payload);
       }
-      toast.success("Оршин суугч нэмэгдлээ");
+      openSuccessOverlay("Оршин суугч нэмэгдлээ");
       setShowResidentModal(false);
       setEditingResident(null);
       setCurrentStep(1);
@@ -708,7 +710,7 @@ export default function Geree() {
       return;
     try {
       await deleteMethod("orshinSuugch", token, p._id || p.id);
-      toast.success("Устгагдлаа");
+      openSuccessOverlay("Устгагдлаа");
       await orshinSuugchJagsaaltMutate();
     } catch (e) {
       toast.error("Устгахад алдаа гарлаа");
@@ -748,7 +750,7 @@ export default function Geree() {
         await createMethod("ajiltan", token, payload);
       }
 
-      toast.success("Ажилтны мэдээлэл хадгалагдлаа");
+      openSuccessOverlay("Ажилтны мэдээлэл хадгалагдлаа");
       setShowEmployeeModal(false);
       setEditingEmployee(null);
       setNewEmployee({
@@ -796,7 +798,7 @@ export default function Geree() {
       return;
     try {
       await deleteMethod("ajiltan", token, p._id || p.id);
-      toast.success("Устгагдлаа");
+      openSuccessOverlay("Устгагдлаа");
       await ajiltniiJagsaaltMutate();
     } catch (e) {
       toast.error("Устгахад алдаа гарлаа");
@@ -933,7 +935,7 @@ export default function Geree() {
       try {
         await uilchilgee(token).delete(`/gereeniiZagvar/${templateId}`);
 
-        toast.success("Загвар амжилттай устгагдлаа");
+        openSuccessOverlay("Загвар амжилттай устгагдлаа");
 
         zagvarJagsaaltMutate();
       } catch (error) {
@@ -1011,6 +1013,15 @@ export default function Geree() {
           <p className="text-sm mt-1 text-subtle">
             Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
+
+          <div className="flex mt-3 w-full h-full pointer-events-none select-none justify-end">
+            <DotLottieReact
+              src="https://lottie.host/97f6cb84-58da-46ef-811a-44e3203445c1/rQ76j6FHd8.lottie"
+              loop
+              autoplay
+              style={{ width: "100%", height: "50%" }}
+            />
+          </div>
           <div className="mt-3 flex gap-2 tabbar">
             <button
               onClick={() => setActiveTab("contracts")}
@@ -1271,11 +1282,11 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
               <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-                <div className="max-h-[60vh] overflow-y-auto custom-scrollbar w-full">
+                <div className="max-h-[20vh] overflow-y-auto custom-scrollbar w-full">
                   <table className="table-ui text-sm min-w-full">
-                    <thead>
+                    <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
-                        <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                        <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                           №
                         </th>
                         {visibleColumns.map((columnKey) => {
@@ -1285,13 +1296,13 @@ export default function Geree() {
                           return (
                             <th
                               key={columnKey}
-                              className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap"
+                              className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
                             >
                               {column?.label}
                             </th>
                           );
                         })}
-                        <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
                           Үйлдэл
                         </th>
                       </tr>
@@ -1327,7 +1338,7 @@ export default function Geree() {
                               <div className="flex gap-2 justify-center">
                                 <button
                                   onClick={() => handleEdit(contract)}
-                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1336,7 +1347,7 @@ export default function Geree() {
                                   onClick={() =>
                                     contract._id && handleDelete(contract._id)
                                   }
-                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Устгах"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1373,11 +1384,11 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
             <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-              <div className="overflow-y-auto custom-scrollbar w-full">
+              <div className="max-h-[20vh] overflow-y-auto custom-scrollbar w-full">
                 <table className="table-ui text-sm min-w-full">
-                  <thead>
+                  <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                         №
                       </th>
                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
@@ -1415,7 +1426,7 @@ export default function Geree() {
                               {idx + 1}
                             </td>
                             <td className="p-3 text-theme whitespace-nowrap text-center">
-                              {p.ovog} {p.ner}
+                              {p.ner}
                             </td>
                             <td className="p-3 text-theme whitespace-nowrap text-center">
                               {p.register}
@@ -1438,7 +1449,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleEditResident(p)}
-                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1446,7 +1457,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteResident(p)}
-                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Устгах"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1487,11 +1498,11 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
             <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-              <div className="overflow-y-auto custom-scrollbar w-full">
+              <div className="max-h-[20vh] overflow-y-auto custom-scrollbar w-full">
                 <table className="table-ui text-sm min-w-full">
-                  <thead>
+                  <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+                      <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                         №
                       </th>
                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
@@ -1532,7 +1543,7 @@ export default function Geree() {
                               {idx + 1}
                             </td>
                             <td className="p-3 text-theme whitespace-nowrap text-center">
-                              {p.ovog} {p.ner}
+                              {p.ner}
                             </td>
                             <td className="p-3 text-theme whitespace-nowrap text-center">
                               {p.register}
@@ -1554,7 +1565,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleEditEmployee(p)}
-                                  className="p-2 rounded-2xl action-edit hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1562,7 +1573,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteEmployee(p)}
-                                  className="p-2 rounded-2xl action-delete hover:bg-white/10 transition-colors"
+                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Устгах"
                                 >
                                   <Trash2 className="w-4 h-4" />

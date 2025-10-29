@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { Palette } from "lucide-react";
 
 type Theme =
+  | "blue-gradient"
   | "colorful"
   | "white-gray"
   | "dark-gray"
   | "dark-green"
-  | "dark-black"
-  | "blue-gradient";
+  | "dark-black";
 
 export default function ӨнгөнийЗагварСонгох() {
   const [currentTheme, setCurrentTheme] = useState<Theme>("colorful");
@@ -40,6 +40,11 @@ export default function ӨнгөнийЗагварСонгох() {
 
   const themes = [
     {
+      id: "blue-gradient" as Theme,
+      name: "Цэнхэр",
+      colors: ["#e6f0ff", "#d7e7ff", "#c7ddff", "#b7d2ff"],
+    },
+    {
       id: "colorful" as Theme,
       name: "Өнгөлөг",
       colors: ["#806bdf", "#f64770", "#f6bb32", "#5cbf9b"],
@@ -63,11 +68,6 @@ export default function ӨнгөнийЗагварСонгох() {
       id: "dark-black" as Theme,
       name: "Гүн Хар",
       colors: ["#0b0b10", "#161620", "#1c1c28"],
-    },
-    {
-      id: "blue-gradient" as Theme,
-      name: "Цэнхэр",
-      colors: ["#e6f0ff", "#d7e7ff", "#c7ddff", "#b7d2ff"],
     },
   ];
 

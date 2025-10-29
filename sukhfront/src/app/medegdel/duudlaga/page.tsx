@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Tag, Input, notification, Popconfirm, Card, Select } from "antd";
+import { Tag, Input, Popconfirm, Card, Select } from "antd";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePickerInput } from "@mantine/dates";
@@ -192,10 +193,7 @@ export default function TaskManagementSystem() {
           : task
       )
     );
-    notification.success({
-      message: "Амжилттай",
-      description: "Төлөв амжилттай шинэчлэгдлээ",
-    });
+    openSuccessOverlay("Төлөв амжилттай шинэчлэгдлээ");
     if (duudlaga?._id === taskId)
       setDuudlaga((prev) => (prev ? { ...prev, tuluv: newStatus } : null));
   };
@@ -420,6 +418,7 @@ export default function TaskManagementSystem() {
               locale="mn"
             />
             <Select
+              popupClassName="tusgaiZagvar"
               placeholder="Төрөл"
               value={turulFilter}
               onChange={setTurulFilter}

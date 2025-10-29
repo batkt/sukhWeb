@@ -1,46 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@mantine/dates";
-import { Select } from "@mantine/core";
 import { motion } from "framer-motion";
 import EbarimtPage from "../ebarimt/page";
 import ZardalPage from "../zardal/page";
+import { useAuth } from "@/lib/useAuth";
+import { DANS_ENDPOINT } from "@/lib/endpoints";
+import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import useJagsaalt from "@/lib/useJagsaalt";
 // Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
 
 type TableItem = {
-  id: number;
+  id: string | number;
   date: string;
   month: string;
   total: number;
   action: string;
 };
 
-const stats = [
-  { title: "Нийт", value: 150, delay: 600 },
-  { title: "Тодорхойгүй", value: 5, delay: 500 },
-  { title: "Холбогдсон", value: 80, delay: 400 },
-  { title: "Магадлалтай", value: 20, delay: 400 },
-];
-
-// Mock table data
-const mockData: TableItem[] = [
-  { id: 1, date: "2025-10-01", month: "10", total: 1500, action: "Тайлбар 1" },
-  { id: 2, date: "2025-10-05", month: "10", total: 2000, action: "Тайлбар 2" },
-  { id: 3, date: "2025-10-09", month: "10", total: 3200, action: "Тайлбар 3" },
-];
-
 type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function DansniiKhuulga() {
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
-  const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
+  const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined
   );
-  const [filteredData, setFilteredData] = useState<TableItem[]>(mockData);
+  const [filteredData, setFilteredData] = useState<TableItem[]>([]);
   const [isEbarimtOpen, setIsEbarimtOpen] = useState(false);
   const [isZardalOpen, setIsZardalOpen] = useState(false);
+  const { token, ajiltan, barilgiinId } = useAuth();
+  // Include only defined filters to avoid sending { baiguullagiinId: undefined }
+  const orgQuery = useMemo(() => {
+    const q: Record<string, any> = {};
+    if (ajiltan?.baiguullagiinId) q.baiguullagiinId = ajiltan.baiguullagiinId;
+    if (barilgiinId) q.barilgiinId = barilgiinId;
+    return q;
+  }, [ajiltan?.baiguullagiinId, barilgiinId]);
+  const { jagsaalt: dansList } = useJagsaalt<any>(DANS_ENDPOINT, orgQuery, {
+    createdAt: -1,
+  });
+  const dansOptions = useMemo(
+    () =>
+      (dansList || []).map((d: any) => ({
+        value: String(d._id || d.dugaar || ""),
+        // Always show account number (dugaar) as label per requirement
+        label: String(d.dugaar || "-") || "-",
+      })),
+    [dansList]
+  );
 
   const exceleerTatya = () => {
     alert("Excel татах товч дарлаа!");
@@ -76,8 +85,15 @@ export default function DansniiKhuulga() {
       </motion.h1>
 
       <div className="space-y-6">
+        {/* Simple live stats derived from current table */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
+          {[
+            { title: "Нийт мөр", value: filteredData.length },
+            {
+              title: "Нийт дүн",
+              value: filteredData.reduce((s, r) => s + (r.total || 0), 0),
+            },
+          ].map((stat, idx) => (
             <motion.div
               key={idx}
               className="relative group rounded-2xl"
@@ -93,7 +109,9 @@ export default function DansniiKhuulga() {
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
                 <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {stat.value}
+                  {typeof stat.value === "number"
+                    ? stat.value.toLocaleString("mn-MN")
+                    : String(stat.value)}
                 </div>
                 <div className="text-xs text-theme leading-tight">
                   {stat.title}
@@ -110,19 +128,24 @@ export default function DansniiKhuulga() {
                 type="range"
                 locale="mn"
                 value={ekhlekhOgnoo}
-                onChange={(v) => setEkhlekhOgnoo(v)}
-                className="w-full sm:w-auto rounded-xl hover:shadow-md transition-all duration-300"
+                onChange={setEkhlekhOgnoo}
+                size="sm"
+                radius="md"
+                variant="filled"
+                clearable
+                placeholder="Огноо сонгох"
+                classNames={{
+                  input:
+                    "text-theme placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                }}
               />
-              <Select
-                data={[
-                  { value: "421030635", label: t("421030635") },
-                  { value: "421030636", label: t("421030636") },
-                ]}
+              <TusgaiZagvar
+                value={selectedDansId || ""}
+                onChange={(v) => setSelectedDansId(v || undefined)}
+                options={dansOptions}
                 placeholder={t("Данс")}
-                allowDeselect
-                onChange={(v) => setUilchilgeeAvi(v || undefined)}
-                className="w-full sm:w-48 rounded-xl hover:shadow-md transition-all duration-300"
-                nothingFoundMessage={t("Хайлт олдсонгүй")}
+                className="h-[40px] !w-[150px]"
+                tone="theme"
               />
             </div>
             <div className="flex items-center gap-3">
@@ -152,10 +175,7 @@ export default function DansniiKhuulga() {
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <button
-                  onClick={exceleerTatya}
-                  className="flex-1 md:flex-none rounded-xl text-theme  text-white shadow-md hover:shadow-lg transition-all duration-300 bg-blue-600 px-4 py-2"
-                >
+                <button onClick={exceleerTatya} className="btn-minimal">
                   {t("Excel татах")}
                 </button>
               </motion.div>
@@ -265,7 +285,7 @@ export default function DansniiKhuulga() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2101] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
@@ -299,7 +319,7 @@ export default function DansniiKhuulga() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2101] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl bg-white dark:bg-slate-900"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">

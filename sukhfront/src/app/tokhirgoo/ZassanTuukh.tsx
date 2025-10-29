@@ -115,6 +115,7 @@ export default function ZassanTuukh() {
             locale="mn"
           />
           <Select
+            popupClassName="tusgaiZagvar"
             className="w-full sm:w-36 text-slate-900"
             placeholder="Ажилтан"
             allowClear
@@ -127,6 +128,7 @@ export default function ZassanTuukh() {
             ))}
           </Select>
           <Select
+            popupClassName="tusgaiZagvar"
             className="w-full sm:w-36 text-slate-900"
             placeholder="Төрөл"
             allowClear

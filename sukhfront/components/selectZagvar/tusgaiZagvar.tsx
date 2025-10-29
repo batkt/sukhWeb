@@ -13,6 +13,7 @@ interface CustomSelectProps {
   options?: Option[]; // optional now
   children?: ReactNode; // support <option> children
   placeholder?: string;
+  data?: string;
   className?: string;
   disabled?: boolean;
   // When used on white surfaces, don't inherit themed text colors
@@ -25,6 +26,7 @@ export default function TusgaiZagvar({
   onChange,
   options,
   children,
+  data,
   placeholder = "Сонгох",
   className = "",
   disabled = false,
@@ -32,6 +34,9 @@ export default function TusgaiZagvar({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const instanceId = useRef<string>(
+    `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -41,6 +46,25 @@ export default function TusgaiZagvar({
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Ensure only one custom select is open at a time across the page
+  useEffect(() => {
+    const onAnotherOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail as { id: string } | undefined;
+      if (detail?.id && detail.id !== instanceId.current) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener(
+      "tusgai-select-open",
+      onAnotherOpen as EventListener
+    );
+    return () =>
+      window.removeEventListener(
+        "tusgai-select-open",
+        onAnotherOpen as EventListener
+      );
   }, []);
 
   // Support reading <option> children as fallback
@@ -64,9 +88,20 @@ export default function TusgaiZagvar({
     <div ref={ref} className={`relative ${className}`}>
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (disabled) return;
+          const next = !isOpen;
+          if (next) {
+            window.dispatchEvent(
+              new CustomEvent("tusgai-select-open", {
+                detail: { id: instanceId.current },
+              })
+            );
+          }
+          setIsOpen(next);
+        }}
         disabled={disabled}
-        className={`btn-neu w-full justify-between cursor-pointer flex items-center ${
+        className={`btn-neu w-full justify-between cursor-pointer flex items-center h-full ${
           tone === "neutral"
             ? "!bg-white !text-slate-900 !border !border-gray-300 hover:!bg-gray-50"
             : ""
@@ -88,14 +123,14 @@ export default function TusgaiZagvar({
 
       {isOpen && (
         <div
-          className={`absolute top-full left-0 mt-2 w-full max-h-60 z-[90] menu-surface rounded-2xl overflow-hidden shadow-lg ${
+          className={`absolute top-full left-0 mt-2 w-full max-h-60 z-[3000] menu-surface rounded-2xl overflow-hidden shadow-lg ${
             tone === "neutral"
               ? "!bg-white !text-slate-900 !border !border-gray-200"
               : ""
           }`}
           role="listbox"
         >
-          <ul className="py-2 overflow-y-auto max-h-60">
+          <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
             {mergedOptions.map((opt) => (
               <li key={opt.value}>
                 <button

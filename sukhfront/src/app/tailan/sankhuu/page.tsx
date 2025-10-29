@@ -202,6 +202,7 @@ const Chart: React.FC<ChartProps> = ({
               value: a.service,
               label: t(a.ner),
             }))}
+            comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
           />
           <Select
             placeholder={t("График төрөл")}
@@ -214,6 +215,7 @@ const Chart: React.FC<ChartProps> = ({
               { value: "bar", label: t("Босоо багана") },
               { value: "barHorizontal", label: t("Хэвтээ багана") },
             ]}
+            comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
           />
           <Select
             placeholder={t("Нарийвчлал")}
@@ -224,6 +226,7 @@ const Chart: React.FC<ChartProps> = ({
               { value: "month", label: t("Сар") },
               { value: "year", label: t("Жил") },
             ]}
+            comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
           />
         </div>
 

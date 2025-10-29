@@ -1504,6 +1504,31 @@ body::after {
   --btn-border: color-mix(in oklch, var(--glass-border), transparent 40%);
   --focus-ring: rgba(96, 165, 250, 0.32);
 }
+/* Logo surface tokens: add weak/default/strong tints for light themes */
+:root {
+  --logo-border: var(--surface-border);
+  --logo-bg-weak: color-mix(in oklch, var(--surface-bg), #0f172a 6%);
+  --logo-bg: color-mix(in oklch, var(--surface-bg), #0f172a 10%);
+  /* Make strong tint more blackish on light themes */
+  --logo-bg-strong: color-mix(in oklch, var(--surface-bg), #000000 24%);
+}
+/* Light theme variants may benefit from a touch more contrast */
+[data-theme="white-gray"],
+[data-theme="blue-gradient"] {
+  --logo-bg-weak: color-mix(in oklch, var(--surface-bg), #0f172a 8%);
+  --logo-bg: color-mix(in oklch, var(--surface-bg), #0f172a 12%);
+  /* Stronger and blackish for extra contrast on very light palettes */
+  --logo-bg-strong: color-mix(in oklch, var(--surface-bg), #000000 28%);
+}
+/* Dark themes: keep logo surface equal to themed surface */
+[data-theme="dark-black"],
+[data-theme="dark-gray"],
+[data-theme="dark-green"] {
+  --logo-bg-weak: var(--surface-bg);
+  --logo-bg: var(--surface-bg);
+  --logo-bg-strong: var(--surface-bg);
+  --logo-border: var(--surface-border);
+}
 [data-theme="white-gray"] {
   --btn-bg: rgba(255, 255, 255, 0.85);
   --btn-bg-hover: rgba(255, 255, 255, 0.92);
@@ -1593,6 +1618,16 @@ select,
   background: color-mix(in oklch, var(--glass-tint-2), white 8%);
 }
 
+/* Reusable hover surface matching table row hover */
+.hover-surface {
+  transition: background 0.18s ease;
+}
+.hover-surface:hover {
+  /* centralize hover tone so every page feels the same */
+  --hover-bg: color-mix(in oklch, var(--glass-tint-2), white 8%);
+  background: var(--hover-bg) !important;
+}
+
 /* Let specific panels overflow (for dropdowns) */
 .neu-panel.allow-overflow {
   overflow: visible;
@@ -1618,7 +1653,7 @@ select,
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
 .btn-minimal:hover {
-  background: var(--btn-bg-hover) !important;
+  background: var(--btn-bg-hover) !important; /* same hover across pages */
 }
 .btn-minimal:active {
   background: var(--btn-bg-active) !important;
@@ -1645,6 +1680,124 @@ select,
   content: none !important;
 }
 
+/* === Global hover unification =========================================== */
+/* Use the same soft hover for tables, menus, lists, and dropdown options */
+:root {
+  --hover-bg: color-mix(in oklch, var(--glass-tint-2), white 8%);
+  --hover-bg-strong: color-mix(in oklch, var(--glass-tint-2), white 14%);
+}
+
+/* Ant Design: table rows */
+.ant-table-tbody > tr:hover > td,
+.ant-table-tbody > tr.ant-table-row:hover > td {
+  background: var(--hover-bg) !important;
+}
+
+/* Ant Design: menus and dropdown items */
+.ant-dropdown-menu-item:hover,
+.ant-dropdown-menu-submenu-title:hover,
+.ant-menu-item:hover {
+  background: var(--hover-bg) !important;
+}
+/* AntD: selected dropdown item state */
+.ant-dropdown-menu-item-selected,
+.ant-dropdown-menu-item-selected:hover {
+  background: var(--hover-bg-strong) !important;
+}
+
+/* Ant Design: Select options */
+.ant-select-item-option-active,
+.ant-select-item-option:hover {
+  background: var(--hover-bg) !important;
+}
+.ant-select-item-option-selected,
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background: var(--hover-bg-strong) !important;
+}
+
+/* Ant Design: buttons (neutralize theme differences) */
+.ant-btn:not([disabled]):hover,
+.ant-btn:not([disabled]):focus {
+  background: var(--btn-bg-hover) !important;
+  color: var(--btn-text) !important;
+  border-color: var(--btn-border) !important;
+}
+
+/* Mantine: table rows and nav links (when present) */
+.mantine-Table-tr:hover {
+  background: var(--hover-bg) !important;
+}
+.mantine-NavLink-root:hover {
+  background: var(--hover-bg) !important;
+}
+/* Mantine: menu items and tabs hover */
+.mantine-Menu-item:hover {
+  background: var(--hover-bg) !important;
+}
+.mantine-Tabs-tab:hover {
+  background: var(--hover-bg) !important;
+}
+
+/* Generic lists/cards using common classes */
+.card:hover,
+.list-item:hover,
+.row-hover:hover {
+  background: var(--hover-bg) !important;
+}
+
+/* Keep dropdowns consistent: Mantine combobox already themed above */
+.mantine-Combobox-option[data-hovered] {
+  background: var(--hover-bg) !important;
+}
+.mantine-Combobox-option[data-selected] {
+  background: var(--hover-bg-strong) !important;
+}
+
+/* Controls: Selects and DatePickers should also reflect the unified hover */
+/* Mantine: hover on input fields of Select and DatePicker */
+.mantine-Select-root .mantine-Input-input:hover,
+.mantine-DatePickerInput-root .mantine-Input-input:hover {
+  background: var(--hover-bg) !important;
+}
+
+/* Mantine: calendar day hover */
+.mantine-Month-day:hover {
+  background: var(--hover-bg) !important;
+  color: inherit !important;
+}
+
+/* AntD: Select control hover */
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+  background: var(--hover-bg) !important;
+}
+
+/* AntD: DatePicker input hover */
+.ant-picker:hover {
+  background: var(--hover-bg) !important;
+}
+/* AntD: Tabs hover */
+.ant-tabs-tab:hover {
+  background: var(--hover-bg) !important;
+}
+/* AntD: DatePicker calendar cells hover */
+.ant-picker-cell:hover .ant-picker-cell-inner,
+.ant-picker-time-panel-cell:hover .ant-picker-time-panel-cell-inner {
+  background: var(--hover-bg) !important;
+}
+
+/* Generic menu surfaces: options, links, buttons on hover */
+.menu-surface [role="menuitem"]:hover,
+.menu-surface [role="option"]:hover,
+.menu-surface a:hover,
+.menu-surface button:hover {
+  background: var(--hover-bg) !important;
+}
+
+/* AntD: list item hover (if used) */
+.ant-list-item:hover {
+  background: var(--hover-bg) !important;
+}
+
 /* Make Mantine DatePickerInput look like .btn-minimal (colors, text, size) */
 .mantine-DatePickerInput-root .mantine-Input-input {
   background: var(--btn-bg) !important;
@@ -1666,4 +1819,73 @@ select,
 /* Calendar icon/sections should follow btn text color */
 .mantine-DatePickerInput-root .mantine-Input-section {
   color: var(--btn-text) !important;
+}
+
+/* === Mantine Select: make it look like .btn-minimal and theme-safe === */
+.mantine-Select-root .mantine-Input-input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 0.75rem !important;
+  height: 42px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 2px 8px var(--glass-shadow, rgba(0, 0, 0, 0.15));
+}
+.mantine-Select-root .mantine-Input-input::placeholder {
+  color: rgba(15, 23, 42, 0.6) !important;
+}
+.mantine-Select-root .mantine-Input-input:focus,
+.mantine-Select-root .mantine-Input-input:focus-visible {
+  outline: none !important;
+  box-shadow: 0 0 0 3px var(--focus-ring, rgba(59, 130, 246, 0.35)) !important;
+}
+.mantine-Select-root .mantine-Input-section {
+  color: currentColor !important;
+}
+
+/* Select dropdown surface should be themed; support special class 'tusgaiZagvar' */
+.mantine-Combobox-dropdown,
+.mantine-Combobox-dropdown.tusgaiZagvar {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 0.75rem !important;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
+  box-shadow: 0 10px 26px var(--glass-shadow, rgba(0, 0, 0, 0.18));
+}
+.mantine-Combobox-option {
+  color: var(--panel-text) !important;
+}
+.mantine-Combobox-option[data-hovered] {
+  background: color-mix(in oklch, var(--surface-bg), white 6%) !important;
+}
+.mantine-Combobox-option[data-selected] {
+  background: color-mix(in oklch, var(--surface-bg), #e5effe 18%) !important;
+  color: color-mix(in oklch, var(--panel-text), #0b3868 35%) !important;
+}
+
+/* Dark themes: ensure select input uses dark surfaces (no white hover) */
+[data-theme="dark-black"] .mantine-Select-root .mantine-Input-input,
+[data-theme="dark-gray"] .mantine-Select-root .mantine-Input-input,
+[data-theme="dark-green"] .mantine-Select-root .mantine-Input-input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+}
+[data-theme="dark-black"]
+  .mantine-Select-root
+  .mantine-Input-input::placeholder,
+[data-theme="dark-gray"] .mantine-Select-root .mantine-Input-input::placeholder,
+[data-theme="dark-green"]
+  .mantine-Select-root
+  .mantine-Input-input::placeholder {
+  color: rgba(229, 231, 235, 0.7) !important;
+}
+[data-theme="dark-black"] .mantine-Combobox-dropdown,
+[data-theme="dark-gray"] .mantine-Combobox-dropdown,
+[data-theme="dark-green"] .mantine-Combobox-dropdown {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
 }

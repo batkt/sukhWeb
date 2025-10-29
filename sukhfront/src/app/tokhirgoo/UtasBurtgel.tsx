@@ -6,16 +6,8 @@ import React, {
   ForwardRefRenderFunction,
   useState,
 } from "react";
-import {
-  Form,
-  InputNumber,
-  notification,
-  Button,
-  Select,
-  Space,
-  Switch,
-  Modal,
-} from "antd";
+import { Form, InputNumber, Button, Select, Space, Switch, Modal } from "antd";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";
 
@@ -89,7 +81,7 @@ const UtasBurtgel: ForwardRefRenderFunction<
       msgAvakhTsag: formValues.msgAvakhTsag,
     };
 
-    notification.success({ message: t("Амжилттай хадгаллаа (mock)") });
+    openSuccessOverlay(t("Амжилттай хадгаллаа (mock)"));
     baiguullagaMutate?.();
     destroy();
   };
@@ -160,7 +152,11 @@ const UtasBurtgel: ForwardRefRenderFunction<
       </Form.List>
 
       <Form.Item label={t("Хүлээн авах цаг")} name="msgAvakhTsag">
-        <Select placeholder="Хүлээн авах цаг" className="text-theme">
+        <Select
+          placeholder="Хүлээн авах цаг"
+          className="text-theme"
+          popupClassName="tusgaiZagvar"
+        >
           {["07:00", "09:30", "20:00", "22:00"].map((time) => (
             <Select.Option key={time}>{time}</Select.Option>
           ))}

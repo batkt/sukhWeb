@@ -10,23 +10,39 @@ type ThemedLogoProps = {
   // Paths to light/dark assets under public/
   lightSrc?: string; // defaults to "/logo.svg"
   darkSrc?: string; // optional; if omitted, only lightSrc is rendered
-  withBg?: boolean; // show theme-aware background using --logo-bg
+  withBg?: boolean; // show theme-aware background using theme tokens
+  /**
+   * Background tint strength for light themes.
+   * - "weak": least gray (subtle)
+   * - "default": balanced (recommended)
+   * - "strong": more gray for high contrast
+   */
+  bgStrength?: "weak" | "default" | "strong";
+  /**
+   * Background mode:
+   * - "theme" (default): follow theme surface exactly (var(--surface-bg))
+   * - "tint": use light-theme tints (weak/default/strong) for extra contrast
+   */
+  bgMode?: "theme" | "tint";
   radius?: number; // px
   padding?: number; // px
   style?: React.CSSProperties;
 };
 
 /**
- * Theme-aware logo with optional background. If darkSrc is provided, it swaps
- * between .logo-light and .logo-dark based on [data-theme="dark-black"].
+ * Theme-aware logo with optional background that follows app theme tokens.
+ * If darkSrc is provided, it swaps between .logo-light and .logo-dark based on
+ * [data-theme="dark-black"].
  */
 export default function ThemedLogo({
   size = 48,
   className,
   alt = "Logo",
-  lightSrc = "/amarLogo.svg",
+  lightSrc = "/logoSukh.png",
   darkSrc,
   withBg = true,
+  bgStrength = "strong",
+  bgMode = "tint",
   radius = 12,
   padding = 6,
   style,
@@ -38,7 +54,19 @@ export default function ThemedLogo({
     justifyContent: "center",
     borderRadius: withBg ? radius : undefined,
     padding: withBg ? padding : 0,
-    background: withBg ? "var(--logo-bg, transparent)" : undefined,
+
+    background: withBg
+      ? bgMode === "theme"
+        ? "var(--surface-bg)"
+        : bgStrength === "strong"
+        ? "var(--logo-bg-strong)"
+        : bgStrength === "weak"
+        ? "var(--logo-bg-weak)"
+        : "var(--logo-bg)"
+      : undefined,
+    border: withBg ? "1px solid var(--surface-border)" : undefined,
+    // Subtle elevation so it reads on light backgrounds
+    boxShadow: withBg ? "0 8px 20px var(--glass-shadow)" : undefined,
     ...style,
   };
 
@@ -62,19 +90,18 @@ export default function ThemedLogo({
         .logo-variant.logo-dark {
           display: none;
         }
-        [data-theme="dark-black"] .logo-variant.logo-light {
+        /* Switch to dark variant on all dark themes */
+        [data-theme="dark-black"] .logo-variant.logo-light,
+        [data-theme="dark-gray"] .logo-variant.logo-light,
+        [data-theme="dark-green"] .logo-variant.logo-light,
+        .dark .logo-variant.logo-light {
           display: none;
         }
-        [data-theme="dark-black"] .logo-variant.logo-dark {
+        [data-theme="dark-black"] .logo-variant.logo-dark,
+        [data-theme="dark-gray"] .logo-variant.logo-dark,
+        [data-theme="dark-green"] .logo-variant.logo-dark,
+        .dark .logo-variant.logo-dark {
           display: inline-flex;
-        }
-
-        /* Defaults for themed background if not defined elsewhere */
-        :root {
-          --logo-bg: transparent;
-        }
-        [data-theme="dark-black"] {
-          --logo-bg: #0b1220;
         }
       `}</style>
     </span>

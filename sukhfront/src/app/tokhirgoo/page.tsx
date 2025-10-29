@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useAuth } from "@/lib/useAuth";
 import { Settings } from "lucide-react";
 
 import AppTokhirgoo from "./AppTokhirgoo";
@@ -33,30 +34,8 @@ const AdminLayout = ({
   </div>
 );
 
-const mockAjiltan = {
-  _id: "ajiltan-123",
-  erkh: "Admin",
-  ner: "d ./.",
-  ovog: "a",
-  albanTushaal: "Developer",
-  register: "1234567890",
-  zurgiinNer: null,
-  baiguullagiinId: "test-org",
-};
-
-const mockBaiguullaga = {
-  _id: "mock-id-123",
-  tokhirgoo: {
-    msgIlgeekhDugaar: "1234",
-    msgIlgeekhKey: "test-key-123",
-    msgAvakhDugaar: ["99887766", "88776655"],
-    msgAvakhTurul: "bugd",
-  },
-};
-
 function Tokhirgoo() {
-  const ajiltan = mockAjiltan;
-  const baiguullaga = mockBaiguullaga;
+  const { ajiltan, baiguullaga, token } = useAuth();
 
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -152,12 +131,14 @@ function Tokhirgoo() {
           >
             <img
               src="/profile.svg"
-              alt={ajiltan.ner}
+              alt={ajiltan?.ner || "profile"}
               className="w-12 h-12 rounded-full ring-2 ring-[var(--sidebar-ring)]"
             />
             <div className="ml-4">
-              <h2 className="font-medium text-lg text-theme">{`${ajiltan.ovog} ${ajiltan.ner}`}</h2>
-              <p className="text-theme text-sm">{ajiltan.albanTushaal}</p>
+              <h2 className="font-medium text-lg text-theme">
+                {ajiltan?.ner || ""}
+              </h2>
+              <p className="text-theme text-sm">{ajiltan?.nevtrekhNer || ""}</p>
             </div>
           </div>
 
@@ -181,15 +162,20 @@ function Tokhirgoo() {
       </div>
 
       <div className="col-span-12 lg:col-span-9 text-theme">
-        <div className="bg-transparent rounded-2xl shadow-lg p-8 max-h-[650px] overflow-y-auto custom-scrollbar">
-          {Tsonkh && (
-            <Tsonkh
-              ajiltan={ajiltan}
-              baiguullaga={baiguullaga}
-              token="mock-token-123"
-              setSongogdsonTsonkhniiIndex={setSelectedIndex}
-            />
-          )}
+        <div className="bg-transparent rounded-2xl shadow-lg p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+          {Tsonkh &&
+            ajiltan &&
+            (() => {
+              const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
+              return (
+                <AnyWindow
+                  ajiltan={ajiltan}
+                  baiguullaga={baiguullaga}
+                  token={token || ""}
+                  setSongogdsonTsonkhniiIndex={setSelectedIndex}
+                />
+              );
+            })()}
         </div>
       </div>
     </AdminLayout>

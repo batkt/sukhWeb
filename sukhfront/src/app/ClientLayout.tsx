@@ -8,8 +8,10 @@ import dayjs from "dayjs";
 import "dayjs/locale/mn";
 import { useRouter, usePathname } from "next/navigation";
 import { parseCookies, destroyCookie } from "nookies";
-import { Toaster } from "react-hot-toast";
 import { SpinnerProvider, useSpinner } from "../../src/context/SpinnerContext";
+import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
+import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 function parseJwt(token: string) {
   try {
@@ -69,11 +71,28 @@ function LayoutContent({ children }: { children: ReactNode }) {
       dayjs.locale("mn");
     } catch (_) {}
 
+    // Apply saved theme on every route change (so login page also follows theme)
+    try {
+      const saved =
+        (typeof window !== "undefined" && localStorage.getItem("app-theme")) ||
+        "";
+      const root = document.documentElement;
+      root.removeAttribute("data-theme");
+      if (saved && saved !== "colorful") {
+        root.setAttribute("data-theme", saved);
+      }
+    } catch (_) {}
+
     const checkAuth = () => {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
 
       if (pathname === "/login") {
+        // If already authenticated, redirect away from login
+        if (token && isTokenValid(token)) {
+          router.replace("/khynalt");
+          return;
+        }
         setAuthChecked(true);
         return;
       }
@@ -95,8 +114,25 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   if (!authChecked || spinnerLoading) {
     return (
-      <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[2000]">
-        <div className="w-24 h-24 border-8 border-gray-200 border-t-green-500 rounded-full animate-spin shadow-lg"></div>
+      <div
+        className="fixed inset-0 z-[2000] grid place-items-center"
+        style={{
+          background: "color-mix(in oklch, var(--surface-bg), transparent 10%)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        <div className="menu-surface p-8 rounded-3xl flex flex-col items-center gap-5">
+          <div className="w-[160px] h-[160px]">
+            <DotLottieReact
+              src="https://lottie.host/5386a522-13d7-4766-b11e-78c8c868b2d6/ljDPLtL4kH.lottie"
+              loop
+              autoplay
+              style={{ width: "100%", height: "100%" }}
+            />
+          </div>
+          <div className="text-sm text-muted-foreground">Түр хүлээнэ үү…</div>
+        </div>
       </div>
     );
   }
@@ -104,7 +140,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      <Toaster position="top-center" reverseOrder={false} />
+      <SuccessOverlayHost />
+      <ErrorOverlayHost />
     </>
   );
 }

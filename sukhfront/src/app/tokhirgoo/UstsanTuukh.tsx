@@ -154,6 +154,7 @@ export default function UstsanTuukh() {
           />
 
           <Select
+            popupClassName="tusgaiZagvar"
             placeholder={t("Ажилтан")}
             style={{ width: 120 }}
             onChange={setAjiltankhaikh}
@@ -164,6 +165,7 @@ export default function UstsanTuukh() {
             <Select.Option value="2">Ажилтан 2</Select.Option>
           </Select>
           <Select
+            popupClassName="tusgaiZagvar"
             placeholder={t("Төрөл")}
             style={{ width: 120 }}
             onChange={setTurul}

@@ -64,3 +64,17 @@ const uilchilgee = (token?: string): AxiosInstance => {
 };
 
 export default uilchilgee;
+
+export const updateBaiguullaga = async (
+  token: string | undefined,
+  id: string,
+  payload: Record<string, any>
+): Promise<any> => {
+  try {
+    const resp = await uilchilgee(token).put(`/baiguullaga/${id}`, payload);
+    return resp.data;
+  } catch (e) {
+    aldaaBarigch(e);
+    throw e;
+  }
+};

@@ -11,9 +11,10 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "../../../../lib/uilchilgee";
-import toast from "react-hot-toast";
+import { message } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -146,7 +147,7 @@ export default function DansniiKhuulga() {
   }, [allHistoryItems, tuluvFilter]);
 
   const exceleerTatya = () => {
-    toast("Excel татах боломж удахгүй");
+    message.info("Excel татах боломж удахгүй");
   };
   const t = (text: string) => text;
 
@@ -183,7 +184,7 @@ export default function DansniiKhuulga() {
       <div className="space-y-6">
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto ">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <DatePickerInput
                 type="range"
                 locale="mn"
@@ -194,9 +195,9 @@ export default function DansniiKhuulga() {
                 variant="filled"
                 clearable
                 placeholder="Огноо сонгох"
-                className="w-[280px]"
                 classNames={{
-                  input: "text-theme placeholder:text-theme",
+                  input:
+                    "text-theme placeholder:text-theme !h-[40px] !py-2 !w-[140px]",
                 }}
               />
               <TusgaiZagvar
@@ -210,7 +211,7 @@ export default function DansniiKhuulga() {
                   { value: "unpaid", label: "Төлөөгүй" },
                 ]}
                 placeholder="Төлөв"
-                className="w-[180px]"
+                className="h-[40px] w-[140px]"
                 tone="theme"
               />
             </div>
@@ -227,7 +228,7 @@ export default function DansniiKhuulga() {
                   Нэхэмжлэх
                 </button>
               </motion.div>
-              <motion.div
+              {/* <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
@@ -237,7 +238,7 @@ export default function DansniiKhuulga() {
                 >
                   Хөнгөлөлт
                 </button>
-              </motion.div>
+              </motion.div> */}
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
@@ -260,12 +261,15 @@ export default function DansniiKhuulga() {
                       №
                     </th>
                     <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      Нэр
+                    </th>
+                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Гэрээний дугаар
                     </th>
 
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    {/* <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Хаяг
-                    </th>
+                    </th> */}
                     <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Нийт дүн
                     </th>
@@ -278,13 +282,13 @@ export default function DansniiKhuulga() {
                 <tbody>
                   {isLoadingHistory ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-theme/70">
+                      <td colSpan={6} className="p-8 text-center text-theme/70">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="p-8 text-center text-theme/60">
+                      <td colSpan={6} className="p-8 text-center text-theme/60">
                         Мэдээлэл байхгүй байна
                       </td>
                     </tr>
@@ -306,13 +310,27 @@ export default function DansniiKhuulga() {
                       const total = Number(
                         it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0
                       );
-                      const khayag = resident?.khayag || "-";
+                      // const khayag =
+                      //   resident && resident.bairNer
+                      //     ? String(resident.bairNer).trim()
+                      //     : it.bairNer
+                      //     ? String(it.bairNer).trim()
+                      //     : "-";
                       const isPaid =
                         String(it?.tuluv || "").trim() === "Төлсөн" ||
                         !!it?.tulsunOgnoo ||
                         (Array.isArray(it?.paymentHistory) &&
                           it.paymentHistory.length > 0);
                       const tuluvLabel = isPaid ? "Төлсөн" : "Төлөөгүй";
+                      const ner = resident
+                        ? [resident.ner]
+                            .map((v) => (v ? String(v).trim() : ""))
+                            .filter(Boolean)
+                            .join(" ") || "-"
+                        : [it.ner]
+                            .map((v) => (v ? String(v).trim() : ""))
+                            .filter(Boolean)
+                            .join(" ") || "-";
 
                       return (
                         <tr
@@ -323,24 +341,29 @@ export default function DansniiKhuulga() {
                             {idx + 1}
                           </td>
                           <td className="p-3 text-center text-theme whitespace-nowrap">
+                            {ner}
+                          </td>
+                          <td className="p-3 text-center text-theme whitespace-nowrap">
                             {dugaar}
                           </td>
 
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                          {/* <td className="p-3 text-center text-theme whitespace-nowrap">
                             {khayag}
-                          </td>
+                          </td> */}
                           <td className="p-3 text-center text-theme whitespace-nowrap">
                             {total.toLocaleString("mn-MN")} ₮
                           </td>
                           <td className="p-3 text-center text-theme whitespace-nowrap">
-                            <span
-                              className={
-                                "px-2 py-0.5 rounded-full text-xs font-medium " +
-                                (isPaid ? "badge-paid" : "badge-unpaid")
-                              }
-                            >
-                              {tuluvLabel}
-                            </span>
+                            <div className="flex items-center justify-center gap-2">
+                              <span
+                                className={
+                                  "px-2 py-0.5 rounded-full text-xs font-medium " +
+                                  (isPaid ? "badge-paid" : "badge-unpaid")
+                                }
+                              >
+                                {tuluvLabel}
+                              </span>
+                            </div>
                           </td>
                         </tr>
                       );

@@ -1,42 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Select, Button, Spin } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
+import { Loader } from "@mantine/core";
+import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import { DatePickerInput } from "@mantine/dates";
 import moment from "moment";
 import { motion } from "framer-motion";
+import { useAuth } from "@/lib/useAuth";
+import uilchilgee from "../../../../lib/uilchilgee";
+import useBaiguullaga from "@/lib/useBaiguullaga";
 
 type TableItem = {
-  id: number;
-  date: string;
-  month: string;
-  total: number;
-  service: string;
+  id?: string | number;
+  receiptId?: string;
+  ddtd?: string;
+  date?: string;
+  month?: string;
+  total?: number; // totalAmount
+  totalVAT?: number;
+  totalCityTax?: number;
+  type?: string;
+  payStatus?: string;
+  payCode?: string;
+  service?: string; // first item name
+  [key: string]: any;
 };
 
-const stats = [
-  { title: "Баримт авах тоо", value: 10 },
-  { title: "Баримт авах дүн", value: 5000 },
-  { title: "Баримт авсан тоо", value: 8 },
-  { title: "Баримт авсан дүн", value: 3200 },
-  { title: "Баримт үлдсэн тоо", value: 2 },
-  { title: "Баримт үлдсэн дүн", value: 1800 },
-  { title: "Нийт", value: 10 },
-];
-
-const mockData: TableItem[] = [
-  { id: 1, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
-  { id: 2, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
-  { id: 3, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
-  { id: 4, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
-  { id: 5, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
-  { id: 6, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
-  { id: 7, date: "2025-10-01", month: "10", total: 1500, service: "Зогсоол" },
-  { id: 8, date: "2025-10-05", month: "10", total: 2000, service: "Тоглоом" },
-  { id: 9, date: "2025-10-09", month: "10", total: 3200, service: "Түрээс" },
-];
-
 export default function Ebarimt() {
+  const { token, ajiltan, barilgiinId } = useAuth();
+  const { baiguullaga } = useBaiguullaga(
+    token || null,
+    ajiltan?.baiguullagiinId || null
+  );
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
   >(null);
@@ -44,7 +40,180 @@ export default function Ebarimt() {
     undefined
   );
   const [loading, setLoading] = useState(false);
-  const [tableData, setTableData] = useState<TableItem[]>(mockData);
+
+  const merchantTin = useMemo(() => {
+    // Prefer selected building; fallback to sole building; then org-level tokhirgoo
+    const list = (baiguullaga as any)?.barilguud || [];
+    const matched = barilgiinId
+      ? list.find((b: any) => String(b?._id) === String(barilgiinId))
+      : null;
+    const fallback = !matched && list.length === 1 ? list[0] : null;
+    return (
+      matched?.tokhirgoo?.merchantTin ||
+      fallback?.tokhirgoo?.merchantTin ||
+      (baiguullaga as any)?.tokhirgoo?.merchantTin ||
+      ""
+    );
+  }, [baiguullaga, barilgiinId]);
+
+  const districtCode = useMemo(() => {
+    const list = (baiguullaga as any)?.barilguud || [];
+    const matched = barilgiinId
+      ? list.find((b: any) => String(b?._id) === String(barilgiinId))
+      : null;
+    const fallback = !matched && list.length === 1 ? list[0] : null;
+    return (
+      matched?.tokhirgoo?.districtCode ||
+      fallback?.tokhirgoo?.districtCode ||
+      (baiguullaga as any)?.tokhirgoo?.districtCode ||
+      ""
+    );
+  }, [baiguullaga, barilgiinId]);
+
+  // Normalize any date-like input to ISO string safely
+  const toISO = (x: any): string | null => {
+    if (!x) return null;
+    try {
+      const d = x instanceof Date ? x : new Date(x);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    } catch (_e) {
+      return null;
+    }
+  };
+
+  const swrKey = useMemo(() => {
+    const [s, e] = ekhlekhOgnoo || [];
+    const orgId = ajiltan?.baiguullagiinId || null;
+    const isExternal = !!merchantTin && !!districtCode;
+    if (isExternal) {
+      return [
+        "ext",
+        token || "",
+        "http://103.143.40.46:8084/ebarimtJagsaaltAvya",
+        merchantTin,
+        districtCode,
+        toISO(s),
+        toISO(e),
+        uilchilgeeAvi || null,
+      ];
+    }
+    if (!token || !orgId) return null;
+    return [
+      "int",
+      token,
+      "/ebarimtJagsaaltAvya",
+      orgId,
+      barilgiinId || null,
+      toISO(s),
+      toISO(e),
+      uilchilgeeAvi || null,
+    ];
+  }, [
+    merchantTin,
+    districtCode,
+    ekhlekhOgnoo,
+    uilchilgeeAvi,
+    ajiltan?.baiguullagiinId,
+    barilgiinId,
+    token,
+  ]);
+
+  const { data, isLoading } = useSWR(
+    swrKey,
+    async (args: any[]) => {
+      const mode = args?.[0];
+      if (mode === "ext") {
+        const [, tkn, url, tin, dCode, s, e, service] = args as [
+          string,
+          string,
+          string,
+          string,
+          string,
+          string | null,
+          string | null,
+          string | null
+        ];
+        const resp = await uilchilgee(tkn).get(url, {
+          baseURL: undefined,
+          params: {
+            merchantTin: tin,
+            districtCode: dCode,
+            ...(s || e ? { ekhlekhOgnoo: s, duusakhOgnoo: e } : {}),
+            ...(service ? { uilchilgee: service } : {}),
+          },
+        });
+        return resp.data;
+      }
+      // internal fallback via our API
+      const [, tkn, url, orgId, branch, s, e, service] = args as [
+        string,
+        string,
+        string,
+        string,
+        string | null,
+        string | null,
+        string | null,
+        string | null
+      ];
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: orgId,
+          ...(branch ? { barilgiinId: branch } : {}),
+          ...(s || e ? { query: { ekhlekhOgnoo: s, duusakhOgnoo: e } } : {}),
+          ...(service ? { uilchilgee: service } : {}),
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const tableData: TableItem[] = useMemo(() => {
+    const container: any = data ?? {};
+    const raw = Array.isArray(container?.jagsaalt)
+      ? container.jagsaalt
+      : Array.isArray(container?.data)
+      ? container.data
+      : Array.isArray(container?.items)
+      ? container.items
+      : Array.isArray(container?.result)
+      ? container.result
+      : Array.isArray(data)
+      ? (data as any[])
+      : [];
+    return raw.map((it: any, idx: number) => {
+      const rec = Array.isArray(it?.receipts) ? it.receipts[0] : undefined;
+      const item0 = Array.isArray(rec?.items) ? rec.items[0] : undefined;
+      const pay = Array.isArray(it?.payments) ? it.payments[0] : undefined;
+      const dstr = it?.ognoo || it?.date || it?.dateOgnoo || it?.createdAt;
+      const d = dstr ? new Date(dstr) : null;
+      return {
+        id: it?._id || idx + 1,
+        receiptId: String(it?.id || it?.receiptId || ""),
+        ddtd:
+          String(
+            it?.ddtd ||
+              rec?.ddtd ||
+              it?.barimtDugaar ||
+              it?.dugaar ||
+              rec?.lottery ||
+              it?.lottery ||
+              it?.lotteryId ||
+              ""
+          ) || undefined,
+        date: d ? moment(d).format("YYYY-MM-DD HH:mm") : "",
+        month: moment(d || undefined).format("MM"),
+        total: Number(it?.totalAmount ?? rec?.totalAmount ?? it?.total ?? 0),
+        totalVAT: Number(it?.totalVAT ?? rec?.totalVAT ?? 0),
+        totalCityTax: Number(it?.totalCityTax ?? rec?.totalCityTax ?? 0),
+        type: it?.type,
+        payStatus: pay?.status || "",
+        payCode: pay?.code || "",
+        service: item0?.name || it?.uilchilgee || it?.service || "-",
+        ...it,
+      } as TableItem;
+    });
+  }, [data]);
 
   const eBarimtMedeelel = { extraInfo: { lastSentDate: new Date() } };
 
@@ -112,6 +281,7 @@ export default function Ebarimt() {
         color: #0f172a !important;
         border: 1px solid #e5e7eb !important;
         border-radius: 0.75rem !important;
+        z-index: 2200 !important;
       }
       body.force-light-dropdown .ant-select-item,
       body.force-light-dropdown .ant-dropdown-menu-item,
@@ -147,8 +317,31 @@ export default function Ebarimt() {
       </motion.h1>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
-          {stats.map((stat, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          {(() => {
+            const total = tableData.reduce((s, r) => s + (r.total || 0), 0);
+            const vat = tableData.reduce((s, r) => s + (r.totalVAT || 0), 0);
+            const city = tableData.reduce(
+              (s, r) => s + (r.totalCityTax || 0),
+              0
+            );
+            const paid = tableData.filter((r) => r.payStatus === "PAID").length;
+            const unpaid = tableData.filter(
+              (r) => r.payStatus !== "PAID"
+            ).length;
+            const b2c = tableData.filter(
+              (r) => r.type === "B2C_RECEIPT"
+            ).length;
+            const stats = [
+              { title: "Нийт баримт", value: tableData.length },
+              { title: "Нийт дүн", value: total },
+              { title: "НӨАТ", value: vat },
+              { title: "Хотын татвар", value: city },
+              { title: "Төлсөн", value: paid },
+              { title: "Иргэн", value: b2c },
+            ];
+            return stats;
+          })().map((stat, idx) => (
             <motion.div
               key={idx}
               className="relative group rounded-2xl"
@@ -164,7 +357,9 @@ export default function Ebarimt() {
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
                 <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {stat.value}
+                  {typeof stat.value === "number"
+                    ? stat.value.toLocaleString("mn-MN")
+                    : String(stat.value)}
                 </div>
                 <div className="text-xs text-theme leading-tight">
                   {stat.title}
@@ -179,33 +374,34 @@ export default function Ebarimt() {
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <DatePickerInput
                 type="range"
-                className="w-full sm:w-auto rounded-xl hover:shadow-md transition-all duration-300"
+                locale="mn"
                 value={ekhlekhOgnoo ?? undefined}
-                placeholder={"Огноо"}
                 onChange={(v) =>
                   setEkhlekhOgnoo(
                     (v || [null, null]) as [Date | null, Date | null]
                   )
                 }
-                locale="mn"
+                size="sm"
+                radius="md"
+                variant="filled"
+                clearable
+                placeholder="Огноо сонгох"
+                className="w-[280px]"
+                classNames={{ input: "text-theme placeholder:text-theme" }}
+                popoverProps={{ zIndex: 2210 }}
               />
-              <Select
-                className="text-[color:var(--panel-text)]"
-                size="large"
+              <TusgaiZagvar
+                value={uilchilgeeAvi || ""}
+                onChange={(v: string) => setUilchilgeeAvi(v || undefined)}
+                options={[
+                  { value: "Зогсоол", label: "Зогсоол" },
+                  { value: "Тоглоом", label: "Тоглоом" },
+                  { value: "Түрээс", label: "Түрээс" },
+                ]}
                 placeholder={t("Үйлчилгээ")}
-                onChange={(v) => setUilchilgeeAvi(v)}
-                allowClear
-              >
-                <Select.Option key="Зогсоол" value="Зогсоол">
-                  {t("Зогсоол")}
-                </Select.Option>
-                <Select.Option key="Тоглоом" value="Тоглоом">
-                  {t("Тоглоом")}
-                </Select.Option>
-                <Select.Option key="Түрээс" value="Түрээс">
-                  {t("Түрээс")}
-                </Select.Option>
-              </Select>
+                className="w-[220px]"
+                tone="neutral"
+              />
             </div>
 
             <div className="flex flex-row gap-3 w-full md:w-auto">
@@ -213,50 +409,36 @@ export default function Ebarimt() {
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
-                  onClick={exceleerTatya}
-                  type="primary"
-                  size="large"
-                  className="btn-minimal"
-                >
+                <button onClick={exceleerTatya} className="btn-minimal">
                   {t("Excel татах")}
-                </Button>
+                </button>
               </motion.div>
 
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
+                <button
                   title={t("Сүүлд илгээгдсэн огноо")}
-                  size="large"
                   className="btn-minimal"
                 >
                   {moment(eBarimtMedeelel.extraInfo.lastSentDate).format(
                     "YYYY-MM-DD"
                   )}
-                </Button>
+                </button>
               </motion.div>
 
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <Button
-                  danger
-                  onClick={ebarimtIlgeeye}
-                  size="large"
-                  className="btn-minimal"
-                >
-                  <Spin spinning={loading}>
-                    {loading ? "" : t("Татварт илгээх")}
-                  </Spin>
-                </Button>
+                <button onClick={ebarimtIlgeeye} className="btn-minimal">
+                  {loading ? <Loader size="sm" /> : t("Татварт илгээх")}
+                </button>
               </motion.div>
             </div>
           </div>
         </div>
-
         <motion.div
           className="rounded-2xl overflow-hidden shadow-lg"
           whileHover={{ scale: 1 }}
@@ -270,38 +452,56 @@ export default function Ebarimt() {
                     <th className="p-3 text-xs font-semibold text-theme text-center w-12">
                       №
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold">
+                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
                       Огноо
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold">
-                      Тайлант сар
+                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                      Төрөл
                     </th>
-                    <th className="py-4 px-6 text-right text-sm font-semibold">
+                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
+                      ДДТД
+                    </th>
+                    <th className="py-4 px-6 text-right text-sm font-semibold whitespace-nowrap">
                       Дүн
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-semibold">
+                    <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
                       Үйлчилгээ
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {tableData.length > 0 ? (
+                  {(isLoading ? [] : tableData).length > 0 ? (
                     tableData.map((item, index) => (
                       <motion.tr
-                        key={item.id}
+                        key={String(item.id)}
                         className="border-b border-white/30 cursor-pointer hover:shadow-lg"
                         transition={{ duration: 0.3 }}
                       >
                         <td className="py-4 px-6">{index + 1}</td>
-                        <td className="py-4 px-6">{item.date}</td>
-                        <td className="py-4 px-6">{item.month}</td>
-                        <td className="py-4 px-6 text-right">{item.total}</td>
-                        <td className="py-4 px-6">{item.service}</td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          {item.date}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          {item.type === "B2C_RECEIPT"
+                            ? "Иргэн"
+                            : item.type === "B2B_RECEIPT"
+                            ? "ААН"
+                            : item.type || "-"}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          {item.ddtd || item.receiptId || "-"}
+                        </td>
+                        <td className="py-4 px-6 text-right whitespace-nowrap">
+                          {(item.total || 0).toLocaleString("mn-MN")}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          {item.service}
+                        </td>
                       </motion.tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center">
+                      <td colSpan={6} className="py-20 text-center">
                         <div className="flex flex-col items-center justify-center space-y-3">
                           <svg
                             className="w-16 h-16 text-slate-300"

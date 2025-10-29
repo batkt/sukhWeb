@@ -19,6 +19,7 @@ import {
   Radio,
   Select,
 } from "antd";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { DatePickerInput } from "@mantine/dates";
 import {
   CloseCircleOutlined,
@@ -147,6 +148,7 @@ function AsuultOruulakh({
           {...restField}
         >
           <Select
+            popupClassName="tusgaiZagvar"
             placeholder={t("Хариултын төрөл")}
             defaultValue={"boglokh"}
             options={[
@@ -403,7 +405,7 @@ export default function Page() {
     };
 
     setAsuultData((prev) => [...prev, newAnket as (typeof staticAnketData)[0]]);
-    message.success(t("Анкетын загвар амжилттай бүртгэгдлээ"));
+    openSuccessOverlay(t("Анкетын загвар амжилттай бүртгэгдлээ"));
     formRef.current?.resetFields();
     setData(undefined);
   }
@@ -411,7 +413,7 @@ export default function Page() {
   function anketUstgay(data: Record<string, unknown>) {
     // Simulate API call
     setAsuultData((prev) => prev.filter((item) => item._id !== data._id));
-    message.success(t("Устгагдлаа"));
+    openSuccessOverlay(t("Устгагдлаа"));
     setData(undefined);
   }
 

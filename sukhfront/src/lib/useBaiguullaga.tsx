@@ -11,6 +11,12 @@ export interface Baiguullaga {
   bankNer?: string;
   email?: string;
   register?: string;
+  merchantTin?: string;
+  // eBarimt and nuat flags stored on the organization level
+  eBarimtAutomataarIlgeekh?: boolean;
+  eBarimtAshiglakhEsekh?: boolean;
+  eBarimtShine?: boolean;
+  nuatTulukhEsekh?: boolean;
   duureg?:
     | string
     | {
@@ -31,10 +37,21 @@ export interface Baiguullaga {
         kod: string;
       };
   tokhirgoo?: {
+    merchantTin?: string;
     duuregNer?: string;
     districtCode?: string;
     sohCode?: string;
+    // small set of settings that can live under tokhirgoo
+    aldangiinKhuvi?: number;
+    aldangiChuluulukhKhonog?: number;
+    baritsaaAvakhSar?: number;
+    horoo?: {
+      ner: string;
+      kod: string;
+    };
   };
+  // Buildings array
+  barilguud?: Array<any>;
 }
 
 const fetcher = async (
