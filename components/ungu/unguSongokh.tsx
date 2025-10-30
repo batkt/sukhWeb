@@ -7,9 +7,9 @@ type Theme =
   | "blue-gradient"
   | "colorful"
   | "white-gray"
-  | "dark-gray"
-  | "dark-green"
-  | "dark-black";
+  // | "dark-gray"
+  // | "dark-green"
+  // | "dark-black";
 
 export default function ӨнгөнийЗагварСонгох() {
   const [currentTheme, setCurrentTheme] = useState<Theme>("colorful");
@@ -54,21 +54,21 @@ export default function ӨнгөнийЗагварСонгох() {
       name: "Цагаан–Саарал",
       colors: ["#e6e9ed", "#d9dde1", "#cbd2d6", "#b0b8be"],
     },
-    {
-      id: "dark-gray" as Theme,
-      name: "Харанхуй Саарал",
-      colors: ["#4a5568", "#2d3748", "#1a202c", "#718096"],
-    },
-    {
-      id: "dark-green" as Theme,
-      name: "Хүрэн Ногоон",
-      colors: ["#2f7c57", "#1e5a3e", "#3d9970", "#5cb88a"],
-    },
-    {
-      id: "dark-black" as Theme,
-      name: "Гүн Хар",
-      colors: ["#0b0b10", "#161620", "#1c1c28"],
-    },
+    // {
+    //   id: "dark-gray" as Theme,
+    //   name: "Харанхуй Саарал",
+    //   colors: ["#4a5568", "#2d3748", "#1a202c", "#718096"],
+    // },
+    // {
+    //   id: "dark-green" as Theme,
+    //   name: "Хүрэн Ногоон",
+    //   colors: ["#2f7c57", "#1e5a3e", "#3d9970", "#5cb88a"],
+    // },
+    // {
+    //   id: "dark-black" as Theme,
+    //   name: "Гүн Хар",
+    //   colors: ["#0b0b10", "#161620", "#1c1c28"],
+    // },
   ];
 
   return (

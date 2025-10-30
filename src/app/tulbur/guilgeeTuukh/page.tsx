@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearch } from "@/context/SearchContext";
 import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@mantine/dates";
@@ -14,9 +15,11 @@ import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "../../../../lib/uilchilgee";
 import { message } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
+import formatNumber from "../../../../tools/function/formatNumber";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -33,6 +36,9 @@ const ModalPortal = ({ children }: { children: React.ReactNode }) => {
 type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function DansniiKhuulga() {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [tuluvFilter, setTuluvFilter] = useState<"all" | "paid" | "unpaid">(
@@ -139,19 +145,77 @@ export default function DansniiKhuulga() {
 
   // Filter by paid/unpaid
   const filteredItems = useMemo(() => {
+    let match: ((it: any, q: string) => boolean) | null = null;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      match = require("@/tools/function/matchesSearch").default;
+    } catch (e) {
+      match = null;
+    }
+
     return allHistoryItems.filter((it: any) => {
       const isPaid =
         !!it?.tulsunOgnoo || String(it?.tuluv || "").trim() === "Төлсөн";
       if (tuluvFilter === "paid") return isPaid;
       if (tuluvFilter === "unpaid") return !isPaid;
+
+      if (searchTerm) {
+        if (match) {
+          if (!match(it, searchTerm)) return false;
+        } else {
+          const qq = String(searchTerm).toLowerCase();
+          const fields = [it.ner, it.gereeniiDugaar, it.tovch, it.description]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!fields.includes(qq)) return false;
+        }
+      }
+
       return true;
     });
-  }, [allHistoryItems, tuluvFilter]);
+  }, [allHistoryItems, tuluvFilter, searchTerm]);
+
+  const stats = useMemo(() => {
+    const totalCount = filteredItems.length;
+    const totalSum = filteredItems.reduce((s: number, it: any) => {
+      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      return s + v;
+    }, 0);
+    const paidCount = filteredItems.filter((it: any) => {
+      return (
+        String(it?.tuluv || "").trim() === "Төлсөн" ||
+        !!it?.tulsunOgnoo ||
+        (Array.isArray(it?.paymentHistory) && it.paymentHistory.length > 0)
+      );
+    }).length;
+    const unpaidCount = totalCount - paidCount;
+    const maxAmount = filteredItems.reduce((m: number, it: any) => {
+      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      return Math.max(m, v);
+    }, 0);
+
+    return [
+      { title: "Төлсөн", value: paidCount },
+      { title: "Төлөөгүй", value: unpaidCount },
+      { title: "Хамгийн их төлбөр", value: `${formatNumber(maxAmount, 0)} ₮` },
+      { title: "Нийт дүн", value: `${formatNumber(totalSum, 0)} ₮` },
+    ];
+  }, [filteredItems]);
 
   const exceleerTatya = () => {
     message.info("Excel татах боломж удахгүй");
   };
   const t = (text: string) => text;
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+  const paginated = filteredItems.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
 
   useEffect(() => {
     const open = isNekhemjlekhOpen || isKhungulultOpen;
@@ -194,6 +258,28 @@ export default function DansniiKhuulga() {
       </div>
 
       <div className="space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {stats.map((stat, idx) => (
+            <motion.div
+              key={idx}
+              className="relative group rounded-2xl neu-panel"
+              whileHover={{ scale: 1.04 }}
+              transition={{ duration: 0.25 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 rounded-2xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
+              <div className="relative rounded-2xl p-5 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
+                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                  {typeof stat.value === "number"
+                    ? stat.value.toLocaleString("mn-MN")
+                    : String(stat.value)}
+                </div>
+                <div className="text-xs text-theme leading-tight">
+                  {stat.title}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -209,7 +295,7 @@ export default function DansniiKhuulga() {
                 placeholder="Огноо сонгох"
                 classNames={{
                   input:
-                    "text-theme placeholder:text-theme !h-[40px] !py-2 !w-[140px]",
+                    "text-theme placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
                 }}
               />
               <TusgaiZagvar
@@ -262,31 +348,30 @@ export default function DansniiKhuulga() {
             </div>
           </div>
         </div>
-
         <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
           <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-            <div className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full">
+            <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
               <table className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
                       №
                     </th>
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Нэр
                     </th>
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Гэрээний дугаар
                     </th>
 
                     {/* <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Хаяг
                     </th> */}
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Нийт дүн
                     </th>
 
-                    <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Төлөв
                     </th>
                   </tr>
@@ -305,7 +390,7 @@ export default function DansniiKhuulga() {
                       </td>
                     </tr>
                   ) : (
-                    filteredItems.map((it: any, idx: number) => {
+                    paginated.map((it: any, idx: number) => {
                       const ct =
                         (it?.gereeniiId &&
                           contractsById[String(it.gereeniiId)]) ||
@@ -349,23 +434,23 @@ export default function DansniiKhuulga() {
                           key={it?._id || `${idx}`}
                           className="transition-colors border-b last:border-b-0"
                         >
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {idx + 1}
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
+                            {(page - 1) * rowsPerPage + idx + 1}
                           </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
                             {ner}
                           </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
                             {dugaar}
                           </td>
 
                           {/* <td className="p-3 text-center text-theme whitespace-nowrap">
                             {khayag}
                           </td> */}
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
                             {total.toLocaleString("mn-MN")} ₮
                           </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
                               <span
                                 className={
@@ -384,12 +469,17 @@ export default function DansniiKhuulga() {
                 </tbody>
               </table>
             </div>
-            <div className=" px-6 py-3 border-t border-gray-200">
-              <div className="text-sm text-theme">
-                Нийт:{" "}
-                <span className="font-semibold">{filteredItems.length}</span>
-              </div>
-            </div>
+            <div className=" px-4 py-2 border-t border-gray-200 flex items-center justify-between gap-4"></div>
+          </div>
+          <div className="flex items-end justify-end gap-3">
+            <PageSongokh
+              value={rowsPerPage}
+              onChange={(v) => {
+                setRowsPerPage(v);
+                setPage(1);
+              }}
+              className="text-xs px-2 py-1"
+            />
           </div>
         </div>
       </div>

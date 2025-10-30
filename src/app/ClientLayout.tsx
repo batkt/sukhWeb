@@ -15,6 +15,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { mutate } from "swr";
 import { socket } from "../../lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
+import { SearchProvider } from "@/context/SearchContext";
 import type { Socket } from "socket.io-client";
 
 function parseJwt(token: string) {
@@ -127,7 +128,9 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const onResidentDeleted = (data: any) => {
         // Revalidate any SWR keys that start with "/orshinSuugch" and "/geree"
         try {
-          mutate((key: any) => Array.isArray(key) && key[0] === "/orshinSuugch");
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
+          );
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
         } catch (err) {
           // If predicate-based mutate is unavailable, swallow the error.
@@ -178,9 +181,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   return (
     <SocketProvider socket={skt}>
-      {children}
-      <SuccessOverlayHost />
-      <ErrorOverlayHost />
+      <SearchProvider>
+        {children}
+        <SuccessOverlayHost />
+        <ErrorOverlayHost />
+      </SearchProvider>
     </SocketProvider>
   );
 }

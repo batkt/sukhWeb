@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 export default function PageSongokh({
   value,
   onChange,
-  options = [10, 50, 100],
+  options = [20, 50, 100],
   className = "",
 }: {
   value: number;
@@ -16,7 +16,7 @@ export default function PageSongokh({
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [position, setPosition] = useState({ bottom: 0, right: 0 });
+  const [position, setPosition] = useState({ top: 0, right: 0, width: 0 });
   const ref = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -28,9 +28,24 @@ export default function PageSongokh({
   useEffect(() => {
     if (open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      // Temporary position before measuring dropdown height
       setPosition({
-        bottom: window.innerHeight - rect.top + 8,
+        top: rect.top, // will adjust later
         right: window.innerWidth - rect.right,
+        width: rect.width,
+      });
+
+      // Wait for dropdown to render to measure its height
+      requestAnimationFrame(() => {
+        if (dropdownRef.current) {
+          const dropdownHeight = dropdownRef.current.offsetHeight;
+          // Position dropdown above the button
+          setPosition({
+            top: rect.top - dropdownHeight - 8,
+            right: window.innerWidth - rect.right,
+            width: rect.width,
+          });
+        }
       });
     }
   }, [open]);
@@ -54,10 +69,12 @@ export default function PageSongokh({
     <div
       ref={dropdownRef}
       role="listbox"
-      className="fixed w-28 page-surface rounded-xl p-1 shadow-lg z-[9999]"
+      className="fixed page-surface rounded-xl p-1 shadow-lg z-[9999]"
       style={{
-        bottom: `${position.bottom}px`,
+        top: `${position.top}px`,
         right: `${position.right}px`,
+        width: position.width ? `${position.width}px` : undefined,
+        minWidth: 0,
       }}
     >
       {options.map((opt) => {
@@ -74,7 +91,7 @@ export default function PageSongokh({
               onChange(opt);
               setOpen(false);
             }}
-            className={`w-full text-left px-3 py-2 rounded-2xl text-sm transition-colors ${
+            className={`w-full text-left px-3 py-1 rounded-2xl text-sm transition-colors ${
               active ? "bg-black/10 font-semibold" : "hover:bg-black/8"
             }`}
           >
@@ -91,7 +108,7 @@ export default function PageSongokh({
         <button
           ref={buttonRef}
           type="button"
-          className="page-surface inline-flex items-center gap-2 rounded-2xl text-sm px-3 py-1.5 focus-visible:outline-none"
+          className={`page-surface inline-flex items-center gap-2 rounded-2xl text-sm px-3 py-1.5 focus-visible:outline-none ${className}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -101,7 +118,7 @@ export default function PageSongokh({
           aria-expanded={open}
         >
           {value}
-          <ChevronDown className="w-4 h-4 transform rotate-180" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
 

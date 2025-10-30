@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "@/context/SearchContext";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@mantine/dates";
 import { motion } from "framer-motion";
@@ -10,6 +11,7 @@ import { useAuth } from "@/lib/useAuth";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -34,6 +36,9 @@ type TableItem = {
 type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function DansniiKhuulga() {
+  const { searchTerm } = useSearch();
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined
@@ -210,11 +215,33 @@ export default function DansniiKhuulga() {
         if (start && d < start) return false;
         if (end && d > end) return false;
       }
+      // global search filtering
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        const match = require("@/tools/function/matchesSearch").default;
+        if (searchTerm && !match(m, searchTerm)) return false;
+      } catch (e) {
+        if (searchTerm) {
+          const qq = String(searchTerm).toLowerCase();
+          if (
+            !String(m.action || "")
+              .toLowerCase()
+              .includes(qq) &&
+            !String(m.account || "")
+              .toLowerCase()
+              .includes(qq) &&
+            !String((m.contractIds || []).join(" "))
+              .toLowerCase()
+              .includes(qq)
+          )
+            return false;
+        }
+      }
       return true;
     });
 
     setFilteredData(filtered as TableItem[]);
-  }, [bankRows, selectedDansId, ekhlekhOgnoo]);
+  }, [bankRows, selectedDansId, ekhlekhOgnoo, searchTerm]);
 
   // Dashboard statistics derived from filteredData for admin
   const stats = useMemo(() => {
@@ -252,6 +279,15 @@ export default function DansniiKhuulga() {
     ];
   }, [filteredData]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+  const paginated = filteredData.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
+
   return (
     <div className="min-h-screen">
       <div className="flex items-center gap-3 mb-1">
@@ -278,7 +314,7 @@ export default function DansniiKhuulga() {
           {stats.map((stat, idx) => (
             <motion.div
               key={idx}
-              className="relative group rounded-2xl"
+              className="relative group rounded-2xl neu-panel"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.3 }}
             >
@@ -290,7 +326,7 @@ export default function DansniiKhuulga() {
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
-                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                <div className="text-3xl font-bold mb-1  bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                   {typeof stat.value === "number"
                     ? stat.value.toLocaleString("mn-MN")
                     : String(stat.value)}
@@ -330,7 +366,7 @@ export default function DansniiKhuulga() {
                 tone="theme"
               />
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
@@ -346,12 +382,12 @@ export default function DansniiKhuulga() {
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <button
+                {/* <button
                   onClick={() => setIsZardalOpen(true)}
                   className="btn-minimal"
                 >
                   Зардал
-                </button>
+                </button> */}
               </motion.div>
               <motion.div
                 whileHover={{ scale: 1.03 }}
@@ -365,148 +401,155 @@ export default function DansniiKhuulga() {
           </div>
         </div>
 
-        <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-          <div className="overflow-y-auto custom-scrollbar w-full">
-            <table className="table-ui text-sm min-w-full">
-              <colgroup>
-                <col style={{ width: "6%" }} />
-                <col style={{ width: "16%" }} />
-                <col style={{ width: "22%" }} />
-                <col style={{ width: "30%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "12%" }} />
-              </colgroup>
-              <thead>
-                <tr className="text-theme">
-                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                    Огноо
-                  </th>
+        <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
+          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+            <div className="max-h-[25vh] overflow-y-auto custom-scrollbar w-full">
+              <table className="table-ui text-sm min-w-full">
+                <thead>
+                  <tr className="text-theme">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      №
+                    </th>
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Огноо
+                    </th>
 
-                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                    Гүйлгээний утга
-                  </th>
-                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                    Гүйлгээний дүн
-                  </th>
-                  <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                    Шилжүүлсэн данс
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredData.length > 0 ? (
-                  filteredData.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      className="transition-colors border-b last:border-b-0"
-                    >
-                      <td className="p-3 text-center whitespace-nowrap">
-                        {index + 1}
-                      </td>
-                      <td className="p-3 text-center whitespace-nowrap">
-                        {item.date}
-                      </td>
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Гүйлгээний утга
+                    </th>
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Гүйлгээний дүн
+                    </th>
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      Шилжүүлсэн данс
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredData.length > 0 ? (
+                    paginated.map((item, index) => (
+                      <tr
+                        key={item.id}
+                        className="transition-colors border-b last:border-b-0"
+                      >
+                        <td className="p-1 text-center whitespace-nowrap">
+                          {(page - 1) * rowsPerPage + index + 1}
+                        </td>
+                        <td className="p-1 text-center whitespace-nowrap">
+                          {item.date}
+                        </td>
 
-                      <td className="p-3 truncate text-left">{item.action}</td>
-                      <td className="p-3 text-right whitespace-nowrap">
-                        {formatNumber(item.total ?? 0, 0)} ₮
-                      </td>
-                      <td className="p-3 text-center whitespace-nowrap">
-                        {item.account || "-"}
+                        <td className="p-1 truncate text-left">
+                          {item.action}
+                        </td>
+                        <td className="p-1 text-right whitespace-nowrap">
+                          {formatNumber(item.total ?? 0, 0)} ₮
+                        </td>
+                        <td className="p-1 text-center whitespace-nowrap">
+                          {item.account || "-"}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <svg
+                            className="w-16 h-16 text-slate-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                          <div className="text-slate-500 font-medium">
+                            Хайсан мэдээлэл алга байна
+                          </div>
+                        </div>
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <svg
-                          className="w-16 h-16 text-slate-300"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.5}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                          />
-                        </svg>
-                        <div className="text-slate-500 font-medium">
-                          Хайсан мэдээлэл алга байна
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="flex items-end justify-end gap-3">
+            <PageSongokh
+              value={rowsPerPage}
+              onChange={(v) => {
+                setRowsPerPage(v);
+                setPage(1);
+              }}
+              className="text-xs px-2 py-1"
+            />
           </div>
         </div>
+
+        {isEbarimtOpen && (
+          <ModalPortal>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
+                onClick={() => setIsEbarimtOpen(false)}
+              />
+              <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.98, opacity: 0 }}
+                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl shadow-2xl bg-white dark:bg-slate-900"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
+                  <EbarimtPage />
+                </div>
+              </motion.div>
+            </>
+          </ModalPortal>
+        )}
+
+        {isZardalOpen && (
+          <ModalPortal>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
+                onClick={() => setIsZardalOpen(false)}
+              />
+              <motion.div
+                initial={{ scale: 0.98, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.98, opacity: 0 }}
+                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl bg-white dark:bg-slate-900"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
+                  <div className="font-semibold">Зардал</div>
+                  <button
+                    onClick={() => setIsZardalOpen(false)}
+                    className="btn-minimal btn-cancel"
+                  >
+                    Хаах
+                  </button>
+                </div>
+                <div className="p-2 overflow-auto max-h-[calc(90vh-48px)]">
+                  <ZardalPage />
+                </div>
+              </motion.div>
+            </>
+          </ModalPortal>
+        )}
       </div>
-
-      {isEbarimtOpen && (
-        <ModalPortal>
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
-              onClick={() => setIsEbarimtOpen(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl shadow-2xl bg-white dark:bg-slate-900"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
-                <EbarimtPage />
-              </div>
-            </motion.div>
-          </>
-        </ModalPortal>
-      )}
-
-      {isZardalOpen && (
-        <ModalPortal>
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
-              onClick={() => setIsZardalOpen(false)}
-            />
-            <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl bg-white dark:bg-slate-900"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
-                <div className="font-semibold">Зардал</div>
-                <button
-                  onClick={() => setIsZardalOpen(false)}
-                  className="btn-minimal btn-cancel"
-                >
-                  Хаах
-                </button>
-              </div>
-              <div className="p-2 overflow-auto max-h-[calc(90vh-48px)]">
-                <ZardalPage />
-              </div>
-            </motion.div>
-          </>
-        </ModalPortal>
-      )}
     </div>
   );
 }

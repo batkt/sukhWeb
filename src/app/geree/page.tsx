@@ -2,15 +2,16 @@
 
 import React from "react";
 import { useState, useEffect, useRef } from "react";
+import { useSearch } from "@/context/SearchContext";
 import {
   Download,
   Search,
   Filter,
   Edit,
   Trash2,
-  Settings,
   X,
   Eye,
+  Columns3Cog,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,29 +54,31 @@ export const ALL_COLUMNS = [
   { key: "ner", label: "Нэр", default: true },
   { key: "utas", label: "Холбоо барих", default: true },
   { key: "mail", label: "И-мэйл", default: true },
-  { key: "aimag", label: "Аймаг", default: false },
+  { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
+  { key: "turul", label: "Төрөл", default: false },
+  // { key: "aimag", label: "Аймаг", default: false },
   { key: "duureg", label: "Дүүрэг", default: false },
   { key: "horoo", label: "Хороо", default: false },
-  { key: "baingiinKhayag", label: "Байнгын хаяг", default: false },
-  { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
-  { key: "gereeniiOgnoo", label: "Гэрээний огноо", default: false },
-  { key: "turul", label: "Төрөл", default: false },
-  { key: "ekhlekhOgnoo", label: "Эхлэх огноо", default: false },
-  { key: "duusakhOgnoo", label: "Дуусах огноо", default: false },
-  { key: "tulukhOgnoo", label: "Төлөх огноо", default: false },
-  { key: "khugatsaa", label: "Хугацаа (сар)", default: false },
-  { key: "suhNer", label: "СӨХ-ийн нэр", default: false },
-  { key: "suhRegister", label: "СӨХ-ийн регистр", default: false },
-  { key: "suhUtas", label: "СӨХ-ийн утас", default: false },
-  { key: "suhMail", label: "СӨХ-ийн и-мэйл", default: false },
-  { key: "suhTulbur", label: "СӨХ төлбөр", default: false },
-  { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
-  { key: "niitTulbur", label: "Нийт төлбөр", default: false },
-  { key: "bairNer", label: "Байрны нэр", default: false },
+  // { key: "baingiinKhayag", label: "Байнгын хаяг", default: false },
+
+  // { key: "gereeniiOgnoo", label: "Гэрээний огноо", default: false },
+
+  // { key: "ekhlekhOgnoo", label: "Эхлэх огноо", default: false },
+  // { key: "duusakhOgnoo", label: "Дуусах огноо", default: false },
+  // { key: "tulukhOgnoo", label: "Төлөх огноо", default: false },
+  // { key: "khugatsaa", label: "Хугацаа (сар)", default: false },
+  // { key: "suhNer", label: "СӨХ-ийн нэр", default: false },
+  // { key: "suhRegister", label: "СӨХ-ийн регистр", default: false },
+  // { key: "suhUtas", label: "СӨХ-ийн утас", default: false },
+  // { key: "suhMail", label: "СӨХ-ийн и-мэйл", default: false },
+  // { key: "suhTulbur", label: "СӨХ төлбөр", default: false },
+  // { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
+  // { key: "niitTulbur", label: "Нийт төлбөр", default: false },
+  { key: "bairniiNer", label: "Байрны нэр", default: false },
   { key: "orts", label: "Орц", default: false },
   { key: "toot", label: "Тоот", default: false },
   { key: "davkhar", label: "Давхар", default: false },
-  { key: "temdeglel", label: "Тэмдэглэл", default: false },
+  // { key: "temdeglel", label: "Тэмдэглэл", default: false },
 ];
 
 export default function Geree() {
@@ -113,7 +116,7 @@ export default function Geree() {
         : [...prev, columnKey]
     );
   };
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm } = useSearch();
   const [filterType, setFilterType] = useState("Бүгд");
   const [editingContract, setEditingContract] = useState<GereeType | null>(
     null
@@ -127,26 +130,26 @@ export default function Geree() {
 
   const mongoliaProvinces = [
     "Улаанбаатар",
-    "Архангай",
-    "Баян-Өлгий",
-    "Баянхонгор",
-    "Булган",
-    "Говь-Алтай",
-    "Говьсүмбэр",
-    "Дархан-Уул",
-    "Дорноговь",
-    "Дорнод",
-    "Дундговь",
-    "Завхан",
-    "Өвөрхангай",
-    "Өмнөговь",
-    "Сүхбаатар",
-    "Сэлэнгэ",
-    "Төв",
-    "Увс",
-    "Ховд",
-    "Хэнтий",
-    "Орхон",
+    // "Архангай",
+    // "Баян-Өлгий",
+    // "Баянхонгор",
+    // "Булган",
+    // "Говь-Алтай",
+    // "Говьсүмбэр",
+    // "Дархан-Уул",
+    // "Дорноговь",
+    // "Дорнод",
+    // "Дундговь",
+    // "Завхан",
+    // "Өвөрхангай",
+    // "Өмнөговь",
+    // "Сүхбаатар",
+    // "Сэлэнгэ",
+    // "Төв",
+    // "Увс",
+    // "Ховд",
+    // "Хэнтий",
+    // "Орхон",
   ];
 
   const districts: Record<string, string[]> = {
@@ -161,93 +164,93 @@ export default function Geree() {
       "Багануур",
       "Багахангай",
     ],
-    Архангай: [
-      "Цэцэрлэг",
-      "Ихтамир",
-      "Өлзийт",
-      "Хотонт",
-      "Тариат",
-      "Хайрхан",
-      "Хашаат",
-      "Өндөр-Улаан",
-      "Жаргалант",
-    ],
-    "Баян-Өлгий": ["Өлгий", "Буянт", "Толбо", "Цэнгэл", "Сагсай", "Алтай"],
-    Баянхонгор: [
-      "Баянхонгор",
-      "Бууцагаан",
-      "Баян-Овоо",
-      "Жаргалант",
-      "Шинэжинст",
-      "Галуут",
-    ],
-    Булган: ["Булган", "Баяннуур", "Сайхан", "Бүрэгхангай", "Могод", "Орхон"],
-    "Говь-Алтай": [
-      "Алтай",
-      "Тайшир",
-      "Есөнбулаг",
-      "Цогт",
-      "Баян-Уул",
-      "Хөхморьт",
-      "Тонхил",
-    ],
-    Говьсүмбэр: ["Чойр", "Шивээговь", "Баянтал"],
-    "Дархан-Уул": ["Дархан", "Орхон", "Хонгор", "Шарын гол"],
-    Дорноговь: [
-      "Сайншанд",
-      "Замын-Үүд",
-      "Эрдэнэ",
-      "Алтанширээ",
-      "Айраг",
-      "Хатанбулаг",
-    ],
-    Дорнод: ["Чойбалсан", "Баянтүмэн", "Булган", "Халхгол", "Гурванзагал"],
-    Дундговь: [
-      "Мандалговь",
-      "Говь-Угтаал",
-      "Дэлгэрхангай",
-      "Адаацаг",
-      "Өлзийт",
-    ],
-    Завхан: [
-      "Улиастай",
-      "Идэр",
-      "Тэлмэн",
-      "Яруу",
-      "Тосонцэнгэл",
-      "Баянтэс",
-      "Отгон",
-    ],
-    Өвөрхангай: ["Арвайхээр", "Баян-Өндөр", "Бат-Өлзий", "Тарагт", "Хужирт"],
-    Өмнөговь: ["Даланзадгад", "Манлай", "Цогтцэций", "Ханбогд", "Баяндалай"],
-    Сүхбаатар: ["Баруун-Урт", "Мөнххаан", "Түвшинширээ", "Асгат", "Онгон"],
-    Сэлэнгэ: [
-      "Сүхбаатар",
-      "Алтанбулаг",
-      "Зүүнбүрэн",
-      "Орхон",
-      "Шаамар",
-      "Мандал",
-    ],
-    Төв: [
-      "Зуунмод",
-      "Баянчандмань",
-      "Баянцогт",
-      "Баян",
-      "Сэргэлэн",
-      "Аргалант",
-    ],
-    Увс: ["Улаангом", "Баруунтуруун", "Зүүнговь", "Ховд", "Малчин", "Сагил"],
-    Ховд: ["Ховд", "Булган", "Жаргалант", "Мянгад", "Дөргөн", "Чандмань"],
-    Хэнтий: [
-      "Өндөрхаан",
-      "Бэрх",
-      "Батноров",
-      "Дэлгэрхаан",
-      "Баянхутаг",
-      "Галшар",
-    ],
-    Орхон: ["Баян-Өндөр", "Жаргалант"],
+    // Архангай: [
+    //   "Цэцэрлэг",
+    //   "Ихтамир",
+    //   "Өлзийт",
+    //   "Хотонт",
+    //   "Тариат",
+    //   "Хайрхан",
+    //   "Хашаат",
+    //   "Өндөр-Улаан",
+    //   "Жаргалант",
+    // ],
+    // "Баян-Өлгий": ["Өлгий", "Буянт", "Толбо", "Цэнгэл", "Сагсай", "Алтай"],
+    // Баянхонгор: [
+    //   "Баянхонгор",
+    //   "Бууцагаан",
+    //   "Баян-Овоо",
+    //   "Жаргалант",
+    //   "Шинэжинст",
+    //   "Галуут",
+    // ],
+    // Булган: ["Булган", "Баяннуур", "Сайхан", "Бүрэгхангай", "Могод", "Орхон"],
+    // "Говь-Алтай": [
+    //   "Алтай",
+    //   "Тайшир",
+    //   "Есөнбулаг",
+    //   "Цогт",
+    //   "Баян-Уул",
+    //   "Хөхморьт",
+    //   "Тонхил",
+    // ],
+    // Говьсүмбэр: ["Чойр", "Шивээговь", "Баянтал"],
+    // "Дархан-Уул": ["Дархан", "Орхон", "Хонгор", "Шарын гол"],
+    // Дорноговь: [
+    //   "Сайншанд",
+    //   "Замын-Үүд",
+    //   "Эрдэнэ",
+    //   "Алтанширээ",
+    //   "Айраг",
+    //   "Хатанбулаг",
+    // ],
+    // Дорнод: ["Чойбалсан", "Баянтүмэн", "Булган", "Халхгол", "Гурванзагал"],
+    // Дундговь: [
+    //   "Мандалговь",
+    //   "Говь-Угтаал",
+    //   "Дэлгэрхангай",
+    //   "Адаацаг",
+    //   "Өлзийт",
+    // ],
+    // Завхан: [
+    //   "Улиастай",
+    //   "Идэр",
+    //   "Тэлмэн",
+    //   "Яруу",
+    //   "Тосонцэнгэл",
+    //   "Баянтэс",
+    //   "Отгон",
+    // ],
+    // Өвөрхангай: ["Арвайхээр", "Баян-Өндөр", "Бат-Өлзий", "Тарагт", "Хужирт"],
+    // Өмнөговь: ["Даланзадгад", "Манлай", "Цогтцэций", "Ханбогд", "Баяндалай"],
+    // Сүхбаатар: ["Баруун-Урт", "Мөнххаан", "Түвшинширээ", "Асгат", "Онгон"],
+    // Сэлэнгэ: [
+    //   "Сүхбаатар",
+    //   "Алтанбулаг",
+    //   "Зүүнбүрэн",
+    //   "Орхон",
+    //   "Шаамар",
+    //   "Мандал",
+    // ],
+    // Төв: [
+    //   "Зуунмод",
+    //   "Баянчандмань",
+    //   "Баянцогт",
+    //   "Баян",
+    //   "Сэргэлэн",
+    //   "Аргалант",
+    // ],
+    // Увс: ["Улаангом", "Баруунтуруун", "Зүүнговь", "Ховд", "Малчин", "Сагил"],
+    // Ховд: ["Ховд", "Булган", "Жаргалант", "Мянгад", "Дөргөн", "Чандмань"],
+    // Хэнтий: [
+    //   "Өндөрхаан",
+    //   "Бэрх",
+    //   "Батноров",
+    //   "Дэлгэрхаан",
+    //   "Баянхутаг",
+    //   "Галшар",
+    // ],
+    // Орхон: ["Баян-Өндөр", "Жаргалант"],
   };
 
   const subDistricts: Record<string, string[]> = {
@@ -439,7 +442,7 @@ export default function Geree() {
     setAjiltniiKhuudaslalt,
   ]);
   useEffect(() => setMounted(true), []);
-  // Initialize both lists on first load (warm SWR caches)
+
   useEffect(() => {
     setOrshinSuugchKhuudaslalt({
       khuudasniiDugaar: 1,
@@ -453,7 +456,6 @@ export default function Geree() {
     });
     orshinSuugchJagsaaltMutate();
     ajiltniiJagsaaltMutate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -469,9 +471,32 @@ export default function Geree() {
   }, []);
 
   const filteredContracts = Array.isArray(contracts)
-    ? contracts.filter(
-        (c: any) => filterType === "Бүгд" || c.turul === filterType
-      )
+    ? contracts.filter((c: any) => {
+        // filter by type first
+        if (filterType !== "Бүгд" && c.turul !== filterType) return false;
+
+        if (searchTerm) {
+          const qq = String(searchTerm).toLowerCase();
+          const hay = [
+            c.ner,
+            c.gereeniiDugaar,
+            c.mail || c.email,
+            Array.isArray(c.utas) ? c.utas.join(" ") : c.utas,
+            c.orts,
+
+            c.toot !== undefined && c.toot !== null
+              ? String(c.toot)
+              : undefined,
+            c.davkhar,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          if (!hay.includes(qq)) return false;
+        }
+
+        return true;
+      })
     : [];
 
   const totalPages = Math.ceil(filteredContracts.length / rowsPerPage);
@@ -511,7 +536,7 @@ export default function Geree() {
     uilchilgeeniiZardalUsgeer: "",
     niitTulbur: 0,
     niitTulburUsgeer: "",
-    bairNer: "",
+    bairniiNer: "",
     orts: "",
     toot: 0,
     talbainKhemjee: "",
@@ -604,6 +629,11 @@ export default function Geree() {
   const isFormValid = () => [1, 2, 3].every((s) => isStepValid(s));
 
   const renderCellValue = (contract: any, columnKey: string) => {
+    const findResidentById = (id: any) =>
+      (orshinSuugchGaralt?.jagsaalt || []).find(
+        (r: any) => String(r?._id || r?.id || "") === String(id || "")
+      );
+
     switch (columnKey) {
       case "ovog":
         return contract.ovog || "-";
@@ -617,6 +647,43 @@ export default function Geree() {
         return contract.gereeniiOgnoo
           ? new Date(contract.gereeniiOgnoo).toLocaleDateString("mn-MN")
           : "-";
+      case "toot":
+        return contract.toot !== undefined && contract.toot !== null
+          ? String(contract.toot)
+          : "-";
+      case "davkhar":
+        return contract.davkhar || "-";
+
+      case "aimag": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return contract.aimag || resident?.aimag || contract.khayag || "-";
+      }
+      case "duureg": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return contract.duureg || resident?.duureg || "-";
+      }
+      case "horoo": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return contract.horoo || resident?.horoo || "-";
+      }
+      case "baingiinKhayag": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return (
+          contract.baingiinKhayag ||
+          contract.bairniiNer ||
+          resident?.khayag ||
+          resident?.soh ||
+          "-"
+        );
+      }
+      case "bairniiNer": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return contract.bairniiNer || resident?.bairniiNer || "-";
+      }
+      case "orts": {
+        const resident = findResidentById(contract.orshinSuugchId);
+        return contract.orts || resident?.orts || "-";
+      }
       case "duusakhOgnoo":
         return contract.duusakhOgnoo
           ? new Date(contract.duusakhOgnoo).toLocaleDateString("mn-MN")
@@ -1244,101 +1311,6 @@ export default function Geree() {
             >
               Ажилтан
             </button>
-
-            {/* Search + Column Selector at the end */}
-            <div className="flex items-center gap-2 ml-auto">
-              <div className="relative min-w-[200px] h-10">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[color:var(--panel-text)] opacity-50 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Хайх..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-full pl-12 pr-4 rounded-2xl border border-transparent bg-[color:var(--surface-bg)] text-theme focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
-                />
-              </div>
-
-              {activeTab === "contracts" && (
-                <div
-                  className="relative flex-shrink-0 h-10"
-                  ref={columnMenuRef}
-                >
-                  <button
-                    onClick={() => setShowColumnSelector((s) => !s)}
-                    className="btn-neu h-full flex items-center gap-2 px-4 rounded-2xl"
-                    aria-expanded={showColumnSelector}
-                    aria-haspopup="menu"
-                  >
-                    <Settings className="w-5 h-5" />
-                    <span className="text-sm font-semibold">Багана сонгох</span>
-                  </button>
-
-                  {showColumnSelector && (
-                    <div
-                      role="menu"
-                      className="absolute right-0 mt-2 w-64 rounded-xl menu-surface p-3 z-[80]"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold text-theme">
-                          Багана
-                        </span>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="text-xs px-2 py-1"
-                            onClick={() =>
-                              setVisibleColumns(ALL_COLUMNS.map((c) => c.key))
-                            }
-                          >
-                            Бүгд
-                          </button>
-                          <button
-                            type="button"
-                            className="text-xs px-2 py-1"
-                            onClick={() =>
-                              setVisibleColumns(
-                                ALL_COLUMNS.filter(
-                                  (c) =>
-                                    c.default && !DEFAULT_HIDDEN.includes(c.key)
-                                ).map((c) => c.key)
-                              )
-                            }
-                          >
-                            Үндсэн
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="max-h-70 overflow-y-auto space-y-1">
-                        {ALL_COLUMNS.map((col) => {
-                          const checked = visibleColumns.includes(col.key);
-                          return (
-                            <label
-                              key={col.key}
-                              className="flex items-center gap-2 text-sm text-theme hover:bg-[color:var(--surface-hover)] px-2 py-1.5 rounded-2xl cursor-pointer transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() =>
-                                  setVisibleColumns((prev) =>
-                                    prev.includes(col.key)
-                                      ? prev.filter((k) => k !== col.key)
-                                      : [...prev, col.key]
-                                  )
-                                }
-                                style={{ accentColor: "var(--panel-text)" }}
-                              />
-                              {col.label}
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -1385,7 +1357,7 @@ export default function Geree() {
                     uilchilgeeniiZardalUsgeer: "",
                     niitTulbur: 0,
                     niitTulburUsgeer: "",
-                    bairNer: "",
+                    bairniiNer: "",
                     orts: "",
                     toot: 0,
                     talbainKhemjee: "",
@@ -1469,6 +1441,84 @@ export default function Geree() {
               Ажилтан нэмэх
             </button>
           )}
+
+          {activeTab === "contracts" && (
+            <div className="relative flex-shrink-0" ref={columnMenuRef}>
+              <button
+                onClick={() => setShowColumnSelector((s) => !s)}
+                className="btn-minimal"
+                aria-expanded={showColumnSelector}
+                aria-haspopup="menu"
+                title="Багана сонгох"
+              >
+                <Columns3Cog className="w-5 h-5" />
+                <span>Багана сонгох</span>
+              </button>
+
+              {showColumnSelector && (
+                <div
+                  role="menu"
+                  className="absolute right-0 mt-2 w-64 rounded-xl menu-surface p-3 z-[80]"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-semibold text-theme">
+                      Багана
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1"
+                        onClick={() =>
+                          setVisibleColumns(ALL_COLUMNS.map((c) => c.key))
+                        }
+                      >
+                        Бүгд
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1"
+                        onClick={() =>
+                          setVisibleColumns(
+                            ALL_COLUMNS.filter(
+                              (c) =>
+                                c.default && !DEFAULT_HIDDEN.includes(c.key)
+                            ).map((c) => c.key)
+                          )
+                        }
+                      >
+                        Үндсэн
+                      </button>
+                    </div>
+                  </div>
+                  <div className="max-h-70 overflow-y-auto space-y-1">
+                    {ALL_COLUMNS.map((col) => {
+                      const checked = visibleColumns.includes(col.key);
+                      return (
+                        <label
+                          key={col.key}
+                          className="flex items-center gap-2 text-sm text-theme hover:bg-[color:var(--surface-hover)] px-2 py-1.5 rounded-2xl cursor-pointer transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              setVisibleColumns((prev) =>
+                                prev.includes(col.key)
+                                  ? prev.filter((k) => k !== col.key)
+                                  : [...prev, col.key]
+                              )
+                            }
+                            style={{ accentColor: "var(--panel-text)" }}
+                          />
+                          {col.label}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1478,9 +1528,9 @@ export default function Geree() {
         ) : (
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
-              <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-                <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
-                  <table className="table-ui text-sm min-w-full">
+              <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
+                <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+                  <table className="table-ui text-xs min-w-full">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
                         <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -1493,13 +1543,13 @@ export default function Geree() {
                           return (
                             <th
                               key={columnKey}
-                              className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
+                              className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
                             >
                               {column?.label}
                             </th>
                           );
                         })}
-                        <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
                           Үйлдэл
                         </th>
                       </tr>
@@ -1520,22 +1570,22 @@ export default function Geree() {
                             key={contract._id || idx}
                             className="transition-colors border-b last:border-b-0"
                           >
-                            <td className="p-3 text-center text-theme">
+                            <td className="p-1 text-center text-theme">
                               {startIndex + idx + 1}
                             </td>
                             {visibleColumns.map((columnKey) => (
                               <td
                                 key={columnKey}
-                                className="p-3 text-theme whitespace-nowrap text-center"
+                                className="p-1 text-theme whitespace-nowrap text-center"
                               >
                                 {renderCellValue(contract, columnKey)}
                               </td>
                             ))}
-                            <td className="p-3 whitespace-nowrap">
+                            <td className="p-1 whitespace-nowrap">
                               <div className="flex gap-2 justify-center">
                                 <button
                                   onClick={() => handleEdit(contract)}
-                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+                                  className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1549,7 +1599,6 @@ export default function Geree() {
                   </table>
                 </div>
               </div>
-
               <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
                 <div className="flex items-end gap-2 !mt-1 sm:ml-auto sm:mt-0 z-1005">
                   <PageSongokh
@@ -1563,7 +1612,7 @@ export default function Geree() {
                         search: searchTerm,
                       });
                     }}
-                    className="relative z-30"
+                    className="text-xs px-2 py-1 relative z-30"
                   />
                 </div>
               </div>
@@ -1577,24 +1626,24 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-sm min-w-full">
+              <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-xs min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                      <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                         №
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Нэр
                       </th>
 
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Холбоо барих
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Төлөв
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Үйлдэл
                       </th>
                     </tr>
@@ -1613,32 +1662,31 @@ export default function Geree() {
                             key={p._id || idx}
                             className="transition-colors border-b last:border-b-0"
                           >
-                            <td className="p-3 text-center text-theme">
+                            <td className="p-1 text-center text-theme">
                               {idx + 1}
                             </td>
-                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                            <td className="p-1 text-theme whitespace-nowrap text-center">
                               {p.ner}
                             </td>
-
-                            <td className="p-3 text-center">
-                              <div className="text-sm text-theme">{p.utas}</div>
+                            <td className="p-1 text-center">
+                              <div className="text-xs text-theme">{p.utas}</div>
                               {p.email && (
-                                <div className="text-xs text-theme/70">
+                                <div className="text-xxs text-theme/70">
                                   {p.email}
                                 </div>
                               )}
                             </td>
-                            <td className="p-3 text-center">
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+                            <td className="p-1 text-center">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold">
                                 {p.tuluv || "Төлсөн"}
                               </span>
                             </td>
-                            <td className="p-3 whitespace-nowrap">
+                            <td className="p-1 whitespace-nowrap">
                               <div className="flex gap-2 justify-center">
                                 <button
                                   type="button"
                                   onClick={() => handleEditResident(p)}
-                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+                                  className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1646,7 +1694,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteResident(p)}
-                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+                                  className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Устгах"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1674,7 +1722,7 @@ export default function Geree() {
                       search: searchTerm,
                     });
                   }}
-                  className="z-1006"
+                  className="text-xs px-2 py-1 z-1006"
                 />
               </div>
             </div>
@@ -1687,27 +1735,27 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-sm min-w-full">
+              <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+                <table className="table-ui text-xs min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                      <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                         №
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Нэр
                       </th>
 
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Холбоо барих
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Албан тушаал
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Эрх
                       </th>
-                      <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Үйлдэл
                       </th>
                     </tr>
@@ -1726,31 +1774,31 @@ export default function Geree() {
                             key={p._id || idx}
                             className="transition-colors border-b last:border-b-0"
                           >
-                            <td className="p-3 text-center text-theme">
+                            <td className="p-1 text-center text-theme">
                               {idx + 1}
                             </td>
-                            <td className="p-3 text-theme whitespace-nowrap text-center">
+                            <td className="p-1 text-theme whitespace-nowrap text-center">
                               {p.ner}
                             </td>
 
-                            <td className="p-3 text-center">
-                              <div className="text-sm text-theme">{p.utas}</div>
+                            <td className="p-1 text-center">
+                              <div className="text-xs text-theme">{p.utas}</div>
                               {p.email && (
-                                <div className="text-xs text-theme/70">
+                                <div className="text-xxs text-theme/70">
                                   {p.email}
                                 </div>
                               )}
                             </td>
-                            <td className="p-3 text-center">
+                            <td className="p-1 text-center">
                               {p.albanTushaal || "-"}
                             </td>
-                            <td className="p-3 text-center">{p.erkh || "-"}</td>
-                            <td className="p-3 whitespace-nowrap">
+                            <td className="p-1 text-center">{p.erkh || "-"}</td>
+                            <td className="p-1 whitespace-nowrap">
                               <div className="flex gap-2 justify-center">
                                 <button
                                   type="button"
                                   onClick={() => handleEditEmployee(p)}
-                                  className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+                                  className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
                                 >
                                   <Edit className="w-4 h-4" />
@@ -1758,7 +1806,7 @@ export default function Geree() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteEmployee(p)}
-                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+                                  className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Устгах"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -1786,7 +1834,7 @@ export default function Geree() {
                       search: searchTerm,
                     });
                   }}
-                  className="z-1006"
+                  className="text-xs px-2 py-1 z-1006"
                 />
               </div>
             </div>
@@ -1969,6 +2017,70 @@ export default function Geree() {
                               }}
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Байрны нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.bairniiNer}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  bairniiNer: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Орц
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.orts}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  orts: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Тоот
+                            </label>
+                            <input
+                              type="number"
+                              value={newContract.toot}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  toot: Number(e.target.value),
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Давхар
+                            </label>
+                            <input
+                              type="text"
+                              value={newContract.davkhar}
+                              onChange={(e) =>
+                                setNewContract((prev: any) => ({
+                                  ...prev,
+                                  davkhar: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                             />
                           </div>
                           <div>
@@ -2260,70 +2372,6 @@ export default function Geree() {
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Байрны нэр
-                              </label>
-                              <input
-                                type="text"
-                                value={newContract.bairNer}
-                                onChange={(e) =>
-                                  setNewContract((prev: any) => ({
-                                    ...prev,
-                                    bairNer: e.target.value,
-                                  }))
-                                }
-                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Орц
-                              </label>
-                              <input
-                                type="text"
-                                value={newContract.orts}
-                                onChange={(e) =>
-                                  setNewContract((prev: any) => ({
-                                    ...prev,
-                                    orts: e.target.value,
-                                  }))
-                                }
-                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Тоот
-                              </label>
-                              <input
-                                type="number"
-                                value={newContract.toot}
-                                onChange={(e) =>
-                                  setNewContract((prev: any) => ({
-                                    ...prev,
-                                    toot: Number(e.target.value),
-                                  }))
-                                }
-                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Давхар
-                              </label>
-                              <input
-                                type="text"
-                                value={newContract.davkhar}
-                                onChange={(e) =>
-                                  setNewContract((prev: any) => ({
-                                    ...prev,
-                                    davkhar: e.target.value,
-                                  }))
-                                }
-                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              />
-                            </div>
                             <div className="md:col-span-2">
                               <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Тэмдэглэл

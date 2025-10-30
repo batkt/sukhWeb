@@ -1,12 +1,13 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { Settings, Search as SearchIcon, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
 import ThemedLogo from "@/components/ui/ThemedLogo";
+import { useSearch } from "@/context/SearchContext";
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -43,6 +44,9 @@ export default function GolContent({ children }: GolContentProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
+  const { searchTerm, setSearchTerm } = useSearch();
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ajiltan, token, garya } = useAuth();
   const avatarRef = useRef<HTMLDivElement>(null);
@@ -50,6 +54,28 @@ export default function GolContent({ children }: GolContentProps) {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // focus mobile search input when opened and prevent body scroll
+  useEffect(() => {
+    if (mobileSearchOpen) {
+      document.body.style.overflow = "hidden";
+      setTimeout(() => mobileSearchInputRef.current?.focus(), 50);
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileSearchOpen]);
+
+  // close mobile search with Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileSearchOpen) setMobileSearchOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileSearchOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -87,10 +113,6 @@ export default function GolContent({ children }: GolContentProps) {
     {
       label: "Төлбөр тооцоо",
       path: "tulbur",
-      submenu: [
-        { label: "Дансны хуулга", path: "dansKhuulga" },
-        { label: "Гүйлгээний түүх", path: "guilgeeTuukh" },
-      ],
     },
     {
       label: "Тайлан",
@@ -209,6 +231,27 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
 
               <div className="flex items-center gap-4">
+                <div className="relative h-10 w-64 hidden md:flex items-center">
+                  <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
+                  <input
+                    aria-label="Global search"
+                    className="w-full h-full pl-10 pr-3 rounded-2xl border border-transparent bg-transparent text-theme focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
+                    placeholder="Хайх..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <div className="md:hidden">
+                  <button
+                    aria-label="Open search"
+                    className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300"
+                    onClick={() => setMobileSearchOpen(true)}
+                  >
+                    <SearchIcon className="w-5 h-5" />
+                  </button>
+                </div>
+
                 <UnguSongokh />
                 <button
                   onClick={() => router.push("/tokhirgoo")}
@@ -249,13 +292,43 @@ export default function GolContent({ children }: GolContentProps) {
 
         <main className="flex-1 relative h-[calc(100vh-80px)]">
           <div className="max-w-[1600px] h-full mx-auto px-8 py-6">
-            <div className="neu-panel rounded-[2rem] p-6 h-[calc(100vh-140px)] overflow-hidden">
+            <div className="neu-panel rounded-[2rem] p-4 h-[calc(100vh-140px)] overflow-hidden">
               {children}
             </div>
           </div>
         </main>
       </div>
 
+      {mobileSearchOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[90] flex items-start p-4">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setMobileSearchOpen(false)}
+            />
+            <div className="relative w-full max-w-xl mx-auto mt-24">
+              <div className="flex items-center gap-2 bg-[color:var(--surface-bg)] p-3 rounded-2xl shadow-lg">
+                <SearchIcon className="w-5 h-5 text-theme" />
+                <input
+                  ref={mobileSearchInputRef}
+                  aria-label="Mobile search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-theme px-2"
+                  placeholder="Хайх..."
+                />
+                <button
+                  aria-label="Close search"
+                  onClick={() => setMobileSearchOpen(false)}
+                  className="p-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
       <div id="modal-root"></div>
     </>
   );

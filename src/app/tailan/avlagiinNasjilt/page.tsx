@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import React, { useState, useMemo, useRef } from "react";
+import { useSearch } from "@/context/SearchContext";
 import {
   Calendar,
   Printer,
@@ -121,11 +122,12 @@ const formatNumber = (
 };
 
 const AvlagiinNasjilt: React.FC = () => {
+  const { searchTerm } = useSearch();
+
   const [dateRange, setDateRange] = useState({
     start: "2024-08-01",
     end: "2024-10-31",
   });
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
   const [showExcelMenu, setShowExcelMenu] = useState(false);
   const [additionalColumns, setAdditionalColumns] = useState<string[]>([]);
@@ -289,16 +291,7 @@ const AvlagiinNasjilt: React.FC = () => {
             />
           </div>
 
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Харилцагч хайх..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full border rounded px-10 py-2"
-            />
-          </div>
+          {/* Global navbar search is used now - per-page input removed */}
 
           <div className="ml-auto flex gap-2">
             <button

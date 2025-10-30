@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useSearch } from "@/context/SearchContext";
 import {
   ChevronDown,
   Users,
@@ -117,7 +118,7 @@ export default function Burtgel() {
 
   const [activeTab, setActiveTab] = useState("ajiltanList");
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm, setSearchTerm } = useSearch();
   const [showAjiltanModal, setShowAjiltanModal] = useState(false);
   const [showSuugchModal, setShowSuugchModal] = useState(false);
   const [showZardalModal, setShowZardalModal] = useState(false);
@@ -901,20 +902,7 @@ export default function Burtgel() {
         </div>
       ) : (
         <>
-          <div className="flex gap-4 items-center flex-wrap mb-4">
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-theme/50" />
-                <input
-                  type="text"
-                  placeholder="Хайх..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-2xl border border-transparent bg-transparent text-theme backdrop-blur-xl focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
-                />
-              </div>
-            </div>
-          </div>
+          {/* Search moved to navbar; page reads global `searchTerm` from SearchContext */}
 
           <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
             <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
@@ -1033,7 +1021,7 @@ export default function Burtgel() {
                     setPageSize(v);
                     setCurrentPage(1);
                   }}
-                  className=""
+                  className="text-xs px-2 py-1"
                 />
               </div>
             </div>
