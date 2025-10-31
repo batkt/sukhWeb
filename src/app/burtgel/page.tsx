@@ -1,5 +1,11 @@
 // "use client";
 
+// NOTE: This page was commented out; Next.js requires the file to be a module.
+// Add a minimal default export so the build recognizes this file as a module.
+export default function Burtgel() {
+  return <div />;
+}
+
 // import { useState, useEffect, useRef, useMemo } from "react";
 // import { useSearch } from "@/context/SearchContext";
 // import {

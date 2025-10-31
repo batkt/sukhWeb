@@ -308,18 +308,20 @@ export default function Ebarimt() {
   }, []);
 
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       <LocalStyles />
+      {/* Hidden title for modal context */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm hidden"
       >
         И-Баримт
       </motion.h1>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="space-y-8">
+        {/* Enhanced Dashboard with Borders */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
           {(() => {
             const total = tableData.reduce((s, r) => s + (r.total || 0), 0);
             const vat = tableData.reduce((s, r) => s + (r.totalVAT || 0), 0);
@@ -346,24 +348,31 @@ export default function Ebarimt() {
           })().map((stat, idx) => (
             <motion.div
               key={idx}
-              className="relative group rounded-2xl"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
+              className="relative group rounded-3xl border border-white/30 shadow-lg overflow-hidden"
+              whileHover={{ scale: 1.08, rotateY: 5 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 rounded-2xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
-              <div className="relative rounded-2xl p-5 backdrop-blur-xl  hover:shadow-2xl transition-all duration-300 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
+              <div className="relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
                 <motion.div
-                  className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/20 via-white/0 to-white/20 opacity-0"
+                  className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
                   initial={{ opacity: 0, x: -100 }}
                   whileHover={{ opacity: 1, x: 100 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
-                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                <div className="flex items-center justify-between mb-3">
+                  <motion.div
+                    className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  />
+                </div>
+                <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {typeof stat.value === "number"
                     ? stat.value.toLocaleString("mn-MN")
                     : String(stat.value)}
                 </div>
-                <div className="text-xs text-theme leading-tight">
+                <div className="text-sm text-gray-600 font-medium leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -371,9 +380,15 @@ export default function Ebarimt() {
           ))}
         </div>
 
-        <div className="rounded-2xl p-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        {/* Filters Section */}
+        <motion.div
+          className="rounded-3xl p-8 bg-white/90 backdrop-blur-xl shadow-xl border border-white/30"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
               <DatePickerInput
                 type="range"
                 locale="mn"
@@ -383,34 +398,39 @@ export default function Ebarimt() {
                     (v || [null, null]) as [Date | null, Date | null]
                   )
                 }
-                size="sm"
-                radius="md"
+                size="md"
+                radius="xl"
                 variant="filled"
                 clearable
                 placeholder="Огноо сонгох"
-                className="w-[280px]"
-                classNames={{ input: "text-theme placeholder:text-theme" }}
+                className="w-[450px]"
+                classNames={{ input: "text-theme placeholder:text-theme h-12" }}
                 popoverProps={{ zIndex: 2210 }}
               />
             </div>
 
-            <div className="flex flex-row gap-3 w-full md:w-auto">
+            <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
-                <button onClick={exceleerTatya} className="btn-minimal">
+                <button
+                  onClick={exceleerTatya}
+                  className="btn-minimal px-6 py-3 rounded-xl"
+                >
                   {t("Excel татах")}
                 </button>
               </motion.div>
 
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
                 <button
                   title={t("Сүүлд илгээгдсэн огноо")}
-                  className="btn-minimal"
+                  className="btn-minimal px-6 py-3 rounded-xl"
                 >
                   {moment(eBarimtMedeelel.extraInfo.lastSentDate).format(
                     "YYYY-MM-DD"
@@ -419,90 +439,121 @@ export default function Ebarimt() {
               </motion.div>
 
               <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
-                <button onClick={ebarimtIlgeeye} className="btn-minimal">
+                <button
+                  onClick={ebarimtIlgeeye}
+                  className="btn-minimal px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0"
+                >
                   {loading ? <Loader size="sm" /> : t("Татварт илгээх")}
                 </button>
               </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
+
+        {/* Enhanced Table */}
         <motion.div
-          className="rounded-2xl overflow-hidden shadow-lg"
-          whileHover={{ scale: 1 }}
-          transition={{ duration: 0.3 }}
+          className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
         >
-          <div className="overflow-hidden rounded-2xl">
-            <div className="rounded-3xl p-6 mb-4 allow-overflow bg-white border border-gray-200">
-              <div className="overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-sm min-w-full">
-                  <thead>
-                    <tr>
-                      <th className="p-3 text-xs font-semibold text-theme text-center w-12">
-                        №
-                      </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                        Огноо
-                      </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                        Гэрээний дугаар
-                      </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                        Төрөл
-                      </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                        ДДТД
-                      </th>
-                      <th className="py-4 px-6 text-right text-sm font-semibold whitespace-nowrap">
-                        Дүн
-                      </th>
-                      <th className="py-4 px-6 text-left text-sm font-semibold whitespace-nowrap">
-                        Үйлчилгээ
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(isLoading ? [] : tableData).length > 0 ? (
-                      tableData.map((item, index) => (
-                        <motion.tr
-                          key={String(item.id)}
-                          className="border-b border-white/30 cursor-pointer hover:shadow-lg"
-                          transition={{ duration: 0.3 }}
-                        >
-                          <td className="py-4 px-6">{index + 1}</td>
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            {item.date}
-                          </td>
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            {item.gereeniiDugaar}
-                          </td>
-                          <td className="py-4 px-6 whitespace-nowrap">
+          <div className="p-8">
+            <div className="max-h-[45vh] overflow-y-auto overflow-x-hidden custom-scrollbar w-full rounded-2xl border border-gray-100">
+              <table className="table-ui text-sm min-w-full">
+                <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
+                  <tr>
+                    <th className="p-4 text-xs font-bold text-theme text-center w-12 rounded-tl-2xl bg-white/95">
+                      №
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Огноо
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Гэрээний дугаар
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Төрөл
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      ДДТД
+                    </th>
+                    <th className="py-4 px-6 text-right text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Дүн
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
+                      Үйлчилгээ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(isLoading ? [] : tableData).length > 0 ? (
+                    tableData.map((item, index) => (
+                      <motion.tr
+                        key={String(item.id)}
+                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <td className="py-4 px-4 text-center font-medium">
+                          {index + 1}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                          {item.date}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                          {item.gereeniiDugaar}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              item.type === "B2C_RECEIPT"
+                                ? "bg-green-100 text-green-800"
+                                : item.type === "B2B_RECEIPT"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
                             {item.type === "B2C_RECEIPT"
                               ? "Иргэн"
                               : item.type === "B2B_RECEIPT"
                               ? "ААН"
                               : item.type || "-"}
-                          </td>
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            {item.ddtd || item.receiptId || "-"}
-                          </td>
-                          <td className="p-3 text-right whitespace-nowrap">
-                            {formatNumber(item.total ?? 0, 0)} ₮
-                          </td>
-
-                          <td className="py-4 px-6 whitespace-nowrap">
-                            {item.service}
-                          </td>
-                        </motion.tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="py-20 text-center">
-                          <div className="flex flex-col items-center justify-center space-y-3">
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 font-mono">
+                          {item.ddtd || item.receiptId || "-"}
+                        </td>
+                        <td className="py-4 px-6 text-right whitespace-nowrap font-bold text-gray-800">
+                          {formatNumber(item.total ?? 0, 0)} ₮
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                          {item.service}
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={7} className="py-20 text-center">
+                        <motion.div
+                          className="flex flex-col items-center justify-center space-y-4"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              repeat: Infinity,
+                              duration: 2,
+                              ease: "linear",
+                            }}
+                          >
                             <svg
-                              className="w-16 h-16 text-slate-300"
+                              className="w-20 h-20 text-gray-300"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -514,19 +565,19 @@ export default function Ebarimt() {
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                               />
                             </svg>
-                            <div className="text-slate-500 font-medium">
-                              Хайсан мэдээлэл алга байна
-                            </div>
-                            <div className="text-slate-400 text-sm">
-                              Шүүлтүүрийг өөрчилж үзнэ үү
-                            </div>
+                          </motion.div>
+                          <div className="text-gray-500 font-semibold text-lg">
+                            Хайсан мэдээлэл алга байна
                           </div>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                          <div className="text-gray-400 text-sm">
+                            Шүүлтүүрийг өөрчилж үзнэ үү
+                          </div>
+                        </motion.div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </motion.div>

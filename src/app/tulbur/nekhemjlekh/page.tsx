@@ -20,15 +20,19 @@ import { useOrshinSuugchJagsaalt } from "../../../lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "../../../lib/useGeree";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
-import toast from "react-hot-toast";
+import { useBuilding } from "@/context/BuildingContext";
+
 import { url as API_URL } from "../../../../lib/uilchilgee";
 import uilchilgee from "../../../../lib/uilchilgee";
 import { DatePickerInput } from "@mantine/dates";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
 const formatNumber = (num: number) => {
   return num?.toLocaleString("mn-MN") || "0";
 };
-
+const exceleerTatya = () => {
+  alert("Excel татах товч дарлаа!");
+};
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
 };
@@ -197,6 +201,7 @@ const InvoiceModal = ({
 }: InvoiceModalProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useModalHotkeys({ isOpen, onClose, container: containerRef.current });
+  const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
   const { gereeGaralt } = useGereeJagsaalt(
     { orshinSuugchId: String(resident?._id || "") },
@@ -206,7 +211,7 @@ const InvoiceModal = ({
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud({
     token,
     baiguullagiinId,
-    barilgiinId,
+    barilgiinId: selectedBuildingId || barilgiinId || null,
   });
 
   const gereeData = gereeGaralt?.jagsaalt?.[0];
@@ -243,12 +248,12 @@ const InvoiceModal = ({
           const gResp = await uilchilgee(token).get(`/geree`, {
             params: {
               baiguullagiinId,
-              ...(barilgiinId ? { barilgiinId } : {}),
+              barilgiinId: selectedBuildingId || barilgiinId || null,
               khuudasniiDugaar: 1,
               khuudasniiKhemjee: 50,
               query: JSON.stringify({
                 baiguullagiinId,
-                ...(barilgiinId ? { barilgiinId } : {}),
+                barilgiinId: selectedBuildingId || barilgiinId || null,
                 orshinSuugchId: String(resident._id || ""),
               }),
             },
@@ -269,12 +274,12 @@ const InvoiceModal = ({
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId,
-            ...(barilgiinId ? { barilgiinId } : {}),
+            barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 10,
             query: JSON.stringify({
               baiguullagiinId,
-              ...(barilgiinId ? { barilgiinId } : {}),
+              barilgiinId: selectedBuildingId || barilgiinId || null,
               ...(gereeniiId
                 ? { gereeniiId }
                 : { orshinSuugchId: String(resident._id || "") }),
@@ -747,6 +752,7 @@ const InvoiceModal = ({
 
 export default function InvoicingZardluud() {
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
   const [selectedSukh, setSelectedSukh] = useState("");
   const [selectedDavkhar, setSelectedDavkhar] = useState("");
   const [selectedBarilga, setSelectedBarilga] = useState("");
@@ -791,7 +797,7 @@ export default function InvoicingZardluud() {
     token || "",
     ajiltan?.baiguullagiinId || "",
     filterQuery,
-    barilgiinId
+    selectedBuildingId || barilgiinId || null
   );
 
   useEffect(() => {
@@ -804,7 +810,7 @@ export default function InvoicingZardluud() {
           `http://103.143.40.46:8084/ashiglaltiinZardluud?baiguullagiinId=${
             ajiltan.baiguullagiinId
           }&barilgiinId=${
-            barilgiinId ?? ""
+            selectedBuildingId || barilgiinId || ""
           }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
           {
             headers: {
@@ -815,8 +821,7 @@ export default function InvoicingZardluud() {
         const data = await response.json();
         setExpenses(data.jagsaalt || []);
       } catch (error) {
-        toast.error("Зардлын мэдээлэл татахад алдаа гарлаа");
-        console.error(error);
+        openErrorOverlay("Зардлын мэдээлэл татахад алдаа гарлаа");
       } finally {
         setIsLoadingExpenses(false);
       }
@@ -848,11 +853,11 @@ export default function InvoicingZardluud() {
         String(ajiltan?.baiguullagiinId || "")
     );
     let branchItems = orgItems;
-    if (barilgiinId) {
+    if (selectedBuildingId || barilgiinId) {
       branchItems = orgItems.filter(
         (r: any) =>
           r?.barilgiinId == null ||
-          String(r.barilgiinId) === String(barilgiinId)
+          String(r.barilgiinId) === String(selectedBuildingId || barilgiinId)
       );
       // If branch filter yields nothing, fall back to org-only
       if (branchItems.length === 0) {
@@ -945,12 +950,12 @@ export default function InvoicingZardluud() {
         const gereeResp = await uilchilgee(token).get(`/geree`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            ...(barilgiinId ? { barilgiinId } : {}),
+            barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 100,
             query: JSON.stringify({
               baiguullagiinId: ajiltan.baiguullagiinId,
-              ...(barilgiinId ? { barilgiinId } : {}),
+              barilgiinId: selectedBuildingId || barilgiinId || null,
               orshinSuugchId: String(resident?._id || ""),
             }),
           },
@@ -990,12 +995,12 @@ export default function InvoicingZardluud() {
       const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
+          barilgiinId: selectedBuildingId || barilgiinId || null,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 10,
           query: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            ...(barilgiinId ? { barilgiinId } : {}),
+            barilgiinId: selectedBuildingId || barilgiinId || null,
             ...(gereeniiId
               ? { gereeniiId }
               : { orshinSuugchId: String(resident._id || "") }),
@@ -1019,7 +1024,7 @@ export default function InvoicingZardluud() {
 
       setHistoryItems(list);
     } catch (e) {
-      toast.error("Түүх татахад алдаа гарлаа");
+      openErrorOverlay("Түүх татахад алдаа гарлаа");
       setHistoryItems([]);
     } finally {
       setHistoryLoading(false);
@@ -1031,9 +1036,11 @@ export default function InvoicingZardluud() {
       if (!token || !ajiltan?.baiguullagiinId) return;
       try {
         const resp = await fetch(
-          `${API_URL}/liftShalgaya?baiguullagiinId=${ajiltan.baiguullagiinId}&${
-            barilgiinId ? `barilgiinId=${barilgiinId}&` : ""
-          }khuudasniiDugaar=1&khuudasniiKhemjee=100`,
+          `${API_URL}/liftShalgaya?baiguullagiinId=${
+            ajiltan.baiguullagiinId
+          }&barilgiinId=${
+            selectedBuildingId || barilgiinId || ""
+          }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (!resp.ok) return;
@@ -1098,207 +1105,363 @@ export default function InvoicingZardluud() {
   }
 
   return (
-    <div className="min-h-screen  text-slate-900 no-theme-scope">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
       <LocalStyles />
+      {/* Hidden title for modal context */}
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6  bg-clip-text text-slate-900 drop-shadow-sm"
+        className="text-3xl font-bold mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm hidden"
       >
         Зардлын нэхэмжлэл
       </motion.h1>
 
-      <div className="rounded-2xl p-6">
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <DatePickerInput
-            value={selectedDate}
-            onChange={(v: string | null) => setSelectedDate(v)}
-            placeholder="Огноо сонгох"
-            className="w-[220px]"
-            clearable
-            locale="mn"
-            valueFormat="YYYY-MM-DD"
-          />
-          <TusgaiZagvar
-            value={selectedTurul}
-            onChange={setSelectedTurul}
-            options={[
-              { value: "", label: "Гэрээний төрөл" },
-              ...turulList.map((t) => ({ value: t, label: t })),
-            ]}
-            placeholder="Гэрээний төрөл"
-          />
+      <div className="space-y-8">
+        {/* Enhanced Dashboard with Borders */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {(() => {
+            const totalResidents = displayResidents.length;
+            const paidCount = displayResidents.filter(
+              (r: any) => r.tuluv === "Төлсөн"
+            ).length;
+            const unpaidCount = displayResidents.filter(
+              (r: any) => r.tuluv === "Төлөөгүй"
+            ).length;
+            const totalAmount = displayResidents.reduce(
+              (sum: number, r: any) => {
+                // This would need actual invoice data, for now using placeholder
+                return sum + (r?.totalAmount || 0);
+              },
+              0
+            );
 
-          <TusgaiZagvar
-            value={selectedTuluv}
-            onChange={setSelectedTuluv}
-            options={[
-              { value: "", label: "Бүх төлөв" },
-              { value: "Төлсөн", label: "Төлсөн" },
-              { value: "Төлөөгүй", label: "Төлөөгүй" },
-              { value: "Тодорхойгүй", label: "Тодорхойгүй" },
-            ]}
-            placeholder="Бүх төлөв"
-          />
-
-          <TusgaiZagvar
-            value={selectedDavkhar}
-            onChange={setSelectedDavkhar}
-            options={[
-              { value: "", label: "Давхар" },
-              ...davkharList.map((d) => ({ value: d, label: d })),
-            ]}
-            placeholder="Давхар"
-          />
-
-          <TusgaiZagvar
-            value={selectedBarilga}
-            onChange={setSelectedBarilga}
-            options={[
-              { value: "", label: "Бүх барилга" },
-              ...barilgaList.map((b) => ({ value: b, label: b })),
-            ]}
-            placeholder="Бүх барилга"
-          />
-        </div>
-
-        {isLoading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-slate-600">Уншиж байна...</p>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl">
-            <div className="rounded-3xl p-6 mb-4 allow-overflow bg-white border border-gray-200">
-              <div className="overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-sm min-w-full">
-                  <thead>
-                    <tr className="text-slate-900">
-                      <th className="w-[4%] p-3 text-center border-b border-gray-200 font-semibold">
-                        №
-                      </th>
-                      <th className="w-[18%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Оршин суугч
-                      </th>
-                      <th className="w-[8%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Тоот
-                      </th>
-                      <th className="w-[22%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Хаяг
-                      </th>
-                      <th className="w-[12%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Утас
-                      </th>
-                      <th className="w-[10%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Төлөв
-                      </th>
-                      <th className="w-[10%] p-3 text-center border-b border-gray-200 font-semibold">
-                        Үйлдэл
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-gray-100">
-                    {displayResidents.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={8}
-                          className="p-8 text-center text-slate-900/60"
-                        >
-                          Хайсан мэдээлэл алга байна
-                        </td>
-                      </tr>
-                    ) : (
-                      displayResidents.map((resident: any, index: number) => (
-                        <tr
-                          key={resident._id}
-                          className="hover:shadow-md transition-colors"
-                        >
-                          <td className="p-3 text-center text-slate-900 font-medium">
-                            {index + 1}
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center gap-3">
-                              <div className="min-w-0">
-                                <div className="font-semibold text-slate-900 truncate">
-                                  {resident.ovog} {resident.ner}
-                                </div>
-                                <div className="text-xs text-slate-900 truncate">
-                                  {resident.register || "Регистр тодорхойгүй"}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex justify-center">
-                              <span className="inline-flex items-center px-3 py-1 rounded-2xl  text-slate-900 font-semibold text-sm">
-                                {resident.toot || "-"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="text-sm text-slate-900/70 text-center">
-                              {resident.duureg &&
-                              resident.horoo &&
-                              resident.davkhar
-                                ? `${resident.duureg}, ${resident.horoo}, ${resident.davkhar}`
-                                : resident.khayag || "Хаяг тодорхойгүй"}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="text-sm text-slate-900/70 text-center">
-                              {resident.utas || "-"}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex justify-center">
-                              <span
-                                className={
-                                  "px-3 py-1 rounded-full text-xs font-medium " +
-                                  (resident.tuluv === "Төлсөн"
-                                    ? "bg-green-100 text-green-700"
-                                    : resident.tuluv === "Төлөөгүй"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-slate-100 text-slate-700")
-                                }
-                              >
-                                {resident.tuluv || "Тодорхойгүй"}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                onClick={() => handleViewInvoice(resident)}
-                                className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-                                title="Нэхэмжлэл харах"
-                              >
-                                <Eye className="w-4 h-4 text-blue-600" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenHistory(resident)}
-                                className="rounded-full p-2 hover:bg-gray-100 transition-colors"
-                                title="Түүх"
-                              >
-                                <History className="w-4 h-4 text-slate-900" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-                <div className="text-sm text-slate-900">
-                  Нийт: <span className="font-semibold">{totalRecords}</span>{" "}
+            const stats = [
+              { title: "Нийт оршин суугч", value: totalResidents },
+              { title: "Төлсөн", value: paidCount },
+              { title: "Төлөөгүй", value: unpaidCount },
+              {
+                title: "Нийт дүн",
+                value: `${formatNumber(totalAmount)} ₮`,
+              },
+            ];
+            return stats;
+          })().map((stat, idx) => (
+            <motion.div
+              key={idx}
+              className="relative group rounded-3xl border border-white/30 shadow-lg overflow-hidden"
+              whileHover={{ scale: 1.08, rotateY: 5 }}
+              transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
+              <div className="relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
+                <motion.div
+                  className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
+                  initial={{ opacity: 0, x: -100 }}
+                  whileHover={{ opacity: 1, x: 100 }}
+                  transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+                />
+                <div className="flex items-center justify-between mb-3">
+                  <motion.div
+                    className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  />
+                </div>
+                <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  {typeof stat.value === "number"
+                    ? stat.value.toLocaleString("mn-MN")
+                    : String(stat.value)}
+                </div>
+                <div className="text-sm text-gray-600 font-medium leading-tight">
+                  {stat.title}
                 </div>
               </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Filters Section */}
+        <motion.div
+          className="rounded-3xl p-8 bg-white/90 backdrop-blur-xl shadow-xl border border-white/30"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <DatePickerInput
+                value={selectedDate}
+                onChange={(v: string | null) => setSelectedDate(v)}
+                placeholder="Огноо сонгох"
+                className="w-[320px]"
+                clearable
+                locale="mn"
+                valueFormat="YYYY-MM-DD"
+                classNames={{ input: "text-theme placeholder:text-theme h-12" }}
+              />
+              <TusgaiZagvar
+                value={selectedTurul}
+                onChange={setSelectedTurul}
+                options={[
+                  { value: "", label: "Гэрээний төрөл" },
+                  ...turulList.map((t) => ({ value: t, label: t })),
+                ]}
+                placeholder="Гэрээний төрөл"
+                className="h-[40px] w-[180px]"
+                tone="theme"
+              />
+              <TusgaiZagvar
+                value={selectedTuluv}
+                onChange={setSelectedTuluv}
+                options={[
+                  { value: "", label: "Бүх төлөв" },
+                  { value: "Төлсөн", label: "Төлсөн" },
+                  { value: "Төлөөгүй", label: "Төлөөгүй" },
+                  { value: "Тодорхойгүй", label: "Тодорхойгүй" },
+                ]}
+                placeholder="Бүх төлөв"
+                className="h-[40px] w-[140px]"
+                tone="theme"
+              />
+              <TusgaiZagvar
+                value={selectedDavkhar}
+                onChange={setSelectedDavkhar}
+                options={[
+                  { value: "", label: "Давхар" },
+                  ...davkharList.map((d) => ({ value: d, label: d })),
+                ]}
+                placeholder="Давхар"
+                className="h-[40px] w-[120px]"
+                tone="theme"
+              />
+              <TusgaiZagvar
+                value={selectedBarilga}
+                onChange={setSelectedBarilga}
+                options={[
+                  { value: "", label: "Бүх барилга" },
+                  ...barilgaList.map((b) => ({ value: b, label: b })),
+                ]}
+                placeholder="Бүх барилга"
+                className="h-[40px] w-[140px]"
+                tone="theme"
+              />
+            </div>
+
+            <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                <button
+                  onClick={exceleerTatya}
+                  className="btn-minimal px-6 py-3 rounded-xl"
+                >
+                  Excel татах
+                </button>
+              </motion.div>
             </div>
           </div>
-        )}
+        </motion.div>
+
+        {/* Enhanced Table */}
+        <motion.div
+          className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <div className="p-8">
+            <div className="max-h-[50vh] overflow-y-auto overflow-x-hidden custom-scrollbar w-full rounded-2xl border border-gray-100">
+              <table className="table-ui text-sm min-w-full">
+                <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
+                  <tr>
+                    <th className="p-4 text-xs font-bold text-theme text-center w-12 rounded-tl-2xl bg-white/95">
+                      №
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Оршин суугч
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Тоот
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Хаяг
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Утас
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                      Төлөв
+                    </th>
+                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
+                      Үйлдэл
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={7} className="py-20 text-center">
+                        <motion.div
+                          className="flex flex-col items-center justify-center space-y-4"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              repeat: Infinity,
+                              duration: 2,
+                              ease: "linear",
+                            }}
+                          >
+                            <svg
+                              className="w-20 h-20 text-gray-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                          </motion.div>
+                          <div className="text-gray-500 font-semibold text-lg">
+                            Уншиж байна...
+                          </div>
+                          <div className="text-gray-400 text-sm">
+                            Мэдээлэл ачааллаж байна
+                          </div>
+                        </motion.div>
+                      </td>
+                    </tr>
+                  ) : displayResidents.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-20 text-center">
+                        <motion.div
+                          className="flex flex-col items-center justify-center space-y-4"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              repeat: Infinity,
+                              duration: 2,
+                              ease: "linear",
+                            }}
+                          >
+                            <svg
+                              className="w-20 h-20 text-gray-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                          </motion.div>
+                          <div className="text-gray-500 font-semibold text-lg">
+                            Хайсан мэдээлэл алга байна
+                          </div>
+                          <div className="text-gray-400 text-sm">
+                            Шүүлтүүрийг өөрчилж үзнэ үү
+                          </div>
+                        </motion.div>
+                      </td>
+                    </tr>
+                  ) : (
+                    displayResidents.map((resident: any, index: number) => (
+                      <motion.tr
+                        key={resident._id}
+                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <td className="py-4 px-4 text-center font-medium">
+                          {index + 1}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                              {resident?.ovog?.charAt(0) || "?"}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="font-semibold text-gray-800 truncate">
+                                {resident.ovog} {resident.ner}
+                              </div>
+                              <div className="text-xs text-gray-500 truncate">
+                                {resident.register || "Регистр тодорхойгүй"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                            {resident.toot || "-"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                          {resident.duureg && resident.horoo && resident.davkhar
+                            ? `${resident.duureg}, ${resident.horoo}, ${resident.davkhar}`
+                            : resident.khayag || "Хаяг тодорхойгүй"}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 font-mono">
+                          {resident.utas || "-"}
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              resident.tuluv === "Төлсөн"
+                                ? "bg-green-100 text-green-800"
+                                : resident.tuluv === "Төлөөгүй"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {resident.tuluv || "Тодорхойгүй"}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <motion.button
+                              onClick={() => handleViewInvoice(resident)}
+                              className="p-2 rounded-xl hover:bg-blue-50 transition-colors"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="Нэхэмжлэл харах"
+                            >
+                              <Eye className="w-4 h-4 text-blue-600" />
+                            </motion.button>
+                            <motion.button
+                              onClick={() => handleOpenHistory(resident)}
+                              className="p-2 rounded-xl hover:bg-purple-50 transition-colors"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="Түүх"
+                            >
+                              <History className="w-4 h-4 text-purple-600" />
+                            </motion.button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       <InvoiceModal
@@ -1308,7 +1471,7 @@ export default function InvoicingZardluud() {
         baiguullagiinId={ajiltan?.baiguullagiinId}
         token={token || ""}
         liftFloors={liftFloors}
-        barilgiinId={barilgiinId}
+        barilgiinId={selectedBuildingId || barilgiinId || null}
       />
 
       {isHistoryOpen && (

@@ -14,6 +14,7 @@ import {
 } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import ӨнгөнийЗагварСонгох from "../../../components/ungu/unguSongokh";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [introDone, setIntroDone] = useState<boolean>(false);
   const [showLoader, setShowLoader] = useState<boolean>(true);
+  const [show3DTransition, setShow3DTransition] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const logoTargetRef = useRef<HTMLDivElement>(null);
   const [logoTarget, setLogoTarget] = useState<{ x: number; y: number } | null>(
@@ -133,15 +135,16 @@ export default function LoginPage() {
 
       if (success) {
         openSuccessOverlay("Амжилттай нэвтэрлээ");
+        setShow3DTransition(true);
+
         setTimeout(() => {
           router.push("/khynalt");
-        }, 900);
+        }, 1500);
         return;
       }
 
       openErrorOverlay("Нэвтрэх нэр эсвэл нууц үг буруу байна");
     } catch (error: any) {
-      console.error("Login error:", error);
       openErrorOverlay("Нэвтрэхэд алдаа гарлаа");
     } finally {
       setLoading(false);
@@ -151,7 +154,7 @@ export default function LoginPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen flex items-center justify-center relative overflow-hidden p-4 bg-card"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden p-2 bg-card"
     >
       <AnimatePresence>
         {showLoader && (
@@ -251,6 +254,16 @@ export default function LoginPage() {
         animate={{ opacity: 0.3, scale: 1 }}
         transition={{ duration: 1.1, ease: "easeOut" }}
       />
+
+      {/* Theme Selector */}
+      <motion.div
+        className="absolute top-6 right-6 z-20"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+      >
+        <ӨнгөнийЗагварСонгох />
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, x: 12 }}
@@ -481,6 +494,43 @@ export default function LoginPage() {
           </motion.p>
         </motion.div>
       </motion.div>
+      <AnimatePresence>
+        {show3DTransition && (
+          <motion.div
+            key="3d-transition"
+            className="fixed inset-0 z-[3000] bg-[color:var(--surface-bg)] origin-center"
+            initial={{
+              opacity: 0,
+              rotateY: 0,
+              scale: 1,
+            }}
+            animate={{
+              opacity: 1,
+              rotateY: 360,
+              scale: [1, 1.05, 0.8],
+            }}
+            exit={{ opacity: 0 }}
+            transition={{
+              duration: 1.3,
+              ease: [0.25, 1, 0.5, 1],
+            }}
+            style={{
+              perspective: 1200,
+              transformStyle: "preserve-3d",
+              background:
+                "linear-gradient(145deg, var(--surface-bg), color-mix(in oklch, var(--surface-border), var(--surface-bg) 40%))",
+            }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <DotLottieReact
+                src="https://lottie.host/84a244a3-217f-4b69-9f26-daf6fce8df7d/pG7Vw0Q4Lw.lottie"
+                autoplay
+                style={{ width: "220px", height: "220px" }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

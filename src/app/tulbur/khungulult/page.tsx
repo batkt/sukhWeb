@@ -277,8 +277,7 @@ const TulburTootsoo: React.FC = () => {
   }, [form.getFieldValue("zardliinId"), zardal?.jagsaalt]);
 
   function ustgaya(mur: KhungulultData) {
-    // Delete discount
-    console.log("Deleting discount...", mur);
+ 
   }
 
   function tseverlekh() {

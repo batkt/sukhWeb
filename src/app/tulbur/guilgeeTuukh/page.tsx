@@ -20,6 +20,7 @@ import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
 import formatNumber from "../../../../tools/function/formatNumber";
+import matchesSearch from "@/tools/function/matchesSearch";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -145,14 +146,6 @@ export default function DansniiKhuulga() {
 
   // Filter by paid/unpaid
   const filteredItems = useMemo(() => {
-    let match: ((it: any, q: string) => boolean) | null = null;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      match = require("@/tools/function/matchesSearch").default;
-    } catch (e) {
-      match = null;
-    }
-
     return allHistoryItems.filter((it: any) => {
       const isPaid =
         !!it?.tulsunOgnoo || String(it?.tuluv || "").trim() === "Төлсөн";
@@ -160,16 +153,7 @@ export default function DansniiKhuulga() {
       if (tuluvFilter === "unpaid") return !isPaid;
 
       if (searchTerm) {
-        if (match) {
-          if (!match(it, searchTerm)) return false;
-        } else {
-          const qq = String(searchTerm).toLowerCase();
-          const fields = [it.ner, it.gereeniiDugaar, it.tovch, it.description]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          if (!fields.includes(qq)) return false;
-        }
+        if (!matchesSearch(it, searchTerm)) return false;
       }
 
       return true;
@@ -239,7 +223,7 @@ export default function DansniiKhuulga() {
 
   return (
     <div className="min-h-screen">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -348,9 +332,9 @@ export default function DansniiKhuulga() {
             </div>
           </div>
         </div>
-        <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
-          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-            <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
+        <div className="table-surface overflow-hidden rounded-2xl w-full">
+          <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
+            <div className="max-h-[34vh] overflow-y-auto custom-scrollbar w-full">
               <table className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
@@ -471,15 +455,37 @@ export default function DansniiKhuulga() {
             </div>
             <div className=" px-4 py-2 border-t border-gray-200 flex items-center justify-between gap-4"></div>
           </div>
-          <div className="flex items-end justify-end gap-3">
-            <PageSongokh
-              value={rowsPerPage}
-              onChange={(v) => {
-                setRowsPerPage(v);
-                setPage(1);
-              }}
-              className="text-xs px-2 py-1"
-            />
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+            <div className="text-theme/70">Нийт: {filteredItems.length}</div>
+
+            <div className="flex items-center gap-3">
+              <PageSongokh
+                value={rowsPerPage}
+                onChange={(v) => {
+                  setRowsPerPage(v);
+                  setPage(1);
+                }}
+                className="text-xs px-2 py-1"
+              />
+
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={page <= 1}
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                >
+                  Өмнөх
+                </button>
+                <div className="text-theme/70 px-1">{page}</div>
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={page * rowsPerPage >= filteredItems.length}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Дараах
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -495,14 +501,15 @@ export default function DansniiKhuulga() {
               onClick={() => setIsNekhemjlekhOpen(false)}
             />
             <motion.div
-              initial={{ scale: 0.98, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] h-auto rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
+              initial={{ scale: 0.9, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 50 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
               ref={nekhemjlekhRef}
             >
-              <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
+              <div className="w-full h-full overflow-hidden">
                 <NekhemjlekhPage />
               </div>
             </motion.div>

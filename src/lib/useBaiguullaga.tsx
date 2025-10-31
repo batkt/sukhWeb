@@ -1,58 +1,7 @@
 import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
 import useSWR, { KeyedMutator } from "swr";
 import { AxiosError } from "axios";
-
-export interface Baiguullaga {
-  _id: string;
-  ner: string;
-  dans?: string;
-  khayag?: string;
-  utas?: string;
-  bankNer?: string;
-  email?: string;
-  register?: string;
-  merchantTin?: string;
-  // eBarimt and nuat flags stored on the organization level
-  eBarimtAutomataarIlgeekh?: boolean;
-  eBarimtAshiglakhEsekh?: boolean;
-  eBarimtShine?: boolean;
-  nuatTulukhEsekh?: boolean;
-  duureg?:
-    | string
-    | {
-        _id?: string;
-        ner: string;
-        kod: string;
-        ded?: Array<{
-          _id: string;
-          ner: string;
-          kod: string;
-        }>;
-      };
-  horoo?:
-    | string
-    | {
-        _id?: string;
-        ner: string;
-        kod: string;
-      };
-  tokhirgoo?: {
-    merchantTin?: string;
-    duuregNer?: string;
-    districtCode?: string;
-    sohCode?: string;
-    // small set of settings that can live under tokhirgoo
-    aldangiinKhuvi?: number;
-    aldangiChuluulukhKhonog?: number;
-    baritsaaAvakhSar?: number;
-    horoo?: {
-      ner: string;
-      kod: string;
-    };
-  };
-  // Buildings array
-  barilguud?: Array<any>;
-}
+import { Baiguullaga } from "@/types/baiguullaga";
 
 const fetcher = async (
   url: string,

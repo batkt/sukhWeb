@@ -19,10 +19,10 @@ const TabButton = ({
   <button
     onClick={onClick}
     className={
-      "px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 " +
+      "neu-btn px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 " +
       (active
-        ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm"
-        : "hover:menu-surface/80")
+        ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+        : "hover:scale-105")
     }
   >
     {children}
@@ -35,7 +35,6 @@ export default function TulburPage() {
   return (
     <div className="min-h-screen">
       <div className="rounded-2xl p-4 table-surface overflow-hidden">
- 
         <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
           <TabButton
             active={active === "guilgee"}
@@ -50,7 +49,7 @@ export default function TulburPage() {
             Дансны хуулга
           </TabButton>
         </div>
- 
+
         <div className="w-full">
           {active === "guilgee" ? <GuilgeeTuukhPage /> : <DansKhuulgaPage />}
         </div>

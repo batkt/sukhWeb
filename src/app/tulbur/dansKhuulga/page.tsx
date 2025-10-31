@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@mantine/dates";
@@ -16,7 +17,10 @@ import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../tools/function/formatNumber";
+import { useBuilding } from "@/context/BuildingContext";
+import { useModalHotkeys } from "@/lib/useModalHotkeys";
 // Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
+import matchesSearch from "@/tools/function/matchesSearch";
 
 type TableItem = {
   id: string | number;
@@ -37,6 +41,8 @@ type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function DansniiKhuulga() {
   const { searchTerm } = useSearch();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
@@ -47,13 +53,41 @@ export default function DansniiKhuulga() {
   const [isEbarimtOpen, setIsEbarimtOpen] = useState(false);
   const [isZardalOpen, setIsZardalOpen] = useState(false);
   const { token, ajiltan, barilgiinId } = useAuth();
+  const ebarimtRef = useRef<HTMLDivElement | null>(null);
+  const { selectedBuildingId } = useBuilding();
+
+  // Load selectedDansId from URL on mount
+  useEffect(() => {
+    const dans = searchParams.get("dans");
+    if (dans) {
+      setSelectedDansId(dans);
+    }
+  }, [searchParams]);
+
+  // Update URL when selectedDansId changes
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (selectedDansId) {
+      params.set("dans", selectedDansId);
+    } else {
+      params.delete("dans");
+    }
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [selectedDansId, searchParams, router]);
+
+  useModalHotkeys({
+    isOpen: isEbarimtOpen,
+    onClose: () => setIsEbarimtOpen(false),
+    container: ebarimtRef.current,
+  });
+
   // Include only defined filters to avoid sending { baiguullagiinId: undefined }
   const orgQuery = useMemo(() => {
     const q: Record<string, any> = {};
     if (ajiltan?.baiguullagiinId) q.baiguullagiinId = ajiltan.baiguullagiinId;
-    if (barilgiinId) q.barilgiinId = barilgiinId;
+    q.barilgiinId = selectedBuildingId || barilgiinId || null;
     return q;
-  }, [ajiltan?.baiguullagiinId, barilgiinId]);
+  }, [ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
   const { jagsaalt: dansList } = useJagsaalt<any>(DANS_ENDPOINT, orgQuery, {
     createdAt: -1,
   });
@@ -102,7 +136,7 @@ export default function DansniiKhuulga() {
         const resp = await uilchilgee(token).get("/bankniiGuilgee", {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            ...(barilgiinId ? { barilgiinId } : {}),
+            barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 200,
           },
@@ -114,7 +148,6 @@ export default function DansniiKhuulga() {
           : [];
         setBankRows(list);
       } catch (e) {
-        console.error("bankniiGuilgee fetch error", e);
         openErrorOverlay("Банкны гүйлгээ татахад алдаа гарлаа");
       } finally {
         setIsLoadingBankRows(false);
@@ -122,7 +155,7 @@ export default function DansniiKhuulga() {
     };
 
     fetchBankTransfers();
-  }, [token, ajiltan?.baiguullagiinId, barilgiinId]);
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
   // Map bankRows to table items and apply filters (date range + selected account)
   useEffect(() => {
@@ -216,27 +249,7 @@ export default function DansniiKhuulga() {
         if (end && d > end) return false;
       }
       // global search filtering
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const match = require("@/tools/function/matchesSearch").default;
-        if (searchTerm && !match(m, searchTerm)) return false;
-      } catch (e) {
-        if (searchTerm) {
-          const qq = String(searchTerm).toLowerCase();
-          if (
-            !String(m.action || "")
-              .toLowerCase()
-              .includes(qq) &&
-            !String(m.account || "")
-              .toLowerCase()
-              .includes(qq) &&
-            !String((m.contractIds || []).join(" "))
-              .toLowerCase()
-              .includes(qq)
-          )
-            return false;
-        }
-      }
+      if (searchTerm && !matchesSearch(m, searchTerm)) return false;
       return true;
     });
 
@@ -290,7 +303,7 @@ export default function DansniiKhuulga() {
 
   return (
     <div className="min-h-screen">
-      <div className="flex items-center gap-3 mb-1">
+      <div className="flex items-center gap-3 mb-4">
         <motion.h1
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -299,14 +312,14 @@ export default function DansniiKhuulga() {
         >
           Дансны хуулга
         </motion.h1>
-        <div style={{ width: 100, height: 100 }} className="flex items-center">
+        {/* <div style={{ width: 100, height: 100 }} className="flex items-center">
           <DotLottieReact
             src="https://lottie.host/2fd97978-2462-4da6-ae45-e16cff8aa0e2/WS8rp6nk36.lottie"
             loop
             autoplay
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "%", height: "100%" }}
           />
-        </div>
+        </div> */}
       </div>
 
       <div className="space-y-6">
@@ -401,9 +414,9 @@ export default function DansniiKhuulga() {
           </div>
         </div>
 
-        <div className="table-surface overflow-hidden rounded-2xl mt-10 w-full">
-          <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-            <div className="max-h-[25vh] overflow-y-auto custom-scrollbar w-full">
+        <div className="table-surface overflow-hidden rounded-2xl w-full">
+          <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
+            <div className="max-h-[37vh] overflow-y-auto custom-scrollbar w-full">
               <table className="table-ui text-sm min-w-full">
                 <thead>
                   <tr className="text-theme">
@@ -439,7 +452,7 @@ export default function DansniiKhuulga() {
                           {item.date}
                         </td>
 
-                        <td className="p-1 truncate text-left">
+                        <td className="p-1 truncate text-center">
                           {item.action}
                         </td>
                         <td className="p-1 text-right whitespace-nowrap">
@@ -479,15 +492,37 @@ export default function DansniiKhuulga() {
             </div>
           </div>
 
-          <div className="flex items-end justify-end gap-3">
-            <PageSongokh
-              value={rowsPerPage}
-              onChange={(v) => {
-                setRowsPerPage(v);
-                setPage(1);
-              }}
-              className="text-xs px-2 py-1"
-            />
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+            <div className="text-theme/70">Нийт: {filteredData.length}</div>
+
+            <div className="flex items-center gap-3">
+              <PageSongokh
+                value={rowsPerPage}
+                onChange={(v) => {
+                  setRowsPerPage(v);
+                  setPage(1);
+                }}
+                className="text-xs px-2 py-1"
+              />
+
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  disabled={page <= 1}
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                >
+                  Өмнөх
+                </button>
+                <div className="text-theme/70 px-1">{page}</div>
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={page * rowsPerPage >= filteredData.length}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Дараах
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -498,17 +533,18 @@ export default function DansniiKhuulga() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
+                className="fixed inset-0 bg-black/60 backdrop-blur-md z-[2100]"
                 onClick={() => setIsEbarimtOpen(false)}
               />
               <motion.div
-                initial={{ scale: 0.98, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.98, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl shadow-2xl bg-white dark:bg-slate-900"
+                initial={{ scale: 0.9, opacity: 0, y: 50 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 50 }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-4 overflow-auto max-h-[calc(90vh-48px)]">
+                <div className="w-full h-full overflow-hidden">
                   <EbarimtPage />
                 </div>
               </motion.div>

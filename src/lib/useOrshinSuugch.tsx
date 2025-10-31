@@ -187,7 +187,7 @@ const fetcherJagsaalt = async ([
         : data.niitKhuudas ?? 0,
     };
   } catch (error: any) {
-    console.error("OrshinSuugch API Error:", error);
+ 
     aldaaBarigch(error);
     throw error;
   }

@@ -29,6 +29,7 @@ import {
 import { useGereeniiZagvar, useGereeZagvarCRUD } from "@/lib/useGereeniiZagvar";
 import { useAuth } from "@/lib/useAuth";
 import { aldaaBarigch } from "../../lib/uilchilgee";
+import { useSpinner } from "@/context/SpinnerContext";
 
 type TagType = string;
 
@@ -217,12 +218,12 @@ export default function ContractEditor({
 }: ContractEditorProps) {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { showSpinner, hideSpinner } = useSpinner();
   const [templateName, setTemplateName] = useState("");
   const [templateDesc, setTemplateDesc] = useState("");
   const [templateTuluv, setTemplateTuluv] = useState("");
   const { zagvarJagsaaltMutate } = useGereeniiZagvar();
   const { zagvarUusgekh, zagvarZasakh } = useGereeZagvarCRUD();
-  const [isSaving, setIsSaving] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(true);
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
     {
@@ -470,7 +471,7 @@ export default function ContractEditor({
       return;
     }
 
-    setIsSaving(true);
+    showSpinner();
 
     try {
       const htmlContent = editor.getHTML();
@@ -525,7 +526,7 @@ export default function ContractEditor({
       aldaaBarigch(error);
       toast.error("Хадгалахад алдаа гарлаа");
     } finally {
-      setIsSaving(false);
+      hideSpinner();
     }
   };
 
@@ -750,11 +751,10 @@ export default function ContractEditor({
 
             <button
               onClick={handleSave}
-              disabled={isSaving}
               className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save size={18} />
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+              Хадгалах
             </button>
           </div>
         </div>

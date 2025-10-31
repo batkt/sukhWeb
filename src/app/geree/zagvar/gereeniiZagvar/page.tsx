@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
 import uilchilgee from "../../../../../lib/uilchilgee";
-import toast from "react-hot-toast";
+ 
 import ContractEditor from "@/components/ContractEditor";
+import { ErrorOverlayHost, openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 
 export default function GereeniiZagvarPage() {
   const router = useRouter();
@@ -34,8 +36,8 @@ export default function GereeniiZagvarPage() {
         setTemplateData(response.data);
       }
     } catch (error) {
-      console.error("Error fetching template:", error);
-      toast.error("Загварын мэдээлэл татахад алдаа гарлаа");
+
+      openErrorOverlay("Загварын мэдээлэл татахад алдаа гарлаа");
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +49,7 @@ export default function GereeniiZagvarPage() {
     aguulga: string;
   }) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -63,7 +65,7 @@ export default function GereeniiZagvarPage() {
         );
 
         if (response.status === 200 || response.data?.success) {
-          toast.success("Загвар амжилттай шинэчлэгдлээ!");
+          openSuccessOverlay("Загвар амжилттай шинэчлэгдлээ!");
           setTimeout(() => router.push("/geree"), 1000);
         }
       } else {
@@ -74,13 +76,13 @@ export default function GereeniiZagvarPage() {
         });
 
         if (response.status === 200 || response.data?.success) {
-          toast.success("Загвар амжилттай үүсгэгдлээ!");
+          openSuccessOverlay("Загвар амжилттай үүсгэгдлээ!");
           setTimeout(() => router.push("/geree"), 1000);
         }
       }
     } catch (error: any) {
-      console.error("Save error:", error);
-      toast.error(
+       
+      openErrorOverlay(
         templateId
           ? "Загвар шинэчлэхэд алдаа гарлаа"
           : "Загвар үүсгэхэд алдаа гарлаа"

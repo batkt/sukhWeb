@@ -16,6 +16,7 @@ import { mutate } from "swr";
 import { socket } from "../../lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
 import { SearchProvider } from "@/context/SearchContext";
+import { BuildingProvider } from "@/context/BuildingContext";
 import type { Socket } from "socket.io-client";
 
 function parseJwt(token: string) {
@@ -182,9 +183,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
   return (
     <SocketProvider socket={skt}>
       <SearchProvider>
-        {children}
-        <SuccessOverlayHost />
-        <ErrorOverlayHost />
+        <BuildingProvider>
+          {children}
+          <SuccessOverlayHost />
+          <ErrorOverlayHost />
+        </BuildingProvider>
       </SearchProvider>
     </SocketProvider>
   );

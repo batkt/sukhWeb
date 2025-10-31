@@ -67,7 +67,6 @@ export default function TusgaiZagvar({
       );
   }, []);
 
-  // Support reading <option> children as fallback
   const childOptions: Option[] = [];
   if (children) {
     const childArray = Array.isArray(children) ? children : [children];
@@ -102,9 +101,7 @@ export default function TusgaiZagvar({
         }}
         disabled={disabled}
         className={`btn-neu w-full justify-between cursor-pointer flex items-center h-full ${
-          tone === "neutral"
-            ? "!bg-white !text-slate-900 !border !border-gray-300 hover:!bg-gray-50"
-            : ""
+          tone === "neutral" ? "!text-slate-900" : ""
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >
         <span
@@ -123,7 +120,7 @@ export default function TusgaiZagvar({
 
       {isOpen && (
         <div
-          className={`absolute top-full left-0 mt-2 w-full max-h-60 z-[3000] menu-surface rounded-2xl overflow-hidden shadow-lg ${
+          className={`absolute top-full left-0 mt-2 w-full max-h-60 z-[3000] rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
             tone === "neutral"
               ? "!bg-white !text-slate-900 !border !border-gray-200"
               : ""

@@ -13,7 +13,8 @@ import React, {
 import toast from "react-hot-toast";
 import { parseCookies, setCookie, destroyCookie } from "nookies";
 import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
-import useBaiguullaga, { Baiguullaga } from "@/lib/useBaiguullaga";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { Baiguullaga } from "@/types/baiguullaga";
 import { AxiosError } from "axios";
 import moment from "moment";
 
@@ -107,7 +108,6 @@ export const useBarilga = () => {
         }
         setIsInitialized(true);
       } catch (error) {
-        console.error("Failed to initialize barilga:", error);
         setIsInitialized(true);
       }
     };
@@ -162,7 +162,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const parsedAjiltan = JSON.parse(storedAjiltan);
               setAjiltan(parsedAjiltan);
             } catch (error) {
-              console.error("Failed to parse stored ajiltan:", error);
               localStorage.removeItem("ajiltan");
             }
           }
@@ -176,14 +175,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (erkh) {
           try {
             setBaiguulgiinErkhiinJagsaalt(JSON.parse(erkh));
-          } catch (error) {
-            console.error("Failed to parse permissions:", error);
-          }
+          } catch (error) {}
         }
 
         hasInitialized.current = true;
       } catch (error) {
-        console.error("Failed to load auth data:", error);
         hasInitialized.current = true;
       } finally {
         setIsLoading(false);
@@ -229,7 +225,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         );
         permissionsData = res.data;
       } catch (error) {
-        console.error("Failed to fetch permissions:", error);
         permissionsData = { moduluud: [], offlineFallback: true };
       }
 
@@ -382,7 +377,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           window.location.href = "/";
         } catch (error) {
-          console.error("Logout error:", error);
           window.location.href = "/";
         }
       },

@@ -61,13 +61,6 @@ const fetcherJagsaalt = async ([
       ];
     }
 
-    console.log("Fetching ajiltan with:", {
-      baiguullagiinId,
-      barilgiinId,
-      queryObj,
-      khuudaslalt,
-    });
-
     const response = await uilchilgee(token).get(url, {
       params: {
         baiguullagiinId,
@@ -78,8 +71,6 @@ const fetcherJagsaalt = async ([
         khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
       },
     });
-
-    console.log("Ajiltan response:", response.data);
 
     // Client-side guard: strictly enforce org/branch
     const raw = response.data || {};
@@ -114,7 +105,6 @@ const fetcherJagsaalt = async ([
     }
     return filtered;
   } catch (error: any) {
-    console.error("Ajiltan API Error:", error);
     aldaaBarigch(error);
     throw error;
   }
@@ -147,12 +137,6 @@ export function useAjiltniiJagsaalt(
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      onError: (err: any) => {
-        console.error("SWR Error:", err);
-      },
-      onSuccess: (data: any) => {
-        console.log("SWR Success:", data);
-      },
     }
   );
 

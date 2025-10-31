@@ -18,6 +18,7 @@ import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import { aldaaBarigch } from "../../../lib/uilchilgee";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
+import { useSpinner } from "@/context/SpinnerContext";
 
 interface DansItem {
   _id: string;
@@ -87,6 +88,7 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
 function Dans() {
   const t = (key: string) => key;
   const { token, ajiltan } = useAuth();
+  const { showSpinner, hideSpinner } = useSpinner();
   // Load all accounts using shared list hook
   const orgQuery = useMemo(
     () => ({ baiguullagiinId: ajiltan?.baiguullagiinId || undefined }),
@@ -133,6 +135,8 @@ function Dans() {
 
   const saveDans = async () => {
     if (!token) return;
+
+    showSpinner();
     try {
       if (editing?._id) {
         await updateMethod("dans", token, {
@@ -152,6 +156,8 @@ function Dans() {
       refetchDans();
     } catch (e) {
       aldaaBarigch(e);
+    } finally {
+      hideSpinner();
     }
   };
 

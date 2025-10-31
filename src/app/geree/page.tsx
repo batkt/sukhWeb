@@ -3,6 +3,7 @@
 import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearch } from "@/context/SearchContext";
+import { useBuilding } from "@/context/BuildingContext";
 import {
   Download,
   Search,
@@ -330,6 +331,10 @@ export default function Geree() {
   };
 
   const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const selectedBarilga = baiguullaga?.barilguud?.find(
+    (b) => b._id === selectedBuildingId
+  );
   const { zardluud } = useAshiglaltiinZardluud();
   // Residents list
   const {
@@ -775,7 +780,6 @@ export default function Geree() {
 
       openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (error) {
-      console.error("Download error:", error);
       openErrorOverlay("Загвар татахад алдаа гарлаа");
     }
   };
@@ -791,9 +795,7 @@ export default function Geree() {
         baiguullagiinId: ajiltan.baiguullagiinId,
       };
 
-      if (barilgiinId) {
-        query.barilgiinId = barilgiinId;
-      }
+      query.barilgiinId = selectedBuildingId || barilgiinId || null;
 
       if (searchTerm) {
         query.$or = [
@@ -848,18 +850,12 @@ export default function Geree() {
 
       openSuccessOverlay("Excel файл амжилттай татагдлаа");
     } catch (error) {
-      console.error("Excel download error:", error);
       openErrorOverlay("Excel файл татахад алдаа гарлаа");
     }
   };
 
   const handleCreateResident = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.debug("[Geree] handleCreateResident called", {
-      editingResident,
-      newResident,
-    });
 
     // Validate basic fields
     if (!isValidName(newResident.ovog) || !isValidName(newResident.ner)) {
@@ -912,12 +908,14 @@ export default function Geree() {
           : typeof val?.ner === "string"
           ? val.ner
           : "";
-      payload.duureg = newResident.duureg || deriveStr(baiguullaga?.duureg);
-      payload.horoo = newResident.horoo || deriveStr(baiguullaga?.horoo);
+      payload.duureg =
+        newResident.duureg || deriveStr(selectedBarilga?.tokhirgoo?.duuregNer);
+      payload.horoo =
+        newResident.horoo || deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner);
       // Auto-fill building code/name for resident
       payload.soh =
-        (baiguullaga as any)?.tokhirgoo?.sohCode || baiguullaga?.ner || "";
-      if (barilgiinId) payload.barilgiinId = barilgiinId;
+        selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
+      payload.barilgiinId = selectedBuildingId || barilgiinId || null;
 
       if (editingResident?._id) {
         await updateMethod("orshinSuugch", token || "", {
@@ -939,7 +937,6 @@ export default function Geree() {
       await orshinSuugchJagsaaltMutate();
       setActiveTab("residents");
     } catch (err) {
-      console.error("handleCreateResident error:", err);
       openErrorOverlay("Нэмэхэд алдаа гарлаа");
     }
   };
@@ -991,9 +988,7 @@ export default function Geree() {
       for (const c of related) {
         try {
           if (c?._id) await gereeUstgakh(c._id);
-        } catch (err) {
-          console.error("Failed to delete related contract", c?._id, err);
-        }
+        } catch (err) {}
       }
 
       await deleteMethod("orshinSuugch", token, p._id || p.id);
@@ -1004,9 +999,7 @@ export default function Geree() {
         for (const c of related) {
           if (c?._id) s.emit("geree.deleted", { id: c._id });
         }
-      } catch (err) {
-        console.error("Socket emit failed", err);
-      }
+      } catch (err) {}
 
       openSuccessOverlay("Устгагдлаа");
 
@@ -1039,8 +1032,8 @@ export default function Geree() {
         nuutsUg: newEmployee.nuutsUg,
         baiguullagiinId: ajiltan?.baiguullagiinId,
       };
-      if (barilgiinId) payload.barilgiinId = barilgiinId;
-      
+      payload.barilgiinId = selectedBuildingId || barilgiinId || null;
+
       if (editingEmployee?._id) {
         await updateMethod("ajiltan", token, {
           ...payload,
@@ -1253,7 +1246,6 @@ export default function Geree() {
 
         zagvarJagsaaltMutate();
       } catch (error) {
-        console.error("Delete error:", error);
         openErrorOverlay("Загвар устгахад алдаа гарлаа");
       }
     }
@@ -1271,7 +1263,6 @@ export default function Geree() {
       setPreviewTemplate(response.data);
       setShowPreviewModal(true);
     } catch (error) {
-      console.error("Preview error:", error);
       openErrorOverlay("Загвар харахад алдаа гарлаа");
     }
   };
@@ -1346,24 +1337,30 @@ export default function Geree() {
             {/* Tabs */}
             <button
               onClick={() => setActiveTab("contracts")}
-              className={`tab-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
-                activeTab === "contracts" ? "is-active" : ""
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "contracts"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
               }`}
             >
               Гэрээ
             </button>
             <button
               onClick={() => setActiveTab("residents")}
-              className={`tab-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
-                activeTab === "residents" ? "is-active" : ""
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "residents"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
               }`}
             >
               Оршин суугч
             </button>
             <button
               onClick={() => setActiveTab("employees")}
-              className={`tab-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
-                activeTab === "employees" ? "is-active" : ""
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "employees"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
               }`}
             >
               Ажилтан
@@ -1586,7 +1583,7 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
-                <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+                <div className="max-h-[52vh] overflow-y-auto custom-scrollbar w-full">
                   <table className="table-ui text-xs min-w-full">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
@@ -1656,8 +1653,12 @@ export default function Geree() {
                   </table>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
-                <div className="flex items-end gap-2 !mt-1 sm:ml-auto sm:mt-0 z-1005">
+              <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+                <div className="text-theme/70">
+                  Нийт: {filteredContracts.length}
+                </div>
+
+                <div className="flex items-center gap-3">
                   <PageSongokh
                     value={rowsPerPage}
                     onChange={(v) => {
@@ -1669,8 +1670,31 @@ export default function Geree() {
                         search: searchTerm,
                       });
                     }}
-                    className="text-xs px-2 py-1 relative z-30"
+                    className="text-xs px-2 py-1"
                   />
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                      disabled={currentPage <= 1}
+                      onClick={() => {
+                        const newPage = Math.max(1, currentPage - 1);
+                        setCurrentPage(newPage);
+                      }}
+                    >
+                      Өмнөх
+                    </button>
+                    <div className="text-theme/70 px-1">{currentPage}</div>
+                    <button
+                      className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => {
+                        setCurrentPage(currentPage + 1);
+                      }}
+                    >
+                      Дараах
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1683,7 +1707,7 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+              <div className="max-h-[51vh] overflow-y-auto custom-scrollbar w-full">
                 <table className="table-ui text-xs min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
@@ -1766,21 +1790,62 @@ export default function Geree() {
                 </table>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
-              <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
-                <PageSongokh
-                  value={resPageSize}
-                  onChange={(v) => {
-                    setResPageSize(v);
-                    setResPage(1);
+            <div className="flex items-center justify-between px-2 py-1 text-xs">
+              <div className="text-theme/70">
+                Нийт: {orshinSuugchGaralt?.niitMur || 0}
+              </div>
+              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
+                <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
+                  <PageSongokh
+                    value={resPageSize}
+                    onChange={(v) => {
+                      setResPageSize(v);
+                      setResPage(1);
+                      setOrshinSuugchKhuudaslalt({
+                        khuudasniiDugaar: 1,
+                        khuudasniiKhemjee: v,
+                        search: searchTerm,
+                      });
+                    }}
+                    className="text-xs px-2 py-1 z-1006"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={resPage <= 1}
+                  onClick={() => {
+                    const newPage = Math.max(1, resPage - 1);
+                    setResPage(newPage);
                     setOrshinSuugchKhuudaslalt({
-                      khuudasniiDugaar: 1,
-                      khuudasniiKhemjee: v,
+                      khuudasniiDugaar: newPage,
+                      khuudasniiKhemjee: resPageSize,
                       search: searchTerm,
                     });
                   }}
-                  className="text-xs px-2 py-1 z-1006"
-                />
+                >
+                  Өмнөх
+                </button>
+                <div className="text-theme/70 px-1">{resPage}</div>
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={
+                    resPage * resPageSize >= (orshinSuugchGaralt?.niitMur || 0)
+                  }
+                  onClick={() => {
+                    const newPage = resPage + 1;
+                    setResPage(newPage);
+                    setOrshinSuugchKhuudaslalt({
+                      khuudasniiDugaar: newPage,
+                      khuudasniiKhemjee: resPageSize,
+                      search: searchTerm,
+                    });
+                  }}
+                >
+                  Дараах
+                </button>
               </div>
             </div>
           </div>
@@ -1878,21 +1943,62 @@ export default function Geree() {
                 </table>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
-              <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
-                <PageSongokh
-                  value={resPageSize}
-                  onChange={(v) => {
-                    setEmpPageSize(v);
-                    setEmpPage(1);
+            <div className="flex items-center justify-between px-2 py-1 text-xs">
+              <div className="text-theme/70">
+                Нийт: {ajilchdiinGaralt?.niitMur || 0}
+              </div>
+              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
+                <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
+                  <PageSongokh
+                    value={empPageSize}
+                    onChange={(v) => {
+                      setEmpPageSize(v);
+                      setEmpPage(1);
+                      setAjiltniiKhuudaslalt({
+                        khuudasniiDugaar: 1,
+                        khuudasniiKhemjee: v,
+                        search: searchTerm,
+                      });
+                    }}
+                    className="text-xs px-2 py-1 z-1006"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={empPage <= 1}
+                  onClick={() => {
+                    const newPage = Math.max(1, empPage - 1);
+                    setEmpPage(newPage);
                     setAjiltniiKhuudaslalt({
-                      khuudasniiDugaar: 1,
-                      khuudasniiKhemjee: v,
+                      khuudasniiDugaar: newPage,
+                      khuudasniiKhemjee: empPageSize,
                       search: searchTerm,
                     });
                   }}
-                  className="text-xs px-2 py-1 z-1006"
-                />
+                >
+                  Өмнөх
+                </button>
+                <div className="text-theme/70 px-1">{empPage}</div>
+                <button
+                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                  disabled={
+                    empPage * empPageSize >= (ajilchdiinGaralt?.niitMur || 0)
+                  }
+                  onClick={() => {
+                    const newPage = empPage + 1;
+                    setEmpPage(newPage);
+                    setAjiltniiKhuudaslalt({
+                      khuudasniiDugaar: newPage,
+                      khuudasniiKhemjee: empPageSize,
+                      search: searchTerm,
+                    });
+                  }}
+                >
+                  Дараах
+                </button>
               </div>
             </div>
           </div>

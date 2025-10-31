@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Palette } from "lucide-react";
+import { Palette, Check } from "lucide-react";
 
 type Theme = "blue-gradient" | "colorful" | "white-gray";
 
@@ -40,7 +40,7 @@ export default function ӨнгөнийЗагварСонгох() {
   const themes = [
     {
       id: "blue-gradient" as Theme,
-      name: "Цэнхэр",
+      name: "Цэнхэр градиент",
       colors: ["#e6f0ff", "#d7e7ff", "#c7ddff", "#b7d2ff"],
     },
     {
@@ -50,7 +50,7 @@ export default function ӨнгөнийЗагварСонгох() {
     },
     {
       id: "white-gray" as Theme,
-      name: "Цагаан–Саарал",
+      name: "Цагаан саарал",
       colors: ["#e6e9ed", "#d9dde1", "#cbd2d6", "#b0b8be"],
     },
   ];
@@ -59,45 +59,69 @@ export default function ӨнгөнийЗагварСонгох() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel text-slate-700 hover:bg-white/70 hover:text-[#1e3a8a] hover:scale-105 hover:shadow-sm transition-all duration-300"
+        className="group relative inline-flex items-center justify-center h-10 w-10 rounded-2xl neu-panel text-slate-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 hover:text-[#1e3a8a] hover:scale-105 hover:shadow-md transition-all duration-300 overflow-hidden"
         title="Өнгөний загварыг солих"
       >
-        <Palette className="w-5 h-5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-current/10 to-current/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <Palette className="w-5 h-5 relative z-10" />
+        <div className="absolute inset-0 rounded-xl ring-2 ring-current/20 group-hover:ring-current/40 transition-all duration-300" />
       </button>
 
       {isOpen && (
-        <div className="menu-surface absolute right-0 mt-2 w-64 rounded-xl z-50 backdrop-blur-md bg-white/80 shadow-md">
-          <div className="py-2 px-3">
-            <p className="text-xs font-semibold text-slate-600 mb-2 px-2">
-              Өнгөний загвар сонгох
-            </p>
-            {themes.map((theme) => (
-              <button
-                key={theme.id}
-                onClick={() => handleThemeChange(theme.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-2xl transition-all duration-300 ease-in-out flex items-center justify-between gap-3 ${
-                  currentTheme === theme.id
-                    ? "bg-white/60 font-semibold shadow-sm"
-                    : "hover:bg-white/40 hover:shadow-md"
-                } ${
-                  clickedTheme === theme.id
-                    ? "scale-95 bg-white/80"
-                    : "scale-100"
-                }`}
-              >
-                <span className="text-sm text-slate-700">{theme.name}</span>
-                <div
-                  className="h-4 w-24 rounded-full border border-white/50 shadow-sm transition-transform duration-300"
-                  style={{
-                    background: `linear-gradient(to right, ${theme.colors.join(
-                      ", "
-                    )})`,
-                    transform:
-                      clickedTheme === theme.id ? "scale(1.05)" : "scale(1)",
-                  }}
-                />
-              </button>
-            ))}
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl z-50 backdrop-blur-xl bg-white/90 shadow-xl border border-white/20 overflow-hidden animate-in slide-in-from-top-2 duration-300">
+          <div className="p-3">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <Palette className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-semibold text-slate-800">
+                  Өнгөний загвар
+                </h3>
+                <p className="text-xs text-slate-500">Загварыг сонгоно уу</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {themes.map((theme) => (
+                <button
+                  key={theme.id}
+                  onClick={() => handleThemeChange(theme.id)}
+                  className={`w-full group relative overflow-hidden rounded-xl border transition-all duration-300 ease-out ${
+                    currentTheme === theme.id
+                      ? "border-blue-500 bg-blue-50/50 shadow-md scale-[1.01]"
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-sm"
+                  } ${clickedTheme === theme.id ? "scale-95" : "scale-100"}`}
+                >
+                  <div className="flex items-center justify-between p-3">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="h-8 w-8 rounded-lg border border-white/50 shadow-sm transition-all duration-300 group-hover:scale-105"
+                        style={{
+                          background: `linear-gradient(135deg, ${theme.colors.join(
+                            ", "
+                          )})`,
+                        }}
+                      />
+                      <div className="text-left">
+                        <p className="text-xs font-medium text-slate-800">
+                          {theme.name}
+                        </p>
+                      </div>
+                    </div>
+
+                    {currentTheme === theme.id && (
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white">
+                        <Check className="w-3 h-3" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Animated background on hover */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}

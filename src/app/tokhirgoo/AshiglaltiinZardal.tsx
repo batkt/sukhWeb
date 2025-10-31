@@ -19,6 +19,8 @@ import { useAuth } from "@/lib/useAuth";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { useBuilding } from "@/context/BuildingContext";
+import { useSpinner } from "@/context/SpinnerContext";
 
 interface ZardalItem {
   _id: string;
@@ -51,6 +53,8 @@ interface ZardalFormData {
 
 export default function AshiglaltiinZardluud() {
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const { showSpinner, hideSpinner } = useSpinner();
 
   const {
     zardluud: ashiglaltiinZardluud,
@@ -61,20 +65,14 @@ export default function AshiglaltiinZardluud() {
     mutate: refreshZardluud,
   } = useAshiglaltiinZardluud();
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
-    {}
-  );
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
-  const [liftModalOpen, setLiftModalOpen] = useState<boolean>(false);
-  const [liftFloors, setLiftFloors] = useState<string[]>([]);
-  const [liftRecordId, setLiftRecordId] = useState<string | null>(null);
-  const [isSavingLift, setIsSavingLift] = useState<boolean>(false);
-  const [singleFloor, setSingleFloor] = useState<number | null>(null);
-  const [bulkText, setBulkText] = useState<string>("");
+  const [liftMaxFloor, setLiftMaxFloor] = useState<number | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
+  const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
+    {}
+  );
 
   const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
   const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
@@ -139,7 +137,6 @@ export default function AshiglaltiinZardluud() {
       setInvoiceActive(true);
       setInvoiceScheduleId(null);
     } catch (error) {
-      console.error("Failed to fetch invoice schedule:", error);
       // Reset to defaults on error
       setInvoiceDay(null);
       setInvoiceActive(true);
@@ -157,6 +154,7 @@ export default function AshiglaltiinZardluud() {
       return;
     }
 
+    showSpinner();
     try {
       const res = await fetch("http://103.143.40.46:8084/nekhemjlekhCron", {
         method: "POST",
@@ -189,6 +187,8 @@ export default function AshiglaltiinZardluud() {
       await fetchInvoiceSchedule();
     } catch (e) {
       openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
+    } finally {
+      hideSpinner();
     }
   };
 
@@ -199,9 +199,9 @@ export default function AshiglaltiinZardluud() {
       const response = await fetch(
         `http://103.143.40.46:8084/liftShalgaya?baiguullagiinId=${
           ajiltan.baiguullagiinId
-        }&${
-          barilgiinId ? `barilgiinId=${barilgiinId}&` : ""
-        }khuudasniiDugaar=1&khuudasniiKhemjee=100`,
+        }&barilgiinId=${
+          selectedBuildingId || barilgiinId || ""
+        }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
         {
           method: "GET",
           headers: {
@@ -230,91 +230,67 @@ export default function AshiglaltiinZardluud() {
 
         if (
           mostRecent.choloolugdokhDavkhar &&
-          Array.isArray(mostRecent.choloolugdokhDavkhar)
+          Array.isArray(mostRecent.choloolugdokhDavkhar) &&
+          mostRecent.choloolugdokhDavkhar.length > 0
         ) {
-          const floors = mostRecent.choloolugdokhDavkhar.map(String);
-          setLiftRecordId(mostRecent._id ?? null);
-          setLiftFloors(floors);
-          setLiftEnabled(floors.length > 0);
+          const maxFloor = Math.max(
+            ...mostRecent.choloolugdokhDavkhar.map((f: any) => Number(f) || 0)
+          );
+          setLiftMaxFloor(maxFloor);
+          setLiftEnabled(true);
           return;
         }
       }
 
-      setLiftFloors([]);
+      setLiftMaxFloor(null);
       setLiftEnabled(false);
-      setLiftRecordId(null);
-    } catch (error) {
-      console.error("Failed to fetch lift floors:", error);
-    }
+    } catch (error) {}
   };
 
-  const saveLiftSettings = async (floors: string[]) => {
+  const saveLiftSettings = async (maxFloor: number | null) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
-    setIsSavingLift(true);
+    showSpinner();
 
     try {
+      // Generate floors array from 1 to maxFloor
+      const floors = maxFloor
+        ? Array.from({ length: maxFloor }, (_, i) => (i + 1).toString())
+        : [];
+
       const payload = {
         choloolugdokhDavkhar: floors,
         baiguullagiinId: ajiltan?.baiguullagiinId,
-        ...(barilgiinId ? { barilgiinId } : {}),
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
       } as any;
 
-      let ok = false;
-      let lastError: any = null;
+      const response = await fetch("http://103.143.40.46:8084/liftShalgaya", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
 
-      if (liftRecordId) {
-        try {
-          const putRes = await fetch(
-            `http://103.143.40.46:8084/liftShalgaya/${liftRecordId}`,
-            {
-              method: "PUT",
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(payload),
-            }
-          );
-          if (putRes.ok) {
-            ok = true;
-          } else {
-            lastError = new Error(`HTTP error! status: ${putRes.status}`);
-          }
-        } catch (e) {
-          lastError = e;
-        }
-      }
-
-      if (!ok) {
-        const postRes = await fetch("http://103.143.40.46:8084/liftShalgaya", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!postRes.ok) {
-          throw lastError || new Error(`HTTP error! status: ${postRes.status}`);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       if (floors.length > 0) {
-        openSuccessOverlay("Лифт давхруудыг амжилттай хадгаллаа");
+        openSuccessOverlay(`Лифт ${maxFloor} давхартай боллоо`);
       } else {
         openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
       }
 
       await fetchLiftFloors();
-      setLiftModalOpen(false);
     } catch (error) {
       openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
     } finally {
-      setIsSavingLift(false);
+      hideSpinner();
     }
   };
 
@@ -397,12 +373,12 @@ export default function AshiglaltiinZardluud() {
       return;
     }
 
-    setIsSaving(true);
+    showSpinner();
     try {
       const payload = {
         ...formData,
         lift: formData.lift ?? null,
-        ...(barilgiinId ? { barilgiinId } : {}),
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
       };
 
       if (editingItem) {
@@ -416,7 +392,7 @@ export default function AshiglaltiinZardluud() {
     } catch (error) {
       openErrorOverlay("Хадгалахад алдаа гарлаа");
     } finally {
-      setIsSaving(false);
+      hideSpinner();
     }
   };
 
@@ -445,7 +421,7 @@ export default function AshiglaltiinZardluud() {
           body: JSON.stringify({
             ...item,
             tariff: newTariff,
-            ...(barilgiinId ? { barilgiinId } : {}),
+            barilgiinId: selectedBuildingId || barilgiinId || undefined,
           }),
         }
       );
@@ -464,12 +440,18 @@ export default function AshiglaltiinZardluud() {
   const saveTariff = async (item: ZardalItem, isUilchilgee = false) => {
     const newTariff = editedTariffs[item._id];
     if (newTariff === undefined) return;
-    await handleTariffChange(item, newTariff, isUilchilgee);
 
-    setEditedTariffs((prev) => {
-      const { [item._id]: _, ...rest } = prev;
-      return rest;
-    });
+    showSpinner();
+    try {
+      await handleTariffChange(item, newTariff, isUilchilgee);
+
+      setEditedTariffs((prev) => {
+        const { [item._id]: _, ...rest } = prev;
+        return rest;
+      });
+    } finally {
+      hideSpinner();
+    }
   };
 
   if (!ajiltan || !ajiltan.baiguullagiinId) {
@@ -497,49 +479,36 @@ export default function AshiglaltiinZardluud() {
                 </span>
                 <MSwitch
                   checked={liftEnabled}
-                  onChange={async (e) => {
-                    const checked = e.currentTarget.checked;
-                    if (checked) {
-                      setLiftModalOpen(true);
-                    } else {
-                      setLiftEnabled(false);
-                      await saveLiftSettings([]);
+                  onChange={(event) => {
+                    const enabled = event.currentTarget.checked;
+                    setLiftEnabled(enabled);
+                    if (!enabled) {
+                      saveLiftSettings(null);
                     }
                   }}
                 />
               </div>
 
-              {liftEnabled && liftFloors.length > 0 && (
+              {liftEnabled && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-3xl">
-                  <button
-                    onClick={() => setLiftModalOpen(true)}
-                    className="btn-minimal btn-save"
-                  >
-                    Засах
-                  </button>
+                  <label className="text-sm font-medium text-theme">
+                    Дээд давхар:
+                  </label>
+                  <MNumberInput
+                    value={liftMaxFloor || undefined}
+                    onChange={(value) => {
+                      const numValue = value ? Number(value) : null;
+                      setLiftMaxFloor(numValue);
+                      if (numValue !== null && numValue > 0) {
+                        saveLiftSettings(numValue);
+                      }
+                    }}
+                    min={1}
+                    max={50}
+                    placeholder="Давхар"
+                    className="w-20"
+                  />
                 </div>
-              )}
-
-              {liftEnabled && liftFloors.length === 0 && (
-                <button
-                  onClick={() => setLiftModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                    />
-                  </svg>
-                  Давхар нэмэх
-                </button>
               )}
             </div>
 
@@ -593,172 +562,6 @@ export default function AshiglaltiinZardluud() {
             )}
           </div>
 
-          <MModal
-            title={
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-lg font-semibold">
-                  Лифт хөнгөлөх давхрууд
-                </span>
-              </div>
-            }
-            opened={liftModalOpen}
-            onClose={() => {
-              setLiftModalOpen(false);
-              if (liftFloors.length === 0) {
-                setLiftEnabled(false);
-              }
-            }}
-            className="modal-blur"
-            size="lg"
-          >
-            <div className="space-y-4">
-              <div className="bg-transparent backdrop-blur-sm p-4 rounded-3xl border border-gray-200">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Давхар нэмэх
-                    </label>
-                    <div className="flex gap-2">
-                      <MNumberInput
-                        min={1}
-                        placeholder="Жишээ: 7"
-                        className="flex-1 bg-white"
-                        value={singleFloor ?? undefined}
-                        onChange={(v) => setSingleFloor((v as number) ?? null)}
-                        onKeyDown={(e) => {
-                          if (e.key !== "Enter") return;
-                          if (singleFloor && singleFloor > 0) {
-                            setLiftFloors(
-                              toUniqueSorted([...liftFloors, singleFloor])
-                            );
-                            setSingleFloor(null);
-                          }
-                        }}
-                      />
-                      <MButton
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
-                        onClick={() => {
-                          if (singleFloor && singleFloor > 0) {
-                            setLiftFloors(
-                              toUniqueSorted([...liftFloors, singleFloor])
-                            );
-                            setSingleFloor(null);
-                          }
-                        }}
-                      >
-                        Нэмэх
-                      </MButton>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Бөөнөөр оруулах
-                    </label>
-                    <MTextarea
-                      autosize
-                      minRows={2}
-                      maxRows={4}
-                      placeholder="Жишээ: 1-5, 7, 9-11"
-                      value={bulkText}
-                      onChange={(e) => setBulkText(e.currentTarget.value)}
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <MButton
-                        onClick={() => {
-                          if (!bulkText.trim()) return;
-                          const parsed = parseBulk(bulkText);
-                          setLiftFloors(
-                            toUniqueSorted([...liftFloors, ...parsed])
-                          );
-                          setBulkText("");
-                        }}
-                      >
-                        Нэмэх
-                      </MButton>
-                      <MButton
-                        variant="default"
-                        onClick={() => setBulkText("")}
-                      >
-                        Цэвэрлэх
-                      </MButton>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xs text-slate-500 mt-2">
-                  Формат: "1-5, 7, 9-11" эсвэл зай/мөрөөр тусгаарлаж болно.
-                  Давхрууд автоматаар цэгцлэгдэж, давхардал арилна.
-                </div>
-              </div>
-
-              {liftFloors.length > 0 && (
-                <div className="bg-transparent backdrop-blur-sm p-4 rounded-3xl border border-blue-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-medium text-slate-800">
-                      Сонгосон давхрууд ({liftFloors.length})
-                    </h3>
-                    <MButton
-                      variant="subtle"
-                      color="red"
-                      onClick={() => setLiftFloors([])}
-                      size="xs"
-                    >
-                      Бүгдийг арилгах
-                    </MButton>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {toUniqueSorted(liftFloors).map((floor) => (
-                      <Badge
-                        key={floor}
-                        color="blue"
-                        variant="filled"
-                        className="px-3 py-1 rounded-2xl"
-                        rightSection={
-                          <button
-                            aria-label="remove"
-                            className="ml-2 text-white/80 hover:text-white"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setLiftFloors(
-                                liftFloors.filter((f) => f !== floor)
-                              );
-                            }}
-                          >
-                            ×
-                          </button>
-                        }
-                      >
-                        {floor}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <MButton
-                variant="default"
-                onClick={() => {
-                  setLiftModalOpen(false);
-                  if (liftFloors.length === 0) {
-                    setLiftEnabled(false);
-                  }
-                }}
-                className="btn-minimal btn-cancel"
-              >
-                Болих
-              </MButton>
-              <MButton
-                className="btn-minimal btn-save"
-                loading={isSavingLift}
-                onClick={() => {
-                  saveLiftSettings(liftFloors);
-                  setLiftEnabled(liftFloors.length > 0);
-                }}
-              >
-                {liftFloors.length === 0 ? "Идэвхгүй болгох" : "Хадгалах"}
-              </MButton>
-            </div>
-          </MModal>
           {isLoadingAshiglaltiin ? (
             <div className="flex justify-center items-center p-10">
               <Loader />
@@ -945,11 +748,7 @@ export default function AshiglaltiinZardluud() {
             >
               Болих
             </MButton>
-            <MButton
-              className="btn-minimal btn-save"
-              loading={isSaving}
-              onClick={handleSave}
-            >
+            <MButton className="btn-minimal btn-save" onClick={handleSave}>
               Хадгалах
             </MButton>
           </div>

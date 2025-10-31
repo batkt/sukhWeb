@@ -8,6 +8,9 @@ import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import { useSearch } from "@/context/SearchContext";
+import { useBuilding } from "@/context/BuildingContext";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import TusgaiZagvar from "./selectZagvar/tusgaiZagvar";
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -45,10 +48,16 @@ export default function GolContent({ children }: GolContentProps) {
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const { searchTerm, setSearchTerm } = useSearch();
+  const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const { ajiltan, token, garya } = useAuth();
+  const { baiguullaga } = useBaiguullaga(
+    token || null,
+    ajiltan?.baiguullagiinId || null
+  );
+  const buildings = baiguullaga?.barilguud || [];
   const avatarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -119,13 +128,15 @@ export default function GolContent({ children }: GolContentProps) {
       path: "tailan",
       submenu: [
         // { label: "Санхүү", path: "sankhuu" },
-        { label: "Оршин суугч", path: "orshinSuugch" },
-        { label: "Авлагийн насжилт", path: "avlagiinNasjilt" },
-        { label: "Өр, авлагын тайлан", path: "debt" },
-        { label: "Орлого, зарлагын тайлан", path: "income-expense" },
-        { label: "Нийт ашиг, алдагдал", path: "profit-loss" },
-        { label: "Гүйлгээний түүх", path: "guilgee" },
-        { label: "Гүйцэтгэлийн тайлан", path: "guitsetgel" },
+        // { label: "Оршин суугч", path: "orshinSuugch" },
+        // { label: "Авлагийн насжилт", path: "avlagiinNasjilt" },
+        // { label: "Өр, авлагын тайлан", path: "debt" },
+        // { label: "Орлого, зарлагын тайлан", path: "income-expense" },
+        // { label: "Нийт ашиг, алдагдал", path: "profit-loss" },
+        // { label: "Гүйлгээний түүх", path: "guilgee" },
+        // { label: "Гүйцэтгэлийн тайлан", path: "guitsetgel" },
+        { label: "Санхүүгийн тайлан", path: "/financial" },
+        { label: "Гүйцэтгэлийн тайлан", path: "/performance" },
       ],
     },
     // {
@@ -158,7 +169,8 @@ export default function GolContent({ children }: GolContentProps) {
       <div className="min-h-screen flex flex-col">
         <nav className="neu-nav sticky top-0 z-[60]">
           <div className="max-w-[1600px] mx-auto px-8 py-4">
-            <div className="flex items-center justify-between">
+            <div className="grid grid-cols-3 items-center">
+              {/* Left section: Logo and Building selector */}
               <div className="flex items-center gap-12">
                 <ThemedLogo
                   size={48}
@@ -168,72 +180,83 @@ export default function GolContent({ children }: GolContentProps) {
                     border: "1px solid rgba(255,255,255,0.06)",
                   }}
                 />
-                {/* <div className="flex items-center gap-3">
-                  <span className="text-4xl font-extrabold font-serif italic text-[color:var(--panel-text)]">
-                    Амар Сөх
-                  </span>
-                </div> */}
 
-                <div className="flex items-center gap-2 relative">
-                  {menuItems.map((item, i) => {
-                    const isParentActive = pathname.startsWith(`/${item.path}`);
-                    return (
-                      <div key={i} className="relative group ">
-                        {item.submenu ? (
-                          <span
-                            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 cursor-default text-[color:var(--panel-text)] ${
-                              isParentActive
-                                ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm scale-105"
-                                : "hover:menu-surface"
-                            }`}
-                          >
-                            {item.label}
-                          </span>
-                        ) : (
-                          <a
-                            href={`/${item.path}`}
-                            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] ${
-                              isParentActive
-                                ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm scale-105"
-                                : "hover:menu-surface"
-                            }`}
-                          >
-                            {item.label}
-                          </a>
-                        )}
-
-                        {item.submenu && (
-                          <div className="absolute left-0 mt-2 w-52 rounded-2xl  shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 menu-surface z-[70]">
-                            <ul className="py-2">
-                              {item.submenu.map((sub, j) => {
-                                const subPath = `/${item.path}/${sub.path}`;
-                                const isSubActive =
-                                  pathname.startsWith(subPath);
-                                return (
-                                  <li key={j}>
-                                    <a
-                                      href={subPath}
-                                      className={`block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
-                                        isSubActive
-                                          ? "menu-surface ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                                          : "hover:translate-x-0.5 hover:menu-surface/80"
-                                      }`}
-                                    >
-                                      {sub.label}
-                                    </a>
-                                  </li>
-                                );
-                              })}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                <div className="w-56">
+                  <TusgaiZagvar
+                    value={selectedBuildingId ?? ""}
+                    onChange={(v: string) => setSelectedBuildingId(v || null)}
+                    options={buildings.map((b: any) => ({
+                      value: b._id,
+                      label: b.ner,
+                    }))}
+                    placeholder={
+                      buildings.length ? "Барилга сонгох" : "Барилга олдсонгүй"
+                    }
+                    tone="neutral"
+                  />
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              {/* Center section: Menu items */}
+              <div className="flex items-center justify-center gap-2 relative">
+                {menuItems.map((item, i) => {
+                  const isParentActive = pathname.startsWith(`/${item.path}`);
+                  return (
+                    <div key={i} className="relative group ">
+                      {item.submenu ? (
+                        <span
+                          className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 cursor-default text-[color:var(--panel-text)] ${
+                            isParentActive
+                              ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
+                              : "hover:menu-surface"
+                          }`}
+                        >
+                          {item.label}
+                        </span>
+                      ) : (
+                        <a
+                          href={`/${item.path}`}
+                          className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] ${
+                            isParentActive
+                              ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
+                              : "hover:menu-surface"
+                          }`}
+                        >
+                          {item.label}
+                        </a>
+                      )}
+
+                      {item.submenu && (
+                        <div className="absolute left-0 mt-2 w-52 rounded-2xl  shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 menu-surface z-[70]">
+                          <ul className="py-2">
+                            {item.submenu.map((sub, j) => {
+                              const subPath = `/${item.path}/${sub.path}`;
+                              const isSubActive = pathname.startsWith(subPath);
+                              return (
+                                <li key={j}>
+                                  <a
+                                    href={subPath}
+                                    className={`block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                      isSubActive
+                                        ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
+                                        : "hover:translate-x-0.5 hover:menu-surface/80"
+                                    }`}
+                                  >
+                                    {sub.label}
+                                  </a>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Right section: Search, settings, user avatar */}
+              <div className="flex items-center justify-end gap-4">
                 <div className="relative h-10 w-64 hidden md:flex items-center neu-panel">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                   <input
@@ -295,7 +318,7 @@ export default function GolContent({ children }: GolContentProps) {
 
         <main className="flex-1 relative h-[calc(100vh-80px)]">
           <div className="max-w-[1600px] h-full mx-auto px-8 py-6">
-            <div className="neu-panel rounded-[2rem] p-4 h-[calc(100vh-140px)] overflow-hidden">
+            <div className="neu-panel rounded-[2rem] p-2 h-[calc(100vh-140px)] overflow-hidden">
               {children}
             </div>
           </div>

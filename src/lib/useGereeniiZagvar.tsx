@@ -86,7 +86,6 @@ const fetcherJagsaalt = async ([
 
     return response.data;
   } catch (error: any) {
-    console.error("GereeZagvar API Error:", error);
     aldaaBarigch(error);
     throw error;
   }
@@ -130,9 +129,6 @@ export function useGereeniiZagvar(
       fetcherJagsaalt,
       {
         revalidateOnFocus: false,
-        onError: (err: any) => {
-          console.error("SWR Error:", err);
-        },
       }
     );
 
@@ -220,9 +216,6 @@ export function useGereeZagvarCRUD() {
       } else if (barilgiinId) {
         payload.barilgiinId = barilgiinId;
       }
-
-      console.log("Sending update payload:", payload);
-      console.log("Update URL:", `/gereeniiZagvar/${id}`);
 
       const response = await uilchilgee(token).put(
         `/gereeniiZagvar/${id}`,

@@ -11,7 +11,8 @@ import React, {
 import toast from "react-hot-toast";
 import { parseCookies, setCookie, destroyCookie } from "nookies";
 import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
-import useBaiguullaga, { Baiguullaga } from "@/lib/useBaiguullaga";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { Baiguullaga } from "@/types/baiguullaga";
 import { AxiosError } from "axios";
 
 export interface Ajiltan {
@@ -140,7 +141,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const parsedAjiltan = JSON.parse(storedAjiltan);
               setAjiltan(parsedAjiltan);
             } catch (error) {
-              console.error("Failed to parse stored ajiltan:", error);
               localStorage.removeItem("ajiltan");
             }
           }
@@ -150,7 +150,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.removeItem("ajiltan");
         }
       } catch (error) {
-        console.error("Failed to load auth data:", error);
       } finally {
         setIsLoading(false);
       }

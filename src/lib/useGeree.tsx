@@ -177,7 +177,6 @@ const fetcherJagsaalt = async ([
     }
     return filtered as Geree[];
   } catch (error: any) {
-    console.error("Geree API Error:", error);
     aldaaBarigch(error);
     throw error;
   }

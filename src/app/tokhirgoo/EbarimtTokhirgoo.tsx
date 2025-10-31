@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/useAuth";
 import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { useSpinner } from "@/context/SpinnerContext";
 
 type DateRangeValue = [string | null, string | null] | undefined;
 
@@ -14,12 +15,12 @@ export default function EbarimtTokhirgoo() {
   const { token, ajiltan, barilgiinId } = useAuth();
 
   const { baiguullaga, baiguullagaMutate } = useAuth();
+  const { showSpinner, hideSpinner } = useSpinner();
 
   // Date range like guilgeeTuukh page
   const [ognoo, setOgnoo] = useState<DateRangeValue>(undefined);
   const [ebAutoSend, setEbAutoSend] = useState<boolean>(false);
   const [ebNuat, setEbNuat] = useState<boolean>(false);
-  const [saving, setSaving] = useState(false);
   const [ebAshiglakh, setEbAshiglakh] = useState<boolean>(false);
   const [ebShine, setEbShine] = useState<boolean>(false);
   const [merchantTin, setMerchantTin] = useState<string>("");
@@ -60,10 +61,43 @@ export default function EbarimtTokhirgoo() {
 
   useEffect(() => {
     if (!baiguullaga) return;
-    setEbAutoSend(Boolean(baiguullaga.eBarimtAutomataarIlgeekh));
-    setEbNuat(Boolean(baiguullaga.nuatTulukhEsekh));
-    setEbAshiglakh(Boolean(baiguullaga.eBarimtAshiglakhEsekh));
-    setEbShine(Boolean(baiguullaga.eBarimtShine));
+    // Load from server data first
+    let autoSend = Boolean(baiguullaga.eBarimtAutomataarIlgeekh);
+    let nuat = Boolean(baiguullaga.nuatTulukhEsekh);
+    let ashiglakh = Boolean(baiguullaga.eBarimtAshiglakhEsekh ?? true);
+    let shine = Boolean(baiguullaga.eBarimtShine);
+    let tin = String(
+      baiguullaga.merchantTin || baiguullaga.tokhirgoo?.merchantTin || ""
+    );
+
+    // If server data is missing, try localStorage
+    if (
+      !baiguullaga.eBarimtAutomataarIlgeekh &&
+      !baiguullaga.nuatTulukhEsekh &&
+      baiguullaga.eBarimtAshiglakhEsekh === undefined &&
+      !baiguullaga.eBarimtShine &&
+      typeof window !== "undefined"
+    ) {
+      try {
+        const saved = localStorage.getItem("baiguullaga_ebarimt");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          autoSend = Boolean(parsed.eBarimtAutomataarIlgeekh ?? autoSend);
+          nuat = Boolean(parsed.nuatTulukhEsekh ?? nuat);
+          ashiglakh = Boolean(parsed.eBarimtAshiglakhEsekh ?? ashiglakh);
+          shine = Boolean(parsed.eBarimtShine ?? shine);
+          tin = String(parsed.merchantTin ?? tin);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    setEbAutoSend(autoSend);
+    setEbNuat(nuat);
+    setEbAshiglakh(ashiglakh);
+    setEbShine(shine);
+    setMerchantTin(tin);
   }, [baiguullaga]);
 
   const paramsKey = useMemo(() => {
@@ -201,28 +235,71 @@ export default function EbarimtTokhirgoo() {
                   if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
                   if (!baiguullaga?._id)
                     return openErrorOverlay("Байгууллага олдсонгүй");
-                  setSaving(true);
+                  showSpinner();
                   try {
                     const payload: any = {
+                      // start with the existing object to preserve fields the user didn't touch
+                      ...(baiguullaga || {}),
+                      // ensure id is present
                       _id: baiguullaga._id,
+                      // update eBarimt settings
                       eBarimtAutomataarIlgeekh: ebAutoSend,
                       nuatTulukhEsekh: ebNuat,
                       eBarimtAshiglakhEsekh: ebAshiglakh,
                       eBarimtShine: ebShine,
+                      // update merchant TIN
+                      merchantTin:
+                        merchantTin || baiguullaga?.merchantTin || "",
+                      // update tokhirgoo merchantTin as well
+                      tokhirgoo: {
+                        ...(baiguullaga?.tokhirgoo || {}),
+                        merchantTin:
+                          merchantTin ||
+                          baiguullaga?.tokhirgoo?.merchantTin ||
+                          "",
+                      },
                     };
-                    await updateBaiguullaga(token, baiguullaga._id, payload);
-                    baiguullagaMutate();
+                    const updated = await updateBaiguullaga(
+                      token,
+                      baiguullaga._id,
+                      payload
+                    );
+                    if (updated) {
+                      await baiguullagaMutate(updated, false);
+                      // Update local state to reflect saved values immediately
+                      setEbAutoSend(payload.eBarimtAutomataarIlgeekh);
+                      setEbNuat(payload.nuatTulukhEsekh);
+                      setEbAshiglakh(payload.eBarimtAshiglakhEsekh);
+                      setEbShine(payload.eBarimtShine);
+                      setMerchantTin(payload.merchantTin);
+                    }
+                    // Save to localStorage as fallback since backend may not persist
+                    try {
+                      if (typeof window !== "undefined") {
+                        localStorage.setItem(
+                          "baiguullaga_ebarimt",
+                          JSON.stringify({
+                            eBarimtAutomataarIlgeekh: ebAutoSend,
+                            nuatTulukhEsekh: ebNuat,
+                            eBarimtAshiglakhEsekh: ebAshiglakh,
+                            eBarimtShine: ebShine,
+                            merchantTin: merchantTin,
+                          })
+                        );
+                      }
+                    } catch (e) {
+                      // ignore storage errors
+                    }
                     openSuccessOverlay("Хадгалагдлаа");
                   } catch (err) {
                     openErrorOverlay("Хадгалахдаа алдаа гарлаа");
                   } finally {
-                    setSaving(false);
+                    hideSpinner();
                   }
                 }}
-                disabled={saving}
                 className="btn-minimal btn-minimal-lg"
               >
-                {saving ? t("Хадгалж...") : t("Хадгалах")}
+                {t("Хадгалах")}
               </button>
             </div>
           </div>
