@@ -22,6 +22,7 @@ export default function EbarimtTokhirgoo() {
   const [saving, setSaving] = useState(false);
   const [ebAshiglakh, setEbAshiglakh] = useState<boolean>(false);
   const [ebShine, setEbShine] = useState<boolean>(false);
+  const [merchantTin, setMerchantTin] = useState<string>("");
 
   const MSwitch = ({
     checked,
@@ -112,24 +113,6 @@ export default function EbarimtTokhirgoo() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <DatePickerInput
-            type="range"
-            locale="mn"
-            value={ognoo}
-            onChange={setOgnoo}
-            size="sm"
-            radius="md"
-            variant="filled"
-            clearable
-            placeholder="Огноо сонгох"
-            className="w-[380px]"
-            classNames={{ input: "text-theme placeholder:text-theme" }}
-          />
-        </div>
-      </div>
-
       <div className="rounded-2xl p-4 neu-panel">
         {isLoading ? (
           <div className="p-8 text-center text-theme/70">
@@ -137,6 +120,21 @@ export default function EbarimtTokhirgoo() {
           </div>
         ) : (
           <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Татвар төлөгчийн дугаар (TIN)
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={merchantTin}
+                onChange={(e) => setMerchantTin(e.target.value.trim())}
+                placeholder="Татварын бүртгэлийн дугаар"
+                className="w-full rounded-2xl border px-4 py-2 text-theme bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                disabled={isLoading}
+              />
+            </div>
             <div className="flex items-center p-4  rounded-xl shadow-sm border-l-4 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">

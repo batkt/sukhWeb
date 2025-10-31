@@ -104,7 +104,6 @@ export default function AshiglaltiinZardluud() {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
-      // Fetch from the correct GET endpoint
       const response = await fetch(
         `http://103.143.40.46:8084/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
         {
@@ -124,59 +123,27 @@ export default function AshiglaltiinZardluud() {
           Array.isArray(result.data) &&
           result.data.length > 0
         ) {
-          // Get the most recent schedule (last item in array or sort by createdAt)
           const latestSchedule = result.data[result.data.length - 1];
 
-          if (latestSchedule.nekhemjlekhUusgekhOgnoo) {
+          if (latestSchedule.nekhemjlekhUusgekhOgnoo !== undefined) {
             setInvoiceDay(latestSchedule.nekhemjlekhUusgekhOgnoo);
             setInvoiceActive(latestSchedule.idevkhitei ?? true);
             setInvoiceScheduleId(latestSchedule._id);
-
-            // Also save to localStorage as backup
-            localStorage.setItem(
-              `invoiceScheduleId_${ajiltan.baiguullagiinId}`,
-              latestSchedule._id
-            );
-            localStorage.setItem(
-              `invoiceDay_${ajiltan.baiguullagiinId}`,
-              latestSchedule.nekhemjlekhUusgekhOgnoo.toString()
-            );
-            localStorage.setItem(
-              `invoiceActive_${ajiltan.baiguullagiinId}`,
-              latestSchedule.idevkhitei.toString()
-            );
             return;
           }
         }
       }
 
-      // Fallback: load from localStorage if API fails
-      const savedDay = localStorage.getItem(
-        `invoiceDay_${ajiltan.baiguullagiinId}`
-      );
-      const savedActive = localStorage.getItem(
-        `invoiceActive_${ajiltan.baiguullagiinId}`
-      );
-
-      if (savedDay) {
-        setInvoiceDay(parseInt(savedDay));
-        setInvoiceActive(savedActive === "true");
-      }
+      // If no data found, reset to defaults
+      setInvoiceDay(null);
+      setInvoiceActive(true);
+      setInvoiceScheduleId(null);
     } catch (error) {
       console.error("Failed to fetch invoice schedule:", error);
-
-      // Fallback: load from localStorage
-      const savedDay = localStorage.getItem(
-        `invoiceDay_${ajiltan.baiguullagiinId}`
-      );
-      const savedActive = localStorage.getItem(
-        `invoiceActive_${ajiltan.baiguullagiinId}`
-      );
-
-      if (savedDay) {
-        setInvoiceDay(parseInt(savedDay));
-        setInvoiceActive(savedActive === "true");
-      }
+      // Reset to defaults on error
+      setInvoiceDay(null);
+      setInvoiceActive(true);
+      setInvoiceScheduleId(null);
     }
   };
 
@@ -211,24 +178,15 @@ export default function AshiglaltiinZardluud() {
       const result = await res.json();
       const data = result.data || result;
 
-      // Save to localStorage for persistence
+      // Update state with the saved data
       if (data._id) {
-        localStorage.setItem(
-          `invoiceScheduleId_${ajiltan.baiguullagiinId}`,
-          data._id
-        );
         setInvoiceScheduleId(data._id);
       }
-      localStorage.setItem(
-        `invoiceDay_${ajiltan.baiguullagiinId}`,
-        invoiceDay.toString()
-      );
-      localStorage.setItem(
-        `invoiceActive_${ajiltan.baiguullagiinId}`,
-        invoiceActive.toString()
-      );
 
       openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
+
+      // Refresh the data from backend
+      await fetchInvoiceSchedule();
     } catch (e) {
       openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
     }
@@ -793,7 +751,6 @@ export default function AshiglaltiinZardluud() {
                 className="btn-minimal btn-save"
                 loading={isSavingLift}
                 onClick={() => {
-                  // Allow saving an empty list to disable without toggling the switch
                   saveLiftSettings(liftFloors);
                   setLiftEnabled(liftFloors.length > 0);
                 }}

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearch } from "@/context/SearchContext";
 import {
   Download,
@@ -28,8 +28,8 @@ import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import uilchilgee, { socket } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
-import toast from "react-hot-toast";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { DatePickerInput } from "@mantine/dates";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
@@ -124,7 +124,7 @@ export default function Geree() {
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -365,9 +365,23 @@ export default function Geree() {
   } = useGereeniiZagvar();
   const contracts = gereeGaralt?.jagsaalt || [];
 
+  const residentsById = useMemo(() => {
+    const list = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((r) => {
+      if (r?._id) map[String(r._id)] = r;
+    });
+    return map;
+  }, [orshinSuugchGaralt?.jagsaalt]);
+
   // Pagination for residents/employees
   const [resPage, setResPage] = useState(1);
-  const [resPageSize, setResPageSize] = useState(10);
+  const [resPageSize, setResPageSize] = useState(20);
+  // total pages for residents (derived from server-provided total count)
+  const resTotalPages = Math.max(
+    1,
+    Math.ceil((orshinSuugchGaralt?.niitMur || 0) / (resPageSize || 1))
+  );
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
 
@@ -549,6 +563,22 @@ export default function Geree() {
     baritsaaAvakhDun: 0,
   });
 
+  const selectedResidentForModal = useMemo(() => {
+    const id =
+      (newContract &&
+        (newContract.orshinSuugchId || newContract.orshinSuugch)) ||
+      (editingContract &&
+        (editingContract.orshinSuugchId || editingContract.orshinSuugch));
+    if (!id) return null;
+    return residentsById[String(id)] || null;
+  }, [
+    newContract?.orshinSuugchId,
+    newContract?.orshinSuugch,
+    editingContract?.orshinSuugchId,
+    editingContract?.orshinSuugch,
+    residentsById,
+  ]);
+
   // Separate state for resident add modal
   const [newResident, setNewResident] = useState<any>({
     ovog: "",
@@ -593,7 +623,6 @@ export default function Geree() {
       const baseValid =
         String(newContract.ovog || "").trim() !== "" &&
         String(newContract.ner || "").trim() !== "" &&
-        String(newContract.register || "").trim() !== "" &&
         hasAnyPhone(newContract.utas) &&
         String(newContract.aimag || "").trim() !== "";
       const ubExtraValid =
@@ -603,7 +632,9 @@ export default function Geree() {
       const namesOk =
         isValidName(newContract.ovog || "") &&
         isValidName(newContract.ner || "");
-      const regOk = isValidRegister(newContract.register || "");
+      const _regVal = String(newContract.register || "").trim();
+      const regOk =
+        _regVal === "" || isValidRegister(newContract.register || "");
       const phonesOk = areValidPhones(newContract.utas || []);
       return baseValid && ubExtraValid && namesOk && regOk && phonesOk;
     }
@@ -721,7 +752,7 @@ export default function Geree() {
 
   const handleDownloadTemplate = async (templateType: string) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -745,13 +776,13 @@ export default function Geree() {
       openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (error) {
       console.error("Download error:", error);
-      toast.error("Загвар татахад алдаа гарлаа");
+      openErrorOverlay("Загвар татахад алдаа гарлаа");
     }
   };
 
   const handleDownloadExcel = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -796,7 +827,7 @@ export default function Geree() {
         ExcelCtor = null;
       }
       if (!ExcelCtor) {
-        toast.error(
+        openErrorOverlay(
           "Excel экспорт хийх боломжгүй байна. 'antd-table-saveas-excel' санг суулгана уу."
         );
         return;
@@ -818,30 +849,36 @@ export default function Geree() {
       openSuccessOverlay("Excel файл амжилттай татагдлаа");
     } catch (error) {
       console.error("Excel download error:", error);
-      toast.error("Excel файл татахад алдаа гарлаа");
+      openErrorOverlay("Excel файл татахад алдаа гарлаа");
     }
   };
 
   const handleCreateResident = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.debug("[Geree] handleCreateResident called", {
+      editingResident,
+      newResident,
+    });
+
     // Validate basic fields
     if (!isValidName(newResident.ovog) || !isValidName(newResident.ner)) {
-      toast.error(
+      openErrorOverlay(
         "Овог, Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
       );
       return;
     }
-    if (!isValidRegister(newResident.register)) {
-      toast.error(explainRegisterRule());
+    const _newResReg = String(newResident.register || "").trim();
+    if (_newResReg !== "" && !isValidRegister(newResident.register)) {
+      openErrorOverlay(explainRegisterRule());
       return;
     }
     if (!areValidPhones(newResident.utas || [])) {
-      toast.error(explainPhoneRule());
+      openErrorOverlay(explainPhoneRule());
       return;
     }
     if (!newResident.nuutsUg || String(newResident.nuutsUg).length < 2) {
-      toast.error("Нууц үг хамгийн багадаа 2 тэмдэгт байх ёстой.");
+      openErrorOverlay("Нууц үг хамгийн багадаа 2 тэмдэгт байх ёстой.");
       return;
     }
 
@@ -890,14 +927,20 @@ export default function Geree() {
       } else {
         await createMethod("orshinSuugchBurtgey", token || "", payload);
       }
-      openSuccessOverlay("Оршин суугч нэмэгдлээ");
+      const wasEdit = Boolean(editingResident?._id);
+      if (wasEdit) {
+        openSuccessOverlay("оршин суугчийн мэдээлэл засагдлаа");
+      } else {
+        openSuccessOverlay("Оршин суугч нэмэгдлээ");
+      }
       setShowResidentModal(false);
       setEditingResident(null);
       setCurrentStep(1);
       await orshinSuugchJagsaaltMutate();
       setActiveTab("residents");
     } catch (err) {
-      toast.error("Нэмэхэд алдаа гарлаа");
+      console.error("handleCreateResident error:", err);
+      openErrorOverlay("Нэмэхэд алдаа гарлаа");
     }
   };
 
@@ -932,7 +975,7 @@ export default function Geree() {
 
   const handleDeleteResident = async (p: any) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
     if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
@@ -970,14 +1013,14 @@ export default function Geree() {
       await orshinSuugchJagsaaltMutate();
       await gereeJagsaaltMutate();
     } catch (e) {
-      toast.error("Устгахад алдаа гарлаа");
+      openErrorOverlay("Устгахад алдаа гарлаа");
     }
   };
 
   const handleCreateOrUpdateEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
     try {
@@ -997,7 +1040,7 @@ export default function Geree() {
         baiguullagiinId: ajiltan?.baiguullagiinId,
       };
       if (barilgiinId) payload.barilgiinId = barilgiinId;
-
+      
       if (editingEmployee?._id) {
         await updateMethod("ajiltan", token, {
           ...payload,
@@ -1024,7 +1067,7 @@ export default function Geree() {
       await ajiltniiJagsaaltMutate();
       setActiveTab("employees");
     } catch (err) {
-      toast.error("Хадгалахад алдаа гарлаа");
+      openErrorOverlay("Хадгалахад алдаа гарлаа");
     }
   };
 
@@ -1048,7 +1091,7 @@ export default function Geree() {
 
   const handleDeleteEmployee = async (p: any) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
     if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
@@ -1058,7 +1101,7 @@ export default function Geree() {
       openSuccessOverlay("Устгагдлаа");
       await ajiltniiJagsaaltMutate();
     } catch (e) {
-      toast.error("Устгахад алдаа гарлаа");
+      openErrorOverlay("Устгахад алдаа гарлаа");
     }
   };
 
@@ -1066,23 +1109,24 @@ export default function Geree() {
     e.preventDefault();
 
     if (!isFormValid()) {
-      toast.error("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
+      openErrorOverlay("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
       return;
     }
 
     // Friendly format errors
     if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
-      toast.error(
+      openErrorOverlay(
         "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
       );
       return;
     }
-    if (!isValidRegister(newContract.register)) {
-      toast.error(explainRegisterRule());
+    const _contractReg = String(newContract.register || "").trim();
+    if (_contractReg !== "" && !isValidRegister(newContract.register)) {
+      openErrorOverlay(explainRegisterRule());
       return;
     }
     if (!areValidPhones(newContract.utas || [])) {
-      toast.error(explainPhoneRule());
+      openErrorOverlay(explainPhoneRule());
       return;
     }
 
@@ -1099,21 +1143,22 @@ export default function Geree() {
     if (!editingContract?._id) return;
 
     if (!isFormValid()) {
-      toast.error("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
+      openErrorOverlay("Бүх шаардлагатай талбарыг зөв бөглөнө үү");
       return;
     }
     if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
-      toast.error(
+      openErrorOverlay(
         "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
       );
       return;
     }
-    if (!isValidRegister(newContract.register)) {
-      toast.error(explainRegisterRule());
+    const _updateContractReg = String(newContract.register || "").trim();
+    if (_updateContractReg !== "" && !isValidRegister(newContract.register)) {
+      openErrorOverlay(explainRegisterRule());
       return;
     }
     if (!areValidPhones(newContract.utas || [])) {
-      toast.error(explainPhoneRule());
+      openErrorOverlay(explainPhoneRule());
       return;
     }
 
@@ -1139,11 +1184,15 @@ export default function Geree() {
     setCurrentStep(1);
     setNewContract((prev: any) => ({
       ...prev,
+      // Personal / contract fields
+      ovog: contract.ovog || contract.ownerOvog || "",
       ner: contract.ner || "",
-      gereeTurul: contract.gereeTurul || "",
+      register: contract.register || "",
+      // Contract meta
+      gereeTurul: contract.gereeTurul || contract.turul || "",
       davkhar: contract.davkhar || "",
-      toot: contract.toot || "",
-      startDate: contract.startDate || "",
+      toot: contract.toot || contract.toot || "",
+      startDate: contract.startDate || contract.ekhlekhOgnoo || "",
       gereeniiDugaar: contract.gereeniiDugaar || "",
       // Always store as array for inputs that use .join(", ")
       utas: Array.isArray(contract.utas)
@@ -1165,6 +1214,14 @@ export default function Geree() {
         : [""],
       // Form binds to "mail", not "email"
       mail: contract.mail || contract.email || "",
+      // Address / apartment info
+      bairniiNer:
+        contract.bairniiNer || contract.bairNer || contract.buildingName || "",
+      orts: contract.orts || contract.orts || "",
+      khayag: contract.khayag || contract.address || "",
+      aimag: contract.aimag || "",
+      duureg: contract.duureg || "",
+      horoo: contract.horoo || "",
     }));
     setShowContractModal(true);
   };
@@ -1184,7 +1241,7 @@ export default function Geree() {
 
   const handleDeleteTemplate = async (templateId: string) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -1197,13 +1254,13 @@ export default function Geree() {
         zagvarJagsaaltMutate();
       } catch (error) {
         console.error("Delete error:", error);
-        toast.error("Загвар устгахад алдаа гарлаа");
+        openErrorOverlay("Загвар устгахад алдаа гарлаа");
       }
     }
   };
   const handlePreviewTemplate = async (templateId: string) => {
     if (!token) {
-      toast.error("Нэвтрэх шаардлагатай");
+      openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
 
@@ -1215,7 +1272,7 @@ export default function Geree() {
       setShowPreviewModal(true);
     } catch (error) {
       console.error("Preview error:", error);
-      toast.error("Загвар харахад алдаа гарлаа");
+      openErrorOverlay("Загвар харахад алдаа гарлаа");
     }
   };
   const templates = [
@@ -1907,26 +1964,35 @@ export default function Geree() {
                         const done = currentStep > step;
                         return (
                           <div key={label} className="flex items-center gap-2">
-                            <div
-                              className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep(step)}
+                              className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold focus:outline-none transition-colors ${
                                 active
                                   ? "bg-sky-700 text-white"
                                   : done
                                   ? "bg-blue-200 text-slate-800"
                                   : "bg-gray-200 text-slate-700"
                               }`}
+                              aria-current={active ? "step" : undefined}
+                              aria-label={`Алхам ${step}: ${label}`}
+                              title={label}
                             >
                               {step}
-                            </div>
-                            <span
-                              className={`text-sm ${
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setCurrentStep(step)}
+                              className={`text-sm focus:outline-none ${
                                 active
                                   ? "text-slate-900 font-semibold"
                                   : "text-slate-600"
                               }`}
+                              title={label}
+                              aria-hidden={false}
                             >
                               {label}
-                            </span>
+                            </button>
                             {step < 3 && (
                               <div className="w-8 h-[2px] bg-gray-200 mx-2" />
                             )}
@@ -2168,7 +2234,6 @@ export default function Geree() {
                               </div>
                             </>
                           ) : newContract.aimag ? (
-                            // For aimags other than Ulaanbaatar show 'Сум' (use duureg field to store sum)
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Сум

@@ -118,10 +118,13 @@ export default function GolContent({ children }: GolContentProps) {
       label: "Тайлан",
       path: "tailan",
       submenu: [
-        { label: "Санхүү", path: "sankhuu" },
+        // { label: "Санхүү", path: "sankhuu" },
         { label: "Оршин суугч", path: "orshinSuugch" },
         { label: "Авлагийн насжилт", path: "avlagiinNasjilt" },
-        { label: "Насжилт", path: "nasjilt" },
+        { label: "Өр, авлагын тайлан", path: "debt" },
+        { label: "Орлого, зарлагын тайлан", path: "income-expense" },
+        { label: "Нийт ашиг, алдагдал", path: "profit-loss" },
+        { label: "Гүйлгээний түүх", path: "guilgee" },
         { label: "Гүйцэтгэлийн тайлан", path: "guitsetgel" },
       ],
     },
@@ -231,7 +234,7 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="relative h-10 w-64 hidden md:flex items-center">
+                <div className="relative h-10 w-64 hidden md:flex items-center neu-panel">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                   <input
                     aria-label="Global search"
@@ -255,7 +258,7 @@ export default function GolContent({ children }: GolContentProps) {
                 <UnguSongokh />
                 <button
                   onClick={() => router.push("/tokhirgoo")}
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
+                  className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
                 >
                   <Settings className="w-5 h-5" />
                 </button>
@@ -264,7 +267,7 @@ export default function GolContent({ children }: GolContentProps) {
                   <div className="relative" ref={avatarRef}>
                     <div
                       onClick={() => setShowLogout(!showLogout)}
-                      className="w-10 h-10 rounded-full bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] text-[#1e3a8a] flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                      className="w-10 h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
                     >
                       {userName.charAt(0).toUpperCase()}
                     </div>
