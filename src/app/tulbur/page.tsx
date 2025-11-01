@@ -19,10 +19,8 @@ const TabButton = ({
   <button
     onClick={onClick}
     className={
-      "neu-btn px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-200 " +
-      (active
-        ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-        : "hover:scale-105")
+      "btn-minimal whitespace-nowrap px-4 py-2 text-sm font-semibold " +
+      (active ? "btn-neu-primary" : "")
     }
   >
     {children}
@@ -34,8 +32,8 @@ export default function TulburPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="rounded-2xl p-4 table-surface overflow-hidden">
-        <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+      <div className="rounded-2xl p-4 table-surface">
+        <div className="flex items-center justify-end gap-2 flex-wrap overflow-x-auto px-1 mb-4">
           <TabButton
             active={active === "guilgee"}
             onClick={() => setActive("guilgee")}

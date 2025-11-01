@@ -163,7 +163,7 @@ export default function PerformanceReportsPage() {
                 return (
                   <div className="table-surface overflow-visible rounded-2xl w-full">
                     <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
-                      <div className="max-h-[60vh] overflow-y-auto custom-scrollbar w-full">
+                      <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
                         <table className="table-ui text-xs min-w-full">
                           <thead>
                             <tr>

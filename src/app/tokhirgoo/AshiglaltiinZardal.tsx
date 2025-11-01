@@ -469,10 +469,10 @@ export default function AshiglaltiinZardluud() {
     <>
       <div className="grid grid-cols-12 gap-4">
         <div className="xxl:col-span-6 col-span-12">
-          <div className="flex items-center border-b border-amber-200 px-5 pb-2 pt-5">
+          <div className="flex flex-col sm:flex-row sm:items-center border-b border-amber-200 px-4 sm:px-5 pb-2 pt-4 gap-3">
             <h2 className="mr-auto text-theme font-medium">Тогтмол зардал</h2>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-2 px-4 py-2 rounded-2xl">
                 <span className="text-sm font-medium text-theme">
                   {liftEnabled ? "Лифт идэвхтэй:" : "Лифт идэвхгүй:"}
@@ -506,13 +506,13 @@ export default function AshiglaltiinZardluud() {
                     min={1}
                     max={50}
                     placeholder="Давхар"
-                    className="w-20"
+                    className="w-24 sm:w-20"
                   />
                 </div>
               )}
             </div>
 
-            <div className="text-sm text-theme mr-3">
+            <div className="text-sm text-theme mr-0 sm:mr-3">
               Нийт: {ashiglaltiinZardluud.length}
             </div>
             <div
@@ -526,7 +526,7 @@ export default function AshiglaltiinZardluud() {
           </div>
 
           <div className="box">
-            <div className="flex items-center gap-4 p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
               <div className="font-medium text-theme flex-1">
                 Нэхэмжлэх илгээх тохиргоо
               </div>
@@ -539,8 +539,8 @@ export default function AshiglaltiinZardluud() {
               </div>
             </div>
             {invoiceActive && (
-              <div className="flex items-center gap-4 px-5 pb-5">
-                <div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
+                <div className="w-full sm:w-auto">
                   <label className="block text-sm font-medium text-theme mb-1">
                     Өдөр (сар бүр)
                   </label>
@@ -550,10 +550,11 @@ export default function AshiglaltiinZardluud() {
                     placeholder="Нэхэмжлэх өдөр"
                     value={invoiceDay ?? undefined}
                     onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                    className="w-full sm:w-40"
                   />
                 </div>
                 <MButton
-                  className="btn-minimal btn-save mt-6"
+                  className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
                   onClick={saveInvoiceSchedule}
                 >
                   Хадгалах
@@ -573,8 +574,8 @@ export default function AshiglaltiinZardluud() {
           ) : (
             ashiglaltiinZardluud.map((mur) => (
               <div key={mur._id} className="box">
-                <div className="flex items-center p-5">
-                  <div className="border-l-2 border-blue-500 pl-4 flex-1">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                  <div className="border-l-2 border-blue-500 pl-4 flex-1 w-full">
                     <div className="font-medium text-theme">{mur.ner}</div>
                     <div className="text-theme text-sm">{mur.turul}</div>
                     {mur.suuriKhuraamj !== undefined && (
@@ -583,9 +584,9 @@ export default function AshiglaltiinZardluud() {
                       </div>
                     )}
                   </div>
-                  <div className="ml-auto flex items-center gap-2">
+                  <div className="sm:ml-auto w-full sm:w-auto flex items-stretch sm:items-center gap-2">
                     <MNumberInput
-                      className="w-32 text-right text-theme"
+                      className="w-full sm:w-32 text-right text-theme"
                       value={
                         editedTariffs[mur._id] !== undefined
                           ? editedTariffs[mur._id]
@@ -602,7 +603,7 @@ export default function AshiglaltiinZardluud() {
                       }
                     />
                     <MButton
-                      className="btn-minimal btn-save"
+                      className="btn-minimal btn-save w-full sm:w-auto"
                       disabled={
                         editedTariffs[mur._id] === undefined ||
                         editedTariffs[mur._id] === mur.tariff
@@ -612,7 +613,7 @@ export default function AshiglaltiinZardluud() {
                       Хадгалах
                     </MButton>
                   </div>
-                  <div className="ml-3 flex space-x-2">
+                  <div className="sm:ml-3 flex gap-2">
                     <div
                       className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
                       onClick={() => {
@@ -645,6 +646,9 @@ export default function AshiglaltiinZardluud() {
         title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
         opened={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        classNames={{ content: "modal-surface modal-responsive" }}
+        overlayProps={{ opacity: 0.5, blur: 6 }}
+        centered
       >
         <div className="space-y-4 mt-4">
           <div>

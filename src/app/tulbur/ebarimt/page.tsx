@@ -353,21 +353,15 @@ export default function Ebarimt() {
               transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
-              <div className="relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
+              <div className="neu-panel relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
                 <motion.div
                   className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
                   initial={{ opacity: 0, x: -100 }}
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
-                <div className="flex items-center justify-between mb-3">
-                  <motion.div
-                    className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                </div>
-                <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+
+                <div className="text-4xl font-bold mb-2 text-theme">
                   {typeof stat.value === "number"
                     ? stat.value.toLocaleString("mn-MN")
                     : String(stat.value)}
@@ -387,8 +381,8 @@ export default function Ebarimt() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <DatePickerInput
                 type="range"
                 locale="mn"
@@ -404,7 +398,10 @@ export default function Ebarimt() {
                 clearable
                 placeholder="Огноо сонгох"
                 className="w-[450px]"
-                classNames={{ input: "text-theme placeholder:text-theme h-12" }}
+                classNames={{
+                  input:
+                    "text-theme placeholder:text-theme bg-[var(--surface-bg)] !h-[40px] !py-2 !w-[380px]",
+                }}
                 popoverProps={{ zIndex: 2210 }}
               />
             </div>
@@ -445,7 +442,7 @@ export default function Ebarimt() {
               >
                 <button
                   onClick={ebarimtIlgeeye}
-                  className="btn-minimal px-6 py-3 rounded-xl bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0"
+                  className="btn-minimal px-6 py-3 rounded-xl  text-white border-0"
                 >
                   {loading ? <Loader size="sm" /> : t("Татварт илгээх")}
                 </button>
@@ -454,7 +451,6 @@ export default function Ebarimt() {
           </div>
         </motion.div>
 
-        {/* Enhanced Table */}
         <motion.div
           className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
           initial={{ opacity: 0, y: 30 }}
@@ -462,7 +458,7 @@ export default function Ebarimt() {
           transition={{ delay: 0.4 }}
         >
           <div className="p-8">
-            <div className="max-h-[45vh] overflow-y-auto overflow-x-hidden custom-scrollbar w-full rounded-2xl border border-gray-100">
+            <div className="max-h-[45vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
               <table className="table-ui text-sm min-w-full">
                 <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
                   <tr>
@@ -511,10 +507,10 @@ export default function Ebarimt() {
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
                               item.type === "B2C_RECEIPT"
-                                ? "bg-green-100 text-green-800"
+                                ? "bg-green-500 text-green-800 dark:bg-green-500  "
                                 : item.type === "B2B_RECEIPT"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-gray-100 text-gray-800"
+                                ? "bg-blue-500 text-blue-800"
+                                : "bg-gray-500 text-gray-800"
                             }`}
                           >
                             {item.type === "B2C_RECEIPT"

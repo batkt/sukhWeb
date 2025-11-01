@@ -112,6 +112,14 @@ const fetcherJagsaalt = async ([
     const data = response.data;
     const list = Array.isArray(data?.jagsaalt)
       ? data.jagsaalt
+      : Array.isArray(data?.list)
+      ? data.list
+      : Array.isArray(data?.rows)
+      ? data.rows
+      : Array.isArray(data?.data?.jagsaalt)
+      ? data.data.jagsaalt
+      : Array.isArray(data?.data)
+      ? data.data
       : Array.isArray(data)
       ? data
       : [];
@@ -128,6 +136,14 @@ const fetcherJagsaalt = async ([
       const d2 = resp2.data;
       const l2 = Array.isArray(d2?.jagsaalt)
         ? d2.jagsaalt
+        : Array.isArray(d2?.list)
+        ? d2.list
+        : Array.isArray(d2?.rows)
+        ? d2.rows
+        : Array.isArray(d2?.data?.jagsaalt)
+        ? d2.data.jagsaalt
+        : Array.isArray(d2?.data)
+        ? d2.data
         : Array.isArray(d2)
         ? d2
         : [];
@@ -158,9 +174,8 @@ const fetcherJagsaalt = async ([
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
       if (!orgOk) return false;
       if (!barilgiinId) return true;
-      return (
-        it?.barilgiinId == null || toStr(it.barilgiinId) === toStr(barilgiinId)
-      );
+      const itemBid = toStr(it?.barilgiinId ?? it?.barilga);
+      return itemBid !== "" && itemBid === toStr(barilgiinId);
     });
     if (Array.isArray(data?.jagsaalt)) {
       return {

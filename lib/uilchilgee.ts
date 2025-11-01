@@ -1,7 +1,7 @@
-import toast from "react-hot-toast";
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from "axios";
 import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
 export const url = "http://103.143.40.46:8084";
 
@@ -19,7 +19,7 @@ export const aldaaBarigch = (e: any): void => {
     window.location.href = "/";
   } else if (errorMessage) {
     // Show warning toast in Mongolian
-    toast.error(t(errorMessage));
+    openErrorOverlay(t(errorMessage));
   }
 };
 
@@ -29,11 +29,26 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
     "Content-Type": "application/json",
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  return axios.create({
+  const instance = axios.create({
     baseURL: url,
     headers,
   });
+  instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    try {
+      if (config.method?.toLowerCase() === "get") {
+        const p: Record<string, any> = { ...(config.params || {}) };
+        if (globalBaiguullagiinId && p.baiguullagiinId == null) {
+          p.baiguullagiinId = globalBaiguullagiinId;
+        }
+        if (globalBarilgiinId && p.barilgiinId == null) {
+          p.barilgiinId = globalBarilgiinId;
+        }
+        config.params = p;
+      }
+    } catch {}
+    return config;
+  });
+  return instance;
 };
 
 // Axios instance for Zogsool service
@@ -43,11 +58,26 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
     "Access-Control-Allow-Origin": "*",
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  return axios.create({
+  const instance = axios.create({
     baseURL: url,
     headers,
   });
+  instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    try {
+      if (config.method?.toLowerCase() === "get") {
+        const p: Record<string, any> = { ...(config.params || {}) };
+        if (globalBaiguullagiinId && p.baiguullagiinId == null) {
+          p.baiguullagiinId = globalBaiguullagiinId;
+        }
+        if (globalBarilgiinId && p.barilgiinId == null) {
+          p.barilgiinId = globalBarilgiinId;
+        }
+        config.params = p;
+      }
+    } catch {}
+    return config;
+  });
+  return instance;
 };
 
 // Default Axios instance
@@ -57,13 +87,52 @@ const uilchilgee = (token?: string): AxiosInstance => {
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  return axios.create({
+  const instance = axios.create({
     baseURL: url,
     headers,
   });
+
+  // Attach org/building params automatically for GET requests when available
+  instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    try {
+      if (config.method?.toLowerCase() === "get") {
+        // Initialize params object if missing
+        const p: Record<string, any> = { ...(config.params || {}) };
+
+        // Only set if not explicitly provided by the caller
+        if (globalBaiguullagiinId && p.baiguullagiinId == null) {
+          p.baiguullagiinId = globalBaiguullagiinId;
+        }
+        if (globalBarilgiinId && p.barilgiinId == null) {
+          p.barilgiinId = globalBarilgiinId;
+        }
+
+        config.params = p;
+      }
+    } catch {}
+    return config;
+  });
+
+  return instance;
 };
 
 export default uilchilgee;
+
+// Global request scope for org/building used by request interceptor above
+let globalBaiguullagiinId: string | null = null;
+let globalBarilgiinId: string | null = null;
+
+export const setRequestScope = (opts: {
+  baiguullagiinId?: string | null;
+  barilgiinId?: string | null;
+}) => {
+  if (typeof opts.baiguullagiinId !== "undefined") {
+    globalBaiguullagiinId = opts.baiguullagiinId ?? null;
+  }
+  if (typeof opts.barilgiinId !== "undefined") {
+    globalBarilgiinId = opts.barilgiinId ?? null;
+  }
+};
 
 export const updateBaiguullaga = async (
   token: string | undefined,

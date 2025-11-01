@@ -505,11 +505,13 @@ const InvoiceModal = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] max-h-[1000px] bg-white rounded-3xl shadow-2xl overflow-hidden z-[9999]"
+              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto"
               onClick={(e) => e.stopPropagation()}
               ref={containerRef}
+              role="dialog"
+              aria-modal="true"
             >
-              <div className="invoice-modal">
+              <div className="invoice-modal h-full flex flex-col">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
                   <div className="flex items-center gap-4">
                     <div>
@@ -545,7 +547,7 @@ const InvoiceModal = ({
                   </button>
                 </div>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
                   <div className="grid grid-cols-2 gap-6 print-break">
                     <div>
                       <h3 className="text-xl font-bold text-slate-800 mb-3">
@@ -1153,21 +1155,15 @@ export default function InvoicingZardluud() {
               transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-3xl opacity-0 group-hover:opacity-40 blur-xl transition-all duration-500" />
-              <div className="relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
+              <div className="neu-panel relative rounded-3xl p-6 backdrop-blur-xl bg-white/80 hover:shadow-2xl transition-all duration-500 overflow-hidden border border-white/20">
                 <motion.div
                   className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/30 via-white/10 to-white/30 opacity-0"
                   initial={{ opacity: 0, x: -100 }}
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
-                <div className="flex items-center justify-between mb-3">
-                  <motion.div
-                    className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                  />
-                </div>
-                <div className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                
+                <div className="text-4xl font-bold mb-2 text-theme">
                   {typeof stat.value === "number"
                     ? stat.value.toLocaleString("mn-MN")
                     : String(stat.value)}
@@ -1272,7 +1268,7 @@ export default function InvoicingZardluud() {
           transition={{ delay: 0.4 }}
         >
           <div className="p-8">
-            <div className="max-h-[50vh] overflow-y-auto overflow-x-hidden custom-scrollbar w-full rounded-2xl border border-gray-100">
+            <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
               <table className="table-ui text-sm min-w-full">
                 <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
                   <tr>
@@ -1491,9 +1487,11 @@ export default function InvoicingZardluud() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[900px] max-w-[95vw] max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden"
+                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
                 ref={historyRef}
+                role="dialog"
+                aria-modal="true"
               >
                 <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
                   <div>
@@ -1514,7 +1512,7 @@ export default function InvoicingZardluud() {
                   ></button>
                 </div>
 
-                <div className="relative p-6">
+                <div className="relative p-6 overflow-y-auto overflow-x-auto max-h-[calc(90vh-64px)] overscroll-contain custom-scrollbar">
                   {historyLoading ? (
                     <div className="py-16 text-center text-slate-600">
                       Ачааллаж байна…

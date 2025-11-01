@@ -8,6 +8,12 @@ export const metadata: Metadata = {
   description: "Амар Сөх",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -15,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="mn">
-      <body className="h-screen overflow-hidden bg-card text-foreground font-sans">
+      <body className="min-h-screen bg-card text-foreground font-sans">
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>

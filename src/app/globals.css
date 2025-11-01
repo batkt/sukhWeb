@@ -422,58 +422,79 @@
   --panel-text: #e6fffa;
 }
 
-/* Ensure input text is readable on dark-gray and dark-green themes (AntD + native) */
-[data-theme="dark-gray"] input,
-[data-theme="dark-gray"] textarea,
-[data-theme="dark-gray"] .ant-input,
-[data-theme="dark-gray"] .ant-input-password input,
-[data-theme="dark-gray"] .ant-input-number-input,
-[data-theme="dark-gray"] .ant-select-single .ant-select-selection-item,
-[data-theme="dark-gray"] .ant-select-single .ant-select-selection-placeholder,
-[data-theme="dark-gray"] .ant-select-selection-search-input,
-[data-theme="dark-gray"] .ant-picker input,
-[data-theme="dark-gray"] .ant-picker-input > input,
-[data-theme="dark-green"] input,
-[data-theme="dark-green"] textarea,
-[data-theme="dark-green"] .ant-input,
-[data-theme="dark-green"] .ant-input-password input,
-[data-theme="dark-green"] .ant-input-number-input,
-[data-theme="dark-green"] .ant-select-single .ant-select-selection-item,
-[data-theme="dark-green"] .ant-select-single .ant-select-selection-placeholder,
-[data-theme="dark-green"] .ant-select-selection-search-input,
-[data-theme="dark-green"] .ant-picker input,
-[data-theme="dark-green"] .ant-picker-input > input {
-  color: #0f172a !important; /* slate-900 for visibility on light inputs */
-  caret-color: #0f172a !important;
-}
-
-[data-theme="dark-gray"] input::placeholder,
-[data-theme="dark-green"] input::placeholder,
-[data-theme="dark-gray"] textarea::placeholder,
-[data-theme="dark-green"] textarea::placeholder,
-[data-theme="dark-gray"] .ant-select-single .ant-select-selection-placeholder,
-[data-theme="dark-green"] .ant-select-single .ant-select-selection-placeholder {
-  color: rgba(15, 23, 42, 0.6) !important; /* slate-900 at 60% */
-}
-
-/* Ensure input text is readable on dark-black theme as well (AntD + native) */
+/* Dark themes: make inputs and dropdowns black surfaces with white text */
 [data-theme="dark-black"] input,
 [data-theme="dark-black"] textarea,
+[data-theme="dark-black"] select,
 [data-theme="dark-black"] .ant-input,
-[data-theme="dark-black"] .ant-input-password input,
+[data-theme="dark-black"] .ant-input-affix-wrapper,
+[data-theme="dark-black"] .ant-input-number,
 [data-theme="dark-black"] .ant-input-number-input,
-[data-theme="dark-black"] .ant-select-single .ant-select-selection-item,
-[data-theme="dark-black"] .ant-select-single .ant-select-selection-placeholder,
-[data-theme="dark-black"] .ant-select-selection-search-input,
-[data-theme="dark-black"] .ant-picker input,
-[data-theme="dark-black"] .ant-picker-input > input {
-  color: #0f172a !important; /* slate-900 to contrast white/light inputs */
-  caret-color: #0f172a !important;
+[data-theme="dark-black"] .ant-select-selector,
+[data-theme="dark-black"] .ant-picker,
+[data-theme="dark-black"] .mantine-Input-input,
+[data-theme="dark-gray"] input,
+[data-theme="dark-gray"] textarea,
+[data-theme="dark-gray"] select,
+[data-theme="dark-gray"] .ant-input,
+[data-theme="dark-gray"] .ant-input-affix-wrapper,
+[data-theme="dark-gray"] .ant-input-number,
+[data-theme="dark-gray"] .ant-input-number-input,
+[data-theme="dark-gray"] .ant-select-selector,
+[data-theme="dark-gray"] .ant-picker,
+[data-theme="dark-gray"] .mantine-Input-input,
+[data-theme="dark-green"] input,
+[data-theme="dark-green"] textarea,
+[data-theme="dark-green"] select,
+[data-theme="dark-green"] .ant-input,
+[data-theme="dark-green"] .ant-input-affix-wrapper,
+[data-theme="dark-green"] .ant-input-number,
+[data-theme="dark-green"] .ant-input-number-input,
+[data-theme="dark-green"] .ant-select-selector,
+[data-theme="dark-green"] .ant-picker,
+[data-theme="dark-green"] .mantine-Input-input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  caret-color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
 }
+
 [data-theme="dark-black"] input::placeholder,
 [data-theme="dark-black"] textarea::placeholder,
-[data-theme="dark-black"] .ant-select-single .ant-select-selection-placeholder {
-  color: rgba(15, 23, 42, 0.6) !important; /* slate-900 at 60% */
+[data-theme="dark-black"] .mantine-Input-input::placeholder,
+[data-theme="dark-black"] .ant-select-selection-placeholder,
+[data-theme="dark-gray"] input::placeholder,
+[data-theme="dark-gray"] textarea::placeholder,
+[data-theme="dark-gray"] .mantine-Input-input::placeholder,
+[data-theme="dark-gray"] .ant-select-selection-placeholder,
+[data-theme="dark-green"] input::placeholder,
+[data-theme="dark-green"] textarea::placeholder,
+[data-theme="dark-green"] .mantine-Input-input::placeholder,
+[data-theme="dark-green"] .ant-select-selection-placeholder {
+  color: rgba(229, 231, 235, 0.7) !important; /* slate-200 @ 70% */
+}
+
+/* Ant Design dropdowns and selectors honor dark surfaces */
+[data-theme="dark-black"] .ant-select-dropdown,
+[data-theme="dark-gray"] .ant-select-dropdown,
+[data-theme="dark-green"] .ant-select-dropdown,
+[data-theme="dark-black"] .ant-dropdown .ant-dropdown-menu,
+[data-theme="dark-gray"] .ant-dropdown .ant-dropdown-menu,
+[data-theme="dark-green"] .ant-dropdown .ant-dropdown-menu {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+}
+[data-theme="dark-black"] .ant-select-item,
+[data-theme="dark-gray"] .ant-select-item,
+[data-theme="dark-green"] .ant-select-item,
+[data-theme="dark-black"] .ant-dropdown-menu-item,
+[data-theme="dark-gray"] .ant-dropdown-menu-item,
+[data-theme="dark-green"] .ant-dropdown-menu-item,
+[data-theme="dark-black"] .ant-dropdown-menu-submenu-title,
+[data-theme="dark-gray"] .ant-dropdown-menu-submenu-title,
+[data-theme="dark-green"] .ant-dropdown-menu-submenu-title {
+  color: var(--panel-text) !important;
 }
 
 /* New theme: dark-blackish gradient */
@@ -512,6 +533,175 @@
 html,
 body {
   background: var(--gradient-bg);
+}
+
+/* ================== Dark variants for the three themes ================== */
+/* Use data-mode="dark" to flip surfaces/text/gradients without changing theme id */
+[data-theme="colorful"][data-mode="dark"] {
+  --gradient-bg: linear-gradient(135deg, #0b0b10 0%, #161620 50%, #1c1c28 100%);
+  --surface-bg: #0f0f16;
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --panel-text: #e5e7eb;
+  --glass-tint: rgba(10, 10, 16, 0.45);
+  --glass-tint-2: rgba(12, 12, 20, 0.28);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --glass-shadow: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="blue-gradient"][data-mode="dark"] {
+  --gradient-bg: linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
+  --surface-bg: #0f1424;
+  --surface-border: rgba(219, 234, 254, 0.18);
+  --panel-text: #e6efff;
+  --glass-tint: rgba(9, 14, 28, 0.5);
+  --glass-tint-2: rgba(12, 18, 34, 0.32);
+  --glass-border: rgba(219, 234, 254, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(2, 6, 23, 0.42);
+}
+
+[data-theme="white-gray"][data-mode="dark"] {
+  --gradient-bg: linear-gradient(135deg, #0e1116 0%, #141820 50%, #171b23 100%);
+  --surface-bg: #10141b;
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --panel-text: #e5e7eb;
+  --glass-tint: rgba(16, 20, 27, 0.5);
+  --glass-tint-2: rgba(16, 20, 27, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(3, 6, 12, 0.38);
+}
+
+/* Controls follow dark tokens automatically when data-mode="dark" */
+[data-mode="dark"] input,
+[data-mode="dark"] textarea,
+[data-mode="dark"] select,
+[data-mode="dark"] .ant-input,
+[data-mode="dark"] .ant-input-affix-wrapper,
+[data-mode="dark"] .ant-input-number,
+[data-mode="dark"] .ant-input-number-input,
+[data-mode="dark"] .ant-select-selector,
+[data-mode="dark"] .ant-picker,
+[data-mode="dark"] .mantine-Input-input {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+  caret-color: var(--panel-text) !important;
+}
+[data-mode="dark"] input::placeholder,
+[data-mode="dark"] textarea::placeholder,
+[data-mode="dark"] .mantine-Input-input::placeholder,
+[data-mode="dark"] .ant-select-selection-placeholder {
+  color: rgba(229, 231, 235, 0.7) !important;
+}
+[data-mode="dark"] .ant-select-dropdown,
+[data-mode="dark"] .ant-dropdown .ant-dropdown-menu,
+[data-mode="dark"] .mantine-Combobox-dropdown,
+[data-mode="dark"] .mantine-Popover-dropdown {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+}
+[data-mode="dark"] .ant-select-item,
+[data-mode="dark"] .ant-dropdown-menu-item,
+[data-mode="dark"] .ant-dropdown-menu-submenu-title,
+[data-mode="dark"] .mantine-Combobox-option {
+  color: var(--panel-text) !important;
+}
+
+/* ================== Edge toggler (FAB + arc trail) ================== */
+.theme-fab {
+  position: absolute;
+  z-index: 50;
+  pointer-events: auto;
+}
+.mode-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%);
+  box-shadow: 0 18px 38px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
+  color: var(--panel-text);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+.mode-fab::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 26px;
+  height: 12px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    ellipse at 20% 20%,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.35) 60%,
+    transparent 80%
+  );
+  filter: blur(1.5px);
+  pointer-events: none;
+}
+.mode-fab:hover {
+  transform: translateY(-1px);
+}
+.mode-fab:active {
+  transform: translateY(0);
+}
+.mode-fab svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Magenta arc trail hugging the corner */
+.mode-trail {
+  position: absolute;
+  width: 96px;
+  height: 96px;
+  top: -56px;
+  right: -56px;
+  pointer-events: none;
+  /* Neutral embossed arc – subtle highlight + shadow */
+  background: conic-gradient(
+    from 210deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(148, 163, 184, 0.38) 35%,
+    transparent 60%
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 63%, #000 65%);
+  mask: radial-gradient(closest-side, transparent 63%, #000 65%);
+  border-top-right-radius: 100%;
+  filter: blur(10px) saturate(140%);
+  opacity: 0.6;
+  transition: opacity 200ms ease;
+}
+.mode-trail::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: conic-gradient(
+    from 210deg,
+    rgba(0, 0, 0, 0.18),
+    rgba(0, 0, 0, 0.06) 35%,
+    transparent 60%
+  );
+  -webkit-mask: radial-gradient(closest-side, transparent 70%, #000 72%);
+  mask: radial-gradient(closest-side, transparent 70%, #000 72%);
+  border-top-right-radius: 100%;
+  filter: blur(6px);
+}
+.theme-fab:hover .mode-trail {
+  opacity: 0.75;
+}
+.theme-fab.is-dark .mode-trail {
+  opacity: 0.95;
 }
 
 .neu-panel {
@@ -704,12 +894,123 @@ body {
 }
 
 .modal-surface {
-  background: #ffffff !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+  /* Always follow themed surface tokens */
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
   border-radius: 1rem;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+/* Text elements inside modal inherit readable color (avoid hardcoded slate classes) */
+.modal-surface h1,
+.modal-surface h2,
+.modal-surface h3,
+.modal-surface h4,
+.modal-surface h5,
+.modal-surface h6,
+.modal-surface p,
+.modal-surface label,
+.modal-surface small,
+.modal-surface span,
+.modal-surface dt,
+.modal-surface dd,
+.modal-surface th,
+.modal-surface td {
+  color: var(--panel-text) !important;
+}
+
+/* Common borders inside modal should use themed border color */
+.modal-surface .border-b,
+.modal-surface .border-t,
+.modal-surface .border-l,
+.modal-surface .border-r,
+.modal-surface .border,
+.modal-surface .divide-y > * + * {
+  border-color: var(--surface-border) !important;
+}
+
+/* Neutralize hardcoded light header background in modals */
+.modal-surface .bg-gray-50 {
+  background: transparent !important;
+}
+
+/* Neutralize hardcoded light backgrounds/borders inside modals */
+.modal-surface .bg-white,
+.modal-surface .bg-white\/90,
+.modal-surface .bg-white\/95,
+.modal-surface .bg-gray-50,
+.modal-surface .bg-gray-100,
+.modal-surface .bg-slate-50 {
+  background: transparent !important;
+}
+.modal-surface .border-gray-50,
+.modal-surface .border-gray-100,
+.modal-surface .border-gray-200,
+.modal-surface .border-white\/20,
+.modal-surface .border-white\/30 {
+  border-color: var(--surface-border) !important;
+}
+
+/* Some pages render decorative light gradients; inside modals, neutralize them */
+.modal-surface .bg-gradient-to-br,
+.modal-surface .bg-gradient-to-r,
+.modal-surface .bg-gradient-to-l,
+.modal-surface .bg-gradient-to-t,
+.modal-surface .bg-gradient-to-b {
+  background-image: none !important;
+  background: var(--surface-bg) !important;
+}
+
+/* Avoid extra frosted layers within modal content */
+.modal-surface .backdrop-blur-sm,
+.modal-surface .backdrop-blur,
+.modal-surface .backdrop-blur-md,
+.modal-surface .backdrop-blur-lg,
+.modal-surface .backdrop-blur-xl {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* Responsive helper for custom modals */
+.modal-responsive {
+  width: 96vw !important;
+  max-height: 90vh !important;
+}
+@media (min-width: 640px) {
+  .modal-responsive {
+    width: 100% !important;
+    max-width: 56rem !important; /* ~max-w-5xl */
+  }
+}
+
+/* Ant Design Modal theming to follow tokens (both light/dark) */
+.ant-modal .ant-modal-content {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 1rem !important;
+}
+.ant-modal .ant-modal-header {
+  background: var(--surface-bg) !important;
+  border-bottom: 1px solid var(--surface-border) !important;
+}
+.ant-modal .ant-modal-title,
+.ant-modal .ant-modal-close {
+  color: var(--panel-text) !important;
+}
+.ant-modal .ant-modal-body,
+.ant-modal .ant-modal-footer {
+  color: var(--panel-text) !important;
+}
+/* AntD Modal responsiveness */
+.ant-modal {
+  max-width: 95vw !important;
+}
+.ant-modal .ant-modal-content {
+  max-height: 90vh !important;
+  overflow: auto;
 }
 [data-theme="dark-black"] .mantine-DatePickerInput-root input {
   background: var(--surface-bg) !important;
@@ -725,54 +1026,82 @@ body {
   box-shadow: 0 0 0 3px var(--focus-ring) !important; /* same as btn-minimal */
 }
 /* Calendar dropdown + text */
-[data-theme="dark-black"] .mantine-Popover-dropdown {
+[data-theme="dark-black"] .mantine-Popover-dropdown,
+[data-theme="dark-gray"] .mantine-Popover-dropdown,
+[data-theme="dark-green"] .mantine-Popover-dropdown {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border: 1px solid var(--surface-border) !important;
   border-radius: 0.75rem !important;
 }
 /* Ensure input elements from Mantine use dark surface */
-[data-theme="dark-black"] .mantine-Input-input {
+[data-theme="dark-black"] .mantine-Input-input,
+[data-theme="dark-gray"] .mantine-Input-input,
+[data-theme="dark-green"] .mantine-Input-input {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border: 1px solid var(--surface-border) !important;
 }
 /* Popover content paper inside calendar */
-[data-theme="dark-black"] .mantine-Popover-dropdown .mantine-Paper-root {
+[data-theme="dark-black"] .mantine-Popover-dropdown .mantine-Paper-root,
+[data-theme="dark-gray"] .mantine-Popover-dropdown .mantine-Paper-root,
+[data-theme="dark-green"] .mantine-Popover-dropdown .mantine-Paper-root {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
 }
 [data-theme="dark-black"] .mantine-CalendarHeader-label,
 [data-theme="dark-black"] .mantine-Month-weekday,
-[data-theme="dark-black"] .mantine-Month-day {
+[data-theme="dark-black"] .mantine-Month-day,
+[data-theme="dark-gray"] .mantine-CalendarHeader-label,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-day,
+[data-theme="dark-green"] .mantine-CalendarHeader-label,
+[data-theme="dark-green"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-day {
   color: var(--panel-text) !important; /* unify header + weekdays + days text */
 }
 /* Avoid red weekends on dark-black; keep same text color */
 [data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
-[data-theme="dark-black"] .mantine-Month-day[data-weekend] {
+[data-theme="dark-black"] .mantine-Month-day[data-weekend],
+[data-theme="dark-gray"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-gray"] .mantine-Month-day[data-weekend],
+[data-theme="dark-green"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-green"] .mantine-Month-day[data-weekend] {
   color: var(--panel-text) !important;
 }
 /* Selected day */
-[data-theme="dark-black"] .mantine-Month-day[data-selected] {
+[data-theme="dark-black"] .mantine-Month-day[data-selected],
+[data-theme="dark-gray"] .mantine-Month-day[data-selected],
+[data-theme="dark-green"] .mantine-Month-day[data-selected] {
   background: rgba(99, 102, 241, 0.22) !important; /* indigo hint */
   color: var(--panel-text) !important;
 }
 /* Range states */
 [data-theme="dark-black"] .mantine-Month-day[data-in-range],
 [data-theme="dark-black"] .mantine-Month-day[data-first-in-range],
-[data-theme="dark-black"] .mantine-Month-day[data-last-in-range] {
+[data-theme="dark-black"] .mantine-Month-day[data-last-in-range],
+[data-theme="dark-gray"] .mantine-Month-day[data-in-range],
+[data-theme="dark-gray"] .mantine-Month-day[data-first-in-range],
+[data-theme="dark-gray"] .mantine-Month-day[data-last-in-range],
+[data-theme="dark-green"] .mantine-Month-day[data-in-range],
+[data-theme="dark-green"] .mantine-Month-day[data-first-in-range],
+[data-theme="dark-green"] .mantine-Month-day[data-last-in-range] {
   background: rgba(99, 102, 241, 0.12) !important;
   color: var(--panel-text) !important;
 }
 /* Hover */
-[data-theme="dark-black"] .mantine-Month-day {
+[data-theme="dark-black"] .mantine-Month-day,
+[data-theme="dark-gray"] .mantine-Month-day,
+[data-theme="dark-green"] .mantine-Month-day {
   /* Increase day cell height/size for better touch/visual spacing */
   min-height: 2.25rem !important; /* ~36px -> 36px+ */
   min-width: 2.25rem !important;
   line-height: 2.25rem !important;
 }
-[data-theme="dark-black"] .mantine-Month-day:hover {
+[data-theme="dark-black"] .mantine-Month-day:hover,
+[data-theme="dark-gray"] .mantine-Month-day:hover,
+[data-theme="dark-green"] .mantine-Month-day:hover {
   /* No white background on hover; highlight text only */
   background: transparent !important;
   color: color-mix(in oklch, var(--panel-text), white 18%) !important;
@@ -1954,4 +2283,49 @@ select,
     inset 0 1px 0 var(--glass-highlight) !important;
   color: var(--panel-text) !important;
   background-clip: padding-box !important;
+}
+
+/* === Global responsiveness helpers ===================================== */
+/* Fluid root font size for better readability across devices */
+html {
+  font-size: clamp(14px, 1.1vw + 10px, 16px);
+}
+
+/* Media embeds scale within containers */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent layout breaks on long words/IDs */
+.prose,
+.text-content,
+.table-ui,
+.neu-panel,
+.neu-table {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Make all neumorphic tables scroll horizontally on small screens */
+.neu-table {
+  overflow-x: auto;
+}
+.table-ui {
+  min-width: 640px;
+}
+
+/* Reduce padding on smaller screens where appropriate (container-like areas) */
+@media (max-width: 640px) {
+  .px-8 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  .py-6 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
 }

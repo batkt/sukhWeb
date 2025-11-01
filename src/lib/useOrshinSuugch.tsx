@@ -86,6 +86,14 @@ const fetcherJagsaalt = async ([
     const normalize = (d: any, fallbackPageSize?: number) => {
       const lst = Array.isArray(d?.jagsaalt)
         ? d.jagsaalt
+        : Array.isArray(d?.list)
+        ? d.list
+        : Array.isArray(d?.rows)
+        ? d.rows
+        : Array.isArray(d?.data?.jagsaalt)
+        ? d.data.jagsaalt
+        : Array.isArray(d?.data)
+        ? d.data
         : Array.isArray(d)
         ? d
         : [];
@@ -187,7 +195,6 @@ const fetcherJagsaalt = async ([
         : data.niitKhuudas ?? 0,
     };
   } catch (error: any) {
- 
     aldaaBarigch(error);
     throw error;
   }

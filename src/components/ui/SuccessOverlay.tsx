@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+// Use a simple SVG instead of a Lottie animation for a minimal, non-animated success indicator
 
 type OpenPayload = { message: string; duration?: number };
 
@@ -65,13 +65,29 @@ export function SuccessOverlayHost() {
             transition: "opacity 200ms ease, transform 200ms ease",
           }}
         >
-          <div className="w-10 h-10 md:w-12 md:h-12 pointer-events-none select-none">
-            <DotLottieReact
-              src="https://lottie.host/1e137598-a331-458b-9385-c1ff5fd7bf8d/6jwr8TV0n5.lottie"
-              loop
-              autoplay
-              style={{ width: "100%", height: "100%" }}
-            />
+          <div className="w-10 h-10 md:w-12 md:h-12 pointer-events-none select-none flex items-center justify-center">
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="12"
+                fill="var(--success-bg, #ecfdf5)"
+              />
+              <path
+                d="M7 12.5l2.5 2.5L17 8"
+                stroke="var(--success, #0f766e)"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
           <div className="text-sm md:text-base font-semibold text-theme">
             {message}

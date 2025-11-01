@@ -245,7 +245,7 @@ export default function FinancialReportsPage() {
                   <div className="table-surface overflow-visible rounded-2xl w-full">
                     <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
                       <h3 className="text-lg font-semibold mb-4">{title}</h3>
-                      <div className="max-h-[60vh] overflow-y-auto custom-scrollbar w-full">
+                      <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
                         <table className="table-ui text-xs min-w-full">
                           <thead>
                             <tr>

@@ -334,7 +334,7 @@ export default function DansniiKhuulga() {
         </div>
         <div className="table-surface overflow-hidden rounded-2xl w-full">
           <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-            <div className="max-h-[34vh] overflow-y-auto custom-scrollbar w-full">
+            <div className="max-h-[29vh] overflow-y-auto custom-scrollbar w-full">
               <table className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
@@ -505,11 +505,13 @@ export default function DansniiKhuulga() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 50 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden"
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
               onClick={(e) => e.stopPropagation()}
               ref={nekhemjlekhRef}
+              role="dialog"
+              aria-modal="true"
             >
-              <div className="w-full h-full overflow-hidden">
+              <div className="w-full h-full overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
                 <NekhemjlekhPage />
               </div>
             </motion.div>
@@ -531,7 +533,7 @@ export default function DansniiKhuulga() {
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-slate-900"
+              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl modal-surface modal-responsive"
               onClick={(e) => e.stopPropagation()}
               ref={khungulultRef}
             >

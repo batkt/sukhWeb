@@ -2020,7 +2020,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-5xl h-[85vh] max-h-[90vh] rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[85vh] max-h-[90vh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2091,7 +2091,7 @@ export default function Geree() {
                               onClick={() => setCurrentStep(step)}
                               className={`text-sm focus:outline-none ${
                                 active
-                                  ? "text-slate-900 font-semibold"
+                                  ? "text-slate-700 font-semibold"
                                   : "text-slate-600"
                               }`}
                               title={label}
@@ -2618,7 +2618,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-4xl h-[100vh] max-h-[90vh] rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[100vh] max-h-[90vh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2967,7 +2967,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -3182,7 +3182,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl p-6"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-slate-900">
@@ -3292,7 +3292,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative w-full max-w-3xl rounded-2xl bg-white shadow-2xl p-6"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-6"
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-slate-900">

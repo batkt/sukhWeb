@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
+import { useBuilding } from "@/context/BuildingContext";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -48,6 +49,8 @@ type Dataset = {
 
 export default function Khynalt() {
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [timeFilter, setTimeFilter] = useState<
@@ -61,18 +64,18 @@ export default function Khynalt() {
       token || "",
       ajiltan?.baiguullagiinId || "",
       {},
-      barilgiinId || undefined
+      effectiveBarilgiinId
     );
   const { gereeGaralt, setGereeKhuudaslalt } = useGereeJagsaalt(
     {},
     token || undefined,
     ajiltan?.baiguullagiinId,
-    barilgiinId || undefined
+    effectiveBarilgiinId
   );
   const { ajilchdiinGaralt, setAjiltniiKhuudaslalt } = useAjiltniiJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
-    barilgiinId || undefined
+    effectiveBarilgiinId
   );
 
   useEffect(() => {
@@ -109,7 +112,8 @@ export default function Khynalt() {
   const totalBuildings = useMemo(() => {
     const set = new Set<string>();
     residents.forEach((r: any) => {
-      if (r?.barilga) set.add(String(r.barilga));
+      const bid = r?.barilgiinId ?? r?.barilga;
+      if (bid) set.add(String(bid));
     });
     return set.size;
   }, [residents]);
@@ -230,7 +234,9 @@ export default function Khynalt() {
             khuudasniiKhemjee: 5000,
             query: {
               baiguullagiinId: ajiltan.baiguullagiinId,
-              ...(barilgiinId ? { barilgiinId } : {}),
+              ...(effectiveBarilgiinId
+                ? { barilgiinId: effectiveBarilgiinId }
+                : {}),
               createdAt: { $gte: rangeStart, $lte: rangeEnd },
             },
           },
@@ -265,7 +271,10 @@ export default function Khynalt() {
             if (osId) unpaidResidents.add(osId);
           }
 
-          const barilga = residentById.get(osId)?.barilga || "Тодорхойгүй";
+          const barilga =
+            residentById.get(osId)?.barilgiinId ||
+            residentById.get(osId)?.barilga ||
+            "Тодорхойгүй";
           byBld[barilga] = (byBld[barilga] || 0) + amount;
 
           const created = String(
@@ -329,7 +338,13 @@ export default function Khynalt() {
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
       });
     })();
-  }, [token, ajiltan?.baiguullagiinId, barilgiinId, timeFilter, residents]);
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    effectiveBarilgiinId,
+    timeFilter,
+    residents,
+  ]);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -337,7 +352,9 @@ export default function Khynalt() {
       try {
         const resp = await postSummary(token, {
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
+          ...(effectiveBarilgiinId
+            ? { barilgiinId: effectiveBarilgiinId }
+            : {}),
         });
         setSummaryData(resp.data);
       } catch (error) {
@@ -345,7 +362,7 @@ export default function Khynalt() {
       }
     };
     fetchSummary();
-  }, [token, ajiltan?.baiguullagiinId, barilgiinId]);
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   const incomeLineData: Dataset = useMemo(() => {
     const pretty = incomeSeries.labels.map((lb) => {
@@ -456,34 +473,40 @@ export default function Khynalt() {
 
   const filteredResidents = residents.filter((r: any) => {
     const timeMatch = _inRange(r?.createdAt || r?.ognoo || r?.date);
+    const buildingField = r?.barilgiinId ?? r?.barilga;
     const buildingMatch =
-      !barilgiinId || String(r?.barilga) === String(barilgiinId);
+      !effectiveBarilgiinId ||
+      String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
   const filteredContracts = contracts.filter((c: any) => {
     const timeMatch = _inRange(
       c?.createdAt || c?.ognoo || c?.date || c?.duusakhOgnoo
     );
+    const buildingField = c?.barilgiinId ?? c?.barilga;
     const buildingMatch =
-      !barilgiinId || String(c?.barilgiinId) === String(barilgiinId);
+      !effectiveBarilgiinId ||
+      String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
   const filteredEmployees = employees.filter((e: any) => {
     const timeMatch = _inRange(e?.createdAt || e?.ognoo || e?.date);
     const buildingMatch =
-      !barilgiinId || String(e?.barilgiinId) === String(barilgiinId);
+      !effectiveBarilgiinId ||
+      String(e?.barilgiinId) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
 
   const filteredTotalResidents = filteredResidents.length;
   const filteredTotalContracts = filteredContracts.length;
   const filteredTotalEmployees = filteredEmployees.length;
-  const filteredBuildings = barilgiinId
+  const filteredBuildings = effectiveBarilgiinId
     ? 1
     : (() => {
         const set = new Set<string>();
         filteredResidents.forEach((r: any) => {
-          if (r?.barilga) set.add(String(r.barilga));
+          const bid = r?.barilgiinId ?? r?.barilga;
+          if (bid) set.add(String(bid));
         });
         return set.size;
       })();
@@ -584,8 +607,8 @@ export default function Khynalt() {
   return (
     <div className="h-full overflow-auto custom-scrollbar">
       <div className="min-h-full p-4">
-        <div className="flex items-center justify-between mb-6 transition-all duration-700">
-          <h1 className="text-2xl font-bold text-[color:var(--panel-text)]">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700">
+          <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
 
@@ -594,7 +617,7 @@ export default function Khynalt() {
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="flex space-x-2 bg-white/5 backdrop-blur-xl rounded-2xl p-2 border border-white/10 shadow-lg">
+            <div className="flex gap-2 bg-white/5 backdrop-blur-xl rounded-2xl p-2 border border-white/10 shadow-lg overflow-x-auto custom-scrollbar whitespace-nowrap">
               {[
                 { value: "day", label: "Өдөр" },
                 { value: "week", label: "Долоо хоног" },
@@ -604,7 +627,7 @@ export default function Khynalt() {
                 <button
                   key={option.value}
                   onClick={() => setTimeFilter(option.value as any)}
-                  className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 shrink-0 whitespace-nowrap ${
                     timeFilter === option.value
                       ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 text-[color:var(--panel-text)] shadow-inner"
                       : "bg-transparent hover:bg-white/5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
@@ -751,7 +774,7 @@ export default function Khynalt() {
               <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">
                 Ашгийн тайлан
               </h3>
-              <div className="h-64">
+              <div className="h-64 ">
                 <Line
                   data={profitLineData as any}
                   options={{

@@ -42,7 +42,7 @@ export default function ReportsControls({
           value={reportType}
           onChange={(v) => setReportType(v)}
         >
-          <option value="summary">Суммар тайлан</option>
+          <option value="summary">Нийт тайлан</option>
           <option value="avlaga">Өр / Авлага</option>
           <option value="orlogo-zarlaga">Орлого / Зарлага</option>
           <option value="ashig-aldagdal">Ашиг / Алдагдал</option>

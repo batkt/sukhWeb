@@ -187,6 +187,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
         okText="Хадгалах"
         cancelText="Болих"
         width={600}
+        rootClassName="modal-themed"
       >
         <UtasBurtgel
           ref={ref}

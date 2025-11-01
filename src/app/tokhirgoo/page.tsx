@@ -125,23 +125,6 @@ function Tokhirgoo() {
     <AdminLayout title="Тохиргоо">
       <div className="col-span-12 lg:col-span-3">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div
-            className="flex items-center p-5 border-b"
-            style={{ borderColor: "var(--surface-border)" }}
-          >
-            <img
-              src="/profile.svg"
-              alt={ajiltan?.ner || "profile"}
-              className="w-12 h-12 rounded-full ring-2 ring-[var(--sidebar-ring)]"
-            />
-            <div className="ml-4">
-              <h2 className="font-medium text-lg text-theme">
-                {ajiltan?.ner || ""}
-              </h2>
-              <p className="text-theme text-sm">{ajiltan?.nevtrekhNer || ""}</p>
-            </div>
-          </div>
-
           <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto custom-scrollbar">
             {tokhirgoo.map((item, i) => (
               <button
