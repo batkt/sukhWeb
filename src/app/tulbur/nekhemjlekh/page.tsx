@@ -569,7 +569,7 @@ const InvoiceModal = ({
                       </div>
                     </div>
                     <div className="text-right space-y-2">
-                      <div className="inline-block text-left bg-blue-50 p-3 rounded-xl">
+                      <div className="inline-block text-left bg-transparent p-3 rounded-xl">
                         <p className="text-sm text-slate-600">
                           <span className="font-medium">Огноо:</span>{" "}
                           {currentDate}
@@ -1162,7 +1162,7 @@ export default function InvoicingZardluud() {
                   whileHover={{ opacity: 1, x: 100 }}
                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
-                
+
                 <div className="text-4xl font-bold mb-2 text-theme">
                   {typeof stat.value === "number"
                     ? stat.value.toLocaleString("mn-MN")
@@ -1403,7 +1403,7 @@ export default function InvoicingZardluud() {
                           </div>
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm font-medium">
                             {resident.toot || "-"}
                           </span>
                         </td>
@@ -1429,24 +1429,29 @@ export default function InvoicingZardluud() {
                           </span>
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
+                          <div
+                            className="flex items-center gap-2"
+                            style={{ minWidth: 90 }}
+                          >
                             <motion.button
                               onClick={() => handleViewInvoice(resident)}
-                              className="p-2 rounded-xl hover:bg-blue-50 transition-colors"
+                              className="p-3 sm:p-2 rounded-xl hover:bg-blue-50 transition-colors"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               title="Нэхэмжлэл харах"
+                              style={{ minWidth: 44, minHeight: 44 }}
                             >
-                              <Eye className="w-4 h-4 text-blue-600" />
+                              <Eye className="w-6 h-6 sm:w-4 sm:h-4 text-blue-600" />
                             </motion.button>
                             <motion.button
                               onClick={() => handleOpenHistory(resident)}
-                              className="p-2 rounded-xl hover:bg-purple-50 transition-colors"
+                              className="p-3 sm:p-2 rounded-xl hover:bg-purple-50 transition-colors"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               title="Түүх"
+                              style={{ minWidth: 44, minHeight: 44 }}
                             >
-                              <History className="w-4 h-4 text-purple-600" />
+                              <History className="w-6 h-6 sm:w-4 sm:h-4 text-purple-600" />
                             </motion.button>
                           </div>
                         </td>

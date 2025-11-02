@@ -175,7 +175,6 @@ export default function GolContent({ children }: GolContentProps) {
       <nav className="w-full z-[500]">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex items-center justify-between gap-4">
-            {/* Left: Logo + building selector */}
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <ThemedLogo />
