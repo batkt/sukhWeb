@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
-import * as tailanApi from "@/lib/tailanApi";
+import * as tailanApi from "@/lib/useTailan";
 import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
