@@ -140,7 +140,15 @@ export const updateBaiguullaga = async (
   payload: Record<string, any>
 ): Promise<any> => {
   try {
-    const resp = await uilchilgee(token).put(`/baiguullaga/${id}`, payload);
+    // Some endpoints require explicit org/building params even for non-GET
+    const params: Record<string, any> = {};
+    // Prefer the explicit id as baiguullagiinId; fallback to global scope
+    params.baiguullagiinId = id || globalBaiguullagiinId || undefined;
+    if (globalBarilgiinId) params.barilgiinId = globalBarilgiinId;
+
+    const resp = await uilchilgee(token).put(`/baiguullaga/${id}`, payload, {
+      params,
+    });
     return resp.data;
   } catch (e) {
     aldaaBarigch(e);

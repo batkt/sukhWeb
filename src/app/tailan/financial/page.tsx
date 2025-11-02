@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
 
@@ -123,6 +123,18 @@ export default function FinancialReportsPage() {
       openErrorOverlay("Файлыг татаж авахад алдаа гарлаа");
     }
   };
+
+  // Auto-fetch once dependencies are ready so the table has data on first load
+  useEffect(() => {
+    const ready = Boolean(
+      token && ajiltan?.baiguullagiinId && (selectedBuildingId || barilgiinId)
+    );
+    if (ready) {
+      fetchReport();
+    }
+    // We intentionally depend only on identity inputs so it re-fetches
+    // when organization or building context changes.
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
   // Define table columns per report type so the table is always shown
   const columnsByType: Record<string, string[]> = {

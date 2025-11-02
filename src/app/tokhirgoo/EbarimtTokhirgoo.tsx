@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { DatePickerInput } from "@mantine/dates";
 import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -13,6 +14,7 @@ type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function EbarimtTokhirgoo() {
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
 
   const { baiguullaga, baiguullagaMutate } = useAuth();
   const { showSpinner, hideSpinner } = useSpinner();
@@ -61,13 +63,34 @@ export default function EbarimtTokhirgoo() {
 
   useEffect(() => {
     if (!baiguullaga) return;
+    // Resolve selected branch first
+    const effBarilgaId = selectedBuildingId || barilgiinId || null;
+    const selectedBarilga = Array.isArray(baiguullaga.barilguud)
+      ? baiguullaga.barilguud.find(
+          (b: any) => String(b?._id || "") === String(effBarilgaId || "")
+        )
+      : null;
     // Load from server data first
-    let autoSend = Boolean(baiguullaga.eBarimtAutomataarIlgeekh);
+    // Prefer branch toggles when a building is selected
+    let autoSend = Boolean(
+      selectedBarilga?.tokhirgoo?.eBarimtAutomataarIlgeekh ??
+        baiguullaga.eBarimtAutomataarIlgeekh
+    );
     let nuat = Boolean(baiguullaga.nuatTulukhEsekh);
-    let ashiglakh = Boolean(baiguullaga.eBarimtAshiglakhEsekh ?? true);
-    let shine = Boolean(baiguullaga.eBarimtShine);
+    let ashiglakh = Boolean(
+      selectedBarilga?.tokhirgoo?.eBarimtAshiglakhEsekh ??
+        baiguullaga.eBarimtAshiglakhEsekh ??
+        true
+    );
+    let shine = Boolean(
+      selectedBarilga?.tokhirgoo?.eBarimtShine ?? baiguullaga.eBarimtShine
+    );
+    // Prefer branch-specific merchantTin when a building is selected
     let tin = String(
-      baiguullaga.merchantTin || baiguullaga.tokhirgoo?.merchantTin || ""
+      selectedBarilga?.tokhirgoo?.merchantTin ||
+        baiguullaga.merchantTin ||
+        baiguullaga.tokhirgoo?.merchantTin ||
+        ""
     );
 
     // If server data is missing, try localStorage
@@ -98,7 +121,7 @@ export default function EbarimtTokhirgoo() {
     setEbAshiglakh(ashiglakh);
     setEbShine(shine);
     setMerchantTin(tin);
-  }, [baiguullaga]);
+  }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const paramsKey = useMemo(() => {
     if (!token || !ajiltan?.baiguullagiinId) return null;
@@ -242,14 +265,17 @@ export default function EbarimtTokhirgoo() {
                       ...(baiguullaga || {}),
                       // ensure id is present
                       _id: baiguullaga._id,
+                      // also include explicit organization id like other endpoints
+                      baiguullagiinId: String(baiguullaga._id),
                       // update eBarimt settings
                       eBarimtAutomataarIlgeekh: ebAutoSend,
                       nuatTulukhEsekh: ebNuat,
                       eBarimtAshiglakhEsekh: ebAshiglakh,
                       eBarimtShine: ebShine,
-                      // update merchant TIN
-                      merchantTin:
-                        merchantTin || baiguullaga?.merchantTin || "",
+                      // update merchant TIN (do not overwrite with empty value)
+                      ...(merchantTin && merchantTin.trim() !== ""
+                        ? { merchantTin }
+                        : {}),
                       // update tokhirgoo merchantTin as well
                       tokhirgoo: {
                         ...(baiguullaga?.tokhirgoo || {}),
@@ -259,6 +285,36 @@ export default function EbarimtTokhirgoo() {
                           "",
                       },
                     };
+
+                    // Also persist merchantTin at the selected branch under barilguud[].tokhirgoo
+                    try {
+                      const effBarilgaId =
+                        selectedBuildingId || barilgiinId || null;
+                      if (
+                        effBarilgaId &&
+                        Array.isArray(baiguullaga?.barilguud)
+                      ) {
+                        payload.barilguud = baiguullaga.barilguud.map(
+                          (b: any) => {
+                            if (String(b?._id || "") !== String(effBarilgaId))
+                              return b;
+                            const shouldUpdateTin =
+                              merchantTin && merchantTin.trim() !== "";
+                            return {
+                              ...b,
+                              tokhirgoo: {
+                                ...(b?.tokhirgoo || {}),
+                                ...(shouldUpdateTin ? { merchantTin } : {}),
+                                // Save ebarimt flags at branch level
+                                eBarimtAshiglakhEsekh: ebAshiglakh,
+                                eBarimtShine: ebShine,
+                                eBarimtAutomataarIlgeekh: ebAutoSend,
+                              },
+                            };
+                          }
+                        );
+                      }
+                    } catch {}
                     const updated = await updateBaiguullaga(
                       token,
                       baiguullaga._id,
