@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { DatePickerInput } from "@mantine/dates";
 import { useBuilding } from "@/context/BuildingContext";
-import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
+
 interface Props {
   dateRange: [string | null, string | null] | undefined;
   setDateRange: (v: any) => void;
@@ -15,6 +15,7 @@ interface Props {
     gereeniiDugaar?: string;
   };
   setFilters: (f: any) => void;
+  hideReportType?: boolean; // hide internal report type selector to avoid duplication
 }
 
 export default function ReportsControls({
@@ -22,12 +23,12 @@ export default function ReportsControls({
   setDateRange,
   filters,
   setFilters,
+  hideReportType = true,
 }: Props) {
   const { selectedBuildingId } = useBuilding();
-  const [reportType, setReportType] = useState<string>("summary");
   return (
     <div className="mb-4">
-      <div className="flex gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center">
         <DatePickerInput
           type="range"
           locale="mn"
@@ -36,18 +37,19 @@ export default function ReportsControls({
           valueFormat="YYYY-MM-DD"
           placeholder="Огноо сонгох"
           clearable
+          dropdownType="popover"
+          popoverProps={{
+            position: "bottom-start",
+            withinPortal: true,
+            width: 320,
+          }}
+          size="sm"
+          radius="xl"
+          classNames={{
+            root: "neu-panel rounded-2xl",
+            input: "px-3 py-2 h-10 text-sm",
+          }}
         />
-        <TusgaiZagvar
-          className="rounded-2xl px-3 py-2 "
-          value={reportType}
-          onChange={(v) => setReportType(v)}
-        >
-          <option value="summary">Нийт тайлан</option>
-          <option value="avlaga">Өр / Авлага</option>
-          <option value="orlogo-zarlaga">Орлого / Зарлага</option>
-          <option value="ashig-aldagdal">Ашиг / Алдагдал</option>
-          <option value="guilegee">Гүйлгээний түүх</option>
-        </TusgaiZagvar>
 
         <input
           placeholder="Байр"

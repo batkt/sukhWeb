@@ -196,8 +196,8 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
             </div>
 
-            {/* Center: Menu */}
-            <div className="flex-1 flex items-center justify-center px-2">
+            {/* Center: Menu (hidden on small to keep right controls visible) */}
+            <div className="hidden md:flex flex-1 items-center justify-center px-2">
               <div className="flex items-center justify-start md:justify-center gap-2 sm:gap-3 relative flex-nowrap overflow-x-auto overflow-y-visible md:overflow-visible px-2 whitespace-nowrap custom-scrollbar min-w-0">
                 {menuItems.map((item, i) => {
                   const isParentActive = pathname.startsWith(`/${item.path}`);
@@ -222,6 +222,37 @@ export default function GolContent({ children }: GolContentProps) {
                           >
                             {item.label}
                           </button>
+
+                          {/* Mobile submenu dropdown */}
+                          {isOpen && (
+                            <div className="md:hidden absolute left-1/2 -translate-x-1/2 mt-2 w-56 rounded-2xl shadow-lg menu-surface z-[120]">
+                              <ul className="py-2">
+                                {item.submenu.map((sub, j) => {
+                                  const subPath = `/${item.path}/${sub.path}`;
+                                  const isSubActive =
+                                    pathname.startsWith(subPath);
+                                  return (
+                                    <li key={j}>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenSubmenuIndex(null);
+                                          router.push(subPath);
+                                        }}
+                                        className={`w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                          isSubActive
+                                            ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
+                                            : "hover:translate-x-0.5 hover:menu-surface/80"
+                                        }`}
+                                      >
+                                        {sub.label}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
 
                           {/* Desktop: parent clickable and hover to open */}
                           <button
@@ -299,7 +330,7 @@ export default function GolContent({ children }: GolContentProps) {
             </div>
 
             {/* Right: Search, settings, user */}
-            <div className="flex items-center justify-end gap-4">
+            <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
               <div className="relative h-10 w-64 hidden md:flex items-center neu-panel">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                 <input
@@ -322,13 +353,10 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
 
               <UnguSongokh />
-              <ThemeModeToggler
-                className="hidden sm:block"
-                buttonClassName="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
-              />
+              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]" />
               <button
                 onClick={() => router.push("/tokhirgoo")}
-                className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
+                className="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
               >
                 <Settings className="w-5 h-5" />
               </button>
@@ -337,13 +365,13 @@ export default function GolContent({ children }: GolContentProps) {
                 <div className="relative" ref={avatarRef}>
                   <div
                     onClick={() => setShowLogout(!showLogout)}
-                    className="w-10 h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
                   >
                     {userName.charAt(0).toUpperCase()}
                   </div>
 
                   {showLogout && (
-                    <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[80]">
+                    <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[120]">
                       <ul className="py-2">
                         <li>
                           <button
@@ -362,6 +390,66 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Bar */}
+      <div className="md:hidden w-full z-[400]">
+        <div className="px-3 pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
+            {menuItems.map((item, i) => {
+              const isParentActive = pathname.startsWith(`/${item.path}`);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() =>
+                    item.submenu
+                      ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
+                      : router.push(`/${item.path}`)
+                  }
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
+                    isParentActive
+                      ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
+                      : "hover:menu-surface"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+          {openSubmenuIndex !== null &&
+            menuItems[openSubmenuIndex]?.submenu && (
+              <div className="mt-2 w-full rounded-2xl shadow-lg menu-surface z-[350]">
+                <ul className="py-2">
+                  {menuItems[openSubmenuIndex].submenu!.map((sub, j) => {
+                    const subPath = `/${menuItems[openSubmenuIndex]!.path}/${
+                      sub.path
+                    }`;
+                    const isSubActive = pathname.startsWith(subPath);
+                    return (
+                      <li key={j}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenSubmenuIndex(null);
+                            router.push(subPath);
+                          }}
+                          className={`w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                            isSubActive
+                              ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
+                              : "hover:translate-x-0.5 hover:menu-surface/80"
+                          }`}
+                        >
+                          {sub.label}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+        </div>
+      </div>
 
       <main className="flex-1 relative md:h-[calc(100vh-80px)]">
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-full">

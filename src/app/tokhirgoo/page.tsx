@@ -88,21 +88,29 @@ function Tokhirgoo() {
         //   text: "И-мэйл",
         //   tsonkh: EmailTokhirgoo,
         // },
-        { icon: <Settings className="w-5 h-5" />, text: "Бааз", tsonkh: Baaz },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Бааз",
+          tsonkh: Baaz,
+          comingSoon: true,
+        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Нэвтрэлтийн түүх",
           tsonkh: NevtreltiinTuukh,
+          comingSoon: true,
         },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Устгасан түүх",
           tsonkh: UstgasanTuukh,
+          comingSoon: true,
         },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Зассан түүх",
           tsonkh: ZassanTuukh,
+          comingSoon: true,
         },
       ];
     } else {
@@ -126,20 +134,33 @@ function Tokhirgoo() {
       <div className="col-span-12 lg:col-span-3">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
           <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto custom-scrollbar">
-            {tokhirgoo.map((item, i) => (
-              <button
-                key={item.text}
-                onClick={() => setSelectedIndex(i)}
-                className={`btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${
-                  i === selectedIndex
-                    ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-semibold"
-                    : "text-theme opacity-80 hover:opacity-100"
-                }`}
-              >
-                {item.icon}
-                <span>{item.text}</span>
-              </button>
-            ))}
+            {tokhirgoo.map((item: any, i) => {
+              const isActive = i === selectedIndex;
+              const isSoon = Boolean(item?.comingSoon);
+              return (
+                <button
+                  key={item.text}
+                  onClick={() => {
+                    if (isSoon) return; // block taps for coming soon
+                    setSelectedIndex(i);
+                  }}
+                  aria-disabled={isSoon}
+                  className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${
+                    isActive
+                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-semibold"
+                      : "text-theme opacity-80 hover:opacity-100"
+                  } ${isSoon ? "cursor-not-allowed" : ""}`}
+                >
+                  {item.icon}
+                  <span>{item.text}</span>
+                  {isSoon && (
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-green-500">
+                      Тун удахгүй
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -531,8 +531,8 @@ export default function ContractEditor({
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 rounded-2xl">
-      <div className="w-80 bg-white border-r rounded-2xl border-gray-200 overflow-y-auto">
+    <div className="flex flex-col md:flex-row h-full bg-gray-50 rounded-2xl">
+      <div className="w-full md:w-80 bg-white border-r rounded-2xl border-gray-200 overflow-y-auto">
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <h3 className="font-semibold text-slate-900">Хувьсагчид</h3>
           <p className="text-xs text-slate-500 mt-1">Дарж оруулах</p>
@@ -759,9 +759,9 @@ export default function ContractEditor({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-gray-100 p-8">
+        <div className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-8">
           <div
-            className="max-w-[21cm] mx-auto bg-white shadow-lg"
+            className="w-full max-w-[21cm] mx-auto bg-white shadow-lg overflow-auto"
             style={{ minHeight: "29.7cm", padding: "2cm" }}
           >
             {/* Header Section */}

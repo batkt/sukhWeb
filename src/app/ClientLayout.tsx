@@ -80,13 +80,30 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
     // Apply saved theme on every route change (so login page also follows theme)
     try {
-      const saved =
+      const root = document.documentElement;
+      // Mode (light/dark)
+      const savedMode =
+        (typeof window !== "undefined" &&
+          (localStorage.getItem("theme-mode") as "light" | "dark" | null)) ||
+        null;
+      const mode =
+        savedMode ||
+        (typeof window !== "undefined" &&
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light");
+      root.setAttribute("data-mode", mode);
+      if (mode === "dark") root.classList.add("dark");
+      else root.classList.remove("dark");
+
+      // Color theme (blue-gradient, colorful, white-gray)
+      const savedTheme =
         (typeof window !== "undefined" && localStorage.getItem("app-theme")) ||
         "";
-      const root = document.documentElement;
       root.removeAttribute("data-theme");
-      if (saved && saved !== "colorful") {
-        root.setAttribute("data-theme", saved);
+      if (savedTheme && savedTheme !== "colorful") {
+        root.setAttribute("data-theme", savedTheme);
       }
     } catch (_) {}
 

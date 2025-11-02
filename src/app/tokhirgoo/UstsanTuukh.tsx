@@ -141,91 +141,93 @@ export default function UstsanTuukh() {
   };
 
   return (
-    <Admin title="Устгасан түүх">
-      <Card className="bg-transparent">
-        <div className="flex flex-col sm:flex-row gap-2 mb-4">
-          <DatePickerInput
-            type="range"
-            value={shuukhOgnoo}
-            onChange={ognooShuultOnChange}
-            valueFormat="YYYY-MM-DD"
-            className="text-slate-900"
-            locale="mn"
-          />
+    <div className="relative">
+      <Admin title="Устгасан түүх">
+        <Card className="bg-transparent">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <DatePickerInput
+              type="range"
+              value={shuukhOgnoo}
+              onChange={ognooShuultOnChange}
+              valueFormat="YYYY-MM-DD"
+              className="text-slate-900"
+              locale="mn"
+            />
 
-          <Select
-            popupClassName="tusgaiZagvar"
-            placeholder={t("Ажилтан")}
-            style={{ width: 120 }}
-            onChange={setAjiltankhaikh}
-            className="text-slate-900"
-            allowClear
-          >
-            <Select.Option value="1">Ажилтан 1</Select.Option>
-            <Select.Option value="2">Ажилтан 2</Select.Option>
-          </Select>
-          <Select
-            popupClassName="tusgaiZagvar"
-            placeholder={t("Төрөл")}
-            style={{ width: 120 }}
-            onChange={setTurul}
-            className="text-slate-900"
-            allowClear
-          >
-            {turluud.map((a) => (
-              <Select.Option key={a.turul} value={a.turul}>
-                {a.text}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
-        <div className="table-surface neu-table custom-scrollbar">
-          <table className="table-ui w-full text-left">
-            <thead>
-              <tr>
-                <th className="text-center">{t("Устгасан огноо")}</th>
-                <th>{t("Төрөл")}</th>
-                <th>{t("Устгасан шалтгаан")}</th>
-                <th className="text-right">{t("Төлсөн дүн")}</th>
-                <th>{t("Хийсэн")}</th>
-                <th className="text-center">{t("Үзэх")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {combinedData.map((row: TableRow) => (
-                <tr key={row._id}>
-                  <td className="text-center">
-                    {row.createdAt.format("YYYY-MM-DD HH:mm")}
-                  </td>
-                  <td>{row.class}</td>
-                  <td>{row.tailbar}</td>
-                  <td
-                    className={`text-right ${
-                      row.object.tulsunDun > 0
-                        ? "text-green-600"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {row.object.tulsunDun}
-                  </td>
-                  <td>{row.guilgeeKhiisenAjiltniiNer}</td>
-                  <td className="text-center">
-                    <Button
-                      icon={<EyeOutlined />}
-                      onClick={() => {
-                        alert("Дэлгэрэнгүй мэдээлэл");
-                      }}
-                    />
-                  </td>
-                </tr>
+            <Select
+              popupClassName="tusgaiZagvar"
+              placeholder={t("Ажилтан")}
+              style={{ width: 120 }}
+              onChange={setAjiltankhaikh}
+              className="text-slate-900"
+              allowClear
+            >
+              <Select.Option value="1">Ажилтан 1</Select.Option>
+              <Select.Option value="2">Ажилтан 2</Select.Option>
+            </Select>
+            <Select
+              popupClassName="tusgaiZagvar"
+              placeholder={t("Төрөл")}
+              style={{ width: 120 }}
+              onChange={setTurul}
+              className="text-slate-900"
+              allowClear
+            >
+              {turluud.map((a) => (
+                <Select.Option key={a.turul} value={a.turul}>
+                  {a.text}
+                </Select.Option>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="md:hidden">
-          <CardList jagsaalt={combinedData} Component={UstsanTuukhTile} />
-        </div>
-      </Card>
-    </Admin>
+            </Select>
+          </div>
+          <div className="table-surface neu-table custom-scrollbar">
+            <table className="table-ui w-full text-left">
+              <thead>
+                <tr>
+                  <th className="text-center">{t("Устгасан огноо")}</th>
+                  <th>{t("Төрөл")}</th>
+                  <th>{t("Устгасан шалтгаан")}</th>
+                  <th className="text-right">{t("Төлсөн дүн")}</th>
+                  <th>{t("Хийсэн")}</th>
+                  <th className="text-center">{t("Үзэх")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {combinedData.map((row: TableRow) => (
+                  <tr key={row._id}>
+                    <td className="text-center">
+                      {row.createdAt.format("YYYY-MM-DD HH:mm")}
+                    </td>
+                    <td>{row.class}</td>
+                    <td>{row.tailbar}</td>
+                    <td
+                      className={`text-right ${
+                        row.object.tulsunDun > 0
+                          ? "text-green-600"
+                          : "text-red-500"
+                      }`}
+                    >
+                      {row.object.tulsunDun}
+                    </td>
+                    <td>{row.guilgeeKhiisenAjiltniiNer}</td>
+                    <td className="text-center">
+                      <Button
+                        icon={<EyeOutlined />}
+                        onClick={() => {
+                          alert("Дэлгэрэнгүй мэдээлэл");
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="md:hidden">
+            <CardList jagsaalt={combinedData} Component={UstsanTuukhTile} />
+          </div>
+        </Card>
+      </Admin>
+    </div>
   );
 }

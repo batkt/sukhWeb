@@ -31,14 +31,20 @@ export default function ThemeModeToggler({
           | null) ||
         "light";
       setMode(initial);
-      document.documentElement.setAttribute("data-mode", initial);
+      const root = document.documentElement;
+      root.setAttribute("data-mode", initial);
+      if (initial === "dark") root.classList.add("dark");
+      else root.classList.remove("dark");
     } catch {}
   }, []);
 
   const toggle = () => {
     const next: "light" | "dark" = mode === "light" ? "dark" : "light";
     setMode(next);
-    document.documentElement.setAttribute("data-mode", next);
+    const root = document.documentElement;
+    root.setAttribute("data-mode", next);
+    if (next === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
     try {
       localStorage.setItem("theme-mode", next);
     } catch {}

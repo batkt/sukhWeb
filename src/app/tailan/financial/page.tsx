@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { DatePickerInput } from "@mantine/dates";
+import React, { useState } from "react";
 import { useAuth } from "@/lib/useAuth";
-import * as tailanApi from "@/lib/tailanApi";
+import * as tailanApi from "@/lib/useTailan";
+
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import ReportsControls from "@/components/tailan/ReportsControls";
@@ -22,7 +22,7 @@ export default function FinancialReportsPage() {
   >(undefined);
   const [filters, setFilters] = useState<any>({});
   const [reportType, setReportType] = useState<string>("summary");
-  const [updateKey, setUpdateKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchReport = async () => {
     console.log("Fetch report called");
@@ -42,7 +42,7 @@ export default function FinancialReportsPage() {
       );
       return;
     }
-
+    setIsLoading(true);
     showSpinner();
 
     try {
@@ -77,14 +77,16 @@ export default function FinancialReportsPage() {
       const data = resp?.data ?? resp;
       console.log("API response data:", data);
       setReport({ ...data });
-      setUpdateKey(Date.now());
       console.log("Report set to:", { ...data });
       openSuccessOverlay("Тайлан амжилттай ирлээ", 900);
     } catch (e: any) {
       console.error("API call failed:", e);
       console.error("Error details:", e?.response?.data || e?.message || e);
-      openErrorOverlay("Тайлан уншихад алдаа гарлаа");
+      openErrorOverlay(
+        e?.response?.data?.message || "Тайлан уншихад алдаа гарлаа"
+      );
     } finally {
+      setIsLoading(false);
       hideSpinner();
     }
   };
@@ -122,6 +124,132 @@ export default function FinancialReportsPage() {
     }
   };
 
+  // Define table columns per report type so the table is always shown
+  const columnsByType: Record<string, string[]> = {
+    summary: ["Тайлбар", "Утга"],
+    "orlogo-zarlaga": ["Орлого", "Зарлага", "Ашиг/Алдагдал"],
+    "ashig-aldagdal": ["Орлого", "Зарлага", "Ашиг/Алдагдал"],
+    avlaga: [
+      "Гэрээний дугаар",
+      "Овог",
+      "Нэр",
+      "Утас",
+      "Тоот",
+      "Давхар",
+      "Байр",
+      "Огноо",
+      "Нийт төлбөр",
+      "Төлөв",
+    ],
+    guilegee: [
+      "Огноо",
+      "Банк",
+      "Дүн",
+      "Гүйлгээний утга",
+      "Дансны дугаар",
+      "Данс код",
+      "Төрөл",
+    ],
+  };
+
+  const renderRows = () => {
+    if (!report) return null;
+    if (reportType === "summary") {
+      const s = report.summary ?? report.totals ?? null;
+      if (!s) return null;
+      const flat: [string, any][] = [];
+      if (s.numResidents != null)
+        flat.push(["Орон суугчдын тоо", s.numResidents]);
+      if (s.numContracts != null) flat.push(["Гэрээний тоо", s.numContracts]);
+      if (s.invoices?.total != null)
+        flat.push(["Нэхэмжлэлийн тоо", s.invoices.total]);
+      if (s.payments?.totalAmount != null)
+        flat.push(["Төлбөрийн нийт дүн", s.payments.totalAmount]);
+      if (s.ebarimt?.totalAmount != null)
+        flat.push(["Е-Баримтын нийт дүн", s.ebarimt.totalAmount]);
+      return flat.map(([k, v], i) => (
+        <tr key={i} className="border-b last:border-b-0">
+          <td className="p-2">{k}</td>
+          <td className="p-2 text-right">
+            {typeof v === "number" ? `${formatNumber(v)} ₮` : String(v)}
+          </td>
+        </tr>
+      ));
+    }
+    if (reportType === "orlogo-zarlaga" || reportType === "ashig-aldagdal") {
+      const r = report;
+      const orlogo = r.orlogo ?? 0;
+      const zarlaga = r.zarlaga ?? 0;
+      const ashig = orlogo - zarlaga;
+      return (
+        <tr>
+          <td className="p-2 text-right">{formatNumber(orlogo)} ₮</td>
+          <td className="p-2 text-right">{formatNumber(zarlaga)} ₮</td>
+          <td
+            className={`p-2 text-right ${
+              ashig >= 0 ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            {formatNumber(ashig)} ₮
+          </td>
+        </tr>
+      );
+    }
+    if (reportType === "avlaga") {
+      const rows = [
+        ...((report.paid?.list as any[]) || []),
+        ...((report.unpaid?.list as any[]) || []),
+      ];
+      return rows.map((r: any, i: number) => (
+        <tr key={r._id ?? i} className="border-b last:border-b-0">
+          <td className="p-2">{r.gereeniiDugaar}</td>
+          <td className="p-2">{r.ovog}</td>
+          <td className="p-2">{r.ner}</td>
+          <td className="p-2">
+            {Array.isArray(r.utas) ? r.utas.join("/") : r.utas || "-"}
+          </td>
+          <td className="p-2">{r.toot}</td>
+          <td className="p-2">{r.davkhar}</td>
+          <td className="p-2">{r.bairNer}</td>
+          <td className="p-2">
+            {r.ognoo ? String(r.ognoo).slice(0, 10) : "-"}
+          </td>
+          <td className="p-2 text-right">
+            {formatNumber(r.niitTulbur || 0)} ₮
+          </td>
+          <td className="p-2 text-center">{r.tuluv}</td>
+        </tr>
+      ));
+    }
+    if (reportType === "guilegee") {
+      const rows = Array.isArray(report.list) ? report.list : [];
+      return rows.map((t: any, i: number) => (
+        <tr key={t._id ?? i} className="border-b last:border-b-0">
+          <td className="p-2">
+            {t.tranDate
+              ? String(t.tranDate).slice(0, 19).replace("T", " ")
+              : "-"}
+          </td>
+          <td className="p-2">{t.bank}</td>
+          <td className="p-2 text-right">
+            {formatNumber(t.amount || t.income || t.outcome || 0)} ₮
+          </td>
+          <td className="p-2">{t.description}</td>
+          <td className="p-2">{t.dansniiDugaar}</td>
+          <td className="p-2">{t.accNum}</td>
+          <td className="p-2 text-center">
+            {t.drOrCr === "CR"
+              ? "Орлого"
+              : t.drOrCr === "DR"
+              ? "Зарлага"
+              : t.drOrCr || "-"}
+          </td>
+        </tr>
+      ));
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen">
       <h1 className="text-2xl font-semibold mb-4">Санхүүгийн тайлан</h1>
@@ -131,194 +259,81 @@ export default function FinancialReportsPage() {
         setDateRange={setDateRange}
         filters={filters}
         setFilters={setFilters}
+        hideReportType
       />
 
-      <div className="mb-4 flex items-center gap-3">
-        <button className="btn-minimal" onClick={fetchReport}>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <TusgaiZagvar
+          className="rounded-2xl px-3 py-2"
+          value={reportType}
+          onChange={(v: string) => setReportType(v)}
+        >
+          <option value="summary">Нийт тайлан</option>
+          <option value="avlaga">Өр / Авлага</option>
+          <option value="orlogo-zarlaga">Орлого / Зарлага</option>
+          <option value="ashig-aldagdal">Ашиг / Алдагдал</option>
+          <option value="guilegee">Гүйлгээний түүх</option>
+        </TusgaiZagvar>
+
+        <button
+          className="btn-minimal disabled:opacity-60"
+          onClick={fetchReport}
+          disabled={isLoading}
+        >
           Татах
         </button>
 
-        <button className="btn-minimal" onClick={() => exportReport("csv")}>
+        <button
+          className="btn-minimal disabled:opacity-60"
+          onClick={() => exportReport("csv")}
+          disabled={isLoading}
+        >
           Export CSV
         </button>
 
-        <button className="btn-minimal" onClick={() => exportReport("xlsx")}>
+        <button
+          className="btn-minimal disabled:opacity-60"
+          onClick={() => exportReport("xlsx")}
+          disabled={isLoading}
+        >
           Export Excel
         </button>
       </div>
-
-      <div className="neu-panel p-4 rounded-2xl" key={updateKey}>
-        {report ? (
-          <div>
-            {/* Summary cards for key metrics */}
-            {(report.summary || report.totals) && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {report.summary?.numResidents !== undefined && (
-                  <div className="bg-white/50 rounded-xl p-4">
-                    <div className="text-sm text-theme/70">
-                      Орон суугчдын тоо
-                    </div>
-                    <div className="text-xl font-bold">
-                      {report.summary.numResidents}
-                    </div>
-                  </div>
-                )}
-                {report.summary?.numContracts !== undefined && (
-                  <div className="bg-white/50 rounded-xl p-4">
-                    <div className="text-sm text-theme/70">Гэрээний тоо</div>
-                    <div className="text-xl font-bold">
-                      {report.summary.numContracts}
-                    </div>
-                  </div>
-                )}
-                {report.totals?.orlogo !== undefined && (
-                  <div className="bg-white/50 rounded-xl p-4">
-                    <div className="text-sm text-theme/70">Нийт орлого</div>
-                    <div className="text-xl font-bold">
-                      {formatNumber(report.totals.orlogo)} ₮
-                    </div>
-                  </div>
-                )}
-                {report.totals?.zarlaga !== undefined && (
-                  <div className="bg-white/50 rounded-xl p-4">
-                    <div className="text-sm text-theme/70">Нийт зарлага</div>
-                    <div className="text-xl font-bold">
-                      {formatNumber(report.totals.zarlaga)} ₮
-                    </div>
-                  </div>
-                )}
-                {report.ashigAldagdal !== undefined && (
-                  <div className="bg-white/50 rounded-xl p-4">
-                    <div className="text-sm text-theme/70">Ашиг/Алдагдал</div>
-                    <div
-                      className={`text-xl font-bold ${
-                        report.ashigAldagdal >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {formatNumber(report.ashigAldagdal)} ₮
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Table display for list data */}
-            {(() => {
-              // Handle different data structures
-              let rows: any[] = [];
-              let title = "";
-
-              if (Array.isArray(report)) {
-                rows = report;
-                title = "Жагсаалт";
-              } else if (report.jagsaalt && Array.isArray(report.jagsaalt)) {
-                rows = report.jagsaalt;
-                title = "Жагсаалт";
-              } else if (report.rows && Array.isArray(report.rows)) {
-                rows = report.rows;
-                title = "Жагсаалт";
-              } else if (
-                report.transactions &&
-                Array.isArray(report.transactions)
-              ) {
-                rows = report.transactions;
-                title = "Гүйлгээний түүх";
-              } else if (report.paid && Array.isArray(report.paid)) {
-                rows = [...report.paid, ...report.unpaid];
-                title = "Нэхэмжлэх";
-              } else if (report.guilegee && Array.isArray(report.guilegee)) {
-                rows = report.guilegee;
-                title = "Гүйлгээ";
-              }
-
-              if (rows.length > 0) {
-                const cols = Object.keys(rows[0]).filter(
-                  (key) =>
-                    !["_id", "__v", "createdAt", "updatedAt"].includes(key) &&
-                    rows[0][key] !== null &&
-                    rows[0][key] !== undefined
-                );
-
-                return (
-                  <div className="table-surface overflow-visible rounded-2xl w-full">
-                    <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
-                      <h3 className="text-lg font-semibold mb-4">{title}</h3>
-                      <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
-                        <table className="table-ui text-xs min-w-full">
-                          <thead>
-                            <tr>
-                              <th className="p-2 text-center w-12">#</th>
-                              {cols.map((c) => (
-                                <th key={c} className="p-2 text-center">
-                                  {c}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {rows.map((r: any, i: number) => (
-                              <tr
-                                key={r._id ?? i}
-                                className="border-b last:border-b-0"
-                              >
-                                <td className="p-2 text-center">{i + 1}</td>
-                                {cols.map((c) => (
-                                  <td key={c} className="p-2 text-center">
-                                    {typeof r[c] === "object"
-                                      ? JSON.stringify(r[c])
-                                      : r[c] === null || r[c] === undefined
-                                      ? "-"
-                                      : typeof r[c] === "number" &&
-                                        c.toLowerCase().includes("dun")
-                                      ? formatNumber(r[c]) + " ₮"
-                                      : String(r[c])}
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-
-              // Fallback for summary objects
-              const summaryData = report.summary ?? report.totals ?? report;
-              if (
-                summaryData &&
-                typeof summaryData === "object" &&
-                !Array.isArray(summaryData)
-              ) {
-                return (
-                  <div className="neu-panel p-4 rounded-2xl">
-                    <h3 className="text-lg font-semibold mb-4">
-                      Тайлангийн дэлгэрэнгүй
-                    </h3>
-                    <pre
-                      style={{
-                        background: "white",
-                        border: "1px solid black",
-                        padding: "10px",
-                        color: "black",
-                      }}
-                      className="rounded text-sm overflow-auto"
-                    >
-                      {JSON.stringify(summaryData, null, 2)}
-                    </pre>
-                  </div>
-                );
-              }
-
-              return <div>Мэдээлэл байхгүй</div>;
-            })()}
+      <div className="neu-panel p-4 rounded-2xl">
+        <div className="table-surface overflow-visible rounded-2xl w-full">
+          <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
+            <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
+              <table className="table-ui text-[11px] sm:text-xs min-w-full">
+                <thead>
+                  <tr>
+                    {columnsByType[reportType]?.map((c) => (
+                      <th
+                        key={c}
+                        className={`p-2 ${
+                          reportType === "summary" ? "text-left" : "text-center"
+                        }`}
+                      >
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderRows() || (
+                    <tr>
+                      <td
+                        className="p-4 text-center text-theme/60"
+                        colSpan={columnsByType[reportType]?.length || 1}
+                      >
+                        {isLoading ? "Уншиж байна..." : "Мэдээлэл байхгүй"}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        ) : (
-          <div>Мэдээлэл олдсонгүй</div>
-        )}
+        </div>
       </div>
     </div>
   );

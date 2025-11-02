@@ -537,16 +537,62 @@ body {
 
 /* ================== Dark variants for the three themes ================== */
 /* Use data-mode="dark" to flip surfaces/text/gradients without changing theme id */
-[data-theme="colorful"][data-mode="dark"] {
-  --gradient-bg: linear-gradient(135deg, #0b0b10 0%, #161620 50%, #1c1c28 100%);
-  --surface-bg: #0f0f16;
-  --surface-border: rgba(255, 255, 255, 0.14);
-  --panel-text: #e5e7eb;
-  --glass-tint: rgba(10, 10, 16, 0.45);
-  --glass-tint-2: rgba(12, 12, 20, 0.28);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-highlight: rgba(255, 255, 255, 0.18);
-  --glass-shadow: rgba(0, 0, 0, 0.35);
+/* Colorful: support both data-mode="dark" and Tailwind .dark class on the root */
+
+/* Default colorful theme (no data-theme attr) — dark mode = colorful on dark */
+html[data-mode="dark"]:not([data-theme]),
+[data-mode="dark"]:not([data-theme]) {
+  /* Keep the same colorful character, but on a deep indigo base */
+  --gradient-bg: radial-gradient(
+      ellipse at top right,
+      rgba(128, 107, 223, 0.28) 0%,
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at right 40%,
+      rgba(246, 71, 112, 0.18) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse at right 45%,
+      rgba(246, 187, 50, 0.16) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 88% 30%,
+      rgba(92, 191, 155, 0.18) 0%,
+      transparent 26%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      rgba(128, 107, 223, 0.22) 0%,
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(246, 71, 112, 0.14) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse at 36% 100%,
+      rgba(246, 187, 50, 0.12) 0%,
+      transparent 32%
+    ),
+    radial-gradient(
+      ellipse at 36% 100%,
+      rgba(92, 191, 155, 0.14) 0%,
+      transparent 30%
+    ),
+    linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
+  --surface-bg: #0f1424; /* dark navy to match the base */
+  --surface-border: rgba(219, 234, 254, 0.18);
+  --panel-text: #e6efff; /* soft ice for readability */
+  /* Glass tokens tuned for indigo/navy background */
+  --glass-tint: rgba(9, 14, 28, 0.5);
+  --glass-tint-2: rgba(12, 18, 34, 0.32);
+  --glass-border: rgba(219, 234, 254, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(2, 6, 23, 0.42);
 }
 
 [data-theme="blue-gradient"][data-mode="dark"] {
@@ -602,6 +648,10 @@ body {
   background: var(--surface-bg) !important;
   color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
+  /* Keep popovers compact and responsive */
+  width: max-content !important;
+  min-width: auto !important;
+  max-width: min(96vw, 720px) !important;
 }
 [data-mode="dark"] .ant-select-item,
 [data-mode="dark"] .ant-dropdown-menu-item,
@@ -1033,6 +1083,11 @@ body {
   color: var(--panel-text) !important;
   border: 1px solid var(--surface-border) !important;
   border-radius: 0.75rem !important;
+  /* Fix: prevent calendar dropdown from stretching full width */
+  width: max-content !important;
+  min-width: auto !important;
+  max-width: min(96vw, 720px) !important;
+  overflow: visible !important;
 }
 /* Ensure input elements from Mantine use dark surface */
 [data-theme="dark-black"] .mantine-Input-input,
@@ -1708,6 +1763,117 @@ body::after {
   }
 }
 
+/* ==========================
+   Responsive base utilities
+   ========================== */
+/* Prevent accidental horizontal scroll and ensure full-bleed background behaves on small screens */
+html,
+body {
+  overflow-x: hidden;
+}
+
+/* Make media elements scale down within containers */
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Common full-cover helper for hero banners or cards */
+.media-cover img,
+.media-cover video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tables span the container and scroll horizontally when needed */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Generic responsive container and inner padding helpers */
+.container-responsive {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(12px, 4vw, 24px);
+  padding-right: clamp(12px, 4vw, 24px);
+}
+.content-responsive {
+  padding: clamp(8px, 2.5vw, 24px);
+}
+
+/* Form controls should not overflow on small screens */
+input,
+select,
+textarea,
+.ant-input,
+.mantine-Input-input {
+  max-width: 100%;
+}
+
+/* Modals default to safe viewport-fitting sizes; component classes can override via CSS vars */
+.modal-surface {
+  max-width: min(100vw, var(--modal-max-w, 100%));
+  max-height: min(92svh, 92vh);
+}
+
+/* Ensure tables and long content inside modals scroll instead of overflowing the viewport */
+.modal-surface .table-wrap,
+.modal-surface .modal-body-scroll,
+.modal-surface .content-scroll {
+  overflow: auto;
+  max-height: calc(92svh - 96px);
+}
+
+/* Small-screen overrides: make fixed-width utilities fluid and improve modal behavior */
+@media (max-width: 640px) {
+  /* Any arbitrary fixed width utility (e.g., w-[380px]) becomes fluid on mobile */
+  [class*="w-\["] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Ant Design modal/content should fit the viewport nicely */
+  .ant-modal {
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .ant-modal .ant-modal-content {
+    max-width: 100vw !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Mantine modal content uses viewport width on mobile */
+  .mantine-Modal-content {
+    width: 96vw !important;
+    max-width: 96vw !important;
+  }
+  .mantine-Modal-body {
+    max-height: calc(100svh - 120px);
+    overflow: auto;
+  }
+
+  /* Date pickers and text inputs stretch full width when placed in toolbars */
+  .mantine-DatePickerInput-root,
+  .mantine-Input-wrapper,
+  .mantine-Input-input {
+    width: 100% !important;
+  }
+}
+
 /* Neumorphism vars updated for the cooler bg */
 :root {
   --neu-bg: #d8e3ec; /* cooler off-white surface */
@@ -2114,6 +2280,19 @@ select,
 }
 .mantine-Combobox-option[data-selected] {
   background: var(--hover-bg-strong) !important;
+}
+
+/* Generic popover sizing – keep content compact (fixes oversized DatePicker) */
+.mantine-Popover-dropdown {
+  width: max-content !important;
+  min-width: auto !important;
+  max-width: min(96vw, 720px) !important;
+  border-radius: 0.75rem !important;
+  overflow: visible !important;
+}
+/* Calendars prefer to size to content as well */
+.mantine-Calendar-root {
+  width: max-content !important;
 }
 
 /* Controls: Selects and DatePickers should also reflect the unified hover */

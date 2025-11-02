@@ -68,7 +68,7 @@ export default function ӨнгөнийЗагварСонгох() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl z-50 backdrop-blur-xl bg-white/90 shadow-xl border border-white/20 overflow-hidden animate-in slide-in-from-top-2 duration-300">
+        <div className="absolute right-0 mt-2 w-64 rounded-2xl z-[120] menu-surface overflow-hidden animate-in slide-in-from-top-2 duration-300">
           <div className="p-3">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">

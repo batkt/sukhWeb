@@ -101,88 +101,90 @@ export default function ZassanTuukh() {
   };
 
   return (
-    <Admin title="Зассан түүх">
-      <Card className="rounded-2xl bg-transparent">
-        <div className="flex flex-col-reverse gap-3 sm:flex-row mb-4">
-          <DatePickerInput
-            type="range"
-            style={{ marginBottom: "10px" }}
-            value={shuukhOgnoo}
-            onChange={(v) =>
-              ognooShuultOnChange(v as [Date | null, Date | null])
-            }
-            className="text-slate-900"
-            locale="mn"
-          />
-          <Select
-            popupClassName="tusgaiZagvar"
-            className="w-full sm:w-36 text-slate-900"
-            placeholder="Ажилтан"
-            allowClear
-            onChange={setAjiltankhaikh}
-          >
-            {mockAjiltan.map((a) => (
-              <Select.Option key={a._id} value={a._id}>
-                {a.ner}
-              </Select.Option>
-            ))}
-          </Select>
-          <Select
-            popupClassName="tusgaiZagvar"
-            className="w-full sm:w-36 text-slate-900"
-            placeholder="Төрөл"
-            allowClear
-            onChange={setTurul}
-          >
-            {turluud.map((a) => (
-              <Select.Option key={a.turul} value={a.text}>
-                {a.text}
-              </Select.Option>
-            ))}
-          </Select>
-        </div>
-
-        <div className="hidden md:block table-surface neu-table custom-scrollbar p-2">
-          <table className="table-ui w-full text-left text-sm">
-            <thead>
-              <tr>
-                <th className="text-center">Огноо</th>
-                <th>Төрөл</th>
-                <th className="text-center">Дугаар</th>
-                <th>Зассан ажилтан</th>
-                <th className="text-center">Зассан огноо</th>
-                <th className="text-center">Үзэх</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((row) => (
-                <tr key={row._id}>
-                  <td className="text-center">
-                    {row.classOgnoo.format("YYYY-MM-DD")}
-                  </td>
-                  <td>{row.className}</td>
-                  <td className="text-center">{row.classDugaar}</td>
-                  <td>{row.ajiltniiNer}</td>
-                  <td className="text-center">
-                    {row.createdAt.format("YYYY-MM-DD HH:mm")}
-                  </td>
-                  <td className="text-center">
-                    <Button
-                      shape="circle"
-                      icon={<EyeOutlined />}
-                      onClick={() => alert(JSON.stringify(row, null, 2))}
-                    />
-                  </td>
-                </tr>
+    <div className="relative">
+      <Admin title="Зассан түүх">
+        <Card className="rounded-2xl bg-transparent">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row mb-4">
+            <DatePickerInput
+              type="range"
+              style={{ marginBottom: "10px" }}
+              value={shuukhOgnoo}
+              onChange={(v) =>
+                ognooShuultOnChange(v as [Date | null, Date | null])
+              }
+              className="text-slate-900"
+              locale="mn"
+            />
+            <Select
+              popupClassName="tusgaiZagvar"
+              className="w-full sm:w-36 text-slate-900"
+              placeholder="Ажилтан"
+              allowClear
+              onChange={setAjiltankhaikh}
+            >
+              {mockAjiltan.map((a) => (
+                <Select.Option key={a._id} value={a._id}>
+                  {a.ner}
+                </Select.Option>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </Select>
+            <Select
+              popupClassName="tusgaiZagvar"
+              className="w-full sm:w-36 text-slate-900"
+              placeholder="Төрөл"
+              allowClear
+              onChange={setTurul}
+            >
+              {turluud.map((a) => (
+                <Select.Option key={a.turul} value={a.text}>
+                  {a.text}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
 
-        <div className="md:hidden mt-4">
-          <CardList jagsaalt={filteredData} Component={UstsanTuukhTile} />
-        </div>
-      </Card>
-    </Admin>
+          <div className="hidden md:block table-surface neu-table custom-scrollbar p-2">
+            <table className="table-ui w-full text-left text-sm">
+              <thead>
+                <tr>
+                  <th className="text-center">Огноо</th>
+                  <th>Төрөл</th>
+                  <th className="text-center">Дугаар</th>
+                  <th>Зассан ажилтан</th>
+                  <th className="text-center">Зассан огноо</th>
+                  <th className="text-center">Үзэх</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.map((row) => (
+                  <tr key={row._id}>
+                    <td className="text-center">
+                      {row.classOgnoo.format("YYYY-MM-DD")}
+                    </td>
+                    <td>{row.className}</td>
+                    <td className="text-center">{row.classDugaar}</td>
+                    <td>{row.ajiltniiNer}</td>
+                    <td className="text-center">
+                      {row.createdAt.format("YYYY-MM-DD HH:mm")}
+                    </td>
+                    <td className="text-center">
+                      <Button
+                        shape="circle"
+                        icon={<EyeOutlined />}
+                        onClick={() => alert(JSON.stringify(row, null, 2))}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="md:hidden mt-4">
+            <CardList jagsaalt={filteredData} Component={UstsanTuukhTile} />
+          </div>
+        </Card>
+      </Admin>
+    </div>
   );
 }

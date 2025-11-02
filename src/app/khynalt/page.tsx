@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
-import { postSummary, postOrlogoZarlaga } from "@/lib/tailanApi";
+import { postSummary, postOrlogoZarlaga } from "@/lib/useTailan";
 import uilchilgee from "../../../lib/uilchilgee";
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
@@ -106,9 +106,10 @@ export default function Khynalt() {
     [ajilchdiinGaralt]
   );
 
-  const totalResidents = residents.length;
-  const totalContracts = contracts.length;
-  const totalEmployees = employees.length;
+  const totalResidents =
+    Number(orshinSuugchGaralt?.niitMur) || residents.length;
+  const totalContracts = Number(gereeGaralt?.niitMur) || contracts.length;
+  const totalEmployees = Number(ajilchdiinGaralt?.niitMur) || employees.length;
   const totalBuildings = useMemo(() => {
     const set = new Set<string>();
     residents.forEach((r: any) => {
@@ -185,6 +186,48 @@ export default function Khynalt() {
   }>({ labels: [], profits: [] });
 
   const [summaryData, setSummaryData] = useState<any>(null);
+
+  // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
+  const [chartColors, setChartColors] = useState({
+    text: "#0f172a", // light default
+    grid: "rgba(15,23,42,0.2)",
+  });
+
+  useEffect(() => {
+    const compute = () => {
+      if (typeof window === "undefined") return;
+      const cs = getComputedStyle(document.documentElement);
+      const text =
+        (cs.getPropertyValue("--panel-text") || "").trim() || chartColors.text;
+      const grid =
+        (cs.getPropertyValue("--surface-border") || "").trim() ||
+        chartColors.grid;
+      setChartColors({ text, grid });
+    };
+    compute();
+    // React to theme switches (data-mode / data-theme changes)
+    const obs = new MutationObserver((muts) => {
+      for (const m of muts) {
+        if (m.type === "attributes") {
+          compute();
+          break;
+        }
+      }
+    });
+    obs.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-mode", "data-theme"],
+    });
+    // Also listen to storage changes (theme toggled in another tab)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "theme-mode" || e.key === "app-theme") compute();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      obs.disconnect();
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     const { start, end } = getDateRange(timeFilter);
@@ -556,7 +599,7 @@ export default function Khynalt() {
   const kpiCards = [
     {
       title: "Гэрээ",
-      value: filteredTotalContracts,
+      value: totalContracts,
       subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
       color: "from-blue-500 to-blue-600",
       onClick: () => router.push("/geree"),
@@ -564,7 +607,7 @@ export default function Khynalt() {
     },
     {
       title: "Оршин суугч",
-      value: filteredTotalResidents,
+      value: totalResidents,
       subtitle: `Нийт барилга: ${filteredBuildings}`,
       color: "from-green-500 to-green-600",
       onClick: () => router.push("/geree"),
@@ -697,17 +740,20 @@ export default function Khynalt() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { position: "top" as const },
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
                       title: { display: false },
                     },
                     scales: {
                       x: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                       y: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                     },
                   }}
@@ -740,17 +786,20 @@ export default function Khynalt() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { position: "top" as const },
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
                       title: { display: false },
                     },
                     scales: {
                       x: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                       y: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                     },
                   }}
@@ -781,17 +830,20 @@ export default function Khynalt() {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                      legend: { position: "top" as const },
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
                       title: { display: false },
                     },
                     scales: {
                       x: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                       y: {
-                        ticks: { color: "var(--panel-text)" },
-                        grid: { color: "var(--surface-border)" },
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
                       },
                     },
                   }}

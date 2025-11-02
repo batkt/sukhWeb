@@ -107,75 +107,82 @@ export default function NevtreltiinTuukh({
   );
 
   return (
-    <div className="bg-transparent rounded-2xl shadow-lg p-2">
-      <div className="flex items-center justify-between mb-4">
-        <h2
-          className="text-lg font-semibold text-theme pb-4 border-b"
-          style={{ borderColor: "var(--surface-border)" }}
-        >
-          {t("Нэвтрэлтийн түүх")}
-        </h2>
-        <DatePickerInput
-          type="range"
-          value={dateRange}
-          onChange={handleDateChange}
-          className="text-slate-900"
-          locale="mn"
-          valueFormat="YYYY-MM-DD"
-        />
-      </div>
+    <div className="relative">
+      <div className="bg-transparent rounded-2xl shadow-lg p-2">
+        <div className="flex items-center justify-between mb-4">
+          <h2
+            className="text-lg font-semibold text-theme pb-4 border-b"
+            style={{ borderColor: "var(--surface-border)" }}
+          >
+            {t("Нэвтрэлтийн түүх")}
+          </h2>
+          <DatePickerInput
+            type="range"
+            value={dateRange}
+            onChange={handleDateChange}
+            className="text-slate-900"
+            locale="mn"
+            valueFormat="YYYY-MM-DD"
+          />
+        </div>
 
-      <div className="table-surface neu-table custom-scrollbar">
-        <table className="table-ui w-full text-left">
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col.title as string} className="py-3 px-4 text-theme">
-                  {col.title as string}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {jagsaalt.map((record, idx) => (
-              <tr key={record._id}>
-                <td className="py-3 px-4">{(page - 1) * pageSize + idx + 1}</td>
-                <td className="py-3 px-4">
-                  {moment(record.ognoo).format("YYYY-MM-DD, HH:mm")}
-                </td>
-                <td className="py-3 px-4">{record.browser}</td>
-                <td className="py-3 px-4">{record.ajiltniiNer}</td>
-                <td className="py-3 px-4">
-                  {record.bairshilKhot}, {record.bairshilUls}
-                </td>
-                <td className="py-3 px-4">{record.uildliinSystem}</td>
-                <td className="py-3 px-4">{record.ip}</td>
+        <div className="table-surface neu-table custom-scrollbar">
+          <table className="table-ui w-full text-left">
+            <thead>
+              <tr>
+                {columns.map((col) => (
+                  <th
+                    key={col.title as string}
+                    className="py-3 px-4 text-theme"
+                  >
+                    {col.title as string}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {jagsaalt.map((record, idx) => (
+                <tr key={record._id}>
+                  <td className="py-3 px-4">
+                    {(page - 1) * pageSize + idx + 1}
+                  </td>
+                  <td className="py-3 px-4">
+                    {moment(record.ognoo).format("YYYY-MM-DD, HH:mm")}
+                  </td>
+                  <td className="py-3 px-4">{record.browser}</td>
+                  <td className="py-3 px-4">{record.ajiltniiNer}</td>
+                  <td className="py-3 px-4">
+                    {record.bairshilKhot}, {record.bairshilUls}
+                  </td>
+                  <td className="py-3 px-4">{record.uildliinSystem}</td>
+                  <td className="py-3 px-4">{record.ip}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      <div className="flex justify-end items-center mt-4 gap-2">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-          className="px-3 py-1 rounded border disabled:opacity-50"
-          style={{ borderColor: "var(--surface-border)" }}
-        >
-          {t("Өмнөх")}
-        </button>
-        <span>
-          {page} / {Math.ceil(total / pageSize)}
-        </span>
-        <button
-          disabled={page * pageSize >= total}
-          onClick={() => setPage((p) => p + 1)}
-          className="px-3 py-1 rounded border disabled:opacity-50"
-          style={{ borderColor: "var(--surface-border)" }}
-        >
-          {t("Дараах")}
-        </button>
+        <div className="flex justify-end items-center mt-4 gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+            style={{ borderColor: "var(--surface-border)" }}
+          >
+            {t("Өмнөх")}
+          </button>
+          <span>
+            {page} / {Math.ceil(total / pageSize)}
+          </span>
+          <button
+            disabled={page * pageSize >= total}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+            style={{ borderColor: "var(--surface-border)" }}
+          >
+            {t("Дараах")}
+          </button>
+        </div>
       </div>
     </div>
   );

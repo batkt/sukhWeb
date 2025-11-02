@@ -72,13 +72,30 @@ const fetcherJagsaalt = async ([
       },
     });
 
-    // Client-side guard: strictly enforce org/branch
-    const raw = response.data || {};
-    const list = Array.isArray(raw?.jagsaalt)
+    // If response empty, retry with non-stringified query (backend variants)
+    let raw = response.data || {};
+    let list = Array.isArray(raw?.jagsaalt)
       ? raw.jagsaalt
       : Array.isArray(raw)
       ? raw
       : [];
+    if (!list || list.length === 0) {
+      const respAlt = await uilchilgee(token).get(url, {
+        params: {
+          baiguullagiinId,
+          ...(barilgiinId ? { barilgiinId } : {}),
+          query: queryObj,
+          khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
+          khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
+        },
+      });
+      raw = respAlt.data || {};
+      list = Array.isArray(raw?.jagsaalt)
+        ? raw.jagsaalt
+        : Array.isArray(raw)
+        ? raw
+        : [];
+    }
     const toStr = (v: any) => (v == null ? "" : String(v));
     const filtered = list.filter((it: any) => {
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);

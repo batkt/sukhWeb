@@ -109,8 +109,8 @@ const fetcherJagsaalt = async ([
 
     // Primary fetch (branch-scoped if barilgiinId exists)
     const response = await uilchilgee(token).get(url, { params: paramsBase });
-    const data = response.data;
-    const list = Array.isArray(data?.jagsaalt)
+    let data = response.data;
+    let list = Array.isArray(data?.jagsaalt)
       ? data.jagsaalt
       : Array.isArray(data?.list)
       ? data.list
@@ -123,6 +123,27 @@ const fetcherJagsaalt = async ([
       : Array.isArray(data)
       ? data
       : [];
+
+    // If empty, try non-stringified nested query as a fallback
+    if (!list || list.length === 0) {
+      const respAlt = await uilchilgee(token).get(url, {
+        params: { ...paramsBase, query: queryObj },
+      });
+      data = respAlt.data;
+      list = Array.isArray(data?.jagsaalt)
+        ? data.jagsaalt
+        : Array.isArray(data?.list)
+        ? data.list
+        : Array.isArray(data?.rows)
+        ? data.rows
+        : Array.isArray(data?.data?.jagsaalt)
+        ? data.data.jagsaalt
+        : Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data)
+        ? data
+        : [];
+    }
 
     // If branch-scoped query returns empty, try org-wide fallback
     if (barilgiinId && (!list || list.length === 0)) {
@@ -153,16 +174,16 @@ const fetcherJagsaalt = async ([
         (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
       );
       if (Array.isArray(d2?.jagsaalt)) {
+        const serverTotal2 = Number((d2 as any)?.niitMur);
+        const pageSizeNum2 = Number((d2 as any)?.khuudasniiKhemjee);
         return {
           ...d2,
           jagsaalt: filtered2,
-          niitMur: filtered2.length,
-          niitKhuudas: d2?.khuudasniiKhemjee
-            ? Math.max(
-                1,
-                Math.ceil(filtered2.length / Number(d2.khuudasniiKhemjee))
-              )
-            : d2?.niitKhuudas ?? 1,
+          niitMur: isNaN(serverTotal2) ? filtered2.length : serverTotal2,
+          niitKhuudas:
+            !isNaN(serverTotal2) && pageSizeNum2
+              ? Math.max(1, Math.ceil(serverTotal2 / pageSizeNum2))
+              : (d2 as any)?.niitKhuudas ?? 1,
         } as GereeResponse;
       }
       return filtered2 as Geree[];
@@ -178,16 +199,16 @@ const fetcherJagsaalt = async ([
       return itemBid !== "" && itemBid === toStr(barilgiinId);
     });
     if (Array.isArray(data?.jagsaalt)) {
+      const serverTotal = Number((data as any)?.niitMur);
+      const pageSizeNum = Number((data as any)?.khuudasniiKhemjee);
       return {
         ...data,
         jagsaalt: filtered,
-        niitMur: filtered.length,
-        niitKhuudas: data?.khuudasniiKhemjee
-          ? Math.max(
-              1,
-              Math.ceil(filtered.length / Number(data.khuudasniiKhemjee))
-            )
-          : data?.niitKhuudas ?? 1,
+        niitMur: isNaN(serverTotal) ? filtered.length : serverTotal,
+        niitKhuudas:
+          !isNaN(serverTotal) && pageSizeNum
+            ? Math.max(1, Math.ceil(serverTotal / pageSizeNum))
+            : (data as any)?.niitKhuudas ?? 1,
       } as GereeResponse;
     }
     return filtered as Geree[];

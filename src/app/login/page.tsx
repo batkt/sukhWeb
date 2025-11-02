@@ -151,7 +151,8 @@ export default function LoginPage() {
   return (
     <div
       ref={containerRef}
-      className="min-h-screen flex items-center justify-center relative overflow-hidden p-2 bg-card"
+      className="min-h-screen flex items-center justify-center relative overflow-hidden p-2"
+      style={{ background: "var(--gradient-bg)" }}
     >
       <AnimatePresence>
         {showLoader && (
@@ -285,7 +286,7 @@ export default function LoginPage() {
         transition={{ duration: 0.6, ease: "easeOut" }}
       >
         <motion.div
-          className="bg-white rounded-3xl shadow-2xl border border-slate-200/60 overflow-hidden"
+          className="menu-surface rounded-3xl overflow-hidden"
           initial={{ y: 0 }}
           animate={{
             y: [0, -8, 0],
@@ -297,7 +298,7 @@ export default function LoginPage() {
           }}
           whileHover={{
             y: -4,
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
+            boxShadow: "0 25px 50px -12px var(--glass-shadow)",
             transition: { duration: 0.3 },
           }}
           style={{
@@ -339,8 +340,10 @@ export default function LoginPage() {
                 </motion.div>
               )}
             </div>
-            <h1 className="text-3xl font-bold text-slate-900">Нэвтрэх</h1>
-            <p className="text-slate-500 text-sm">Амар СӨХ тавтай морилно уу</p>
+            <h1 className="text-3xl font-bold text-theme">Нэвтрэх</h1>
+            <p className="text-sm text-[color:var(--muted-text)]">
+              Амар СӨХ тавтай морилно уу
+            </p>
           </div>
 
           <motion.form
@@ -363,14 +366,11 @@ export default function LoginPage() {
                 show: { y: 0, opacity: 1 },
               }}
             >
-              <label
-                htmlFor="email"
-                className="text-sm font-medium text-slate-700"
-              >
+              <label htmlFor="email" className="text-sm font-medium text-theme">
                 Нэвтрэх нэр
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[color:var(--muted-text)]">
                   <Mail className="w-5 h-5" />
                 </div>
                 <input
@@ -381,7 +381,12 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full h-12 rounded-2xl border border-slate-300 bg-white pl-12 pr-4 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-12 rounded-2xl border pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: "var(--surface-bg)",
+                    color: "var(--panel-text)",
+                    borderColor: "var(--surface-border)",
+                  }}
                 />
               </div>
             </motion.div>
@@ -395,12 +400,12 @@ export default function LoginPage() {
             >
               <label
                 htmlFor="password"
-                className="text-sm font-medium text-slate-700"
+                className="text-sm font-medium text-theme"
               >
                 Нууц үг
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[color:var(--muted-text)]">
                   <Lock className="w-5 h-5" />
                 </div>
                 <input
@@ -411,12 +416,18 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  className="w-full h-12 rounded-2xl border border-slate-300 bg-white pl-12 pr-12 text-slate-900 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full h-12 rounded-2xl border pl-12 pr-12 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: "var(--surface-bg)",
+                    color: "var(--panel-text)",
+                    borderColor: "var(--surface-border)",
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v: boolean) => !v)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center transition-colors"
+                  style={{ color: "var(--muted-text)" }}
                   aria-label={showPassword ? "Нууц үг нуух" : "Нууц үг харах"}
                 >
                   {showPassword ? (
@@ -431,7 +442,7 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-2xl text-slate-900 font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
+              className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
               variants={{
                 hidden: { y: 8, opacity: 0 },
                 show: { y: 0, opacity: 1 },
@@ -439,20 +450,28 @@ export default function LoginPage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               style={{
-                background: "linear-gradient(145deg, #f0f0f3, #caccd1)",
-                boxShadow: "6px 6px 12px #b8babe, -6px -6px 12px #ffffff",
+                background:
+                  "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",
+                color: "var(--panel-text)",
+                border:
+                  "1px solid " +
+                  (getComputedStyle?.(document.documentElement)
+                    .getPropertyValue("--surface-border")
+                    ?.trim() || "rgba(15,23,42,0.12)"),
+                boxShadow:
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)",
               }}
               onMouseDown={(e) => {
                 e.currentTarget.style.boxShadow =
-                  "inset 3px 3px 7px #b8babe, inset -3px -3px 7px #ffffff";
+                  "inset 0 1px 0 var(--glass-highlight), 0 8px 20px var(--glass-shadow)";
               }}
               onMouseUp={(e) => {
                 e.currentTarget.style.boxShadow =
-                  "6px 6px 12px #b8babe, -6px -6px 12px #ffffff";
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.boxShadow =
-                  "6px 6px 12px #b8babe, -6px -6px 12px #ffffff";
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)";
               }}
             >
               {loading && (
@@ -482,7 +501,8 @@ export default function LoginPage() {
           </motion.form>
 
           <motion.p
-            className="text-center text-xs text-slate-400 mt-6"
+            className="text-center text-xs mt-6"
+            style={{ color: "var(--muted-text)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}

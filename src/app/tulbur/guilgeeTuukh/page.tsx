@@ -276,6 +276,12 @@ export default function DansniiKhuulga() {
                 radius="md"
                 variant="filled"
                 clearable
+                dropdownType="popover"
+                popoverProps={{
+                  position: "bottom-start",
+                  withinPortal: true,
+                  width: 320,
+                }}
                 placeholder="Огноо сонгох"
                 classNames={{
                   input:

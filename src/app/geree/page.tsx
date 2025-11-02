@@ -382,11 +382,6 @@ export default function Geree() {
   // Pagination for residents/employees
   const [resPage, setResPage] = useState(1);
   const [resPageSize, setResPageSize] = useState(20);
-  // total pages for residents (derived from server-provided total count)
-  const resTotalPages = Math.max(
-    1,
-    Math.ceil((orshinSuugchGaralt?.niitMur || 0) / (resPageSize || 1))
-  );
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
 
@@ -463,16 +458,24 @@ export default function Geree() {
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
+    // Fetch large chunks once; paginate on client (same as guilgeeTuukh)
+    const LARGE_PAGE = 500;
+    setGereeKhuudaslalt({
+      khuudasniiDugaar: 1,
+      khuudasniiKhemjee: LARGE_PAGE,
+      search: "",
+    });
     setOrshinSuugchKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: resPageSize,
+      khuudasniiKhemjee: LARGE_PAGE,
       search: "",
     });
     setAjiltniiKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: empPageSize,
+      khuudasniiKhemjee: LARGE_PAGE,
       search: "",
     });
+    gereeJagsaaltMutate();
     orshinSuugchJagsaaltMutate();
     ajiltniiJagsaaltMutate();
   }, []);
@@ -522,6 +525,27 @@ export default function Geree() {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = startIndex + rowsPerPage;
   const currentContracts = filteredContracts.slice(startIndex, endIndex);
+
+  // Client-side pagination for residents and employees (slice loaded lists)
+  const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+  const resTotalPages = Math.max(
+    1,
+    Math.ceil(residentsList.length / (resPageSize || 1))
+  );
+  const currentResidents = residentsList.slice(
+    (resPage - 1) * resPageSize,
+    resPage * resPageSize
+  );
+
+  const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
+  const empTotalPages = Math.max(
+    1,
+    Math.ceil(employeesList.length / (empPageSize || 1))
+  );
+  const currentEmployees = employeesList.slice(
+    (empPage - 1) * empPageSize,
+    empPage * empPageSize
+  );
 
   const [newContract, setNewContract] = useState<any>({
     ovog: "",
@@ -1442,7 +1466,7 @@ export default function Geree() {
                 onClick={() => setShowTemplatesModal(true)}
                 className="btn-minimal"
               >
-                Гэрээний загвар татах
+                Загвар татах
               </button>
             </>
           )}
@@ -1730,122 +1754,99 @@ export default function Geree() {
                     </tr>
                   </thead>
                   <tbody>
-                    {!(orshinSuugchGaralt?.jagsaalt || []).length ? (
+                    {!currentResidents.length ? (
                       <tr>
                         <td colSpan={6} className="p-8 text-center text-subtle">
                           Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (
-                      (orshinSuugchGaralt?.jagsaalt || []).map(
-                        (p: any, idx: number) => (
-                          <tr
-                            key={p._id || idx}
-                            className="transition-colors border-b last:border-b-0"
-                          >
-                            <td className="p-1 text-center text-theme">
-                              {idx + 1}
-                            </td>
-                            <td className="p-1 text-theme whitespace-nowrap text-center">
-                              {p.ner}
-                            </td>
-                            <td className="p-1 text-center">
-                              <div className="text-xs text-theme">{p.utas}</div>
-                              {p.email && (
-                                <div className="text-xxs text-theme/70">
-                                  {p.email}
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-1 text-center">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold">
-                                {p.tuluv || "Төлсөн"}
-                              </span>
-                            </td>
-                            <td className="p-1 whitespace-nowrap">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditResident(p)}
-                                  className="p-1 rounded-2xl action-edit hover-surface transition-colors"
-                                  title="Засах"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteResident(p)}
-                                  className="p-1 rounded-2xl action-delete hover-surface transition-colors"
-                                  title="Устгах"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                      currentResidents.map((p: any, idx: number) => (
+                        <tr
+                          key={p._id || idx}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-1 text-center text-theme">
+                            {(resPage - 1) * resPageSize + idx + 1}
+                          </td>
+                          <td className="p-1 text-theme whitespace-nowrap text-center">
+                            {p.ner}
+                          </td>
+                          <td className="p-1 text-center">
+                            <div className="text-xs text-theme">{p.utas}</div>
+                            {p.email && (
+                              <div className="text-xxs text-theme/70">
+                                {p.email}
                               </div>
-                            </td>
-                          </tr>
-                        )
-                      )
+                            )}
+                          </td>
+                          <td className="p-1 text-center">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold">
+                              {p.tuluv || "Төлсөн"}
+                            </span>
+                          </td>
+                          <td className="p-1 whitespace-nowrap">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleEditResident(p)}
+                                className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteResident(p)}
+                                className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-xs">
-              <div className="text-theme/70">
-                Нийт: {orshinSuugchGaralt?.niitMur || 0}
-              </div>
-              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
-                <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
-                  <PageSongokh
-                    value={resPageSize}
-                    onChange={(v) => {
-                      setResPageSize(v);
-                      setResPage(1);
-                      setOrshinSuugchKhuudaslalt({
-                        khuudasniiDugaar: 1,
-                        khuudasniiKhemjee: v,
-                        search: searchTerm,
-                      });
-                    }}
-                    className="text-xs px-2 py-1 z-1006"
-                  />
-                </div>
-              </div>
-
+              <div className="text-theme/70">Нийт: {residentsList.length}</div>
               <div className="flex items-center gap-3">
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
-                  disabled={resPage <= 1}
-                  onClick={() => {
-                    const newPage = Math.max(1, resPage - 1);
-                    setResPage(newPage);
-                    setOrshinSuugchKhuudaslalt({
-                      khuudasniiDugaar: newPage,
-                      khuudasniiKhemjee: resPageSize,
-                      search: searchTerm,
-                    });
+                <PageSongokh
+                  value={resPageSize}
+                  onChange={(v) => {
+                    setResPageSize(v);
+                    setResPage(1);
                   }}
-                >
-                  Өмнөх
-                </button>
-                <div className="text-theme/70 px-1">{resPage}</div>
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
-                  disabled={
-                    resPage * resPageSize >= (orshinSuugchGaralt?.niitMur || 0)
-                  }
-                  onClick={() => {
-                    const newPage = resPage + 1;
-                    setResPage(newPage);
-                    setOrshinSuugchKhuudaslalt({
-                      khuudasniiDugaar: newPage,
-                      khuudasniiKhemjee: resPageSize,
-                      search: searchTerm,
-                    });
-                  }}
-                >
-                  Дараах
-                </button>
+                  className="text-xs px-2 py-1"
+                />
+
+                <div className="flex items-center gap-1">
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={resPage <= 1}
+                    onClick={() => {
+                      const newPage = Math.max(1, resPage - 1);
+                      setResPage(newPage);
+                    }}
+                  >
+                    Өмнөх
+                  </button>
+                  <div className="text-theme/70 px-1">{resPage}</div>
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={resPage >= resTotalPages}
+                    onClick={() => {
+                      const newPage = Math.min(resTotalPages, resPage + 1);
+                      setResPage(newPage);
+                    }}
+                  >
+                    Дараах
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1883,122 +1884,99 @@ export default function Geree() {
                     </tr>
                   </thead>
                   <tbody>
-                    {!(ajilchdiinGaralt?.jagsaalt || []).length ? (
+                    {!currentEmployees.length ? (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-subtle">
                           Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
                     ) : (
-                      (ajilchdiinGaralt?.jagsaalt || []).map(
-                        (p: any, idx: number) => (
-                          <tr
-                            key={p._id || idx}
-                            className="transition-colors border-b last:border-b-0"
-                          >
-                            <td className="p-1 text-center text-theme">
-                              {idx + 1}
-                            </td>
-                            <td className="p-1 text-theme whitespace-nowrap text-center">
-                              {p.ner}
-                            </td>
+                      currentEmployees.map((p: any, idx: number) => (
+                        <tr
+                          key={p._id || idx}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-1 text-center text-theme">
+                            {(empPage - 1) * empPageSize + idx + 1}
+                          </td>
+                          <td className="p-1 text-theme whitespace-nowrap text-center">
+                            {p.ner}
+                          </td>
 
-                            <td className="p-1 text-center">
-                              <div className="text-xs text-theme">{p.utas}</div>
-                              {p.email && (
-                                <div className="text-xxs text-theme/70">
-                                  {p.email}
-                                </div>
-                              )}
-                            </td>
-                            <td className="p-1 text-center">
-                              {p.albanTushaal || "-"}
-                            </td>
-                            <td className="p-1 text-center">{p.erkh || "-"}</td>
-                            <td className="p-1 whitespace-nowrap">
-                              <div className="flex gap-2 justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handleEditEmployee(p)}
-                                  className="p-1 rounded-2xl action-edit hover-surface transition-colors"
-                                  title="Засах"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteEmployee(p)}
-                                  className="p-1 rounded-2xl action-delete hover-surface transition-colors"
-                                  title="Устгах"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                          <td className="p-1 text-center">
+                            <div className="text-xs text-theme">{p.utas}</div>
+                            {p.email && (
+                              <div className="text-xxs text-theme/70">
+                                {p.email}
                               </div>
-                            </td>
-                          </tr>
-                        )
-                      )
+                            )}
+                          </td>
+                          <td className="p-1 text-center">
+                            {p.albanTushaal || "-"}
+                          </td>
+                          <td className="p-1 text-center">{p.erkh || "-"}</td>
+                          <td className="p-1 whitespace-nowrap">
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleEditEmployee(p)}
+                                className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                                title="Засах"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEmployee(p)}
+                                className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                                title="Устгах"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
               </div>
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-xs">
-              <div className="text-theme/70">
-                Нийт: {ajilchdiinGaralt?.niitMur || 0}
-              </div>
-              <div className="flex flex-col sm:flex-row w-full px-1 gap-3 z-1005">
-                <div className="flex items-end gap-2 sm:ml-auto sm:mt-0 z-1005">
-                  <PageSongokh
-                    value={empPageSize}
-                    onChange={(v) => {
-                      setEmpPageSize(v);
-                      setEmpPage(1);
-                      setAjiltniiKhuudaslalt({
-                        khuudasniiDugaar: 1,
-                        khuudasniiKhemjee: v,
-                        search: searchTerm,
-                      });
-                    }}
-                    className="text-xs px-2 py-1 z-1006"
-                  />
-                </div>
-              </div>
+              <div className="text-theme/70">Нийт: {employeesList.length}</div>
+              <div className="flex items-center gap-3">
+                <PageSongokh
+                  value={empPageSize}
+                  onChange={(v) => {
+                    setEmpPageSize(v);
+                    setEmpPage(1);
+                  }}
+                  className="text-xs px-2 py-1"
+                />
 
-              <div className="flex items-center gap-1">
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
-                  disabled={empPage <= 1}
-                  onClick={() => {
-                    const newPage = Math.max(1, empPage - 1);
-                    setEmpPage(newPage);
-                    setAjiltniiKhuudaslalt({
-                      khuudasniiDugaar: newPage,
-                      khuudasniiKhemjee: empPageSize,
-                      search: searchTerm,
-                    });
-                  }}
-                >
-                  Өмнөх
-                </button>
-                <div className="text-theme/70 px-1">{empPage}</div>
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
-                  disabled={
-                    empPage * empPageSize >= (ajilchdiinGaralt?.niitMur || 0)
-                  }
-                  onClick={() => {
-                    const newPage = empPage + 1;
-                    setEmpPage(newPage);
-                    setAjiltniiKhuudaslalt({
-                      khuudasniiDugaar: newPage,
-                      khuudasniiKhemjee: empPageSize,
-                      search: searchTerm,
-                    });
-                  }}
-                >
-                  Дараах
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={empPage <= 1}
+                    onClick={() => {
+                      const newPage = Math.max(1, empPage - 1);
+                      setEmpPage(newPage);
+                    }}
+                  >
+                    Өмнөх
+                  </button>
+                  <div className="text-theme/70 px-1">{empPage}</div>
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={empPage >= empTotalPages}
+                    onClick={() => {
+                      const newPage = Math.min(empTotalPages, empPage + 1);
+                      setEmpPage(newPage);
+                    }}
+                  >
+                    Дараах
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2020,7 +1998,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[85vh] max-h-[90vh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[92svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2056,58 +2034,101 @@ export default function Geree() {
                       ? handleUpdateContract
                       : handleCreateContract
                   }
-                  className="flex-1 flex flex-col"
+                  className="flex-1 flex flex-col min-h-0"
                 >
                   {
-                    <div className="flex justify-center gap-3 px-6 my-10">
-                      {[
-                        "Хувийн мэдээлэл",
-                        "Гэрээний дугаар",
-                        "СӨХ мэдээлэл",
-                      ].map((label, i) => {
-                        const step = i + 1;
-                        const active = currentStep === step;
-                        const done = currentStep > step;
-                        return (
-                          <div key={label} className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => setCurrentStep(step)}
-                              className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold focus:outline-none transition-colors ${
-                                active
-                                  ? "bg-sky-700 text-white"
-                                  : done
-                                  ? "bg-blue-200 text-slate-800"
-                                  : "bg-gray-200 text-slate-700"
-                              }`}
-                              aria-current={active ? "step" : undefined}
-                              aria-label={`Алхам ${step}: ${label}`}
-                              title={label}
+                    <div className="px-6 my-6">
+                      {/* Mobile compact stepper (numbers only) */}
+                      <div className="md:hidden overflow-x-auto -mx-6 px-6">
+                        <div className="flex justify-center gap-4 min-w-max">
+                          {[
+                            "Хувийн мэдээлэл",
+                            "Гэрээний дугаар",
+                            "СӨХ мэдээлэл",
+                          ].map((label, i) => {
+                            const step = i + 1;
+                            const active = currentStep === step;
+                            const done = currentStep > step;
+                            return (
+                              <button
+                                key={label}
+                                type="button"
+                                onClick={() => setCurrentStep(step)}
+                                className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                                  active
+                                    ? "bg-sky-700 text-white"
+                                    : done
+                                    ? "bg-blue-200 text-slate-800"
+                                    : "bg-gray-200 text-slate-700"
+                                }`}
+                                aria-current={active ? "step" : undefined}
+                                aria-label={`Алхам ${step}: ${label}`}
+                                title={label}
+                              >
+                                {step}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      {/* Desktop stepper with labels */}
+                      <div className="hidden md:flex justify-center gap-3">
+                        {[
+                          "Хувийн мэдээлэл",
+                          "Гэрээний дугаар",
+                          "СӨХ мэдээлэл",
+                        ].map((label, i) => {
+                          const step = i + 1;
+                          const active = currentStep === step;
+                          const done = currentStep > step;
+                          return (
+                            <div
+                              key={label}
+                              className="flex items-center gap-2"
                             >
-                              {step}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setCurrentStep(step)}
-                              className={`text-sm focus:outline-none ${
-                                active
-                                  ? "text-slate-700 font-semibold"
-                                  : "text-slate-600"
-                              }`}
-                              title={label}
-                              aria-hidden={false}
-                            >
-                              {label}
-                            </button>
-                            {step < 3 && (
-                              <div className="w-8 h-[2px] bg-gray-200 mx-2" />
-                            )}
-                          </div>
-                        );
-                      })}
+                              <button
+                                type="button"
+                                onClick={() => setCurrentStep(step)}
+                                className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-semibold focus:outline-none transition-colors ${
+                                  active
+                                    ? "bg-sky-700 text-white"
+                                    : done
+                                    ? "bg-blue-200 text-slate-800"
+                                    : "bg-gray-200 text-slate-700"
+                                }`}
+                                aria-current={active ? "step" : undefined}
+                                aria-label={`Алхам ${step}: ${label}`}
+                                title={label}
+                              >
+                                {step}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setCurrentStep(step)}
+                                className={`text-sm focus:outline-none ${
+                                  active
+                                    ? "text-slate-700 font-semibold"
+                                    : "text-slate-600"
+                                }`}
+                                title={label}
+                                aria-hidden={false}
+                              >
+                                {label}
+                              </button>
+                              {step < 3 && (
+                                <div className="w-8 h-[2px] bg-gray-200 mx-2" />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   }
-                  <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-40">
+                  <div
+                    className={`flex-1 overflow-y-auto md:overflow-visible px-6 space-y-6 ${
+                      currentStep !== 1 ? "pb-32" : "pb-8"
+                    } md:pb-6 min-h-0`}
+                  >
                     <div className="min-h-[60vh]">
                       {currentStep === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2564,7 +2585,13 @@ export default function Geree() {
                       )}
                     </div>
 
-                    <div className="flex justify-between px-6 py-4 border-t sticky bottom-14 left-0 right-0">
+                    <div
+                      className={`flex justify-between px-6 py-3 border-t md:border-t ${
+                        currentStep !== 1
+                          ? "sticky bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/90 backdrop-blur supports-[position:sticky]:backdrop-blur-sm z-10"
+                          : ""
+                      } md:static`}
+                    >
                       <button
                         type="button"
                         onClick={() =>
@@ -2618,7 +2645,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[100vh] max-h-[90vh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[92svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2932,18 +2959,18 @@ export default function Geree() {
 
                     <div className="flex justify-end px-6 py-4 border-t sticky bottom-6 left-0 right-0 gap-2">
                       <button
-                        type="submit"
-                        className="btn-minimal btn-save h-11"
-                        data-modal-primary
-                      >
-                        {editingResident ? "Хадгалах" : "Хадгалах"}
-                      </button>
-                      <button
                         type="button"
                         onClick={() => setShowResidentModal(false)}
                         className="btn-minimal-ghost btn-cancel min-w-[100px]"
                       >
                         Цуцлах
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn-minimal btn-save h-11"
+                        data-modal-primary
+                      >
+                        {editingResident ? "Хадгалах" : "Хадгалах"}
                       </button>
                     </div>
                   </div>
@@ -3147,18 +3174,18 @@ export default function Geree() {
                   </div>
                   <div className="flex justify-end gap-2">
                     <button
-                      type="submit"
-                      className="btn-minimal btn-save"
-                      data-modal-primary
-                    >
-                      {editingEmployee ? "Хадгалах" : "Хадгалах"}
-                    </button>
-                    <button
                       type="button"
                       onClick={() => setShowEmployeeModal(false)}
                       className="btn-minimal-ghost btn-cancel min-w-[100px]"
                     >
                       Цуцлах
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-minimal btn-save"
+                      data-modal-primary
+                    >
+                      {editingEmployee ? "Хадгалах" : "Хадгалах"}
                     </button>
                   </div>
                 </form>
@@ -3296,7 +3323,7 @@ export default function Geree() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-slate-900">
-                    Гэрээний загвар татах
+                    Загвар татах
                   </h3>
                   <button
                     onClick={() => setShowTemplatesModal(false)}

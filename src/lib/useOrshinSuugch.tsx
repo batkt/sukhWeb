@@ -157,16 +157,16 @@ const fetcherJagsaalt = async ([
       const filtered2 = l2.filter(
         (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
       );
+      const serverTotal2 = Number((d2 as any)?.niitMur);
+      const pageSizeNum2 = Number((d2 as any)?.khuudasniiKhemjee);
       return {
         ...d2,
         jagsaalt: filtered2,
-        niitMur: filtered2.length,
-        niitKhuudas: d2.khuudasniiKhemjee
-          ? Math.max(
-              0,
-              Math.ceil(filtered2.length / Number(d2.khuudasniiKhemjee))
-            )
-          : d2.niitKhuudas ?? 0,
+        niitMur: isNaN(serverTotal2) ? filtered2.length : serverTotal2,
+        niitKhuudas:
+          !isNaN(serverTotal2) && pageSizeNum2
+            ? Math.max(0, Math.ceil(serverTotal2 / pageSizeNum2))
+            : (d2 as any)?.niitKhuudas ?? 0,
       };
     }
 
@@ -183,16 +183,16 @@ const fetcherJagsaalt = async ([
     });
     const finalList =
       barilgiinId && branchAware.length === 0 ? orgOnly : branchAware;
+    const serverTotal = Number((data as any)?.niitMur);
+    const pageSizeNum = Number((data as any)?.khuudasniiKhemjee);
     return {
       ...data,
       jagsaalt: finalList,
-      niitMur: finalList.length,
-      niitKhuudas: data.khuudasniiKhemjee
-        ? Math.max(
-            0,
-            Math.ceil(finalList.length / Number(data.khuudasniiKhemjee))
-          )
-        : data.niitKhuudas ?? 0,
+      niitMur: isNaN(serverTotal) ? finalList.length : serverTotal,
+      niitKhuudas:
+        !isNaN(serverTotal) && pageSizeNum
+          ? Math.max(0, Math.ceil(serverTotal / pageSizeNum))
+          : (data as any)?.niitKhuudas ?? 0,
     };
   } catch (error: any) {
     aldaaBarigch(error);
