@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
 
@@ -8,6 +8,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
+import PageSongokh from "components/selectZagvar/pageSongokh";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -23,6 +24,8 @@ export default function FinancialReportsPage() {
   const [filters, setFilters] = useState<any>({});
   const [reportType, setReportType] = useState<string>("summary");
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
 
   const fetchReport = async () => {
     console.log("Fetch report called");
@@ -124,17 +127,41 @@ export default function FinancialReportsPage() {
     }
   };
 
-  // Auto-fetch once dependencies are ready so the table has data on first load
+  // Auto-load org-only data when page opens and when report type changes (like summary behavior)
+  const lastQuickFetchKeyRef = useRef<string | null>(null);
   useEffect(() => {
-    const ready = Boolean(
-      token && ajiltan?.baiguullagiinId && (selectedBuildingId || barilgiinId)
-    );
-    if (ready) {
-      fetchReport();
-    }
-    // We intentionally depend only on identity inputs so it re-fetches
-    // when organization or building context changes.
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    const orgId = String(ajiltan.baiguullagiinId);
+    const key = `${reportType}:${orgId}`;
+    if (lastQuickFetchKeyRef.current === key) return;
+    (async () => {
+      try {
+        let resp: any;
+        switch (reportType) {
+          case "avlaga":
+            resp = await tailanApi.getAvlagaByOrg(token, orgId);
+            break;
+          case "orlogo-zarlaga":
+            resp = await tailanApi.getOrlogoZarlagaByOrg(token, orgId);
+            break;
+          case "ashig-aldagdal":
+            resp = await tailanApi.getAshigAldagdalByOrg(token, orgId);
+            break;
+          case "guilegee":
+            resp = await tailanApi.getGuilegeeByOrg(token, orgId);
+            break;
+          default:
+            resp = await tailanApi.getSummaryByOrg(token, orgId);
+        }
+        const data = resp?.data ?? resp;
+        setReport({ ...data });
+      } catch (e) {
+        // non-blocking
+      } finally {
+        lastQuickFetchKeyRef.current = key;
+      }
+    })();
+  }, [token, ajiltan?.baiguullagiinId, reportType]);
 
   // Define table columns per report type so the table is always shown
   const columnsByType: Record<string, string[]> = {
@@ -171,7 +198,7 @@ export default function FinancialReportsPage() {
       if (!s) return null;
       const flat: [string, any][] = [];
       if (s.numResidents != null)
-        flat.push(["Орон суугчдын тоо", s.numResidents]);
+        flat.push(["Оршин суугчдын тоо", s.numResidents]);
       if (s.numContracts != null) flat.push(["Гэрээний тоо", s.numContracts]);
       if (s.invoices?.total != null)
         flat.push(["Нэхэмжлэлийн тоо", s.invoices.total]);
@@ -179,10 +206,20 @@ export default function FinancialReportsPage() {
         flat.push(["Төлбөрийн нийт дүн", s.payments.totalAmount]);
       if (s.ebarimt?.totalAmount != null)
         flat.push(["Е-Баримтын нийт дүн", s.ebarimt.totalAmount]);
-      return flat.map(([k, v], i) => (
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      return flat.slice(start, end).map(([k, v], i) => (
         <tr key={i} className="border-b last:border-b-0">
-          <td className="p-2">{k}</td>
-          <td className="p-2 text-right">
+          <td className="p-2 text-left">{k}</td>
+          <td
+            className={`p-2 ${
+              String(
+                typeof v === "number" ? `${formatNumber(v)} ₮` : String(v)
+              ).includes("₮")
+                ? "text-right"
+                : "text-center"
+            }`}
+          >
             {typeof v === "number" ? `${formatNumber(v)} ₮` : String(v)}
           </td>
         </tr>
@@ -212,18 +249,20 @@ export default function FinancialReportsPage() {
         ...((report.paid?.list as any[]) || []),
         ...((report.unpaid?.list as any[]) || []),
       ];
-      return rows.map((r: any, i: number) => (
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      return rows.slice(start, end).map((r: any, i: number) => (
         <tr key={r._id ?? i} className="border-b last:border-b-0">
-          <td className="p-2">{r.gereeniiDugaar}</td>
-          <td className="p-2">{r.ovog}</td>
-          <td className="p-2">{r.ner}</td>
-          <td className="p-2">
+          <td className="p-2 text-center">{r.gereeniiDugaar}</td>
+          <td className="p-2 text-center">{r.ovog}</td>
+          <td className="p-2 text-center">{r.ner}</td>
+          <td className="p-2 text-center">
             {Array.isArray(r.utas) ? r.utas.join("/") : r.utas || "-"}
           </td>
-          <td className="p-2">{r.toot}</td>
-          <td className="p-2">{r.davkhar}</td>
-          <td className="p-2">{r.bairNer}</td>
-          <td className="p-2">
+          <td className="p-2 text-center">{r.toot}</td>
+          <td className="p-2 text-center">{r.davkhar}</td>
+          <td className="p-2 text-center">{r.bairNer}</td>
+          <td className="p-2 text-center">
             {r.ognoo ? String(r.ognoo).slice(0, 10) : "-"}
           </td>
           <td className="p-2 text-right">
@@ -235,20 +274,22 @@ export default function FinancialReportsPage() {
     }
     if (reportType === "guilegee") {
       const rows = Array.isArray(report.list) ? report.list : [];
-      return rows.map((t: any, i: number) => (
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      return rows.slice(start, end).map((t: any, i: number) => (
         <tr key={t._id ?? i} className="border-b last:border-b-0">
-          <td className="p-2">
+          <td className="p-2 text-center">
             {t.tranDate
               ? String(t.tranDate).slice(0, 19).replace("T", " ")
               : "-"}
           </td>
-          <td className="p-2">{t.bank}</td>
+          <td className="p-2 text-center">{t.bank}</td>
           <td className="p-2 text-right">
             {formatNumber(t.amount || t.income || t.outcome || 0)} ₮
           </td>
-          <td className="p-2">{t.description}</td>
-          <td className="p-2">{t.dansniiDugaar}</td>
-          <td className="p-2">{t.accNum}</td>
+          <td className="p-2 text-center">{t.description}</td>
+          <td className="p-2 text-center">{t.dansniiDugaar}</td>
+          <td className="p-2 text-center">{t.accNum}</td>
           <td className="p-2 text-center">
             {t.drOrCr === "CR"
               ? "Орлого"
@@ -260,6 +301,37 @@ export default function FinancialReportsPage() {
       ));
     }
     return null;
+  };
+
+  const getTotalRows = () => {
+    if (!report) return 0;
+    if (reportType === "avlaga") {
+      const paid = Array.isArray(report?.paid?.list)
+        ? report.paid.list.length
+        : 0;
+      const unpaid = Array.isArray(report?.unpaid?.list)
+        ? report.unpaid.list.length
+        : 0;
+      return paid + unpaid;
+    }
+    if (reportType === "guilegee") {
+      return Array.isArray(report?.list) ? report.list.length : 0;
+    }
+    if (reportType === "summary") {
+      const s = report.summary ?? report.totals ?? null;
+      if (!s) return 0;
+      let n = 0;
+      if (s.numResidents != null) n++;
+      if (s.numContracts != null) n++;
+      if (s.invoices?.total != null) n++;
+      if (s.payments?.totalAmount != null) n++;
+      if (s.ebarimt?.totalAmount != null) n++;
+      return n;
+    }
+    if (reportType === "orlogo-zarlaga" || reportType === "ashig-aldagdal") {
+      return report ? 1 : 0;
+    }
+    return 0;
   };
 
   return (
@@ -314,7 +386,7 @@ export default function FinancialReportsPage() {
       <div className="neu-panel p-4 rounded-2xl">
         <div className="table-surface overflow-visible rounded-2xl w-full">
           <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
-            <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
+            <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
               <table className="table-ui text-[11px] sm:text-xs min-w-full">
                 <thead>
                   <tr>
@@ -343,6 +415,38 @@ export default function FinancialReportsPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between px-2 py-1 text-xs">
+            <div className="text-theme/70">Нийт: {getTotalRows()}</div>
+            <div className="flex items-center gap-3">
+              <PageSongokh
+                value={rowsPerPage}
+                onChange={(v) => {
+                  setRowsPerPage(v);
+                  setCurrentPage(1);
+                }}
+                className="text-xs px-2 py-1"
+              />
+
+              <div className="flex items-center gap-1">
+                <button
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  disabled={currentPage <= 1}
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                >
+                  Өмнөх
+                </button>
+                <div className="text-theme/70 px-1">{currentPage}</div>
+                <button
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  disabled={currentPage * rowsPerPage >= getTotalRows()}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Дараах
+                </button>
+              </div>
             </div>
           </div>
         </div>

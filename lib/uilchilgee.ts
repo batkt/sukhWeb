@@ -103,8 +103,12 @@ const uilchilgee = (token?: string): AxiosInstance => {
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
           p.baiguullagiinId = globalBaiguullagiinId;
         }
-        if (globalBarilgiinId && p.barilgiinId == null) {
-          p.barilgiinId = globalBarilgiinId;
+        // Allow callers to opt-out of auto-injecting barilgiinId via header
+        const orgOnly = (config.headers as any)?.["X-Org-Only"] === "1";
+        if (!orgOnly) {
+          if (globalBarilgiinId && p.barilgiinId == null) {
+            p.barilgiinId = globalBarilgiinId;
+          }
         }
 
         config.params = p;

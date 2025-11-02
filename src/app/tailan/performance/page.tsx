@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
@@ -9,6 +9,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
+import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -24,6 +25,37 @@ export default function PerformanceReportsPage() {
   const [reportType, setReportType] = useState<string>("sariin");
   const [report, setReport] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(20);
+
+  // Auto-load org-only data on mount and when the report type changes (like summary behavior)
+  const lastQuickFetchKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    const orgId = String(ajiltan.baiguullagiinId);
+    const key = `${reportType}:${orgId}`;
+    if (lastQuickFetchKeyRef.current === key) return;
+    (async () => {
+      try {
+        let resp: any;
+        switch (reportType) {
+          case "sariin":
+            resp = await tailanApi.getSariinByOrg(token, orgId);
+            break;
+          case "uliral":
+            resp = await tailanApi.getUliralByOrg(token, orgId);
+            break;
+          default:
+            resp = await tailanApi.getSummaryByOrg(token, orgId);
+        }
+        setReport(resp?.data ?? resp);
+      } catch (e) {
+        // non-blocking; user can still use the button for full filters
+      } finally {
+        lastQuickFetchKeyRef.current = key;
+      }
+    })();
+  }, [token, ajiltan?.baiguullagiinId, reportType]);
 
   const fetchPerformance = async () => {
     if (!token) {
@@ -167,7 +199,7 @@ export default function PerformanceReportsPage() {
       <div className="neu-panel p-4 rounded-2xl">
         <div className="table-surface overflow-visible rounded-2xl w-full">
           <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
-            <div className="max-h-[60vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
+            <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
               <table className="table-ui text-[11px] sm:text-xs min-w-full">
                 <thead>
                   <tr>
@@ -212,37 +244,45 @@ export default function PerformanceReportsPage() {
                       reportType === "sariin" &&
                       Array.isArray(report?.months)
                     ) {
-                      return report.months.map((m: any, i: number) => (
-                        <tr key={i} className="border-b last:border-b-0">
-                          <td className="p-2 text-center">{m?._id?.y}</td>
-                          <td className="p-2 text-center">{m?._id?.m}</td>
-                          <td className="p-2 text-right">
-                            {formatNumber(m?.total || 0)} ₮
-                          </td>
-                          <td className="p-2 text-center">{m?.count || 0}</td>
-                        </tr>
-                      ));
+                      const start = (currentPage - 1) * rowsPerPage;
+                      const end = start + rowsPerPage;
+                      return report.months
+                        .slice(start, end)
+                        .map((m: any, i: number) => (
+                          <tr key={i} className="border-b last:border-b-0">
+                            <td className="p-2 text-center">{m?._id?.y}</td>
+                            <td className="p-2 text-center">{m?._id?.m}</td>
+                            <td className="p-2 text-right">
+                              {formatNumber(m?.total || 0)} ₮
+                            </td>
+                            <td className="p-2 text-center">{m?.count || 0}</td>
+                          </tr>
+                        ));
                     }
                     if (
                       reportType === "uliral" &&
                       Array.isArray(report?.quarters)
                     ) {
-                      return report.quarters.map((q: any, i: number) => (
-                        <tr key={i} className="border-b last:border-b-0">
-                          <td className="p-2 text-center">{q?._id?.y}</td>
-                          <td className="p-2 text-center">{q?._id?.q}</td>
-                          <td className="p-2 text-right">
-                            {formatNumber(q?.total || 0)} ₮
-                          </td>
-                          <td className="p-2 text-center">{q?.count || 0}</td>
-                        </tr>
-                      ));
+                      const start = (currentPage - 1) * rowsPerPage;
+                      const end = start + rowsPerPage;
+                      return report.quarters
+                        .slice(start, end)
+                        .map((q: any, i: number) => (
+                          <tr key={i} className="border-b last:border-b-0">
+                            <td className="p-2 text-center">{q?._id?.y}</td>
+                            <td className="p-2 text-center">{q?._id?.q}</td>
+                            <td className="p-2 text-right">
+                              {formatNumber(q?.total || 0)} ₮
+                            </td>
+                            <td className="p-2 text-center">{q?.count || 0}</td>
+                          </tr>
+                        ));
                     }
                     if (reportType === "summary") {
                       const s = report.summary ?? report;
                       const pairs: [string, any][] = [];
                       if (s?.numResidents != null)
-                        pairs.push(["Орон суугчдын тоо", s.numResidents]);
+                        pairs.push(["Оршин суугчдын тоо", s.numResidents]);
                       if (s?.numContracts != null)
                         pairs.push(["Гэрээний тоо", s.numContracts]);
                       if (s?.invoices?.total != null)
@@ -285,6 +325,87 @@ export default function PerformanceReportsPage() {
                   })()}
                 </tbody>
               </table>
+            </div>
+            {/* Pagination controls */}
+            <div className="flex items-center justify-between px-2 py-1 text-xs">
+              <div className="text-theme/70">
+                Нийт:{" "}
+                {(() => {
+                  if (!report) return 0;
+                  if (reportType === "sariin") {
+                    return Array.isArray(report?.months)
+                      ? report.months.length
+                      : 0;
+                  }
+                  if (reportType === "uliral") {
+                    return Array.isArray(report?.quarters)
+                      ? report.quarters.length
+                      : 0;
+                  }
+                  if (reportType === "summary") {
+                    const s = report.summary ?? report;
+                    let n = 0;
+                    if (s?.numResidents != null) n++;
+                    if (s?.numContracts != null) n++;
+                    if (s?.invoices?.total != null) n++;
+                    if (s?.payments?.totalAmount != null) n++;
+                    if (s?.ebarimt?.totalAmount != null) n++;
+                    return n;
+                  }
+                  return 0;
+                })()}
+              </div>
+              <div className="flex items-center gap-3">
+                <PageSongokh
+                  value={rowsPerPage}
+                  onChange={(v) => {
+                    setRowsPerPage(v);
+                    setCurrentPage(1);
+                  }}
+                  className="text-xs px-2 py-1"
+                />
+                <div className="flex items-center gap-1">
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  >
+                    Өмнөх
+                  </button>
+                  <div className="text-theme/70 px-1">{currentPage}</div>
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={(() => {
+                      const total = (() => {
+                        if (!report) return 0;
+                        if (reportType === "sariin")
+                          return Array.isArray(report?.months)
+                            ? report.months.length
+                            : 0;
+                        if (reportType === "uliral")
+                          return Array.isArray(report?.quarters)
+                            ? report.quarters.length
+                            : 0;
+                        if (reportType === "summary") {
+                          const s = report.summary ?? report;
+                          let n = 0;
+                          if (s?.numResidents != null) n++;
+                          if (s?.numContracts != null) n++;
+                          if (s?.invoices?.total != null) n++;
+                          if (s?.payments?.totalAmount != null) n++;
+                          if (s?.ebarimt?.totalAmount != null) n++;
+                          return n;
+                        }
+                        return 0;
+                      })();
+                      return currentPage * rowsPerPage >= total;
+                    })()}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Дараах
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

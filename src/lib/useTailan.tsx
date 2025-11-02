@@ -1,60 +1,92 @@
 import uilchilgee from "lib/uilchilgee";
 
-function buildQueryParams(body: any): string {
-  const params = new URLSearchParams();
-  Object.entries(body).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (Array.isArray(value)) {
-        // Handle arrays by appending multiple values with the same key
-        value.forEach((item) => {
-          params.append(key, String(item));
-        });
-      } else if (typeof value === "object") {
-        // Handle objects by JSON stringifying them
-        params.append(key, JSON.stringify(value));
-      } else {
-        params.append(key, String(value));
-      }
-    }
-  });
-  return params.toString();
+export async function postSummary(token: string, body: any) {
+  return uilchilgee(token).get(`/tailan/summary`, { params: body });
 }
 
-export async function postSummary(token: string, body: any) {
-  return uilchilgee(token).get(`/tailan/summary?${buildQueryParams(body)}`);
+export async function getSummaryByOrg(token: string, baiguullagiinId: string) {
+  return uilchilgee(token).get(`/tailan/summary`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
 }
 
 export async function postAvlaga(token: string, body: any) {
-  return uilchilgee(token).get(`/tailan/avlaga?${buildQueryParams(body)}`);
+  return uilchilgee(token).get(`/tailan/avlaga`, { params: body });
 }
 
 export async function postGuilegee(token: string, body: any) {
-  return uilchilgee(token).get(`/tailan/guilegee?${buildQueryParams(body)}`);
+  return uilchilgee(token).get(`/tailan/guilegee`, { params: body });
 }
 
 export async function postOrlogoZarlaga(token: string, body: any) {
-  return uilchilgee(token).get(
-    `/tailan/orlogo-zarlaga?${buildQueryParams(body)}`
-  );
+  return uilchilgee(token).get(`/tailan/orlogo-zarlaga`, { params: body });
 }
 
 export async function postAshigAldagdal(token: string, body: any) {
-  return uilchilgee(token).get(
-    `/tailan/ashig-aldagdal?${buildQueryParams(body)}`
-  );
+  return uilchilgee(token).get(`/tailan/ashig-aldagdal`, { params: body });
 }
 
 export async function postSariin(token: string, body: any) {
-  return uilchilgee(token).get(`/tailan/sariin?${buildQueryParams(body)}`);
+  return uilchilgee(token).get(`/tailan/sariin`, { params: body });
 }
 
 export async function postUliral(token: string, body: any) {
-  return uilchilgee(token).get(`/tailan/uliral?${buildQueryParams(body)}`);
+  return uilchilgee(token).get(`/tailan/uliral`, { params: body });
 }
 
 export async function postExport(token: string, body: any) {
   // Export still uses POST for file download
   return uilchilgee(token).post(`/tailan/export`, body, {
     responseType: "blob",
+  });
+}
+
+// Org-only GET helpers (send only baiguullagiinId)
+export async function getAvlagaByOrg(token: string, baiguullagiinId: string) {
+  return uilchilgee(token).get(`/tailan/avlaga`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
+}
+
+export async function getGuilegeeByOrg(token: string, baiguullagiinId: string) {
+  return uilchilgee(token).get(`/tailan/guilegee`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
+}
+
+export async function getOrlogoZarlagaByOrg(
+  token: string,
+  baiguullagiinId: string
+) {
+  return uilchilgee(token).get(`/tailan/orlogo-zarlaga`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
+}
+
+export async function getAshigAldagdalByOrg(
+  token: string,
+  baiguullagiinId: string
+) {
+  return uilchilgee(token).get(`/tailan/ashig-aldagdal`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
+}
+
+export async function getSariinByOrg(token: string, baiguullagiinId: string) {
+  return uilchilgee(token).get(`/tailan/sariin`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
+  });
+}
+
+export async function getUliralByOrg(token: string, baiguullagiinId: string) {
+  return uilchilgee(token).get(`/tailan/uliral`, {
+    params: { baiguullagiinId },
+    headers: { "X-Org-Only": "1" },
   });
 }
