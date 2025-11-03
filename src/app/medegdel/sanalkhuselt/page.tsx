@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { notification, Tag } from "antd";
 import Aos from "aos";
 import moment from "moment";

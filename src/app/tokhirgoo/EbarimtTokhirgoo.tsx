@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";

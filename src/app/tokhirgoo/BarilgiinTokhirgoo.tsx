@@ -1,0 +1,328 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  NumberInput as MNumberInput,
+  Button as MButton,
+  Loader,
+  Badge,
+} from "@mantine/core";
+import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { updateBaiguullaga } from "../../../lib/uilchilgee";
+
+interface Props {
+  setSongogdsonTsonkhniiIndex?: (index: number) => void;
+}
+
+export default function BarilgiinTokhirgoo({
+  setSongogdsonTsonkhniiIndex,
+}: Props) {
+  const { baiguullaga, token, baiguullagaMutate, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+
+  const activeBuildingId = useMemo(() => {
+    return (
+      selectedBuildingId ||
+      barilgiinId ||
+      (baiguullaga?.barilguud?.[0]?._id ?? null)
+    );
+  }, [selectedBuildingId, barilgiinId, baiguullaga?.barilguud]);
+
+  const barilga = useMemo(() => {
+    return baiguullaga?.barilguud?.find(
+      (b: any) => String(b._id) === String(activeBuildingId)
+    );
+  }, [baiguullaga?.barilguud, activeBuildingId]);
+
+  const [barilgaNer, setBarilgaNer] = useState<string>("");
+
+  const [ortsInput, setOrtsInput] = useState<string>("");
+  const [ortsnuud, setOrtsnuud] = useState<string[]>([]);
+  const [davkharCount, setDavkharCount] = useState<number>(0);
+  const [isInit, setIsInit] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!barilga) return;
+    try {
+      setBarilgaNer(barilga?.ner || "");
+
+      const tkh: any = (barilga?.tokhirgoo as any) || {};
+      // Prefer saved tokhirgoo.orts; fallback to tokhirgoo.ortsnuud for backward compatibility
+      const existingOrts: string[] = Array.isArray(tkh.orts)
+        ? tkh.orts
+        : Array.isArray(tkh.ortsnuud)
+        ? tkh.ortsnuud
+        : [];
+      setOrtsnuud(existingOrts);
+      setOrtsInput("");
+
+      // Floors: prefer tokhirgoo.davkhar (string[]), fallback to root-level davkharuud objects
+      const tokhirgooDavkhars: string[] = Array.isArray(tkh.davkhar)
+        ? tkh.davkhar
+        : [];
+      const existingDavkharuud = Array.isArray(barilga?.davkharuud)
+        ? barilga!.davkharuud
+        : [];
+      const initialFloorCount =
+        (tokhirgooDavkhars && tokhirgooDavkhars.length) ||
+        (existingDavkharuud && existingDavkharuud.length) ||
+        0;
+      setDavkharCount(initialFloorCount);
+      setIsInit(true);
+    } catch (e) {
+      // ignore
+    }
+  }, [barilga, baiguullaga]);
+
+  const addOrtsFromInput = () => {
+    const tokens = (ortsInput || "")
+      .split(/[,;\n\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (tokens.length === 0) return;
+
+    const existing = new Set((ortsnuud || []).map((x) => x));
+    const uniqueNew: string[] = [];
+    const dups: string[] = [];
+    const seenInBatch = new Set<string>();
+
+    for (const t of tokens) {
+      const isDupExisting = existing.has(t);
+      const isDupBatch = seenInBatch.has(t);
+      if (isDupExisting || isDupBatch) {
+        if (!dups.includes(t)) dups.push(t);
+      } else {
+        uniqueNew.push(t);
+        seenInBatch.add(t);
+      }
+    }
+
+    if (dups.length > 0) {
+      openErrorOverlay(`Давхардсан орц байна: ${dups.join(", ")}`);
+    }
+
+    if (uniqueNew.length > 0) {
+      setOrtsnuud([...(ortsnuud || []), ...uniqueNew]);
+    }
+    setOrtsInput("");
+  };
+
+  const removeOrts = (name: string) => {
+    setOrtsnuud((prev) => prev.filter((o) => o !== name));
+  };
+
+  const buildDavkharuud = (n: number) => {
+    const safe = Math.max(0, Math.min(100, Math.floor(n)));
+    const current = Array.isArray(barilga?.davkharuud)
+      ? barilga!.davkharuud
+      : [];
+    if (safe <= 0) return [] as any[];
+
+    // Preserve existing when possible
+    const out = [] as any[];
+    for (let i = 0; i < safe; i++) {
+      const label = String(i + 1);
+      const existing = current[i];
+      out.push(
+        existing || {
+          davkhar: label,
+          talbai: 0,
+          tariff: 0,
+          planZurag: "",
+        }
+      );
+    }
+    return out;
+  };
+
+  const save = async () => {
+    if (!token || !baiguullaga?._id || !barilga) {
+      openErrorOverlay("Мэдээлэл дутуу байна");
+      return;
+    }
+
+    try {
+      // Building name duplicate check (excluding current building)
+      const newName = (barilgaNer || "").trim();
+      if (newName) {
+        const hasDup = (baiguullaga?.barilguud || []).some(
+          (b: any) =>
+            String(b._id) !== String(barilga._id) &&
+            String(b?.ner || "").trim() === newName
+        );
+        if (hasDup) {
+          openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
+          return;
+        }
+      }
+
+      const floorsObjects = buildDavkharuud(davkharCount);
+      const floorLabels = Array.from({ length: davkharCount }, (_, i) =>
+        String(i + 1)
+      );
+
+      const updatedBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+        if (String(b._id) !== String(barilga._id)) return b;
+        return {
+          ...b,
+          ner: barilgaNer || b.ner,
+          tokhirgoo: {
+            ...(b.tokhirgoo || {}),
+            // mirror UI fields into tokhirgoo as requested
+            orts: ortsnuud,
+            davkhar: floorLabels,
+            // keep a list form for building name to satisfy consumers expecting array
+          },
+          // keep root-level floors for backward compatibility
+          davkharuud: floorsObjects,
+        };
+      });
+
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga._id,
+        barilguud: updatedBarilguud,
+      };
+
+      const res = await updateBaiguullaga(
+        token || undefined,
+        baiguullaga._id,
+        payload,
+        { barilgiinId: activeBuildingId || null }
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+
+      openSuccessOverlay("Барилгын тохиргоо хадгаллаа");
+      if (setSongogdsonTsonkhniiIndex) setSongogdsonTsonkhniiIndex(0);
+    } catch (e) {
+      openErrorOverlay("Хадгалах үед алдаа гарлаа");
+    }
+  };
+
+  if (!isInit) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <Loader />
+      </div>
+    );
+  }
+
+  return (
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
+      <div className="mt-2">
+        <h2 className="text-md font-semibold text-theme mb-3">
+          Барилгын тохиргоо
+        </h2>
+
+        <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
+          {/* Info grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Барилгын нэр
+              </label>
+              <input
+                type="text"
+                value={barilgaNer}
+                onChange={(e) => setBarilgaNer(e.target.value)}
+                placeholder="Барилгын нэр"
+                className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Байршил
+              </label>
+              <div className="w-full px-3 py-3 neu-panel text-sm text-theme">
+                {barilga?.tokhirgoo?.duuregNer ||
+                  (baiguullaga?.tokhirgoo as any)?.duuregNer ||
+                  ""}{" "}
+                {"/"}{" "}
+                {(barilga?.tokhirgoo as any)?.horoo?.ner ||
+                  (baiguullaga?.tokhirgoo as any)?.horoo?.ner ||
+                  ""}
+              </div>
+            </div>
+          </div>
+
+          {/* Entrances */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="font-medium text-theme">Орц</h3>
+              <Badge variant="light" color="blue">
+                {ortsnuud.length}
+              </Badge>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={ortsInput}
+                onChange={(e) => setOrtsInput(e.target.value)}
+                placeholder="Ж: А, Б, В эсвэл A B C"
+                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <MButton className="btn-minimal" onClick={addOrtsFromInput}>
+                Нэмэх
+              </MButton>
+            </div>
+            {ortsnuud.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {ortsnuud.map((o) => (
+                  <span
+                    key={o}
+                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500 text-blue-700 border border-blue-200 text-sm"
+                  >
+                    {o}
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:text-blue-800"
+                      onClick={() => removeOrts(o)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Floors */}
+          <div>
+            <h3 className="font-medium text-theme mb-2">Давхар</h3>
+            <div className="flex items-center gap-3">
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Нийт давхар
+                </label>
+                <MNumberInput
+                  min={0}
+                  max={100}
+                  value={davkharCount}
+                  onChange={(v) => setDavkharCount(Number(v as number) || 0)}
+                  className="w-40"
+                />
+              </div>
+              <div className="text-sm text-slate-600">
+                {davkharCount > 0
+                  ? `1 - ${davkharCount} давхар тохируулна`
+                  : "Давхарын тоо оруулна уу"}
+              </div>
+            </div>
+          </div>
+
+          {/* Save */}
+          <div className="flex justify-end pt-2">
+            <MButton className="btn-minimal btn-save" onClick={save}>
+              Хадгалах
+            </MButton>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

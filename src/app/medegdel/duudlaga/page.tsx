@@ -6,7 +6,7 @@ import { Tag, Input, Popconfirm, Card, Select } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 
 const { Option } = Select;
 

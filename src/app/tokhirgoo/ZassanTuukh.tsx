@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Card, Select, Button } from "antd";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import dayjs from "dayjs";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";

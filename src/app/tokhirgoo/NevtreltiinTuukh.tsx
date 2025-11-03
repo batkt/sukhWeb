@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { Tooltip } from "@mantine/core";
 import { Settings, MoreHorizontal } from "lucide-react";
 import moment from "moment";

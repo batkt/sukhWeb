@@ -31,7 +31,7 @@ import uilchilgee, { socket } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -1998,7 +1998,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[92svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[85svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2138,7 +2138,6 @@ export default function Geree() {
                                 Гэрээний төрөл
                               </label>
                               <TusgaiZagvar
-                                tone="neutral"
                                 value={newContract.turul}
                                 onChange={(val) =>
                                   setNewContract((prev: any) => ({
@@ -2297,7 +2296,6 @@ export default function Geree() {
                               Аймаг
                             </label>
                             <TusgaiZagvar
-                              tone="neutral"
                               value={newContract.aimag}
                               onChange={(val) =>
                                 setNewContract((prev: any) => ({
@@ -2323,7 +2321,6 @@ export default function Geree() {
                                   Дүүрэг
                                 </label>
                                 <TusgaiZagvar
-                                  tone="neutral"
                                   value={newContract.duureg}
                                   onChange={(val) =>
                                     setNewContract((prev: any) => ({
@@ -2344,7 +2341,6 @@ export default function Geree() {
                                   Хороо
                                 </label>
                                 <TusgaiZagvar
-                                  tone="neutral"
                                   value={newContract.horoo}
                                   onChange={(val) =>
                                     setNewContract((prev: any) => ({
@@ -2366,7 +2362,6 @@ export default function Geree() {
                                 Сум
                               </label>
                               <TusgaiZagvar
-                                tone="neutral"
                                 value={newContract.duureg}
                                 onChange={(val) =>
                                   setNewContract((prev: any) => ({
@@ -2645,7 +2640,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[92svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto sm:overflow-y-visible modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[85svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2688,7 +2683,6 @@ export default function Geree() {
                           Төрөл
                         </label>
                         <TusgaiZagvar
-                          tone="neutral"
                           value={newResident.turul}
                           onChange={(val) =>
                             setNewResident((prev: any) => ({
@@ -2782,7 +2776,6 @@ export default function Geree() {
                           Аймаг
                         </label>
                         <TusgaiZagvar
-                          tone="neutral"
                           value={newResident.aimag}
                           onChange={(val) =>
                             setNewResident((prev: any) => ({
@@ -2808,7 +2801,6 @@ export default function Geree() {
                               Дүүрэг
                             </label>
                             <TusgaiZagvar
-                              tone="neutral"
                               value={newResident.duureg}
                               onChange={(val) =>
                                 setNewResident((prev: any) => ({
@@ -2829,7 +2821,6 @@ export default function Geree() {
                               Хороо
                             </label>
                             <TusgaiZagvar
-                              tone="neutral"
                               value={newResident.horoo}
                               onChange={(val) =>
                                 setNewResident((prev: any) => ({
@@ -2957,7 +2948,7 @@ export default function Geree() {
                       </div>
                     </div>
 
-                    <div className="flex justify-end px-6 py-4 border-t sticky bottom-6 left-0 right-0 gap-2">
+                    <div className="flex justify-end px-6 py-4 border-t sticky bottom-2 left-0 right-0 gap-2">
                       <button
                         type="button"
                         onClick={() => setShowResidentModal(false)}

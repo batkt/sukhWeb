@@ -48,7 +48,7 @@ type Dataset = {
 };
 
 export default function Khynalt() {
-  const { token, ajiltan, barilgiinId } = useAuth();
+  const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
@@ -270,18 +270,23 @@ export default function Khynalt() {
           residentsUnpaid: 0,
         };
       try {
+        // Use full-day ISO ranges to avoid timezone mismatches
+        const startIso = `${rangeStart}T00:00:00.000Z`;
+        const endIso = `${rangeEnd}T23:59:59.999Z`;
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 5000,
-            query: {
+            // Stringify query for backends expecting JSON in params
+            query: JSON.stringify({
               baiguullagiinId: ajiltan.baiguullagiinId,
               ...(effectiveBarilgiinId
                 ? { barilgiinId: effectiveBarilgiinId }
                 : {}),
-              createdAt: { $gte: rangeStart, $lte: rangeEnd },
-            },
+              // Prefer createdAt range; servers may also filter by issued/paid dates internally
+              createdAt: { $gte: startIso, $lte: endIso },
+            }),
           },
         });
 
@@ -303,13 +308,25 @@ export default function Khynalt() {
         list.forEach((it) => {
           const amount =
             Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-          const status = String(it?.tuluv || it?.status || "");
+          const status = String(it?.tuluv || it?.status || "").trim();
           const osId = String(it?.orshinSuugchId || "");
 
-          if (status === "Төлсөн") {
+          // Robust paid/unpaid detection (align with history page)
+          const hasPaymentHistory = Array.isArray(it?.paymentHistory)
+            ? it.paymentHistory.length > 0
+            : false;
+          const isPaid =
+            status === "Төлсөн" ||
+            status.toLowerCase() === "paid" ||
+            !!it?.tulsunOgnoo ||
+            hasPaymentHistory;
+          const isUnpaid =
+            status === "Төлөөгүй" || status.toLowerCase() === "unpaid";
+
+          if (isPaid) {
             paid += amount;
             if (osId) paidResidents.add(osId);
-          } else if (status === "Төлөөгүй") {
+          } else if (isUnpaid) {
             unpaid += amount;
             if (osId) unpaidResidents.add(osId);
           }
@@ -317,6 +334,7 @@ export default function Khynalt() {
           const barilga =
             residentById.get(osId)?.barilgiinId ||
             residentById.get(osId)?.barilga ||
+            it?.barilgiinId ||
             "Тодорхойгүй";
           byBld[barilga] = (byBld[barilga] || 0) + amount;
 
@@ -543,16 +561,18 @@ export default function Khynalt() {
   const filteredTotalResidents = filteredResidents.length;
   const filteredTotalContracts = filteredContracts.length;
   const filteredTotalEmployees = filteredEmployees.length;
-  const filteredBuildings = effectiveBarilgiinId
-    ? 1
-    : (() => {
-        const set = new Set<string>();
-        filteredResidents.forEach((r: any) => {
-          const bid = r?.barilgiinId ?? r?.barilga;
-          if (bid) set.add(String(bid));
-        });
-        return set.size;
-      })();
+  // Building count should always reflect total organization buildings, not the selected filter
+  const buildingCount = useMemo(() => {
+    const orgCount = (baiguullaga as any)?.barilguud?.length;
+    if (typeof orgCount === "number" && orgCount > 0) return orgCount;
+    // Fallback: derive from all resident records if org data not available yet
+    const set = new Set<string>();
+    (residents || []).forEach((r: any) => {
+      const bid = r?.barilgiinId ?? r?.barilga;
+      if (bid) set.add(String(bid));
+    });
+    return set.size;
+  }, [baiguullaga, residents]);
   // compute active contracts and expiring percent from filtered contracts
   const filteredActiveContracts = (() => {
     if (!filteredContracts?.length) return 0;
@@ -608,7 +628,7 @@ export default function Khynalt() {
     {
       title: "Оршин суугч",
       value: totalResidents,
-      subtitle: `Нийт барилга: ${filteredBuildings}`,
+      subtitle: `Нийт барилга: ${buildingCount}`,
       color: "from-green-500 to-green-600",
       onClick: () => router.push("/geree"),
       delay: 100,
@@ -639,7 +659,7 @@ export default function Khynalt() {
     },
     {
       title: "Барилга",
-      value: filteredBuildings,
+      value: buildingCount,
       subtitle: "Нийт барилга",
       color: "from-indigo-500 to-indigo-600",
       onClick: () => router.push("/geree"),

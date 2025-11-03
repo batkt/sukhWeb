@@ -20,6 +20,7 @@ import UndsenMedeelel from "./UndsenMedeelel";
 import Zogsool from "./Zogsool";
 import UstgasanTuukh from "./UstsanTuukh";
 import ZassanTuukh from "./ZassanTuukh";
+import BarilgiinTokhirgoo from "./BarilgiinTokhirgoo";
 
 const AdminLayout = ({
   title,
@@ -44,8 +45,13 @@ function Tokhirgoo() {
       return [
         {
           icon: <Settings className="w-5 h-5" />,
-          text: "Хувийн мэдээлэл",
+          text: "Ерөнхий мэдээлэл",
           tsonkh: UndsenMedeelel,
+        },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Барилгын тохиргоо",
+          tsonkh: BarilgiinTokhirgoo,
         },
         {
           icon: <Settings className="w-5 h-5" />,

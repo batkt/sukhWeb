@@ -192,11 +192,22 @@ const fetcherJagsaalt = async ([
     // Client-side enforcement for org/branch
     const toStr = (v: any) => (v == null ? "" : String(v));
     const filtered = list.filter((it: any) => {
+      // Must match organization
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
       if (!orgOk) return false;
+
+      // If no branch is selected, keep it
       if (!barilgiinId) return true;
-      const itemBid = toStr(it?.barilgiinId ?? it?.barilga);
-      return itemBid !== "" && itemBid === toStr(barilgiinId);
+
+      // Backend may return various field names or omit branch field entirely
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
+      );
+
+      // If item has no explicit branch id, don't filter it out since server already scoped
+      if (itemBid === "") return true;
+
+      return itemBid === toStr(barilgiinId);
     });
     if (Array.isArray(data?.jagsaalt)) {
       const serverTotal = Number((data as any)?.niitMur);

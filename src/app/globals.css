@@ -1086,6 +1086,7 @@ html[data-mode="dark"]:not([data-theme]),
   /* Fix: prevent calendar dropdown from stretching full width */
   width: max-content !important;
   min-width: auto !important;
+
   max-width: min(96vw, 720px) !important;
   overflow: visible !important;
 }
@@ -1116,6 +1117,13 @@ html[data-mode="dark"]:not([data-theme]),
 [data-theme="dark-green"] .mantine-Month-day {
   color: var(--panel-text) !important; /* unify header + weekdays + days text */
 }
+/* Also apply unscoped defaults so portal content (mounted on <body>) inherits theme vars */
+.mantine-CalendarHeader-label,
+.mantine-Month-weekday,
+.mantine-Month-day {
+  /* Fallback to a readable light color when portal can't see CSS vars */
+  color: var(--panel-text, #e5e7eb) !important;
+}
 /* Avoid red weekends on dark-black; keep same text color */
 [data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
 [data-theme="dark-black"] .mantine-Month-day[data-weekend],
@@ -1125,12 +1133,31 @@ html[data-mode="dark"]:not([data-theme]),
 [data-theme="dark-green"] .mantine-Month-day[data-weekend] {
   color: var(--panel-text) !important;
 }
+/* Unscoped weekend color to cover portal mounts */
+.mantine-Month-weekday[data-weekend],
+.mantine-Month-day[data-weekend] {
+  color: var(--panel-text) !important;
+}
+
+/* Weekday labels should be white on dark themes */
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-weekday {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500;
+}
+
 /* Selected day */
 [data-theme="dark-black"] .mantine-Month-day[data-selected],
 [data-theme="dark-gray"] .mantine-Month-day[data-selected],
 [data-theme="dark-green"] .mantine-Month-day[data-selected] {
   background: rgba(99, 102, 241, 0.22) !important; /* indigo hint */
   color: var(--panel-text) !important;
+}
+/* Outside/disabled days should be dimmed but readable on dark */
+.mantine-Month-day[data-outside],
+.mantine-Month-day:disabled {
+  color: color-mix(in oklch, var(--panel-text), transparent 45%) !important;
 }
 /* Range states */
 [data-theme="dark-black"] .mantine-Month-day[data-in-range],
@@ -1145,6 +1172,95 @@ html[data-mode="dark"]:not([data-theme]),
   background: rgba(99, 102, 241, 0.12) !important;
   color: var(--panel-text) !important;
 }
+
+/* Day cells sizing and alignment */
+[data-theme="dark-black"] .mantine-Month-day,
+[data-theme="dark-gray"] .mantine-Month-day,
+[data-theme="dark-green"] .mantine-Month-day {
+  min-height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  line-height: 2.25rem !important;
+}
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-weekday {
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  line-height: 2.25rem !important;
+  text-align: center !important;
+}
+
+/* Unscoped sizing + centering so header and days align even when rendered in a portal */
+.mantine-Month-day {
+  min-height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  line-height: 2.25rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.mantine-Month-weekday {
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  line-height: 2.25rem !important;
+  text-align: center !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+[data-theme="dark-black"] .mantine-CalendarHeader-label,
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-black"] .mantine-Month-day,
+[data-theme="dark-gray"] .mantine-CalendarHeader-label,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-day,
+[data-theme="dark-green"] .mantine-CalendarHeader-label,
+[data-theme="dark-green"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-day {
+  color: var(--panel-text) !important;
+}
+
+/* Avoid red weekends - keep same as panel text */
+[data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-black"] .mantine-Month-day[data-weekend],
+[data-theme="dark-gray"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-gray"] .mantine-Month-day[data-weekend],
+[data-theme="dark-green"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-green"] .mantine-Month-day[data-weekend] {
+  color: var(--panel-text) !important;
+}
+
+/* NOW override weekday labels to be bright white - this must come LAST */
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-weekday {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500;
+}
+
+/* Unscoped for portal-mounted calendars */
+.mantine-Month-weekday {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500;
+}
+
+/* Ensure weekend weekdays also stay white */
+[data-theme="dark-black"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-gray"] .mantine-Month-weekday[data-weekend],
+[data-theme="dark-green"] .mantine-Month-weekday[data-weekend] {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.mantine-Month-weekday[data-weekend] {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+/* Hover state - blackish background on dark themes */
+[data-theme="dark-black"] .mantine-Month-day:hover,
+[data-theme="dark-gray"] .mantine-Month-day:hover,
+[data-theme="dark-green"] .mantine-Month-day:hover {
+  background: rgba(0, 0, 0, 0.3) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+}
 /* Hover */
 [data-theme="dark-black"] .mantine-Month-day,
 [data-theme="dark-gray"] .mantine-Month-day,
@@ -1154,12 +1270,52 @@ html[data-mode="dark"]:not([data-theme]),
   min-width: 2.25rem !important;
   line-height: 2.25rem !important;
 }
+[data-theme="dark-black"] .mantine-Month-weekday,
+[data-theme="dark-gray"] .mantine-Month-weekday,
+[data-theme="dark-green"] .mantine-Month-weekday {
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  line-height: 2.25rem !important;
+  text-align: center !important;
+}
+/* Unscoped sizing + centering so header and days align even when rendered in a portal */
+.mantine-Month-day {
+  min-height: 2.25rem !important;
+  min-width: 2.25rem !important;
+  line-height: 2.25rem !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.mantine-Month-weekday {
+  min-width: 2.25rem !important;
+  height: 2.25rem !important;
+  line-height: 2.25rem !important;
+  text-align: center !important;
+}
 [data-theme="dark-black"] .mantine-Month-day:hover,
 [data-theme="dark-gray"] .mantine-Month-day:hover,
 [data-theme="dark-green"] .mantine-Month-day:hover {
-  /* No white background on hover; highlight text only */
-  background: transparent !important;
-  color: color-mix(in oklch, var(--panel-text), white 18%) !important;
+  /* Dark hover surface for better contrast in dark themes */
+  background: rgba(0, 0, 0, 0.24) !important; /* blackish hover */
+  color: var(--panel-text, #e5e7eb) !important;
+}
+/* Unscoped fallback for hover when portal content has no theme attrs */
+.mantine-Month-day:hover {
+  background: rgba(0, 0, 0, 0.24) !important;
+  color: var(--panel-text, #e5e7eb) !important;
+}
+
+/* Unscoped popover fallback so dropdown text is white on dark even in portals */
+.mantine-Popover-dropdown {
+  background: var(--surface-bg, #0f172a) !important; /* dark surface fallback */
+  color: var(--panel-text, #e5e7eb) !important; /* light text fallback */
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.12)) !important;
+}
+.mantine-Popover-dropdown .mantine-Paper-root {
+  background: var(--surface-bg, #0f172a) !important;
+  color: var(--panel-text, #e5e7eb) !important;
+  border-color: var(--surface-border, rgba(255, 255, 255, 0.12)) !important;
 }
 .action-edit,
 .action-edit svg {
@@ -2282,131 +2438,6 @@ select,
   background: var(--hover-bg-strong) !important;
 }
 
-/* Generic popover sizing – keep content compact (fixes oversized DatePicker) */
-.mantine-Popover-dropdown {
-  width: max-content !important;
-  min-width: auto !important;
-  max-width: min(96vw, 720px) !important;
-  border-radius: 0.75rem !important;
-  overflow: visible !important;
-}
-/* Calendars prefer to size to content as well */
-.mantine-Calendar-root {
-  width: max-content !important;
-}
-
-/* Controls: Selects and DatePickers should also reflect the unified hover */
-/* Mantine: hover on input fields of Select and DatePicker */
-.mantine-Select-root .mantine-Input-input:hover,
-.mantine-DatePickerInput-root .mantine-Input-input:hover {
-  background: var(--hover-bg) !important;
-}
-
-/* Mantine: calendar day hover */
-.mantine-Month-day:hover {
-  background: var(--hover-bg) !important;
-  color: inherit !important;
-}
-
-/* AntD: Select control hover */
-.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
-  background: var(--hover-bg) !important;
-}
-
-/* AntD: DatePicker input hover */
-.ant-picker:hover {
-  background: var(--hover-bg) !important;
-}
-/* AntD: Tabs hover */
-.ant-tabs-tab:hover {
-  background: var(--hover-bg) !important;
-}
-/* AntD: DatePicker calendar cells hover */
-.ant-picker-cell:hover .ant-picker-cell-inner,
-.ant-picker-time-panel-cell:hover .ant-picker-time-panel-cell-inner {
-  background: var(--hover-bg) !important;
-}
-
-/* Generic menu surfaces: options, links, buttons on hover */
-.menu-surface [role="menuitem"]:hover,
-.menu-surface [role="option"]:hover,
-.menu-surface a:hover,
-.menu-surface button:hover {
-  background: var(--hover-bg) !important;
-}
-
-/* AntD: list item hover (if used) */
-.ant-list-item:hover {
-  background: var(--hover-bg) !important;
-}
-
-/* Make Mantine DatePickerInput look like .btn-minimal (colors, text, size) */
-.mantine-DatePickerInput-root .mantine-Input-input {
-  background: var(--btn-bg) !important;
-  color: var(--btn-text) !important;
-  border: 1px solid var(--btn-border) !important;
-  border-radius: 0.75rem !important; /* same as .btn-minimal */
-  padding: 0.65rem 1rem !important; /* same vertical/horizontal as .btn-minimal */
-  line-height: 1.2 !important;
-  height: auto !important; /* let padding define height, like buttons */
-}
-.mantine-DatePickerInput-root .mantine-Input-input::placeholder {
-  color: color-mix(in oklch, var(--btn-text), transparent 35%) !important;
-}
-.mantine-DatePickerInput-root .mantine-Input-input:focus,
-.mantine-DatePickerInput-root .mantine-Input-input:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 3px var(--focus-ring) !important; /* same ring as .btn-minimal */
-}
-/* Calendar icon/sections should follow btn text color */
-.mantine-DatePickerInput-root .mantine-Input-section {
-  color: var(--btn-text) !important;
-}
-
-/* === Mantine Select: make it look like .btn-minimal and theme-safe === */
-.mantine-Select-root .mantine-Input-input {
-  background: var(--surface-bg) !important;
-  color: var(--panel-text) !important;
-  border: 1px solid var(--surface-border) !important;
-  border-radius: 0.75rem !important;
-  height: 42px !important;
-  padding: 8px 12px !important;
-  box-shadow: 0 2px 8px var(--glass-shadow, rgba(0, 0, 0, 0.15));
-}
-.mantine-Select-root .mantine-Input-input::placeholder {
-  color: rgba(15, 23, 42, 0.6) !important;
-}
-.mantine-Select-root .mantine-Input-input:focus,
-.mantine-Select-root .mantine-Input-input:focus-visible {
-  outline: none !important;
-  box-shadow: 0 0 0 3px var(--focus-ring, rgba(59, 130, 246, 0.35)) !important;
-}
-.mantine-Select-root .mantine-Input-section {
-  color: currentColor !important;
-}
-
-/* Select dropdown surface should be themed; support special class 'tusgaiZagvar' */
-.mantine-Combobox-dropdown,
-.mantine-Combobox-dropdown.tusgaiZagvar {
-  background: var(--surface-bg) !important;
-  color: var(--panel-text) !important;
-  border: 1px solid var(--surface-border) !important;
-  border-radius: 0.75rem !important;
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  backdrop-filter: blur(12px) saturate(140%);
-  box-shadow: 0 10px 26px var(--glass-shadow, rgba(0, 0, 0, 0.18));
-}
-.mantine-Combobox-option {
-  color: var(--panel-text) !important;
-}
-.mantine-Combobox-option[data-hovered] {
-  background: color-mix(in oklch, var(--surface-bg), white 6%) !important;
-}
-.mantine-Combobox-option[data-selected] {
-  background: color-mix(in oklch, var(--surface-bg), #e5effe 18%) !important;
-  color: color-mix(in oklch, var(--panel-text), #0b3868 35%) !important;
-}
-
 /* Dark themes: ensure select input uses dark surfaces (no white hover) */
 [data-theme="dark-black"] .mantine-Select-root .mantine-Input-input,
 [data-theme="dark-gray"] .mantine-Select-root .mantine-Input-input,
@@ -2507,4 +2538,39 @@ svg {
     padding-top: 1rem !important;
     padding-bottom: 1rem !important;
   }
+}
+
+/* Mobile search button without backdrop-filter to fix touch issues */
+.mobile-search-btn {
+  background: var(--surface-bg);
+  color: var(--panel-text);
+  border: 1px solid var(--surface-border);
+  border-radius: 9999px;
+  transition: transform 0.3s ease;
+  padding: 0.5rem;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  pointer-events: auto !important;
+}
+
+.mobile-search-btn:active {
+  transform: scale(0.95);
+}
+
+/* Remove backdrop-filter on mobile for nav to fix touch issues */
+@media (max-width: 768px) {
+  .neu-nav {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    background: var(--surface-bg) !important;
+    position: relative !important;
+  }
+}
+.mantine-DatePicker-month .mantine-Month-weekday,
+body .mantine-Month-weekday {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: 500 !important;
 }

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
 import useSWR from "swr";
 import { createPortal } from "react-dom";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { motion } from "framer-motion";
 import NekhemjlekhPage from "../nekhemjlekh/page";
 import KhungulultPage from "../khungulult/page";
@@ -285,7 +285,7 @@ export default function DansniiKhuulga() {
                 placeholder="Огноо сонгох"
                 classNames={{
                   input:
-                    "text-theme placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                    "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
                 }}
               />
               <TusgaiZagvar
@@ -300,7 +300,6 @@ export default function DansniiKhuulga() {
                 ]}
                 placeholder="Төлөв"
                 className="h-[40px] w-[140px]"
-                tone="theme"
               />
             </div>
 

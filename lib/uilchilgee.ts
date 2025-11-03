@@ -141,14 +141,20 @@ export const setRequestScope = (opts: {
 export const updateBaiguullaga = async (
   token: string | undefined,
   id: string,
-  payload: Record<string, any>
+  payload: Record<string, any>,
+  opts?: { barilgiinId?: string | null }
 ): Promise<any> => {
   try {
     // Some endpoints require explicit org/building params even for non-GET
     const params: Record<string, any> = {};
     // Prefer the explicit id as baiguullagiinId; fallback to global scope
     params.baiguullagiinId = id || globalBaiguullagiinId || undefined;
-    if (globalBarilgiinId) params.barilgiinId = globalBarilgiinId;
+    // Allow callers to explicitly target a building; fallback to global scope
+    if (typeof opts?.barilgiinId !== "undefined") {
+      params.barilgiinId = opts.barilgiinId ?? undefined;
+    } else if (globalBarilgiinId) {
+      params.barilgiinId = globalBarilgiinId;
+    }
 
     const resp = await uilchilgee(token).put(`/baiguullaga/${id}`, payload, {
       params,

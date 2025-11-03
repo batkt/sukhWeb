@@ -20,7 +20,7 @@ import {
   Select,
 } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import {
   CloseCircleOutlined,
   DeleteOutlined,
@@ -475,7 +475,7 @@ export default function Page() {
             <div className="mt-5 w-full px-5">
               <DatePickerInput
                 type="range"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 className="flex w-full rounded-2xl md:w-auto"
                 placeholder={"Огноо"}
                 value={ognoo}

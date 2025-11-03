@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
 import { Loader } from "@mantine/core";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
@@ -400,7 +400,7 @@ export default function Ebarimt() {
                 className="w-[450px]"
                 classNames={{
                   input:
-                    "text-theme placeholder:text-theme bg-[var(--surface-bg)] !h-[40px] !py-2 !w-[380px]",
+                    "text-theme placeholder:text-theme neu-panel bg-[var(--surface-bg)] !h-[40px] !py-2 !w-[380px]",
                 }}
                 popoverProps={{ zIndex: 2210 }}
               />

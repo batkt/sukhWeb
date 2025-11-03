@@ -24,15 +24,13 @@ import { useBuilding } from "@/context/BuildingContext";
 
 import { url as API_URL } from "../../../../lib/uilchilgee";
 import uilchilgee from "../../../../lib/uilchilgee";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
 const formatNumber = (num: number) => {
   return num?.toLocaleString("mn-MN") || "0";
 };
-const exceleerTatya = () => {
-  alert("Excel татах товч дарлаа!");
-};
+const exceleerTatya = () => {};
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
 };
@@ -1193,7 +1191,7 @@ export default function InvoicingZardluud() {
                 clearable
                 locale="mn"
                 valueFormat="YYYY-MM-DD"
-                classNames={{ input: "text-theme placeholder:text-theme h-12" }}
+                classNames={{ input: "text-theme neu-panel placeholder:text-theme h-12" }}
               />
               <TusgaiZagvar
                 value={selectedTurul}
@@ -1435,7 +1433,7 @@ export default function InvoicingZardluud() {
                           >
                             <motion.button
                               onClick={() => handleViewInvoice(resident)}
-                              className="p-3 sm:p-2 rounded-xl hover:bg-blue-50 transition-colors"
+                              className="p-3 sm:p-2 rounded-xl hover:shadow-md transition-colors"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               title="Нэхэмжлэл харах"
@@ -1445,7 +1443,7 @@ export default function InvoicingZardluud() {
                             </motion.button>
                             <motion.button
                               onClick={() => handleOpenHistory(resident)}
-                              className="p-3 sm:p-2 rounded-xl hover:bg-purple-50 transition-colors"
+                              className="p-3 sm:p-2 rounded-xl hover:shadow-md transition-colors"
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               title="Түүх"
@@ -1492,7 +1490,7 @@ export default function InvoicingZardluud() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
+                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
                 ref={historyRef}
                 role="dialog"
@@ -1500,11 +1498,9 @@ export default function InvoicingZardluud() {
               >
                 <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
                   <div>
-                    <h3 className="text-xl font-semibold text-slate-900">
-                      Түүх
-                    </h3>
+                    <h3 className="text-xl font-semibold">Түүх</h3>
                     {historyResident && (
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm">
                         {historyResident.ovog} {historyResident.ner} —{" "}
                         {historyItems.length} Нийт
                       </p>
@@ -1512,18 +1508,16 @@ export default function InvoicingZardluud() {
                   </div>
                   <button
                     onClick={() => setIsHistoryOpen(false)}
-                    className="p-2 rounded-2xl hover:bg-gray-100"
+                    className="p-2 rounded-2xl hover:menu-surface/80"
                     data-modal-primary
                   ></button>
                 </div>
 
                 <div className="relative p-6 overflow-y-auto overflow-x-auto max-h-[calc(90vh-64px)] overscroll-contain custom-scrollbar">
                   {historyLoading ? (
-                    <div className="py-16 text-center text-slate-600">
-                      Ачааллаж байна…
-                    </div>
+                    <div className="py-16 text-center">Ачааллаж байна…</div>
                   ) : historyItems.length === 0 ? (
-                    <div className="py-16 text-center text-slate-600">
+                    <div className="py-16 text-center">
                       Түүхийн мэдээлэл олдсонгүй
                     </div>
                   ) : (
@@ -1558,7 +1552,7 @@ export default function InvoicingZardluud() {
                             return (
                               <div
                                 key={item._id || `${item.sar}-${i}`}
-                                className="absolute inset-x-0 mx-auto w-[92%] bg-white border border-gray-100 rounded-2xl shadow-lg p-5 transition-transform"
+                                className="absolute inset-x-0 mx-auto w-[92%] menu-surface border rounded-2xl shadow-lg p-5 transition-transform"
                                 style={{
                                   transform: `translateY(${translate}px) scale(${scale})`,
                                   zIndex: z,
@@ -1566,9 +1560,9 @@ export default function InvoicingZardluud() {
                               >
                                 <div className="flex items-start justify-between gap-4">
                                   <div>
-                                    <div className="text-sm text-slate-500">
+                                    <div className="text-sm">
                                       Огноо:{" "}
-                                      <span className="font-medium text-slate-900">
+                                      <span className="font-medium">
                                         {dateStr
                                           ? new Date(
                                               dateStr
@@ -1576,18 +1570,16 @@ export default function InvoicingZardluud() {
                                           : "-"}
                                       </span>
                                     </div>
-                                    <div className="mt-1 text-sm text-slate-500">
+                                    <div className="mt-1 text-sm">
                                       Дугаар:{" "}
-                                      <span className="font-medium text-slate-900">
+                                      <span className="font-medium">
                                         {numberStr}
                                       </span>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-xs text-slate-500">
-                                      Нийт дүн
-                                    </div>
-                                    <div className="text-xl font-bold text-slate-900">
+                                    <div className="text-xs">Нийт дүн</div>
+                                    <div className="text-xl font-bold">
                                       {formatCurrency(total)}
                                     </div>
                                   </div>
@@ -1620,10 +1612,10 @@ export default function InvoicingZardluud() {
                                             key={zi}
                                             className="flex items-center justify-between"
                                           >
-                                            <span className="text-slate-600 truncate">
+                                            <span className="truncate">
                                               {z.ner || z.name}
                                             </span>
-                                            <span className="font-medium text-slate-900">
+                                            <span className="font-medium">
                                               {formatNumber(amount)} ₮
                                             </span>
                                           </div>
@@ -1647,7 +1639,7 @@ export default function InvoicingZardluud() {
                           <ChevronLeft className="w-4 h-4" />
                           Өмнөх
                         </button>
-                        <div className="text-sm text-slate-600">
+                        <div className="text-sm">
                           {Math.min(historyIndex + 1, historyItems.length)} /{" "}
                           {historyItems.length}
                         </div>

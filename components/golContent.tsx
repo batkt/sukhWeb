@@ -32,15 +32,10 @@ interface SubMenuItem {
 }
 
 const ModalPortal = ({ children }: { children: React.ReactNode }) => {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
-
-  useEffect(() => {
-    const el = document.getElementById("modal-root") || document.body;
-    setTarget(el);
-  }, []);
-
-  if (!target) return null;
-  return createPortal(children, target);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
+  if (!ready) return null;
+  return createPortal(children, document.body);
 };
 
 export default function GolContent({ children }: GolContentProps) {
@@ -66,12 +61,10 @@ export default function GolContent({ children }: GolContentProps) {
     setMounted(true);
   }, []);
 
-  // Close any open submenu when route changes
   useEffect(() => {
     setOpenSubmenuIndex(null);
   }, [pathname]);
 
-  // focus mobile search input when opened and prevent body scroll
   useEffect(() => {
     if (mobileSearchOpen) {
       document.body.style.overflow = "hidden";
@@ -84,7 +77,6 @@ export default function GolContent({ children }: GolContentProps) {
     };
   }, [mobileSearchOpen]);
 
-  // close mobile search with Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape" && mobileSearchOpen) setMobileSearchOpen(false);
@@ -114,18 +106,6 @@ export default function GolContent({ children }: GolContentProps) {
   const menuItems: MenuItem[] = [
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
-    // { label: "Бүртгэл", path: "burtgel" },
-    // {
-    //   label: "Мэдэгдэл",
-    //   path: "medegdel",
-    //   submenu: [
-    //     { label: "Шаардлага", path: "shaardlaga" },
-    //     { label: "Санал хүсэлт", path: "sanalkhuselt" },
-    //     { label: "Мэдэгдэл", path: "medegdel" },
-    //     { label: "Дуудлага", path: "duudlaga" },
-    //     { label: "Анкет", path: "anket" },
-    //   ],
-    // },
     {
       label: "Төлбөр",
       path: "tulbur",
@@ -134,52 +114,69 @@ export default function GolContent({ children }: GolContentProps) {
       label: "Тайлан",
       path: "tailan",
       submenu: [
-        // { label: "Санхүү", path: "sankhuu" },
-        // { label: "Оршин суугч", path: "orshinSuugch" },
-        // { label: "Авлагийн насжилт", path: "avlagiinNasjilt" },
-        // { label: "Өр, авлагын тайлан", path: "debt" },
-        // { label: "Орлого, зарлагын тайлан", path: "income-expense" },
-        // { label: "Нийт ашиг, алдагдал", path: "profit-loss" },
-        // { label: "Гүйлгээний түүх", path: "guilgee" },
-        // { label: "Гүйцэтгэлийн тайлан", path: "guitsetgel" },
         { label: "Санхүүгийн тайлан", path: "/financial" },
         { label: "Гүйцэтгэлийн тайлан", path: "/performance" },
       ],
     },
-    // {
-    //   label: "Зогсоол",
-    //   path: "zogsool",
-    //   submenu: [
-    //     { label: "Жагсаалт", path: "jagsaalt" },
-    //     { label: "Камер касс", path: "camera" },
-    //   ],
-    // },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    console.log("Logout button clicked - starting logout process");
+    setShowLogout(false);
+    
     try {
-      setShowLogout(false);
-      // Clear auth using central logout to remove cookies/localStorage
-      garya();
-      // Fallback in case full page reload doesn't happen
-      router.replace("/login");
-    } catch (_) {
+      // Call the logout function
+      console.log("Calling garya()...");
+      await garya();
+      console.log("garya() completed");
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // Always redirect to login regardless of garya() success
+      console.log("Redirecting to /login");
       router.replace("/login");
     }
   };
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
   const isLoggedIn = !!token && !!ajiltan;
+
   return (
     <>
-      <nav className="w-full z-[500]">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between gap-4">
+      <nav className="w-full sticky top-0 z-[10] neu-nav">
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+          {/* Top row on mobile: Logo + Building Selector */}
+          <div className="flex md:hidden items-center justify-between gap-2 mb-2">
+            <div className="shrink-0">
+              <ThemedLogo />
+            </div>
+            <div className="flex-1 max-w-[200px]">
+              <TusgaiZagvar
+                value={selectedBuildingId ?? ""}
+                onChange={(v: string) => setSelectedBuildingId(v || null)}
+                options={buildings.map((b: any) => ({
+                  value: b._id,
+                  label: b.ner,
+                }))}
+                placeholder={
+                  buildings.length ? "Барилга" : "Барилга олдсонгүй"
+                }
+              />
+            </div>
+          </div>
+
+          {/* Desktop layout: Logo, Building, Menu, Actions */}
+          <div className="hidden md:flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="shrink-0">
                 <ThemedLogo />
               </div>
-              <div className="hidden sm:block w-48 sm:w-56">
+              <div className="w-56">
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
                   onChange={(v: string) => setSelectedBuildingId(v || null)}
@@ -190,96 +187,43 @@ export default function GolContent({ children }: GolContentProps) {
                   placeholder={
                     buildings.length ? "Барилга сонгох" : "Барилга олдсонгүй"
                   }
-                  tone="neutral"
                 />
               </div>
             </div>
 
-            {/* Center: Menu (hidden on small to keep right controls visible) */}
-            <div className="hidden md:flex flex-1 items-center justify-center px-2">
-              <div className="flex items-center justify-start md:justify-center gap-2 sm:gap-3 relative flex-nowrap overflow-x-auto overflow-y-visible md:overflow-visible px-2 whitespace-nowrap custom-scrollbar min-w-0">
+            {/* Center: Desktop Menu */}
+            <div className="flex flex-1 items-center justify-center px-2">
+              <div className="flex items-center justify-center gap-3 relative">
                 {menuItems.map((item, i) => {
                   const isParentActive = pathname.startsWith(`/${item.path}`);
                   const isOpen = openSubmenuIndex === i;
                   return (
-                    <div key={i} className="relative shrink-0 z-[80]">
+                    <div key={i} className="relative shrink-0 z-[1005]">
                       {item.submenu ? (
                         <>
-                          {/* Mobile: tap to open inline */}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setOpenSubmenuIndex((prev) =>
-                                prev === i ? null : i
-                              )
-                            }
-                            className={`md:hidden px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap ${
-                              isParentActive
-                                ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
-                                : "hover:menu-surface"
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-
-                          {/* Mobile submenu dropdown */}
-                          {isOpen && (
-                            <div className="md:hidden absolute left-1/2 -translate-x-1/2 mt-2 w-56 rounded-2xl shadow-lg menu-surface z-[120]">
-                              <ul className="py-2">
-                                {item.submenu.map((sub, j) => {
-                                  const subPath = `/${item.path}/${sub.path}`;
-                                  const isSubActive =
-                                    pathname.startsWith(subPath);
-                                  return (
-                                    <li key={j}>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setOpenSubmenuIndex(null);
-                                          router.push(subPath);
-                                        }}
-                                        className={`w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
-                                          isSubActive
-                                            ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
-                                            : "hover:translate-x-0.5 hover:menu-surface/80"
-                                        }`}
-                                      >
-                                        {sub.label}
-                                      </button>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          )}
-
-                          {/* Desktop: parent clickable and hover to open */}
                           <button
                             type="button"
                             role="menuitem"
                             onMouseEnter={() => setOpenSubmenuIndex(i)}
-                            onMouseLeave={() => {
-                              /* leave handled on wrapper */
-                            }}
                             onClick={() => {
-                              setOpenSubmenuIndex(null);
-                              router.push(`/${item.path}`);
+                              setOpenSubmenuIndex((prev) =>
+                                prev === i ? null : i
+                              );
                             }}
-                            className={`hidden md:inline-flex px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
                               isParentActive
                                 ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                                 : "hover:menu-surface"
-                            } relative z-[80]`}
+                            } relative z-[1005]`}
                           >
                             {item.label}
                           </button>
 
-                          {/* Desktop submenu (absolute) */}
                           {isOpen && (
                             <div
                               onMouseEnter={() => setOpenSubmenuIndex(i)}
                               onMouseLeave={() => setOpenSubmenuIndex(null)}
-                              className="hidden md:block absolute left-1/2 transform -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-lg menu-surface z-[90]"
+                              className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto"
                             >
                               <ul className="py-2">
                                 {item.submenu.map((sub, j) => {
@@ -317,7 +261,7 @@ export default function GolContent({ children }: GolContentProps) {
                             isParentActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                               : "hover:menu-surface"
-                          } relative z-[80]`}
+                          } relative z-[1005]`}
                         >
                           {item.label}
                         </a>
@@ -328,9 +272,9 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
             </div>
 
-            {/* Right: Search, settings, user */}
-            <div className="flex items-center justify-end gap-2 sm:gap-3 shrink-0">
-              <div className="relative h-10 w-64 hidden md:flex items-center neu-panel">
+            {/* Desktop actions */}
+            <div className="flex items-center justify-end gap-3 shrink-0">
+              <div className="relative h-10 w-64 flex items-center neu-panel">
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                 <input
                   aria-label="Global search"
@@ -341,41 +285,46 @@ export default function GolContent({ children }: GolContentProps) {
                 />
               </div>
 
-              <div className="md:hidden">
-                <button
-                  aria-label="Open search"
-                  className="inline-flex items-center justify-center h-10 w-10 rounded-full menu-surface hover:scale-105 transition-all duration-300"
-                  onClick={() => setMobileSearchOpen(true)}
-                >
-                  <SearchIcon className="w-5 h-5" />
-                </button>
-              </div>
-
               <UnguSongokh />
-              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]" />
+              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
+
               <button
                 onClick={() => router.push("/tokhirgoo")}
-                className="inline-flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300 focus-visible:outline-none focus-visible:[box-shadow:0_0_0_3px_var(--focus-ring)]"
+                className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
               >
                 <Settings className="w-5 h-5" />
               </button>
 
               {isLoggedIn && (
-                <div className="relative" ref={avatarRef}>
-                  <div
-                    onClick={() => setShowLogout(!showLogout)}
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                <div className="relative z-[150]" ref={avatarRef}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLogout(!showLogout);
+                    }}
+                    className="w-10 h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
                   >
                     {userName.charAt(0).toUpperCase()}
-                  </div>
+                  </button>
 
                   {showLogout && (
-                    <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[120]">
+                    <div 
+                      className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      onMouseLeave={() => setShowLogout(false)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <ul className="py-2">
                         <li>
                           <button
-                            onClick={handleLogout}
-                            className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)]"
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              console.log("Mouse down on logout button - triggering logout");
+                              handleLogout(e);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto"
                           >
                             Гарах
                           </button>
@@ -387,13 +336,67 @@ export default function GolContent({ children }: GolContentProps) {
               )}
             </div>
           </div>
+
+          {/* Mobile actions row */}
+          <div className="flex md:hidden items-center justify-end gap-2">
+            <button
+              type="button"
+              aria-label="Open search"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setMobileSearchOpen(true);
+              }}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+            >
+              <SearchIcon className="w-4 h-4 pointer-events-none" />
+            </button>
+
+            <UnguSongokh />
+            <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
+
+            <button
+              onClick={() => router.push("/tokhirgoo")}
+              className="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
+
+            {isLoggedIn && (
+              <div className="relative z-[150]" ref={avatarRef}>
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLogout(!showLogout);
+                  }}
+                  className="w-9 h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                >
+                  {userName.charAt(0).toUpperCase()}
+                </div>
+
+                {showLogout && (
+                  <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
+                    <ul className="py-2">
+                      <li>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)] cursor-pointer"
+                        >
+                          Гарах
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </nav>
-
-      {/* Mobile Menu Bar */}
-      <div className="md:hidden w-full z-[400]">
+ 
+      <div className="md:hidden w-full bg-[color:var(--surface-bg)] sticky top-[120px] z-[9]">
         <div className="px-3 pb-2">
-          <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
+          <div className="flex items-center justify-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
             {menuItems.map((item, i) => {
               const isParentActive = pathname.startsWith(`/${item.path}`);
               return (
@@ -405,7 +408,7 @@ export default function GolContent({ children }: GolContentProps) {
                       ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
                       : router.push(`/${item.path}`)
                   }
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
                     isParentActive
                       ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                       : "hover:menu-surface"
@@ -418,7 +421,7 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
           {openSubmenuIndex !== null &&
             menuItems[openSubmenuIndex]?.submenu && (
-              <div className="mt-2 w-full rounded-2xl shadow-lg menu-surface z-[350]">
+              <div className="mt-2 w-full rounded-2xl shadow-lg menu-surface z-[950] relative">
                 <ul className="py-2">
                   {menuItems[openSubmenuIndex].submenu!.map((sub, j) => {
                     const subPath = `/${menuItems[openSubmenuIndex]!.path}/${
@@ -462,7 +465,7 @@ export default function GolContent({ children }: GolContentProps) {
 
       {mobileSearchOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 z-[90] flex items-start p-4">
+          <div className="fixed inset-0 z-[1200] flex items-start p-4 pointer-events-auto">
             <div
               className="absolute inset-0 bg-black/50"
               onClick={() => setMobileSearchOpen(false)}
@@ -481,7 +484,7 @@ export default function GolContent({ children }: GolContentProps) {
                 <button
                   aria-label="Close search"
                   onClick={() => setMobileSearchOpen(false)}
-                  className="p-2"
+                  className="p-2 text-theme"
                 >
                   <X className="w-5 h-5" />
                 </button>

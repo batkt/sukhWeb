@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
 
 interface Props {

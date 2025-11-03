@@ -54,7 +54,7 @@ export function SuccessOverlayHost() {
       aria-atomic="true"
       className="fixed inset-0 z-[2200] pointer-events-none"
     >
-      <div className="absolute top-4 left-1/2 md:top-6 -translate-x-1/2 flex flex-col items-center gap-2">
+      <div className="absolute top-4 md:top-6 right-4 md:right-6 left-auto translate-x-0 flex flex-col items-end gap-2">
         <div
           role="status"
           onClick={() => setOpen(false)}
@@ -62,6 +62,7 @@ export function SuccessOverlayHost() {
           style={{
             opacity: open ? 1 : 0,
             transform: open ? "translateY(0)" : "translateY(-8px)",
+            pointerEvents: open ? "auto" : "none",
             transition: "opacity 200ms ease, transform 200ms ease",
           }}
         >

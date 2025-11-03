@@ -54,6 +54,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
   const { showSpinner, hideSpinner } = useSpinner();
   const [merchantTin, setMerchantTin] = useState<string>("");
   const [sohNer, setSohNer] = useState<string>("");
+  const [barilgaNer, setBarilgaNer] = useState<string>("");
 
   useEffect(() => {
     if (!token) return;
@@ -84,6 +85,17 @@ const KhuviinMedeelel: React.FC<Props> = ({
           setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
         } else if (baiguullaga?.ner) {
           setSohNer(String(baiguullaga.ner));
+        }
+
+        // preload building name if any
+        if (firstBuilding?.ner) {
+          setBarilgaNer(String(firstBuilding.ner));
+        } else if (
+          Array.isArray(baiguullaga?.barilguud) &&
+          baiguullaga!.barilguud!.length > 0 &&
+          (baiguullaga!.barilguud![0] as any)?.ner
+        ) {
+          setBarilgaNer(String((baiguullaga!.barilguud![0] as any).ner));
         }
 
         let effectiveTokhirgoo = baiguullaga?.tokhirgoo;
@@ -218,6 +230,21 @@ const KhuviinMedeelel: React.FC<Props> = ({
       return;
     }
 
+    // Duplicate building name validation (against other buildings)
+    const newName = (barilgaNer || "").trim();
+    if (newName && Array.isArray(baiguullaga?.barilguud)) {
+      const firstBuilding = baiguullaga.barilguud[0];
+      const hasDup = baiguullaga.barilguud.some(
+        (b: any) =>
+          String(b?._id || "") !== String(firstBuilding?._id || "") &&
+          String(b?.ner || "").trim() === newName
+      );
+      if (hasDup) {
+        openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
+        return;
+      }
+    }
+
     showSpinner();
 
     try {
@@ -230,6 +257,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
 
       // build default building entry
       const defaultBuilding = {
+        ner: (barilgaNer || "").trim(),
         bairshil: {
           coordinates: [],
         },
@@ -249,6 +277,11 @@ const KhuviinMedeelel: React.FC<Props> = ({
       const barilguudArray = Array.isArray(baiguullaga?.barilguud)
         ? baiguullaga!.barilguud!.map((b: any, index: number) => ({
             ...b,
+            // If user entered a building name, update the first building's name
+            ner:
+              index === 0 && (barilgaNer || "").trim()
+                ? (barilgaNer || "").trim()
+                : b?.ner,
             bairshil: b?.bairshil || { coordinates: [] },
             tokhirgoo: {
               ...(b?.tokhirgoo || {}),
@@ -343,6 +376,11 @@ const KhuviinMedeelel: React.FC<Props> = ({
     }
   };
 
+  // New minimal API call to register a building with SÖH name
+  // NOTE: Previously there was a separate "Барилга бүртгэх" action.
+  // We now consolidate into a single Save (khadgalakh) button,
+  // so this function has been removed in favor of unified save logic.
+
   const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
     (d) => d._id === state.selectedDuureg
   );
@@ -355,10 +393,12 @@ const KhuviinMedeelel: React.FC<Props> = ({
             Үндсэн мэдээлэл
           </h2>
 
-          <div className="neu-panel allow-overflow p-4 md:p-6 space-y-4 md:space-y-6 min-h-[24rem]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1  ">
+          <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
+            {/* 2x2 grid: 1) Дүүрэг, 2) Хороо, 3) Барилгын нэр, 4) СӨХ-ийн нэр */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 1) Дүүрэг */}
+              <div className="w-full">
+                <label className="block text-sm font-medium text-theme mb-1">
                   Дүүрэг
                 </label>
                 <TusgaiZagvar
@@ -371,31 +411,28 @@ const KhuviinMedeelel: React.FC<Props> = ({
                     })
                   )}
                   placeholder="Сонгоно уу"
-                  tone="neutral"
-                  className="w-full z-[1001]"
+                  className="w-full"
                 />
               </div>
 
-              {selectedDistrict && (
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-theme mb-1">
-                    Хороо
-                  </label>
-                  <TusgaiZagvar
-                    value={state.selectedHoroo || ""}
-                    onChange={(v) => handleHorooChange(v)}
-                    options={(selectedDistrict?.ded || []).map((horoo) => ({
-                      value: horoo.kod,
-                      label: horoo.ner,
-                    }))}
-                    placeholder="Сонгоно уу"
-                    tone="neutral"
-                    className="w-full z-[1000]"
-                  />
-                </div>
-              )}
+              <div className="w-full">
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Хороо
+                </label>
+                <TusgaiZagvar
+                  value={state.selectedHoroo || ""}
+                  onChange={(v) => handleHorooChange(v)}
+                  options={(selectedDistrict?.ded || []).map((horoo) => ({
+                    value: horoo.kod,
+                    label: horoo.ner,
+                  }))}
+                  placeholder="Сонгоно уу"
+                  className="w-full"
+                />
+              </div>
 
-              <div className="md:col-span-2">
+              {/* 4) СӨХ-ийн нэр */}
+              <div className="w-full">
                 <label className="block text-sm font-medium text-theme mb-1">
                   СӨХ-ийн нэр
                 </label>
@@ -409,11 +446,9 @@ const KhuviinMedeelel: React.FC<Props> = ({
               </div>
             </div>
 
+            {/* Single Save button */}
             <div className="flex justify-end">
-              <button
-                onClick={khadgalakh}
-                className="btn-minimal btn-save btn-minimal-lg"
-              >
+              <button onClick={khadgalakh} className="btn-minimal btn-save">
                 Хадгалах
               </button>
             </div>

@@ -132,14 +132,14 @@ const CustomTagComponent = ({ node, deleteNode }: NodeViewProps) => {
   return (
     <NodeViewWrapper
       as="span"
-      className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded border text-xs font-medium cursor-move select-none bg-blue-100 text-blue-700 border-blue-300"
+      className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded border text-xs font-medium cursor-move select-none bg-[color:var(--glass-tint)] text-[color:var(--panel-text)] border-[color:var(--glass-border)]"
       draggable="true"
       data-drag-handle
     >
       <span>{label}</span>
       <button
         onClick={deleteNode}
-        className="hover:bg-blue-200 rounded px-1 leading-none"
+        className="rounded px-1 leading-none hover:bg-[color:var(--btn-bg-hover)]"
         contentEditable={false}
       >
         ×
@@ -531,11 +531,16 @@ export default function ContractEditor({
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-full bg-gray-50 rounded-2xl">
-      <div className="w-full md:w-80 bg-white border-r rounded-2xl border-gray-200 overflow-y-auto">
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="font-semibold text-slate-900">Хувьсагчид</h3>
-          <p className="text-xs text-slate-500 mt-1">Дарж оруулах</p>
+    <div className="contract-editor flex flex-col md:flex-row h-full rounded-2xl">
+      {/* Sidebar */}
+      <div className="w-full md:w-80 neu-panel rounded-2xl overflow-y-auto">
+        <div className="p-4 border-b border-[color:var(--surface-border)]">
+          <h3 className="font-semibold text-[color:var(--panel-text)]">
+            Хувьсагчид
+          </h3>
+          <p className="text-xs text-[color:var(--muted-text)] mt-1">
+            Дарж оруулах
+          </p>
         </div>
 
         <div className="p-2">
@@ -543,7 +548,7 @@ export default function ContractEditor({
             <div key={key} className="mb-2">
               <button
                 onClick={() => toggleCategory(key)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-slate-700 hover:bg-gray-100 rounded-2xl"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-[color:var(--panel-text)] hover:bg-[color:var(--btn-bg-hover)] rounded-2xl"
               >
                 <span>{category.label}</span>
                 {openCategories[key] ? (
@@ -559,7 +564,7 @@ export default function ContractEditor({
                     <button
                       key={tag.type}
                       onClick={() => addCustomTag(tag.type)}
-                      className="w-full text-left px-3 py-1.5 text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-700 rounded transition-colors"
+                      className="w-full text-left px-3 py-1.5 text-xs text-[color:var(--muted-text)] hover:bg-[color:var(--btn-bg-hover)] hover:text-[color:var(--panel-text)] rounded transition-colors"
                     >
                       {tag.label}
                     </button>
@@ -572,36 +577,41 @@ export default function ContractEditor({
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="bg-transparent border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+        <div className="bg-transparent border-b border-[color:var(--surface-border)] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => (onBack ? onBack() : router.push("/geree"))}
-            className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+            className="p-2 hover:bg-[color:var(--btn-bg-hover)] rounded-2xl transition-colors"
             title="Буцах"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-slate-900">
+          <h1 className="text-lg font-semibold text-[color:var(--panel-text)]">
             {isEditMode ? "Гэрээний загвар засах" : "Гэрээний загвар үүсгэх"}
           </h1>
         </div>
 
-        <div className="bg-transparent border-b border-gray-200">
+        <div className="bg-transparent border-b border-[color:var(--surface-border)]">
           <button
             onClick={() => setIsFormOpen(!isFormOpen)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-[color:var(--btn-bg-hover)] transition-colors"
           >
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-slate-900">
+              <h3 className="text-sm font-medium text-[color:var(--panel-text)]">
                 Загварын мэдээлэл
               </h3>
               {!isFormOpen && templateName && (
-                <span className="text-xs text-slate-500">— {templateName}</span>
+                <span className="text-xs text-[color:var(--muted-text)]">
+                  — {templateName}
+                </span>
               )}
             </div>
             {isFormOpen ? (
-              <ChevronUp size={18} className="text-slate-500" />
+              <ChevronUp size={18} className="text-[color:var(--muted-text)]" />
             ) : (
-              <ChevronDown size={18} className="text-slate-500" />
+              <ChevronDown
+                size={18}
+                className="text-[color:var(--muted-text)]"
+              />
             )}
           </button>
 
@@ -609,38 +619,38 @@ export default function ContractEditor({
             <div className="px-4 pb-4">
               <div className="max-w-4xl mx-auto space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
                     Загварын нэр *
                   </label>
                   <input
                     type="text"
                     value={templateName}
                     onChange={(e) => setTemplateName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-2xl border border-[color:var(--surface-border)] focus:ring-2 focus:ring-[color:var(--theme)] focus:border-transparent bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
                     placeholder="Жишээ: Орон сууцны түрээсийн гэрээ"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
                     Тайлбар
                   </label>
                   <input
                     type="text"
                     value={templateDesc}
                     onChange={(e) => setTemplateDesc(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-2xl border border-[color:var(--surface-border)] focus:ring-2 focus:ring-[color:var(--theme)] focus:border-transparent bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
                     placeholder="Энэ загварын тухай товч тайлбар"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
                     Төрөл
                   </label>
                   <input
                     type="text"
                     value={templateTuluv}
                     onChange={(e) => setTemplateTuluv(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                    className="w-full px-3 py-2 rounded-2xl border border-[color:var(--surface-border)] focus:ring-2 focus:ring-[color:var(--theme)] focus:border-transparent bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
                     placeholder="Энэ загварын аль төрөлд хамаарах вэ"
                   />
                 </div>
@@ -649,15 +659,15 @@ export default function ContractEditor({
           )}
         </div>
 
-        <div className="bg-transparent border-b border-gray-200 p-2">
+        <div className="bg-transparent border-b border-[color:var(--surface-border)] p-2">
           <div className="max-w-4xl mx-auto flex flex-wrap gap-1">
             <button
               onClick={() => editor?.chain().focus().toggleBold().run()}
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive("bold")
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Тод (Ctrl+B)"
             >
@@ -669,8 +679,8 @@ export default function ContractEditor({
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive("italic")
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Налуу (Ctrl+I)"
             >
@@ -682,23 +692,23 @@ export default function ContractEditor({
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive("underline")
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Доогуур зураас (Ctrl+U)"
             >
               <UnderlineIcon size={18} />
             </button>
 
-            <div className="w-px bg-gray-300 mx-1" />
+            <div className="w-px bg-[color:var(--surface-border)] mx-1" />
 
             <button
               onClick={() => editor?.chain().focus().setTextAlign("left").run()}
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive({ textAlign: "left" })
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Зүүн тийш"
             >
@@ -711,8 +721,8 @@ export default function ContractEditor({
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive({ textAlign: "center" })
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Төвлөх"
             >
@@ -725,8 +735,8 @@ export default function ContractEditor({
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive({ textAlign: "right" })
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Баруун тийш"
             >
@@ -739,19 +749,19 @@ export default function ContractEditor({
               disabled={!editor}
               className={`p-2 rounded transition-colors ${
                 editor?.isActive({ textAlign: "justify" })
-                  ? "bg-violet-600 text-white"
-                  : "hover:bg-gray-100 text-slate-700"
+                  ? "bg-[color:var(--theme)] text-white"
+                  : "hover:bg-[color:var(--btn-bg-hover)] text-[color:var(--panel-text)]"
               }`}
               title="Тэгшлэх"
             >
               <AlignJustify size={18} />
             </button>
 
-            <div className="w-px bg-gray-300 mx-1" />
+            <div className="w-px bg-[color:var(--surface-border)] mx-1" />
 
             <button
               onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-2xl hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-[color:var(--btn-border)] bg-[color:var(--btn-bg)] text-[color:var(--btn-text)] hover:bg-[color:var(--btn-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <Save size={18} />
               Хадгалах
@@ -759,15 +769,15 @@ export default function ContractEditor({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-8">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
           <div
-            className="w-full max-w-[21cm] mx-auto bg-white shadow-lg overflow-auto"
+            className="w-full max-w-[21cm] mx-auto neu-panel overflow-auto"
             style={{ minHeight: "29.7cm", padding: "2cm" }}
           >
             {/* Header Section */}
-            <div className="flex justify-between items-start gap-8 pb-4 mb-4 border-b border-gray-300">
+            <div className="flex justify-between items-start gap-8 pb-4 mb-4 border-b border-[color:var(--surface-border)]">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
                   Зүүн толгой
                 </label>
                 <div
@@ -775,13 +785,13 @@ export default function ContractEditor({
                     setActiveEditor("zuunTolgoi");
                     zuunTolgoiEditor?.commands.focus();
                   }}
-                  className="border border-gray-200 rounded p-2 min-h-[120px] cursor-text hover:border-violet-300 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500"
+                  className="border border-[color:var(--surface-border)] rounded p-2 min-h-[120px] cursor-text hover:border-[color:var(--theme)] focus-within:border-[color:var(--theme)] focus-within:ring-1 focus-within:ring-[color:var(--theme)]"
                 >
                   <EditorContent editor={zuunTolgoiEditor} />
                 </div>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
                   Баруун толгой
                 </label>
                 <div
@@ -789,7 +799,7 @@ export default function ContractEditor({
                     setActiveEditor("baruunTolgoi");
                     baruunTolgoiEditor?.commands.focus();
                   }}
-                  className="border border-gray-200 rounded p-2 min-h-[120px] cursor-text hover:border-violet-300 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500"
+                  className="border border-[color:var(--surface-border)] rounded p-2 min-h-[120px] cursor-text hover:border-[color:var(--theme)] focus-within:border-[color:var(--theme)] focus-within:ring-1 focus-within:ring-[color:var(--theme)]"
                 >
                   <EditorContent editor={baruunTolgoiEditor} />
                 </div>
@@ -808,9 +818,9 @@ export default function ContractEditor({
             </div>
 
             {/* Footer Section */}
-            <div className="flex justify-between items-start gap-8 pt-4 mt-6 border-t border-gray-300">
+            <div className="flex justify-between items-start gap-8 pt-4 mt-6 border-t border-[color:var(--surface-border)]">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
                   Зүүн хөл
                 </label>
                 <div
@@ -818,13 +828,13 @@ export default function ContractEditor({
                     setActiveEditor("zuunKhul");
                     zuunKhulEditor?.commands.focus();
                   }}
-                  className="border border-gray-200 rounded p-2 min-h-[180px] cursor-text hover:border-violet-300 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500"
+                  className="border border-[color:var(--surface-border)] rounded p-2 min-h-[180px] cursor-text hover:border-[color:var(--theme)] focus-within:border-[color:var(--theme)] focus-within:ring-1 focus-within:ring-[color:var(--theme)]"
                 >
                   <EditorContent editor={zuunKhulEditor} />
                 </div>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-slate-600 mb-2">
+                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
                   Баруун хөл
                 </label>
                 <div
@@ -832,7 +842,7 @@ export default function ContractEditor({
                     setActiveEditor("baruunKhul");
                     baruunKhulEditor?.commands.focus();
                   }}
-                  className="border border-gray-200 rounded p-2 min-h-[180px] cursor-text hover:border-violet-300 focus-within:border-violet-500 focus-within:ring-1 focus-within:ring-violet-500"
+                  className="border border-[color:var(--surface-border)] rounded p-2 min-h-[180px] cursor-text hover:border-[color:var(--theme)] focus-within:border-[color:var(--theme)] focus-within:ring-1 focus-within:ring-[color:var(--theme)]"
                 >
                   <EditorContent editor={baruunKhulEditor} />
                 </div>

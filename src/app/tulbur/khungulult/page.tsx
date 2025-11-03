@@ -24,7 +24,8 @@ import {
   Tabs,
   Switch,
 } from "antd";
-import { DatePickerInput, MonthPickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { MonthPickerInput } from "@mantine/dates";
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -276,9 +277,7 @@ const TulburTootsoo: React.FC = () => {
     return column;
   }, [form.getFieldValue("zardliinId"), zardal?.jagsaalt]);
 
-  function ustgaya(mur: KhungulultData) {
- 
-  }
+  function ustgaya(mur: KhungulultData) {}
 
   function tseverlekh() {
     formRef.current.resetFields();

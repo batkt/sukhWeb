@@ -399,7 +399,8 @@ export default function AshiglaltiinZardluud() {
   const handleTariffChange = async (
     item: ZardalItem,
     newTariff: number,
-    isUilchilgee = false
+    isUilchilgee = false,
+    options?: { skipRefresh?: boolean }
   ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -431,24 +432,70 @@ export default function AshiglaltiinZardluud() {
       }
 
       openSuccessOverlay("Амжилттай шинэчиллээ");
-      refreshZardluud();
+      if (!options?.skipRefresh) {
+        refreshZardluud();
+      }
     } catch (error) {
       openErrorOverlay("Шинэчлэхэд алдаа гарлаа");
     }
   };
 
-  const saveTariff = async (item: ZardalItem, isUilchilgee = false) => {
-    const newTariff = editedTariffs[item._id];
-    if (newTariff === undefined) return;
+  const saveAllTariffs = async () => {
+    const entries = Object.entries(editedTariffs);
+    if (entries.length === 0) {
+      openErrorOverlay("Өөрчлөлт байхгүй байна");
+      return;
+    }
+
+    // Only persist changes that actually differ from current values
+    const itemsById = new Map(ashiglaltiinZardluud.map((it) => [it._id, it]));
+    const toSave = entries
+      .map(([id, newTariff]) => ({ id, newTariff, item: itemsById.get(id) }))
+      .filter((x) => x.item && x.item.tariff !== x.newTariff) as Array<{
+      id: string;
+      newTariff: number;
+      item: ZardalItem;
+    }>;
+
+    if (toSave.length === 0) {
+      openErrorOverlay("Өөрчлөлт байхгүй байна");
+      return;
+    }
 
     showSpinner();
-    try {
-      await handleTariffChange(item, newTariff, isUilchilgee);
+    let success = 0;
+    let fail = 0;
 
+    try {
+      for (const { item, newTariff } of toSave) {
+        try {
+          await handleTariffChange(item, newTariff, false, {
+            skipRefresh: true,
+          });
+          success++;
+        } catch (e) {
+          fail++;
+        }
+      }
+
+      await refreshZardluud();
+
+      // Clear only the successfully saved ids from edited cache
       setEditedTariffs((prev) => {
-        const { [item._id]: _, ...rest } = prev;
-        return rest;
+        const next = { ...prev } as Record<string, number>;
+        for (const { item } of toSave) {
+          delete next[item._id];
+        }
+        return next;
       });
+
+      if (fail === 0) {
+        openSuccessOverlay(`${success} зардлыг хадгаллаа`);
+      } else if (success > 0) {
+        openErrorOverlay(`${success} амжилттай, ${fail} амжилтгүй`);
+      } else {
+        openErrorOverlay(`Хадгалах амжилтгүй боллоо`);
+      }
     } finally {
       hideSpinner();
     }
@@ -572,72 +619,125 @@ export default function AshiglaltiinZardluud() {
               Тогтмол зардал байхгүй байна
             </div>
           ) : (
-            ashiglaltiinZardluud.map((mur) => (
-              <div key={mur._id} className="box">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-                  <div className="border-l-2 border-blue-500 pl-4 flex-1 w-full">
-                    <div className="font-medium text-theme">{mur.ner}</div>
-                    <div className="text-theme text-sm">{mur.turul}</div>
-                    {mur.suuriKhuraamj !== undefined && (
-                      <div className="text-xs text-theme mt-1">
-                        Суурь хураамж: {formatNumber(mur.suuriKhuraamj, 0)}
+            <>
+              {ashiglaltiinZardluud.map((mur) => {
+                const currentValue =
+                  editedTariffs[mur._id] !== undefined
+                    ? editedTariffs[mur._id]
+                    : mur.tariff;
+                const changed = currentValue !== mur.tariff;
+                return (
+                  <div key={mur._id} className="box">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                      <div className="border-l-2 border-blue-500 pl-4 flex-1 w-full">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-theme">
+                            {mur.ner}
+                          </div>
+                          {changed && (
+                            <Badge color="yellow" variant="light" size="sm">
+                              Өөрчлөгдсөн
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="text-theme text-sm">{mur.turul}</div>
+                        {mur.suuriKhuraamj !== undefined && (
+                          <div className="text-xs text-theme mt-1">
+                            Суурь хураамж: {formatNumber(mur.suuriKhuraamj, 0)}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <div className="sm:ml-auto w-full sm:w-auto flex items-center gap-2">
+                        <div className="text-sm text-theme hidden sm:block">
+                          Тариф
+                        </div>
+                        <MNumberInput
+                          className="w-full sm:w-40 text-right text-theme"
+                          value={currentValue}
+                          onChange={(v) =>
+                            setEditedTariffs((prev) => ({
+                              ...prev,
+                              [mur._id]: Number(v as number),
+                            }))
+                          }
+                          rightSection={
+                            <span className="text-slate-500 pr-1">₮</span>
+                          }
+                        />
+                      </div>
+                      <div className="sm:ml-3 flex gap-2">
+                        <div
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
+                          onClick={() => {
+                            if (confirm(`Зардал устгах уу? (${mur.ner})`)) {
+                              deleteZardal(mur._id);
+                            }
+                          }}
+                        >
+                          <MTooltip label="Устгах">
+                            <DeleteOutlined />
+                          </MTooltip>
+                        </div>
+                        <div
+                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-yellow-500 p-2 text-white hover:bg-yellow-600 transition-colors"
+                          onClick={() => openEditModal(mur, false)}
+                        >
+                          <MTooltip label="Засах">
+                            <EditOutlined />
+                          </MTooltip>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="sm:ml-auto w-full sm:w-auto flex items-stretch sm:items-center gap-2">
-                    <MNumberInput
-                      className="w-full sm:w-32 text-right text-theme"
-                      value={
-                        editedTariffs[mur._id] !== undefined
-                          ? editedTariffs[mur._id]
-                          : mur.tariff
-                      }
-                      onChange={(v) =>
-                        setEditedTariffs((prev) => ({
-                          ...prev,
-                          [mur._id]: Number(v as number),
-                        }))
-                      }
-                      rightSection={
-                        <span className="text-slate-500 pr-1">₮</span>
-                      }
-                    />
+                );
+              })}
+
+ 
+              <div className="box sticky bottom-0 z-[5] border-t mt-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                  <div className="text-theme flex-1">
+                    {(() => {
+                      const itemsById = new Map(
+                        ashiglaltiinZardluud.map((it) => [it._id, it])
+                      );
+                      const changedCount = Object.entries(editedTariffs).filter(
+                        ([id, val]) => itemsById.get(id)?.tariff !== val
+                      ).length;
+                      return changedCount > 0
+                        ? `${changedCount} зардалд өөрчлөлт орсон байна`
+                        : "Өөрчлөлт байхгүй";
+                    })()}
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <MButton
-                      className="btn-minimal btn-save w-full sm:w-auto"
-                      disabled={
-                        editedTariffs[mur._id] === undefined ||
-                        editedTariffs[mur._id] === mur.tariff
-                      }
-                      onClick={() => saveTariff(mur, false)}
+                      variant="default"
+                      onClick={() => setEditedTariffs({})}
+                      disabled={Object.keys(editedTariffs).length === 0}
+                      className="btn-cancel btn-minimal"
                     >
-                      Хадгалах
+                      Цуцлах
                     </MButton>
-                  </div>
-                  <div className="sm:ml-3 flex gap-2">
-                    <div
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
-                      onClick={() => {
-                        if (confirm(`Зардал устгах уу? (${mur.ner})`)) {
-                          deleteZardal(mur._id);
-                        }
-                      }}
+                    <MButton
+                      className="btn-minimal btn-save"
+                      onClick={saveAllTariffs}
+                      disabled={(() => {
+                        const itemsById = new Map(
+                          ashiglaltiinZardluud.map((it) => [it._id, it])
+                        );
+                        const changedCount = Object.entries(
+                          editedTariffs
+                        ).filter(
+                          ([id, val]) => itemsById.get(id)?.tariff !== val
+                        ).length;
+                        return changedCount === 0;
+                      })()}
                     >
-                      <MTooltip label="Устгах">
-                        <DeleteOutlined />
-                      </MTooltip>
-                    </div>
-                    <div
-                      className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-yellow-500 p-2 text-white hover:bg-yellow-600 transition-colors"
-                      onClick={() => openEditModal(mur, false)}
-                    >
-                      <MTooltip label="Засах">
-                        <EditOutlined />
-                      </MTooltip>
-                    </div>
+                      Бүгдийг хадгалах
+                    </MButton>
                   </div>
                 </div>
               </div>
-            ))
+            </>
           )}
         </div>
       </div>

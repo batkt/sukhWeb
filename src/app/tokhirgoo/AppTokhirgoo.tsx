@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Button, notification } from "antd";
-import { DatePickerInput } from "@mantine/dates";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { SolutionOutlined } from "@ant-design/icons";
 import moment from "moment";
 

@@ -3,7 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { MantineProvider } from "@mantine/core";
 import "@mantine/core/styles.css";
-import "@mantine/dates/styles.css";
+// Removed Mantine dates styles; using custom DatePicker component
 import dayjs from "dayjs";
 import "dayjs/locale/mn";
 import { useRouter, usePathname } from "next/navigation";
