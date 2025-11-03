@@ -21,7 +21,7 @@ export default function BarilgiinTokhirgoo({
   setSongogdsonTsonkhniiIndex,
 }: Props) {
   const { baiguullaga, token, baiguullagaMutate, barilgiinId } = useAuth();
-  const { selectedBuildingId } = useBuilding();
+  const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
 
   const activeBuildingId = useMemo(() => {
     return (
@@ -37,6 +37,25 @@ export default function BarilgiinTokhirgoo({
     );
   }, [baiguullaga?.barilguud, activeBuildingId]);
 
+  // If the current activeBuildingId doesn't exist in baiguullaga anymore,
+  // automatically fall back to the first available building and update the selection.
+  useEffect(() => {
+    const list = Array.isArray(baiguullaga?.barilguud)
+      ? baiguullaga!.barilguud!
+      : [];
+    if (!barilga && list.length > 0) {
+      const firstId = String(list[0]._id);
+      if (selectedBuildingId !== firstId) {
+        setSelectedBuildingId(firstId);
+      }
+    }
+  }, [
+    barilga,
+    baiguullaga?.barilguud,
+    selectedBuildingId,
+    setSelectedBuildingId,
+  ]);
+
   const [barilgaNer, setBarilgaNer] = useState<string>("");
 
   const [ortsInput, setOrtsInput] = useState<string>("");
@@ -45,7 +64,15 @@ export default function BarilgiinTokhirgoo({
   const [isInit, setIsInit] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!barilga) return;
+    // If building isn't found, stop the spinner and show empty state instead of hanging
+    if (!barilga) {
+      setBarilgaNer("");
+      setOrtsnuud([]);
+      setOrtsInput("");
+      setDavkharCount(0);
+      setIsInit(true);
+      return;
+    }
     try {
       setBarilgaNer(barilga?.ner || "");
 
@@ -139,8 +166,18 @@ export default function BarilgiinTokhirgoo({
   };
 
   const save = async () => {
-    if (!token || !baiguullaga?._id || !barilga) {
-      openErrorOverlay("Мэдээлэл дутуу байна");
+    if (!token) {
+      openErrorOverlay("Нэвтрэх токен олдсонгүй");
+      return;
+    }
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+    if (!barilga) {
+      openErrorOverlay(
+        "Барилга сонгогдоогүй байна. Үндсэн мэдээлэл хэсгээс байршил/барилга тохируулна уу."
+      );
       return;
     }
 
@@ -219,6 +256,14 @@ export default function BarilgiinTokhirgoo({
         </h2>
 
         <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
+          {/* Empty state when no building is available */}
+          {!barilga && (
+            <div className="p-3 rounded-md border border-blue-300 text-blue-700 text-sm">
+              Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга
+              сонгох эсвэл шинээр нэмнэ үү.
+            </div>
+          )}
+
           {/* Info grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -239,13 +284,17 @@ export default function BarilgiinTokhirgoo({
                 Байршил
               </label>
               <div className="w-full px-3 py-3 neu-panel text-sm text-theme">
-                {barilga?.tokhirgoo?.duuregNer ||
-                  (baiguullaga?.tokhirgoo as any)?.duuregNer ||
-                  ""}{" "}
-                {"/"}{" "}
-                {(barilga?.tokhirgoo as any)?.horoo?.ner ||
-                  (baiguullaga?.tokhirgoo as any)?.horoo?.ner ||
-                  ""}
+                {(() => {
+                  const duureg =
+                    barilga?.tokhirgoo?.duuregNer ||
+                    (baiguullaga?.tokhirgoo as any)?.duuregNer;
+                  const horoo =
+                    (barilga?.tokhirgoo as any)?.horoo?.ner ||
+                    (baiguullaga?.tokhirgoo as any)?.horoo?.ner;
+                  if (duureg || horoo)
+                    return `${duureg || ""} / ${horoo || ""}`;
+                  return "Байршил тохируулаагүй (Үндсэн мэдээлэл хэсгээс тохируулна уу)";
+                })()}
               </div>
             </div>
           </div>
@@ -263,10 +312,10 @@ export default function BarilgiinTokhirgoo({
                 type="text"
                 value={ortsInput}
                 onChange={(e) => setOrtsInput(e.target.value)}
-                placeholder="Ж: А, Б, В эсвэл A B C"
+                placeholder="Ж: 1, 2, 3 эсвэл 1 2 3"
                 className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
-              <MButton className="btn-minimal" onClick={addOrtsFromInput}>
+              <MButton className="btn-minimal mt-1" onClick={addOrtsFromInput}>
                 Нэмэх
               </MButton>
             </div>
@@ -307,9 +356,9 @@ export default function BarilgiinTokhirgoo({
                   className="w-40"
                 />
               </div>
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-slate-600 mt-6">
                 {davkharCount > 0
-                  ? `1 - ${davkharCount} давхар тохируулна`
+                  ? `1 - ${davkharCount} давхар оруулсан байна`
                   : "Давхарын тоо оруулна уу"}
               </div>
             </div>
@@ -317,7 +366,12 @@ export default function BarilgiinTokhirgoo({
 
           {/* Save */}
           <div className="flex justify-end pt-2">
-            <MButton className="btn-minimal btn-save" onClick={save}>
+            <MButton
+              className="btn-minimal btn-save"
+              onClick={save}
+              disabled={!barilga}
+              title={!barilga ? "Барилга сонгоогүй байна" : undefined}
+            >
               Хадгалах
             </MButton>
           </div>

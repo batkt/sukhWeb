@@ -376,17 +376,25 @@ export default function LoginPage() {
                 <input
                   type="text"
                   id="email"
+                  name="username"
+                  autoComplete="username"
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   placeholder="aaa@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
                   className="w-full h-12 rounded-2xl border pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{
-                    background: "var(--surface-bg)",
-                    color: "var(--panel-text)",
-                    borderColor: "var(--surface-border)",
-                  }}
+                  style={
+                    {
+                      background: "var(--surface-bg) !important",
+                      color: "var(--panel-text)",
+                      borderColor: "var(--surface-border)",
+                      "--tw-ring-color": "var(--surface-border)",
+                    } as React.CSSProperties
+                  }
                 />
               </div>
             </motion.div>
@@ -411,6 +419,8 @@ export default function LoginPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
+                  name="current-password"
+                  autoComplete="current-password"
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

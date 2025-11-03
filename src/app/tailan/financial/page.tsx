@@ -10,6 +10,8 @@ import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { useBuilding } from "@/context/BuildingContext";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download, FileDown } from "lucide-react";
 import { useSpinner } from "@/context/SpinnerContext";
 import formatNumber from "../../../../tools/function/formatNumber";
 
@@ -359,29 +361,26 @@ export default function FinancialReportsPage() {
           <option value="guilegee">Гүйлгээний түүх</option>
         </TusgaiZagvar>
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={fetchReport}
+          icon={<Download className="w-5 h-5" />}
+          label="Татах"
           disabled={isLoading}
-        >
-          Татах
-        </button>
+        />
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={() => exportReport("csv")}
+          icon={<Download className="w-5 h-5" />}
+          label="CSV"
           disabled={isLoading}
-        >
-          Export CSV
-        </button>
+        />
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={() => exportReport("xlsx")}
+          icon={<FileDown className="w-5 h-5" />}
+          label="Excel"
           disabled={isLoading}
-        >
-          Export Excel
-        </button>
+        />
       </div>
       <div className="neu-panel p-4 rounded-2xl">
         <div className="table-surface overflow-visible rounded-2xl w-full">

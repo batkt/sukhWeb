@@ -473,6 +473,88 @@
 [data-theme="dark-green"] .ant-select-selection-placeholder {
   color: rgba(229, 231, 235, 0.7) !important; /* slate-200 @ 70% */
 }
+[data-theme="dark-black"] .menu-surface input::placeholder,
+[data-theme="dark-gray"] .menu-surface input::placeholder,
+[data-theme="dark-green"] .menu-surface input::placeholder,
+[data-mode="dark"] .menu-surface input::placeholder,
+[data-theme="dark-black"] .menu-surface textarea::placeholder,
+[data-theme="dark-gray"] .menu-surface textarea::placeholder,
+[data-theme="dark-green"] .menu-surface textarea::placeholder,
+[data-mode="dark"] .menu-surface textarea::placeholder,
+/* Target the specific login fields as highest specificity */
+[data-theme="dark-black"] #email::placeholder,
+[data-theme="dark-gray"] #email::placeholder,
+[data-theme="dark-green"] #email::placeholder,
+[data-mode="dark"] #email::placeholder,
+[data-theme="dark-black"] #password::placeholder,
+[data-theme="dark-gray"] #password::placeholder,
+[data-theme="dark-green"] #password::placeholder,
+[data-mode="dark"] #password::placeholder {
+  color: rgba(229, 231, 235, 0.52) !important;
+}
+
+/* Autofill can inject its own yellow/white background and text color; force consistent
+   appearance for autofilled inputs across themes. Targets both standard autofill and
+   autofill when focused. Uses large inset box-shadow to override UA styles. */
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill:focus,
+.menu-surface input:-webkit-autofill,
+.menu-surface textarea:-webkit-autofill,
+#email:-webkit-autofill,
+#password:-webkit-autofill,
+#email:-webkit-autofill:focus,
+#password:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--panel-text) !important;
+  color: var(--panel-text) !important;
+  caret-color: var(--panel-text) !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface-bg) inset !important;
+  box-shadow: 0 0 0px 1000px var(--surface-bg) inset !important;
+}
+
+/* Firefox autofill */
+input:-moz-autofill,
+textarea:-moz-autofill,
+input:-moz-autofill:focus,
+textarea:-moz-autofill:focus {
+  box-shadow: 0 0 0px 1000px var(--surface-bg) inset !important;
+  -moz-text-fill-color: var(--panel-text) !important;
+  color: var(--panel-text) !important;
+  caret-color: var(--panel-text) !important;
+}
+
+/* Ensure dark themes always show readable input text and a slightly muted placeholder.
+   Some libraries apply -webkit-text-fill-color: transparent for gradient text which can
+   leak into inputs; force the fill color and caret for dark themes here. */
+[data-theme="dark-black"] input,
+[data-theme="dark-black"] textarea,
+[data-theme="dark-black"] .mantine-Input-input,
+[data-theme="dark-gray"] input,
+[data-theme="dark-gray"] textarea,
+[data-theme="dark-gray"] .mantine-Input-input,
+[data-theme="dark-green"] input,
+[data-theme="dark-green"] textarea,
+[data-theme="dark-green"] .mantine-Input-input,
+[data-mode="dark"] input,
+[data-mode="dark"] textarea,
+[data-mode="dark"] .mantine-Input-input {
+  color: var(--panel-text) !important;
+  caret-color: var(--panel-text) !important;
+  /* Do NOT set -webkit-text-fill-color here, it can make placeholders same as text */
+}
+
+[data-theme="dark-black"] input::placeholder,
+[data-theme="dark-gray"] input::placeholder,
+[data-theme="dark-green"] input::placeholder,
+[data-mode="dark"] input::placeholder,
+[data-theme="dark-black"] textarea::placeholder,
+[data-theme="dark-gray"] textarea::placeholder,
+[data-theme="dark-green"] textarea::placeholder,
+[data-mode="dark"] textarea::placeholder {
+  /* slightly muted but clearly visible */
+  color: rgba(229, 231, 235, 0.52) !important;
+}
 
 /* Ant Design dropdowns and selectors honor dark surfaces */
 [data-theme="dark-black"] .ant-select-dropdown,
@@ -1061,6 +1143,25 @@ html[data-mode="dark"]:not([data-theme]),
 .ant-modal .ant-modal-content {
   max-height: 90vh !important;
   overflow: auto;
+}
+/* Mantine Modal: follow themed surface/header colors globally */
+.mantine-Modal-content {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-radius: 1rem !important;
+}
+.mantine-Modal-header {
+  background: var(--surface-bg) !important;
+  border-bottom: 1px solid var(--surface-border) !important;
+  color: var(--panel-text) !important;
+}
+.mantine-Modal-title,
+.mantine-Modal-close {
+  color: var(--panel-text) !important;
+}
+.mantine-Modal-body {
+  color: var(--panel-text) !important;
 }
 [data-theme="dark-black"] .mantine-DatePickerInput-root input {
   background: var(--surface-bg) !important;

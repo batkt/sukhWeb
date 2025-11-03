@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download, FileDown } from "lucide-react";
 
 import { useAuth } from "@/lib/useAuth";
 import * as tailanApi from "@/lib/useTailan";
@@ -171,29 +173,26 @@ export default function PerformanceReportsPage() {
           <option value="summary">Товч тойм</option>
         </TusgaiZagvar>
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={fetchPerformance}
+          icon={<Download className="w-5 h-5" />}
+          label="Татах"
           disabled={isLoading}
-        >
-          Татах
-        </button>
+        />
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={() => exportReport("csv")}
+          icon={<Download className="w-5 h-5" />}
+          label="CSV"
           disabled={isLoading}
-        >
-          Export CSV
-        </button>
+        />
 
-        <button
-          className="btn-minimal disabled:opacity-60"
+        <IconTextButton
           onClick={() => exportReport("xlsx")}
+          icon={<FileDown className="w-5 h-5" />}
+          label="Excel"
           disabled={isLoading}
-        >
-          Excel
-        </button>
+        />
       </div>
 
       <div className="neu-panel p-4 rounded-2xl">

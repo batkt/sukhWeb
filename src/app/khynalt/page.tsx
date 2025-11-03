@@ -7,6 +7,7 @@ import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import { postSummary, postOrlogoZarlaga } from "@/lib/useTailan";
 import uilchilgee from "../../../lib/uilchilgee";
+import { getPaymentStatusLabel, isPaidLike, isUnpaidLike } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
@@ -308,20 +309,11 @@ export default function Khynalt() {
         list.forEach((it) => {
           const amount =
             Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-          const status = String(it?.tuluv || it?.status || "").trim();
+          const status = getPaymentStatusLabel(it);
           const osId = String(it?.orshinSuugchId || "");
 
-          // Robust paid/unpaid detection (align with history page)
-          const hasPaymentHistory = Array.isArray(it?.paymentHistory)
-            ? it.paymentHistory.length > 0
-            : false;
-          const isPaid =
-            status === "Төлсөн" ||
-            status.toLowerCase() === "paid" ||
-            !!it?.tulsunOgnoo ||
-            hasPaymentHistory;
-          const isUnpaid =
-            status === "Төлөөгүй" || status.toLowerCase() === "unpaid";
+          const isPaid = isPaidLike(it);
+          const isUnpaid = isUnpaidLike(it);
 
           if (isPaid) {
             paid += amount;
@@ -344,8 +336,8 @@ export default function Khynalt() {
           const d = new Date(created);
           const key = buildLabel(d);
           const curr = series.get(key) || { paid: 0, unpaid: 0 };
-          if (status === "Төлсөн") curr.paid += amount;
-          else if (status === "Төлөөгүй") curr.unpaid += amount;
+          if (isPaid) curr.paid += amount;
+          else if (isUnpaid) curr.unpaid += amount;
           series.set(key, curr);
         });
 

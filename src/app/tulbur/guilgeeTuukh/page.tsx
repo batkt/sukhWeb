@@ -7,6 +7,8 @@ import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { motion } from "framer-motion";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import NekhemjlekhPage from "../nekhemjlekh/page";
 import KhungulultPage from "../khungulult/page";
 import { useAuth } from "@/lib/useAuth";
@@ -21,6 +23,12 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
 import formatNumber from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+} from "@/lib/utils";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -42,9 +50,9 @@ export default function DansniiKhuulga() {
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
-  const [tuluvFilter, setTuluvFilter] = useState<"all" | "paid" | "unpaid">(
-    "all"
-  );
+  const [tuluvFilter, setTuluvFilter] = useState<
+    "all" | "paid" | "unpaid" | "overdue"
+  >("all");
   const [isNekhemjlekhOpen, setIsNekhemjlekhOpen] = useState(false);
   const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
   const nekhemjlekhRef = useRef<HTMLDivElement | null>(null);
@@ -147,10 +155,11 @@ export default function DansniiKhuulga() {
   // Filter by paid/unpaid
   const filteredItems = useMemo(() => {
     return allHistoryItems.filter((it: any) => {
-      const isPaid =
-        !!it?.tulsunOgnoo || String(it?.tuluv || "").trim() === "Төлсөн";
-      if (tuluvFilter === "paid") return isPaid;
-      if (tuluvFilter === "unpaid") return !isPaid;
+      const paid = isPaidLike(it);
+      if (tuluvFilter === "paid") return paid;
+      if (tuluvFilter === "unpaid")
+        return isUnpaidLike(it) && !isOverdueLike(it);
+      if (tuluvFilter === "overdue") return isOverdueLike(it);
 
       if (searchTerm) {
         if (!matchesSearch(it, searchTerm)) return false;
@@ -166,14 +175,13 @@ export default function DansniiKhuulga() {
       const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
       return s + v;
     }, 0);
-    const paidCount = filteredItems.filter((it: any) => {
-      return (
-        String(it?.tuluv || "").trim() === "Төлсөн" ||
-        !!it?.tulsunOgnoo ||
-        (Array.isArray(it?.paymentHistory) && it.paymentHistory.length > 0)
-      );
-    }).length;
-    const unpaidCount = totalCount - paidCount;
+    const paidCount = filteredItems.filter((it: any) => isPaidLike(it)).length;
+    const overdueCount = filteredItems.filter((it: any) =>
+      isOverdueLike(it)
+    ).length;
+    const unpaidCount = filteredItems.filter(
+      (it: any) => isUnpaidLike(it) && !isOverdueLike(it)
+    ).length;
     const maxAmount = filteredItems.reduce((m: number, it: any) => {
       const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
       return Math.max(m, v);
@@ -181,8 +189,8 @@ export default function DansniiKhuulga() {
 
     return [
       { title: "Төлсөн", value: paidCount },
+      { title: "Хугацаа хэтэрсэн", value: overdueCount },
       { title: "Төлөөгүй", value: unpaidCount },
-      { title: "Хамгийн их төлбөр", value: `${formatNumber(maxAmount, 0)} ₮` },
       { title: "Нийт дүн", value: `${formatNumber(totalSum, 0)} ₮` },
     ];
   }, [filteredItems]);
@@ -291,15 +299,16 @@ export default function DansniiKhuulga() {
               <TusgaiZagvar
                 value={tuluvFilter}
                 onChange={(v: string) =>
-                  setTuluvFilter(v as "all" | "paid" | "unpaid")
+                  setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
                 }
                 options={[
                   { value: "all", label: "Бүгд" },
                   { value: "paid", label: "Төлсөн" },
+                  { value: "overdue", label: "Хугацаа хэтэрсэн" },
                   { value: "unpaid", label: "Төлөөгүй" },
                 ]}
                 placeholder="Төлөв"
-                className="h-[40px] w-[140px]"
+                className="h-[40px] w-[160px]"
               />
             </div>
 
@@ -330,9 +339,11 @@ export default function DansniiKhuulga() {
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
-                <button onClick={exceleerTatya} className="btn-minimal">
-                  {t("Excel татах")}
-                </button>
+                <IconTextButton
+                  onClick={exceleerTatya}
+                  icon={<Download className="w-5 h-5" />}
+                  label={t("Excel татах")}
+                />
               </motion.div>
             </div>
           </div>
@@ -402,12 +413,8 @@ export default function DansniiKhuulga() {
                       //     : it.bairNer
                       //     ? String(it.bairNer).trim()
                       //     : "-";
-                      const isPaid =
-                        String(it?.tuluv || "").trim() === "Төлсөн" ||
-                        !!it?.tulsunOgnoo ||
-                        (Array.isArray(it?.paymentHistory) &&
-                          it.paymentHistory.length > 0);
-                      const tuluvLabel = isPaid ? "Төлсөн" : "Төлөөгүй";
+                      const tuluvLabel = getPaymentStatusLabel(it);
+                      const isPaid = tuluvLabel === "Төлсөн";
                       const ner = resident
                         ? [resident.ner]
                             .map((v) => (v ? String(v).trim() : ""))
@@ -444,7 +451,12 @@ export default function DansniiKhuulga() {
                               <span
                                 className={
                                   "px-2 py-0.5 rounded-full text-xs font-medium " +
-                                  (isPaid ? "badge-paid" : "badge-unpaid")
+                                  (isPaid
+                                    ? "badge-paid"
+                                    : tuluvLabel === "Төлөөгүй" ||
+                                      tuluvLabel === "Хугацаа хэтэрсэн"
+                                    ? "badge-unpaid"
+                                    : "badge-neutral")
                                 }
                               >
                                 {tuluvLabel}
@@ -474,21 +486,21 @@ export default function DansniiKhuulga() {
               />
 
               <div className="flex items-center gap-1">
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                <IconTextButton
                   disabled={page <= 1}
                   onClick={() => setPage(Math.max(1, page - 1))}
-                >
-                  Өмнөх
-                </button>
+                  icon={<ChevronLeft className="w-4 h-4" />}
+                  label="Өмнөх"
+                  size="sm"
+                />
                 <div className="text-theme/70 px-1">{page}</div>
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                <IconTextButton
                   disabled={page * rowsPerPage >= filteredItems.length}
                   onClick={() => setPage(page + 1)}
-                >
-                  Дараах
-                </button>
+                  icon={<ChevronRight className="w-4 h-4" />}
+                  label="Дараах"
+                  size="sm"
+                />
               </div>
             </div>
           </div>

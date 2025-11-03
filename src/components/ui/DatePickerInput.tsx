@@ -85,7 +85,7 @@ export function DatePickerInput(
   }
 ) {
   const {
-    placeholder = "Select date",
+    placeholder = "Огноо оруулна уу",
     clearable,
     className,
     classNames,
@@ -185,7 +185,7 @@ export function DatePickerInput(
 
       {open && (
         <div
-          className="absolute z-50 mt-2 p-3 rounded-2xl shadow-xl border border-black/10 bg-white dark:bg-neutral-900 dark:border-white/10"
+          className="absolute z-50 mt-2 p-3 rounded-2xl menu-surface"
           style={{ width: 320 }}
         >
           <style>{`
@@ -196,6 +196,96 @@ export function DatePickerInput(
             .rdp-weeks { display: grid; gap: 2px; }
             .rdp-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
             .rdp-day { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+            
+            /* Weekdays (Mon-Fri): default backgrounds */
+            .rdp-day_button {
+              width: 100%;
+              height: 100%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              border-radius: 0.5rem;
+              background-color: white !important;
+              color: black !important;
+              font-weight: 500;
+              transition: background-color .15s ease, color .15s ease;
+              border: none;
+              cursor: pointer;
+            }
+            
+            /* Dark mode - Weekdays (Mon-Fri): black background */
+            .dark .rdp-day_button {
+              background-color: black !important;
+              color: white !important;
+            }
+            
+            /* Weekend styling - Sunday (1st col) and Saturday (7th col): red text, same bg as weekdays */
+            .rdp-table tbody tr > td:nth-child(1) .rdp-day_button,
+            .rdp-table tbody tr > td:nth-child(7) .rdp-day_button {
+              color: #ef4444 !important; /* red-500 */
+            }
+            
+            .dark .rdp-table tbody tr > td:nth-child(1) .rdp-day_button,
+            .dark .rdp-table tbody tr > td:nth-child(7) .rdp-day_button {
+              color: #ef4444 !important; /* red-500 */
+            }
+            
+            /* Previous/next month dates - gray background and text */
+            .rdp-day_outside .rdp-day_button {
+              background-color: #e5e7eb !important; /* gray-200 */
+              color: #9ca3af !important; /* gray-400 */
+            }
+            
+            .dark .rdp-day_outside .rdp-day_button {
+              background-color: #374151 !important; /* gray-700 */
+              color: #9ca3af !important; /* gray-400 - lighter gray for visibility */
+            }
+            
+            /* Keep weekend red even for outside days */
+            .rdp-table tbody tr > td:nth-child(1) .rdp-day_outside .rdp-day_button,
+            .rdp-table tbody tr > td:nth-child(7) .rdp-day_outside .rdp-day_button {
+              color: #ef4444 !important;
+            }
+            
+            /* Selected state - blue background with white text */
+            .rdp-day_selected .rdp-day_button {
+              background-color: #3b82f6 !important; /* blue-500 */
+              color: white !important;
+            }
+            
+            .dark .rdp-day_selected .rdp-day_button {
+              background-color: #3b82f6 !important;
+              color: white !important;
+            }
+            
+            /* Hover state */
+            .rdp-day_button:hover {
+              background-color: #f3f4f6 !important; /* gray-100 */
+            }
+            
+            .dark .rdp-day_button:hover {
+              background-color: #1f2937 !important; /* gray-800 */
+            }
+            
+            /* Selected hover */
+            .rdp-day_selected .rdp-day_button:hover {
+              background-color: #2563eb !important; /* blue-600 */
+            }
+            
+            .dark .rdp-day_selected .rdp-day_button:hover {
+              background-color: #2563eb !important;
+            }
+            
+            /* Today indicator - ring border */
+            .rdp-day_today .rdp-day_button {
+              box-shadow: 0 0 0 2px #3b82f6 !important;
+            }
+            
+            /* Disabled state */
+            .rdp-day_disabled .rdp-day_button {
+              opacity: 0.3;
+              cursor: not-allowed;
+            }
           `}</style>
           {React.createElement(
             DayPicker as any,
@@ -212,20 +302,20 @@ export function DatePickerInput(
                   "text-sm font-semibold text-gray-800 dark:text-gray-100 tracking-wide",
                 nav: "flex items-center gap-3",
                 button_previous:
-                  "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200",
+                  "text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300",
                 button_next:
-                  "text-gray-500 hover:text-gray-800 dark:hover:text-gray-200",
+                  "text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300",
                 table: "w-full border-collapse",
                 head_row: "text-[11px] text-gray-500",
                 head_cell: "text-center font-medium p-1",
                 row: "",
                 cell: "p-1",
-                day: "w-9 h-9 rounded-lg text-sm flex items-center justify-center hover:bg-gray-100 dark:hover:bg-white/10",
-                day_selected:
-                  "bg-black text-white dark:bg-white dark:text-black hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black",
-                day_today: "ring-1 ring-black/20 dark:ring-white/30",
-                day_outside: "text-gray-300 dark:text-gray-300",
-                day_disabled: "opacity-30",
+                day: "w-9 h-9 rounded-lg text-sm flex items-center justify-center",
+                day_button: "",
+                day_selected: "",
+                day_today: "",
+                day_outside: "",
+                day_disabled: "",
               },
             } as any
           )}

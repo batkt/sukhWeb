@@ -13,6 +13,11 @@ import {
   X,
   Eye,
   Columns3Cog,
+  UserPlus,
+  FileDown,
+  FileUp,
+  FilePlus,
+  LayoutTemplate,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +40,7 @@ import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import { getPaymentStatusLabel } from "@/lib/utils";
 import LordIcon from "@/components/ui/LordIcon";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
@@ -58,8 +64,8 @@ export const ALL_COLUMNS = [
   { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
   { key: "turul", label: "Төрөл", default: false },
   // { key: "aimag", label: "Аймаг", default: false },
-  { key: "duureg", label: "Дүүрэг", default: false },
-  { key: "horoo", label: "Хороо", default: false },
+  { key: "duureg", label: "Дүүрэг", default: true },
+  { key: "horoo", label: "Хороо", default: true },
   // { key: "baingiinKhayag", label: "Байнгын хаяг", default: false },
 
   // { key: "gereeniiOgnoo", label: "Гэрээний огноо", default: false },
@@ -75,16 +81,17 @@ export const ALL_COLUMNS = [
   // { key: "suhTulbur", label: "СӨХ төлбөр", default: false },
   // { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
   // { key: "niitTulbur", label: "Нийт төлбөр", default: false },
-  { key: "bairniiNer", label: "Байрны нэр", default: false },
+  { key: "bairniiNer", label: "Байрны нэр", default: true },
   { key: "orts", label: "Орц", default: false },
   { key: "toot", label: "Тоот", default: false },
   { key: "davkhar", label: "Давхар", default: false },
+  { key: "ognoo", label: "Үүссэн огноо", default: true },
   // { key: "temdeglel", label: "Тэмдэглэл", default: false },
 ];
 
 export default function Geree() {
   const router = useRouter();
-  const DEFAULT_HIDDEN = ["aimag", "duureg", "horoo"];
+  const DEFAULT_HIDDEN = ["aimag"];
 
   // Which section to show: contracts, residents, or employees
   const [activeTab, setActiveTab] = useState<
@@ -123,6 +130,19 @@ export default function Geree() {
     null
   );
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  const residentExcelInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingResidents, setIsUploadingResidents] = useState(false);
+
+  // Stable date formatter to avoid SSR/CSR timezone mismatches
+  const dateFmt = useMemo(
+    () => new Intl.DateTimeFormat("mn-MN", { timeZone: "UTC" }),
+    []
+  );
+  const formatDateValue = (v: any): string => {
+    if (!v) return "-";
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? "-" : dateFmt.format(d);
+  };
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
@@ -384,6 +404,63 @@ export default function Geree() {
   const [resPageSize, setResPageSize] = useState(20);
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
+
+  // Canonical status map from nekhemjlekhiinTuukh by resident (_id)
+  const [tuluvByResidentId, setTuluvByResidentId] = useState<
+    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
+  >({});
+
+  // Fetch latest payment status per resident from nekhemjlekhiinTuukh (canonical source)
+  useEffect(() => {
+    const run = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 1000,
+            query: JSON.stringify({
+              baiguullagiinId: ajiltan.baiguullagiinId,
+              barilgiinId: selectedBuildingId || barilgiinId || null,
+            }),
+          },
+        });
+        const list: any[] = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+        const byId: Record<string, { label: string; ts: number }> = {};
+        list.forEach((it: any) => {
+          const osId = String(it?.orshinSuugchId || "");
+          if (!osId) return;
+          const label = getPaymentStatusLabel(it);
+          const ts = new Date(
+            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
+          ).getTime();
+          const cur = byId[osId];
+          if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
+        });
+        const out: Record<
+          string,
+          "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
+        > = {};
+        Object.entries(byId).forEach(([k, v]) => {
+          const l = v.label as any;
+          out[k] =
+            l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
+              ? l
+              : "Тодорхойгүй";
+        });
+        setTuluvByResidentId(out);
+      } catch {
+        setTuluvByResidentId({});
+      }
+    };
+    run();
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
   // Editing flags
   const [editingResident, setEditingResident] = useState<any | null>(null);
@@ -694,68 +771,92 @@ export default function Geree() {
         (r: any) => String(r?._id || r?.id || "") === String(id || "")
       );
 
+    const getStringValue = (val: any) => {
+      if (typeof val === "object" && val !== null) {
+        return val.ner || val.kod || JSON.stringify(val);
+      }
+      return val || "-";
+    };
+
     switch (columnKey) {
       case "ovog":
-        return contract.ovog || "-";
+        return getStringValue(contract.ovog);
       case "ner":
-        return contract.ner || "-";
+        const nerVal = contract.ner;
+        if (typeof nerVal === "object" && nerVal !== null) {
+          return `${nerVal.ner || ""} ${nerVal.kod || ""}`.trim() || "-";
+        }
+        return nerVal || "-";
       case "register":
-        return contract.register || "-";
+        return getStringValue(contract.register);
       case "gereeniiDugaar":
-        return contract.gereeniiDugaar || "-";
+        return getStringValue(contract.gereeniiDugaar);
       case "gereeniiOgnoo":
-        return contract.gereeniiOgnoo
-          ? new Date(contract.gereeniiOgnoo).toLocaleDateString("mn-MN")
-          : "-";
+        return formatDateValue(contract.gereeniiOgnoo);
       case "toot":
         return contract.toot !== undefined && contract.toot !== null
           ? String(contract.toot)
           : "-";
       case "davkhar":
-        return contract.davkhar || "-";
+        return getStringValue(contract.davkhar);
 
       case "aimag": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return contract.aimag || resident?.aimag || contract.khayag || "-";
+        return getStringValue(
+          contract.aimag || resident?.aimag || contract.khayag
+        );
       }
       case "duureg": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return contract.duureg || resident?.duureg || "-";
+        if (contract.duureg || resident?.duureg)
+          return getStringValue(contract.duureg || resident?.duureg);
+        const addr = String(contract.sukhBairshil || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        // Fallback: use second token as duureg/sum; else first
+        return getStringValue(addr[1] || addr[0]);
       }
       case "horoo": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return contract.horoo || resident?.horoo || "-";
+        if (contract.horoo || resident?.horoo)
+          return getStringValue(contract.horoo || resident?.horoo);
+        const addr = String(contract.sukhBairshil || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        // Fallback: use third token as horoo; else empty
+        return getStringValue(addr[2]);
       }
       case "baingiinKhayag": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return (
+        return getStringValue(
           contract.baingiinKhayag ||
-          contract.bairniiNer ||
-          resident?.khayag ||
-          resident?.soh ||
-          "-"
+            contract.bairniiNer ||
+            resident?.khayag ||
+            resident?.soh
         );
       }
       case "bairniiNer": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return contract.bairniiNer || resident?.bairniiNer || "-";
+        return getStringValue(
+          contract.bairniiNer || contract.bairNer || resident?.bairniiNer
+        );
       }
       case "orts": {
         const resident = findResidentById(contract.orshinSuugchId);
-        return contract.orts || resident?.orts || "-";
+        return getStringValue(contract.orts || resident?.orts);
       }
       case "duusakhOgnoo":
-        return contract.duusakhOgnoo
-          ? new Date(contract.duusakhOgnoo).toLocaleDateString("mn-MN")
-          : "-";
+        return formatDateValue(contract.duusakhOgnoo);
       case "khugatsaa":
-        return contract.khugatsaa || "-";
+        return getStringValue(contract.khugatsaa);
       case "turul":
-        return contract.turul || "-";
+        return getStringValue(contract.turul);
       case "zoriulalt":
-        return contract.zoriulalt || "-";
+        return getStringValue(contract.zoriulalt);
       case "talbainDugaar":
-        return contract.talbainDugaar || "-";
+        return getStringValue(contract.talbainDugaar);
       case "talbainKhemjee":
         return contract.talbainKhemjee ? `${contract.talbainKhemjee} м²` : "-";
       case "sariinTurees":
@@ -769,11 +870,24 @@ export default function Geree() {
       case "utas":
         return Array.isArray(contract.utas) && contract.utas.length > 0
           ? contract.utas.join(", ")
-          : contract.utas || "-";
+          : getStringValue(contract.utas);
       case "mail":
-        return contract.mail || contract.email || "-";
+        return getStringValue(contract.mail || contract.email);
       case "khayag":
-        return contract.khayag || "-";
+        return getStringValue(contract.khayag);
+      case "ognoo": {
+        const created = contract.createdAt
+          ? new Date(contract.createdAt)
+          : null;
+        const updated = contract.updatedAt
+          ? new Date(contract.updatedAt)
+          : null;
+        const show =
+          updated && created && updated.getTime() !== created.getTime()
+            ? updated
+            : created || updated;
+        return show ? dateFmt.format(show) : "-";
+      }
       default:
         return "-";
     }
@@ -866,15 +980,92 @@ export default function Geree() {
         key: col.key,
       }));
 
+      // Prepare data source with computed fields (e.g., ognoo)
+      const dataSrc = (response.data?.jagsaalt || []).map((row: any) => {
+        const created = row.createdAt ? new Date(row.createdAt) : null;
+        const updated = row.updatedAt ? new Date(row.updatedAt) : null;
+        const showDate =
+          updated && created && updated.getTime() !== created.getTime()
+            ? updated
+            : created || updated;
+        return {
+          ...row,
+          ognoo: showDate ? showDate.toLocaleDateString("mn-MN") : undefined,
+        };
+      });
+
       excel
         .addSheet("Гэрээний жагсаалт")
         .addColumns(columns)
-        .addDataSource(response.data?.jagsaalt || [])
+        .addDataSource(dataSrc)
         .saveAs("Гэрээний_жагсаалт.xlsx");
 
       openSuccessOverlay("Excel файл амжилттай татагдлаа");
     } catch (error) {
       openErrorOverlay("Excel файл татахад алдаа гарлаа");
+    }
+  };
+
+  // Download residents Excel template
+  const handleDownloadResidentsTemplate = async () => {
+    try {
+      const resp = await uilchilgee(token || undefined).get(
+        `/orshinSuugchExcelTemplate`,
+        { responseType: "blob" }
+      );
+      const blob = new Blob([resp.data], {
+        type:
+          resp.headers["content-type"] ||
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `orshin_suugch_template.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      openSuccessOverlay("Загвар амжилттай татагдлаа");
+    } catch (e) {
+      openErrorOverlay("Загвар татахад алдаа гарлаа");
+    }
+  };
+
+  // Trigger hidden input for residents Excel import
+  const handleResidentsExcelImportClick = () => {
+    residentExcelInputRef.current?.click();
+  };
+
+  // Handle residents Excel file import
+  const onResidentsExcelFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      e.currentTarget.value = "";
+      return;
+    }
+    try {
+      setIsUploadingResidents(true);
+      const form = new FormData();
+      form.append("excelFile", file);
+      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+      if (barilgiinId) form.append("barilgiinId", barilgiinId);
+
+      await uilchilgee(token).post(`/orshinSuugchExcelImport`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      openSuccessOverlay("Оршин суугчдын Excel импорт амжилттай");
+      await orshinSuugchJagsaaltMutate();
+    } catch (err) {
+      openErrorOverlay("Импорт хийхэд алдаа гарлаа");
+    } finally {
+      setIsUploadingResidents(false);
+      e.currentTarget.value = "";
     }
   };
 
@@ -1454,48 +1645,88 @@ export default function Geree() {
                 }}
                 className="btn-minimal"
               >
-                Гэрээ байгуулах
+                <FilePlus className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Шинэ</span>
               </button>
               <button
                 onClick={() => setShowList2Modal(true)}
                 className="btn-minimal"
+                aria-label="Гэрээний загварууд"
+                title="Гэрээний загварууд"
               >
-                Гэрээний Загвар
+                <LayoutTemplate className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Загвар</span>
               </button>
               <button
                 onClick={() => setShowTemplatesModal(true)}
                 className="btn-minimal"
+                aria-label="Загвар татах"
+                title="Загвар татах"
               >
-                Загвар татах
+                <FileDown className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Татах</span>
               </button>
             </>
           )}
           {activeTab === "residents" && (
-            <button
-              onClick={() => {
-                setCurrentStep(1);
-                setEditingContract(null);
-                setEditingResident(null);
-                setNewResident({
-                  ovog: "",
-                  ner: "",
-                  register: "",
-                  utas: [""],
-                  mail: "",
-                  khayag: "",
-                  aimag: "Улаанбаатар",
-                  duureg: "",
-                  horoo: "",
-                  nevtrekhNer: "",
-                  nuutsUg: "",
-                  turul: "Үндсэн",
-                });
-                setShowResidentModal(true);
-              }}
-              className="btn-minimal"
-            >
-              Оршин суугч нэмэх
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setCurrentStep(1);
+                  setEditingContract(null);
+                  setEditingResident(null);
+                  setNewResident({
+                    ovog: "",
+                    ner: "",
+                    register: "",
+                    utas: [""],
+                    mail: "",
+                    khayag: "",
+                    aimag: "Улаанбаатар",
+                    duureg: "",
+                    horoo: "",
+                    nevtrekhNer: "",
+                    nuutsUg: "",
+                    turul: "Үндсэн",
+                  });
+                  setShowResidentModal(true);
+                }}
+                className="btn-minimal"
+                aria-label="Оршин суугч нэмэх"
+                title="Оршин суугч нэмэх"
+              >
+                <UserPlus className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Нэмэх</span>
+              </button>
+
+              <button
+                onClick={handleDownloadResidentsTemplate}
+                className="btn-minimal"
+                aria-label="Загвар татах"
+                title="Оршин суугчийн Excel загвар татах"
+              >
+                <FileDown className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Загвар</span>
+              </button>
+
+              <button
+                onClick={handleResidentsExcelImportClick}
+                className="btn-minimal"
+                disabled={isUploadingResidents}
+                aria-label="Excel-ээс импортлох"
+                title="Excel-ээс оршин суугчдыг импортлох"
+              >
+                <FileUp className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">Оруулах</span>
+              </button>
+              <input
+                ref={residentExcelInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={onResidentsExcelFileChange}
+                className="hidden"
+              />
+            </>
           )}
           {activeTab === "employees" && (
             <button
@@ -1515,8 +1746,11 @@ export default function Geree() {
                 setShowEmployeeModal(true);
               }}
               className="btn-minimal"
+              aria-label="Ажилтан нэмэх"
+              title="Ажилтан нэмэх"
             >
-              Ажилтан нэмэх
+              <UserPlus className="w-5 h-5" />
+              <span className="hidden sm:inline text-xs ml-1">Нэмэх</span>
             </button>
           )}
 
@@ -1527,10 +1761,11 @@ export default function Geree() {
                 className="btn-minimal"
                 aria-expanded={showColumnSelector}
                 aria-haspopup="menu"
+                aria-label="Багана сонгох"
                 title="Багана сонгох"
               >
                 <Columns3Cog className="w-5 h-5" />
-                <span>Багана сонгох</span>
+                <span className="hidden sm:inline text-xs ml-1">Багана</span>
               </button>
 
               {showColumnSelector && (
@@ -1770,7 +2005,11 @@ export default function Geree() {
                             {(resPage - 1) * resPageSize + idx + 1}
                           </td>
                           <td className="p-1 text-theme whitespace-nowrap text-center">
-                            {p.ner}
+                            {typeof p.ner === "object"
+                              ? `${p.ner?.ner || ""} ${
+                                  p.ner?.kod || ""
+                                }`.trim() || "-"
+                              : p.ner || "-"}
                           </td>
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
@@ -1781,9 +2020,28 @@ export default function Geree() {
                             )}
                           </td>
                           <td className="p-1 text-center">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold">
-                              {p.tuluv || "Төлсөн"}
-                            </span>
+                            {(() => {
+                              const id = String(p?._id || "");
+                              const label =
+                                id && tuluvByResidentId[id]
+                                  ? (tuluvByResidentId[id] as any)
+                                  : getPaymentStatusLabel(p);
+                              const cls =
+                                label === "Төлсөн"
+                                  ? "badge-paid"
+                                  : label === "Хугацаа хэтэрсэн"
+                                  ? "bg-red-500 text-red-800"
+                                  : label === "Төлөөгүй"
+                                  ? "badge-unpaid"
+                                  : "badge-neutral";
+                              return (
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}
+                                >
+                                  {label}
+                                </span>
+                              );
+                            })()}
                           </td>
                           <td className="p-1 whitespace-nowrap">
                             <div className="flex gap-2 justify-center">
@@ -1900,7 +2158,11 @@ export default function Geree() {
                             {(empPage - 1) * empPageSize + idx + 1}
                           </td>
                           <td className="p-1 text-theme whitespace-nowrap text-center">
-                            {p.ner}
+                            {typeof p.ner === "object"
+                              ? `${p.ner?.ner || ""} ${
+                                  p.ner?.kod || ""
+                                }`.trim() || "-"
+                              : p.ner || "-"}
                           </td>
 
                           <td className="p-1 text-center">
@@ -1998,7 +2260,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[85svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[88svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -2640,7 +2902,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto sm:overflow-y-visible modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[85svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto sm:overflow-y-visible modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[90svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">

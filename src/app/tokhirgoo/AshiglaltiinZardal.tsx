@@ -601,7 +601,7 @@ export default function AshiglaltiinZardluud() {
                   />
                 </div>
                 <MButton
-                  className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
+                  className="btn-minimal w-full sm:w-auto sm:mt-6"
                   onClick={saveInvoiceSchedule}
                 >
                   Хадгалах
@@ -692,8 +692,7 @@ export default function AshiglaltiinZardluud() {
                 );
               })}
 
- 
-              <div className="box sticky bottom-0 z-[5] border-t mt-4">
+              <div className="box bottom-0 z-[5] border-t mt-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
                   <div className="text-theme flex-1">
                     {(() => {
@@ -713,12 +712,12 @@ export default function AshiglaltiinZardluud() {
                       variant="default"
                       onClick={() => setEditedTariffs({})}
                       disabled={Object.keys(editedTariffs).length === 0}
-                      className="btn-cancel btn-minimal"
+                      className="btn-minimal"
                     >
                       Цуцлах
                     </MButton>
                     <MButton
-                      className="btn-minimal btn-save"
+                      className="btn-minimal"
                       onClick={saveAllTariffs}
                       disabled={(() => {
                         const itemsById = new Map(
@@ -746,13 +745,19 @@ export default function AshiglaltiinZardluud() {
         title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
         opened={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        classNames={{ content: "modal-surface modal-responsive" }}
+        classNames={{
+          content: "modal-surface modal-responsive",
+          header:
+            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+          title: "text-theme font-semibold",
+          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+        }}
         overlayProps={{ opacity: 0.5, blur: 6 }}
         centered
       >
         <div className="space-y-4 mt-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-theme">
               Зардлын нэр
             </label>
             <MTextInput
@@ -761,18 +766,20 @@ export default function AshiglaltiinZardluud() {
                 setFormData({ ...formData, ner: e.currentTarget.value })
               }
               placeholder="Зардлын нэр оруулах"
-              className="text-sm"
+              className="text-sm text-theme"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Төрөл</label>
+            <label className="block text-sm font-medium mb-1 text-theme">
+              Төрөл
+            </label>
             <MSelect
               value={formData.turul}
               onChange={(value) =>
                 setFormData({ ...formData, turul: value ?? "" })
               }
-              className="w-full"
+              className="w-full text-theme"
               data={expenseTypes.map((type) => ({
                 label: type,
                 value: type,
@@ -783,7 +790,7 @@ export default function AshiglaltiinZardluud() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-theme">
               Зардлын төрөл
             </label>
             <MSelect
@@ -792,7 +799,7 @@ export default function AshiglaltiinZardluud() {
               onChange={(value) =>
                 setFormData({ ...formData, lift: (value as string) ?? null })
               }
-              className="w-full"
+              className="w-full text-theme"
               data={[
                 { label: "Лифт", value: "Лифт" },
                 { label: "Энгийн", value: "Энгийн" },
@@ -803,7 +810,9 @@ export default function AshiglaltiinZardluud() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Тариф (₮)</label>
+            <label className="block text-sm font-medium mb-1 text-theme">
+              Тариф (₮)
+            </label>
             <MNumberInput
               value={formData.tariff}
               onChange={(v) =>
@@ -816,7 +825,7 @@ export default function AshiglaltiinZardluud() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label className="block text-sm font-medium mb-1 text-theme">
               Суурь хураамж
             </label>
             <MNumberInput
@@ -841,18 +850,22 @@ export default function AshiglaltiinZardluud() {
                 setFormData({ ...formData, nuatBodokhEsekh: e.target.checked })
               }
               className="mr-2"
+              style={{ accentColor: "var(--panel-text)" }}
             />
-            <label className="text-sm font-medium">НӨАТ бодох</label>
+            <label className="text-sm font-medium text-theme">НӨАТ бодох</label>
           </div>
           <div className="mt-6 flex justify-end gap-2">
             <MButton
-              variant="default"
               onClick={() => setIsModalOpen(false)}
-              className="btn-cancel btn-minimal"
+              className="btn-minimal"
             >
               Болих
             </MButton>
-            <MButton className="btn-minimal btn-save" onClick={handleSave}>
+            <MButton
+              className="btn-minimal h-11"
+              onClick={handleSave}
+              data-modal-primary
+            >
               Хадгалах
             </MButton>
           </div>

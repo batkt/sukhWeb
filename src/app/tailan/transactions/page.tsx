@@ -9,6 +9,8 @@ import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function TransactionsPage() {
   const { token, ajiltan, barilgiinId } = useAuth();
@@ -161,9 +163,11 @@ export default function TransactionsPage() {
         >
           {loading ? "Татаж байна..." : "Хайх"}
         </button>
-        <button className="btn-minimal" onClick={exportCsv}>
-          Export CSV
-        </button>
+        <IconTextButton
+          onClick={exportCsv}
+          icon={<Download className="w-5 h-5" />}
+          label="CSV татах"
+        />
         <div className="ml-auto flex items-center gap-2">
           <PageSongokh
             value={pageSize}
@@ -231,21 +235,19 @@ export default function TransactionsPage() {
       <div className="flex items-center justify-between mt-4">
         <div>Нийт: {total}</div>
         <div className="flex items-center gap-2">
-          <button
-            className="btn-minimal"
+          <IconTextButton
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Өмнөх
-          </button>
+            icon={<ChevronLeft className="w-4 h-4" />}
+            label="Өмнөх"
+          />
           <div>Хуудас {page}</div>
-          <button
-            className="btn-minimal"
+          <IconTextButton
             disabled={page * pageSize >= total}
             onClick={() => setPage((p) => p + 1)}
-          >
-            Дараах
-          </button>
+            icon={<ChevronRight className="w-4 h-4" />}
+            label="Дараах"
+          />
         </div>
       </div>
     </div>

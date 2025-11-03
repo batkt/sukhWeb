@@ -11,7 +11,15 @@ import {
   ChevronLeft,
   ChevronRight,
   Printer,
+  Download,
 } from "lucide-react";
+import IconTextButton from "@/components/ui/IconTextButton";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+} from "@/lib/utils";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import LordIcon from "@/components/ui/LordIcon";
 import matchesSearch from "../../../tools/function/matchesSearch";
@@ -228,6 +236,9 @@ const InvoiceModal = ({
   // Latest invoice rows and total for accurate amounts
   const [invRows, setInvRows] = React.useState<any[]>([]);
   const [invTotal, setInvTotal] = React.useState<number | null>(null);
+  const [paymentStatusLabel, setPaymentStatusLabel] = React.useState<
+    "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
+  >("Тодорхойгүй");
   const invValid = React.useMemo(() => {
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
     const invSum = invRows.reduce(
@@ -300,6 +311,7 @@ const InvoiceModal = ({
           : Array.isArray(latest?.zardluud)
           ? latest.zardluud
           : [];
+        setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
             const num = Number(v);
@@ -327,6 +339,7 @@ const InvoiceModal = ({
       } catch (e) {
         setInvRows([]);
         setInvTotal(null);
+        setPaymentStatusLabel("Тодорхойгүй");
       }
     };
     run();
@@ -702,14 +715,15 @@ const InvoiceModal = ({
                           </span>
                           <span
                             className={`badge-status ${
-                              resident?.tuluv === "Төлсөн"
+                              paymentStatusLabel === "Төлсөн"
                                 ? "badge-paid"
-                                : resident?.tuluv === "Төлөөгүй"
+                                : paymentStatusLabel === "Төлөөгүй" ||
+                                  paymentStatusLabel === "Хугацаа хэтэрсэн"
                                 ? "badge-unpaid"
                                 : "badge-unknown"
                             }`}
                           >
-                            {resident?.tuluv || "Тодорхойгүй"}
+                            {paymentStatusLabel}
                           </span>
                         </div>
                         <span className="text-sm text-slate-500">
@@ -726,18 +740,18 @@ const InvoiceModal = ({
                 <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
                   <div className="flex justify-end gap-3">
                     <button
-                      onClick={() => window.print()}
-                      className="btn-minimal btn-print"
-                      data-prevent-enter
-                    >
-                      Хэвлэх
-                    </button>
-                    <button
                       onClick={onClose}
                       className="btn-minimal btn-cancel"
                       data-modal-primary
                     >
                       Хаах
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="btn-minimal btn-print"
+                      data-prevent-enter
+                    >
+                      Хэвлэх
                     </button>
                   </div>
                 </div>
@@ -753,6 +767,9 @@ const InvoiceModal = ({
 export default function InvoicingZardluud() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
+  const [tuluvByResidentId, setTuluvByResidentId] = useState<
+    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
+  >({});
   const [selectedSukh, setSelectedSukh] = useState("");
   const [selectedDavkhar, setSelectedDavkhar] = useState("");
   const [selectedBarilga, setSelectedBarilga] = useState("");
@@ -843,6 +860,58 @@ export default function InvoicingZardluud() {
 
   const residents = orshinSuugchGaralt?.jagsaalt || [];
 
+  // Fetch latest payment status per resident from nekhemjlekhiinTuukh (canonical source)
+  useEffect(() => {
+    const run = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 1000,
+            query: {
+              baiguullagiinId: ajiltan.baiguullagiinId,
+              barilgiinId: selectedBuildingId || barilgiinId || null,
+            },
+          },
+        });
+        const list: any[] = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+        const byId: Record<string, { label: string; ts: number }> = {};
+        list.forEach((it) => {
+          const osId = String(it?.orshinSuugchId || "");
+          if (!osId) return;
+          const label = getPaymentStatusLabel(it);
+          const ts = new Date(
+            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
+          ).getTime();
+          const cur = byId[osId];
+          if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
+        });
+        const out: Record<
+          string,
+          "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
+        > = {};
+        Object.entries(byId).forEach(([k, v]) => {
+          const l = v.label as any;
+          out[k] =
+            l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
+              ? l
+              : "Тодорхойгүй";
+        });
+        setTuluvByResidentId(out);
+      } catch {
+        setTuluvByResidentId({});
+      }
+    };
+    run();
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+
   const displayResidents = useMemo(() => {
     let items = [...residents];
 
@@ -872,7 +941,14 @@ export default function InvoicingZardluud() {
     }
 
     if (selectedTuluv) {
-      items = items.filter((r: any) => r.tuluv === selectedTuluv);
+      items = items.filter((r: any) => {
+        const id = String(r?._id || "");
+        const label =
+          id && tuluvByResidentId[id]
+            ? (tuluvByResidentId[id] as any)
+            : getPaymentStatusLabel(r);
+        return label === selectedTuluv;
+      });
     }
 
     if (selectedDavkhar)
@@ -890,6 +966,7 @@ export default function InvoicingZardluud() {
     selectedDavkhar,
     selectedBarilga,
     selectedTurul,
+    tuluvByResidentId,
   ]);
 
   const totalRecords = displayResidents.length;
@@ -1121,12 +1198,22 @@ export default function InvoicingZardluud() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {(() => {
             const totalResidents = displayResidents.length;
-            const paidCount = displayResidents.filter(
-              (r: any) => r.tuluv === "Төлсөн"
-            ).length;
-            const unpaidCount = displayResidents.filter(
-              (r: any) => r.tuluv === "Төлөөгүй"
-            ).length;
+            const paidCount = displayResidents.filter((r: any) => {
+              const id = String(r?._id || "");
+              const label =
+                id && tuluvByResidentId[id]
+                  ? (tuluvByResidentId[id] as any)
+                  : getPaymentStatusLabel(r);
+              return label === "Төлсөн";
+            }).length;
+            const unpaidCount = displayResidents.filter((r: any) => {
+              const id = String(r?._id || "");
+              const label =
+                id && tuluvByResidentId[id]
+                  ? (tuluvByResidentId[id] as any)
+                  : getPaymentStatusLabel(r);
+              return label === "Төлөөгүй";
+            }).length;
             const totalAmount = displayResidents.reduce(
               (sum: number, r: any) => {
                 // This would need actual invoice data, for now using placeholder
@@ -1174,7 +1261,6 @@ export default function InvoicingZardluud() {
           ))}
         </div>
 
-        {/* Filters Section */}
         <motion.div
           className="rounded-3xl p-8 bg-white/90 backdrop-blur-xl shadow-xl border border-white/30"
           initial={{ opacity: 0, y: 20 }}
@@ -1187,11 +1273,13 @@ export default function InvoicingZardluud() {
                 value={selectedDate}
                 onChange={(v: string | null) => setSelectedDate(v)}
                 placeholder="Огноо сонгох"
-                className="w-[320px]"
+                className="!w-[360px]"
                 clearable
                 locale="mn"
                 valueFormat="YYYY-MM-DD"
-                classNames={{ input: "text-theme neu-panel placeholder:text-theme h-12" }}
+                classNames={{
+                  input: "text-theme neu-panel placeholder:text-theme h-12",
+                }}
               />
               <TusgaiZagvar
                 value={selectedTurul}
@@ -1210,6 +1298,7 @@ export default function InvoicingZardluud() {
                 options={[
                   { value: "", label: "Бүх төлөв" },
                   { value: "Төлсөн", label: "Төлсөн" },
+                  { value: "Хугацаа хэтэрсэн", label: "Хугацаа хэтэрсэн" },
                   { value: "Төлөөгүй", label: "Төлөөгүй" },
                   { value: "Тодорхойгүй", label: "Тодорхойгүй" },
                 ]}
@@ -1387,11 +1476,11 @@ export default function InvoicingZardluud() {
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-theme font-semibold text-sm">
                               {resident?.ovog?.charAt(0) || "?"}
                             </div>
                             <div className="min-w-0">
-                              <div className="font-semibold text-gray-800 truncate">
+                              <div className="font-semibold text-theme truncate">
                                 {resident.ovog} {resident.ner}
                               </div>
                               <div className="text-xs text-gray-500 truncate">
@@ -1414,17 +1503,27 @@ export default function InvoicingZardluud() {
                           {resident.utas || "-"}
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              resident.tuluv === "Төлсөн"
-                                ? "bg-green-100 text-green-800"
-                                : resident.tuluv === "Төлөөгүй"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {resident.tuluv || "Тодорхойгүй"}
-                          </span>
+                          {(() => {
+                            const id = String(resident?._id || "");
+                            const label =
+                              id && tuluvByResidentId[id]
+                                ? (tuluvByResidentId[id] as any)
+                                : getPaymentStatusLabel(resident);
+                            const cls =
+                              label === "Төлсөн"
+                                ? "badge-paid"
+                                : label === "Төлөөгүй" ||
+                                  label === "Хугацаа хэтэрсэн"
+                                ? "badge-unpaid"
+                                : "badge-neutral";
+                            return (
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}
+                              >
+                                {label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
                           <div
@@ -1629,32 +1728,32 @@ export default function InvoicingZardluud() {
                       </div>
 
                       <div className="mt-4 flex items-center justify-between">
-                        <button
-                          className="btn-minimal btn-back"
+                        <IconTextButton
+                          variant="minimal"
                           disabled={historyIndex <= 0}
                           onClick={() =>
                             setHistoryIndex((i) => Math.max(0, i - 1))
                           }
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                          Өмнөх
-                        </button>
+                          icon={<ChevronLeft className="w-4 h-4" />}
+                          label="Өмнөх"
+                          showLabelFrom="sm"
+                        />
                         <div className="text-sm">
                           {Math.min(historyIndex + 1, historyItems.length)} /{" "}
                           {historyItems.length}
                         </div>
-                        <button
-                          className="btn-minimal btn-next"
+                        <IconTextButton
+                          variant="minimal"
                           disabled={historyIndex >= historyItems.length - 1}
                           onClick={() =>
                             setHistoryIndex((i) =>
                               Math.min(historyItems.length - 1, i + 1)
                             )
                           }
-                        >
-                          Дараах
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
+                          icon={<ChevronRight className="w-4 h-4" />}
+                          label="Дараах"
+                          showLabelFrom="sm"
+                        />
                       </div>
                     </>
                   )}
