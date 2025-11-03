@@ -6,7 +6,7 @@ import {
   DateRange,
   SelectRangeEventHandler,
 } from "react-day-picker";
-import "react-day-picker/style.css";
+
 import dayjs from "dayjs";
 
 // Types mimicking the subset of Mantine's DatePickerInput we use in the app
