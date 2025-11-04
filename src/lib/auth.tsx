@@ -342,6 +342,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem("newtrekhNerTurees", khereglech.nevtrekhNer);
         }
 
+        // Offline fallback: if no internet, allow login using cached session
+        try {
+          const online =
+            typeof navigator !== "undefined" ? navigator.onLine : true;
+          if (!online) {
+            const cookies = parseCookies();
+            const storedToken = cookies.tureestoken;
+            const storedAjiltanRaw = localStorage.getItem("ajiltan");
+            if (
+              storedAjiltanRaw &&
+              storedAjiltanRaw !== "undefined" &&
+              storedAjiltanRaw !== "null"
+            ) {
+              const cachedAjiltan: Ajiltan = JSON.parse(storedAjiltanRaw);
+              // If username matches cached one, proceed to offline mode
+              if (
+                !khereglech.nevtrekhNer ||
+                cachedAjiltan.nevtrekhNer === khereglech.nevtrekhNer
+              ) {
+                const loginData = {
+                  token: storedToken || "offline-token",
+                  result: cachedAjiltan,
+                  permissionsData: { offlineFallback: true },
+                };
+                const ok = await processSuccessfulLogin(loginData);
+                if (ok) {
+                  toast.success("Оффлайн горимд нэвтэрлээ");
+                  return true;
+                }
+              }
+            }
+            toast.error(
+              "Оффлайн горимд өмнө нь нэг удаа нэвтэрсэн байх шаардлагатай"
+            );
+            return false;
+          }
+        } catch {}
+
         try {
           const loginResult = await performOnlineLogin(khereglech);
           const success = await processSuccessfulLogin(loginResult);

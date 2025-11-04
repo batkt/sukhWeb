@@ -29,6 +29,7 @@ import {
   isUnpaidLike,
   isOverdueLike,
 } from "@/lib/utils";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -82,7 +83,7 @@ export default function DansniiKhuulga() {
           baiguullagiinId: orgId,
           ...(branch ? { barilgiinId: branch } : {}),
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 500,
+          khuudasniiKhemjee: 20000,
           query: {
             baiguullagiinId: orgId,
             ...(branch ? { barilgiinId: branch } : {}),
@@ -229,6 +230,57 @@ export default function DansniiKhuulga() {
     container: khungulultRef.current,
   });
 
+  // Register guided tour for /tulbur/guilgeeTuukh
+  const tourSteps = useMemo<DriverStep[]>(
+    () => [
+      {
+        element: "#guilgee-date",
+        popover: {
+          title: "Огнооны шүүлтүүр",
+          description: "Эндээс хугацааны интервал сонгож жагсаалтыг шүүдэг.",
+        },
+      },
+      {
+        element: "#guilgee-status-filter",
+        popover: {
+          title: "Төлөвийн шүүлтүүр",
+          description:
+            "Төлсөн, Төлөөгүй эсвэл Хугацаа хэтэрсэн гэх мэт төлөвөөр ялгана.",
+        },
+      },
+      {
+        element: "#guilgee-nekhemjlekh-btn",
+        popover: {
+          title: "Нэхэмжлэх",
+          description: "Энд дарж нэхэмжлэхийн цонх нээнэ.",
+        },
+      },
+      // {
+      //   element: "#guilgee-excel-btn",
+      //   popover: {
+      //     title: "Excel татах",
+      //     description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+      //   },
+      // },
+      {
+        element: "#guilgee-table",
+        popover: {
+          title: "Жагсаалт",
+          description: "Гүйлгээний түүх энд харагдана.",
+        },
+      },
+      {
+        element: "#guilgee-pagination",
+        popover: {
+          title: "Хуудаслалт",
+          description: "Эндээс хуудсуудын хооронд шилжинэ.",
+        },
+      },
+    ],
+    []
+  );
+  useRegisterTourSteps("/tulbur/guilgeeTuukh", tourSteps);
+
   return (
     <div className="min-h-screen">
       <div className="flex items-center gap-3 mb-4">
@@ -275,41 +327,45 @@ export default function DansniiKhuulga() {
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <DatePickerInput
-                type="range"
-                locale="mn"
-                value={ekhlekhOgnoo}
-                onChange={setEkhlekhOgnoo}
-                size="sm"
-                radius="md"
-                variant="filled"
-                clearable
-                dropdownType="popover"
-                popoverProps={{
-                  position: "bottom-start",
-                  withinPortal: true,
-                  width: 320,
-                }}
-                placeholder="Огноо сонгох"
-                classNames={{
-                  input:
-                    "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
-                }}
-              />
-              <TusgaiZagvar
-                value={tuluvFilter}
-                onChange={(v: string) =>
-                  setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
-                }
-                options={[
-                  { value: "all", label: "Бүгд" },
-                  { value: "paid", label: "Төлсөн" },
-                  { value: "overdue", label: "Хугацаа хэтэрсэн" },
-                  { value: "unpaid", label: "Төлөөгүй" },
-                ]}
-                placeholder="Төлөв"
-                className="h-[40px] w-[160px]"
-              />
+              <div id="guilgee-date">
+                <DatePickerInput
+                  type="range"
+                  locale="mn"
+                  value={ekhlekhOgnoo}
+                  onChange={setEkhlekhOgnoo}
+                  size="sm"
+                  radius="md"
+                  variant="filled"
+                  clearable
+                  dropdownType="popover"
+                  popoverProps={{
+                    position: "bottom-start",
+                    withinPortal: true,
+                    width: 320,
+                  }}
+                  placeholder="Огноо сонгох"
+                  classNames={{
+                    input:
+                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                  }}
+                />
+              </div>
+              <div id="guilgee-status-filter">
+                <TusgaiZagvar
+                  value={tuluvFilter}
+                  onChange={(v: string) =>
+                    setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
+                  }
+                  options={[
+                    { value: "all", label: "Бүгд" },
+                    { value: "paid", label: "Төлсөн" },
+                    { value: "overdue", label: "Хугацаа хэтэрсэн" },
+                    { value: "unpaid", label: "Төлөөгүй" },
+                  ]}
+                  placeholder="Төлөв"
+                  className="h-[40px] w-[160px]"
+                />
+              </div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -318,6 +374,7 @@ export default function DansniiKhuulga() {
                 transition={{ duration: 0.3 }}
               >
                 <button
+                  id="guilgee-nekhemjlekh-btn"
                   onClick={() => setIsNekhemjlekhOpen(true)}
                   className="btn-minimal"
                 >
@@ -335,7 +392,8 @@ export default function DansniiKhuulga() {
                   Хөнгөлөлт
                 </button>
               </motion.div> */}
-              <motion.div
+              {/* <motion.div
+                id="guilgee-excel-btn"
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
@@ -344,14 +402,14 @@ export default function DansniiKhuulga() {
                   icon={<Download className="w-5 h-5" />}
                   label={t("Excel татах")}
                 />
-              </motion.div>
+              </motion.div> */}
             </div>
           </div>
         </div>
         <div className="table-surface overflow-hidden rounded-2xl w-full">
           <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
             <div className="max-h-[29vh] overflow-y-auto custom-scrollbar w-full">
-              <table className="table-ui text-sm min-w-full">
+              <table id="guilgee-table" className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
                     <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
@@ -476,16 +534,18 @@ export default function DansniiKhuulga() {
             <div className="text-theme/70">Нийт: {filteredItems.length}</div>
 
             <div className="flex items-center gap-3">
-              <PageSongokh
-                value={rowsPerPage}
-                onChange={(v) => {
-                  setRowsPerPage(v);
-                  setPage(1);
-                }}
-                className="text-xs px-2 py-1"
-              />
+              <span id="guilgee-page-size">
+                <PageSongokh
+                  value={rowsPerPage}
+                  onChange={(v) => {
+                    setRowsPerPage(v);
+                    setPage(1);
+                  }}
+                  className="text-xs px-2 py-1"
+                />
+              </span>
 
-              <div className="flex items-center gap-1">
+              <div id="guilgee-pagination" className="flex items-center gap-1">
                 <IconTextButton
                   disabled={page <= 1}
                   onClick={() => setPage(Math.max(1, page - 1))}

@@ -53,11 +53,7 @@ function Tokhirgoo() {
           text: "Барилгын тохиргоо",
           tsonkh: BarilgiinTokhirgoo,
         },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Тусламж",
-          tsonkh: TuslamjTokhirgoo,
-        },
+
         {
           icon: <Settings className="w-5 h-5" />,
           text: "И-Баримт",
@@ -94,6 +90,12 @@ function Tokhirgoo() {
         //   text: "И-мэйл",
         //   tsonkh: EmailTokhirgoo,
         // },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Тусламж",
+          tsonkh: TuslamjTokhirgoo,
+          comingSoon: true,
+        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Бааз",

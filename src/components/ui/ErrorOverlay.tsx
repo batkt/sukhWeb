@@ -21,6 +21,7 @@ export function ErrorOverlayHost() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [duration, setDuration] = useState(1800);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -46,13 +47,20 @@ export function ErrorOverlayHost() {
     return () => clearTimeout(t);
   }, [open, duration]);
 
-  if (typeof document === "undefined") return null;
+  // Resolve a stable portal container inside the React tree to avoid hydration mismatches
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById("portal-root") as HTMLElement | null;
+    setContainer(el || document.body);
+  }, []);
+
+  if (!container) return null;
 
   return createPortal(
     <div
       aria-live="assertive"
       aria-atomic="true"
-      className="fixed inset-0 z-[2201] pointer-events-none"
+      className="fixed inset-0 z-[3001] pointer-events-none"
     >
       <div className="absolute top-4 md:top-6 right-4 md:right-6 left-auto translate-x-0 flex flex-col items-end gap-2">
         <div
@@ -80,6 +88,6 @@ export function ErrorOverlayHost() {
         </div>
       </div>
     </div>,
-    document.body
+    container
   );
 }

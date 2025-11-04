@@ -513,213 +513,191 @@ export default function AshiglaltiinZardluud() {
   }
 
   return (
-    <>
-      <div className="grid grid-cols-12 gap-4">
-        <div className="xxl:col-span-6 col-span-12">
-          <div className="flex flex-col sm:flex-row sm:items-center border-b border-amber-200 px-4 sm:px-5 pb-2 pt-4 gap-3">
-            <h2 className="mr-auto text-theme font-medium">Тогтмол зардал</h2>
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
+      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
+        <div className="grid grid-cols-12 gap-4">
+          <div className="xxl:col-span-6 col-span-12">
+            <div className="flex flex-col sm:flex-row sm:items-center border-b border-gray-200 px-4 sm:px-5 pb-2 pt-4 gap-3">
+              <h2 className="mr-auto text-theme font-medium">Тогтмол зардал</h2>
 
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl">
-                <span className="text-sm font-medium text-theme">
-                  {liftEnabled ? "Лифт идэвхтэй:" : "Лифт идэвхгүй:"}
-                </span>
-                <MSwitch
-                  checked={liftEnabled}
-                  onChange={(event) => {
-                    const enabled = event.currentTarget.checked;
-                    setLiftEnabled(enabled);
-                    if (!enabled) {
-                      saveLiftSettings(null);
-                    }
-                  }}
-                />
-              </div>
-
-              {liftEnabled && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-3xl">
-                  <label className="text-sm font-medium text-theme">
-                    Дээд давхар:
-                  </label>
-                  <MNumberInput
-                    value={liftMaxFloor || undefined}
-                    onChange={(value) => {
-                      const numValue = value ? Number(value) : null;
-                      setLiftMaxFloor(numValue);
-                      if (numValue !== null && numValue > 0) {
-                        saveLiftSettings(numValue);
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl">
+                  <span className="text-sm font-medium text-theme">
+                    {liftEnabled ? "Лифт идэвхтэй:" : "Лифт идэвхгүй:"}
+                  </span>
+                  <MSwitch
+                    checked={liftEnabled}
+                    onChange={(event) => {
+                      const enabled = event.currentTarget.checked;
+                      setLiftEnabled(enabled);
+                      if (!enabled) {
+                        saveLiftSettings(null);
                       }
                     }}
-                    min={1}
-                    max={50}
-                    placeholder="Давхар"
-                    className="w-24 sm:w-20"
                   />
+                </div>
+
+                {liftEnabled && (
+                  <div className="flex items-center gap-2 px-4 py-2 rounded-3xl">
+                    <label className="text-sm font-medium text-theme">
+                      Дээд давхар:
+                    </label>
+                    <MNumberInput
+                      value={liftMaxFloor || undefined}
+                      onChange={(value) => {
+                        const numValue = value ? Number(value) : null;
+                        setLiftMaxFloor(numValue);
+                        if (numValue !== null && numValue > 0) {
+                          saveLiftSettings(numValue);
+                        }
+                      }}
+                      min={1}
+                      max={50}
+                      placeholder="Давхар"
+                      className="w-24 sm:w-20"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="text-sm text-theme mr-0 sm:mr-3">
+                Нийт: {ashiglaltiinZardluud.length}
+              </div>
+              <div
+                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-blue-500 p-2 text-theme hover:bg-blue-600 transition-colors"
+                onClick={() => openAddModal(false)}
+              >
+                <MTooltip label="Нэмэх">
+                  <PlusOutlined />
+                </MTooltip>
+              </div>
+            </div>
+
+            <div className="box">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                <div className="font-medium text-theme flex-1">
+                  Нэхэмжлэх илгээх тохиргоо
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-theme">Идэвхтэй</span>
+                  <MSwitch
+                    checked={invoiceActive}
+                    onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                  />
+                </div>
+              </div>
+              {invoiceActive && (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
+                  <div className="w-full sm:w-auto">
+                    <label className="block text-sm font-medium text-theme mb-1">
+                      Өдөр (сар бүр)
+                    </label>
+                    <MNumberInput
+                      min={1}
+                      max={31}
+                      placeholder="Нэхэмжлэх өдөр"
+                      value={invoiceDay ?? undefined}
+                      onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                      className="w-full sm:w-40"
+                    />
+                  </div>
+                  <MButton
+                    className="btn-minimal w-full sm:w-auto sm:mt-6"
+                    onClick={saveInvoiceSchedule}
+                  >
+                    Хадгалах
+                  </MButton>
                 </div>
               )}
             </div>
 
-            <div className="text-sm text-theme mr-0 sm:mr-3">
-              Нийт: {ashiglaltiinZardluud.length}
-            </div>
-            <div
-              className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-blue-500 p-2 text-theme hover:bg-blue-600 transition-colors"
-              onClick={() => openAddModal(false)}
-            >
-              <MTooltip label="Нэмэх">
-                <PlusOutlined />
-              </MTooltip>
-            </div>
-          </div>
-
-          <div className="box">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-              <div className="font-medium text-theme flex-1">
-                Нэхэмжлэх илгээх тохиргоо
+            {isLoadingAshiglaltiin ? (
+              <div className="flex justify-center items-center p-10">
+                <Loader />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-theme">Идэвхтэй</span>
-                <MSwitch
-                  checked={invoiceActive}
-                  onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
-                />
+            ) : ashiglaltiinZardluud.length === 0 ? (
+              <div className="p-8 text-center text-theme">
+                Тогтмол зардал байхгүй байна
               </div>
-            </div>
-            {invoiceActive && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
-                <div className="w-full sm:w-auto">
-                  <label className="block text-sm font-medium text-theme mb-1">
-                    Өдөр (сар бүр)
-                  </label>
-                  <MNumberInput
-                    min={1}
-                    max={31}
-                    placeholder="Нэхэмжлэх өдөр"
-                    value={invoiceDay ?? undefined}
-                    onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                    className="w-full sm:w-40"
-                  />
-                </div>
-                <MButton
-                  className="btn-minimal w-full sm:w-auto sm:mt-6"
-                  onClick={saveInvoiceSchedule}
-                >
-                  Хадгалах
-                </MButton>
-              </div>
-            )}
-          </div>
-
-          {isLoadingAshiglaltiin ? (
-            <div className="flex justify-center items-center p-10">
-              <Loader />
-            </div>
-          ) : ashiglaltiinZardluud.length === 0 ? (
-            <div className="p-8 text-center text-theme">
-              Тогтмол зардал байхгүй байна
-            </div>
-          ) : (
-            <>
-              {ashiglaltiinZardluud.map((mur) => {
-                const currentValue =
-                  editedTariffs[mur._id] !== undefined
-                    ? editedTariffs[mur._id]
-                    : mur.tariff;
-                const changed = currentValue !== mur.tariff;
-                return (
-                  <div key={mur._id} className="box">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-                      <div className="border-l-2 border-blue-500 pl-4 flex-1 w-full">
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium text-theme">
-                            {mur.ner}
+            ) : (
+              <>
+                {ashiglaltiinZardluud.map((mur) => {
+                  const currentValue =
+                    editedTariffs[mur._id] !== undefined
+                      ? editedTariffs[mur._id]
+                      : mur.tariff;
+                  const changed = currentValue !== mur.tariff;
+                  return (
+                    <div key={mur._id} className="box">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                        <div className="border-l-2 border-blue-500 pl-4 flex-1 w-full">
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-theme">
+                              {mur.ner}
+                            </div>
+                            {changed && (
+                              <Badge color="yellow" variant="light" size="sm">
+                                Өөрчлөгдсөн
+                              </Badge>
+                            )}
                           </div>
-                          {changed && (
-                            <Badge color="yellow" variant="light" size="sm">
-                              Өөрчлөгдсөн
-                            </Badge>
+                          <div className="text-theme text-sm">{mur.turul}</div>
+                          {mur.suuriKhuraamj !== undefined && (
+                            <div className="text-xs text-theme mt-1">
+                              Суурь хураамж:{" "}
+                              {formatNumber(mur.suuriKhuraamj, 0)}
+                            </div>
                           )}
                         </div>
-                        <div className="text-theme text-sm">{mur.turul}</div>
-                        {mur.suuriKhuraamj !== undefined && (
-                          <div className="text-xs text-theme mt-1">
-                            Суурь хураамж: {formatNumber(mur.suuriKhuraamj, 0)}
+                        <div className="sm:ml-auto w-full sm:w-auto flex items-center gap-2">
+                          <div className="text-sm text-theme hidden sm:block">
+                            Тариф
                           </div>
-                        )}
-                      </div>
-                      <div className="sm:ml-auto w-full sm:w-auto flex items-center gap-2">
-                        <div className="text-sm text-theme hidden sm:block">
-                          Тариф
-                        </div>
-                        <MNumberInput
-                          className="w-full sm:w-40 text-right text-theme"
-                          value={currentValue}
-                          onChange={(v) =>
-                            setEditedTariffs((prev) => ({
-                              ...prev,
-                              [mur._id]: Number(v as number),
-                            }))
-                          }
-                          rightSection={
-                            <span className="text-slate-500 pr-1">₮</span>
-                          }
-                        />
-                      </div>
-                      <div className="sm:ml-3 flex gap-2">
-                        <div
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
-                          onClick={() => {
-                            if (confirm(`Зардал устгах уу? (${mur.ner})`)) {
-                              deleteZardal(mur._id);
+                          <MNumberInput
+                            className="w-full sm:w-40 text-right text-theme"
+                            value={currentValue}
+                            onChange={(v) =>
+                              setEditedTariffs((prev) => ({
+                                ...prev,
+                                [mur._id]: Number(v as number),
+                              }))
                             }
-                          }}
-                        >
-                          <MTooltip label="Устгах">
-                            <DeleteOutlined />
-                          </MTooltip>
+                            rightSection={
+                              <span className="text-slate-500 pr-1">₮</span>
+                            }
+                          />
                         </div>
-                        <div
-                          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-yellow-500 p-2 text-white hover:bg-yellow-600 transition-colors"
-                          onClick={() => openEditModal(mur, false)}
-                        >
-                          <MTooltip label="Засах">
-                            <EditOutlined />
-                          </MTooltip>
+                        <div className="sm:ml-3 flex gap-2">
+                          <div
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-red-500 p-2 text-white hover:bg-red-600 transition-colors"
+                            onClick={() => {
+                              if (confirm(`Зардал устгах уу? (${mur.ner})`)) {
+                                deleteZardal(mur._id);
+                              }
+                            }}
+                          >
+                            <MTooltip label="Устгах">
+                              <DeleteOutlined />
+                            </MTooltip>
+                          </div>
+                          <div
+                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-yellow-500 p-2 text-white hover:bg-yellow-600 transition-colors"
+                            onClick={() => openEditModal(mur, false)}
+                          >
+                            <MTooltip label="Засах">
+                              <EditOutlined />
+                            </MTooltip>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
 
-              <div className="box bottom-0 z-[5] border-t mt-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-                  <div className="text-theme flex-1">
-                    {(() => {
-                      const itemsById = new Map(
-                        ashiglaltiinZardluud.map((it) => [it._id, it])
-                      );
-                      const changedCount = Object.entries(editedTariffs).filter(
-                        ([id, val]) => itemsById.get(id)?.tariff !== val
-                      ).length;
-                      return changedCount > 0
-                        ? `${changedCount} зардалд өөрчлөлт орсон байна`
-                        : "Өөрчлөлт байхгүй";
-                    })()}
-                  </div>
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <MButton
-                      variant="default"
-                      onClick={() => setEditedTariffs({})}
-                      disabled={Object.keys(editedTariffs).length === 0}
-                      className="btn-minimal"
-                    >
-                      Цуцлах
-                    </MButton>
-                    <MButton
-                      className="btn-minimal"
-                      onClick={saveAllTariffs}
-                      disabled={(() => {
+                <div className="box bottom-0 z-[5] border-t mt-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+                    <div className="text-theme flex-1">
+                      {(() => {
                         const itemsById = new Map(
                           ashiglaltiinZardluud.map((it) => [it._id, it])
                         );
@@ -728,149 +706,182 @@ export default function AshiglaltiinZardluud() {
                         ).filter(
                           ([id, val]) => itemsById.get(id)?.tariff !== val
                         ).length;
-                        return changedCount === 0;
+                        return changedCount > 0
+                          ? `${changedCount} зардалд өөрчлөлт орсон байна`
+                          : "Өөрчлөлт байхгүй";
                       })()}
-                    >
-                      Бүгдийг хадгалах
-                    </MButton>
+                    </div>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <MButton
+                        variant="default"
+                        onClick={() => setEditedTariffs({})}
+                        disabled={Object.keys(editedTariffs).length === 0}
+                        className="btn-minimal"
+                      >
+                        Цуцлах
+                      </MButton>
+                      <MButton
+                        className="btn-minimal"
+                        onClick={saveAllTariffs}
+                        disabled={(() => {
+                          const itemsById = new Map(
+                            ashiglaltiinZardluud.map((it) => [it._id, it])
+                          );
+                          const changedCount = Object.entries(
+                            editedTariffs
+                          ).filter(
+                            ([id, val]) => itemsById.get(id)?.tariff !== val
+                          ).length;
+                          return changedCount === 0;
+                        })()}
+                      >
+                        Бүгдийг хадгалах
+                      </MButton>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
+
+        <MModal
+          title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          classNames={{
+            content: "modal-surface modal-responsive",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.5, blur: 6 }}
+          centered
+        >
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Зардлын нэр
+              </label>
+              <MTextInput
+                value={formData.ner}
+                onChange={(e) =>
+                  setFormData({ ...formData, ner: e.currentTarget.value })
+                }
+                placeholder="Зардлын нэр оруулах"
+                className="text-sm text-theme"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Төрөл
+              </label>
+              <MSelect
+                value={formData.turul}
+                onChange={(value) =>
+                  setFormData({ ...formData, turul: value ?? "" })
+                }
+                className="w-full text-theme"
+                data={expenseTypes.map((type) => ({
+                  label: type,
+                  value: type,
+                }))}
+                placeholder="Сонгох"
+                searchable
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Зардлын төрөл
+              </label>
+              <MSelect
+                clearable
+                value={formData.lift ?? undefined}
+                onChange={(value) =>
+                  setFormData({ ...formData, lift: (value as string) ?? null })
+                }
+                className="w-full text-theme"
+                data={[
+                  { label: "Лифт", value: "Лифт" },
+                  { label: "Энгийн", value: "Энгийн" },
+                ]}
+                placeholder="Сонгох (Лифт)"
+                searchable
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Тариф (₮)
+              </label>
+              <MNumberInput
+                value={formData.tariff}
+                onChange={(v) =>
+                  setFormData({ ...formData, tariff: Number(v as number) })
+                }
+                placeholder="0"
+                className="text-theme"
+                rightSection={<span className="text-slate-500 pr-1">₮</span>}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Суурь хураамж
+              </label>
+              <MNumberInput
+                value={formData.suuriKhuraamj}
+                onChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    suuriKhuraamj: Number(v as number),
+                  })
+                }
+                placeholder="0"
+                className="text-theme"
+                rightSection={<span className="text-slate-500 pr-1">₮</span>}
+              />
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={formData.nuatBodokhEsekh}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    nuatBodokhEsekh: e.target.checked,
+                  })
+                }
+                className="mr-2"
+                style={{ accentColor: "var(--panel-text)" }}
+              />
+              <label className="text-sm font-medium text-theme">
+                НӨАТ бодох
+              </label>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <MButton
+                onClick={() => setIsModalOpen(false)}
+                className="btn-minimal"
+              >
+                Болих
+              </MButton>
+              <MButton
+                className="btn-minimal h-11"
+                onClick={handleSave}
+                data-modal-primary
+              >
+                Хадгалах
+              </MButton>
+            </div>
+          </div>
+        </MModal>
       </div>
-
-      <MModal
-        title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
-        opened={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        classNames={{
-          content: "modal-surface modal-responsive",
-          header:
-            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-          title: "text-theme font-semibold",
-          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-        }}
-        overlayProps={{ opacity: 0.5, blur: 6 }}
-        centered
-      >
-        <div className="space-y-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Зардлын нэр
-            </label>
-            <MTextInput
-              value={formData.ner}
-              onChange={(e) =>
-                setFormData({ ...formData, ner: e.currentTarget.value })
-              }
-              placeholder="Зардлын нэр оруулах"
-              className="text-sm text-theme"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Төрөл
-            </label>
-            <MSelect
-              value={formData.turul}
-              onChange={(value) =>
-                setFormData({ ...formData, turul: value ?? "" })
-              }
-              className="w-full text-theme"
-              data={expenseTypes.map((type) => ({
-                label: type,
-                value: type,
-              }))}
-              placeholder="Сонгох"
-              searchable
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Зардлын төрөл
-            </label>
-            <MSelect
-              clearable
-              value={formData.lift ?? undefined}
-              onChange={(value) =>
-                setFormData({ ...formData, lift: (value as string) ?? null })
-              }
-              className="w-full text-theme"
-              data={[
-                { label: "Лифт", value: "Лифт" },
-                { label: "Энгийн", value: "Энгийн" },
-              ]}
-              placeholder="Сонгох (Лифт)"
-              searchable
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Тариф (₮)
-            </label>
-            <MNumberInput
-              value={formData.tariff}
-              onChange={(v) =>
-                setFormData({ ...formData, tariff: Number(v as number) })
-              }
-              placeholder="0"
-              className="text-theme"
-              rightSection={<span className="text-slate-500 pr-1">₮</span>}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Суурь хураамж
-            </label>
-            <MNumberInput
-              value={formData.suuriKhuraamj}
-              onChange={(v) =>
-                setFormData({
-                  ...formData,
-                  suuriKhuraamj: Number(v as number),
-                })
-              }
-              placeholder="0"
-              className="text-theme"
-              rightSection={<span className="text-slate-500 pr-1">₮</span>}
-            />
-          </div>
-
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.nuatBodokhEsekh}
-              onChange={(e) =>
-                setFormData({ ...formData, nuatBodokhEsekh: e.target.checked })
-              }
-              className="mr-2"
-              style={{ accentColor: "var(--panel-text)" }}
-            />
-            <label className="text-sm font-medium text-theme">НӨАТ бодох</label>
-          </div>
-          <div className="mt-6 flex justify-end gap-2">
-            <MButton
-              onClick={() => setIsModalOpen(false)}
-              className="btn-minimal"
-            >
-              Болих
-            </MButton>
-            <MButton
-              className="btn-minimal h-11"
-              onClick={handleSave}
-              data-modal-primary
-            >
-              Хадгалах
-            </MButton>
-          </div>
-        </div>
-      </MModal>
-    </>
+    </div>
   );
 }

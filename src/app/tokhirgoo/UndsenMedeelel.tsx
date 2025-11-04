@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Loader } from "@mantine/core";
 import uilchilgee, {
   aldaaBarigch,
@@ -51,10 +51,15 @@ const KhuviinMedeelel: React.FC<Props> = ({
   const [tatvariinAlbaData, setTatvariinAlbaData] =
     useState<TatvariinAlbaResponse | null>(null);
   const { token, baiguullaga, baiguullagaMutate } = useAuth();
-  const { showSpinner, hideSpinner } = useSpinner();
-  const [merchantTin, setMerchantTin] = useState<string>("");
+
   const [sohNer, setSohNer] = useState<string>("");
-  const [barilgaNer, setBarilgaNer] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    selectedDuureg: "",
+    selectedHoroo: "",
+    sohNer: "",
+  });
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     if (!token) return;
@@ -64,11 +69,6 @@ const KhuviinMedeelel: React.FC<Props> = ({
           "/tatvariinAlba"
         );
         setTatvariinAlbaData(res.data);
-
-        // preload merchant TIN if available
-        if (baiguullaga?.tokhirgoo?.merchantTin) {
-          setMerchantTin(String(baiguullaga.tokhirgoo.merchantTin));
-        }
 
         // preload sohNer if available - check barilguud tokhirgoo first
         const firstBuilding =
@@ -87,17 +87,6 @@ const KhuviinMedeelel: React.FC<Props> = ({
           setSohNer(String(baiguullaga.ner));
         }
 
-        // preload building name if any
-        if (firstBuilding?.ner) {
-          setBarilgaNer(String(firstBuilding.ner));
-        } else if (
-          Array.isArray(baiguullaga?.barilguud) &&
-          baiguullaga!.barilguud!.length > 0 &&
-          (baiguullaga!.barilguud![0] as any)?.ner
-        ) {
-          setBarilgaNer(String((baiguullaga!.barilguud![0] as any).ner));
-        }
-
         let effectiveTokhirgoo = baiguullaga?.tokhirgoo;
         if (
           !baiguullaga?.tokhirgoo?.districtCode &&
@@ -107,7 +96,6 @@ const KhuviinMedeelel: React.FC<Props> = ({
             const savedTok = localStorage.getItem("baiguullaga_tokhirgoo");
             if (savedTok) {
               effectiveTokhirgoo = JSON.parse(savedTok);
-              setMerchantTin(String(effectiveTokhirgoo?.merchantTin || ""));
               setSohNer(String((effectiveTokhirgoo as any)?.sohNer || ""));
             }
           } catch (e) {
@@ -161,6 +149,78 @@ const KhuviinMedeelel: React.FC<Props> = ({
     fetchTatvariinAlba();
   }, [token, baiguullaga]);
 
+  // Initialize form state and initial snapshot ONCE after data is ready
+  useEffect(() => {
+    if (initializedRef.current) return;
+    if (!tatvariinAlbaData?.jagsaalt) return;
+
+    // Derive effective tokhirgoo from org or localStorage
+    let effectiveTokhirgoo = baiguullaga?.tokhirgoo as any;
+    if (!effectiveTokhirgoo?.districtCode && typeof window !== "undefined") {
+      try {
+        const savedTok = localStorage.getItem("baiguullaga_tokhirgoo");
+        if (savedTok) effectiveTokhirgoo = JSON.parse(savedTok);
+      } catch (_) {}
+    }
+
+    // Derive SÖH name first to avoid async setState timing issues
+    const firstBuilding =
+      Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0
+        ? baiguullaga.barilguud[0]
+        : null;
+    const derivedSohNer = firstBuilding?.tokhirgoo?.sohNer
+      ? String(firstBuilding.tokhirgoo.sohNer)
+      : (baiguullaga?.tokhirgoo as any)?.sohNer
+      ? String((baiguullaga!.tokhirgoo as any).sohNer)
+      : baiguullaga?.ner
+      ? String(baiguullaga.ner)
+      : "";
+
+    // Find duureg and horoo matches from tax office data
+    let duuregMatch: Duureg | undefined;
+    let horooMatch: Horoo | undefined;
+    if (effectiveTokhirgoo) {
+      const tok = effectiveTokhirgoo as any;
+      if (tok?.districtCode) {
+        const code = String(tok.districtCode);
+        const duuregKodGuess =
+          code.length > 2 ? code.slice(0, code.length - 2) : code.slice(0, 2);
+        duuregMatch = tatvariinAlbaData.jagsaalt.find(
+          (d) => d.kod === duuregKodGuess || d.ner === tok.duuregNer
+        );
+      }
+      if (!duuregMatch && tok?.duuregNer) {
+        duuregMatch = tatvariinAlbaData.jagsaalt.find(
+          (d) => d.ner === tok.duuregNer
+        );
+      }
+      if (duuregMatch) {
+        horooMatch = (duuregMatch.ded || []).find(
+          (h) => h.kod === tok?.horoo?.kod || h.ner === tok?.horoo?.ner
+        );
+      }
+    }
+
+    // Apply to state
+    setState((s) => ({
+      ...s,
+      selectedDuureg: duuregMatch?._id || s.selectedDuureg || "",
+      selectedDuuregData: duuregMatch || s.selectedDuuregData,
+      selectedHoroo: horooMatch?.kod || s.selectedHoroo || "",
+      selectedHorooData: horooMatch || s.selectedHorooData,
+    }));
+    setSohNer((prev) => (prev || derivedSohNer ? derivedSohNer : prev));
+
+    // Capture initial snapshot once
+    setInitialValues({
+      selectedDuureg: duuregMatch?._id || "",
+      selectedHoroo: horooMatch?.kod || "",
+      sohNer: derivedSohNer,
+    });
+
+    initializedRef.current = true;
+  }, [tatvariinAlbaData, baiguullaga]);
+
   // Update sohNer state when baiguullaga changes (after save operations)
   useEffect(() => {
     const firstBuilding =
@@ -196,6 +256,11 @@ const KhuviinMedeelel: React.FC<Props> = ({
   };
 
   const handleHorooChange = (horooKod: string) => {
+    if (!state.selectedDuureg) {
+      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
+      return;
+    }
+
     const selectedHorooData = selectedDistrict?.ded?.find(
       (h) => h.kod === horooKod
     );
@@ -220,6 +285,17 @@ const KhuviinMedeelel: React.FC<Props> = ({
       return;
     }
 
+    // Check if there are any changes
+    const hasChanges =
+      state.selectedDuureg !== initialValues.selectedDuureg ||
+      state.selectedHoroo !== initialValues.selectedHoroo ||
+      sohNer.trim() !== (initialValues.sohNer || "").trim();
+
+    if (!hasChanges) {
+      openErrorOverlay("Өөрчлөлт байхгүй байна");
+      return;
+    }
+
     if (!state.selectedDuuregData) {
       openErrorOverlay("Дүүрэг сонгоно уу");
       return;
@@ -230,22 +306,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
       return;
     }
 
-    // Duplicate building name validation (against other buildings)
-    const newName = (barilgaNer || "").trim();
-    if (newName && Array.isArray(baiguullaga?.barilguud)) {
-      const firstBuilding = baiguullaga.barilguud[0];
-      const hasDup = baiguullaga.barilguud.some(
-        (b: any) =>
-          String(b?._id || "") !== String(firstBuilding?._id || "") &&
-          String(b?.ner || "").trim() === newName
-      );
-      if (hasDup) {
-        openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
-        return;
-      }
-    }
-
-    showSpinner();
+    setIsSaving(true);
 
     try {
       const duuregKod = state.selectedDuuregData.kod || "";
@@ -255,72 +316,9 @@ const KhuviinMedeelel: React.FC<Props> = ({
       // Ensure we have a valid sohNer value
       const finalSohNer = sohNer || baiguullaga?.ner || "";
 
-      // build default building entry
-      const defaultBuilding = {
-        ner: (barilgaNer || "").trim(),
-        bairshil: {
-          coordinates: [],
-        },
-        tokhirgoo: {
-          merchantTin: merchantTin || baiguullaga?.tokhirgoo?.merchantTin || "",
-          duuregNer: state.selectedDuuregData.ner,
-          districtCode: districtCodeCombined,
-          horoo: {
-            ner: state.selectedHorooData.ner,
-            kod: state.selectedHorooData.kod,
-          },
-          sohNer: finalSohNer, // Use finalSohNer here
-        },
-      };
-
-      // merge existing barilguud if present
-      const barilguudArray = Array.isArray(baiguullaga?.barilguud)
-        ? baiguullaga!.barilguud!.map((b: any, index: number) => ({
-            ...b,
-            // If user entered a building name, update the first building's name
-            ner:
-              index === 0 && (barilgaNer || "").trim()
-                ? (barilgaNer || "").trim()
-                : b?.ner,
-            bairshil: b?.bairshil || { coordinates: [] },
-            tokhirgoo: {
-              ...(b?.tokhirgoo || {}),
-              aldangiinKhuvi:
-                b?.tokhirgoo?.aldangiinKhuvi ??
-                baiguullaga?.tokhirgoo?.aldangiinKhuvi ??
-                0,
-              aldangiChuluulukhKhonog:
-                b?.tokhirgoo?.aldangiChuluulukhKhonog ??
-                baiguullaga?.tokhirgoo?.aldangiChuluulukhKhonog ??
-                0,
-              baritsaaAvakhSar:
-                b?.tokhirgoo?.baritsaaAvakhSar ??
-                baiguullaga?.tokhirgoo?.baritsaaAvakhSar ??
-                0,
-              merchantTin:
-                b?.tokhirgoo?.merchantTin ??
-                merchantTin ??
-                baiguullaga?.tokhirgoo?.merchantTin ??
-                "",
-              duuregNer: state.selectedDuuregData!.ner,
-              districtCode: districtCodeCombined,
-              horoo: {
-                ner: state.selectedHorooData!.ner,
-                kod: state.selectedHorooData!.kod,
-              },
-              sohNer: finalSohNer, // Use finalSohNer consistently for all buildings
-            },
-          }))
-        : [defaultBuilding];
-
       const payload: any = {
         ...(baiguullaga || {}),
         _id: baiguullaga!._id,
-        merchantTin:
-          merchantTin ||
-          baiguullaga?.merchantTin ||
-          baiguullaga?.tokhirgoo?.merchantTin ||
-          "",
         eBarimtAutomataarIlgeekh:
           typeof baiguullaga?.eBarimtAutomataarIlgeekh === "boolean"
             ? baiguullaga?.eBarimtAutomataarIlgeekh
@@ -333,16 +331,14 @@ const KhuviinMedeelel: React.FC<Props> = ({
         eBarimtShine: baiguullaga?.eBarimtShine ?? false,
         tokhirgoo: {
           ...(baiguullaga?.tokhirgoo || {}),
-          merchantTin: merchantTin || baiguullaga?.tokhirgoo?.merchantTin || "",
           duuregNer: state.selectedDuuregData.ner,
           districtCode: districtCodeCombined,
           horoo: {
             ner: state.selectedHorooData.ner,
             kod: state.selectedHorooData.kod,
           },
-          sohNer: finalSohNer, // Also save at top-level tokhirgoo for consistency
+          sohNer: finalSohNer,
         },
-        barilguud: barilguudArray,
       };
 
       const updated = await updateBaiguullaga(
@@ -355,9 +351,11 @@ const KhuviinMedeelel: React.FC<Props> = ({
         await baiguullagaMutate(updated, false);
       }
 
-      const revalidated = await baiguullagaMutate();
+      // Show success overlay
+      openSuccessOverlay("Амжилттай хадгаллаа", 2000);
 
-      openSuccessOverlay("Амжилттай хадгаллаа");
+      // Revalidate in background
+      const revalidated = await baiguullagaMutate();
 
       // Save to localStorage
       if (typeof window !== "undefined") {
@@ -367,12 +365,20 @@ const KhuviinMedeelel: React.FC<Props> = ({
         );
       }
 
+      // Update initial values after successful save
+      setInitialValues({
+        selectedDuureg: state.selectedDuureg || "",
+        selectedHoroo: state.selectedHoroo || "",
+        sohNer: sohNer || "",
+      });
+
       setSongogdsonTsonkhniiIndex(1);
     } catch (err) {
       aldaaBarigch(err);
       openErrorOverlay("Хадгалахад алдаа гарлаа");
     } finally {
-      hideSpinner();
+      setIsSaving(false);
+      // REMOVED: hideSpinner();
     }
   };
 
@@ -385,73 +391,81 @@ const KhuviinMedeelel: React.FC<Props> = ({
     (d) => d._id === state.selectedDuureg
   );
 
+  // Derived dirty flag for UI (disable Save when no changes)
+  const isDirty = useMemo(() => {
+    return (
+      (state.selectedDuureg || "") !== (initialValues.selectedDuureg || "") ||
+      (state.selectedHoroo || "") !== (initialValues.selectedHoroo || "") ||
+      (sohNer || "").trim() !== (initialValues.sohNer || "").trim()
+    );
+  }, [state.selectedDuureg, state.selectedHoroo, sohNer, initialValues]);
+
   return (
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
       {tatvariinAlbaData?.jagsaalt && (
-        <div className="mt-8">
-          <h2 className="text-md font-semibold text-theme mb-3">
-            Үндсэн мэдээлэл
-          </h2>
-
-          <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
-            {/* 2x2 grid: 1) Дүүрэг, 2) Хороо, 3) Барилгын нэр, 4) СӨХ-ийн нэр */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 1) Дүүрэг */}
-              <div className="w-full">
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Дүүрэг
-                </label>
-                <TusgaiZagvar
-                  value={state.selectedDuureg || ""}
-                  onChange={(v) => handleDuuregChange(v)}
-                  options={(tatvariinAlbaData?.jagsaalt || []).map(
-                    (duureg) => ({
-                      value: duureg._id || "",
-                      label: duureg.ner,
-                    })
-                  )}
-                  placeholder="Сонгоно уу"
-                  className="w-full"
-                />
-              </div>
-
-              <div className="w-full">
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Хороо
-                </label>
-                <TusgaiZagvar
-                  value={state.selectedHoroo || ""}
-                  onChange={(v) => handleHorooChange(v)}
-                  options={(selectedDistrict?.ded || []).map((horoo) => ({
-                    value: horoo.kod,
-                    label: horoo.ner,
-                  }))}
-                  placeholder="Сонгоно уу"
-                  className="w-full"
-                />
-              </div>
-
-              {/* 4) СӨХ-ийн нэр */}
-              <div className="w-full">
-                <label className="block text-sm font-medium text-theme mb-1">
-                  СӨХ-ийн нэр
-                </label>
-                <input
-                  type="text"
-                  value={sohNer}
-                  onChange={(e) => setSohNer(e.target.value)}
-                  placeholder="СӨХ-ийн нэрийг оруулна уу"
-                  className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+        <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
+          {/* 2x2 grid: 1) Дүүрэг, 2) Хороо, 3) Барилгын нэр, 4) СӨХ-ийн нэр */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 1) Дүүрэг */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                Дүүрэг
+              </label>
+              <TusgaiZagvar
+                value={state.selectedDuureg || ""}
+                onChange={(v) => handleDuuregChange(v)}
+                options={(tatvariinAlbaData?.jagsaalt || []).map((duureg) => ({
+                  value: duureg._id || "",
+                  label: duureg.ner,
+                }))}
+                placeholder="Сонгоно уу"
+                className="w-full"
+              />
             </div>
 
-            {/* Single Save button */}
-            <div className="flex justify-end">
-              <button onClick={khadgalakh} className="btn-minimal btn-save">
-                Хадгалах
-              </button>
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                Хороо
+              </label>
+              <TusgaiZagvar
+                value={state.selectedHoroo || ""}
+                onChange={(v) => handleHorooChange(v)}
+                options={(selectedDistrict?.ded || []).map((horoo) => ({
+                  value: horoo.kod,
+                  label: horoo.ner,
+                }))}
+                placeholder="Сонгоно уу"
+                className="w-full"
+                disabled={!state.selectedDuureg}
+              />
             </div>
+
+            {/* 4) СӨХ-ийн нэр */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                СӨХ-ийн нэр
+              </label>
+              <input
+                type="text"
+                value={sohNer}
+                onChange={(e) => setSohNer(e.target.value)}
+                placeholder="СӨХ-ийн нэрийг оруулна уу"
+                className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Single Save button */}
+          <div className="flex justify-end">
+            <button
+              onClick={khadgalakh}
+              className={`btn-minimal btn-save ${
+                !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+              disabled={!isDirty || isSaving}
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
           </div>
         </div>
       )}

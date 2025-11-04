@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
 import ThemedLogo from "@/components/ui/ThemedLogo";
 import ThemeModeToggler from "@/components/ui/ThemeModeToggler";
+import TourReplayButton from "@/components/ui/TourReplayButton";
+import { useRegisterTourSteps } from "@/context/TourContext";
 import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -101,8 +103,6 @@ export default function GolContent({ children }: GolContentProps) {
     };
   }, []);
 
-  if (!mounted) return null;
-
   const menuItems: MenuItem[] = [
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
@@ -125,10 +125,10 @@ export default function GolContent({ children }: GolContentProps) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     console.log("Logout button clicked - starting logout process");
     setShowLogout(false);
-    
+
     try {
       // Call the logout function
       console.log("Calling garya()...");
@@ -145,6 +145,38 @@ export default function GolContent({ children }: GolContentProps) {
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
   const isLoggedIn = !!token && !!ajiltan;
+
+  // Register global tour steps that exist across most pages
+  useRegisterTourSteps("global", [
+    {
+      element: ".neu-nav",
+      popover: {
+        title: "Толгой цэс",
+        description:
+          "Эндээс үндсэн цэс, хайлт, тохиргоо болон профайлаа удирдана.",
+        side: "bottom",
+      },
+    },
+    {
+      element: "input[aria-label='Global search']",
+      popover: {
+        title: "Хайлт",
+        description: "Нийт систем доторх мэдээллийг хурдан хайна.",
+        side: "bottom",
+      },
+    },
+
+    {
+      element: "#tokhirgoo",
+      popover: {
+        title: "Тохиргоо",
+        description: "Системийн тохиргоонуудыг эндээс өөрчилнө.",
+        side: "bottom",
+      },
+    },
+  ]);
+
+  if (!mounted) return null;
 
   return (
     <>
@@ -163,9 +195,7 @@ export default function GolContent({ children }: GolContentProps) {
                   value: b._id,
                   label: b.ner,
                 }))}
-                placeholder={
-                  buildings.length ? "Барилга" : "Барилга олдсонгүй"
-                }
+                placeholder={buildings.length ? "Барилга" : "Барилга олдсонгүй"}
               />
             </div>
           </div>
@@ -290,6 +320,7 @@ export default function GolContent({ children }: GolContentProps) {
 
               <button
                 onClick={() => router.push("/tokhirgoo")}
+                id="tokhirgoo"
                 className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
               >
                 <Settings className="w-5 h-5" />
@@ -309,7 +340,7 @@ export default function GolContent({ children }: GolContentProps) {
                   </button>
 
                   {showLogout && (
-                    <div 
+                    <div
                       className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
                       onMouseLeave={() => setShowLogout(false)}
                       onClick={(e) => e.stopPropagation()}
@@ -321,7 +352,9 @@ export default function GolContent({ children }: GolContentProps) {
                             onMouseDown={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              console.log("Mouse down on logout button - triggering logout");
+                              console.log(
+                                "Mouse down on logout button - triggering logout"
+                              );
                               handleLogout(e);
                             }}
                             className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto"
@@ -393,7 +426,7 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
         </div>
       </nav>
- 
+
       <div className="md:hidden w-full bg-[color:var(--surface-bg)] sticky top-[120px] z-[9]">
         <div className="px-3 pb-2">
           <div className="flex items-center justify-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
@@ -462,6 +495,9 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
         </div>
       </main>
+
+      {/* Floating tour controls */}
+      <TourReplayButton />
 
       {mobileSearchOpen && (
         <ModalPortal>

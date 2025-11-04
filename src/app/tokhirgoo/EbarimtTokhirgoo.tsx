@@ -192,7 +192,7 @@ export default function EbarimtTokhirgoo() {
                 disabled={isLoading}
               />
             </div>
-            <div className="flex items-center p-4  rounded-xl shadow-sm border-l-4 border-l-blue-500">
+            <div className="flex items-center p-4  rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт ашиглах эсэх
@@ -207,7 +207,7 @@ export default function EbarimtTokhirgoo() {
               </div>
             </div>
 
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-4 border-l-blue-500">
+            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт 3.0 эсэх
@@ -222,7 +222,7 @@ export default function EbarimtTokhirgoo() {
               </div>
             </div>
 
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-4 border-l-blue-500">
+            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт автоматаар илгээх эсэх
@@ -237,7 +237,7 @@ export default function EbarimtTokhirgoo() {
               </div>
             </div>
 
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-4 border-l-blue-500">
+            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт нөат эсэх

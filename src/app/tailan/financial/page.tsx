@@ -10,7 +10,9 @@ import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { useBuilding } from "@/context/BuildingContext";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import IconTextButton from "@/components/ui/IconTextButton";
+import { useMemo } from "react";
 import { Download, FileDown } from "lucide-react";
 import { useSpinner } from "@/context/SpinnerContext";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -28,6 +30,59 @@ export default function FinancialReportsPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  const financialTourSteps: DriverStep[] = [
+    {
+      element: "#financial-reports-controls",
+      popover: {
+        title: "Огнооны сонголт",
+        description: "Эндээс тайлангийн филтерийг сонгоно.",
+      },
+    },
+    {
+      element: "#financial-report-type",
+      popover: {
+        title: "Тайлангийн төрөл",
+        description: "Тайлангийн төрлийг сонгоно.",
+      },
+    },
+    {
+      element: "#financial-fetch",
+      popover: {
+        title: "Тайлан татах",
+        description: "Сонгосон тохиргоогоор тайланг татаж авна.",
+      },
+    },
+    {
+      element: "#financial-csv",
+      popover: {
+        title: "CSV экспорт",
+        description: "Тайланг CSV форматаар татаж авна.",
+      },
+    },
+    {
+      element: "#financial-excel",
+      popover: {
+        title: "Excel экспорт",
+        description: "Тайланг Excel форматаар татаж авна.",
+      },
+    },
+    {
+      element: "#financial-table",
+      popover: {
+        title: "Тайлангийн хүснэгт",
+        description: "Тайлангийн мэдээлэл энд харуулагдана.",
+      },
+    },
+    {
+      element: "#financial-pagination",
+      popover: {
+        title: "Хуудаслалт",
+        description: "Тайлангийн хуудсуудыг сольж болно.",
+      },
+    },
+  ];
+
+  useRegisterTourSteps("/tailan/financial", financialTourSteps);
 
   const fetchReport = async () => {
     console.log("Fetch report called");
@@ -210,22 +265,30 @@ export default function FinancialReportsPage() {
         flat.push(["Е-Баримтын нийт дүн", s.ebarimt.totalAmount]);
       const start = (currentPage - 1) * rowsPerPage;
       const end = start + rowsPerPage;
-      return flat.slice(start, end).map(([k, v], i) => (
-        <tr key={i} className="border-b last:border-b-0">
-          <td className="p-2 text-left">{k}</td>
-          <td
-            className={`p-2 ${
-              String(
-                typeof v === "number" ? `${formatNumber(v)} ₮` : String(v)
-              ).includes("₮")
-                ? "text-right"
-                : "text-center"
-            }`}
-          >
-            {typeof v === "number" ? `${formatNumber(v)} ₮` : String(v)}
-          </td>
-        </tr>
-      ));
+      return flat.slice(start, end).map(([k, v], i) => {
+        const displayValue =
+          typeof v === "number"
+            ? k === "Оршин суугчдын тоо" || k === "Гэрээний тоо"
+              ? formatNumber(v, 0)
+              : `${formatNumber(v)} ₮`
+            : String(v);
+        let alignClass = "text-center";
+        if (displayValue.includes("₮")) alignClass = "text-center";
+        else if (k === "Оршин суугчдын тоо" || k === "Гэрээний тоо")
+          alignClass = "text-center";
+        return (
+          <tr key={i} className="border-b last:border-b-0">
+            <td className="p-2 text-left">{k}</td>
+            <td
+              className={`p-2 ${
+                displayValue.includes("₮") ? "text-right" : "text-center"
+              }`}
+            >
+              {displayValue}
+            </td>
+          </tr>
+        );
+      });
     }
     if (reportType === "orlogo-zarlaga" || reportType === "ashig-aldagdal") {
       const r = report;
@@ -335,33 +398,39 @@ export default function FinancialReportsPage() {
     }
     return 0;
   };
+  useRegisterTourSteps("/tailan/financial", financialTourSteps);
 
   return (
     <div className="min-h-screen">
       <h1 className="text-2xl font-semibold mb-4">Санхүүгийн тайлан</h1>
 
-      <ReportsControls
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        filters={filters}
-        setFilters={setFilters}
-        hideReportType
-      />
+      <div id="financial-reports-controls">
+        <ReportsControls
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          filters={filters}
+          setFilters={setFilters}
+          hideReportType
+        />
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <TusgaiZagvar
-          className="rounded-2xl px-3 py-2"
-          value={reportType}
-          onChange={(v: string) => setReportType(v)}
-        >
-          <option value="summary">Нийт тайлан</option>
-          <option value="avlaga">Өр / Авлага</option>
-          <option value="orlogo-zarlaga">Орлого / Зарлага</option>
-          <option value="ashig-aldagdal">Ашиг / Алдагдал</option>
-          <option value="guilegee">Гүйлгээний түүх</option>
-        </TusgaiZagvar>
+        <div id="financial-report-type">
+          <TusgaiZagvar
+            className="rounded-2xl px-3 py-2"
+            value={reportType}
+            onChange={(v: string) => setReportType(v)}
+          >
+            <option value="summary">Нийт тайлан</option>
+            <option value="avlaga">Өр / Авлага</option>
+            <option value="orlogo-zarlaga">Орлого / Зарлага</option>
+            <option value="ashig-aldagdal">Ашиг / Алдагдал</option>
+            <option value="guilegee">Гүйлгээний түүх</option>
+          </TusgaiZagvar>
+        </div>
 
         <IconTextButton
+          id="financial-fetch"
           onClick={fetchReport}
           icon={<Download className="w-5 h-5" />}
           label="Татах"
@@ -369,6 +438,7 @@ export default function FinancialReportsPage() {
         />
 
         <IconTextButton
+          id="financial-csv"
           onClick={() => exportReport("csv")}
           icon={<Download className="w-5 h-5" />}
           label="CSV"
@@ -376,6 +446,7 @@ export default function FinancialReportsPage() {
         />
 
         <IconTextButton
+          id="financial-excel"
           onClick={() => exportReport("xlsx")}
           icon={<FileDown className="w-5 h-5" />}
           label="Excel"
@@ -383,19 +454,17 @@ export default function FinancialReportsPage() {
         />
       </div>
       <div className="neu-panel p-4 rounded-2xl">
-        <div className="table-surface overflow-visible rounded-2xl w-full">
+        <div className="table-surface overflow-visible rounded-2xl w-full max-h-[58vh]">
           <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
-              <table className="table-ui text-[11px] sm:text-xs min-w-full">
+              <table
+                id="financial-table"
+                className="table-ui text-[11px] sm:text-xs min-w-full"
+              >
                 <thead>
                   <tr>
                     {columnsByType[reportType]?.map((c) => (
-                      <th
-                        key={c}
-                        className={`p-2 ${
-                          reportType === "summary" ? "text-left" : "text-center"
-                        }`}
-                      >
+                      <th key={c} className="p-2 text-center">
                         {c}
                       </th>
                     ))}
@@ -405,7 +474,7 @@ export default function FinancialReportsPage() {
                   {renderRows() || (
                     <tr>
                       <td
-                        className="p-4 text-center text-theme/60"
+                        className="p-2 text-center text-theme/60"
                         colSpan={columnsByType[reportType]?.length || 1}
                       >
                         {isLoading ? "Уншиж байна..." : "Мэдээлэл байхгүй"}
@@ -417,7 +486,10 @@ export default function FinancialReportsPage() {
             </div>
           </div>
           {/* Pagination controls */}
-          <div className="flex items-center justify-between px-2 py-1 text-xs">
+          <div
+            id="financial-pagination"
+            className="flex items-center justify-between px-2 py-1 text-xs"
+          >
             <div className="text-theme/70">Нийт: {getTotalRows()}</div>
             <div className="flex items-center gap-3">
               <PageSongokh

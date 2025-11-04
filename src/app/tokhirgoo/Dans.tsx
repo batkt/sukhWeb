@@ -200,7 +200,7 @@ function Dans() {
         <h2 className="text-lg font-semibold">{title}</h2>
         <button
           onClick={() => openAdd(bankKey)}
-          className="btn-minimal btn-neu-round"
+          className="btn-neu"
           aria-label={t("Нэмэх")}
         >
           +
@@ -277,106 +277,110 @@ function Dans() {
   );
 
   return (
-    <div className="grid grid-cols-12 gap-6">
-      <div className="col-span-12 lg:col-span-6">
-        <BankCard
-          title={t("Хаан банк")}
-          bankKey="khanbank"
-          corporateState={khanbankCorporate}
-          setCorporateState={setKhanBankCorporate}
-        />
-      </div>
-      <div className="col-span-12 lg:col-span-6">
-        <BankCard
-          title={t("Худалдаа хөгжлийн банк")}
-          bankKey="tdb"
-          corporateState={tdbCorporate}
-          setCorporateState={setTdbCorporate}
-        />
-      </div>
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
+      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 lg:col-span-6">
+            <BankCard
+              title={t("Хаан банк")}
+              bankKey="khanbank"
+              corporateState={khanbankCorporate}
+              setCorporateState={setKhanBankCorporate}
+            />
+          </div>
+          <div className="col-span-12 lg:col-span-6">
+            <BankCard
+              title={t("Худалдаа хөгжлийн банк")}
+              bankKey="tdb"
+              corporateState={tdbCorporate}
+              setCorporateState={setTdbCorporate}
+            />
+          </div>
 
-      <Modal
-        opened={modalOpen}
-        onClose={() => {
-          setModalOpen(false);
-          setEditing(null);
-        }}
-        title={editing ? t("Данс засах") : t("Шинэ данс нэмэх")}
-        classNames={{ content: "modal-surface" }}
-      >
-        <div className="flex flex-col gap-3 mt-2">
-          <div>
-            <div className="text-sm mb-1">{t("Банк")}</div>
-            <Select
-              data={[
-                { label: "Хаан банк", value: "khanbank" },
-                { label: "ХХБ", value: "tdb" },
-              ]}
-              value={formState.bank}
-              onChange={(v) =>
-                setFormState((s) => ({
-                  ...s,
-                  bank: (v as "khanbank" | "tdb") ?? "khanbank",
-                }))
-              }
-              comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
-              classNames={{ input: "" }}
-            />
-          </div>
-          <div>
-            <div className="text-sm mb-1">{t("Дансны дугаар")}</div>
-            <TextInput
-              placeholder={t("Дансны дугаар")}
-              value={formState.dugaar}
-              onChange={(e) =>
-                setFormState((s) => ({ ...s, dugaar: e.target.value }))
-              }
-              className="text-theme"
-            />
-          </div>
-          <div>
-            <div className="text-sm mb-1">{t("Дансны нэр")}</div>
-            <TextInput
-              placeholder={t("Дансны нэр")}
-              value={formState.dansniiNer}
-              onChange={(e) =>
-                setFormState((s) => ({ ...s, dansniiNer: e.target.value }))
-              }
-              className="text-theme"
-            />
-          </div>
-          <div>
-            <div className="text-sm mb-1">{t("Валют")}</div>
-            <Select
-              data={[
-                { label: "MNT", value: "MNT" },
-                { label: "USD", value: "USD" },
-                { label: "EUR", value: "EUR" },
-              ]}
-              value={formState.valyut}
-              onChange={(v) =>
-                setFormState((s) => ({ ...s, valyut: v || "MNT" }))
-              }
-              comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
-              classNames={{ input: "" }}
-            />
-          </div>
-          <div className="flex justify-end gap-2 mt-2">
-            <button
-              className="btn-minimal btn-cancel"
-              onClick={() => {
-                setModalOpen(false);
-                setEditing(null);
-              }}
-            >
-              {t("Болих")}
-            </button>
-            <button className="btn-minimal btn-save" onClick={saveDans}>
-              {t("Хадгалах")}
-            </button>
-          </div>
+          <Modal
+            opened={modalOpen}
+            onClose={() => {
+              setModalOpen(false);
+              setEditing(null);
+            }}
+            title={editing ? t("Данс засах") : t("Шинэ данс нэмэх")}
+            classNames={{ content: "modal-surface" }}
+          >
+            <div className="flex flex-col gap-3 mt-2">
+              <div>
+                <div className="text-sm mb-1">{t("Банк")}</div>
+                <Select
+                  data={[
+                    { label: "Хаан банк", value: "khanbank" },
+                    { label: "ХХБ", value: "tdb" },
+                  ]}
+                  value={formState.bank}
+                  onChange={(v) =>
+                    setFormState((s) => ({
+                      ...s,
+                      bank: (v as "khanbank" | "tdb") ?? "khanbank",
+                    }))
+                  }
+                  comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
+                  classNames={{ input: "" }}
+                />
+              </div>
+              <div>
+                <div className="text-sm mb-1">{t("Дансны дугаар")}</div>
+                <TextInput
+                  placeholder={t("Дансны дугаар")}
+                  value={formState.dugaar}
+                  onChange={(e) =>
+                    setFormState((s) => ({ ...s, dugaar: e.target.value }))
+                  }
+                  className="text-theme"
+                />
+              </div>
+              <div>
+                <div className="text-sm mb-1">{t("Дансны нэр")}</div>
+                <TextInput
+                  placeholder={t("Дансны нэр")}
+                  value={formState.dansniiNer}
+                  onChange={(e) =>
+                    setFormState((s) => ({ ...s, dansniiNer: e.target.value }))
+                  }
+                  className="text-theme"
+                />
+              </div>
+              <div>
+                <div className="text-sm mb-1">{t("Валют")}</div>
+                <Select
+                  data={[
+                    { label: "MNT", value: "MNT" },
+                    { label: "USD", value: "USD" },
+                    { label: "EUR", value: "EUR" },
+                  ]}
+                  value={formState.valyut}
+                  onChange={(v) =>
+                    setFormState((s) => ({ ...s, valyut: v || "MNT" }))
+                  }
+                  comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
+                  classNames={{ input: "" }}
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-2">
+                <button
+                  className="btn-minimal btn-cancel"
+                  onClick={() => {
+                    setModalOpen(false);
+                    setEditing(null);
+                  }}
+                >
+                  {t("Болих")}
+                </button>
+                <button className="btn-minimal btn-save" onClick={saveDans}>
+                  {t("Хадгалах")}
+                </button>
+              </div>
+            </div>
+          </Modal>
         </div>
-      </Modal>
+      </div>
     </div>
   );
 }

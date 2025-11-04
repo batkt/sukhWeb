@@ -453,7 +453,9 @@
 [data-theme="dark-green"] .ant-select-selector,
 [data-theme="dark-green"] .ant-picker,
 [data-theme="dark-green"] .mantine-Input-input {
-  background: var(--surface-bg) !important;
+  background: color-mix(in srgb, var(--surface-bg), transparent 15%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(12px) saturate(140%);
   color: var(--panel-text) !important;
   caret-color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
@@ -682,6 +684,60 @@ html[data-mode="dark"]:not([data-theme]),
   --surface-bg: #0f1424;
   --surface-border: rgba(219, 234, 254, 0.18);
   --panel-text: #e6efff;
+  --glass-tint: rgba(9, 14, 28, 0.5);
+  --glass-tint-2: rgba(12, 18, 34, 0.32);
+  --glass-border: rgba(219, 234, 254, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(2, 6, 23, 0.42);
+}
+
+[data-theme="colorful"][data-mode="dark"] {
+  /* Keep the same colorful character, but on a deep indigo base */
+  --gradient-bg: radial-gradient(
+      ellipse at top right,
+      rgba(128, 107, 223, 0.28) 0%,
+      transparent 36%
+    ),
+    radial-gradient(
+      ellipse at right 40%,
+      rgba(246, 71, 112, 0.18) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse at right 45%,
+      rgba(246, 187, 50, 0.16) 0%,
+      transparent 30%
+    ),
+    radial-gradient(
+      ellipse at 88% 30%,
+      rgba(92, 191, 155, 0.18) 0%,
+      transparent 26%
+    ),
+    radial-gradient(
+      ellipse at bottom left,
+      rgba(128, 107, 223, 0.22) 0%,
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse at 20% 80%,
+      rgba(246, 71, 112, 0.14) 0%,
+      transparent 24%
+    ),
+    radial-gradient(
+      ellipse at 36% 100%,
+      rgba(246, 187, 50, 0.12) 0%,
+      transparent 32%
+    ),
+    radial-gradient(
+      ellipse at 36% 100%,
+      rgba(92, 191, 155, 0.14) 0%,
+      transparent 30%
+    ),
+    linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
+  --surface-bg: #0f1424; /* dark navy to match the base */
+  --surface-border: rgba(219, 234, 254, 0.18);
+  --panel-text: #e6efff; /* soft ice for readability */
+  /* Glass tokens tuned for indigo/navy background */
   --glass-tint: rgba(9, 14, 28, 0.5);
   --glass-tint-2: rgba(12, 18, 34, 0.32);
   --glass-border: rgba(219, 234, 254, 0.22);

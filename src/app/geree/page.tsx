@@ -56,6 +56,7 @@ import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import { set } from "lodash";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 export const ALL_COLUMNS = [
   // { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
@@ -420,11 +421,12 @@ export default function Geree() {
             baiguullagiinId: ajiltan.baiguullagiinId,
             barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 1000,
-            query: JSON.stringify({
+            khuudasniiKhemjee: 20000,
+            // Pass object (matches other working pages like guilgeeTuukh)
+            query: {
               baiguullagiinId: ajiltan.baiguullagiinId,
               barilgiinId: selectedBuildingId || barilgiinId || null,
-            }),
+            },
           },
         });
         const list: any[] = Array.isArray(resp.data?.jagsaalt)
@@ -432,10 +434,59 @@ export default function Geree() {
           : Array.isArray(resp.data)
           ? resp.data
           : [];
+        // Build a robust resident index to resolve invoices without explicit orshinSuugchId
+        const residents = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+        const norm = (v: any) =>
+          String(v ?? "")
+            .trim()
+            .toLowerCase();
+        const resIndex = new Map<string, string>(); // key -> residentId
+        const makeResKeys = (r: any): string[] => {
+          const id = String(r?._id || "");
+          const reg = norm(r?.register);
+          const phone = norm(r?.utas);
+          const ovog = norm(r?.ovog);
+          const ner = norm(r?.ner);
+          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
+          const keys: string[] = [];
+          if (id) keys.push(`id|${id}`);
+          if (reg) keys.push(`reg|${reg}`);
+          if (phone) keys.push(`phone|${phone}`);
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          return keys;
+        };
+        residents.forEach((r: any) => {
+          const id = String(r?._id || "");
+          if (!id) return;
+          makeResKeys(r).forEach((k) => resIndex.set(k, id));
+        });
+
         const byId: Record<string, { label: string; ts: number }> = {};
         list.forEach((it: any) => {
-          const osId = String(it?.orshinSuugchId || "");
+          // Prefer explicit resident id when available
+          const keys: string[] = [];
+          const osIdRaw = String(it?.orshinSuugchId || "");
+          if (osIdRaw) keys.push(`id|${osIdRaw}`);
+          const reg = norm(it?.register);
+          if (reg) keys.push(`reg|${reg}`);
+          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
+          const phone = norm(utasVal);
+          if (phone) keys.push(`phone|${phone}`);
+          const ovog = norm(it?.ovog);
+          const ner = norm(it?.ner);
+          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+
+          let osId = "";
+          for (const k of keys) {
+            const found = resIndex.get(k);
+            if (found) {
+              osId = found;
+              break;
+            }
+          }
           if (!osId) return;
+
           const label = getPaymentStatusLabel(it);
           const ts = new Date(
             it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
@@ -460,7 +511,13 @@ export default function Geree() {
       }
     };
     run();
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    selectedBuildingId,
+    barilgiinId,
+    orshinSuugchGaralt?.jagsaalt,
+  ]);
 
   // Editing flags
   const [editingResident, setEditingResident] = useState<any | null>(null);
@@ -533,6 +590,208 @@ export default function Geree() {
     setAjiltniiKhuudaslalt,
   ]);
   useEffect(() => setMounted(true), []);
+
+  // Register tour steps for /geree page (dynamic based on activeTab)
+  const gereeTourSteps: DriverStep[] = useMemo(() => {
+    if (activeTab === "contracts") {
+      return [
+        {
+          element: "#tab-contracts",
+          popover: {
+            title: "Гэрээний хэсэг",
+            description:
+              "Эндээс гэрээний жагсаалтыг харах, шүүх болон шинэ гэрээ үүсгэх боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#geree-new-btn",
+          popover: {
+            title: "Шинэ гэрээ",
+            description:
+              "Шинэ гэрээ үүсгэх товч. Дараад шаардлагатай мэдээллээ бөглөнө.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#geree-templates-btn",
+          popover: {
+            title: "Гэрээний загвар",
+            description: "Гэрээний загваруудыг харах, сонгох боломжтой хэсэг.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#geree-download-template-btn",
+          popover: {
+            title: "Загвар татах",
+            description:
+              "Excel загвар файлыг татаж авч, өгөгдлөө бэлтгэх боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#geree-columns-btn",
+          popover: {
+            title: "Багана сонгох",
+            description: "Жагсаалтын багануудыг эндээс тохируулж болно.",
+            side: "left",
+          },
+        },
+        {
+          element: "#geree-table",
+          popover: {
+            title: "Гэрээний жагсаалт",
+            description:
+              "Тохируулсан багануудтай хамт гэрээний жагсаалт энд харагдана. Үйлдлээс засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#geree-edit-btn",
+          popover: {
+            title: "Гэрээний засвар",
+            description: "Жагсаалтан дахь мэдээллийг энд засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#geree-pagination",
+          popover: {
+            title: "Хуудаслалт",
+            description: "Эндээс хуудсуудын хооронд шилжинэ.",
+            side: "top",
+          },
+        },
+      ];
+    } else if (activeTab === "residents") {
+      return [
+        {
+          element: "#tab-residents",
+          popover: {
+            title: "Оршин суугчдын хэсэг",
+            description: "Эндээс оршин суугчдын жагсаалтыг харах боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#resident-new-btn",
+          popover: {
+            title: "Оршин суугч бүртгэх",
+            description:
+              "Шинэ оршин суугч гараас бүртгэх товч. Дараад шаардлагатай мэдээллээ бөглөнө.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#resident-download-template-btn",
+          popover: {
+            title: "Загвар татах",
+            description:
+              "Excel загвар файлыг татаж авч, өгөгдлөө бэлтгэх боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#resident-upload-template-btn",
+          popover: {
+            title: "Загвар оруулах",
+            description:
+              "Excel загвар файлыг оруулж, өгөгдлөө бэлтгэх боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#resident-table",
+          popover: {
+            title: "Оршин суугчдын жагсаалт",
+            description:
+              "Оршин суугчдын жагсаалт энд харагдана. Үйлдлээс засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#resident-edit-btn",
+          popover: {
+            title: "Оршин суугчийн мэдээлэл засах",
+            description: "Жагсаалтан дахь мэдээллийг энд засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#resident-delete-btn",
+          popover: {
+            title: "Оршин суугч устгах",
+            description: "Жагсаалтан дахь мэдээллийг энд устгах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#resident-pagination",
+          popover: {
+            title: "Хуудаслалт",
+            description: "Эндээс хуудсуудын хооронд шилжинэ.",
+            side: "top",
+          },
+        },
+      ];
+    } else if (activeTab === "employees") {
+      return [
+        {
+          element: "#tab-employees",
+          popover: {
+            title: "Ажилчдын хэсэг",
+            description: "Эндээс ажилтнуудын жагсаалтыг харах боломжтой.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#employees-new-btn",
+          popover: {
+            title: "Ажилтан бүртгэх",
+            description:
+              "Шинэ ажилтан бүртгэх товч. Дараад шаардлагатай мэдээллээ бөглөнө.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#employees-table",
+          popover: {
+            title: "Ажилтнуудын жагсаалт",
+            description:
+              "Ажилтнуудын жагсаалт энд харагдана. Үйлдлээс засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#employees-edit-btn",
+          popover: {
+            title: "Ажилтны мэдээлэл засах",
+            description: "Жагсаалтан дахь мэдээллийг энд засах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#employees-delete-btn",
+          popover: {
+            title: "Ажилтны мэдээлэл устгах",
+            description: "Жагсаалтан дахь мэдээллийг энд устгах боломжтой.",
+            side: "top",
+          },
+        },
+        {
+          element: "#employees-pagination",
+          popover: {
+            title: "Хуудаслалт",
+            description: "Эндээс хуудсуудын хооронд шилжинэ.",
+            side: "top",
+          },
+        },
+      ];
+    }
+    return [];
+  }, [activeTab]);
+  useRegisterTourSteps("/geree", gereeTourSteps);
 
   useEffect(() => {
     // Fetch large chunks once; paginate on client (same as guilgeeTuukh)
@@ -1088,8 +1347,8 @@ export default function Geree() {
       openErrorOverlay(explainPhoneRule());
       return;
     }
-    if (!newResident.nuutsUg || String(newResident.nuutsUg).length < 2) {
-      openErrorOverlay("Нууц үг хамгийн багадаа 2 тэмдэгт байх ёстой.");
+    if (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4) {
+      openErrorOverlay("Нууц үг хамгийн багадаа 4 тэмдэгт байх ёстой.");
       return;
     }
 
@@ -1522,7 +1781,7 @@ export default function Geree() {
     <div className="min-h-screen">
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex items-center gap-3">
             <motion.h1
               initial={{ opacity: 0, y: -16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1551,6 +1810,7 @@ export default function Geree() {
           <div className="mt-3 flex flex-wrap items-center gap-2 tabbar">
             {/* Tabs */}
             <button
+              id="tab-contracts"
               onClick={() => setActiveTab("contracts")}
               className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
                 activeTab === "contracts"
@@ -1561,6 +1821,7 @@ export default function Geree() {
               Гэрээ
             </button>
             <button
+              id="tab-residents"
               onClick={() => setActiveTab("residents")}
               className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
                 activeTab === "residents"
@@ -1571,6 +1832,7 @@ export default function Geree() {
               Оршин суугч
             </button>
             <button
+              id="tab-employees"
               onClick={() => setActiveTab("employees")}
               className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
                 activeTab === "employees"
@@ -1586,6 +1848,7 @@ export default function Geree() {
           {activeTab === "contracts" && (
             <>
               <button
+                id="geree-new-btn"
                 onClick={() => {
                   setEditingContract(null);
                   setCurrentStep(1);
@@ -1649,6 +1912,7 @@ export default function Geree() {
                 <span className="hidden sm:inline text-xs ml-1">Шинэ</span>
               </button>
               <button
+                id="geree-templates-btn"
                 onClick={() => setShowList2Modal(true)}
                 className="btn-minimal"
                 aria-label="Гэрээний загварууд"
@@ -1658,6 +1922,7 @@ export default function Geree() {
                 <span className="hidden sm:inline text-xs ml-1">Загвар</span>
               </button>
               <button
+                id="geree-download-template-btn"
                 onClick={() => setShowTemplatesModal(true)}
                 className="btn-minimal"
                 aria-label="Загвар татах"
@@ -1692,6 +1957,7 @@ export default function Geree() {
                   setShowResidentModal(true);
                 }}
                 className="btn-minimal"
+                id="resident-new-btn"
                 aria-label="Оршин суугч нэмэх"
                 title="Оршин суугч нэмэх"
               >
@@ -1702,6 +1968,7 @@ export default function Geree() {
               <button
                 onClick={handleDownloadResidentsTemplate}
                 className="btn-minimal"
+                id="resident-download-template-btn"
                 aria-label="Загвар татах"
                 title="Оршин суугчийн Excel загвар татах"
               >
@@ -1712,6 +1979,7 @@ export default function Geree() {
               <button
                 onClick={handleResidentsExcelImportClick}
                 className="btn-minimal"
+                id="resident-upload-template-btn"
                 disabled={isUploadingResidents}
                 aria-label="Excel-ээс импортлох"
                 title="Excel-ээс оршин суугчдыг импортлох"
@@ -1748,6 +2016,7 @@ export default function Geree() {
               className="btn-minimal"
               aria-label="Ажилтан нэмэх"
               title="Ажилтан нэмэх"
+              id="employees-new-btn"
             >
               <UserPlus className="w-5 h-5" />
               <span className="hidden sm:inline text-xs ml-1">Нэмэх</span>
@@ -1757,6 +2026,7 @@ export default function Geree() {
           {activeTab === "contracts" && (
             <div className="relative flex-shrink-0" ref={columnMenuRef}>
               <button
+                id="geree-columns-btn"
                 onClick={() => setShowColumnSelector((s) => !s)}
                 className="btn-minimal"
                 aria-expanded={showColumnSelector}
@@ -1843,7 +2113,10 @@ export default function Geree() {
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
                 <div className="max-h-[52vh] overflow-y-auto custom-scrollbar w-full">
-                  <table className="table-ui text-xs min-w-full">
+                  <table
+                    id="geree-table"
+                    className="table-ui text-xs min-w-full"
+                  >
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
                         <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -1900,6 +2173,7 @@ export default function Geree() {
                                   onClick={() => handleEdit(contract)}
                                   className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                   title="Засах"
+                                  id="geree-edit-btn"
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>
@@ -1932,7 +2206,10 @@ export default function Geree() {
                     className="text-xs px-2 py-1"
                   />
 
-                  <div className="flex items-center gap-1">
+                  <div
+                    id="geree-pagination"
+                    className="flex items-center gap-1"
+                  >
                     <button
                       className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                       disabled={currentPage <= 1}
@@ -1967,7 +2244,10 @@ export default function Geree() {
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
               <div className="max-h-[51vh] overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-xs min-w-full">
+                <table
+                  className="table-ui text-xs min-w-full"
+                  id="resident-table"
+                >
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
                       <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -2050,6 +2330,7 @@ export default function Geree() {
                                 onClick={() => handleEditResident(p)}
                                 className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                 title="Засах"
+                                id="resident-edit-btn"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -2058,6 +2339,7 @@ export default function Geree() {
                                 onClick={() => handleDeleteResident(p)}
                                 className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                 title="Устгах"
+                                id="resident-delete-btn"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2082,7 +2364,10 @@ export default function Geree() {
                   className="text-xs px-2 py-1"
                 />
 
-                <div className="flex items-center gap-1">
+                <div
+                  id="resident-pagination"
+                  className="flex items-center gap-1"
+                >
                   <button
                     className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                     disabled={resPage <= 1}
@@ -2117,7 +2402,10 @@ export default function Geree() {
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
               <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
-                <table className="table-ui text-xs min-w-full">
+                <table
+                  className="table-ui text-xs min-w-full"
+                  id="employees-table"
+                >
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
                       <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -2184,6 +2472,7 @@ export default function Geree() {
                                 onClick={() => handleEditEmployee(p)}
                                 className="p-1 rounded-2xl action-edit hover-surface transition-colors"
                                 title="Засах"
+                                id="employees-edit-btn"
                               >
                                 <Edit className="w-4 h-4" />
                               </button>
@@ -2192,6 +2481,7 @@ export default function Geree() {
                                 onClick={() => handleDeleteEmployee(p)}
                                 className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                 title="Устгах"
+                                id="employees-delete-btn"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2216,7 +2506,10 @@ export default function Geree() {
                   className="text-xs px-2 py-1"
                 />
 
-                <div className="flex items-center gap-1">
+                <div
+                  id="employee-pagination"
+                  className="flex items-center gap-1"
+                >
                   <button
                     className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                     disabled={empPage <= 1}
@@ -2699,6 +2992,10 @@ export default function Geree() {
                                     : "",
                                 }))
                               }
+                              classNames={{
+                                input:
+                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
+                              }}
                             />
                           </div>
                           <div>
@@ -2733,6 +3030,10 @@ export default function Geree() {
                                     : "",
                                 }));
                               }}
+                              classNames={{
+                                input:
+                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
+                              }}
                             />
                           </div>
                           <div>
@@ -2755,9 +3056,13 @@ export default function Geree() {
                                     : "",
                                 }))
                               }
+                              classNames={{
+                                input:
+                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
+                              }}
                             />
                           </div>
-                          <div>
+                          {/* <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Хугацаа (сар)
                             </label>
@@ -2772,7 +3077,7 @@ export default function Geree() {
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                             />
-                          </div>
+                          </div> */}
                         </div>
                       )}
 
@@ -3388,6 +3693,10 @@ export default function Geree() {
                         className="w-full"
                         required
                         clearable
+                        classNames={{
+                          input:
+                            "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
+                        }}
                       />
                     </div>
                     <div>

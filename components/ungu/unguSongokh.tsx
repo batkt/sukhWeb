@@ -20,10 +20,8 @@ export default function ӨнгөнийЗагварСонгох() {
 
   const applyTheme = (theme: Theme) => {
     const root = document.documentElement;
-    root.removeAttribute("data-theme");
-    if (theme !== "colorful") {
-      root.setAttribute("data-theme", theme);
-    }
+    // Always set explicit data-theme, including "colorful"
+    root.setAttribute("data-theme", theme);
   };
 
   const handleThemeChange = (theme: Theme) => {
@@ -48,6 +46,7 @@ export default function ӨнгөнийЗагварСонгох() {
       name: "Өнгөлөг",
       colors: ["#806bdf", "#f64770", "#f6bb32", "#5cbf9b"],
     },
+
     {
       id: "white-gray" as Theme,
       name: "Цагаан саарал",

@@ -21,6 +21,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 // Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
 import matchesSearch from "@/tools/function/matchesSearch";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 
 type TableItem = {
   id: string | number;
@@ -128,6 +129,56 @@ export default function DansniiKhuulga() {
     };
   }, [isEbarimtOpen, isZardalOpen]);
 
+  // Register guided tour for /tulbur/dansKhuulga
+  const tourSteps = useMemo<DriverStep[]>(
+    () => [
+      {
+        element: "#dans-date",
+        popover: {
+          title: "Огнооны шүүлтүүр",
+          description: "Эндээс хугацааны интервал сонгож жагсаалтыг шүүдэг.",
+        },
+      },
+      {
+        element: "#dans-account",
+        popover: {
+          title: "Данс сонгох",
+          description: "Данс сонгоход тухайн дансны гүйлгээ харагдана.",
+        },
+      },
+      {
+        element: "#ebarimt-btn",
+        popover: {
+          title: "И-баримт",
+          description: "Энд дарж И-баримтын цонх нээнэ.",
+        },
+      },
+      // {
+      //   element: "#dans-excel-btn",
+      //   popover: {
+      //     title: "Excel татах",
+      //     description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+      //   },
+      // },
+      {
+        element: "#dans-table",
+        popover: {
+          title: "Жагсаалт",
+          description: "Сонгосон дансны гүйлгээ энд харагдана.",
+        },
+      },
+      {
+        element: "#dans-pagination",
+        popover: {
+          title: "Хуудаслалт",
+          description: "Эндээс хуудсуудын хооронд шилжинэ.",
+        },
+      },
+    ],
+    []
+  );
+  useRegisterTourSteps("/tulbur/dansKhuulga", tourSteps);
+
   useEffect(() => {
     const fetchBankTransfers = async () => {
       if (!token || !ajiltan?.baiguullagiinId) return;
@@ -138,7 +189,7 @@ export default function DansniiKhuulga() {
             baiguullagiinId: ajiltan.baiguullagiinId,
             barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 200,
+            khuudasniiKhemjee: 20000,
           },
         });
         const list = Array.isArray(resp.data?.jagsaalt)
@@ -355,34 +406,38 @@ export default function DansniiKhuulga() {
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <DatePickerInput
-                type="range"
-                locale="mn"
-                value={ekhlekhOgnoo}
-                onChange={setEkhlekhOgnoo}
-                size="sm"
-                radius="md"
-                variant="filled"
-                dropdownType="popover"
-                popoverProps={{
-                  position: "bottom-start",
-                  withinPortal: true,
-                  width: 320,
-                }}
-                clearable
-                placeholder="Огноо сонгох"
-                classNames={{
-                  input:
-                    "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
-                }}
-              />
-              <TusgaiZagvar
-                value={selectedDansId || ""}
-                onChange={(v) => setSelectedDansId(v || undefined)}
-                options={dansOptions}
-                placeholder={t("Данс")}
-                className="h-[40px] !w-[150px]"
-              />
+              <div id="dans-date">
+                <DatePickerInput
+                  type="range"
+                  locale="mn"
+                  value={ekhlekhOgnoo}
+                  onChange={setEkhlekhOgnoo}
+                  size="sm"
+                  radius="md"
+                  variant="filled"
+                  dropdownType="popover"
+                  popoverProps={{
+                    position: "bottom-start",
+                    withinPortal: true,
+                    width: 320,
+                  }}
+                  clearable
+                  placeholder="Огноо сонгох"
+                  classNames={{
+                    input:
+                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                  }}
+                />
+              </div>
+              <div id="dans-account">
+                <TusgaiZagvar
+                  value={selectedDansId || ""}
+                  onChange={(v) => setSelectedDansId(v || undefined)}
+                  options={dansOptions}
+                  placeholder={t("Данс")}
+                  className="h-[40px] !w-[150px]"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <motion.div
@@ -390,6 +445,7 @@ export default function DansniiKhuulga() {
                 transition={{ duration: 0.3 }}
               >
                 <button
+                  id="ebarimt-btn"
                   onClick={() => setIsEbarimtOpen(true)}
                   className="btn-minimal"
                 >
@@ -407,14 +463,15 @@ export default function DansniiKhuulga() {
                   Зардал
                 </button> */}
               </motion.div>
-              <motion.div
+              {/* <motion.div
+                id="dans-excel-btn"
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
                 <button onClick={exceleerTatya} className="btn-minimal">
                   {t("Excel татах")}
                 </button>
-              </motion.div>
+              </motion.div> */}
             </div>
           </div>
         </div>
@@ -422,7 +479,7 @@ export default function DansniiKhuulga() {
         <div className="table-surface overflow-hidden rounded-2xl w-full">
           <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
             <div className="max-h-[31vh] overflow-y-auto custom-scrollbar w-full">
-              <table className="table-ui text-sm min-w-full">
+              <table id="dans-table" className="table-ui text-sm min-w-full">
                 <thead>
                   <tr className="text-theme">
                     <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
@@ -501,16 +558,18 @@ export default function DansniiKhuulga() {
             <div className="text-theme/70">Нийт: {filteredData.length}</div>
 
             <div className="flex items-center gap-3">
-              <PageSongokh
-                value={rowsPerPage}
-                onChange={(v) => {
-                  setRowsPerPage(v);
-                  setPage(1);
-                }}
-                className="text-xs px-2 py-1"
-              />
+              <span id="dans-page-size">
+                <PageSongokh
+                  value={rowsPerPage}
+                  onChange={(v) => {
+                    setRowsPerPage(v);
+                    setPage(1);
+                  }}
+                  className="text-xs px-2 py-1"
+                />
+              </span>
 
-              <div className="flex items-center gap-1">
+              <div id="dans-pagination" className="flex items-center gap-1">
                 <button
                   className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                   disabled={page <= 1}

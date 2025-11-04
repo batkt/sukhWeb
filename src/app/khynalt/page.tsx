@@ -7,7 +7,12 @@ import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import { postSummary, postOrlogoZarlaga } from "@/lib/useTailan";
 import uilchilgee from "../../../lib/uilchilgee";
-import { getPaymentStatusLabel, isPaidLike, isUnpaidLike } from "@/lib/utils";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+} from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
@@ -188,6 +193,18 @@ export default function Khynalt() {
 
   const [summaryData, setSummaryData] = useState<any>(null);
 
+  // Overdue 2+ months and cancelled-contract receivables
+  const [overdue2m, setOverdue2m] = useState<{
+    count: number;
+    total: number;
+    items: any[];
+  }>({ count: 0, total: 0, items: [] });
+  const [cancelledReceivables, setCancelledReceivables] = useState<{
+    count: number;
+    total: number;
+    items: any[];
+  }>({ count: 0, total: 0, items: [] });
+
   // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
   const [chartColors, setChartColors] = useState({
     text: "#0f172a", // light default
@@ -299,6 +316,31 @@ export default function Khynalt() {
 
         const residentById = new Map<string, any>();
         residents.forEach((r: any) => residentById.set(String(r._id || ""), r));
+        // Build multi-key index to match invoices without explicit orshinSuugchId
+        const norm = (v: any) =>
+          String(v ?? "")
+            .trim()
+            .toLowerCase();
+        const resIndex = new Map<string, string>(); // key -> residentId
+        const makeResKeys = (r: any): string[] => {
+          const id = String(r?._id || "");
+          const reg = norm(r?.register);
+          const phone = norm(r?.utas);
+          const ovog = norm(r?.ovog);
+          const ner = norm(r?.ner);
+          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
+          const keys: string[] = [];
+          if (id) keys.push(`id|${id}`);
+          if (reg) keys.push(`reg|${reg}`);
+          if (phone) keys.push(`phone|${phone}`);
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          return keys;
+        };
+        residents.forEach((r: any) => {
+          const id = String(r?._id || "");
+          if (!id) return;
+          makeResKeys(r).forEach((k) => resIndex.set(k, id));
+        });
 
         let paid = 0;
         let unpaid = 0;
@@ -310,7 +352,28 @@ export default function Khynalt() {
           const amount =
             Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
           const status = getPaymentStatusLabel(it);
-          const osId = String(it?.orshinSuugchId || "");
+          // Resolve resident id from invoice
+          const invoiceKeys: string[] = [];
+          const osIdRaw = String(it?.orshinSuugchId || "");
+          if (osIdRaw) invoiceKeys.push(`id|${osIdRaw}`);
+          const reg = norm(it?.register);
+          if (reg) invoiceKeys.push(`reg|${reg}`);
+          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
+          const phone = norm(utasVal);
+          if (phone) invoiceKeys.push(`phone|${phone}`);
+          const ovog = norm(it?.ovog);
+          const ner = norm(it?.ner);
+          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
+          if (ovog || ner || toot)
+            invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
+          let osId = "";
+          for (const k of invoiceKeys) {
+            const found = resIndex.get(k);
+            if (found) {
+              osId = found;
+              break;
+            }
+          }
 
           const isPaid = isPaidLike(it);
           const isUnpaid = isUnpaidLike(it);
@@ -397,6 +460,169 @@ export default function Khynalt() {
     effectiveBarilgiinId,
     timeFilter,
     residents,
+  ]);
+
+  // Fetch invoices once (broad window) to compute overdue 2+ months and cancelled-contract receivables
+  useEffect(() => {
+    const run = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId || undefined,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 20000,
+            query: {
+              baiguullagiinId: ajiltan.baiguullagiinId,
+              ...(effectiveBarilgiinId
+                ? { barilgiinId: effectiveBarilgiinId }
+                : {}),
+            },
+          },
+        });
+        const list: any[] = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+
+        // Build resident index for robust matching
+        const norm = (v: any) =>
+          String(v ?? "")
+            .trim()
+            .toLowerCase();
+        const resIndex = new Map<string, string>(); // key -> residentId
+        const makeResKeys = (r: any): string[] => {
+          const id = String(r?._id || "");
+          const reg = norm(r?.register);
+          const phone = norm(r?.utas);
+          const ovog = norm(r?.ovog);
+          const ner = norm(r?.ner);
+          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
+          const keys: string[] = [];
+          if (id) keys.push(`id|${id}`);
+          if (reg) keys.push(`reg|${reg}`);
+          if (phone) keys.push(`phone|${phone}`);
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          return keys;
+        };
+        residents.forEach((r: any) => {
+          const id = String(r?._id || "");
+          if (!id) return;
+          makeResKeys(r).forEach((k) => resIndex.set(k, id));
+        });
+
+        const findResidentIdFromInvoice = (it: any): string => {
+          const keys: string[] = [];
+          const osIdRaw = String(it?.orshinSuugchId || "");
+          if (osIdRaw) keys.push(`id|${osIdRaw}`);
+          const reg = norm(it?.register);
+          if (reg) keys.push(`reg|${reg}`);
+          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
+          const phone = norm(utasVal);
+          if (phone) keys.push(`phone|${phone}`);
+          const ovog = norm(it?.ovog);
+          const ner = norm(it?.ner);
+          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          for (const k of keys) {
+            const found = resIndex.get(k);
+            if (found) return found;
+          }
+          return "";
+        };
+
+        // Overdue 2+ months (>= ~60 days) and unpaid
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 60);
+        const overdueItems: any[] = [];
+        list.forEach((it) => {
+          if (!isUnpaidLike(it)) return;
+          const due = it?.tulukhOgnoo ? new Date(it.tulukhOgnoo) : null;
+          const created = it?.createdAt ? new Date(it.createdAt) : null;
+          const refDate = due && !isNaN(due.getTime()) ? due : created;
+          if (!refDate || isNaN(refDate.getTime())) return;
+          if (refDate <= cutoff) overdueItems.push(it);
+        });
+        const overdueTotal = overdueItems.reduce(
+          (s, it) =>
+            s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
+          0
+        );
+        setOverdue2m({
+          count: overdueItems.length,
+          total: overdueTotal,
+          items: overdueItems,
+        });
+
+        // Cancelled contracts -> receivables (unpaid invoices linked to those contracts)
+        const cancelledResidentIds = new Set<string>();
+        const makeContractKeys = (c: any): string[] => {
+          const reg = norm(c?.register);
+          const phone = norm(Array.isArray(c?.utas) ? c.utas[0] : c?.utas);
+          const ovog = norm(c?.ovog);
+          const ner = norm(c?.ner);
+          const toot = String(c?.toot ?? c?.medeelel?.toot ?? "").trim();
+          const keys: string[] = [];
+          if (reg) keys.push(`reg|${reg}`);
+          if (phone) keys.push(`phone|${phone}`);
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          return keys;
+        };
+        const isCancelledContract = (c: any) => {
+          const raw = String(c?.status ?? c?.tuluv ?? "").toLowerCase();
+          if (raw === "-1") return true;
+          if (raw.includes("цуц")) return true; // Цуцлагдсан
+          if (raw.includes("cancel")) return true; // cancelled
+          return false;
+        };
+
+        (contracts || []).forEach((c: any) => {
+          if (!isCancelledContract(c)) return;
+          const id = String(c?.orshinSuugchId || "");
+          if (id) {
+            cancelledResidentIds.add(id);
+            return;
+          }
+          const keys = makeContractKeys(c);
+          for (const k of keys) {
+            const rid = resIndex.get(k);
+            if (rid) {
+              cancelledResidentIds.add(rid);
+              break;
+            }
+          }
+        });
+
+        const cancelledItems: any[] = [];
+        list.forEach((it) => {
+          if (!isUnpaidLike(it)) return;
+          const rid = findResidentIdFromInvoice(it);
+          if (rid && cancelledResidentIds.has(rid)) cancelledItems.push(it);
+        });
+        const cancelledTotal = cancelledItems.reduce(
+          (s, it) =>
+            s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
+          0
+        );
+        setCancelledReceivables({
+          count: cancelledItems.length,
+          total: cancelledTotal,
+          items: cancelledItems,
+        });
+      } catch (e) {
+        setOverdue2m({ count: 0, total: 0, items: [] });
+        setCancelledReceivables({ count: 0, total: 0, items: [] });
+      }
+    };
+    run();
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    effectiveBarilgiinId,
+    residents,
+    contracts,
   ]);
 
   useEffect(() => {
@@ -774,9 +1000,9 @@ export default function Khynalt() {
             </div>
           </div>
 
-          {/* Expenses Chart */}
+          {/* Overdue receivables 2+ months */}
           <div
-            onClick={() => router.push("/tailan/financial")}
+            onClick={() => router.push("/tulbur")}
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
@@ -786,43 +1012,73 @@ export default function Khynalt() {
             }}
           >
             <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
-              <div className="mb-4">
+              <div className="mb-2 flex items-baseline justify-between gap-2">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
-                  Зарлагын тайлан
+                  Төлөгдөөгүй удсан авлага 2+ сар
                 </h3>
+                <div className="text-right">
+                  <div className="text-sm text-[color:var(--muted-text)]">
+                    Нийт
+                  </div>
+                  <div className="text-base font-semibold text-[color:var(--panel-text)]">
+                    {overdue2m.count} / {formatCurrency(overdue2m.total)}
+                  </div>
+                </div>
               </div>
-              <div className="h-64">
-                <Line
-                  data={expenseLineData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                        labels: { color: chartColors.text },
-                      },
-                      title: { display: false },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
-                      },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
-                      },
-                    },
-                  }}
-                />
+              <div className="h-64 overflow-auto custom-scrollbar pr-1">
+                {overdue2m.items.slice(0, 12).map((it: any, idx: number) => {
+                  const amount =
+                    Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) ||
+                    0;
+                  const name = [
+                    it?.ovog,
+                    it?.ner,
+                    it?.toot || it?.medeelel?.toot,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+                  const due = it?.tulukhOgnoo ? new Date(it.tulukhOgnoo) : null;
+                  const created = it?.createdAt ? new Date(it.createdAt) : null;
+                  const refDate = due && !isNaN(due.getTime()) ? due : created;
+                  const days = refDate
+                    ? Math.max(
+                        0,
+                        Math.floor((Date.now() - refDate.getTime()) / 86400000)
+                      )
+                    : undefined;
+                  return (
+                    <div
+                      key={it?._id || idx}
+                      className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
+                          {name || it?.register || it?.orshinSuugchId || "-"}
+                        </div>
+                        <div className="text-xs text-[color:var(--muted-text)] truncate">
+                          {days !== undefined
+                            ? `${days} хоног хэтэрсэн`
+                            : `Хугацаа хэтэрсэн`}
+                        </div>
+                      </div>
+                      <div className="text-sm font-semibold text-red-500">
+                        {formatCurrency(amount)}
+                      </div>
+                    </div>
+                  );
+                })}
+                {overdue2m.items.length === 0 && (
+                  <div className="h-full flex items-center justify-center text-sm text-[color:var(--muted-text)]">
+                    Мэдээлэл байхгүй
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Profit Chart */}
+          {/* Cancelled contract receivables */}
           <div
-            onClick={() => router.push("/tailan/financial")}
+            onClick={() => router.push("/tulbur")}
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
@@ -832,34 +1088,59 @@ export default function Khynalt() {
             }}
           >
             <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
-              <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">
-                Ашгийн тайлан
-              </h3>
-              <div className="h-64 ">
-                <Line
-                  data={profitLineData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: {
-                        position: "top" as const,
-                        labels: { color: chartColors.text },
-                      },
-                      title: { display: false },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
-                      },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
-                      },
-                    },
-                  }}
-                />
+              <div className="mb-2 flex items-baseline justify-between gap-2">
+                <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                  Цуцлагдсан гэрээний авлага
+                </h3>
+                <div className="text-right">
+                  <div className="text-sm text-[color:var(--muted-text)]">
+                    Нийт
+                  </div>
+                  <div className="text-base font-semibold text-[color:var(--panel-text)]">
+                    {cancelledReceivables.count} /{" "}
+                    {formatCurrency(cancelledReceivables.total)}
+                  </div>
+                </div>
+              </div>
+              <div className="h-64 overflow-auto custom-scrollbar pr-1">
+                {cancelledReceivables.items
+                  .slice(0, 12)
+                  .map((it: any, idx: number) => {
+                    const amount =
+                      Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) ||
+                      0;
+                    const name = [
+                      it?.ovog,
+                      it?.ner,
+                      it?.toot || it?.medeelel?.toot,
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+                    const label = getPaymentStatusLabel(it);
+                    return (
+                      <div
+                        key={it?._id || idx}
+                        className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
+                      >
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
+                            {name || it?.register || it?.orshinSuugchId || "-"}
+                          </div>
+                          <div className="text-xs text-[color:var(--muted-text)] truncate">
+                            {label}
+                          </div>
+                        </div>
+                        <div className="text-sm font-semibold text-red-500">
+                          {formatCurrency(amount)}
+                        </div>
+                      </div>
+                    );
+                  })}
+                {cancelledReceivables.items.length === 0 && (
+                  <div className="h-full flex items-center justify-center text-sm text-[color:var(--muted-text)]">
+                    Мэдээлэл байхгүй
+                  </div>
+                )}
               </div>
             </div>
           </div>

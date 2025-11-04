@@ -9,6 +9,7 @@ import * as tailanApi from "@/lib/useTailan";
 
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -58,6 +59,60 @@ export default function PerformanceReportsPage() {
       }
     })();
   }, [token, ajiltan?.baiguullagiinId, reportType]);
+
+  const performanceTourSteps: DriverStep[] = [
+    {
+      element: "#performance-reports-controls",
+      popover: {
+        title: "Огнооны сонголт",
+        description: "Эндээс тайлангийн филтерийг сонгоно.",
+      },
+    },
+    {
+      element: "#performance-report-type",
+      popover: {
+        title: "Тайлангийн төрөл",
+        description: "Тайлангийн төрлийг сонгоно.",
+      },
+    },
+    {
+      element: "#performance-fetch",
+      popover: {
+        title: "Тайлан татах",
+        description: "Сонгосон тохиргоогоор тайланг татаж авна.",
+      },
+    },
+    {
+      element: "#performance-csv",
+      popover: {
+        title: "CSV экспорт",
+        description: "Тайланг CSV форматаар татаж авна.",
+      },
+    },
+    {
+      element: "#performance-excel",
+      popover: {
+        title: "Excel экспорт",
+        description: "Тайланг Excel форматаар татаж авна.",
+      },
+    },
+    {
+      element: "#performance-table",
+      popover: {
+        title: "Тайлангийн хүснэгт",
+        description: "Тайлангийн мэдээлэл энд харуулагдана.",
+      },
+    },
+    {
+      element: "#performance-pagination",
+      popover: {
+        title: "Хуудаслалт",
+        description: "Тайлангийн хуудсуудыг сольж болно.",
+      },
+    },
+  ];
+
+  useRegisterTourSteps("/tailan/performance", performanceTourSteps);
 
   const fetchPerformance = async () => {
     if (!token) {
@@ -154,26 +209,31 @@ export default function PerformanceReportsPage() {
     <div className="min-h-screen">
       <h1 className="text-2xl font-semibold mb-4">Гүйцэтгэлийн тайлан</h1>
 
-      <ReportsControls
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        filters={filters}
-        setFilters={setFilters}
-        hideReportType
-      />
+      <div id="performance-reports-controls">
+        <ReportsControls
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          filters={filters}
+          setFilters={setFilters}
+          hideReportType
+        />
+      </div>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <TusgaiZagvar
-          className="rounded-2xl px-3 py-2"
-          value={reportType}
-          onChange={(v: string) => setReportType(v)}
-        >
-          <option value="sariin">Сарын тайлан</option>
-          <option value="uliral">Улиралын тайлан</option>
-          <option value="summary">Товч тойм</option>
-        </TusgaiZagvar>
+        <div id="performance-report-type">
+          <TusgaiZagvar
+            className="rounded-2xl px-3 py-2"
+            value={reportType}
+            onChange={(v: string) => setReportType(v)}
+          >
+            <option value="sariin">Сарын тайлан</option>
+            <option value="uliral">Улиралын тайлан</option>
+            <option value="summary">Товч тойм</option>
+          </TusgaiZagvar>
+        </div>
 
         <IconTextButton
+          id="performance-fetch"
           onClick={fetchPerformance}
           icon={<Download className="w-5 h-5" />}
           label="Татах"
@@ -181,6 +241,7 @@ export default function PerformanceReportsPage() {
         />
 
         <IconTextButton
+          id="performance-csv"
           onClick={() => exportReport("csv")}
           icon={<Download className="w-5 h-5" />}
           label="CSV"
@@ -188,6 +249,7 @@ export default function PerformanceReportsPage() {
         />
 
         <IconTextButton
+          id="performance-excel"
           onClick={() => exportReport("xlsx")}
           icon={<FileDown className="w-5 h-5" />}
           label="Excel"
@@ -196,10 +258,13 @@ export default function PerformanceReportsPage() {
       </div>
 
       <div className="neu-panel p-4 rounded-2xl">
-        <div className="table-surface overflow-visible rounded-2xl w-full">
-          <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
+        <div className="table-surface overflow-visible rounded-2xl w-full p-2 sm:p-4 max-h-[58vh]">
+          <div className="rounded-3xl p-2 sm:p-4 mb-1 neu-table allow-overflow relative">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
-              <table className="table-ui text-[11px] sm:text-xs min-w-full">
+              <table
+                id="performance-table"
+                className="table-ui text-[11px] sm:text-xs min-w-full"
+              >
                 <thead>
                   <tr>
                     {reportType === "sariin" && (
@@ -220,8 +285,8 @@ export default function PerformanceReportsPage() {
                     )}
                     {reportType === "summary" && (
                       <>
-                        <th className="p-2 text-left">Тайлбар</th>
-                        <th className="p-2 text-right">Утга</th>
+                        <th className="p-2 text-center">Тайлбар</th>
+                        <th className="p-2 text-center">Утга</th>
                       </>
                     )}
                   </tr>
@@ -309,24 +374,46 @@ export default function PerformanceReportsPage() {
                             </td>
                           </tr>
                         );
-                      return pairs.map(([k, v], i) => (
-                        <tr key={i} className="border-b last:border-b-0">
-                          <td className="p-2">{k}</td>
-                          <td className="p-2 text-right">
-                            {typeof v === "number"
-                              ? `${formatNumber(v)} ₮`
-                              : String(v)}
-                          </td>
-                        </tr>
-                      ));
+                      return pairs.map(([k, v], i) => {
+                        const displayValue = (k: string, v: any) => {
+                          if (
+                            k === "Оршин суугчдын тоо" ||
+                            k === "Гэрээний тоо" ||
+                            k === "Нэхэмжлэлийн тоо"
+                          ) {
+                            return formatNumber(v, 0);
+                          } else {
+                            return `${formatNumber(v)} ₮`;
+                          }
+                        };
+                        return (
+                          <tr key={i} className="border-b last:border-b-0">
+                            <td className="p-2 text-left">{k}</td>
+                            <td
+                              className={`p-2 ${
+                                displayValue(k, v).includes("₮")
+                                  ? "text-right"
+                                  : "text-center"
+                              }`}
+                            >
+                              {typeof v === "number"
+                                ? displayValue(k, v)
+                                : String(v)}
+                            </td>
+                          </tr>
+                        );
+                      });
                     }
                     return null;
                   })()}
                 </tbody>
               </table>
             </div>
-            {/* Pagination controls */}
-            <div className="flex items-center justify-between px-2 py-1 text-xs">
+
+            <div
+              id="performance-pagination"
+              className="flex items-center justify-between px-2 py-1 text-xs"
+            >
               <div className="text-theme/70">
                 Нийт:{" "}
                 {(() => {

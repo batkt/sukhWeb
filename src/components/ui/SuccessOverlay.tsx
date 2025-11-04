@@ -21,6 +21,7 @@ export function SuccessOverlayHost() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [duration, setDuration] = useState(1600);
+  const [container, setContainer] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     const handler = (e: Event) => {
@@ -46,13 +47,20 @@ export function SuccessOverlayHost() {
     return () => clearTimeout(t);
   }, [open, duration]);
 
-  if (typeof document === "undefined") return null;
+  // Resolve a stable portal container inside the React tree to avoid hydration mismatches
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const el = document.getElementById("portal-root") as HTMLElement | null;
+    setContainer(el || document.body);
+  }, []);
+
+  if (!container) return null;
 
   return createPortal(
     <div
       aria-live="polite"
       aria-atomic="true"
-      className="fixed inset-0 z-[2200] pointer-events-none"
+      className="fixed inset-0 z-[3000] pointer-events-none"
     >
       <div className="absolute top-4 md:top-6 right-4 md:right-6 left-auto translate-x-0 flex flex-col items-end gap-2">
         <div
@@ -96,6 +104,6 @@ export function SuccessOverlayHost() {
         </div>
       </div>
     </div>,
-    document.body
+    container
   );
 }

@@ -882,24 +882,79 @@ export default function InvoicingZardluud() {
           : Array.isArray(resp.data)
           ? resp.data
           : [];
-        const byId: Record<string, { label: string; ts: number }> = {};
+
+        // Build a resident index by multiple keys to match invoices without explicit orshinSuugchId
+        const norm = (v: any) =>
+          String(v ?? "")
+            .trim()
+            .toLowerCase();
+        const makeResKeys = (r: any): string[] => {
+          const keys: string[] = [];
+          const id = String(r?._id || "");
+          if (!id) return keys;
+          const reg = norm(r?.register);
+          const phone = norm(r?.utas);
+          const ovog = norm(r?.ovog);
+          const ner = norm(r?.ner);
+          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
+          if (reg) keys.push(`reg|${reg}`);
+          if (phone) keys.push(`phone|${phone}`);
+          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+          // also map direct id for convenience
+          keys.push(`id|${id}`);
+          return keys;
+        };
+        const residentKeyToId = new Map<string, string>();
+        (residents || []).forEach((r: any) => {
+          const id = String(r?._id || "");
+          if (!id) return;
+          makeResKeys(r).forEach((k) => residentKeyToId.set(k, id));
+        });
+
+        // Reduce invoice list to latest status per resident (matched by multi-key)
+        const byResident: Record<string, { label: string; ts: number }> = {};
         list.forEach((it) => {
-          const osId = String(it?.orshinSuugchId || "");
-          if (!osId) return;
           const label = getPaymentStatusLabel(it);
           const ts = new Date(
             it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
           ).getTime();
-          const cur = byId[osId];
-          if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
+
+          const invoiceKeys: string[] = [];
+          const osId = String(it?.orshinSuugchId || "");
+          if (osId) invoiceKeys.push(`id|${osId}`);
+          const reg = norm(it?.register);
+          if (reg) invoiceKeys.push(`reg|${reg}`);
+          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
+          const phone = norm(utasVal);
+          if (phone) invoiceKeys.push(`phone|${phone}`);
+          const ovog = norm(it?.ovog);
+          const ner = norm(it?.ner);
+          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
+          if (ovog || ner || toot)
+            invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
+
+          // Find a resident id via the first matching key
+          let rid = "";
+          for (const k of invoiceKeys) {
+            const found = residentKeyToId.get(k);
+            if (found) {
+              rid = found;
+              break;
+            }
+          }
+          if (!rid) return;
+
+          const cur = byResident[rid];
+          if (!cur || ts >= cur.ts) byResident[rid] = { label, ts };
         });
+
         const out: Record<
           string,
           "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
         > = {};
-        Object.entries(byId).forEach(([k, v]) => {
+        Object.entries(byResident).forEach(([rid, v]) => {
           const l = v.label as any;
-          out[k] =
+          out[rid] =
             l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
               ? l
               : "Тодорхойгүй";
@@ -910,7 +965,13 @@ export default function InvoicingZardluud() {
       }
     };
     run();
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    selectedBuildingId,
+    barilgiinId,
+    residents,
+  ]);
 
   const displayResidents = useMemo(() => {
     let items = [...residents];
@@ -1278,7 +1339,8 @@ export default function InvoicingZardluud() {
                 locale="mn"
                 valueFormat="YYYY-MM-DD"
                 classNames={{
-                  input: "text-theme neu-panel placeholder:text-theme h-12",
+                  input:
+                    "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
                 }}
               />
               <TusgaiZagvar
@@ -1330,7 +1392,7 @@ export default function InvoicingZardluud() {
               />
             </div>
 
-            <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
+            {/* <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1343,7 +1405,7 @@ export default function InvoicingZardluud() {
                   Excel татах
                 </button>
               </motion.div>
-            </div>
+            </div> */}
           </div>
         </motion.div>
 

@@ -309,149 +309,142 @@ export default function BarilgiinTokhirgoo({
 
   return (
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
-      <div className="mt-2">
-        <h2 className="text-md font-semibold text-theme mb-3">
-          Барилгын тохиргоо
-        </h2>
-
-        <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
-          {/* Empty state when no building is available */}
-          {!barilga && (
-            <div className="p-3 rounded-md border border-blue-300 text-blue-700 text-sm">
-              Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга
-              сонгох эсвэл шинээр нэмнэ үү.
-            </div>
-          )}
-
-          {/* Info grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Барилгын нэр
-              </label>
-              <input
-                type="text"
-                value={barilgaNer}
-                readOnly
-                placeholder="Барилгын нэр"
-                className="w-full px-3 py-2 neu-panel focus:outline-none bg-gray-100 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Байршил
-              </label>
-              <div className="w-full px-3 py-3 neu-panel text-sm text-theme">
-                {(() => {
-                  const duureg =
-                    barilga?.tokhirgoo?.duuregNer ||
-                    (baiguullaga?.tokhirgoo as any)?.duuregNer;
-                  const horoo =
-                    (barilga?.tokhirgoo as any)?.horoo?.ner ||
-                    (baiguullaga?.tokhirgoo as any)?.horoo?.ner;
-                  if (duureg || horoo)
-                    return `${duureg || ""} / ${horoo || ""}`;
-                  return "Байршил тохируулаагүй (Үндсэн мэдээлэл хэсгээс тохируулна уу)";
-                })()}
-              </div>
-            </div>
+      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
+        {/* Empty state when no building is available */}
+        {!barilga && (
+          <div className="p-3 rounded-md border border-blue-300 text-blue-700 text-sm">
+            Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох
+            эсвэл шинээр нэмнэ үү.
           </div>
+        )}
 
-          <div className="border-t pt-4">
-            <h3 className="font-medium text-theme mb-2">Шинэ барилга нэмэх</h3>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={newBarilgaNer}
-                onChange={(e) => setNewBarilgaNer(e.target.value)}
-                placeholder="Шинэ барилгын нэр"
-                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <MButton className="btn-minimal" onClick={addNewBuilding}>
-                Нэмэх
-              </MButton>
-            </div>
-          </div>
-
-          {/* Entrances */}
+        {/* Info grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-medium text-theme">Орц</h3>
-              <Badge variant="light" color="blue">
-                {ortsnuud.length}
-              </Badge>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={ortsInput}
-                onChange={(e) => setOrtsInput(e.target.value)}
-                placeholder="Ж: 1, 2, 3 эсвэл 1 2 3"
-                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <MButton className="btn-minimal mt-1" onClick={addOrtsFromInput}>
-                Нэмэх
-              </MButton>
-            </div>
-            {ortsnuud.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {ortsnuud.map((o) => (
-                  <span
-                    key={o}
-                    className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500 text-blue-700 border border-blue-200 text-sm"
-                  >
-                    {o}
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:text-blue-800"
-                      onClick={() => removeOrts(o)}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+            <label className="block text-sm font-medium text-theme mb-1">
+              Барилгын нэр
+            </label>
+            <input
+              type="text"
+              value={barilgaNer}
+              readOnly
+              placeholder="Барилгын нэр"
+              className="w-full px-3 py-2 neu-panel focus:outline-none bg-gray-100 cursor-not-allowed"
+            />
           </div>
 
-          {/* Floors */}
           <div>
-            <h3 className="font-medium text-theme mb-2">Давхар</h3>
-            <div className="flex items-center gap-3">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт давхар
-                </label>
-                <MNumberInput
-                  min={0}
-                  max={100}
-                  value={davkharCount}
-                  onChange={(v) => setDavkharCount(Number(v as number) || 0)}
-                  className="w-40"
-                />
-              </div>
-              <div className="text-sm text-slate-600 mt-6">
-                {davkharCount > 0
-                  ? `1 - ${davkharCount} давхар оруулсан байна`
-                  : "Давхарын тоо оруулна уу"}
-              </div>
+            <label className="block text-sm font-medium text-theme mb-1">
+              Байршил
+            </label>
+            <div className="w-full px-3 py-3 neu-panel text-sm text-theme">
+              {(() => {
+                const duureg =
+                  barilga?.tokhirgoo?.duuregNer ||
+                  (baiguullaga?.tokhirgoo as any)?.duuregNer;
+                const horoo =
+                  (barilga?.tokhirgoo as any)?.horoo?.ner ||
+                  (baiguullaga?.tokhirgoo as any)?.horoo?.ner;
+                if (duureg || horoo) return `${duureg || ""} / ${horoo || ""}`;
+                return "Байршил тохируулаагүй (Үндсэн мэдээлэл хэсгээс тохируулна уу)";
+              })()}
             </div>
           </div>
+        </div>
 
-          {/* Add New Building */}
-
-          {/* Save */}
-          <div className="flex justify-end pt-2">
-            <MButton
-              className="btn-minimal btn-save"
-              onClick={save}
-              disabled={!barilga}
-              title={!barilga ? "Барилга сонгоогүй байна" : undefined}
-            >
-              Хадгалах
+        <div className="border-t pt-4">
+          <h3 className="font-medium text-theme mb-2">Шинэ барилга нэмэх</h3>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={newBarilgaNer}
+              onChange={(e) => setNewBarilgaNer(e.target.value)}
+              placeholder="Шинэ барилгын нэр"
+              className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <MButton className="btn-minimal" onClick={addNewBuilding}>
+              Нэмэх
             </MButton>
           </div>
+        </div>
+
+        {/* Entrances */}
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="font-medium text-theme">Орц</h3>
+            <Badge variant="light" color="blue">
+              {ortsnuud.length}
+            </Badge>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              value={ortsInput}
+              onChange={(e) => setOrtsInput(e.target.value)}
+              placeholder="Ж: 1, 2, 3 эсвэл 1 2 3"
+              className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <MButton className="btn-minimal mt-1" onClick={addOrtsFromInput}>
+              Нэмэх
+            </MButton>
+          </div>
+          {ortsnuud.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ortsnuud.map((o) => (
+                <span
+                  key={o}
+                  className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500 text-blue-700 border border-blue-200 text-sm"
+                >
+                  {o}
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:text-blue-800"
+                    onClick={() => removeOrts(o)}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Floors */}
+        <div>
+          <h3 className="font-medium text-theme mb-2">Давхар</h3>
+          <div className="flex items-center gap-3">
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Нийт давхар
+              </label>
+              <MNumberInput
+                min={0}
+                max={100}
+                value={davkharCount}
+                onChange={(v) => setDavkharCount(Number(v as number) || 0)}
+                className="w-40"
+              />
+            </div>
+            <div className="text-sm text-slate-600 mt-6">
+              {davkharCount > 0
+                ? `1 - ${davkharCount} давхар оруулсан байна`
+                : "Давхарын тоо оруулна уу"}
+            </div>
+          </div>
+        </div>
+
+        {/* Add New Building */}
+
+        {/* Save */}
+        <div className="flex justify-end pt-2">
+          <MButton
+            className="btn-minimal btn-save"
+            onClick={save}
+            disabled={!barilga}
+            title={!barilga ? "Барилга сонгоогүй байна" : undefined}
+          >
+            Хадгалах
+          </MButton>
         </div>
       </div>
     </div>
