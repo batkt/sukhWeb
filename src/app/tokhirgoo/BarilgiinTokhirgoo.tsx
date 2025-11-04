@@ -63,6 +63,9 @@ export default function BarilgiinTokhirgoo({
   const [davkharCount, setDavkharCount] = useState<number>(0);
   const [isInit, setIsInit] = useState<boolean>(false);
 
+  // New state for adding new building
+  const [newBarilgaNer, setNewBarilgaNer] = useState<string>("");
+
   useEffect(() => {
     // If building isn't found, stop the spinner and show empty state instead of hanging
     if (!barilga) {
@@ -165,6 +168,76 @@ export default function BarilgiinTokhirgoo({
     return out;
   };
 
+  const addNewBuilding = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх токен олдсонгүй");
+      return;
+    }
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+    const name = (newBarilgaNer || "").trim();
+    if (!name) {
+      openErrorOverlay("Барилгын нэр оруулна уу");
+      return;
+    }
+
+    // Check for duplicate name
+    const hasDup = (baiguullaga?.barilguud || []).some(
+      (b: any) => String(b?.ner || "").trim() === name
+    );
+    if (hasDup) {
+      openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
+      return;
+    }
+
+    try {
+      const newBuilding = {
+        ner: name,
+        bairshil: { coordinates: [] },
+        tokhirgoo: {
+          duuregNer: (baiguullaga?.tokhirgoo as any)?.duuregNer || "",
+          districtCode: (baiguullaga?.tokhirgoo as any)?.districtCode || "",
+          horoo: {
+            ner: (baiguullaga?.tokhirgoo as any)?.horoo?.ner || "",
+            kod: (baiguullaga?.tokhirgoo as any)?.horoo?.kod || "",
+          },
+          sohNer: (baiguullaga?.tokhirgoo as any)?.sohNer || "",
+          orts: [],
+          davkhar: [],
+        },
+        davkharuud: [],
+      };
+
+      const updatedBarilguud = [...(baiguullaga?.barilguud || []), newBuilding];
+
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga._id,
+        barilguud: updatedBarilguud,
+      };
+
+      const res = await updateBaiguullaga(
+        token || undefined,
+        baiguullaga._id,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+
+      openSuccessOverlay("Шинэ барилга нэмэгдлээ");
+      setNewBarilgaNer("");
+      // Optionally switch to the new building
+      if (res?.barilguud && res.barilguud.length > 0) {
+        const newId = res.barilguud[res.barilguud.length - 1]._id;
+        setSelectedBuildingId(newId);
+      }
+    } catch (e) {
+      openErrorOverlay("Шинэ барилга нэмэхэд алдаа гарлаа");
+    }
+  };
+
   const save = async () => {
     if (!token) {
       openErrorOverlay("Нэвтрэх токен олдсонгүй");
@@ -182,20 +255,6 @@ export default function BarilgiinTokhirgoo({
     }
 
     try {
-      // Building name duplicate check (excluding current building)
-      const newName = (barilgaNer || "").trim();
-      if (newName) {
-        const hasDup = (baiguullaga?.barilguud || []).some(
-          (b: any) =>
-            String(b._id) !== String(barilga._id) &&
-            String(b?.ner || "").trim() === newName
-        );
-        if (hasDup) {
-          openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
-          return;
-        }
-      }
-
       const floorsObjects = buildDavkharuud(davkharCount);
       const floorLabels = Array.from({ length: davkharCount }, (_, i) =>
         String(i + 1)
@@ -205,7 +264,7 @@ export default function BarilgiinTokhirgoo({
         if (String(b._id) !== String(barilga._id)) return b;
         return {
           ...b,
-          ner: barilgaNer || b.ner,
+          // ner: barilgaNer || b.ner, // Remove name update to avoid changing current building name
           tokhirgoo: {
             ...(b.tokhirgoo || {}),
             // mirror UI fields into tokhirgoo as requested
@@ -273,9 +332,9 @@ export default function BarilgiinTokhirgoo({
               <input
                 type="text"
                 value={barilgaNer}
-                onChange={(e) => setBarilgaNer(e.target.value)}
+                readOnly
                 placeholder="Барилгын нэр"
-                className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 neu-panel focus:outline-none bg-gray-100 cursor-not-allowed"
               />
             </div>
 
@@ -296,6 +355,22 @@ export default function BarilgiinTokhirgoo({
                   return "Байршил тохируулаагүй (Үндсэн мэдээлэл хэсгээс тохируулна уу)";
                 })()}
               </div>
+            </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="font-medium text-theme mb-2">Шинэ барилга нэмэх</h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="text"
+                value={newBarilgaNer}
+                onChange={(e) => setNewBarilgaNer(e.target.value)}
+                placeholder="Шинэ барилгын нэр"
+                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+              <MButton className="btn-minimal" onClick={addNewBuilding}>
+                Нэмэх
+              </MButton>
             </div>
           </div>
 
@@ -363,6 +438,8 @@ export default function BarilgiinTokhirgoo({
               </div>
             </div>
           </div>
+
+          {/* Add New Building */}
 
           {/* Save */}
           <div className="flex justify-end pt-2">
