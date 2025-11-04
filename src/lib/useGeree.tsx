@@ -22,7 +22,7 @@ export interface Geree {
   register?: string;
   turul?: "Үндсэн" | "Түр";
   davkhar: string;
-  toot: number;
+  toot?: string | number;
   gereeniiDugaar: string;
   gereeniiOgnoo?: string;
   ekhlekhOgnoo?: string;
@@ -91,12 +91,13 @@ const fetcherJagsaalt = async ([
     if (barilgiinId != null && barilgiinId !== "") {
       queryObj.barilgiinId = barilgiinId;
     }
-    // Add search filters
+    // Add search filters (support searching by apartment number "toot" as string)
     const search = khuudaslalt.search || "";
     queryObj.$or = [
       { ner: { $regex: search, $options: "i" } },
       { gereeniiDugaar: { $regex: search, $options: "i" } },
       { register: { $regex: search, $options: "i" } },
+      { toot: { $regex: search, $options: "i" } },
     ];
 
     const paramsBase: any = {

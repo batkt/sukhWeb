@@ -353,6 +353,8 @@ export default function Geree() {
 
   const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
   const { selectedBuildingId } = useBuilding();
+  const effectiveBarilgiinId: string | undefined =
+    selectedBuildingId ?? barilgiinId ?? undefined;
   const selectedBarilga = baiguullaga?.barilguud?.find(
     (b) => b._id === selectedBuildingId
   );
@@ -363,7 +365,12 @@ export default function Geree() {
     orshinSuugchJagsaaltMutate,
     setOrshinSuugchKhuudaslalt,
     isValidating: isValidatingSuugch,
-  } = useOrshinSuugchJagsaalt(token || "", ajiltan?.baiguullagiinId || "", {});
+  } = useOrshinSuugchJagsaalt(
+    token || "",
+    ajiltan?.baiguullagiinId || "",
+    {},
+    effectiveBarilgiinId
+  );
   // Employees list
   const {
     ajilchdiinGaralt,
@@ -373,7 +380,7 @@ export default function Geree() {
   } = useAjiltniiJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
-    undefined,
+    effectiveBarilgiinId,
     {}
   );
 
@@ -382,7 +389,12 @@ export default function Geree() {
     gereeJagsaaltMutate,
     setGereeKhuudaslalt,
     isValidating: isValidatingGeree,
-  } = useGereeJagsaalt();
+  } = useGereeJagsaalt(
+    {},
+    token || undefined,
+    ajiltan?.baiguullagiinId,
+    effectiveBarilgiinId
+  );
   const { gereeUusgekh, gereeZasakh, gereeUstgakh } = useGereeCRUD();
   const {
     zagvaruud,
@@ -405,6 +417,24 @@ export default function Geree() {
   const [resPageSize, setResPageSize] = useState(20);
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
+
+  // When selected building changes, reset paginations to first page
+  useEffect(() => {
+    setResPage(1);
+    setEmpPage(1);
+    setOrshinSuugchKhuudaslalt((prev: any) => ({
+      ...prev,
+      khuudasniiDugaar: 1,
+    }));
+    setAjiltniiKhuudaslalt((prev: any) => ({
+      ...prev,
+      khuudasniiDugaar: 1,
+    }));
+    setGereeKhuudaslalt((prev: any) => ({
+      ...prev,
+      khuudasniiDugaar: 1,
+    }));
+  }, [selectedBuildingId, barilgiinId]);
 
   // Canonical status map from nekhemjlekhiinTuukh by resident (_id)
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
@@ -1391,13 +1421,34 @@ export default function Geree() {
         selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
       payload.barilgiinId = selectedBuildingId || barilgiinId || null;
 
+      // Track newly created resident id for auto-contract creation
+      let createdResidentId: string | null = null;
+
       if (editingResident?._id) {
         await updateMethod("orshinSuugch", token || "", {
           ...payload,
           _id: editingResident._id,
         });
       } else {
-        await createMethod("orshinSuugchBurtgey", token || "", payload);
+        const resp: any = await createMethod(
+          "orshinSuugchBurtgey",
+          token || "",
+          payload
+        );
+        try {
+          const respData = resp?.data ?? resp;
+          // Try common shapes: { data: {...} } | {...}
+          const created =
+            respData?.data ||
+            respData?.orshinSuugch ||
+            (Array.isArray(respData?.jagsaalt)
+              ? respData.jagsaalt[0]
+              : respData);
+          const idCandidate = created?._id || created?.id;
+          createdResidentId = idCandidate ? String(idCandidate) : null;
+        } catch (_) {
+          createdResidentId = null;
+        }
       }
       const wasEdit = Boolean(editingResident?._id);
       if (wasEdit) {
@@ -1409,6 +1460,65 @@ export default function Geree() {
       setEditingResident(null);
       setCurrentStep(1);
       await orshinSuugchJagsaaltMutate();
+
+      // Auto-create a basic contract for newly created resident
+      if (!wasEdit && createdResidentId) {
+        try {
+          const today = new Date();
+          const start = new Date(today);
+          const end = new Date(today);
+          // Default duration: 12 months
+          end.setMonth(end.getMonth() + 12);
+
+          const firstPhone = Array.isArray(newResident.utas)
+            ? newResident.utas.find(
+                (p: any) => String(p || "").trim() !== ""
+              ) || ""
+            : String(newResident.utas || "");
+
+          const autoContract: any = {
+            // Link to resident
+            orshinSuugchId: createdResidentId,
+            // Basic person fields copied for convenience
+            ovog: newResident.ovog,
+            ner: newResident.ner,
+            register: newResident.register,
+            utas: firstPhone ? [firstPhone] : [],
+            mail: newResident.mail,
+            khayag: newResident.khayag,
+
+            // Contract meta
+            turul: "Үндсэн",
+            gereeniiDugaar: computeNextGereeDugaar(),
+            gereeniiOgnoo: start.toISOString(),
+            ekhlekhOgnoo: start.toISOString(),
+            duusakhOgnoo: end.toISOString(),
+            tulukhOgnoo: start.toISOString(),
+            khugatsaa: 12,
+
+            // Location details if present on resident form
+            aimag: newResident.aimag,
+            duureg: newResident.duureg,
+            horoo: newResident.horoo,
+            davkhar: newResident.davkhar,
+            toot: newResident.toot,
+          };
+
+          const ok = await gereeUusgekh(autoContract);
+          if (ok) {
+            await gereeJagsaaltMutate();
+            openSuccessOverlay("Гэрээ автоматаар үүсгэгдлээ");
+          } else {
+            openErrorOverlay(
+              "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэхэд алдаа гарлаа."
+            );
+          }
+        } catch (e) {
+          openErrorOverlay(
+            "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэх явцад алдаа гарлаа."
+          );
+        }
+      }
       setActiveTab("residents");
     } catch (err) {
       openErrorOverlay("Нэмэхэд алдаа гарлаа");

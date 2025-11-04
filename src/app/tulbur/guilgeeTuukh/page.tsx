@@ -30,6 +30,7 @@ import {
   isOverdueLike,
 } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
+import { useBuilding } from "@/context/BuildingContext";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -50,6 +51,8 @@ export default function DansniiKhuulga() {
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
@@ -69,7 +72,7 @@ export default function DansniiKhuulga() {
           "/nekhemjlekhiinTuukh",
           token,
           ajiltan.baiguullagiinId,
-          barilgiinId || null,
+          effectiveBarilgiinId || null,
         ]
       : null,
     async ([url, tkn, orgId, branch]: [
@@ -117,13 +120,13 @@ export default function DansniiKhuulga() {
     {},
     token || undefined,
     ajiltan?.baiguullagiinId,
-    barilgiinId || undefined
+    effectiveBarilgiinId
   );
   const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
     {},
-    barilgiinId
+    effectiveBarilgiinId
   );
 
   const contractsById = useMemo(() => {
@@ -153,9 +156,42 @@ export default function DansniiKhuulga() {
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
+  // Ensure history is scoped to the selected building on the client too,
+  // in case backend returns org-wide data.
+  const buildingHistoryItems = useMemo(() => {
+    const bid = String(effectiveBarilgiinId || "");
+    if (!bid) return allHistoryItems;
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    return allHistoryItems.filter((it: any) => {
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
+      );
+      if (itemBid) return itemBid === bid;
+      // Derive from linked contract or resident if barilgiinId absent
+      const cId = toStr(
+        it?.gereeId ??
+          it?.gereeniiId ??
+          it?.contractId ??
+          it?.kholbosonGereeniiId
+      );
+      const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+      const c = cId ? (contractsById as any)[cId] : undefined;
+      const r = rId ? (residentsById as any)[rId] : undefined;
+      const cbid = toStr(
+        c?.barilgiinId ?? c?.barilga ?? c?.barilgaId ?? c?.branchId
+      );
+      const rbid = toStr(
+        r?.barilgiinId ?? r?.barilga ?? r?.barilgaId ?? r?.branchId
+      );
+      if (cbid) return cbid === bid;
+      if (rbid) return rbid === bid;
+      return false;
+    });
+  }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
+
   // Filter by paid/unpaid
   const filteredItems = useMemo(() => {
-    return allHistoryItems.filter((it: any) => {
+    return buildingHistoryItems.filter((it: any) => {
       const paid = isPaidLike(it);
       if (tuluvFilter === "paid") return paid;
       if (tuluvFilter === "unpaid")
@@ -168,7 +204,7 @@ export default function DansniiKhuulga() {
 
       return true;
     });
-  }, [allHistoryItems, tuluvFilter, searchTerm]);
+  }, [buildingHistoryItems, tuluvFilter, searchTerm]);
 
   const stats = useMemo(() => {
     const totalCount = filteredItems.length;

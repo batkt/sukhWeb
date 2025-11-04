@@ -27,6 +27,7 @@ interface OrshinSuugch {
   khayag?: string;
   nevtrekhNer?: string;
   tuluv?: string;
+  toot?: string | number;
   baiguullagiinId?: string;
   [key: string]: any;
 }
@@ -130,59 +131,21 @@ const fetcherJagsaalt = async ([
       data = normalize(respAlt.data, paramsBase.khuudasniiKhemjee);
     }
 
-    // If branch-scoped query returns empty but org might have residents, fallback without branch
-    const list = data.jagsaalt || [];
-    if (barilgiinId && (!list || list.length === 0)) {
-      const baseNoBranch = {
-        ...paramsBase,
-        barilgiinId: undefined,
-        query: JSON.stringify({ ...queryObj, barilgiinId: undefined }),
-      };
-      // Try stringified org-only
-      let resp2 = await uilchilgee(token).get(url, { params: baseNoBranch });
-      let d2 = normalize(resp2.data, paramsBase.khuudasniiKhemjee);
-      let l2 = d2.jagsaalt || [];
-      // If still empty, try non-stringified org-only
-      if (!l2 || l2.length === 0) {
-        const resp2Alt = await uilchilgee(token).get(url, {
-          params: {
-            ...baseNoBranch,
-            query: { ...queryObj, barilgiinId: undefined },
-          },
-        });
-        d2 = normalize(resp2Alt.data, paramsBase.khuudasniiKhemjee);
-        l2 = d2.jagsaalt || [];
-      }
-      const toStr = (v: any) => (v == null ? "" : String(v));
-      const filtered2 = l2.filter(
-        (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
-      );
-      const serverTotal2 = Number((d2 as any)?.niitMur);
-      const pageSizeNum2 = Number((d2 as any)?.khuudasniiKhemjee);
-      return {
-        ...d2,
-        jagsaalt: filtered2,
-        niitMur: isNaN(serverTotal2) ? filtered2.length : serverTotal2,
-        niitKhuudas:
-          !isNaN(serverTotal2) && pageSizeNum2
-            ? Math.max(0, Math.ceil(serverTotal2 / pageSizeNum2))
-            : (d2 as any)?.niitKhuudas ?? 0,
-      };
-    }
-
-    // Client-side enforcement for org/branch with org-only fallback when branch yields none
+    // Client-side enforcement for org/branch (strict when branch is selected)
     const toStr = (v: any) => (v == null ? "" : String(v));
+    const list = data.jagsaalt || [];
     const orgOnly = (list || []).filter(
       (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
     );
     const branchAware = orgOnly.filter((it: any) => {
       if (!barilgiinId) return true;
-      return (
-        it?.barilgiinId == null || toStr(it.barilgiinId) === toStr(barilgiinId)
+      // Support alternate field names for building id
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
       );
+      return itemBid === toStr(barilgiinId);
     });
-    const finalList =
-      barilgiinId && branchAware.length === 0 ? orgOnly : branchAware;
+    const finalList = branchAware;
     const serverTotal = Number((data as any)?.niitMur);
     const pageSizeNum = Number((data as any)?.khuudasniiKhemjee);
     return {

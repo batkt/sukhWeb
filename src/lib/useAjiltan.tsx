@@ -101,10 +101,11 @@ const fetcherJagsaalt = async ([
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
       if (!orgOk) return false;
       if (!barilgiinId) return true;
-      // Some records may not have barilgiinId; allow them only when no branch filter.
-      return (
-        it?.barilgiinId == null || toStr(it.barilgiinId) === toStr(barilgiinId)
+      // Support alternate building id fields for employees as well
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
       );
+      return itemBid === toStr(barilgiinId);
     });
     if (Array.isArray(raw?.jagsaalt)) {
       return {
