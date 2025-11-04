@@ -207,7 +207,7 @@ export default function PerformanceReportsPage() {
 
   return (
     <div className="min-h-screen">
-      <h1 className="text-2xl font-semibold mb-4">Гүйцэтгэлийн тайлан</h1>
+      <h1 className="text-2xl font-semibold mb-4 p-4">Гүйцэтгэлийн тайлан</h1>
 
       <div id="performance-reports-controls">
         <ReportsControls
@@ -258,7 +258,7 @@ export default function PerformanceReportsPage() {
       </div>
 
       <div className="neu-panel p-4 rounded-2xl">
-        <div className="table-surface overflow-visible rounded-2xl w-full p-2 sm:p-4 max-h-[58vh]">
+        <div className="table-surface overflow-visible rounded-2xl w-full p-2 sm:p-4 max-h-[55vh]">
           <div className="rounded-3xl p-2 sm:p-4 mb-1 neu-table allow-overflow relative">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
               <table

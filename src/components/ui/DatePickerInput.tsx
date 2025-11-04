@@ -197,7 +197,7 @@ export function DatePickerInput(
             .rdp-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
             .rdp-day { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
             
-            /* Weekdays (Mon-Fri): default backgrounds */
+            /* Base button styling */
             .rdp-day_button {
               width: 100%;
               height: 100%;
@@ -205,51 +205,60 @@ export function DatePickerInput(
               align-items: center;
               justify-content: center;
               border-radius: 0.5rem;
-              background-color: white !important;
-              color: black !important;
+              background-color: white;
+              color: black;
               font-weight: 500;
               transition: background-color .15s ease, color .15s ease;
               border: none;
               cursor: pointer;
             }
             
-            /* Dark mode - Weekdays (Mon-Fri): black background */
+            /* Dark mode base */
             .dark .rdp-day_button {
-              background-color: black !important;
-              color: white !important;
+              background-color: black;
+              color: white;
             }
             
-            /* Weekend styling - Sunday (1st col) and Saturday (7th col): red text, same bg as weekdays */
-            .rdp-table tbody tr > td:nth-child(1) .rdp-day_button,
-            .rdp-table tbody tr > td:nth-child(7) .rdp-day_button {
-              color: #ef4444 !important; /* red-500 */
-            }
-            
-            .dark .rdp-table tbody tr > td:nth-child(1) .rdp-day_button,
-            .dark .rdp-table tbody tr > td:nth-child(7) .rdp-day_button {
-              color: #ef4444 !important; /* red-500 */
-            }
-            
-            /* Previous/next month dates - gray background and text */
+            /* Previous/next month dates - must come before weekend styles */
             .rdp-day_outside .rdp-day_button {
-              background-color: #e5e7eb !important; /* gray-200 */
-              color: #9ca3af !important; /* gray-400 */
+              background-color: #e5e7eb !important;
+              color: #9ca3af !important;
             }
             
             .dark .rdp-day_outside .rdp-day_button {
-              background-color: #374151 !important; /* gray-700 */
-              color: #9ca3af !important; /* gray-400 - lighter gray for visibility */
+              background-color: #374151 !important;
+              color: #9ca3af !important;
             }
             
-            /* Keep weekend red even for outside days */
-            .rdp-table tbody tr > td:nth-child(1) .rdp-day_outside .rdp-day_button,
-            .rdp-table tbody tr > td:nth-child(7) .rdp-day_outside .rdp-day_button {
+            /* Weekend styling - Sunday (1st col) and Saturday (7th col) */
+            .rdp-week > :first-child .rdp-day_button,
+            .rdp-week > :last-child .rdp-day_button {
               color: #ef4444 !important;
             }
             
-            /* Selected state - blue background with white text */
+            .dark .rdp-week > :first-child .rdp-day_button,
+            .dark .rdp-week > :last-child .rdp-day_button {
+              color: #ef4444 !important;
+            }
+            
+            /* Hover state */
+            .rdp-day_button:hover {
+              background-color: #f3f4f6 !important;
+            }
+            
+            .dark .rdp-day_button:hover {
+              background-color: #1f2937 !important;
+            }
+            
+            /* Weekend hover - maintain red text */
+            .rdp-week > :first-child .rdp-day_button:hover,
+            .rdp-week > :last-child .rdp-day_button:hover {
+              color: #ef4444 !important;
+            }
+            
+            /* Selected state - blue background with white text (overrides weekend red) */
             .rdp-day_selected .rdp-day_button {
-              background-color: #3b82f6 !important; /* blue-500 */
+              background-color: #3b82f6 !important;
               color: white !important;
             }
             
@@ -258,22 +267,15 @@ export function DatePickerInput(
               color: white !important;
             }
             
-            /* Hover state */
-            .rdp-day_button:hover {
-              background-color: #f3f4f6 !important; /* gray-100 */
-            }
-            
-            .dark .rdp-day_button:hover {
-              background-color: #1f2937 !important; /* gray-800 */
-            }
-            
             /* Selected hover */
             .rdp-day_selected .rdp-day_button:hover {
-              background-color: #2563eb !important; /* blue-600 */
+              background-color: #2563eb !important;
+              color: white !important;
             }
             
             .dark .rdp-day_selected .rdp-day_button:hover {
               background-color: #2563eb !important;
+              color: white !important;
             }
             
             /* Today indicator - ring border */

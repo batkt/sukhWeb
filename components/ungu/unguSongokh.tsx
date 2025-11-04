@@ -3,19 +3,21 @@
 import { useEffect, useState } from "react";
 import { Palette, Check } from "lucide-react";
 
-type Theme = "blue-gradient" | "colorful" | "white-gray";
+type Theme = "blue-gradient" | "colorful" | "white-gray" | "soft-sage";
 
 export default function ӨнгөнийЗагварСонгох() {
-  const [currentTheme, setCurrentTheme] = useState<Theme>("colorful");
+  const [currentTheme, setCurrentTheme] = useState<Theme>("soft-sage");
   const [isOpen, setIsOpen] = useState(false);
   const [clickedTheme, setClickedTheme] = useState<Theme | null>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("app-theme") as Theme;
-    if (saved) {
-      setCurrentTheme(saved);
-      applyTheme(saved);
-    }
+    const saved = localStorage.getItem("app-theme") as Theme | null;
+    const attr = document.documentElement.getAttribute(
+      "data-theme"
+    ) as Theme | null;
+    const initial = (saved || attr || "soft-sage") as Theme;
+    setCurrentTheme(initial);
+    applyTheme(initial);
   }, []);
 
   const applyTheme = (theme: Theme) => {
@@ -36,6 +38,11 @@ export default function ӨнгөнийЗагварСонгох() {
   };
 
   const themes = [
+    {
+      id: "soft-sage" as Theme,
+      name: "Зөөлөн ногоон",
+      colors: ["#eaf7f0", "#d9f1e7", "#9fd3c0", "#0f1730"],
+    },
     {
       id: "blue-gradient" as Theme,
       name: "Цэнхэр градиент",

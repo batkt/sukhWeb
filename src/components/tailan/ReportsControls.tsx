@@ -29,7 +29,7 @@ export default function ReportsControls({
   return (
     <div className="mb-4">
       <div className="flex flex-wrap gap-3 items-center">
-        <DatePickerInput
+        {/* <DatePickerInput
           type="range"
           locale="mn"
           value={dateRange}
@@ -49,7 +49,7 @@ export default function ReportsControls({
             root: "neu-panel rounded-2xl",
             input: "px-3 py-2 h-10 text-sm",
           }}
-        />
+        /> */}
 
         <input
           placeholder="Байр"

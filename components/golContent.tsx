@@ -487,7 +487,7 @@ export default function GolContent({ children }: GolContentProps) {
       </div>
 
       <main className="flex-1 relative md:h-[calc(100vh-80px)]">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-full">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-full">
           <div className="relative">
             <div className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain">
               {children}

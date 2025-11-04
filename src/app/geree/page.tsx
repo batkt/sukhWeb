@@ -1889,7 +1889,7 @@ export default function Geree() {
 
   return (
     <div className="min-h-screen">
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex items-start justify-between p-4 gap-4 mb-4">
         <div>
           <div className="flex items-center gap-3">
             <motion.h1

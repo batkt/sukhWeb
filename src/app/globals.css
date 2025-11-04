@@ -275,7 +275,7 @@
       transparent 100%
     ),
     linear-gradient(135deg, #f8f9fa 0%, #e6e9ed 100%);
-
+  --surface-bg: #ffffff;
   --glass-tint: rgba(255, 255, 255, 0.18);
   --glass-tint-2: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.5);
@@ -613,6 +613,22 @@ textarea:-moz-autofill:focus {
   --glass-shadow: rgba(14, 30, 60, 0.12);
 }
 
+/* New theme: gentle static green (eye-friendly) */
+[data-theme="green-static"] {
+  /* Solid soft green background (Material Green 50-like) */
+  --gradient-bg: #e8f5e9;
+  /* Keep clean white surfaces for panels/forms */
+  --surface-bg: #ffffff;
+  --surface-border: rgba(15, 23, 42, 0.08);
+  --panel-text: #0f172a; /* readable dark text */
+  /* Glass tokens tuned for light backgrounds */
+  --glass-tint: rgba(255, 255, 255, 0.95);
+  --glass-tint-2: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: rgba(14, 30, 60, 0.08);
+}
+
 /* Ensure page reads the variable background */
 html,
 body {
@@ -894,17 +910,50 @@ html[data-mode="dark"]:not([data-theme]),
 
 .neu-panel {
   position: relative;
-  border-radius: 1.25rem;
-  overflow: hidden; /* clip blur edges */
-  isolation: isolate; /* proper stacking for effects */
-  background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
-  backdrop-filter: blur(28px) saturate(160%);
-  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%);
-  box-shadow: 0 18px 48px var(--glass-shadow),
-    inset 0 1px 0 var(--glass-highlight);
-  color: var(--panel-text);
+  border-radius: 2rem;
+  overflow: hidden;
+  isolation: isolate;
+
+  /* Enhanced iOS 26-style glass background */
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, var(--glass-tint), transparent 15%) 0%,
+    color-mix(in oklch, var(--glass-tint-2), transparent 25%) 100%
+  );
+
+  /* Stronger blur and saturation for depth */
+  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+
+  /* Luminous border with gradient */
+  border: 1.5px solid transparent;
   background-clip: padding-box;
+
+  /* Multi-layer shadow system */
+  box-shadow: 
+    /* Soft ambient shadow */ 0 24px 64px
+      color-mix(in oklch, var(--glass-shadow), transparent 20%),
+    /* Mid-range depth */ 0 12px 32px
+      color-mix(in oklch, var(--glass-shadow), transparent 40%),
+    /* Tight contact shadow */ 0 4px 16px
+      color-mix(in oklch, var(--glass-shadow), transparent 50%),
+    /* Inner glow */ inset 0 1px 0
+      color-mix(in oklch, var(--glass-highlight), transparent 30%),
+    inset 0 -1px 0 color-mix(in oklch, var(--glass-highlight), transparent 85%);
+
+  color: var(--panel-text);
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(50%, 50%) rotate(180deg);
+    opacity: 0.4;
+  }
 }
 
 .neu-table {
@@ -1003,12 +1052,33 @@ html[data-mode="dark"]:not([data-theme]),
 }
 
 .page-surface {
-  background: var(--surface-bg, #fff) !important;
+  background: linear-gradient(
+    180deg,
+    var(--glass-tint),
+    var(--glass-tint-2)
+  ) !important;
   color: var(--panel-text, #0f172a) !important;
-  border: 1px solid var(--surface-border, rgba(15, 23, 42, 0.12)) !important;
-  border-radius: 1rem;
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%) !important;
+  border-radius: 1.25rem;
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  backdrop-filter: blur(26px) saturate(170%);
+  box-shadow: 0 18px 38px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
+}
+
+/* Optional helper to force iOS-like glass on any container */
+.ios-glass {
+  background: linear-gradient(
+    180deg,
+    var(--glass-tint),
+    var(--glass-tint-2)
+  ) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 40%) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  backdrop-filter: blur(26px) saturate(170%);
+  box-shadow: 0 18px 38px var(--glass-shadow),
+    inset 0 1px 0 var(--glass-highlight);
 }
 .badge-status {
   display: inline-flex;
@@ -2730,4 +2800,351 @@ svg {
 body .mantine-Month-weekday {
   color: rgba(255, 255, 255, 0.95) !important;
   font-weight: 500 !important;
+}
+
+/* ================== New theme: soft-sage (light + dark) ================== */
+/* A gentle sage/teal palette designed to be easy on the eyes. */
+[data-theme="soft-sage"] {
+  /* Soft Green → Navy Blue background */
+  --gradient-bg: linear-gradient(
+    135deg,
+    #eaf7f0 0%,
+    #d9f1e7 35%,
+    #9fd3c0 55%,
+    #0f1730 100%
+  );
+  /* Light surfaces + readable dark text */
+  --surface-bg: #ffffff; /* remove yellow tint */
+  --surface-border: rgba(15, 23, 42, 0.12);
+  --panel-text: #0f172a;
+  /* Glass tokens tuned for subtle depth on light backgrounds */
+  --glass-tint: rgba(255, 255, 255, 0.92);
+  --glass-tint-2: rgba(255, 255, 255, 0.84);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.6);
+  --glass-shadow: rgba(6, 32, 24, 0.12);
+
+  /* Tabs (light) */
+  --tab-active-from: #ecfdf5; /* emerald-50 */
+  --tab-active-to: #d1fae5; /* emerald-100 */
+  --tab-accent: #34d399; /* emerald-400 */
+  --tab-active-text: #064e3b; /* emerald-900 */
+  --tab-inactive-text: #475569; /* slate-600 */
+  --tab-inactive-hover-text: #0f172a; /* slate-900 */
+
+  /* Buttons (light) */
+  --btn-bg: rgba(255, 255, 255, 0.9);
+  --btn-bg-hover: rgba(255, 255, 255, 0.95);
+  --btn-bg-active: rgba(255, 255, 255, 0.85);
+  --btn-text: #0f172a;
+  --btn-border: rgba(15, 23, 42, 0.12);
+
+  /* Logo surfaces on very light palette: add slight contrast */
+  --logo-border: var(--surface-border);
+  --logo-bg-weak: color-mix(in oklch, var(--surface-bg), #0f172a 8%);
+  --logo-bg: color-mix(in oklch, var(--surface-bg), #0f172a 12%);
+  --logo-bg-strong: color-mix(in oklch, var(--surface-bg), #000000 28%);
+}
+
+/* === Date Picker theming (Mantine + AntD) ================================ */
+/* Goals:
+   - Weekends red
+   - Previous/next month days gray
+   - Current month weekdays: white on dark mode, black on light mode
+   - Clear date range states (first/last/in-range)
+*/
+
+/* Mantine: base day colors by context */
+/* Light mode current-month weekdays */
+:not([data-mode="dark"])
+  .mantine-Month-day:not([data-outside]):not([data-weekend]) {
+  color: #0f172a !important; /* slate-900 */
+}
+/* Dark mode current-month weekdays */
+[data-mode="dark"] .mantine-Month-day:not([data-outside]):not([data-weekend]) {
+  color: #ffffff !important;
+}
+/* Weekends (both modes, in-view) */
+.mantine-Month-weekday[data-weekend] {
+  color: #dc2626 !important; /* red-600 */
+  font-weight: 600 !important;
+}
+.mantine-Month-day[data-weekend]:not([data-outside]) {
+  color: #dc2626 !important; /* red-600 */
+}
+/* Header labels: black on light, white on dark; weekend headers red */
+:not([data-mode="dark"]) .mantine-Month-weekday {
+  color: #0f172a !important;
+}
+[data-mode="dark"] .mantine-Month-weekday {
+  color: #ffffff !important;
+}
+.mantine-Month-weekday[data-weekend] {
+  color: #dc2626 !important;
+}
+/* Out-of-month days */
+.mantine-Month-day[data-outside] {
+  color: #94a3b8 !important; /* slate-400 */
+}
+[data-mode="dark"] .mantine-Month-day[data-outside] {
+  color: #64748b !important; /* slate-500 on dark */
+}
+
+/* Range selection visuals (use theme accent where available) */
+.mantine-Month-day[data-selected] {
+  background: var(--tab-accent, #34d399) !important;
+  color: #ffffff !important;
+}
+.mantine-Month-day[data-in-range] {
+  background: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 82%
+  ) !important;
+  color: inherit !important;
+}
+.mantine-Month-day[data-first-in-range],
+.mantine-Month-day[data-last-in-range] {
+  background: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 70%
+  ) !important;
+  color: #0f172a !important;
+}
+[data-mode="dark"] .mantine-Month-day[data-first-in-range],
+[data-mode="dark"] .mantine-Month-day[data-last-in-range] {
+  color: #ffffff !important;
+}
+.mantine-Month-day[data-first-in-range] {
+  border-top-left-radius: 10px !important;
+  border-bottom-left-radius: 10px !important;
+}
+.mantine-Month-day[data-last-in-range] {
+  border-top-right-radius: 10px !important;
+  border-bottom-right-radius: 10px !important;
+}
+
+/* Hover in calendar should not force dark bg; keep subtle */
+.mantine-Month-day:hover {
+  background: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 92%
+  ) !important;
+}
+
+/* AntD DatePicker (fallback theming to match tokens) */
+.ant-picker-panel {
+  background: var(--surface-bg) !important;
+  color: var(--panel-text) !important;
+  border-color: var(--surface-border) !important;
+}
+.ant-picker-cell-in-view.ant-picker-cell-disabled .ant-picker-cell-inner,
+.ant-picker-cell:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
+  color: #94a3b8 !important; /* gray for out-of-month */
+}
+.ant-picker-cell-in-view.ant-picker-cell-week-end .ant-picker-cell-inner {
+  color: #dc2626 !important; /* weekend red */
+}
+[data-mode="dark"]
+  .ant-picker-cell-in-view:not(.ant-picker-cell-disabled):not(
+    .ant-picker-cell-selected
+  ):not(.ant-picker-cell-range-start):not(.ant-picker-cell-range-end):not(
+    .ant-picker-cell-in-range
+  )
+  .ant-picker-cell-inner {
+  color: #ffffff !important; /* weekdays on dark */
+}
+:not([data-mode="dark"])
+  .ant-picker-cell-in-view:not(.ant-picker-cell-disabled):not(
+    .ant-picker-cell-selected
+  ):not(.ant-picker-cell-range-start):not(.ant-picker-cell-range-end):not(
+    .ant-picker-cell-in-range
+  )
+  .ant-picker-cell-inner {
+  color: #0f172a !important; /* weekdays on light */
+}
+.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
+.ant-picker-cell-in-view.ant-picker-cell-range-end .ant-picker-cell-inner {
+  background: var(--tab-accent, #34d399) !important;
+  color: #ffffff !important;
+}
+.ant-picker-cell-in-view.ant-picker-cell-in-range .ant-picker-cell-inner {
+  background: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 82%
+  ) !important;
+}
+/* Dark variant for soft-sage (uses data-mode="dark") */
+[data-theme="soft-sage"][data-mode="dark"] {
+  /* Deep dark variant with a navy tail */
+  --gradient-bg: linear-gradient(135deg, #0c1713 0%, #0e1f18 50%, #0f1730 100%);
+  --surface-bg: #0e1814; /* near-black with green hint */
+  --surface-border: rgba(255, 255, 255, 0.14);
+  --panel-text: #e6fff5; /* minty white */
+  --glass-tint: rgba(10, 22, 18, 0.5);
+  --glass-tint-2: rgba(12, 26, 21, 0.32);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-highlight: rgba(255, 255, 255, 0.2);
+  --glass-shadow: rgba(3, 12, 9, 0.42);
+
+  /* Tabs (dark) */
+  --tab-active-from: #134e4a; /* teal/emerald deep */
+  --tab-active-to: #083c36;
+  --tab-accent: #34d399;
+  --tab-active-text: #e6fff5;
+  --tab-inactive-text: #c8f6e6;
+  --tab-inactive-hover-text: #ffffff;
+
+  /* Buttons (dark) */
+  --btn-bg: rgba(255, 255, 255, 0.08);
+  --btn-bg-hover: rgba(255, 255, 255, 0.12);
+  --btn-bg-active: rgba(255, 255, 255, 0.06);
+  --btn-text: #e6fff5;
+  --btn-border: rgba(255, 255, 255, 0.18);
+
+  /* Logo surfaces equal to themed surface in dark */
+  --logo-bg-weak: var(--surface-bg);
+  --logo-bg: var(--surface-bg);
+  --logo-bg-strong: var(--surface-bg);
+  --logo-border: var(--surface-border);
+}
+
+/* === React Day Picker theming (for DatePickerInput component) ========= */
+/* Goals: Match the Mantine theming - weekends red, out-of-month gray, themed weekdays, range selection */
+
+/* Basic layout for react-day-picker */
+.rdp-root {
+  width: 100%;
+}
+.rdp-month {
+  width: 100%;
+}
+.rdp-month_caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.rdp-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 4px;
+}
+.rdp-weeks {
+  display: grid;
+  gap: 2px;
+}
+.rdp-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.rdp-day {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Base day button styling - use theme variables */
+.rdp-day_button {
+  background-color: var(--surface-bg, #ffffff) !important;
+  color: var(--panel-text, #0f172a) !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+  font-weight: 500 !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+  cursor: pointer !important;
+}
+
+/* Light mode: current month weekdays black */
+:not([data-mode="dark"]) .rdp-day_button:not(.rdp-day_outside) {
+  color: #0f172a !important;
+}
+
+/* Dark mode: current month weekdays white */
+[data-mode="dark"] .rdp-day_button:not(.rdp-day_outside) {
+  color: #ffffff !important;
+}
+
+/* Weekends: red text (both light and dark) */
+.rdp-table tbody tr > td:nth-child(1) .rdp-day_button:not(.rdp-day_outside),
+.rdp-table tbody tr > td:nth-child(7) .rdp-day_button:not(.rdp-day_outside) {
+  color: #dc2626 !important;
+}
+
+/* Out-of-month days: gray */
+.rdp-day_outside .rdp-day_button {
+  color: #94a3b8 !important; /* slate-400 */
+}
+
+/* Dark mode out-of-month: lighter gray */
+[data-mode="dark"] .rdp-day_outside .rdp-day_button {
+  color: #64748b !important; /* slate-500 */
+}
+
+/* Keep weekend red even for outside days */
+.rdp-table tbody tr > td:nth-child(1) .rdp-day_outside .rdp-day_button,
+.rdp-table tbody tr > td:nth-child(7) .rdp-day_outside .rdp-day_button {
+  color: #dc2626 !important;
+}
+
+/* Selected day: theme accent background, white text */
+.rdp-day_selected .rdp-day_button {
+  background-color: var(--tab-accent, #34d399) !important;
+  color: #ffffff !important;
+}
+
+/* Range selection: in-range with transparent accent */
+.rdp-day_range_middle .rdp-day_button,
+.rdp-day_range_start .rdp-day_button,
+.rdp-day_range_end .rdp-day_button {
+  background-color: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 82%
+  ) !important;
+  color: var(--panel-text, #0f172a) !important;
+}
+
+/* Dark mode range: white text */
+[data-mode="dark"] .rdp-day_range_middle .rdp-day_button,
+[data-mode="dark"] .rdp-day_range_start .rdp-day_button,
+[data-mode="dark"] .rdp-day_range_end .rdp-day_button {
+  color: #ffffff !important;
+}
+
+/* Range start/end: stronger accent */
+.rdp-day_range_start .rdp-day_button,
+.rdp-day_range_end .rdp-day_button {
+  background-color: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 70%
+  ) !important;
+}
+
+/* Hover: subtle accent */
+.rdp-day_button:hover {
+  background-color: color-mix(
+    in oklch,
+    var(--tab-accent, #34d399),
+    transparent 92%
+  ) !important;
+}
+
+/* Today indicator: ring */
+.rdp-day_today .rdp-day_button {
+  box-shadow: 0 0 0 2px var(--tab-accent, #34d399) !important;
+}
+
+/* Disabled: muted */
+.rdp-day_disabled .rdp-day_button {
+  opacity: 0.3 !important;
+  cursor: not-allowed !important;
 }

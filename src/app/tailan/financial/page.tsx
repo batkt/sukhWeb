@@ -402,7 +402,7 @@ export default function FinancialReportsPage() {
 
   return (
     <div className="min-h-screen">
-      <h1 className="text-2xl font-semibold mb-4">Санхүүгийн тайлан</h1>
+      <h1 className="text-2xl font-semibold mb-4 p-4">Санхүүгийн тайлан</h1>
 
       <div id="financial-reports-controls">
         <ReportsControls
@@ -454,7 +454,7 @@ export default function FinancialReportsPage() {
         />
       </div>
       <div className="neu-panel p-4 rounded-2xl">
-        <div className="table-surface overflow-visible rounded-2xl w-full max-h-[58vh]">
+        <div className="table-surface overflow-visible rounded-2xl w-full max-h-[55vh]">
           <div className="rounded-3xl p-4 sm:p-6 mb-1 neu-table allow-overflow relative">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full">
               <table

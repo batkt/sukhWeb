@@ -1,206 +1,216 @@
 "use client";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Info,
-  FileText,
-  FileSpreadsheet,
-  PlayCircle,
-  HelpCircle,
-  Download,
-  BookOpen,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
+import { useAuth } from "@/lib/useAuth";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
-export default function TuslamjTokhirgoo() {
+type Props = {
+  ajiltan?: any;
+  baiguullaga?: any;
+  token?: string;
+};
+
+export default function TuslamjTokhirgoo(props: Props) {
+  const auth = useAuth();
+  const token = useMemo(
+    () => props.token || auth.token || "",
+    [props.token, auth.token]
+  );
+  const orgId = useMemo(
+    () => props.ajiltan?.baiguullagiinId || auth.ajiltan?.baiguullagiinId || "",
+    [props.ajiltan?.baiguullagiinId, auth.ajiltan?.baiguullagiinId]
+  );
+  const barilgiinId = auth.barilgiinId || null;
+
+  // Apply a gentle static green theme only while this page is mounted
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevTheme = root.getAttribute("data-theme");
+    root.setAttribute("data-theme", "green-static");
+    return () => {
+      if (prevTheme) root.setAttribute("data-theme", prevTheme);
+      else root.removeAttribute("data-theme");
+    };
+  }, []);
+
+  const [file, setFile] = useState<File | null>(null);
+  const [ner, setNer] = useState("");
+  const [tailbar, setTailbar] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
+
+  const [viewId, setViewId] = useState("");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
+    };
+  }, []);
+
+  const onUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
+      if (!orgId) return openErrorOverlay("Байгууллага сонгогдоогүй");
+      if (!file) return openErrorOverlay("PDF файл оруулна уу");
+      if (file.type !== "application/pdf")
+        return openErrorOverlay("Зөвхөн PDF файл байж болно");
+      const max = 10 * 1024 * 1024; // 10MB
+      if (file.size > max)
+        return openErrorOverlay("Файлын хэмжээ 10MB-аас хэтэрсэн байна");
+
+      const fd = new FormData();
+      fd.append("file", file);
+      if (ner.trim()) fd.append("ner", ner.trim());
+      if (tailbar.trim()) fd.append("tailbar", tailbar.trim());
+
+      setUploading(true);
+      const resp = await uilchilgee(token).post("/pdfFile/upload", fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+        params: {
+          baiguullagiinId: orgId,
+          ...(barilgiinId ? { barilgiinId } : {}),
+        },
+      });
+
+      const data = resp?.data || {};
+      if (data?.queued) {
+        openSuccessOverlay(
+          "Сүлжээ байхгүй тул илгээгдлээ. Интернэт ормогц сервер рүү дамжина."
+        );
+        setLastUploadedId(null);
+      } else {
+        const newId = data?.id || data?._id || data?.result?.id || null;
+        setLastUploadedId(newId);
+        openSuccessOverlay("Амжилттай байршлаа");
+        if (newId) setViewId(String(newId));
+      }
+      setFile(null);
+      setNer("");
+      setTailbar("");
+    } catch (err) {
+      aldaaBarigch(err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openPdf = async () => {
+    try {
+      if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
+      const id = viewId?.trim();
+      if (!id) return openErrorOverlay("PDF ID оруулна уу");
+      // Cleanup previous object URL
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+
+      const resp = await uilchilgee(token).get(
+        `/pdfFile/${encodeURIComponent(id)}/file`,
+        {
+          responseType: "blob" as any,
+        }
+      );
+      const blob = resp?.data as Blob;
+      const url = URL.createObjectURL(blob);
+      objectUrlRef.current = url;
+      setPreviewUrl(url);
+      // Also open in a new tab for convenience
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      aldaaBarigch(err);
+    }
+  };
+
   return (
-    <div className="min-h-screen ">
-      <div className="max-w-6xl mx-auto px-4 py-12 space-y-8">
-        {/* Header Section */}
-        <div className="text-center space-y-3">
-          
-          <h1 className="text-4xl font-bold text-slate-800">Гарын авлага</h1>
-          <p className="text-slate-600 max-w-2xl mx-auto">
-            Системийг ашиглах заавар, сургалтын материал болон түгээмэл
-            асуултуудын хариулт
-          </p>
+    <div className="space-y-6">
+      {/* Upload panel */}
+      <div className="rounded-2xl p-6 neu-panel">
+        <h2 className="text-xl font-semibold mb-4">PDF байршуулах</h2>
+        <form onSubmit={onUpload} className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Файл (PDF, 10MB хүртэл)
+              </label>
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Нэр (сонголттой)
+              </label>
+              <input
+                type="text"
+                value={ner}
+                onChange={(e) => setNer(e.target.value)}
+                placeholder="Жишээ: Ашиглалтын заавар"
+                className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1 text-theme">
+              Тайлбар (сонголттой)
+            </label>
+            <textarea
+              value={tailbar}
+              onChange={(e) => setTailbar(e.target.value)}
+              rows={3}
+              placeholder="Товч тайлбар..."
+              className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="submit" disabled={uploading} className="btn-minimal">
+              {uploading ? "Илгээж байна…" : "Байршуулах"}
+            </button>
+            {lastUploadedId && (
+              <span className="text-sm text-theme/80">
+                ID: {lastUploadedId}
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
+      {/* View panel */}
+      <div className="rounded-2xl p-6 neu-panel">
+        <h2 className="text-xl font-semibold mb-4">PDF харах</h2>
+        <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium mb-1 text-theme">
+              PDF ID
+            </label>
+            <input
+              type="text"
+              value={viewId}
+              onChange={(e) => setViewId(e.target.value)}
+              placeholder="Жишээ: 672fdc0a…"
+              className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
+            />
+          </div>
+          <div className="flex-none">
+            <button onClick={openPdf} className="btn-minimal">
+              Нээх
+            </button>
+          </div>
         </div>
 
-        {/* Download Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 mt-12">
-          <a
-            href="/manuals/suh-manual.pdf"
-            target="_blank"
-            className="group relative overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-2xl p-8 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <FileText className="w-10 h-10" />
-                <Download className="w-5 h-5 opacity-70 group-hover:opacity-100 transition" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">PDF гарын авлага</h3>
-              <p className="text-blue-100 text-sm">
-                Бүрэн гарын авлагыг PDF форматаар татаж авах
-              </p>
-            </div>
-          </a>
-
-          <a
-            href="/manuals/suh-manual.pptx"
-            target="_blank"
-            className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl p-8 hover:from-green-600 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-          >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <FileSpreadsheet className="w-10 h-10" />
-                <Download className="w-5 h-5 opacity-70 group-hover:opacity-100 transition" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">
-                PowerPoint танилцуулга
-              </h3>
-              <p className="text-green-100 text-sm">
-                Танилцуулгын материалыг PPT форматаар татаж авах
-              </p>
-            </div>
-          </a>
-        </div>
-
-        {/* Video Training Section */}
-        <section className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden mt-12">
-          <div className="bg-gradient-to-r from-blue-500 to-indigo-600 px-8 py-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <PlayCircle className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">
-                Сургалтын бичлэгүүд
-              </h2>
-            </div>
+        {previewUrl && (
+          <div className="mt-4 border rounded-xl overflow-hidden">
+            <iframe src={previewUrl} className="w-full h-[480px] bg-white" />
           </div>
-
-          <div className="p-8">
-            <div className="grid gap-4">
-              {[
-                {
-                  title: "Нэвтрэх болон тохиргоо",
-                  link: "https://youtube.com/watch?v=xxxxx",
-                  duration: "5:30",
-                  description: "Системд анх удаа нэвтрэх болон үндсэн тохиргоо",
-                },
-                {
-                  title: "Оршин суугч нэмэх",
-                  link: "https://youtube.com/watch?v=yyyyy",
-                  duration: "8:15",
-                  description: "Шинэ оршин суугч бүртгэх дэлгэрэнгүй заавар",
-                },
-                {
-                  title: "Тайлан харах",
-                  link: "https://youtube.com/watch?v=zzzzz",
-                  duration: "6:45",
-                  description: "Тайлан үүсгэх болон харах арга",
-                },
-              ].map((video, i) => (
-                <a
-                  key={i}
-                  href={video.link}
-                  target="_blank"
-                  className="group flex items-center gap-4 p-5 border-2 border-slate-100 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300"
-                >
-                  <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                    <PlayCircle className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-slate-800 font-semibold group-hover:text-blue-600 transition">
-                        {video.title}
-                      </h3>
-                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">
-                        {video.duration}
-                      </span>
-                    </div>
-                    <p className="text-sm text-slate-500">
-                      {video.description}
-                    </p>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
-        <section className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-8 py-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <HelpCircle className="w-6 h-6 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white">
-                Түгээмэл асуулт (FAQ)
-              </h2>
-            </div>
-          </div>
-
-          <div className="p-8">
-            <div className="space-y-3">
-              {[
-                {
-                  q: "Системд хэрхэн нэвтрэх вэ?",
-                  a: "Бүртгэгдсэн хэрэглэгч нэр болон нууц үгээ ашиглан нэвтэрнэ.",
-                },
-                {
-                  q: "Нууц үгээ мартсан бол?",
-                  a: "Нууц үг сэргээх цэсээр шинэ нууц үг авах боломжтой.",
-                },
-                {
-                  q: "Сургалтын бичлэгүүд хаана хадгалагдах вэ?",
-                  a: "YouTube-н unlisted линкээр байршуулсан бичлэгүүдийг эндээс үзэх боломжтой.",
-                },
-              ].map((item, i) => (
-                <details
-                  key={i}
-                  className="group border-2 border-slate-100 rounded-xl overflow-hidden hover:border-indigo-300 transition-all duration-300"
-                >
-                  <summary className="flex items-center gap-3 cursor-pointer font-semibold text-slate-800 p-5 bg-slate-50 hover:bg-indigo-50 transition-colors list-none">
-                    <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                      <HelpCircle className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="flex-1">{item.q}</span>
-                    <svg
-                      className="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </summary>
-                  <div className="p-5 bg-white border-t border-slate-100">
-                    <p className="text-slate-600 leading-relaxed">{item.a}</p>
-                  </div>
-                </details>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Footer Help Text */}
-        <div className="text-center py-8">
-          <p className="text-slate-500 text-sm">
-            Нэмэлт тусламж хэрэгтэй бол манай дэмжлэгийн багтай холбогдоно уу
-          </p>
-        </div>
+        )}
       </div>
     </div>
   );

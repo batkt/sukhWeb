@@ -7,8 +7,6 @@ import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { motion } from "framer-motion";
-import IconTextButton from "@/components/ui/IconTextButton";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react";
 import NekhemjlekhPage from "../nekhemjlekh/page";
 import KhungulultPage from "../khungulult/page";
 import { useAuth } from "@/lib/useAuth";
@@ -582,21 +580,21 @@ export default function DansniiKhuulga() {
               </span>
 
               <div id="guilgee-pagination" className="flex items-center gap-1">
-                <IconTextButton
+                <button
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                   disabled={page <= 1}
                   onClick={() => setPage(Math.max(1, page - 1))}
-                  icon={<ChevronLeft className="w-4 h-4" />}
-                  label="Өмнөх"
-                  size="sm"
-                />
+                >
+                  Өмнөх
+                </button>
                 <div className="text-theme/70 px-1">{page}</div>
-                <IconTextButton
+                <button
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
                   disabled={page * rowsPerPage >= filteredItems.length}
                   onClick={() => setPage(page + 1)}
-                  icon={<ChevronRight className="w-4 h-4" />}
-                  label="Дараах"
-                  size="sm"
-                />
+                >
+                  Дараах
+                </button>
               </div>
             </div>
           </div>
