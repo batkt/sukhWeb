@@ -1355,13 +1355,11 @@ export default function Geree() {
         },
       });
 
-      // Lazy load Excel export lib at runtime to avoid bundling failure if missing
+      // Lazy load Excel export lib at runtime using ESM dynamic import
       let ExcelCtor: any = null;
       try {
-        // Use eval to avoid static resolution during bundling
-        const req = eval("require");
-        const mod = req("antd-table-saveas-excel");
-        ExcelCtor = mod?.Excel;
+        const mod = await import("antd-table-saveas-excel");
+        ExcelCtor = (mod as any)?.Excel ?? null;
       } catch (e) {
         ExcelCtor = null;
       }
@@ -1428,6 +1426,115 @@ export default function Geree() {
       openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (e) {
       openErrorOverlay("Загвар татахад алдаа гарлаа");
+    }
+  };
+
+  // Export residents list to Excel — prefers backend export; falls back to client-side if 404
+  const handleExportResidentsExcel = async () => {
+    try {
+      if (!token) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+      }
+
+      // 1) Fetch latest residents list from API
+      const listResp = await uilchilgee(token).get(`/orshinSuugch`, {
+        params: {
+          // fetch sufficiently large page to include all rows
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: (orshinSuugchGaralt?.niitMur as any) || 5000,
+        },
+      });
+      const orshinSuugchList =
+        (listResp?.data &&
+          ((listResp.data as any).result || (listResp.data as any).jagsaalt)) ||
+        listResp?.data ||
+        [];
+
+      // 2) Try server-side generation first
+      let served = false;
+      try {
+        const excelResp = await uilchilgee(token).post(
+          `/orshinSuugch/downloadExcelList`,
+          {
+            data: orshinSuugchList,
+            fileName: "orshinSuugch_export",
+          },
+          { responseType: "blob" }
+        );
+        const blob = new Blob([excelResp.data]);
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "orshinSuugch_export.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        openSuccessOverlay("Оршин суугчдын Excel татагдлаа");
+        served = true;
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status !== 404) throw err; // non-404 => show error
+      }
+
+      if (served) return;
+
+      // 3) Fallback: client-side Excel generation
+      let ExcelCtor: any = null;
+      try {
+        const mod = await import("antd-table-saveas-excel");
+        ExcelCtor = (mod as any)?.Excel ?? null;
+      } catch (_) {
+        ExcelCtor = null;
+      }
+      if (!ExcelCtor) {
+        openErrorOverlay(
+          "Excel үүсгэхэд шаардлагатай 'antd-table-saveas-excel' сан байхгүй байна. Суулгаад дахин оролдоно уу."
+        );
+        return;
+      }
+
+      const excel = new ExcelCtor();
+      const columns = [
+        { title: "Овог", dataIndex: "ovog", key: "ovog" },
+        { title: "Нэр", dataIndex: "ner", key: "ner" },
+        { title: "Регистр", dataIndex: "register", key: "register" },
+        { title: "Утас", dataIndex: "utas", key: "utas" },
+        { title: "И-мэйл", dataIndex: "mail", key: "mail" },
+        { title: "Аймаг/Хот", dataIndex: "aimag", key: "aimag" },
+        { title: "Дүүрэг/Сум", dataIndex: "duureg", key: "duureg" },
+        { title: "Хороо", dataIndex: "horoo", key: "horoo" },
+        { title: "Давхар", dataIndex: "davkhar", key: "davkhar" },
+        { title: "Тоот", dataIndex: "toot", key: "toot" },
+        { title: "Огноо", dataIndex: "ognoo", key: "ognoo" },
+      ];
+
+      const dataSrc = (
+        Array.isArray(orshinSuugchList) ? orshinSuugchList : []
+      ).map((r: any) => {
+        const created = r?.createdAt ? new Date(r.createdAt) : null;
+        const updated = r?.updatedAt ? new Date(r.updatedAt) : null;
+        const showDate =
+          updated && created && updated.getTime() !== created.getTime()
+            ? updated
+            : created || updated;
+        return {
+          ...r,
+          utas: Array.isArray(r?.utas) ? r.utas.join(", ") : r?.utas,
+          mail: r?.mail || r?.email,
+          ognoo: showDate ? showDate.toLocaleDateString("mn-MN") : undefined,
+        };
+      });
+
+      excel
+        .addSheet("Оршин суугчид")
+        .addColumns(columns)
+        .addDataSource(dataSrc)
+        .saveAs("orshinSuugch_export.xlsx");
+      openSuccessOverlay("Оршин суугчдын Excel татагдлаа");
+    } catch (e) {
+      openErrorOverlay("Excel татахад алдаа гарлаа");
     }
   };
 
@@ -2264,6 +2371,18 @@ export default function Geree() {
                 <UserPlus className="w-5 h-5" />
                 <span className="hidden sm:inline text-xs ml-1">
                   Оршин суугч нэмэх
+                </span>
+              </button>
+
+              <button
+                onClick={handleExportResidentsExcel}
+                className="btn-minimal"
+                aria-label="Оршин суугч Excel татах"
+                title="Оршин суугчдын Excel татах"
+              >
+                <Download className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">
+                  Жагсаалт татах
                 </span>
               </button>
 

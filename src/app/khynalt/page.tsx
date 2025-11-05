@@ -866,7 +866,12 @@ export default function Khynalt() {
       value: filteredTotalContracts,
       subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
       color: "from-blue-500 to-blue-600",
-      onClick: () => router.push("/geree"),
+      onClick: () => {
+        try {
+          localStorage.setItem("geree.activeTab", "contracts");
+        } catch (e) {}
+        router.push("/geree");
+      },
       delay: 0,
     },
     {
@@ -874,7 +879,12 @@ export default function Khynalt() {
       value: filteredTotalResidents,
       subtitle: `Нийт барилга: ${buildingCount}`,
       color: "from-green-500 to-green-600",
-      onClick: () => router.push("/geree"),
+      onClick: () => {
+        try {
+          localStorage.setItem("geree.activeTab", "residents");
+        } catch (e) {}
+        router.push("/geree");
+      },
       delay: 100,
     },
     {
@@ -898,7 +908,12 @@ export default function Khynalt() {
       value: filteredTotalEmployees,
       subtitle: "Нийт ажилчид",
       color: "from-yellow-500 to-yellow-600",
-      onClick: () => router.push("/geree"),
+      onClick: () => {
+        try {
+          localStorage.setItem("geree.activeTab", "employees");
+        } catch (e) {}
+        router.push("/geree");
+      },
       delay: 400,
     },
     {
