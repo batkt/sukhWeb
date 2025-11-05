@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
-import { postSummary, postOrlogoZarlaga } from "@/lib/useTailan";
+import { postSummary } from "@/lib/useTailan";
 import uilchilgee from "../../../lib/uilchilgee";
 import {
   getPaymentStatusLabel,
@@ -16,7 +16,7 @@ import {
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
-import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
 import {
   Chart as ChartJS,
@@ -59,9 +59,18 @@ export default function Khynalt() {
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [timeFilter, setTimeFilter] = useState<
-    "day" | "week" | "month" | "year"
-  >("month");
+  // Date range (YYYY-MM-DD). Default last 30 days.
+  const toISODate = (d: Date) => d.toISOString().slice(0, 10);
+  const today = useMemo(() => new Date(), []);
+  const defaultEnd = useMemo(() => toISODate(today), [today]);
+  const defaultStart = useMemo(() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - 30);
+    return toISODate(d);
+  }, [today]);
+  const [dateRange, setDateRange] = useState<
+    [string | null, string | null] | undefined
+  >([defaultStart, defaultEnd]);
 
   useEffect(() => setMounted(true), []);
 
@@ -146,28 +155,19 @@ export default function Khynalt() {
     };
   }, [contracts]);
 
-  const getDateRange = (filter: "day" | "week" | "month" | "year") => {
-    const now = new Date();
-    const start = new Date();
-    switch (filter) {
-      case "day":
-        start.setDate(now.getDate() - 1);
-        break;
-      case "week":
-        start.setDate(now.getDate() - 7);
-        break;
-      case "month":
-        start.setMonth(now.getMonth() - 1);
-        break;
-      case "year":
-        start.setFullYear(now.getFullYear() - 1);
-        break;
-    }
-    return {
-      start: start.toISOString().slice(0, 10),
-      end: now.toISOString().slice(0, 10),
-    };
-  };
+  // Effective start/end strings based on current selection (fallback to last 30 days)
+  const { start: rangeStart, end: rangeEnd } = useMemo(() => {
+    const end = (dateRange?.[1] as string) || defaultEnd;
+    const start =
+      (dateRange?.[0] as string) ||
+      (() => {
+        const e = new Date(end + "T00:00:00Z");
+        const s = new Date(e);
+        s.setDate(s.getDate() - 30);
+        return toISODate(s);
+      })();
+    return { start, end };
+  }, [dateRange, defaultEnd]);
 
   const [incomeTotals, setIncomeTotals] = useState({ paid: 0, unpaid: 0 });
   const [incomeByBuilding, setIncomeByBuilding] = useState<
@@ -248,7 +248,8 @@ export default function Khynalt() {
   }, []);
 
   useEffect(() => {
-    const { start, end } = getDateRange(timeFilter);
+    const start = rangeStart;
+    const end = rangeEnd;
     const s = new Date(start);
     const e = new Date(end);
     const dayDiff = Math.max(
@@ -294,6 +295,10 @@ export default function Khynalt() {
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
+            // Include branch both top-level and inside nested query for maximum backend compatibility
+            ...(effectiveBarilgiinId
+              ? { barilgiinId: effectiveBarilgiinId }
+              : {}),
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 5000,
             // Stringify query for backends expecting JSON in params
@@ -458,7 +463,8 @@ export default function Khynalt() {
     token,
     ajiltan?.baiguullagiinId,
     effectiveBarilgiinId,
-    timeFilter,
+    rangeStart,
+    rangeEnd,
     residents,
   ]);
 
@@ -740,9 +746,8 @@ export default function Khynalt() {
   }
 
   // apply the selected time filter to other KPI counts where possible
-  const { start: _start, end: _end } = getDateRange(timeFilter);
-  const _startDate = new Date(_start + "T00:00:00Z");
-  const _endDate = new Date(_end + "T23:59:59Z");
+  const _startDate = new Date(rangeStart + "T00:00:00Z");
+  const _endDate = new Date(rangeEnd + "T23:59:59Z");
   const _inRange = (dStr?: string | null) => {
     if (!dStr) return true;
     const d = new Date(String(dStr));
@@ -768,12 +773,33 @@ export default function Khynalt() {
       String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
+  // Employees should not be time-filtered; show all employees for the selected building
+
+  // Employees: show all employees for the selected building (do not time-filter)
   const filteredEmployees = employees.filter((e: any) => {
-    const timeMatch = _inRange(e?.createdAt || e?.ognoo || e?.date);
-    const buildingMatch =
-      !effectiveBarilgiinId ||
-      String(e?.barilgiinId) === String(effectiveBarilgiinId);
-    return timeMatch && buildingMatch;
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    const want = toStr(effectiveBarilgiinId);
+    if (!want) return true; // if no building selected, show all
+    // direct fields
+    const direct = toStr(
+      e?.barilgiinId ?? e?.barilga ?? e?.barilgaId ?? e?.branchId
+    );
+    if (direct && direct === want) return true;
+    // arrays (assignments)
+    const arr: any[] = Array.isArray(e?.barilguud) ? e.barilguud : [];
+    for (const el of arr) {
+      if (
+        toStr(el) === want ||
+        toStr(el?._id) === want ||
+        toStr(el?.id) === want ||
+        toStr(el?.barilgiinId) === want ||
+        toStr(el?.barilgaId) === want ||
+        toStr(el?.branchId) === want
+      ) {
+        return true;
+      }
+    }
+    return false;
   });
 
   const filteredTotalResidents = filteredResidents.length;
@@ -837,7 +863,7 @@ export default function Khynalt() {
   const kpiCards = [
     {
       title: "Гэрээ",
-      value: totalContracts,
+      value: filteredTotalContracts,
       subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
       color: "from-blue-500 to-blue-600",
       onClick: () => router.push("/geree"),
@@ -845,7 +871,7 @@ export default function Khynalt() {
     },
     {
       title: "Оршин суугч",
-      value: totalResidents,
+      value: filteredTotalResidents,
       subtitle: `Нийт барилга: ${buildingCount}`,
       color: "from-green-500 to-green-600",
       onClick: () => router.push("/geree"),
@@ -898,25 +924,20 @@ export default function Khynalt() {
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
           >
-            <div className="flex gap-2 bg-white/5 backdrop-blur-xl rounded-2xl p-2 border border-white/10 shadow-lg overflow-x-auto custom-scrollbar whitespace-nowrap">
-              {[
-                { value: "day", label: "Өдөр" },
-                { value: "week", label: "Долоо хоног" },
-                { value: "month", label: "Сар" },
-                { value: "year", label: "Жил" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setTimeFilter(option.value as any)}
-                  className={`px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-200 shrink-0 whitespace-nowrap ${
-                    timeFilter === option.value
-                      ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 text-[color:var(--panel-text)] shadow-inner"
-                      : "bg-transparent hover:bg-white/5 text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div
+              className="neu-panel rounded-2xl border border-white/10 shadow-lg"
+              style={{ overflow: "visible" }}
+            >
+              <div className="min-w-[260px]">
+                <DatePickerInput
+                  type="range"
+                  value={dateRange}
+                  onChange={(v: any) => setDateRange(v)}
+                  valueFormat="YYYY-MM-DD"
+                  className="w-full"
+                  clearable
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -1165,15 +1186,15 @@ export default function Khynalt() {
                 Нийт орлого
               </p>
             </div>
-            <div className="text-center">
+            {/* <div className="text-center">
               <p className="text-2xl font-bold text-[color:var(--theme)]">
                 {formatCurrency(totalExpenses)}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
                 Нийт зарлага
               </p>
-            </div>
-            <div className="text-center">
+            </div> */}
+            {/* <div className="text-center">
               <p className="text-2xl font-bold text-[color:var(--theme)]">
                 {formatCurrency(totalProfit)}
               </p>
@@ -1186,12 +1207,36 @@ export default function Khynalt() {
               <p className="text-sm text-[color:var(--muted-text)]">
                 Нийт гүйлгээ
               </p>
+            </div> */}
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[color:var(--theme)]">
+                {residentsUnpaidCount}
+              </p>
+              <p className="text-sm text-[color:var(--muted-text)]">
+                Төлөөгүй оршин суугч
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[color:var(--theme)]">
+                {residentsPaidCount}
+              </p>
+              <p className="text-sm text-[color:var(--muted-text)]">
+                Төлсөн оршин суугч
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-[color:var(--theme)]">
+                {filteredTotalResidents}
+              </p>
+              <p className="text-sm text-[color:var(--muted-text)]">
+                Оршин суугч
+              </p>
             </div>
           </div>
         </div>
 
         {/* Additional Info */}
-        <div
+        {/* <div
           className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
@@ -1226,7 +1271,7 @@ export default function Khynalt() {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

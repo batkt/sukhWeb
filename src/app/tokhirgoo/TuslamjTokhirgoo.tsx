@@ -130,7 +130,7 @@ export default function TuslamjTokhirgoo(props: Props) {
   return (
     <div className="space-y-6">
       {/* Upload panel */}
-      <div className="rounded-2xl p-6 neu-panel">
+      <div className="rounded-2xl p-6">
         <h2 className="text-xl font-semibold mb-4">PDF байршуулах</h2>
         <form onSubmit={onUpload} className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

@@ -214,10 +214,23 @@ function LayoutContent({ children }: { children: ReactNode }) {
       s.on("orshinSuugch.deleted", onResidentDeleted);
       s.on("geree.deleted", onResidentDeleted);
 
+      // Employees: created/updated/deleted -> revalidate employee lists
+      const onEmployeeChanged = (data: any) => {
+        try {
+          mutate((key: any) => Array.isArray(key) && key[0] === "/ajiltan");
+        } catch (_) {}
+      };
+      s.on("ajiltan.created", onEmployeeChanged);
+      s.on("ajiltan.updated", onEmployeeChanged);
+      s.on("ajiltan.deleted", onEmployeeChanged);
+
       return () => {
         try {
           s.off("orshinSuugch.deleted", onResidentDeleted);
           s.off("geree.deleted", onResidentDeleted);
+          s.off("ajiltan.created", onEmployeeChanged);
+          s.off("ajiltan.updated", onEmployeeChanged);
+          s.off("ajiltan.deleted", onEmployeeChanged);
           s.disconnect();
         } catch (e) {
           // ignore during cleanup

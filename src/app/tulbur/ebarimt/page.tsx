@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import { Loader } from "@mantine/core";
+import { Spin } from "antd";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
@@ -444,7 +444,7 @@ export default function Ebarimt() {
                   onClick={ebarimtIlgeeye}
                   className="btn-minimal px-6 py-3 rounded-xl  text-white border-0"
                 >
-                  {loading ? <Loader size="sm" /> : t("Татварт илгээх")}
+                  {loading ? <Spin size="small" /> : t("Татварт илгээх")}
                 </button>
               </motion.div>
             </div>

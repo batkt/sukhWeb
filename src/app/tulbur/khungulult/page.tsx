@@ -25,7 +25,7 @@ import {
   Switch,
 } from "antd";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
-import { MonthPickerInput } from "@mantine/dates";
+import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";

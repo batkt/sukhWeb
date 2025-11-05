@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import {
-  DayPicker,
-  DateRange,
-  SelectRangeEventHandler,
-} from "react-day-picker";
+import { createPortal } from "react-dom";
+import { DateRange, SelectRangeEventHandler } from "react-day-picker";
+import { Calendar } from "./calendar";
 
 import dayjs from "dayjs";
 
@@ -25,7 +23,7 @@ type CommonProps = {
   classNames?: { root?: string; input?: string };
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   radius?: string | number;
-  dropdownType?: "popover" | "modal"; // we always use a small popover
+  dropdownType?: "popover" | "modal"; // popover on desktop, modal-like panel on mobile
   popoverProps?: {
     width?: number | string;
     position?: string;
@@ -98,7 +96,50 @@ export function DatePickerInput(
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  useOutsideClick(rootRef, () => setOpen(false));
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  // Position the dropdown in a portal so it renders above any panels
+  useEffect(() => {
+    if (!open) return;
+    const update = () => {
+      if (!rootRef.current) return;
+      const rect = rootRef.current.getBoundingClientRect();
+      const estWidth = type === "range" ? 680 : 360; // two-month vs single
+      const maxW = Math.min(window.innerWidth - 16, 720);
+      const width = Math.min(Math.max(estWidth, 340), maxW);
+      const left = Math.min(
+        Math.max(8, rect.left),
+        Math.max(8, window.innerWidth - width - 8)
+      );
+      const top = Math.min(rect.bottom + 8, window.innerHeight - 8);
+      setDropdownPos({ top, left, width });
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, type]);
+
+  // Outside click that respects the portal content
+  useEffect(() => {
+    if (!open) return;
+    function handle(e: MouseEvent) {
+      const t = e.target as Node;
+      if (rootRef.current && rootRef.current.contains(t)) return;
+      if (dropdownRef.current && dropdownRef.current.contains(t)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handle, true);
+    return () => document.removeEventListener("mousedown", handle, true);
+  }, [open]);
 
   // Normalize current value to Date/DateRange for the calendar
   const selected = useMemo(() => {
@@ -152,7 +193,10 @@ export function DatePickerInput(
   }, [selected, type, valueFormat]);
 
   return (
-    <div ref={rootRef} className={classNames?.root || "relative inline-block"}>
+    <div
+      ref={rootRef}
+      className={classNames?.root || "relative inline-block w-full max-w-full"}
+    >
       <button
         type="button"
         onClick={(e) => {
@@ -161,11 +205,11 @@ export function DatePickerInput(
         }}
         className={
           classNames?.input ||
-          `neu-panel rounded-2xl px-3 py-2 h-10 text-sm flex items-center justify-between gap-2 min-w-[220px]` +
+          `neu-panel rounded-2xl px-3 py-2 h-11 text-sm flex items-center justify-between gap-2 w-full` +
             (className ? ` ${className}` : "")
         }
       >
-        <span className={displayText ? "text-foreground" : "text-gray-400"}>
+        <span className={displayText ? "text-theme" : "text-subtle"}>
           {displayText || placeholder}
         </span>
         {clearable && displayText && (
@@ -175,7 +219,7 @@ export function DatePickerInput(
               if (type === "range") (onChange as any)?.(undefined);
               else (onChange as any)?.(null);
             }}
-            className="text-gray-400 hover:text-gray-600 cursor-pointer"
+            className="text-subtle hover:text-theme cursor-pointer"
             aria-label="Clear date"
           >
             ×
@@ -183,146 +227,41 @@ export function DatePickerInput(
         )}
       </button>
 
-      {open && (
-        <div
-          className="absolute z-50 mt-2 p-3 rounded-2xl menu-surface"
-          style={{ width: 320 }}
-        >
-          <style>{`
-            .rdp-root { width: 100%; }
-            .rdp-month { width: 100%; }
-            .rdp-month_caption { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-            .rdp-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 4px; }
-            .rdp-weeks { display: grid; gap: 2px; }
-            .rdp-week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-            .rdp-day { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
-            
-            /* Base button styling */
-            .rdp-day_button {
-              width: 100%;
-              height: 100%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              border-radius: 0.5rem;
-              background-color: white;
-              color: black;
-              font-weight: 500;
-              transition: background-color .15s ease, color .15s ease;
-              border: none;
-              cursor: pointer;
-            }
-            
-            /* Dark mode base */
-            .dark .rdp-day_button {
-              background-color: black;
-              color: white;
-            }
-            
-            /* Previous/next month dates - must come before weekend styles */
-            .rdp-day_outside .rdp-day_button {
-              background-color: #e5e7eb !important;
-              color: #9ca3af !important;
-            }
-            
-            .dark .rdp-day_outside .rdp-day_button {
-              background-color: #374151 !important;
-              color: #9ca3af !important;
-            }
-            
-            /* Weekend styling - Sunday (1st col) and Saturday (7th col) */
-            .rdp-week > :first-child .rdp-day_button,
-            .rdp-week > :last-child .rdp-day_button {
-              color: #ef4444 !important;
-            }
-            
-            .dark .rdp-week > :first-child .rdp-day_button,
-            .dark .rdp-week > :last-child .rdp-day_button {
-              color: #ef4444 !important;
-            }
-            
-            /* Hover state */
-            .rdp-day_button:hover {
-              background-color: #f3f4f6 !important;
-            }
-            
-            .dark .rdp-day_button:hover {
-              background-color: #1f2937 !important;
-            }
-            
-            /* Weekend hover - maintain red text */
-            .rdp-week > :first-child .rdp-day_button:hover,
-            .rdp-week > :last-child .rdp-day_button:hover {
-              color: #ef4444 !important;
-            }
-            
-            /* Selected state - blue background with white text (overrides weekend red) */
-            .rdp-day_selected .rdp-day_button {
-              background-color: #3b82f6 !important;
-              color: white !important;
-            }
-            
-            .dark .rdp-day_selected .rdp-day_button {
-              background-color: #3b82f6 !important;
-              color: white !important;
-            }
-            
-            /* Selected hover */
-            .rdp-day_selected .rdp-day_button:hover {
-              background-color: #2563eb !important;
-              color: white !important;
-            }
-            
-            .dark .rdp-day_selected .rdp-day_button:hover {
-              background-color: #2563eb !important;
-              color: white !important;
-            }
-            
-            /* Today indicator - ring border */
-            .rdp-day_today .rdp-day_button {
-              box-shadow: 0 0 0 2px #3b82f6 !important;
-            }
-            
-            /* Disabled state */
-            .rdp-day_disabled .rdp-day_button {
-              opacity: 0.3;
-              cursor: not-allowed;
-            }
-          `}</style>
-          {React.createElement(
-            DayPicker as any,
-            {
-              mode: type === "range" ? "range" : "single",
-              selected: selected as any,
-              onSelect: type === "range" ? (commitRange as any) : commitSingle,
-              weekStartsOn: 0,
-              showOutsideDays: true,
-              fixedWeeks: true,
-              classNames: {
-                caption: "flex justify-between items-center px-2 mb-1",
-                caption_label:
-                  "text-sm font-semibold text-gray-800 dark:text-gray-100 tracking-wide",
-                nav: "flex items-center gap-3",
-                button_previous:
-                  "text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300",
-                button_next:
-                  "text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300",
-                table: "w-full border-collapse",
-                head_row: "text-[11px] text-gray-500",
-                head_cell: "text-center font-medium p-1",
-                row: "",
-                cell: "p-1",
-                day: "w-9 h-9 rounded-lg text-sm flex items-center justify-center",
-                day_button: "",
-                day_selected: "",
-                day_today: "",
-                day_outside: "",
-                day_disabled: "",
-              },
-            } as any
-          )}
-        </div>
-      )}
+      {open &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="menu-surface rounded-2xl shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: "fixed",
+              zIndex: 9999,
+              top: dropdownPos?.top ?? 0,
+              left: dropdownPos?.left ?? 0,
+              width: dropdownPos?.width ?? undefined,
+              maxWidth: "96vw",
+              padding: "0.75rem",
+            }}
+          >
+            <Calendar
+              mode={type === "range" ? "range" : "single"}
+              selected={selected as any}
+              onSelect={
+                (type === "range" ? (commitRange as any) : commitSingle) as any
+              }
+              required={false}
+              numberOfMonths={2}
+              captionLayout="dropdown"
+              hideNavigation
+              weekStartsOn={1}
+              showOutsideDays
+              fixedWeeks
+            />
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

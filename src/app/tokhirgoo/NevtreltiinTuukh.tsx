@@ -2,7 +2,11 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
-import { Tooltip } from "@mantine/core";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Settings, MoreHorizontal } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
@@ -95,8 +99,15 @@ export default function NevtreltiinTuukh({
       {
         title: t("Байршил"),
         render: (_: unknown, record: RecordType) => (
-          <Tooltip label={`${record.bairshilKhot}, ${record.bairshilUls}`}>
-            {record.bairshilKhot}, {record.bairshilUls}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="underline underline-offset-4 cursor-help">
+                {record.bairshilKhot}, {record.bairshilUls}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              {record.bairshilKhot}, {record.bairshilUls}
+            </TooltipContent>
           </Tooltip>
         ),
       },

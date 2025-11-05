@@ -94,6 +94,7 @@ function Tokhirgoo() {
           icon: <Settings className="w-5 h-5" />,
           text: "Тусламж",
           tsonkh: TuslamjTokhirgoo,
+          comingSoon: true,
           // Enabled: implement PDF upload/view and use green static theme inside
         },
         {

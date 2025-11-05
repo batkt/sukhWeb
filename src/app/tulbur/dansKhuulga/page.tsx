@@ -310,7 +310,6 @@ export default function DansniiKhuulga() {
   // Dashboard statistics derived from filteredData for admin
   const stats = useMemo(() => {
     const totalCount = filteredData.length;
-    const totalSum = filteredData.reduce((s, r) => s + (r.total || 0), 0);
     const uniqueAccounts = new Set(
       filteredData.map((f) => String(f.account || "")).filter(Boolean)
     ).size;
@@ -335,12 +334,20 @@ export default function DansniiKhuulga() {
     })();
 
     return [
+      // Total transactions
+      { title: "Нийт", value: totalCount },
+      // Unspecified / no contract
+      { title: "Тодорхойгүй", value: withoutContracts },
+      // Linked to contract
       { title: "Гэрээ холбогдсон", value: withContracts },
-
-      { title: "Холбогдоогүй", value: withoutContracts },
-      { title: "Хамгийн их гүйлгээ", value: `${formatNumber(maxAmount, 0)} ₮` },
-      { title: "Нийт дүн", value: `${formatNumber(totalSum, 0)} ₮` },
+      // Number of unique accounts involved (could represent potential leads)
+      { title: "Магадлалтай", value: uniqueAccounts },
     ];
+  }, [filteredData]);
+
+  // Calculate total sum for the footer
+  const totalSum = useMemo(() => {
+    return filteredData.reduce((s, r) => s + (r.total || 0), 0);
   }, [filteredData]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
@@ -517,7 +524,7 @@ export default function DansniiKhuulga() {
                         <td className="p-1 truncate text-center">
                           {item.action}
                         </td>
-                        <td className="p-1 text-right whitespace-nowrap">
+                        <td className="p-1 !text-right whitespace-nowrap">
                           {formatNumber(item.total ?? 0, 0)} ₮
                         </td>
                         <td className="p-1 text-center whitespace-nowrap">
@@ -551,6 +558,11 @@ export default function DansniiKhuulga() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className=" px-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-theme">
+                Нийт дүн: {formatNumber(totalSum, 0)} ₮
+              </div>
             </div>
           </div>
 
@@ -611,6 +623,28 @@ export default function DansniiKhuulga() {
                 role="dialog"
                 aria-modal="true"
               >
+                <button
+                  onClick={() => setIsEbarimtOpen(false)}
+                  className="absolute top-2 right-4 hover:bg-gray-100 rounded-2xl transition-colors z-[2300]"
+                  aria-label="Хаах"
+                  title="Хаах"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-slate-700"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
                 <div className="w-full h-full overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
                   {/* Ensure the embedded page can scroll within the modal instead of bubbling to body */}
                   <EbarimtPage />

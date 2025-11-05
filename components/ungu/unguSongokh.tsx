@@ -81,10 +81,10 @@ export default function ӨнгөнийЗагварСонгох() {
                 <Palette className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-xs font-semibold text-slate-800">
+                <h3 className="text-xs font-semibold text-theme">
                   Өнгөний загвар
                 </h3>
-                <p className="text-xs text-slate-500">Загварыг сонгоно уу</p>
+                <p className="text-xs text-theme">Загварыг сонгоно уу</p>
               </div>
             </div>
 
@@ -110,7 +110,7 @@ export default function ӨнгөнийЗагварСонгох() {
                         }}
                       />
                       <div className="text-left">
-                        <p className="text-xs font-medium text-slate-800">
+                        <p className="text-xs font-medium text-theme">
                           {theme.name}
                         </p>
                       </div>

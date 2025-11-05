@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
 import useSWR from "swr";
 import { createPortal } from "react-dom";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { motion } from "framer-motion";
 import NekhemjlekhPage from "../nekhemjlekh/page";
 import KhungulultPage from "../khungulult/page";
@@ -21,6 +20,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
 import formatNumber from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
+import DatePickerInput from "@/components/ui/DatePickerInput";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -51,6 +51,7 @@ export default function DansniiKhuulga() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
@@ -204,12 +205,15 @@ export default function DansniiKhuulga() {
     });
   }, [buildingHistoryItems, tuluvFilter, searchTerm]);
 
-  const stats = useMemo(() => {
-    const totalCount = filteredItems.length;
-    const totalSum = filteredItems.reduce((s: number, it: any) => {
+  const totalSum = useMemo(() => {
+    return filteredItems.reduce((s: number, it: any) => {
       const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
       return s + v;
     }, 0);
+  }, [filteredItems]);
+
+  const stats = useMemo(() => {
+    const totalCount = filteredItems.length;
     const paidCount = filteredItems.filter((it: any) => isPaidLike(it)).length;
     const overdueCount = filteredItems.filter((it: any) =>
       isOverdueLike(it)
@@ -226,7 +230,6 @@ export default function DansniiKhuulga() {
       { title: "Төлсөн", value: paidCount },
       { title: "Хугацаа хэтэрсэн", value: overdueCount },
       { title: "Төлөөгүй", value: unpaidCount },
-      { title: "Нийт дүн", value: `${formatNumber(totalSum, 0)} ₮` },
     ];
   }, [filteredItems]);
 
@@ -267,13 +270,6 @@ export default function DansniiKhuulga() {
   // Register guided tour for /tulbur/guilgeeTuukh
   const tourSteps = useMemo<DriverStep[]>(
     () => [
-      {
-        element: "#guilgee-date",
-        popover: {
-          title: "Огнооны шүүлтүүр",
-          description: "Эндээс хугацааны интервал сонгож жагсаалтыг шүүдэг.",
-        },
-      },
       {
         element: "#guilgee-status-filter",
         popover: {
@@ -336,7 +332,7 @@ export default function DansniiKhuulga() {
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {stats.map((stat, idx) => (
             <motion.div
               key={idx}
@@ -361,7 +357,7 @@ export default function DansniiKhuulga() {
         <div className="rounded-2xl p-6">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div id="guilgee-date">
+              <div id="dans-date">
                 <DatePickerInput
                   type="range"
                   locale="mn"
@@ -370,13 +366,13 @@ export default function DansniiKhuulga() {
                   size="sm"
                   radius="md"
                   variant="filled"
-                  clearable
                   dropdownType="popover"
                   popoverProps={{
                     position: "bottom-start",
                     withinPortal: true,
                     width: 320,
                   }}
+                  clearable
                   placeholder="Огноо сонгох"
                   classNames={{
                     input:
@@ -446,24 +442,24 @@ export default function DansniiKhuulga() {
               <table id="guilgee-table" className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
-                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="  z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
                       №
                     </th>
-                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="   z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Нэр
                     </th>
-                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="  z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Гэрээний дугаар
                     </th>
 
-                    {/* <th className="  dark:bg-slate-900 z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    {/* <th className="   z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Хаяг
                     </th> */}
-                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                      Нийт дүн
+                    <th className="  z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      Төлбөр
                     </th>
 
-                    <th className="  dark:bg-slate-900 z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="   z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                       Төлөв
                     </th>
                   </tr>
@@ -471,13 +467,13 @@ export default function DansniiKhuulga() {
                 <tbody>
                   {isLoadingHistory ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-theme/70">
+                      <td colSpan={5} className="p-8 text-center text-theme/70">
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                       </td>
                     </tr>
                   ) : filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-theme/60">
+                      <td colSpan={5} className="p-8 text-center text-theme/60">
                         Хайсан мэдээлэл алга байна
                       </td>
                     </tr>
@@ -525,7 +521,7 @@ export default function DansniiKhuulga() {
                           <td className="p-1 text-center text-theme whitespace-nowrap">
                             {(page - 1) * rowsPerPage + idx + 1}
                           </td>
-                          <td className="p-1 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 !text-left text-theme whitespace-nowrap">
                             {ner}
                           </td>
                           <td className="p-1 text-center text-theme whitespace-nowrap">
@@ -535,7 +531,7 @@ export default function DansniiKhuulga() {
                           {/* <td className="p-3 text-center text-theme whitespace-nowrap">
                             {khayag}
                           </td> */}
-                          <td className="p-1 text-center text-theme whitespace-nowrap">
+                          <td className="p-1 !text-right text-theme whitespace-nowrap">
                             {total.toLocaleString("mn-MN")} ₮
                           </td>
                           <td className="p-1 text-center text-theme whitespace-nowrap">
@@ -562,7 +558,11 @@ export default function DansniiKhuulga() {
                 </tbody>
               </table>
             </div>
-            <div className=" px-4 py-2 border-t border-gray-200 flex items-center justify-between gap-4"></div>
+            <div className=" px-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-theme">
+                Нийт дүн: {formatNumber(totalSum, 0)} ₮
+              </div>
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
             <div className="text-theme/70">Нийт: {filteredItems.length}</div>
@@ -616,12 +616,34 @@ export default function DansniiKhuulga() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 50 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
+              className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[98vh] max-h-[98vh] rounded-3xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
               onClick={(e) => e.stopPropagation()}
               ref={nekhemjlekhRef}
               role="dialog"
               aria-modal="true"
             >
+              <button
+                onClick={() => setIsNekhemjlekhOpen(false)}
+                className="absolute top-2 right-4 hover:bg-gray-100 rounded-2xl transition-colors z-[2300]"
+                aria-label="Хаах"
+                title="Хаах"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-slate-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
               <div className="w-full h-full overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
                 <NekhemjlekhPage />
               </div>

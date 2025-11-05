@@ -553,6 +553,17 @@ export default function Geree() {
   const [editingResident, setEditingResident] = useState<any | null>(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
+
+  // Error states for form validation
+  const [contractErrors, setContractErrors] = useState<Record<string, string>>(
+    {}
+  );
+  const [employeeErrors, setEmployeeErrors] = useState<Record<string, string>>(
+    {}
+  );
+  const [residentErrors, setResidentErrors] = useState<Record<string, string>>(
+    {}
+  );
   const [newEmployee, setNewEmployee] = useState<any>({
     ovog: "",
     ner: "",
@@ -1034,14 +1045,18 @@ export default function Geree() {
       return baseValid && ubExtraValid && namesOk && regOk && phonesOk;
     }
     if (step === 2) {
-      return (
+      // Require contract number and all dates, ensure range is valid; khugatsaa is no longer required in UI
+      const hasAll =
         String(newContract.gereeniiDugaar || "").trim() !== "" &&
         String(newContract.gereeniiOgnoo || "").trim() !== "" &&
         String(newContract.ekhlekhOgnoo || "").trim() !== "" &&
         String(newContract.duusakhOgnoo || "").trim() !== "" &&
-        String(newContract.tulukhOgnoo || "").trim() !== "" &&
-        Number(newContract.khugatsaa) > 0
-      );
+        String(newContract.tulukhOgnoo || "").trim() !== "";
+      if (!hasAll) return false;
+      // Start <= End
+      const start = dayjs(newContract.ekhlekhOgnoo);
+      const end = dayjs(newContract.duusakhOgnoo);
+      return start.isValid() && end.isValid() && !end.isBefore(start, "day");
     }
     if (step === 3) {
       return (
@@ -1616,15 +1631,38 @@ export default function Geree() {
         nuutsUg: newEmployee.nuutsUg,
         baiguullagiinId: ajiltan?.baiguullagiinId,
       };
-      payload.barilgiinId = selectedBuildingId || barilgiinId || null;
+      const curBid = selectedBuildingId || barilgiinId || null;
+      payload.barilgiinId = curBid;
+      // Also include array-based building assignment for backends expecting `barilguud`
+      if (curBid) {
+        payload.barilguud = [curBid];
+      }
 
+      let createdOrUpdatedId: any = null;
       if (editingEmployee?._id) {
-        await updateMethod("ajiltan", token, {
+        const resp: any = await updateMethod("ajiltan", token, {
           ...payload,
           _id: editingEmployee._id,
         });
+        try {
+          const d = resp?.data ?? resp;
+          createdOrUpdatedId = d?._id || d?.id || editingEmployee._id;
+        } catch (_) {}
+        try {
+          const s = socket();
+          s.emit("ajiltan.updated", { id: createdOrUpdatedId });
+        } catch (_) {}
       } else {
-        await createMethod("ajiltan", token, payload);
+        const resp: any = await createMethod("ajiltan", token, payload);
+        try {
+          const d = resp?.data ?? resp;
+          const created = d?.data || d;
+          createdOrUpdatedId = created?._id || created?.id || null;
+        } catch (_) {}
+        try {
+          const s = socket();
+          s.emit("ajiltan.created", { id: createdOrUpdatedId });
+        } catch (_) {}
       }
 
       openSuccessOverlay("Ажилтны мэдээлэл хадгалагдлаа");
@@ -1675,6 +1713,10 @@ export default function Geree() {
       return;
     try {
       await deleteMethod("ajiltan", token, p._id || p.id);
+      try {
+        const s = socket();
+        s.emit("ajiltan.deleted", { id: p._id || p.id });
+      } catch (_) {}
       openSuccessOverlay("Устгагдлаа");
       await ajiltniiJagsaaltMutate();
     } catch (e) {
@@ -2269,14 +2311,24 @@ export default function Geree() {
                             <td className="p-1 text-center text-theme">
                               {startIndex + idx + 1}
                             </td>
-                            {visibleColumns.map((columnKey) => (
-                              <td
-                                key={columnKey}
-                                className="p-1 text-theme whitespace-nowrap text-center"
-                              >
-                                {renderCellValue(contract, columnKey)}
-                              </td>
-                            ))}
+                            {visibleColumns.map((columnKey) => {
+                              const alignClass =
+                                columnKey === "ner" ||
+                                columnKey === "bairniiNer"
+                                  ? "cell-left"
+                                  : columnKey === "sariinTurees" ||
+                                    columnKey === "baritsaaniiUldegdel"
+                                  ? "cell-right"
+                                  : "text-center";
+                              return (
+                                <td
+                                  key={columnKey}
+                                  className={`p-1 text-theme whitespace-nowrap ${alignClass}`}
+                                >
+                                  {renderCellValue(contract, columnKey)}
+                                </td>
+                              );
+                            })}
                             <td className="p-1 whitespace-nowrap">
                               <div className="flex gap-2 justify-center">
                                 <button
@@ -2394,7 +2446,7 @@ export default function Geree() {
                           <td className="p-1 text-center text-theme">
                             {(resPage - 1) * resPageSize + idx + 1}
                           </td>
-                          <td className="p-1 text-theme whitespace-nowrap text-center">
+                          <td className="p-1 text-theme whitespace-nowrap cell-left">
                             {typeof p.ner === "object"
                               ? `${p.ner?.ner || ""} ${
                                   p.ner?.kod || ""
@@ -2403,9 +2455,9 @@ export default function Geree() {
                           </td>
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
-                            {p.email && (
+                            {(p.email || p.mail) && (
                               <div className="text-xxs text-theme/70">
-                                {p.email}
+                                {p.email || p.mail}
                               </div>
                             )}
                           </td>
@@ -2555,7 +2607,7 @@ export default function Geree() {
                           <td className="p-1 text-center text-theme">
                             {(empPage - 1) * empPageSize + idx + 1}
                           </td>
-                          <td className="p-1 text-theme whitespace-nowrap text-center">
+                          <td className="p-1 text-theme whitespace-nowrap cell-left">
                             {typeof p.ner === "object"
                               ? `${p.ner?.ner || ""} ${
                                   p.ner?.kod || ""
@@ -2565,9 +2617,9 @@ export default function Geree() {
 
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
-                            {p.email && (
+                            {(p.email || p.mail) && (
                               <div className="text-xxs text-theme/70">
-                                {p.email}
+                                {p.email || p.mail}
                               </div>
                             )}
                           </td>
@@ -2826,15 +2878,26 @@ export default function Geree() {
                             <input
                               type="text"
                               value={newContract.ovog}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                                  ""
+                                );
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  ovog: e.target.value,
-                                }))
-                              }
+                                  ovog: value,
+                                }));
+                              }}
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               required
                             />
+                            {currentStep === 1 &&
+                              (!newContract.ovog ||
+                                !isValidName(newContract.ovog)) && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Зөв овог оруулна уу
+                                </p>
+                              )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -2843,15 +2906,26 @@ export default function Geree() {
                             <input
                               type="text"
                               value={newContract.ner}
-                              onChange={(e) =>
+                              onChange={(e) => {
+                                const value = e.target.value.replace(
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                                  ""
+                                );
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  ner: e.target.value,
-                                }))
-                              }
+                                  ner: value,
+                                }));
+                              }}
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               required
                             />
+                            {currentStep === 1 &&
+                              (!newContract.ner ||
+                                !isValidName(newContract.ner)) && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Зөв нэр оруулна уу
+                                </p>
+                              )}
                           </div>
 
                           <div>
@@ -2875,6 +2949,13 @@ export default function Geree() {
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               required
                             />
+                            {currentStep === 1 &&
+                              (!hasAnyPhone(newContract.utas) ||
+                                !areValidPhones(newContract.utas)) && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  {explainPhoneRule()}
+                                </p>
+                              )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -2978,6 +3059,12 @@ export default function Geree() {
                               className="w-full"
                               placeholder="Сонгох..."
                             />
+                            {currentStep === 1 &&
+                              !String(newContract.aimag || "").trim() && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Аймаг сонгоно уу
+                                </p>
+                              )}
                           </div>
                           {newContract.aimag === "Улаанбаатар" ? (
                             <>
@@ -3000,6 +3087,13 @@ export default function Geree() {
                                   className="w-full"
                                   placeholder="Сонгох..."
                                 />
+                                {currentStep === 1 &&
+                                  String(newContract.aimag) === "Улаанбаатар" &&
+                                  !String(newContract.duureg || "").trim() && (
+                                    <p className="text-xs text-red-600 mt-1">
+                                      Дүүрэг сонгоно уу
+                                    </p>
+                                  )}
                               </div>
                               <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3019,6 +3113,13 @@ export default function Geree() {
                                   className="w-full"
                                   placeholder="Сонгох..."
                                 />
+                                {currentStep === 1 &&
+                                  String(newContract.aimag) === "Улаанбаатар" &&
+                                  !String(newContract.horoo || "").trim() && (
+                                    <p className="text-xs text-red-600 mt-1">
+                                      Хороо сонгоно уу
+                                    </p>
+                                  )}
                               </div>
                             </>
                           ) : newContract.aimag ? (
@@ -3081,6 +3182,14 @@ export default function Geree() {
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                             />
+                            {currentStep === 2 &&
+                              !String(
+                                newContract.gereeniiDugaar || ""
+                              ).trim() && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Гэрээний дугаар оруулна уу
+                                </p>
+                              )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3107,6 +3216,14 @@ export default function Geree() {
                                   "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
                               }}
                             />
+                            {currentStep === 2 &&
+                              !String(
+                                newContract.gereeniiOgnoo || ""
+                              ).trim() && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Гэрээний огноо сонгоно уу
+                                </p>
+                              )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3145,6 +3262,27 @@ export default function Geree() {
                                   "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
                               }}
                             />
+                            {currentStep === 2 &&
+                              (!String(newContract.ekhlekhOgnoo || "").trim() ||
+                                !String(
+                                  newContract.duusakhOgnoo || ""
+                                ).trim()) && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Эхлэх болон дуусах огноо сонгоно уу
+                                </p>
+                              )}
+                            {currentStep === 2 &&
+                              String(newContract.ekhlekhOgnoo || "") &&
+                              String(newContract.duusakhOgnoo || "") &&
+                              dayjs(newContract.duusakhOgnoo).isBefore(
+                                dayjs(newContract.ekhlekhOgnoo),
+                                "day"
+                              ) && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Дуусах огноо эхлэх огнооноос өмнө байж
+                                  болохгүй
+                                </p>
+                              )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3171,6 +3309,12 @@ export default function Geree() {
                                   "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
                               }}
                             />
+                            {currentStep === 2 &&
+                              !String(newContract.tulukhOgnoo || "").trim() && (
+                                <p className="text-xs text-red-600 mt-1">
+                                  Төлөх огноо сонгоно уу
+                                </p>
+                              )}
                           </div>
                           {/* <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3275,16 +3419,29 @@ export default function Geree() {
                         Буцах
                       </button>
                       {currentStep < 3 ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCurrentStep((s: number) => Math.min(3, s + 1));
-                          }}
-                          className="btn-minimal btn-next"
-                          data-modal-primary
-                        >
-                          Дараах
-                        </button>
+                        <div className="flex items-center gap-3">
+                          {!isStepValid(currentStep) && (
+                            <span className="text-red-600 text-sm">
+                              Бүх талбаруудыг бөглөнө үү
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!isStepValid(currentStep)) return;
+                              setCurrentStep((s: number) => Math.min(3, s + 1));
+                            }}
+                            className={`btn-minimal btn-next ${
+                              !isStepValid(currentStep)
+                                ? "opacity-50 cursor-not-allowed"
+                                : ""
+                            }`}
+                            disabled={!isStepValid(currentStep)}
+                            data-modal-primary
+                          >
+                            Дараах
+                          </button>
+                        </div>
                       ) : (
                         <button
                           type="submit"
@@ -3382,12 +3539,16 @@ export default function Geree() {
                         <input
                           type="text"
                           value={newResident.ovog}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Za-яА-ЯөүёӨҮЁ]/g,
+                              ""
+                            );
                             setNewResident((prev: any) => ({
                               ...prev,
-                              ovog: e.target.value,
-                            }))
-                          }
+                              ovog: value,
+                            }));
+                          }}
                           className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                           required
                         />
@@ -3399,12 +3560,16 @@ export default function Geree() {
                         <input
                           type="text"
                           value={newResident.ner}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Za-яА-ЯөүёӨҮЁ]/g,
+                              ""
+                            );
                             setNewResident((prev: any) => ({
                               ...prev,
-                              ner: e.target.value,
-                            }))
-                          }
+                              ner: value,
+                            }));
+                          }}
                           className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                           required
                         />
@@ -3445,6 +3610,7 @@ export default function Geree() {
                               mail: e.target.value,
                             }))
                           }
+                          required
                           className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                         />
                       </div>
@@ -3703,12 +3869,16 @@ export default function Geree() {
                       <input
                         type="text"
                         value={newEmployee.ovog}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.replace(
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                            ""
+                          );
                           setNewEmployee((p: any) => ({
                             ...p,
-                            ovog: e.target.value,
-                          }))
-                        }
+                            ovog: value,
+                          }));
+                        }}
                         className="w-full p-3 rounded-2xl border border-gray-400"
                         required
                       />
@@ -3720,12 +3890,16 @@ export default function Geree() {
                       <input
                         type="text"
                         value={newEmployee.ner}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value.replace(
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                            ""
+                          );
                           setNewEmployee((p: any) => ({
                             ...p,
-                            ner: e.target.value,
-                          }))
-                        }
+                            ner: value,
+                          }));
+                        }}
                         className="w-full p-3 rounded-2xl border border-gray-400"
                         required
                       />
@@ -3738,13 +3912,18 @@ export default function Geree() {
                       <input
                         type="tel"
                         value={newEmployee.utas}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/[^0-9]/g, "")
+                            .slice(0, 8);
                           setNewEmployee((p: any) => ({
                             ...p,
-                            utas: e.target.value,
-                          }))
-                        }
+                            utas: value,
+                          }));
+                        }}
                         className="w-full p-3 rounded-2xl border border-gray-400"
+                        maxLength={8}
+                        pattern="[0-9]{8}"
                         required
                       />
                     </div>

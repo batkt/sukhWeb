@@ -97,15 +97,36 @@ const fetcherJagsaalt = async ([
         : [];
     }
     const toStr = (v: any) => (v == null ? "" : String(v));
+    const includesBuilding = (it: any, bid: any) => {
+      const want = toStr(bid);
+      if (!want) return true;
+      // 1) Direct single-field mappings
+      const direct = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
+      );
+      if (direct && direct === want) return true;
+      // 2) Arrays of assignments: barilguud can be ids or objects
+      const arr: any[] = Array.isArray(it?.barilguud) ? it.barilguud : [];
+      for (const el of arr) {
+        if (
+          toStr(el) === want ||
+          toStr(el?._id) === want ||
+          toStr(el?.id) === want ||
+          toStr(el?.barilgiinId) === want ||
+          toStr(el?.barilgaId) === want ||
+          toStr(el?.branchId) === want
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
     const filtered = list.filter((it: any) => {
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
       if (!orgOk) return false;
       if (!barilgiinId) return true;
-      // Support alternate building id fields for employees as well
-      const itemBid = toStr(
-        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
-      );
-      return itemBid === toStr(barilgiinId);
+      return includesBuilding(it, barilgiinId);
     });
     if (Array.isArray(raw?.jagsaalt)) {
       return {

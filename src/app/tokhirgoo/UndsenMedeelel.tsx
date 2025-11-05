@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Loader } from "@mantine/core";
 import uilchilgee, {
   aldaaBarigch,
   updateBaiguullaga,

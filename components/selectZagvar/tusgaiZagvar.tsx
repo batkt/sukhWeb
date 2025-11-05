@@ -100,7 +100,7 @@ export default function TusgaiZagvar({
           setIsOpen(next);
         }}
         disabled={disabled}
-        className={`btn-neu w-full justify-between cursor-pointer flex items-center h-full ${
+        className={`btn-minimal w-full justify-between cursor-pointer flex items-center h-full ${
           tone === "neutral" ? "!text-slate-900" : ""
         } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
       >

@@ -603,16 +603,10 @@ const InvoiceModal = ({
 
                   <div className="border border-gray-100 rounded-xl p-4 print-break">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-3xl bg-gradient-to-r from-violet-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                        {resident?.ovog?.charAt(0)}
-                      </div>
                       <div>
                         <h3 className="font-medium text-slate-800">
                           {resident?.ovog} {resident?.ner}
                         </h3>
-                        <div className="text-xs text-slate-300 truncate">
-                          {resident.register || "Регистр тодорхойгүй"}
-                        </div>
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1419,27 +1413,27 @@ export default function InvoicingZardluud() {
           <div className="p-8">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
               <table className="table-ui text-sm min-w-full">
-                <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
+                <thead className="bg-white/95 backdrop-blur-sm top-0 z-10 border-b border-gray-200 shadow-sm">
                   <tr>
                     <th className="p-4 text-xs font-bold text-theme text-center w-12 rounded-tl-2xl bg-white/95">
                       №
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Оршин суугч
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Тоот
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Хаяг
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Утас
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Төлөв
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
                       Үйлдэл
                     </th>
                   </tr>
@@ -1538,15 +1532,9 @@ export default function InvoicingZardluud() {
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-theme font-semibold text-sm">
-                              {resident?.ovog?.charAt(0) || "?"}
-                            </div>
                             <div className="min-w-0">
                               <div className="font-semibold text-theme truncate">
-                                {resident.ovog} {resident.ner}
-                              </div>
-                              <div className="text-xs text-gray-500 truncate">
-                                {resident.register || "Регистр тодорхойгүй"}
+                                {resident.ner}
                               </div>
                             </div>
                           </div>
@@ -1587,9 +1575,9 @@ export default function InvoicingZardluud() {
                             );
                           })()}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
+                        <td className="py-4 px-6 text-center">
                           <div
-                            className="flex items-center gap-2"
+                            className="flex justify-center items-center gap-2"
                             style={{ minWidth: 90 }}
                           >
                             <motion.button
@@ -1602,6 +1590,7 @@ export default function InvoicingZardluud() {
                             >
                               <Eye className="w-6 h-6 sm:w-4 sm:h-4 text-blue-600" />
                             </motion.button>
+
                             <motion.button
                               onClick={() => handleOpenHistory(resident)}
                               className="p-3 sm:p-2 rounded-xl hover:shadow-md transition-colors"
