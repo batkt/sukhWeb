@@ -130,7 +130,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         ) {
           setTokenState(storedToken);
 
-          // Try to load ajiltan from localStorage
+          // Load ajiltan from localStorage (session continuity), but this
+          // does NOT bypass login as middleware enforces token presence.
           const storedAjiltan = localStorage.getItem("ajiltan");
           if (
             storedAjiltan &&
@@ -161,8 +162,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
+      // Session cookie only (no maxAge) so it doesn't persist across browser restarts
       setCookie(null, "tureestoken", newToken, {
-        maxAge: 30 * 24 * 60 * 60,
         path: "/",
       });
     } else {
@@ -192,9 +193,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return false;
         }
 
-        if (khereglech.namaigsana) {
-          localStorage.setItem("newtrekhNerTurees", khereglech.nevtrekhNer);
-        }
+        // Do not persist username or any remember-me data
 
         try {
           const response = await uilchilgee().post<LoginResponse>(

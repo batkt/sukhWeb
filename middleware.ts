@@ -25,6 +25,16 @@ export function middleware(req: NextRequest) {
   const { nextUrl, cookies } = req;
   const pathname = nextUrl.pathname;
 
+  // When user visits the login page, always clear auth-related cookies
+  if (pathname === "/login") {
+    const res = NextResponse.next();
+    try {
+      res.cookies.delete("tureestoken");
+      res.cookies.delete("barilgiinId");
+    } catch {}
+    return res;
+  }
+
   // Always allow public paths
   if (isPublicPath(pathname)) {
     return NextResponse.next();

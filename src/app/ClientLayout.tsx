@@ -78,7 +78,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { loading: spinnerLoading } = useSpinner();
   const [authChecked, setAuthChecked] = useState(false);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
 
   useEffect(() => {
     // Set global locale for date handling to Mongolian
@@ -115,41 +114,21 @@ function LayoutContent({ children }: { children: ReactNode }) {
     const checkAuth = () => {
       const cookies = parseCookies();
       const token = cookies.tureestoken;
-      const online = typeof navigator !== "undefined" ? navigator.onLine : true;
-      setIsOnline(online);
-      // Consider cached session valid in offline mode if we have ajiltan locally
-      const hasCachedUser =
-        typeof window !== "undefined" &&
-        (() => {
-          try {
-            const a = localStorage.getItem("ajiltan");
-            return !!(a && a !== "undefined" && a !== "null");
-          } catch {
-            return false;
-          }
-        })();
 
       if (pathname === "/login") {
-        // Always show login page (no redirect to /khynalt even if token exists)
-        // Allow offline login if we have a cached session
-        if (!online && hasCachedUser) {
-          setAuthChecked(true);
-          return;
-        }
+        // Always show login page
         setAuthChecked(true);
         return;
       }
 
       if (!token || !isTokenValid(token)) {
-        // If offline but we have a cached session, let user continue working
-        if (!online && hasCachedUser) {
-          setAuthChecked(true);
-          return;
-        }
         if (token) {
           destroyCookie(null, "tureestoken", { path: "/" });
-          localStorage.removeItem("ajiltan");
         }
+        // Clear any cached user, we don't support offline auto-login
+        try {
+          localStorage.removeItem("ajiltan");
+        } catch {}
         router.replace("/login");
         return;
       }
@@ -160,34 +139,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     checkAuth();
   }, [pathname, router]);
 
-  // Register the service worker once on the client
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if ("serviceWorker" in navigator) {
-      // Wait for the app to settle
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .then((reg) => {
-            // Listen to updates
-            if (reg && reg.active) {
-              // noop for now
-            }
-          })
-          .catch(() => {
-            // ignore registration errors
-          });
-      });
-    }
-    const onOnline = () => setIsOnline(true);
-    const onOffline = () => setIsOnline(false);
-    window.addEventListener("online", onOnline);
-    window.addEventListener("offline", onOffline);
-    return () => {
-      window.removeEventListener("online", onOnline);
-      window.removeEventListener("offline", onOffline);
-    };
-  }, []);
+  // Service worker registration removed: no offline persistence or queuing
 
   // Initialize socket listeners for real-time updates (refresh SWR caches)
   const [skt, setSkt] = useState<Socket | null>(null);
@@ -275,12 +227,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
       <SearchProvider>
         <BuildingProvider>
           <RequestScopeSync />
-          {/* Optionally, small offline badge */}
-          {!isOnline && (
-            <div className="fixed bottom-3 right-3 z-[2000] px-3 py-1 rounded-full text-xs bg-yellow-500/90 text-black shadow">
-              Оффлайн горим
-            </div>
-          )}
           {children}
           <SuccessOverlayHost />
           <ErrorOverlayHost />

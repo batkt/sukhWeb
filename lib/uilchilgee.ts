@@ -117,78 +117,10 @@ const uilchilgee = (token?: string): AxiosInstance => {
     return config;
   });
 
-  // Helper to queue a request via the Service Worker
-  const queueViaServiceWorker = async (
-    fullUrl: string,
-    init: RequestInit
-  ): Promise<boolean> => {
-    try {
-      if (!("serviceWorker" in navigator)) return false;
-      const reg = await navigator.serviceWorker.ready;
-      if (!reg?.active) return false;
-      // Use MessageChannel to get an ack
-      const channel = new MessageChannel();
-      const ack = new Promise<boolean>((resolve) => {
-        channel.port1.onmessage = (ev) => {
-          resolve(!!ev.data?.ok);
-        };
-      });
-      reg.active.postMessage({ type: "queue-request", url: fullUrl, init }, [
-        channel.port2,
-      ]);
-      const ok = await ack;
-      return ok;
-    } catch {
-      return false;
-    }
-  };
-
-  // If offline and a write request fails, queue it and return a synthetic response
+  // Remove offline queueing: if a request fails, just propagate the error
   instance.interceptors.response.use(
     (resp) => resp,
-    async (error) => {
-      try {
-        const cfg = error?.config as any;
-        const method = (cfg?.method || "").toString().toUpperCase();
-        const isWrite = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-        const online =
-          typeof navigator !== "undefined" ? navigator.onLine : true;
-        const targetUrl: string = cfg?.baseURL
-          ? cfg.baseURL.replace(/\/$/, "") + (cfg?.url || "")
-          : cfg?.url || "";
-        if (isWrite && !online && targetUrl) {
-          const headers: Record<string, string> = { ...(cfg.headers || {}) };
-          // Axios may include extra headers object nesting; keep simple primitives
-          Object.keys(headers).forEach((k) => {
-            const v: any = (headers as any)[k];
-            if (typeof v === "object") delete (headers as any)[k];
-          });
-          const body = cfg.data
-            ? typeof cfg.data === "string"
-              ? cfg.data
-              : JSON.stringify(cfg.data)
-            : undefined;
-          const queued = await queueViaServiceWorker(targetUrl, {
-            method,
-            headers,
-            body,
-            credentials: "include",
-          });
-          if (queued) {
-            // Fabricate an Axios-like response
-            return Promise.resolve({
-              data: { queued: true },
-              status: 202,
-              statusText: "Queued offline",
-              headers: {},
-              config: cfg,
-              request: null,
-            });
-          }
-        }
-      } catch {}
-      return Promise.reject(error);
-    }
+    async (error) => Promise.reject(error)
   );
 
   return instance;
