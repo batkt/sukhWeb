@@ -3,7 +3,10 @@ import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
-export const url = "http://103.143.40.46:8084";
+// Use environment variable for API URL, fallback to default for local development
+// In production (HTTPS), the API must also use HTTPS to avoid mixed content errors
+export const url =
+  process.env.NEXT_PUBLIC_API_URL || "http://103.143.40.46:8084";
 
 // Socket connection
 export const socket = (): Socket =>

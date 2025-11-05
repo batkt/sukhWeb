@@ -95,9 +95,13 @@ export const useBarilga = () => {
     }
 
     setBarilgiinId(id);
+    const isProduction =
+      typeof window !== "undefined" && window.location.protocol === "https:";
     setCookie(null, "barilgiinId", id, {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
+      secure: isProduction,
+      sameSite: "lax",
     });
     return true;
   };
@@ -197,7 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         try {
           const response = await uilchilgee().post<LoginResponse>(
-            "/ajiltanNevtrey",
+            "api/ajiltanNevtrey",
             khereglech
           );
 
