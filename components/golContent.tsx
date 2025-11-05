@@ -156,7 +156,8 @@ export default function GolContent({ children }: GolContentProps) {
   };
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
-  const isLoggedIn = !!token && !!ajiltan;
+  // Show logout controls whenever a valid token exists, even if user profile isn't loaded yet
+  const isLoggedIn = !!token;
 
   // Register global tour steps that exist across most pages
   useRegisterTourSteps("global", [

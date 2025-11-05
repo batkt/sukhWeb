@@ -80,6 +80,15 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    // Proactively unregister any existing service workers from older builds
+    try {
+      if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations?.().then((regs) => {
+          regs?.forEach((r) => r.unregister());
+        });
+      }
+    } catch {}
+
     // Set global locale for date handling to Mongolian
     try {
       dayjs.locale("mn");

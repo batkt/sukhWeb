@@ -2,17 +2,15 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Publicly accessible paths (no auth needed)
-const PUBLIC_PATHS = new Set<string>(["/login", "/signup", "/offline.html"]);
+const PUBLIC_PATHS = new Set<string>(["/login", "/signup"]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
-  // Allow static and PWA files
+  // Allow static files
   if (
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/public/") ||
     pathname === "/favicon.ico" ||
-    pathname === "/manifest.webmanifest" ||
-    pathname === "/sw.js" ||
     pathname.startsWith("/images/") ||
     pathname.startsWith("/icons/")
   ) {
@@ -90,7 +88,5 @@ export function middleware(req: NextRequest) {
 
 // Match all routes except Next.js internals and static assets
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|images/|icons/).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|images/|icons/).*)"],
 };

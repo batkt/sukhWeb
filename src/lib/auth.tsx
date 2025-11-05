@@ -193,8 +193,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setToken = useCallback((newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
+      // Session cookie only (no maxAge) so it doesn't persist across browser restarts
       setCookie(null, "tureestoken", newToken, {
-        maxAge: 30 * 24 * 60 * 60,
         path: "/",
       });
     } else {
@@ -217,16 +217,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     if (response.status === 200 && response.data) {
-      let permissionsData = null;
-
+      // Fetch permissions; if it fails, default to empty modules (no offline fallback)
+      let permissionsData: any = { moduluud: [] };
       try {
         const res = await uilchilgee(response.data.token).post(
           "/erkhiinMedeelelAvya"
         );
-        permissionsData = res.data;
-      } catch (error) {
-        permissionsData = { moduluud: [], offlineFallback: true };
-      }
+        permissionsData = res.data || { moduluud: [] };
+      } catch (_) {}
 
       return {
         token: response.data.token,
@@ -337,48 +335,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           toast.error("Нууц үг талбарыг бөглөнө үү");
           return false;
         }
-
-        if (khereglech.namaigsana) {
-          localStorage.setItem("newtrekhNerTurees", khereglech.nevtrekhNer);
-        }
-
-        // Offline fallback: if no internet, allow login using cached session
-        try {
-          const online =
-            typeof navigator !== "undefined" ? navigator.onLine : true;
-          if (!online) {
-            const cookies = parseCookies();
-            const storedToken = cookies.tureestoken;
-            const storedAjiltanRaw = localStorage.getItem("ajiltan");
-            if (
-              storedAjiltanRaw &&
-              storedAjiltanRaw !== "undefined" &&
-              storedAjiltanRaw !== "null"
-            ) {
-              const cachedAjiltan: Ajiltan = JSON.parse(storedAjiltanRaw);
-              // If username matches cached one, proceed to offline mode
-              if (
-                !khereglech.nevtrekhNer ||
-                cachedAjiltan.nevtrekhNer === khereglech.nevtrekhNer
-              ) {
-                const loginData = {
-                  token: storedToken || "offline-token",
-                  result: cachedAjiltan,
-                  permissionsData: { offlineFallback: true },
-                };
-                const ok = await processSuccessfulLogin(loginData);
-                if (ok) {
-                  toast.success("Оффлайн горимд нэвтэрлээ");
-                  return true;
-                }
-              }
-            }
-            toast.error(
-              "Оффлайн горимд өмнө нь нэг удаа нэвтэрсэн байх шаардлагатай"
-            );
-            return false;
-          }
-        } catch {}
 
         try {
           const loginResult = await performOnlineLogin(khereglech);

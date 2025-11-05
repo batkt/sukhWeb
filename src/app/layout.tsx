@@ -23,8 +23,7 @@ export default function RootLayout({
   return (
     <html lang="mn" suppressHydrationWarning>
       <head suppressHydrationWarning>
-        {/* PWA manifest and theme color */}
-        <link rel="manifest" href="/manifest.webmanifest" />
+        {/* Theme color (PWA manifest removed) */}
         <meta name="theme-color" content="#0ea5e9" />
         <Script id="theme-init" strategy="beforeInteractive">
           {`(function(){try{var d=document.documentElement;var savedMode=localStorage.getItem('theme-mode');var mode=savedMode||(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');d.setAttribute('data-mode',mode);if(mode==='dark'){d.classList.add('dark');}else{d.classList.remove('dark');}

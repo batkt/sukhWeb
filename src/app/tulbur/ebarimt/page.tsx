@@ -407,7 +407,7 @@ export default function Ebarimt() {
             </div>
 
             <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
-              <motion.div
+              {/* <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
@@ -418,7 +418,7 @@ export default function Ebarimt() {
                 >
                   {t("Excel татах")}
                 </button>
-              </motion.div>
+              </motion.div> */}
 
               <motion.div
                 whileHover={{ scale: 1.05 }}
