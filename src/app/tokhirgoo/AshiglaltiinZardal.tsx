@@ -67,6 +67,8 @@ export default function AshiglaltiinZardluud() {
 
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
   const [liftMaxFloor, setLiftMaxFloor] = useState<number | null>(null);
+  const [liftFloors, setLiftFloors] = useState<string[]>([]);
+  const [liftBulkInput, setLiftBulkInput] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
@@ -233,10 +235,12 @@ export default function AshiglaltiinZardluud() {
           Array.isArray(mostRecent.choloolugdokhDavkhar) &&
           mostRecent.choloolugdokhDavkhar.length > 0
         ) {
-          const maxFloor = Math.max(
-            ...mostRecent.choloolugdokhDavkhar.map((f: any) => Number(f) || 0)
-          );
+          const parsed = mostRecent.choloolugdokhDavkhar
+            .map((f: any) => String(f).trim())
+            .filter(Boolean);
+          const maxFloor = Math.max(...parsed.map((f: any) => Number(f) || 0));
           setLiftMaxFloor(maxFloor);
+          setLiftFloors(toUniqueSorted(parsed));
           setLiftEnabled(true);
           return;
         }
@@ -247,7 +251,7 @@ export default function AshiglaltiinZardluud() {
     } catch (error) {}
   };
 
-  const saveLiftSettings = async (maxFloor: number | null) => {
+  const saveLiftSettings = async (floorsOrMax: string[] | number | null) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -256,10 +260,14 @@ export default function AshiglaltiinZardluud() {
     showSpinner();
 
     try {
-      // Generate floors array from 1 to maxFloor
-      const floors = maxFloor
-        ? Array.from({ length: maxFloor }, (_, i) => (i + 1).toString())
-        : [];
+      let floors: string[] = [];
+      if (Array.isArray(floorsOrMax)) {
+        floors = toUniqueSorted(floorsOrMax);
+      } else if (typeof floorsOrMax === "number" && floorsOrMax > 0) {
+        floors = Array.from({ length: floorsOrMax }, (_, i) => String(i + 1));
+      } else {
+        floors = [];
+      }
 
       const payload = {
         choloolugdokhDavkhar: floors,
@@ -281,7 +289,7 @@ export default function AshiglaltiinZardluud() {
       }
 
       if (floors.length > 0) {
-        openSuccessOverlay(`Лифт ${maxFloor} давхартай боллоо`);
+        openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
       } else {
         openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
       }
@@ -538,38 +546,87 @@ export default function AshiglaltiinZardluud() {
                 </div>
 
                 {liftEnabled && (
-                  <div className="flex items-center gap-2 px-4 py-2 rounded-3xl">
+                  <div className="flex flex-col gap-3 px-4 py-2 rounded-3xl">
                     <label className="text-sm font-medium text-theme">
-                      Дээд давхар:
+                      Хөнгөлөх давхар (жишээ: 1,3,5-7)
                     </label>
-                    <MNumberInput
-                      value={liftMaxFloor || undefined}
-                      onChange={(value) => {
-                        const numValue = value ? Number(value) : null;
-                        setLiftMaxFloor(numValue);
-                        if (numValue !== null && numValue > 0) {
-                          saveLiftSettings(numValue);
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* show current floors as chips */}
+                      {liftFloors && liftFloors.length > 0 ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {liftFloors.map((f) => (
+                            <div
+                              key={f}
+                              className="flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-sm"
+                            >
+                              <span>{f}</span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setLiftFloors((prev) =>
+                                    prev.filter((p) => p !== f)
+                                  )
+                                }
+                                className="text-blue-500 hover:text-blue-700 ml-1"
+                                aria-label={`Remove floor ${f}`}
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">
+                          Давхар сонгоогүй
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <MNumberInput
+                        min={1}
+                        max={200}
+                        placeholder="Давхар"
+                        className="w-24"
+                        onChange={(v) => {
+                          const n = Number(v as number);
+                          if (!Number.isFinite(n) || n <= 0) return;
+                          const nv = String(n);
+                          setLiftFloors((prev) =>
+                            toUniqueSorted([...prev, nv])
+                          );
+                        }}
+                      />
+                      <MTextInput
+                        placeholder="1,3,5-7"
+                        value={liftBulkInput}
+                        onChange={(e) =>
+                          setLiftBulkInput(e.currentTarget.value)
                         }
-                      }}
-                      min={1}
-                      max={50}
-                      placeholder="Давхар"
-                      className="w-24 sm:w-20"
-                    />
+                        className="flex-1"
+                      />
+                      <MButton
+                        onClick={() => {
+                          try {
+                            const parsed = parseBulk(liftBulkInput || "");
+                            setLiftFloors((prev) =>
+                              toUniqueSorted([...prev, ...parsed])
+                            );
+                            setLiftBulkInput("");
+                          } catch (e) {}
+                        }}
+                      >
+                        Нэмэх
+                      </MButton>
+                      <MButton
+                        className="btn-minimal"
+                        onClick={() => saveLiftSettings(liftFloors)}
+                      >
+                        Хадгалах
+                      </MButton>
+                    </div>
                   </div>
                 )}
-              </div>
-
-              <div className="text-sm text-theme mr-0 sm:mr-3">
-                Нийт: {ashiglaltiinZardluud.length}
-              </div>
-              <div
-                className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-blue-500 p-2 text-theme hover:bg-blue-600 transition-colors"
-                onClick={() => openAddModal(false)}
-              >
-                <MTooltip label="Нэмэх">
-                  <PlusOutlined />
-                </MTooltip>
               </div>
             </div>
 
@@ -584,6 +641,14 @@ export default function AshiglaltiinZardluud() {
                     checked={invoiceActive}
                     onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
                   />
+                </div>
+                <div
+                  className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-blue-500 p-2 text-theme hover:bg-blue-600 transition-colors"
+                  onClick={() => openAddModal(false)}
+                >
+                  <MTooltip label="Нэмэх">
+                    <PlusOutlined />
+                  </MTooltip>
                 </div>
               </div>
               {invoiceActive && (

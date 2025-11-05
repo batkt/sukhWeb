@@ -57,6 +57,7 @@ export default function GolContent({ children }: GolContentProps) {
   );
   const buildings = baiguullaga?.barilguud || [];
   const avatarRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -66,6 +67,17 @@ export default function GolContent({ children }: GolContentProps) {
   useEffect(() => {
     setOpenSubmenuIndex(null);
   }, [pathname]);
+
+  // Close open submenu when clicking outside the menu area
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenSubmenuIndex(null);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, []);
 
   useEffect(() => {
     if (mobileSearchOpen) {
@@ -180,7 +192,7 @@ export default function GolContent({ children }: GolContentProps) {
 
   return (
     <>
-      <nav className="w-full sticky top-0 z-[10] neu-nav">
+      <nav className="w-full sticky top-0 z-[1000] neu-nav">
         <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
           {/* Top row on mobile: Logo + Building Selector */}
           <div className="flex md:hidden items-center justify-between gap-2 mb-2">
@@ -223,7 +235,10 @@ export default function GolContent({ children }: GolContentProps) {
 
             {/* Center: Desktop Menu */}
             <div className="flex flex-1 items-center justify-center px-2">
-              <div className="flex items-center justify-center gap-3 relative">
+              <div
+                className="flex items-center justify-center gap-3 relative"
+                ref={menuRef}
+              >
                 {menuItems.map((item, i) => {
                   const isParentActive = pathname.startsWith(`/${item.path}`);
                   const isOpen = openSubmenuIndex === i;
@@ -234,13 +249,12 @@ export default function GolContent({ children }: GolContentProps) {
                           <button
                             type="button"
                             role="menuitem"
-                            onMouseEnter={() => setOpenSubmenuIndex(i)}
                             onClick={() => {
                               setOpenSubmenuIndex((prev) =>
                                 prev === i ? null : i
                               );
                             }}
-                            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                            className={`menu-pro-font px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
                               isParentActive
                                 ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                                 : "hover:menu-surface"
@@ -250,11 +264,7 @@ export default function GolContent({ children }: GolContentProps) {
                           </button>
 
                           {isOpen && (
-                            <div
-                              onMouseEnter={() => setOpenSubmenuIndex(i)}
-                              onMouseLeave={() => setOpenSubmenuIndex(null)}
-                              className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto"
-                            >
+                            <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto">
                               <ul className="py-2">
                                 {item.submenu.map((sub, j) => {
                                   const subPath = `/${item.path}/${sub.path}`;
@@ -268,7 +278,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           setOpenSubmenuIndex(null);
                                           router.push(subPath);
                                         }}
-                                        className={`w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                                           isSubActive
                                             ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                                             : "hover:translate-x-0.5 hover:menu-surface/80"
@@ -284,17 +294,20 @@ export default function GolContent({ children }: GolContentProps) {
                           )}
                         </>
                       ) : (
-                        <a
-                          href={`/${item.path}`}
-                          onClick={() => setOpenSubmenuIndex(null)}
-                          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpenSubmenuIndex(null);
+                            router.push(`/${item.path}`);
+                          }}
+                          className={`menu-pro-font px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
                             isParentActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                               : "hover:menu-surface"
                           } relative z-[1005]`}
                         >
                           {item.label}
-                        </a>
+                        </button>
                       )}
                     </div>
                   );
@@ -441,7 +454,7 @@ export default function GolContent({ children }: GolContentProps) {
                       ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
                       : router.push(`/${item.path}`)
                   }
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
+                  className={`menu-pro-font px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
                     isParentActive
                       ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                       : "hover:menu-surface"
@@ -469,7 +482,7 @@ export default function GolContent({ children }: GolContentProps) {
                             setOpenSubmenuIndex(null);
                             router.push(subPath);
                           }}
-                          className={`w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                          className={`menu-pro-font w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                             isSubActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                               : "hover:translate-x-0.5 hover:menu-surface/80"

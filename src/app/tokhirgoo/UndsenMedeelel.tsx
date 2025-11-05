@@ -10,6 +10,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { useSpinner } from "@/context/SpinnerContext";
+import { useBuilding } from "@/context/BuildingContext";
 
 interface Horoo {
   _id?: string;
@@ -46,6 +47,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
   ajiltan: initialAjiltan,
   setSongogdsonTsonkhniiIndex,
 }) => {
+  const { selectedBuildingId } = useBuilding();
   const [state, setState] = useState<Ajiltan>(initialAjiltan);
   const [tatvariinAlbaData, setTatvariinAlbaData] =
     useState<TatvariinAlbaResponse | null>(null);
@@ -315,6 +317,29 @@ const KhuviinMedeelel: React.FC<Props> = ({
       // Ensure we have a valid sohNer value
       const finalSohNer = sohNer || baiguullaga?.ner || "";
 
+      // Propagate shared location and SÖH name across all buildings too
+      const newTokhirgoo = {
+        ...(baiguullaga?.tokhirgoo || {}),
+        duuregNer: state.selectedDuuregData.ner,
+        districtCode: districtCodeCombined,
+        horoo: {
+          ner: state.selectedHorooData.ner,
+          kod: state.selectedHorooData.kod,
+        },
+        sohNer: finalSohNer,
+      } as any;
+
+      const newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => ({
+        ...b,
+        tokhirgoo: {
+          ...(b.tokhirgoo || {}),
+          duuregNer: newTokhirgoo.duuregNer,
+          districtCode: newTokhirgoo.districtCode,
+          horoo: { ...(newTokhirgoo.horoo || {}) },
+          sohNer: newTokhirgoo.sohNer,
+        },
+      }));
+
       const payload: any = {
         ...(baiguullaga || {}),
         _id: baiguullaga!._id,
@@ -328,16 +353,8 @@ const KhuviinMedeelel: React.FC<Props> = ({
             : false,
         eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
         eBarimtShine: baiguullaga?.eBarimtShine ?? false,
-        tokhirgoo: {
-          ...(baiguullaga?.tokhirgoo || {}),
-          duuregNer: state.selectedDuuregData.ner,
-          districtCode: districtCodeCombined,
-          horoo: {
-            ner: state.selectedHorooData.ner,
-            kod: state.selectedHorooData.kod,
-          },
-          sohNer: finalSohNer,
-        },
+        tokhirgoo: newTokhirgoo,
+        barilguud: newBarilguud,
       };
 
       const updated = await updateBaiguullaga(
@@ -371,7 +388,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
         sohNer: sohNer || "",
       });
 
-      setSongogdsonTsonkhniiIndex(1);
+      // Stay on the current tab after save
     } catch (err) {
       aldaaBarigch(err);
       openErrorOverlay("Хадгалахад алдаа гарлаа");
@@ -399,6 +416,21 @@ const KhuviinMedeelel: React.FC<Props> = ({
     );
   }, [state.selectedDuureg, state.selectedHoroo, sohNer, initialValues]);
 
+  // Only allow editing from main (first) building; otherwise read-only
+  const mainBuildingId = useMemo(() => {
+    const first =
+      Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0
+        ? baiguullaga.barilguud[0]
+        : null;
+    return first?._id ? String(first._id) : null;
+  }, [baiguullaga?.barilguud]);
+
+  const isMainBuildingSelected = useMemo(() => {
+    if (!mainBuildingId) return true; // no buildings means allow
+    if (!selectedBuildingId) return true; // no selection means allow first
+    return String(selectedBuildingId) === String(mainBuildingId);
+  }, [selectedBuildingId, mainBuildingId]);
+
   return (
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
       {tatvariinAlbaData?.jagsaalt && (
@@ -419,6 +451,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
                 }))}
                 placeholder="Сонгоно уу"
                 className="w-full"
+                disabled={!isMainBuildingSelected}
               />
             </div>
 
@@ -435,7 +468,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
                 }))}
                 placeholder="Сонгоно уу"
                 className="w-full"
-                disabled={!state.selectedDuureg}
+                disabled={!state.selectedDuureg || !isMainBuildingSelected}
               />
             </div>
 
@@ -450,9 +483,17 @@ const KhuviinMedeelel: React.FC<Props> = ({
                 onChange={(e) => setSohNer(e.target.value)}
                 placeholder="СӨХ-ийн нэрийг оруулна уу"
                 className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                readOnly={!isMainBuildingSelected}
               />
             </div>
           </div>
+
+          {!isMainBuildingSelected && (
+            <div className="text-xs text-amber-600">
+              Байршил болон СӨХ-ийн нэрийг зөвхөн үндсэн (эхний) барилгаас
+              өөрчлөх боломжтой. Бусад барилга дээр энэ мэдээлэл хуваалцагдана.
+            </div>
+          )}
 
           {/* Single Save button */}
           <div className="flex justify-end">
@@ -461,7 +502,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
               className={`btn-minimal btn-save ${
                 !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
               }`}
-              disabled={!isDirty || isSaving}
+              disabled={!isDirty || isSaving || !isMainBuildingSelected}
             >
               {isSaving ? "Хадгалж байна..." : "Хадгалах"}
             </button>

@@ -36,12 +36,12 @@ import uilchilgee, { socket } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { useSocket } from "@/context/SocketContext";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import dayjs from "dayjs";
 import { ModalPortal } from "../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { getPaymentStatusLabel } from "@/lib/utils";
-import LordIcon from "@/components/ui/LordIcon";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import {
@@ -95,9 +95,30 @@ export default function Geree() {
   const DEFAULT_HIDDEN = ["aimag"];
 
   // Which section to show: contracts, residents, or employees
+  // Default to residents and persist last-used tab in localStorage so the
+  // current tab remains selected across actions and reloads.
   const [activeTab, setActiveTab] = useState<
     "contracts" | "residents" | "employees"
-  >("contracts");
+  >("residents");
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("geree.activeTab");
+      if (
+        stored === "contracts" ||
+        stored === "residents" ||
+        stored === "employees"
+      ) {
+        setActiveTab(stored as any);
+      }
+    } catch (e) {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("geree.activeTab", activeTab);
+    } catch (e) {}
+  }, [activeTab]);
 
   // Separate modals to avoid layout differences breaking sticky footers
   const [showContractModal, setShowContractModal] = useState(false);
@@ -358,6 +379,22 @@ export default function Geree() {
   const selectedBarilga = baiguullaga?.barilguud?.find(
     (b) => b._id === selectedBuildingId
   );
+  // Floors (davkhar) options derived from building settings.
+  const davkharOptions = useMemo(() => {
+    try {
+      const tok = (selectedBarilga as any)?.tokhirgoo?.davkhar;
+      if (Array.isArray(tok) && tok.length > 0)
+        return tok.map((d: any) => String(d));
+      if (typeof tok === "number" && tok > 0)
+        return Array.from({ length: tok }).map((_, i) => String(i + 1));
+      const list = (selectedBarilga as any)?.davkharuud;
+      if (Array.isArray(list) && list.length > 0)
+        return list.map((d: any) => String(d?.davkhar ?? d));
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }, [selectedBarilga]);
   const { zardluud } = useAshiglaltiinZardluud();
   // Residents list
   const {
@@ -856,6 +893,57 @@ export default function Geree() {
     orshinSuugchJagsaaltMutate();
     ajiltniiJagsaaltMutate();
   }, []);
+
+  // Socket listeners: refresh lists when server emits relevant events so the
+  // UI stays in sync with background changes from other users.
+  const socketCtx = useSocket();
+  useEffect(() => {
+    if (!socketCtx) return;
+    const onResidentCreated = () => orshinSuugchJagsaaltMutate();
+    const onResidentUpdated = () => orshinSuugchJagsaaltMutate();
+    const onResidentDeleted = () => orshinSuugchJagsaaltMutate();
+
+    const onContractCreated = () => gereeJagsaaltMutate();
+    const onContractUpdated = () => gereeJagsaaltMutate();
+    const onContractDeleted = () => gereeJagsaaltMutate();
+
+    const onEmployeeCreated = () => ajiltniiJagsaaltMutate();
+    const onEmployeeUpdated = () => ajiltniiJagsaaltMutate();
+    const onEmployeeDeleted = () => ajiltniiJagsaaltMutate();
+
+    socketCtx.on("orshinSuugch.created", onResidentCreated);
+    socketCtx.on("orshinSuugch.updated", onResidentUpdated);
+    socketCtx.on("orshinSuugch.deleted", onResidentDeleted);
+
+    socketCtx.on("geree.created", onContractCreated);
+    socketCtx.on("geree.updated", onContractUpdated);
+    socketCtx.on("geree.deleted", onContractDeleted);
+
+    socketCtx.on("ajiltan.created", onEmployeeCreated);
+    socketCtx.on("ajiltan.updated", onEmployeeUpdated);
+    socketCtx.on("ajiltan.deleted", onEmployeeDeleted);
+
+    return () => {
+      try {
+        socketCtx.off("orshinSuugch.created", onResidentCreated);
+        socketCtx.off("orshinSuugch.updated", onResidentUpdated);
+        socketCtx.off("orshinSuugch.deleted", onResidentDeleted);
+
+        socketCtx.off("geree.created", onContractCreated);
+        socketCtx.off("geree.updated", onContractUpdated);
+        socketCtx.off("geree.deleted", onContractDeleted);
+
+        socketCtx.off("ajiltan.created", onEmployeeCreated);
+        socketCtx.off("ajiltan.updated", onEmployeeUpdated);
+        socketCtx.off("ajiltan.deleted", onEmployeeDeleted);
+      } catch (e) {}
+    };
+  }, [
+    socketCtx,
+    orshinSuugchJagsaaltMutate,
+    gereeJagsaaltMutate,
+    ajiltniiJagsaaltMutate,
+  ]);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
       if (
@@ -996,6 +1084,7 @@ export default function Geree() {
     aimag: "Улаанбаатар",
     duureg: "",
     horoo: "",
+    davkhar: "",
     // Resident account fields
     nevtrekhNer: "",
     nuutsUg: "",
@@ -1203,6 +1292,12 @@ export default function Geree() {
       return;
     }
 
+    // If the user hasn't chosen a building in the UI, require selection.
+    if (!selectedBuildingId) {
+      openErrorOverlay("Барилга сонгоогүй байна. Эхлээд барилга сонгоно уу.");
+      return;
+    }
+
     try {
       const response = await uilchilgee(token).get("/gereeniiZagvarAvya", {
         responseType: "blob",
@@ -1345,11 +1440,14 @@ export default function Geree() {
   const onResidentsExcelFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const file = e.target.files?.[0];
+    // Capture the real input element immediately — React may recycle the synthetic
+    // event after an await, which makes `e.currentTarget` null in finally blocks.
+    const input = e.currentTarget as HTMLInputElement | null;
+    const file = input?.files?.[0];
     if (!file) return;
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
-      e.currentTarget.value = "";
+      if (input) input.value = "";
       return;
     }
     try {
@@ -1357,19 +1455,56 @@ export default function Geree() {
       const form = new FormData();
       form.append("excelFile", file);
       form.append("baiguullagiinId", ajiltan.baiguullagiinId);
-      if (barilgiinId) form.append("barilgiinId", barilgiinId);
+      // Ensure we target the currently selected building (selectedBuildingId)
+      // falling back to the auth-provided barilgiinId when none selected.
+      const targetBarilgiinId = selectedBuildingId || barilgiinId || null;
+      if (targetBarilgiinId) form.append("barilgiinId", targetBarilgiinId);
 
-      await uilchilgee(token).post(`/orshinSuugchExcelImport`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const resp: any = await uilchilgee(token).post(
+        `/orshinSuugchExcelImport`,
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
 
-      openSuccessOverlay("Оршин суугчдын Excel импорт амжилттай");
-      await orshinSuugchJagsaaltMutate();
+      // The backend may return 200 OK even when some rows failed. Inspect
+      // response.result.failed and surface the backend-provided message or
+      // details instead of always showing success.
+      const data = resp?.data;
+      const failed = data?.result?.failed;
+      if (Array.isArray(failed) && failed.length > 0) {
+        // Build a concise details string for the user
+        const detailLines = failed
+          .map(
+            (f: any) =>
+              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+          )
+          .slice(0, 10); // limit to first 10 lines to avoid flooding
+        const details = detailLines.join("\n");
+        const topMsg =
+          data?.message || "Импортын явцад зарим мөр алдаатай байна";
+        openErrorOverlay(`${topMsg}\n${details}`);
+      } else {
+        openSuccessOverlay("Оршин суугчдын Excel импорт амжилттай");
+        await orshinSuugchJagsaaltMutate();
+      }
     } catch (err) {
-      openErrorOverlay("Импорт хийхэд алдаа гарлаа");
+      // Try to show backend-provided error message when available
+      const apiErr: any = err;
+      const serverMsg =
+        apiErr?.response?.data?.message ||
+        apiErr?.response?.data?.error ||
+        apiErr?.response?.data?.aldaa ||
+        (typeof apiErr?.response?.data === "string"
+          ? apiErr.response.data
+          : null) ||
+        apiErr?.message ||
+        "Импорт хийхэд алдаа гарлаа";
+      openErrorOverlay(String(serverMsg));
     } finally {
       setIsUploadingResidents(false);
-      e.currentTarget.value = "";
+      if (input) input.value = "";
     }
   };
 
@@ -1435,6 +1570,7 @@ export default function Geree() {
       payload.soh =
         selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
       payload.barilgiinId = selectedBuildingId || barilgiinId || null;
+      if (newResident.davkhar) payload.davkhar = newResident.davkhar;
 
       // Track newly created resident id for auto-contract creation
       let createdResidentId: string | null = null;
@@ -1962,17 +2098,6 @@ export default function Geree() {
           <div className="mt-3 flex flex-wrap items-center gap-2 tabbar">
             {/* Tabs */}
             <button
-              id="tab-contracts"
-              onClick={() => setActiveTab("contracts")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
-                activeTab === "contracts"
-                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                  : "hover:scale-105"
-              }`}
-            >
-              Гэрээ
-            </button>
-            <button
               id="tab-residents"
               onClick={() => setActiveTab("residents")}
               className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
@@ -1983,6 +2108,18 @@ export default function Geree() {
             >
               Оршин суугч
             </button>
+            <button
+              id="tab-contracts"
+              onClick={() => setActiveTab("contracts")}
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "contracts"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
+              }`}
+            >
+              Гэрээ
+            </button>
+
             <button
               id="tab-employees"
               onClick={() => setActiveTab("employees")}
@@ -2046,7 +2183,10 @@ export default function Geree() {
                     toot: 0,
                     talbainKhemjee: "",
                     zoriulalt: "",
-                    davkhar: "",
+                    davkhar:
+                      davkharOptions && davkharOptions.length > 0
+                        ? davkharOptions[0]
+                        : "",
                     burtgesenAjiltan: "",
                     temdeglel: "",
                     actOgnoo: "",
@@ -2061,7 +2201,9 @@ export default function Geree() {
                 className="btn-minimal"
               >
                 <FilePlus className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">Шинэ</span>
+                <span className="hidden sm:inline text-xs ml-1">
+                  Гэрээ байгуулах
+                </span>
               </button>
               <button
                 id="geree-templates-btn"
@@ -2071,9 +2213,11 @@ export default function Geree() {
                 title="Гэрээний загварууд"
               >
                 <LayoutTemplate className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">Загвар</span>
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар үүсгэх
+                </span>
               </button>
-              <button
+              {/* <button
                 id="geree-download-template-btn"
                 onClick={() => setShowTemplatesModal(true)}
                 className="btn-minimal"
@@ -2082,7 +2226,7 @@ export default function Geree() {
               >
                 <FileDown className="w-5 h-5" />
                 <span className="hidden sm:inline text-xs ml-1">Татах</span>
-              </button>
+              </button> */}
             </>
           )}
           {activeTab === "residents" && (
@@ -2097,6 +2241,10 @@ export default function Geree() {
                     ner: "",
                     register: "",
                     utas: [""],
+                    davkhar:
+                      davkharOptions && davkharOptions.length > 0
+                        ? davkharOptions[0]
+                        : "",
                     mail: "",
                     khayag: "",
                     aimag: "Улаанбаатар",
@@ -2114,7 +2262,9 @@ export default function Geree() {
                 title="Оршин суугч нэмэх"
               >
                 <UserPlus className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">Нэмэх</span>
+                <span className="hidden sm:inline text-xs ml-1">
+                  Оршин суугч нэмэх
+                </span>
               </button>
 
               <button
@@ -2125,7 +2275,9 @@ export default function Geree() {
                 title="Оршин суугчийн Excel загвар татах"
               >
                 <FileDown className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">Загвар</span>
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар татах
+                </span>
               </button>
 
               <button
@@ -2137,7 +2289,9 @@ export default function Geree() {
                 title="Excel-ээс оршин суугчдыг импортлох"
               >
                 <FileUp className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">Оруулах</span>
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар оруулах
+                </span>
               </button>
               <input
                 ref={residentExcelInputRef}
@@ -2171,7 +2325,9 @@ export default function Geree() {
               id="employees-new-btn"
             >
               <UserPlus className="w-5 h-5" />
-              <span className="hidden sm:inline text-xs ml-1">Нэмэх</span>
+              <span className="hidden sm:inline text-xs ml-1">
+                Ажилтан нэмэх
+              </span>
             </button>
           )}
 
@@ -2264,11 +2420,11 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
-                <div className="max-h-[52vh] overflow-y-auto custom-scrollbar w-full">
-                  <table
-                    id="geree-table"
-                    className="table-ui text-xs min-w-full"
-                  >
+                <div
+                  className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+                  id="geree-table"
+                >
+                  <table className="table-ui text-xs min-w-full">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
                         <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -2348,7 +2504,7 @@ export default function Geree() {
                   </table>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+              <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-md">
                 <div className="text-theme/70">
                   Нийт: {filteredContracts.length}
                 </div>
@@ -2405,11 +2561,11 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[51vh] overflow-y-auto custom-scrollbar w-full">
-                <table
-                  className="table-ui text-xs min-w-full"
-                  id="resident-table"
-                >
+              <div
+                className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full "
+                id="resident-table"
+              >
+                <table className="table-ui text-xs min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
                       <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -2514,7 +2670,7 @@ export default function Geree() {
                 </table>
               </div>
             </div>
-            <div className="flex items-center justify-between px-2 py-1 text-xs">
+            <div className="flex items-center justify-between px-2 py-1 text-md">
               <div className="text-theme/70">Нийт: {residentsList.length}</div>
               <div className="flex items-center gap-3">
                 <PageSongokh
@@ -2563,11 +2719,11 @@ export default function Geree() {
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
             <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
-              <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
-                <table
-                  className="table-ui text-xs min-w-full"
-                  id="employees-table"
-                >
+              <div
+                className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+                id="employees-table"
+              >
+                <table className="table-ui text-xs min-w-full">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
                       <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
@@ -2656,7 +2812,7 @@ export default function Geree() {
                 </table>
               </div>
             </div>
-            <div className="flex items-center justify-between px-2 py-1 text-xs">
+            <div className="flex items-center justify-between px-2 py-1 text-md">
               <div className="text-theme/70">Нийт: {employeesList.length}</div>
               <div className="flex items-center gap-3">
                 <PageSongokh
@@ -2715,7 +2871,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-5xl h-[88svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[88svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -3009,17 +3165,35 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Давхар
                             </label>
-                            <input
-                              type="text"
-                              value={newContract.davkhar}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  davkhar: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
+                            {davkharOptions && davkharOptions.length > 0 ? (
+                              <TusgaiZagvar
+                                value={newContract.davkhar}
+                                onChange={(val) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    davkhar: val,
+                                  }))
+                                }
+                                options={davkharOptions.map((d) => ({
+                                  value: d,
+                                  label: d,
+                                }))}
+                                className="w-full"
+                                placeholder="Сонгох..."
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={newContract.davkhar}
+                                onChange={(e) =>
+                                  setNewContract((prev: any) => ({
+                                    ...prev,
+                                    davkhar: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              />
+                            )}
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -3459,6 +3633,66 @@ export default function Geree() {
             </motion.div>
           </ModalPortal>
         )}
+        {showPreviewModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+              onClick={() => setShowPreviewModal(false)}
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold text-slate-900">
+                    Загварын урьдчилсан харалт
+                  </h3>
+                  <button
+                    onClick={() => setShowPreviewModal(false)}
+                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                    aria-label="Хаах"
+                    title="Хаах"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6 text-slate-700"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <div className="paper-viewport">
+                  <div className="paper-legal">
+                    {/* Render main content (aguulga) returned by the API */}
+                    <div
+                      className="prose prose-sm max-w-none text-sm text-slate-800"
+                      dangerouslySetInnerHTML={{
+                        __html: previewTemplate?.aguulga || "",
+                      }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
         {showResidentModal && (
           <ModalPortal>
             <motion.div
@@ -3474,7 +3708,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto sm:overflow-y-visible modal-surface modal-responsive sm:w-full sm:max-w-4xl h-[90svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[90svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -3681,7 +3915,7 @@ export default function Geree() {
                         </>
                       )}
 
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             СӨХ нэр
@@ -3699,22 +3933,7 @@ export default function Geree() {
                             className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                           />
                         </div>
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Давхар
-                          </label>
-                          <input
-                            type="text"
-                            value={newResident.davkhar || ""}
-                            onChange={(e) =>
-                              setNewResident((prev: any) => ({
-                                ...prev,
-                                davkhar: e.target.value,
-                              }))
-                            }
-                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                          />
-                        </div>
+
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             Тоот
@@ -3731,6 +3950,42 @@ export default function Geree() {
                             className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                           />
                         </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Давхар
+                          </label>
+                          {davkharOptions && davkharOptions.length > 0 ? (
+                            <TusgaiZagvar
+                              value={newResident.davkhar}
+                              onChange={(val) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  davkhar: val,
+                                }))
+                              }
+                              options={davkharOptions.map((d) => ({
+                                value: d,
+                                label: d,
+                              }))}
+                              className="w-full"
+                              placeholder="Сонгох..."
+                            />
+                          ) : (
+                            <input
+                              type="text"
+                              value={newResident.davkhar || ""}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  davkhar: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          )}
+                        </div>
+
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             Байгууллагын нэр
@@ -4107,44 +4362,30 @@ export default function Geree() {
                       className="flex items-center justify-between p-3 rounded-2xl border"
                     >
                       <div>
-                        <div className="font-semibold text-slate-900">
-                          {z.ner}
-                        </div>
-                        <div className="text-sm text-slate-600">{z.turul}</div>
+                        <div className="font-semibold text-theme">{z.ner}</div>
+                        <div className="text-sm text-theme">{z.turul}</div>
                       </div>
                       <div className="flex gap-2">
                         <button
                           onClick={() => handlePreviewTemplate(z._id)}
-                          className="p-2 hover:bg-blue-100 rounded-2xl"
+                          className="p-2 text-blue-500 hover:bg-blue-100 rounded-2xl"
                           title="Харах"
                         >
-                          <LordIcon
-                            src="https://cdn.lordicon.com/tyounuzx.json"
-                            trigger="hover"
-                            size={20}
-                          />
+                          <Eye className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleEditTemplate(z._id)}
                           className="p-2 hover:bg-blue-100 rounded-2xl"
                           title="Засах"
                         >
-                          <LordIcon
-                            src="https://cdn.lordicon.com/wuvorxbv.json"
-                            trigger="hover"
-                            size={20}
-                          />
+                          <Edit className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(z._id)}
                           className="p-2 hover:bg-red-50 rounded-2xl action-delete"
                           title="Устгах"
                         >
-                          <LordIcon
-                            src="https://cdn.lordicon.com/kfzfxczd.json"
-                            trigger="hover"
-                            size={20}
-                          />
+                          <Trash2 className="w-5 h-5 text-red-500" />
                         </button>
                       </div>
                     </div>

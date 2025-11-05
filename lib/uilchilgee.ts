@@ -212,6 +212,12 @@ export const setRequestScope = (opts: {
   }
 };
 
+// Small helper to read current in-memory request scope (useful for debugging/tests)
+export const getRequestScope = () => ({
+  baiguullagiinId: globalBaiguullagiinId,
+  barilgiinId: globalBarilgiinId,
+});
+
 export const updateBaiguullaga = async (
   token: string | undefined,
   id: string,

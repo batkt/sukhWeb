@@ -533,7 +533,7 @@ export default function ContractEditor({
   return (
     <div className="contract-editor flex flex-col md:flex-row h-full rounded-2xl">
       {/* Sidebar */}
-      <div className="w-full md:w-80 neu-panel rounded-2xl overflow-y-auto">
+      <div className="w-full md:w-80 neu-panel rounded-2xl flex flex-col h-full">
         <div className="p-4 border-b border-[color:var(--surface-border)]">
           <h3 className="font-semibold text-[color:var(--panel-text)]">
             Хувьсагчид
@@ -543,7 +543,7 @@ export default function ContractEditor({
           </p>
         </div>
 
-        <div className="p-2">
+        <div className="p-2 overflow-y-auto flex-1 custom-scrollbar">
           {Object.entries(tagCategories).map(([key, category]) => (
             <div key={key} className="mb-2">
               <button

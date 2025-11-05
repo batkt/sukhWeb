@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Publicly accessible paths (no auth needed)
-const PUBLIC_PATHS = new Set<string>([
-  "/",
-  "/login",
-  "/signup",
-  "/offline.html",
-]);
+const PUBLIC_PATHS = new Set<string>(["/login", "/signup", "/offline.html"]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
@@ -38,12 +33,45 @@ export function middleware(req: NextRequest) {
   // Read auth cookie (set by app on login)
   const token = cookies.get("tureestoken")?.value;
 
-  // If missing token, redirect to login (do not preserve the original URL)
-  if (!token || token === "undefined" || token === "null") {
+  // Helper: lightweight JWT parse to check exp without secret
+  const isTokenValid = (tok: string | undefined): boolean => {
+    if (!tok || tok === "undefined" || tok === "null") return false;
+    const parts = tok.split(".");
+    if (parts.length < 2) return false;
+    try {
+      const payloadRaw = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      // Use WebAPI atob in Edge runtime
+      const json = decodeURIComponent(
+        atob(payloadRaw)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      const payload = JSON.parse(json);
+      if (payload && typeof payload === "object") {
+        if (payload.exp && typeof payload.exp === "number") {
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp < now) return false;
+        }
+        // Optionally require an id/subject field
+        if (!payload.id && !payload.sub) return false;
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  // If missing/invalid token, redirect to login and clear cookie
+  if (!isTokenValid(token)) {
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     url.search = ""; // clear any search params
-    return NextResponse.redirect(url);
+    const res = NextResponse.redirect(url);
+    // Proactively clear bad cookie on the way out
+    res.cookies.delete("tureestoken");
+    return res;
   }
 
   // Otherwise allow request

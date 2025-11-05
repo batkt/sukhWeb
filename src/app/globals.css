@@ -1,24 +1,68 @@
-/* Minimal button: already present, ensure consistency */
+/* iOS 26 Glassy Minimal Button - works across all themes */
 .btn-minimal {
-  background: linear-gradient(145deg, #ebf0fc, #dce5f8) !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(59, 130, 246, 0.12) !important;
+  position: relative;
   border-radius: 0.75rem;
   font-size: 0.95rem;
   font-weight: 500;
   text-align: center;
-  transition: transform 120ms, background 140ms, box-shadow 140ms;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.08);
+  isolation: isolate;
+
+  /* iOS 26 glass effect using theme tokens */
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklch, var(--glass-tint), transparent 5%) 0%,
+    color-mix(in oklch, var(--glass-tint-2), transparent 15%) 100%
+  ) !important;
+
+  /* Strong blur and saturation */
+  -webkit-backdrop-filter: blur(32px) saturate(160%) brightness(1.08);
+  backdrop-filter: blur(32px) saturate(160%) brightness(1.08);
+
+  /* Adaptive border using theme glass tokens */
+  border: 1px solid color-mix(in oklch, var(--glass-border), transparent 35%) !important;
+
+  /* Multi-layer shadow for depth */
+  box-shadow: 0 8px 24px
+      color-mix(in oklch, var(--glass-shadow), transparent 30%),
+    0 4px 12px color-mix(in oklch, var(--glass-shadow), transparent 50%),
+    inset 0 1px 0 color-mix(in oklch, var(--glass-highlight), transparent 40%);
+
+  /* Text inherits theme color */
+  color: var(--panel-text) !important;
+
+  transition: transform 120ms ease, box-shadow 140ms ease, background 140ms ease,
+    border-color 140ms ease;
 }
+
 .btn-minimal:hover {
-  background: linear-gradient(145deg, #e4ecfa, #d4dfed);
+  background: linear-gradient(
+    145deg,
+    color-mix(in oklch, var(--glass-tint), transparent 0%) 0%,
+    color-mix(in oklch, var(--glass-tint-2), transparent 10%) 100%
+  ) !important;
+
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.14);
+
+  box-shadow: 0 12px 32px
+      color-mix(in oklch, var(--glass-shadow), transparent 25%),
+    0 6px 16px color-mix(in oklch, var(--glass-shadow), transparent 45%),
+    inset 0 1px 0 color-mix(in oklch, var(--glass-highlight), transparent 35%);
+
+  border-color: color-mix(
+    in oklch,
+    var(--glass-border),
+    transparent 25%
+  ) !important;
 }
+
 .btn-minimal:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+
+  box-shadow: 0 4px 16px
+      color-mix(in oklch, var(--glass-shadow), transparent 40%),
+    0 2px 8px color-mix(in oklch, var(--glass-shadow), transparent 60%),
+    inset 0 1px 0 color-mix(in oklch, var(--glass-highlight), transparent 50%);
 }
 @import "tailwindcss";
 .scrollable::-webkit-scrollbar {
@@ -422,6 +466,59 @@
   --panel-text: #e6fffa;
 }
 
+/* Paper / contract preview styles */
+.paper-viewport {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem;
+}
+
+.paper-legal {
+  /* Legal paper: 8.5in x 14in */
+  width: 8.5in;
+  min-height: 14in;
+  background: white;
+  color: var(--panel-text);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.18);
+  border-radius: 6px;
+  padding: 2cm; /* typical page margins */
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+/* Make the paper responsive: scale down on small screens */
+@media (max-width: 1100px) {
+  .paper-legal {
+    width: calc(8.5in * 0.7);
+    min-height: calc(14in * 0.7);
+    padding: 1.2cm;
+  }
+}
+
+@media (max-width: 640px) {
+  .paper-legal {
+    width: calc(8.5in * 0.55);
+    min-height: calc(14in * 0.55);
+    padding: 0.8cm;
+  }
+  .paper-viewport {
+    padding: 0.5rem;
+  }
+}
+
+/* When printing from the preview modal, try to use actual paper dimensions */
+@media print {
+  .paper-legal {
+    box-shadow: none;
+    border: none;
+    width: 8.5in;
+    min-height: 14in;
+    padding: 2cm;
+  }
+}
+
 /* Dark themes: make inputs and dropdowns black surfaces with white text */
 [data-theme="dark-black"] input,
 [data-theme="dark-black"] textarea,
@@ -598,10 +695,10 @@ textarea:-moz-autofill:focus {
 [data-theme="blue-gradient"] {
   --gradient-bg: linear-gradient(
     135deg,
-    #e6f0ff 0%,
-    #d7e7ff 30%,
-    #c7ddff 60%,
-    #b7d2ff 100%
+    #308dc7 0%,
+    #92b6f0 30%,
+    #799db4 60%,
+    #a8daf9 100%
   );
   --surface-bg: #ffffff; /* light surfaces */
   --surface-border: rgba(15, 23, 42, 0.12);
@@ -633,6 +730,28 @@ textarea:-moz-autofill:focus {
 html,
 body {
   background: var(--gradient-bg);
+  /* Prevent unwanted page overflow and unify scrollbar */
+  min-height: 100%;
+  overflow-x: hidden; /* remove horizontal overflow */
+  overflow-y: hidden; /* keep vertical scroll on page */
+  /* Firefox scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+/* WebKit scrollbars for the page */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 /* ================== Dark variants for the three themes ================== */
@@ -908,39 +1027,42 @@ html[data-mode="dark"]:not([data-theme]),
   opacity: 0.95;
 }
 
+/* iOS 26 Glassy Panel - adaptive across all themes */
 .neu-panel {
   position: relative;
   border-radius: 2rem;
   overflow: hidden;
   isolation: isolate;
 
-  /* Enhanced iOS 26-style glass background */
+  /* iOS 26-style glass background with theme adaptation */
   background: linear-gradient(
     135deg,
-    color-mix(in oklch, var(--glass-tint), transparent 15%) 0%,
-    color-mix(in oklch, var(--glass-tint-2), transparent 25%) 100%
+    color-mix(in oklch, var(--glass-tint), transparent 8%) 0%,
+    color-mix(in oklch, var(--glass-tint-2), transparent 18%) 100%
   );
 
-  /* Stronger blur and saturation for depth */
-  -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
-  backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+  /* Premium blur, saturation and brightness for iOS 26 feel */
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
+  backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
 
-  /* Luminous border with gradient */
-  border: 1.5px solid transparent;
+  /* Luminous adaptive border */
+  border: 1.5px solid color-mix(in oklch, var(--glass-border), transparent 30%);
   background-clip: padding-box;
 
-  /* Multi-layer shadow system */
+  /* iOS 26 multi-layer shadow system for depth */
   box-shadow: 
     /* Soft ambient shadow */ 0 24px 64px
-      color-mix(in oklch, var(--glass-shadow), transparent 20%),
+      color-mix(in oklch, var(--glass-shadow), transparent 15%),
     /* Mid-range depth */ 0 12px 32px
-      color-mix(in oklch, var(--glass-shadow), transparent 40%),
+      color-mix(in oklch, var(--glass-shadow), transparent 35%),
     /* Tight contact shadow */ 0 4px 16px
-      color-mix(in oklch, var(--glass-shadow), transparent 50%),
-    /* Inner glow */ inset 0 1px 0
-      color-mix(in oklch, var(--glass-highlight), transparent 30%),
-    inset 0 -1px 0 color-mix(in oklch, var(--glass-highlight), transparent 85%);
+      color-mix(in oklch, var(--glass-shadow), transparent 45%),
+    /* Inner top glow */ inset 0 1px 0
+      color-mix(in oklch, var(--glass-highlight), transparent 25%),
+    /* Inner bottom subtle shadow */ inset 0 -1px 0 color-mix(in oklch, var(--glass-highlight), transparent
+          82%);
 
+  /* Text inherits theme color */
   color: var(--panel-text);
 }
 
@@ -972,7 +1094,7 @@ html[data-mode="dark"]:not([data-theme]),
 .neu-nav {
   position: relative;
   /* let dropdowns overflow the navbar */
-  overflow: visible; /* was hidden */
+  overflow: visible; /* allow dropdowns/menus to escape navbar bounds */
   isolation: isolate;
   background: linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2));
   -webkit-backdrop-filter: blur(22px) saturate(160%);
@@ -985,6 +1107,13 @@ html[data-mode="dark"]:not([data-theme]),
     inset 0 1px 0 var(--glass-highlight);
   color: var(--panel-text);
   background-clip: padding-box;
+}
+
+/* Professional menu font for top navigation/menu items */
+.menu-pro-font {
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-weight: 600; /* keep the menu prominent */
+  letter-spacing: 0.2px;
 }
 
 /* Surfaces inherit themed text color so labels/icons follow the background */
@@ -1531,6 +1660,55 @@ html[data-mode="dark"]:not([data-theme]),
 .mantine-Month-day:hover {
   background: rgba(0, 0, 0, 0.24) !important;
   color: var(--panel-text, #e5e7eb) !important;
+}
+
+/* Driver.js theming - make tour controls follow app theme and use Mongolian labels */
+.driver,
+.driver * {
+  color: var(--panel-text) !important;
+}
+.driver-tooltip,
+.driver-step {
+  background: color-mix(in oklch, var(--surface-bg), transparent 0%) !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+  box-shadow: 0 12px 40px
+    color-mix(in oklch, var(--glass-shadow), transparent 30%) !important;
+}
+.driver-tooltip .driver-title {
+  color: var(--panel-text) !important;
+  font-weight: 700;
+}
+.driver-tooltip .driver-description {
+  color: var(--panel-text) !important;
+}
+.driver .driver-btn,
+.driver-tooltip .driver-btn {
+  background: var(--primary) !important;
+  color: var(--primary-foreground, #fff) !important;
+  border: 1px solid color-mix(in oklch, var(--primary), transparent 30%) !important;
+  padding: 0.45rem 0.75rem !important;
+  border-radius: 0.6rem !important;
+  box-shadow: 0 8px 20px
+    color-mix(in oklch, var(--glass-shadow), transparent 30%) !important;
+}
+.driver .driver-btn:hover,
+.driver-tooltip .driver-btn:hover {
+  filter: brightness(1.06) !important;
+}
+.driver .driver-prev-btn {
+  background: color-mix(in oklch, var(--surface-bg), black 6%) !important;
+  color: var(--panel-text) !important;
+}
+.driver .driver-close-btn {
+  background: transparent !important;
+  color: var(--panel-text) !important;
+  border: 1px solid var(--surface-border) !important;
+}
+
+/* Ensure progress / pagination uses theme */
+.driver .driver-pagination {
+  color: var(--panel-text) !important;
 }
 
 /* Unscoped popover fallback so dropdown text is white on dark even in portals */

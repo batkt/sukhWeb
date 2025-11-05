@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, type ReactNode } from "react";
+import { motion } from "framer-motion";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import GuilgeeTuukhPage from "./guilgeeTuukh/page";
 import DansKhuulgaPage from "./dansKhuulga/page";
@@ -19,9 +21,12 @@ const TabButton = ({
   <button
     id={id}
     onClick={onClick}
+    aria-pressed={active}
     className={
-      "btn-minimal whitespace-nowrap px-4 py-2 text-sm font-semibold " +
-      (active ? "btn-neu-primary" : "")
+      `relative whitespace-nowrap px-6 py-2.5 text-sm font-semibold rounded-2xl transition-all duration-300 backdrop-blur-md border ` +
+      (active
+        ? `bg-primary-gradient/30 text-theme border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:border-primary/70 scale-105`
+        : `bg-white/20 dark:bg-gray-800/20 text-theme/70 border-white/30 dark:border-gray-700/30 hover:bg-white/30 dark:hover:bg-gray-800/30 hover:border-white/50 dark:hover:border-gray-700/50`)
     }
   >
     {children}
@@ -153,27 +158,63 @@ export default function TulburPage() {
   return (
     <div className="min-h-screen">
       <div className="rounded-2xl p-4 table-surface">
-        <div className="flex items-center justify-end gap-2 flex-wrap overflow-x-auto px-1 mb-4">
-          <TabButton
-            id="tab-guilgee"
-            active={active === "guilgee"}
-            onClick={() => {
-              setActive("guilgee");
-              setActiveTab("guilgee");
-            }}
-          >
-            Гүйлгээний түүх
-          </TabButton>
-          <TabButton
-            id="tab-dansKhuulga"
-            active={active === "dans"}
-            onClick={() => {
-              setActive("dans");
-              setActiveTab("dansKhuulga");
-            }}
-          >
-            Дансны хуулга
-          </TabButton>
+        <div className="flex items-center justify-between gap-3 flex-wrap px-1 mb-4">
+          <div className="flex items-center gap-3">
+            {active === "guilgee" ? (
+              <>
+                <motion.h1
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-3xl font-bold text-theme bg-clip-text text-transparent drop-shadow-sm"
+                >
+                  Гүйлгээний түүх
+                </motion.h1>
+                <div
+                  style={{ width: 44, height: 44 }}
+                  className="flex items-center"
+                >
+                  <DotLottieReact
+                    src="https://lottie.host/740ab27b-f4f0-49c5-a202-a23a70cd8e50/eNy8Ct6t4y.lottie"
+                    loop
+                    autoplay
+                    style={{ width: 44, height: 44 }}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <motion.h1
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-3xl font-bold text-theme bg-clip-text text-transparent drop-shadow-sm"
+                >
+                  Дансны хуулга
+                </motion.h1>
+              </>
+            )}
+          </div>
+          <div className="flex items-center justify-end gap-2 flex-wrap">
+            <TabButton
+              id="tab-guilgee"
+              active={active === "guilgee"}
+              onClick={() => {
+                setActive("guilgee");
+                setActiveTab("guilgee");
+              }}
+            >
+              Гүйлгээний түүх
+            </TabButton>
+            <TabButton
+              id="tab-dansKhuulga"
+              active={active === "dans"}
+              onClick={() => {
+                setActive("dans");
+                setActiveTab("dansKhuulga");
+              }}
+            >
+              Дансны хуулга
+            </TabButton>
+          </div>
         </div>
 
         <div className="w-full">

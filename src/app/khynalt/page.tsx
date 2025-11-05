@@ -928,7 +928,7 @@ export default function Khynalt() {
               className="neu-panel rounded-2xl border border-white/10 shadow-lg"
               style={{ overflow: "visible" }}
             >
-              <div className="min-w-[260px]">
+              <div className="min-w-[220px]">
                 <DatePickerInput
                   type="range"
                   value={dateRange}

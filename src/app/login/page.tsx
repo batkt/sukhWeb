@@ -381,7 +381,7 @@ export default function LoginPage() {
                   autoCorrect="off"
                   autoCapitalize="none"
                   spellCheck={false}
-                  placeholder="aaa@email.com"
+                  placeholder="Байгууллагын регистр"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required

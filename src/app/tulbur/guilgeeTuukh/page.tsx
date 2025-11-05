@@ -313,7 +313,7 @@ export default function DansniiKhuulga() {
 
   return (
     <div className="min-h-screen">
-      <div className="flex items-center gap-3 mb-4">
+      {/* <div className="flex items-center gap-3 mb-4">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -329,7 +329,7 @@ export default function DansniiKhuulga() {
             style={{ width: 44, height: 44 }}
           />
         </div>
-      </div>
+      </div> */}
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -354,7 +354,7 @@ export default function DansniiKhuulga() {
             </motion.div>
           ))}
         </div>
-        <div className="rounded-2xl p-6">
+        <div className="rounded-2xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
               <div id="dans-date">
@@ -376,7 +376,7 @@ export default function DansniiKhuulga() {
                   placeholder="Огноо сонгох"
                   classNames={{
                     input:
-                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
+                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[220px]",
                   }}
                 />
               </div>
@@ -438,8 +438,11 @@ export default function DansniiKhuulga() {
         </div>
         <div className="table-surface overflow-hidden rounded-2xl w-full">
           <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-            <div className="max-h-[29vh] overflow-y-auto custom-scrollbar w-full">
-              <table id="guilgee-table" className="table-ui text-sm min-w-full">
+            <div
+              className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
+              id="guilgee-table"
+            >
+              <table className="table-ui text-sm min-w-full">
                 <thead>
                   <tr>
                     <th className="  z-10 p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
@@ -558,13 +561,27 @@ export default function DansniiKhuulga() {
                 </tbody>
               </table>
             </div>
-            <div className=" px-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-theme">
-                Нийт дүн: {formatNumber(totalSum, 0)} ₮
-              </div>
+            <div className="border-t dark:border-gray-800 border-gray-100">
+              {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
+              <table className="text-sm min-w-full">
+                <tbody>
+                  <tr>
+                    <td className="p-1 !text-right text-theme whitespace-nowrap">
+                      Нийт дүн: {formatNumber(totalSum, 0)} ₮
+                    </td>
+                    <td className="p-1 text-center text-theme whitespace-nowrap w-12"></td>
+
+                    <td className="p-1 text-theme"></td>
+
+                    <td className="p-1 text-theme"></td>
+
+                    <td className="p-1 text-theme"></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 gap-3 text-md">
             <div className="text-theme/70">Нийт: {filteredItems.length}</div>
 
             <div className="flex items-center gap-3">

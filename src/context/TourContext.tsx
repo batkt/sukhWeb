@@ -67,8 +67,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
       ? instance({
           showProgress: true,
           overlayColor: "rgba(0,0,0,0.55)",
+          // Mongolian labels for the controls
+          nextBtnText: "Дараагийн",
+          prevBtnText: "Өмнөх",
+          doneBtnText: "Дуусгах",
+          closeBtnText: "Хаах",
           stagePadding: 4,
-          smoothScroll: true,
+          // Prevent driver from auto-scrolling the page; prefer leaving page position unchanged
+          smoothScroll: false,
+          scrollTo: false,
+          scrollIntoViewOptions: {
+            behavior: "auto",
+            block: "nearest",
+            inline: "nearest",
+          },
         })
       : null;
     return driverRef.current;
@@ -93,11 +105,79 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
               showProgress: true,
               overlayColor: "rgba(0,0,0,0.55)",
               stagePadding: 4,
-              smoothScroll: true,
+              // Mongolian labels for controls
+              nextBtnText: "Дараагийн",
+              prevBtnText: "Өмнөх",
+              doneBtnText: "Дуусгах",
+              closeBtnText: "Хаах",
+              // Prevent driver from auto-scrolling the page while touring
+              smoothScroll: false,
+              scrollTo: false,
+              scrollIntoViewOptions: {
+                behavior: "auto",
+                block: "nearest",
+                inline: "nearest",
+              },
               steps: steps as any,
             })
           : null;
       if (!drv) return;
+      // Prevent driver.js from forcing page scroll by temporarily disabling
+      // native scrolling helpers. We'll restore them when the tour ends.
+      const origScrollIntoView = (Element.prototype as any).scrollIntoView;
+      const origScrollTo = (window as any).scrollTo;
+
+      const disableScrollFns = () => {
+        try {
+          (Element.prototype as any).scrollIntoView = function () {
+            /* noop to avoid driver scrolling */
+          };
+        } catch (e) {}
+        try {
+          (window as any).scrollTo = function () {
+            /* noop to avoid driver scrolling */
+          };
+        } catch (e) {}
+      };
+
+      const restoreScrollFns = () => {
+        try {
+          (Element.prototype as any).scrollIntoView = origScrollIntoView;
+        } catch (e) {}
+        try {
+          (window as any).scrollTo = origScrollTo;
+        } catch (e) {}
+      };
+
+      disableScrollFns();
+
+      // Attach handlers to restore scroll functions when the tour stops/finishes
+      const safeRestore = () => {
+        restoreScrollFns();
+        try {
+          drv.off?.("stop", safeRestore);
+          drv.off?.("destroy", safeRestore);
+          drv.off?.("complete", safeRestore);
+        } catch (e) {}
+        // clear fallback timer
+        try {
+          if ((safeRestore as any)._timer) {
+            clearTimeout((safeRestore as any)._timer);
+            (safeRestore as any)._timer = undefined;
+          }
+        } catch (e) {}
+      };
+
+      // Some driver.js versions emit 'stop' or 'complete' events; listen to both.
+      try {
+        drv.on?.("stop", safeRestore);
+        drv.on?.("destroy", safeRestore);
+        drv.on?.("complete", safeRestore);
+      } catch (e) {}
+
+      // Fallback: ensure restoration after 10 minutes to avoid permanently broken scrolling
+      (safeRestore as any)._timer = setTimeout(safeRestore, 10 * 60 * 1000);
+
       drv.drive();
       try {
         localStorage.setItem(SHOWN_ONCE_KEY, "1");
