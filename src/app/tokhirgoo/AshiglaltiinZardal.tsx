@@ -18,6 +18,7 @@ import formatNumber from "../../../tools/function/formatNumber";
 import { useAuth } from "@/lib/useAuth";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { url as API_URL } from "../../../lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
@@ -105,7 +106,7 @@ export default function AshiglaltiinZardluud() {
 
     try {
       const response = await fetch(
-        `http://103.143.40.46:8084/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
+        `${API_URL}/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
         {
           method: "GET",
           headers: {
@@ -158,7 +159,7 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
-      const res = await fetch("http://103.143.40.46:8084/nekhemjlekhCron", {
+      const res = await fetch(`${API_URL}/nekhemjlekhCron`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -199,7 +200,7 @@ export default function AshiglaltiinZardluud() {
 
     try {
       const response = await fetch(
-        `http://103.143.40.46:8084/liftShalgaya?baiguullagiinId=${
+        `${API_URL}/liftShalgaya?baiguullagiinId=${
           ajiltan.baiguullagiinId
         }&barilgiinId=${
           selectedBuildingId || barilgiinId || ""
@@ -275,7 +276,7 @@ export default function AshiglaltiinZardluud() {
         barilgiinId: selectedBuildingId || barilgiinId || undefined,
       } as any;
 
-      const response = await fetch("http://103.143.40.46:8084/liftShalgaya", {
+      const response = await fetch(`${API_URL}/liftShalgaya`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -419,21 +420,18 @@ export default function AshiglaltiinZardluud() {
       const endpoint = isUilchilgee
         ? "uilchilgeeniiZardal"
         : "ashiglaltiinZardluud";
-      const response = await fetch(
-        `http://103.143.40.46:8084/${endpoint}/${item._id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            ...item,
-            tariff: newTariff,
-            barilgiinId: selectedBuildingId || barilgiinId || undefined,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/${endpoint}/${item._id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...item,
+          tariff: newTariff,
+          barilgiinId: selectedBuildingId || barilgiinId || undefined,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

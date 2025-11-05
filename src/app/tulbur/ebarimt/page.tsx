@@ -8,7 +8,7 @@ import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../../../lib/uilchilgee";
+import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../tools/function/formatNumber";
 
@@ -91,7 +91,7 @@ export default function Ebarimt() {
       return [
         "ext",
         token || "",
-        "http://103.143.40.46:8084/ebarimtJagsaaltAvya",
+        `${API_URL}/ebarimtJagsaaltAvya`,
         merchantTin,
         districtCode,
         toISO(s),

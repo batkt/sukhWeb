@@ -818,7 +818,7 @@ export default function InvoicingZardluud() {
       setIsLoadingExpenses(true);
       try {
         const response = await fetch(
-          `http://103.143.40.46:8084/ashiglaltiinZardluud?baiguullagiinId=${
+          `${API_URL}/ashiglaltiinZardluud?baiguullagiinId=${
             ajiltan.baiguullagiinId
           }&barilgiinId=${
             selectedBuildingId || barilgiinId || ""
