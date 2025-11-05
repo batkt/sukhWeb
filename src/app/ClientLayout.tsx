@@ -48,11 +48,13 @@ function isTokenValid(token: string): boolean {
     return false;
   }
 
-  if (payload.exp) {
-    const currentTime = Math.floor(Date.now() / 1000);
-    if (payload.exp < currentTime) {
-      return false;
-    }
+  // Require a valid expiration; tokens without exp are treated as invalid
+  if (typeof payload.exp !== "number") {
+    return false;
+  }
+  const currentTime = Math.floor(Date.now() / 1000);
+  if (payload.exp < currentTime) {
+    return false;
   }
 
   return true;
@@ -128,11 +130,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         })();
 
       if (pathname === "/login") {
-        // If already authenticated, redirect away from login
-        if (token && isTokenValid(token)) {
-          router.replace("/khynalt");
-          return;
-        }
+        // Always show login page (no redirect to /khynalt even if token exists)
         // Allow offline login if we have a cached session
         if (!online && hasCachedUser) {
           setAuthChecked(true);
