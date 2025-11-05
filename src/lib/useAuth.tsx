@@ -201,7 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         try {
           const response = await uilchilgee().post<LoginResponse>(
-            "api/ajiltanNevtrey",
+            "/ajiltanNevtrey",
             khereglech
           );
 
