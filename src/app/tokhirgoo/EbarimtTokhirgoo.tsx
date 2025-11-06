@@ -107,9 +107,7 @@ export default function EbarimtTokhirgoo() {
         params: {
           baiguullagiinId: orgId,
           ...(branch ? { barilgiinId: branch } : {}),
-          ...(start || end
-            ? { query: { ekhlekhOgnoo: start, duusakhOgnoo: end } }
-            : {}),
+          ...(start || end ? { ekhlekhOgnoo: start, duusakhOgnoo: end } : {}),
         },
       });
       return resp.data;
