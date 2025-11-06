@@ -84,7 +84,7 @@ export default function EbarimtTokhirgoo() {
     if (!token || !ajiltan?.baiguullagiinId) return null;
     const [s, e] = ognoo || [];
     return [
-      "/ebarimtJagsaaltAvya",
+      "/api/ebarimtJagsaaltAvya",
       token,
       ajiltan.baiguullagiinId,
       barilgiinId || null,
