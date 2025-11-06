@@ -817,20 +817,15 @@ export default function InvoicingZardluud() {
 
       setIsLoadingExpenses(true);
       try {
-        const response = await fetch(
-          `http://103.143.40.46:8084/ashiglaltiinZardluud?baiguullagiinId=${
-            ajiltan.baiguullagiinId
-          }&barilgiinId=${
-            selectedBuildingId || barilgiinId || ""
-          }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        const data = await response.json();
-        setExpenses(data.jagsaalt || []);
+        const response = await uilchilgee(token).get("/ashiglaltiinZardluud", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        setExpenses(response.data?.jagsaalt || []);
       } catch (error) {
         openErrorOverlay("Зардлын мэдээлэл татахад алдаа гарлаа");
       } finally {
@@ -839,7 +834,7 @@ export default function InvoicingZardluud() {
     };
 
     fetchExpenses();
-  }, [token, ajiltan?.baiguullagiinId]);
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
   useEffect(() => {
     setOrshinSuugchKhuudaslalt({
@@ -1167,16 +1162,15 @@ export default function InvoicingZardluud() {
     const fetchLiftFloors = async () => {
       if (!token || !ajiltan?.baiguullagiinId) return;
       try {
-        const resp = await fetch(
-          `${API_URL}/liftShalgaya?baiguullagiinId=${
-            ajiltan.baiguullagiinId
-          }&barilgiinId=${
-            selectedBuildingId || barilgiinId || ""
-          }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (!resp.ok) return;
-        const data = await resp.json();
+        const resp = await uilchilgee(token).get("/liftShalgaya", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        const data = resp.data;
         const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
         // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
         const toStr = (v: any) => (v == null ? "" : String(v));
@@ -1207,7 +1201,7 @@ export default function InvoicingZardluud() {
       } catch {}
     };
     fetchLiftFloors();
-  }, [token, ajiltan?.baiguullagiinId, barilgiinId]);
+  }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
 
   const isLoading = isLoadingExpenses || isLoadingResidents;
 

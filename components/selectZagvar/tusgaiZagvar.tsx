@@ -30,6 +30,7 @@ export default function TusgaiZagvar({
   children,
   data,
   placeholder = "Сонгох",
+  required = false,
   className = "",
   disabled = false,
   tone = "theme",
