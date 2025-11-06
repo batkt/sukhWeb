@@ -17,6 +17,14 @@ export function getApiUrl(): string {
     return "/api";
   }
 
+  // Check if we're on the production domain
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname === "amarhome.mn"
+  ) {
+    return "https://amarhome.mn/api";
+  }
+
   // Default: local development URL
   return "http://103.143.40.46:8084";
 }
@@ -38,6 +46,16 @@ export const socket = (): Socket => {
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     // Production: use relative path through nginx proxy
     return io({
+      path: "/socket.io",
+      transports: ["websocket"],
+      secure: true,
+    });
+  } else if (
+    typeof window !== "undefined" &&
+    window.location.hostname === "amarhome.mn"
+  ) {
+    // Production domain: use full URL
+    return io("https://amarhome.mn", {
       path: "/socket.io",
       transports: ["websocket"],
       secure: true,
