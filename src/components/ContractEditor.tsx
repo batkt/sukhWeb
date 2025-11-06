@@ -39,7 +39,6 @@ const tagCategories = {
     tags: [
       { type: "ovog", label: "Овог" },
       { type: "ner", label: "Нэр" },
-      { type: "register", label: "Регистр" },
       { type: "utas", label: "Утас" },
       { type: "mail", label: "И-мэйл" },
       { type: "khayag", label: "Хаяг" },
@@ -56,21 +55,14 @@ const tagCategories = {
       { type: "suhRegister", label: "СӨХ-ийн регистр" },
       { type: "suhUtas", label: "СӨХ-ийн утас" },
       { type: "suhMail", label: "СӨХ-ийн и-мэйл" },
-      { type: "suhGariinUseg", label: "СӨХ гарын үсэг" },
-      { type: "suhTamga", label: "СӨХ тамга" },
     ],
   },
   duration: {
     label: "Хугацаа",
     tags: [
       { type: "khugatsaa", label: "Хугацаа" },
-      { type: "ekhlekhOgnoo", label: "Эхлэх огноо" },
-      { type: "duusakhOgnoo", label: "Дуусах огноо" },
       { type: "tulukhOgnoo", label: "Төлөх огноо" },
-      { type: "tsutsalsanOgnoo", label: "Цуцалсан огноо" },
-      { type: "khungulukhKhugatsaa", label: "Хөнгөлөх хугацаа" },
       { type: "gereeniiKhugatsaa", label: "Гэрээний хугацаа" },
-      { type: "actOgnoo", label: "Актын огноо" },
     ],
   },
   payment: {
@@ -78,14 +70,10 @@ const tagCategories = {
     tags: [
       { type: "suhTulbur", label: "СӨХ хураамж" },
       { type: "suhTulburUsgeer", label: "СӨХ хураамж үсгээр" },
-      { type: "suhKhugatsaa", label: "Хураамжийн хугацаа" },
-      { type: "sukhKhungulult", label: "Хөнгөлөлт" },
       { type: "ashiglaltiinZardal", label: "Ашиглалтын зардал" },
       { type: "ashiglaltiinZardalUsgeer", label: "Ашиглалт үсгээр" },
       { type: "niitTulbur", label: "Нийт төлбөр" },
       { type: "niitTulburUsgeer", label: "Нийт төлбөр үсгээр" },
-      { type: "baritsaaAvakhDun", label: "Барьцаа авах дүн" },
-      { type: "baritsaaniiUldegdel", label: "Барьцааны үлдэгдэл" },
     ],
     property: {
       label: "Байр, талбайн мэдээлэл",
@@ -93,10 +81,7 @@ const tagCategories = {
         { type: "bairNer", label: "Байрны нэр" },
         { type: "orts", label: "Орц" },
         { type: "toot", label: "Тоот" },
-        { type: "talbainKhemjee", label: "Талбайн хэмжээ" },
-        { type: "zoriulalt", label: "Зориулалт" },
         { type: "davkhar", label: "Давхар" },
-        { type: "tooluuriinDugaar", label: "Тоолуурын дугаар" },
       ],
     },
     additional: {
@@ -108,15 +93,7 @@ const tagCategories = {
     },
     dates: {
       label: "Хугацааны хувьсагч",
-      tags: [
-        { type: "EhlehOn", label: "Эхлэх он" },
-        { type: "EhlehSar", label: "Эхлэх сар" },
-        { type: "EhlehUdur", label: "Эхлэх өдөр" },
-        { type: "DuusahOn", label: "Дуусах он" },
-        { type: "DuusahSar", label: "Дуусах сар" },
-        { type: "DuusahUdur", label: "Дуусах өдөр" },
-        { type: "TulultHiigdehOgnoo", label: "Төлөлт хийгдэх огноо" },
-      ],
+      tags: [{ type: "TulultHiigdehOgnoo", label: "Төлөлт хийгдэх огноо" }],
     },
   },
 };
