@@ -45,7 +45,7 @@ export function useAshiglaltiinZardluud(overrides?: {
 
   const { data, error, mutate } = useSWR(
     shouldFetch
-      ? ["/api/ashiglaltiinZardluud", token, currentOrg, currentBarilga]
+      ? ["/ashiglaltiinZardluud", token, currentOrg, currentBarilga]
       : null,
     async ([url, token, baiguullagiinId, barilgiinId]) => {
       const response = await uilchilgee(token).get(url, {
