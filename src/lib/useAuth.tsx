@@ -27,6 +27,7 @@ export interface Ajiltan {
     duusakhOgnoo: string;
   }>;
   tsonkhniiErkhuud?: any[];
+  defaultBarilga?: string;
 }
 
 interface LoginResponse {

@@ -991,7 +991,6 @@ export default function Khynalt() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div
-            onClick={() => router.push("/tailan/financial")}
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
@@ -1038,7 +1037,6 @@ export default function Khynalt() {
 
           {/* Overdue receivables 2+ months */}
           <div
-            onClick={() => router.push("/tulbur")}
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
@@ -1114,7 +1112,6 @@ export default function Khynalt() {
 
           {/* Cancelled contract receivables */}
           <div
-            onClick={() => router.push("/tulbur")}
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}

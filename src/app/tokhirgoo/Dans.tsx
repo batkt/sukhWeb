@@ -9,6 +9,7 @@ import {
   Modal,
   Select,
   Loader,
+  Popover,
 } from "@mantine/core";
 import toast from "react-hot-toast";
 import { useAuth } from "@/lib/useAuth";
@@ -40,6 +41,8 @@ interface DansTileProps {
 }
 
 function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
+  const [deleteOpened, setDeleteOpened] = useState(false);
+
   return (
     <div className="flex items-center justify-between bg-transparent rounded-2xl shadow p-4 mb-3 hover:shadow-md transition">
       <div className="flex flex-col sm:flex-row sm:gap-6 w-full">
@@ -57,19 +60,46 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
         </div>
       </div>
       <div className="flex gap-2">
-        <Tooltip label={t("Устгах")} withArrow>
-          <button
-            onClick={() => {
-              if (window.confirm(`${data.dugaar} данс устгах уу?`)) {
-                onDelete(data._id);
-              }
-            }}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
-            aria-label={t("Устгах")}
-          >
-            ×
-          </button>
-        </Tooltip>
+        <Popover
+          opened={deleteOpened}
+          onChange={setDeleteOpened}
+          width={200}
+          position="bottom-end"
+        >
+          <Popover.Target>
+            <Tooltip label={t("Устгах")} withArrow>
+              <button
+                onClick={() => setDeleteOpened(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                aria-label={t("Устгах")}
+              >
+                ×
+              </button>
+            </Tooltip>
+          </Popover.Target>
+          <Popover.Dropdown>
+            <div className="text-sm text-theme">
+              <p className="mb-3">{data.dugaar} данс устгах уу?</p>
+              <div className="flex gap-2 justify-end">
+                <button
+                  className="btn-minimal btn-cancel text-xs px-3 py-1"
+                  onClick={() => setDeleteOpened(false)}
+                >
+                  {t("Болих")}
+                </button>
+                <button
+                  className="btn-minimal btn-save text-xs px-3 py-1"
+                  onClick={() => {
+                    onDelete(data._id);
+                    setDeleteOpened(false);
+                  }}
+                >
+                  {t("Устгах")}
+                </button>
+              </div>
+            </div>
+          </Popover.Dropdown>
+        </Popover>
 
         <Tooltip label={t("Засах")} withArrow>
           <button
@@ -269,7 +299,10 @@ function Dans() {
         ))}
 
       <div className="flex justify-end mt-4">
-        <button className="btn-minimal btn-save" onClick={() => saveBank(bankKey)}>
+        <button
+          className="btn-minimal btn-save"
+          onClick={() => saveBank(bankKey)}
+        >
           {t("Хадгалах")}
         </button>
       </div>
@@ -305,8 +338,9 @@ function Dans() {
             }}
             title={editing ? t("Данс засах") : t("Шинэ данс нэмэх")}
             classNames={{ content: "modal-surface" }}
+            centered
           >
-            <div className="flex flex-col gap-3 mt-2">
+            <div className="flex flex-col gap-3 mt-2 ">
               <div>
                 <div className="text-sm mb-1">{t("Банк")}</div>
                 <Select

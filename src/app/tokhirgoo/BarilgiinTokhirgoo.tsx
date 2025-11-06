@@ -26,23 +26,21 @@ export default function BarilgiinTokhirgoo() {
     );
   }, [baiguullaga?.barilguud, activeBuildingId]);
 
-  // If the current activeBuildingId doesn't exist in baiguullaga anymore,
-  // automatically fall back to the first available building and update the selection.
+  // If no building is selected and there are buildings available,
+  // automatically select the first available building.
   useEffect(() => {
     const list = Array.isArray(baiguullaga?.barilguud)
       ? baiguullaga!.barilguud!
       : [];
-    if (!barilga && list.length > 0) {
+    if (baiguullaga && !selectedBuildingId && list.length > 0) {
       const firstId = String(list[0]._id);
-      if (selectedBuildingId !== firstId) {
-        setSelectedBuildingId(firstId);
-      }
+      setSelectedBuildingId(firstId);
     }
   }, [
-    barilga,
     baiguullaga?.barilguud,
     selectedBuildingId,
     setSelectedBuildingId,
+    baiguullaga,
   ]);
 
   const [barilgaNer, setBarilgaNer] = useState<string>("");

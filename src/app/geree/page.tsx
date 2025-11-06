@@ -1201,6 +1201,8 @@ export default function Geree() {
     aimag: "Улаанбаатар",
     duureg: "",
     horoo: "",
+    orts: "",
+    toot: "",
     davkhar: "",
     // Resident account fields
     nevtrekhNer: "",
@@ -1790,6 +1792,8 @@ export default function Geree() {
         newResident.duureg || deriveStr(selectedBarilga?.tokhirgoo?.duuregNer);
       payload.horoo =
         newResident.horoo || deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner);
+      if (newResident.orts) payload.orts = newResident.orts;
+      if (newResident.toot) payload.toot = newResident.toot;
       // Auto-fill building code/name for resident
       payload.soh =
         selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
@@ -1901,6 +1905,12 @@ export default function Geree() {
   };
 
   const handleEditResident = (p: any) => {
+    const deriveStr = (val: any) =>
+      typeof val === "string"
+        ? val
+        : typeof val?.ner === "string"
+        ? val.ner
+        : "";
     setEditingResident(p);
     setNewResident({
       ovog: p.ovog || "",
@@ -1914,16 +1924,20 @@ export default function Geree() {
       mail: p.mail || p.email || "",
       khayag: p.khayag || "",
       aimag: p.aimag || "Улаанбаатар",
-      duureg: p.duureg || "",
-      horoo: p.horoo || "",
-      soh: p.soh || "",
-      davkhar: p.davkhar || "",
+      duureg:
+        p.duureg || deriveStr(selectedBarilga?.tokhirgoo?.duuregNer) || "",
+      horoo: p.horoo || deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
+      soh:
+        p.soh || selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "",
+      orts: p.orts || String(selectedBarilga?.tokhirgoo?.orts || ""),
       toot: p.toot || "",
+      davkhar:
+        p.davkhar ||
+        (davkharOptions && davkharOptions.length > 0 ? davkharOptions[0] : ""),
       baiguullagiinId: p.baiguullagiinId || p.baiguullagiin_id || "",
-      baiguullagiinNer:
-        p.baiguullagiinNer || p.baiguullagiinNer || baiguullaga?.ner || "",
+      baiguullagiinNer: p.baiguullagiinNer || selectedBarilga?.ner || "",
       nevtrekhNer: p.nevtrekhNer || (p.utas ? String(p.utas) : "") || "",
-      nuutsUg: "",
+      nuutsUg: p.nuutsUg || "",
       turul: p.turul || "Үндсэн",
     });
     setShowResidentModal(true);
@@ -2506,6 +2520,12 @@ export default function Geree() {
             <>
               <button
                 onClick={() => {
+                  const deriveStr = (val: any) =>
+                    typeof val === "string"
+                      ? val
+                      : typeof val?.ner === "string"
+                      ? val.ner
+                      : "";
                   setCurrentStep(1);
                   setEditingContract(null);
                   setEditingResident(null);
@@ -2521,8 +2541,17 @@ export default function Geree() {
                     mail: "",
                     khayag: "",
                     aimag: "Улаанбаатар",
-                    duureg: "",
-                    horoo: "",
+                    duureg:
+                      deriveStr(selectedBarilga?.tokhirgoo?.duuregNer) || "",
+                    horoo:
+                      deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
+                    orts: String(selectedBarilga?.tokhirgoo?.orts || ""),
+                    toot: "",
+                    soh:
+                      selectedBarilga?.tokhirgoo?.sohNer ||
+                      baiguullaga?.ner ||
+                      "",
+                    baiguullagiinNer: selectedBarilga?.ner || "",
                     nevtrekhNer: "",
                     nuutsUg: "",
                     turul: "Үндсэн",
@@ -4313,6 +4342,7 @@ export default function Geree() {
                           ]}
                           className="w-full"
                           placeholder="Сонгох..."
+                          required
                         />
                       </div>
                       <div>
@@ -4418,6 +4448,7 @@ export default function Geree() {
                           }))}
                           className="w-full"
                           placeholder="Сонгох..."
+                          required
                         />
                       </div>
                       {newResident.aimag === "Улаанбаатар" && (
@@ -4464,7 +4495,7 @@ export default function Geree() {
                         </>
                       )}
 
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             СӨХ нэр
@@ -4485,6 +4516,24 @@ export default function Geree() {
 
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Орц
+                          </label>
+                          <input
+                            type="text"
+                            value={newResident.orts || ""}
+                            onChange={(e) =>
+                              setNewResident((prev: any) => ({
+                                ...prev,
+                                orts: e.target.value,
+                              }))
+                            }
+                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
                             Тоот
                           </label>
                           <input
@@ -4497,6 +4546,7 @@ export default function Geree() {
                               }))
                             }
                             className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            required
                           />
                         </div>
 
@@ -4518,7 +4568,9 @@ export default function Geree() {
                                 label: d,
                               }))}
                               className="w-full"
+                              required
                               placeholder="Сонгох..."
+                              
                             />
                           ) : (
                             <input
@@ -4531,19 +4583,20 @@ export default function Geree() {
                                 }))
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              required
                             />
                           )}
                         </div>
 
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Байгууллагын нэр
+                            Барилгын нэр
                           </label>
                           <input
                             type="text"
                             value={
                               newResident.baiguullagiinNer ||
-                              baiguullaga?.ner ||
+                              selectedBarilga?.ner ||
                               ""
                             }
                             readOnly
@@ -4572,6 +4625,7 @@ export default function Geree() {
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               placeholder="Нэвтрэх нэр"
+                              required
                             />
                           </div>
                           <div>
@@ -4589,6 +4643,7 @@ export default function Geree() {
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                               placeholder="Нууц үг"
+                              required
                             />
                           </div>
                         </div>

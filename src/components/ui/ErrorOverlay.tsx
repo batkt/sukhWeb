@@ -60,7 +60,7 @@ export function ErrorOverlayHost() {
     <div
       aria-live="assertive"
       aria-atomic="true"
-      className="fixed inset-0 z-[3001] pointer-events-none"
+      className="fixed inset-0 z-[10000] pointer-events-none"
     >
       <div className="absolute top-4 md:top-6 right-4 md:right-6 left-auto translate-x-0 flex flex-col items-end gap-2">
         <div

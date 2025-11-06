@@ -14,7 +14,9 @@ interface CustomSelectProps {
   children?: ReactNode; // support <option> children
   placeholder?: string;
   data?: string;
+  required?: boolean;
   className?: string;
+
   disabled?: boolean;
   // When used on white surfaces, don't inherit themed text colors
   // and use neutral colors for better contrast.

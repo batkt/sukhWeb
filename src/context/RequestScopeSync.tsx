@@ -15,7 +15,7 @@ export default function RequestScopeSync() {
     // ajiltan.barilguud[0], 3) baiguullaga.barilguud[0]. This makes the UI
     // friendlier immediately after login.
     try {
-      if (!selectedBuildingId) {
+      if (!selectedBuildingId && !localStorage.getItem("selectedBuildingId")) {
         const candidate =
           barilgiinId ||
           (ajiltan?.barilguud && ajiltan.barilguud.length > 0

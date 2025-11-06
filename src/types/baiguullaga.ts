@@ -15,6 +15,7 @@ export interface Tokhirgoo {
     kod: string;
   };
   sohNer: string;
+  orts: string;
   nuatTulukhEsekh: boolean;
   zogsoolMsgIlgeekh: boolean;
   tooluurAutomatTatakhToken: string;
