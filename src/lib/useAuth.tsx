@@ -95,9 +95,13 @@ export const useBarilga = () => {
     }
 
     setBarilgiinId(id);
+    const isProduction =
+      typeof window !== "undefined" && window.location.protocol === "https:";
     setCookie(null, "barilgiinId", id, {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
+      secure: isProduction,
+      sameSite: "lax",
     });
     return true;
   };

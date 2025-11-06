@@ -3,13 +3,52 @@ import { io, Socket } from "socket.io-client";
 import { t } from "i18next";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 
-export const url = "http://103.143.40.46:8084";
+// Use environment variable for API URL
+// In production with nginx proxy, use /api (relative path)
+// In local development, use full URL
+// Priority: env variable > detect production (HTTPS + /api) > default local dev URL
+export function getApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+
+  // Runtime check: if we're in browser and on HTTPS, use nginx proxy
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return "/api";
+  }
+
+  // Default: local development URL
+  return "http://103.143.40.46:8084";
+}
+
+// Export url for backward compatibility and direct access
+// Note: This will use default on server-side, runtime check happens in functions
+export const url =
+  process.env.NEXT_PUBLIC_API_URL || "http://103.143.40.46:8084";
+
+// Export for debugging - can be accessed in browser console
+if (typeof window !== "undefined") {
+  (window as any).__API_URL__ = getApiUrl();
+}
 
 // Socket connection
-export const socket = (): Socket =>
-  io(url, {
-    transports: ["websocket"],
-  });
+// In production, socket.io goes through nginx proxy at /socket.io
+// In development, use the full URL
+export const socket = (): Socket => {
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    // Production: use relative path through nginx proxy
+    return io({
+      path: "/socket.io",
+      transports: ["websocket"],
+      secure: true,
+    });
+  } else {
+    // Development: use full URL
+    return io(getApiUrl(), {
+      transports: ["websocket"],
+    });
+  }
+};
 
 // Generic error handler
 export const aldaaBarigch = (e: any): void => {
@@ -30,7 +69,7 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const instance = axios.create({
-    baseURL: url,
+    baseURL: getApiUrl(),
     headers,
   });
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -59,7 +98,7 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
   };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const instance = axios.create({
-    baseURL: url,
+    baseURL: getApiUrl(),
     headers,
   });
   instance.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -88,7 +127,7 @@ const uilchilgee = (token?: string): AxiosInstance => {
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const instance = axios.create({
-    baseURL: url,
+    baseURL: getApiUrl(),
     headers,
   });
 

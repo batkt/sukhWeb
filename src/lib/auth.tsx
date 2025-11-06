@@ -88,9 +88,13 @@ export const useBarilga = () => {
     }
 
     setBarilgiinId(id);
+    const isProduction =
+      typeof window !== "undefined" && window.location.protocol === "https:";
     setCookie(null, "barilgiinId", id, {
       maxAge: 30 * 24 * 60 * 60,
       path: "/",
+      secure: isProduction,
+      sameSite: "lax",
     });
     return true;
   }, []);
@@ -194,8 +198,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setTokenState(newToken);
     if (newToken) {
       // Session cookie only (no maxAge) so it doesn't persist across browser restarts
+      // In production (HTTPS), cookies need secure flag; sameSite prevents CSRF
+      const isProduction =
+        typeof window !== "undefined" && window.location.protocol === "https:";
       setCookie(null, "tureestoken", newToken, {
         path: "/",
+        secure: isProduction,
+        sameSite: "lax",
       });
     } else {
       destroyCookie(null, "tureestoken", { path: "/" });
@@ -242,8 +251,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setBaiguulgiinErkhiinJagsaalt: (data: any[]) => void,
     permissionsData?: any
   ) => {
-    if (permissionsData?.moduluud) {
-      localStorage.setItem(
+    if (permissionsData?.moduluud) {localStorage.setItem(
         "baiguulgiinErkhiinJagsaalt",
         JSON.stringify(permissionsData.moduluud)
       );
