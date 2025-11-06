@@ -91,7 +91,7 @@ export default function Ebarimt() {
       return [
         "ext",
         token || "",
-        `${getApiUrl()}/ebarimtJagsaaltAvya`,
+        "/ebarimtJagsaaltAvya",
         merchantTin,
         districtCode,
         toISO(s),
@@ -135,8 +135,8 @@ export default function Ebarimt() {
           string | null,
           string | null
         ];
-        const resp = await uilchilgee(tkn).get(url, {
-          baseURL: undefined,
+        const resp = await uilchilgee(tkn).get("/ebarimtJagsaaltAvya", {
+          baseURL: getApiUrl(),
           params: {
             merchantTin: tin,
             districtCode: dCode,
