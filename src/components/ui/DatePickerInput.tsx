@@ -102,6 +102,7 @@ export function DatePickerInput(
     left: number;
     width: number;
   } | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Position the dropdown in a portal so it renders above any panels
   useEffect(() => {
@@ -127,6 +128,14 @@ export function DatePickerInput(
       window.removeEventListener("scroll", update, true);
     };
   }, [open, type]);
+
+  // Detect small screens and optionally render modal-style calendar
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 640);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
 
   // Outside click that respects the portal content
   useEffect(() => {
@@ -212,6 +221,7 @@ export function DatePickerInput(
         <span className={displayText ? "text-theme" : "text-subtle"}>
           {displayText || placeholder}
         </span>
+
         {clearable && displayText && (
           <span
             onClick={(e) => {
@@ -219,7 +229,7 @@ export function DatePickerInput(
               if (type === "range") (onChange as any)?.(undefined);
               else (onChange as any)?.(null);
             }}
-            className="text-subtle hover:text-theme cursor-pointer"
+            className="text-subtle hover:text-theme cursor-pointer ml-2"
             aria-label="Clear date"
           >
             ×
@@ -229,39 +239,76 @@ export function DatePickerInput(
 
       {open &&
         typeof document !== "undefined" &&
-        createPortal(
-          <div
-            ref={dropdownRef}
-            className="menu-surface rounded-2xl shadow-xl"
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: "fixed",
-              zIndex: 9999,
-              top: dropdownPos?.top ?? 0,
-              left: dropdownPos?.left ?? 0,
-              width: dropdownPos?.width ?? undefined,
-              maxWidth: "96vw",
-              padding: "0.75rem",
-            }}
-          >
-            <Calendar
-              mode={type === "range" ? "range" : "single"}
-              selected={selected as any}
-              onSelect={
-                (type === "range" ? (commitRange as any) : commitSingle) as any
-              }
-              required={false}
-              numberOfMonths={2}
-              captionLayout="dropdown"
-              hideNavigation
-              weekStartsOn={1}
-              showOutsideDays
-              fixedWeeks
-            />
-          </div>,
-          document.body
-        )}
+        (props.dropdownType === "modal" || isMobile
+          ? createPortal(
+              <div
+                ref={dropdownRef}
+                role="dialog"
+                aria-modal="true"
+                className="fixed inset-0 z-[11000] flex items-center justify-center p-4"
+                onClick={() => setOpen(false)}
+              >
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl p-4 w-full max-w-md"
+                  style={{ maxHeight: "90vh", overflow: "auto" }}
+                >
+                  <Calendar
+                    mode={type === "range" ? "range" : "single"}
+                    selected={selected as any}
+                    onSelect={
+                      (type === "range"
+                        ? (commitRange as any)
+                        : commitSingle) as any
+                    }
+                    required={false}
+                    numberOfMonths={1}
+                    captionLayout="dropdown"
+                    hideNavigation={false}
+                    weekStartsOn={1}
+                    showOutsideDays
+                    fixedWeeks
+                  />
+                </div>
+              </div>,
+              document.body
+            )
+          : createPortal(
+              <div
+                ref={dropdownRef}
+                className="menu-surface rounded-2xl shadow-xl bg-[color:var(--surface-bg)]"
+                role="dialog"
+                aria-modal="true"
+                style={{
+                  position: "fixed",
+                  zIndex: 9999,
+                  top: dropdownPos?.top ?? 0,
+                  left: dropdownPos?.left ?? 0,
+                  width: dropdownPos?.width ?? undefined,
+                  maxWidth: "96vw",
+                  padding: "0.75rem",
+                }}
+              >
+                <Calendar
+                  mode={type === "range" ? "range" : "single"}
+                  selected={selected as any}
+                  onSelect={
+                    (type === "range"
+                      ? (commitRange as any)
+                      : commitSingle) as any
+                  }
+                  required={false}
+                  numberOfMonths={type === "range" ? 2 : 1}
+                  captionLayout="dropdown"
+                  hideNavigation
+                  weekStartsOn={1}
+                  showOutsideDays
+                  fixedWeeks
+                />
+              </div>,
+              document.body
+            ))}
     </div>
   );
 }

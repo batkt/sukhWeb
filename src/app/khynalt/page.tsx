@@ -870,7 +870,7 @@ export default function Khynalt() {
         try {
           localStorage.setItem("geree.activeTab", "contracts");
         } catch (e) {}
-        router.push("/geree");
+        router.push("/geree?tab=contracts");
       },
       delay: 0,
     },
@@ -883,7 +883,7 @@ export default function Khynalt() {
         try {
           localStorage.setItem("geree.activeTab", "residents");
         } catch (e) {}
-        router.push("/geree");
+        router.push("/geree?tab=residents");
       },
       delay: 100,
     },
@@ -912,7 +912,7 @@ export default function Khynalt() {
         try {
           localStorage.setItem("geree.activeTab", "employees");
         } catch (e) {}
-        router.push("/geree");
+        router.push("/geree?tab=employees");
       },
       delay: 400,
     },
@@ -921,13 +921,13 @@ export default function Khynalt() {
       value: buildingCount,
       subtitle: "Нийт барилга",
       color: "from-indigo-500 to-indigo-600",
-      onClick: () => router.push("/geree"),
+
       delay: 500,
     },
   ];
 
   return (
-    <div className="h-full overflow-auto custom-scrollbar">
+    <div className="h-full overflow-hidden custom-scrollbar">
       <div className="min-h-full p-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700">
           <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">

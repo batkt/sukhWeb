@@ -269,7 +269,7 @@ function Dans() {
         ))}
 
       <div className="flex justify-end mt-4">
-        <button className="btn-minimal" onClick={() => saveBank(bankKey)}>
+        <button className="btn-minimal btn-save" onClick={() => saveBank(bankKey)}>
           {t("Хадгалах")}
         </button>
       </div>

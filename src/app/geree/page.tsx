@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import {
@@ -19,7 +19,7 @@ import {
   FilePlus,
   LayoutTemplate,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { DownloadOutlined } from "@ant-design/icons";
 import {
@@ -32,7 +32,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import uilchilgee, { socket } from "../../../lib/uilchilgee";
+import uilchilgee, { socket, updateBaiguullaga } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -92,27 +92,47 @@ export const ALL_COLUMNS = [
 
 export default function Geree() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const didInitRef = useRef(false);
   const DEFAULT_HIDDEN = ["aimag"];
 
   // Which section to show: contracts, residents, or employees
   // Default to residents and persist last-used tab in localStorage so the
   // current tab remains selected across actions and reloads.
   const [activeTab, setActiveTab] = useState<
-    "contracts" | "residents" | "employees"
+    "contracts" | "residents" | "employees" | "units"
   >("residents");
 
+  // Initialize from URL tab (if provided) else fall back to localStorage — run once
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("geree.activeTab");
-      if (
-        stored === "contracts" ||
-        stored === "residents" ||
-        stored === "employees"
-      ) {
-        setActiveTab(stored as any);
-      }
-    } catch (e) {}
-  }, []);
+    if (didInitRef.current) return;
+    const t = searchParams.get("tab");
+    if (
+      t === "contracts" ||
+      t === "residents" ||
+      t === "employees" ||
+      t === "units"
+    ) {
+      setActiveTab(t as any);
+      try {
+        localStorage.setItem("geree.activeTab", t);
+      } catch (e) {}
+    } else {
+      try {
+        const stored = localStorage.getItem("geree.activeTab");
+        if (
+          stored === "contracts" ||
+          stored === "residents" ||
+          stored === "employees" ||
+          stored === "units"
+        ) {
+          setActiveTab(stored as any);
+        }
+      } catch (e) {}
+    }
+    didInitRef.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   useEffect(() => {
     try {
@@ -372,7 +392,8 @@ export default function Geree() {
     Багахангай: ["1-р хороо", "2-р хороо"],
   };
 
-  const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
+  const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } =
+    useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId: string | undefined =
     selectedBuildingId ?? barilgiinId ?? undefined;
@@ -384,7 +405,7 @@ export default function Geree() {
     try {
       const tok = (selectedBarilga as any)?.tokhirgoo?.davkhar;
       if (Array.isArray(tok) && tok.length > 0)
-        return tok.map((d: any) => String(d));
+        return tok.map((d: any) => String(d?.davkhar ?? d));
       if (typeof tok === "number" && tok > 0)
         return Array.from({ length: tok }).map((_, i) => String(i + 1));
       const list = (selectedBarilga as any)?.davkharuud;
@@ -395,7 +416,94 @@ export default function Geree() {
       return [];
     }
   }, [selectedBarilga]);
+  // Entrances (орц) options derived from building settings
+  const ortsOptions = useMemo(() => {
+    try {
+      const tok = (selectedBarilga as any)?.tokhirgoo?.orts;
+      if (Array.isArray(tok) && tok.length > 0) return tok.map(String);
+      if (typeof tok === "number" && tok > 0)
+        return Array.from({ length: tok }).map((_, i) => String(i + 1));
+      if (typeof tok === "string") {
+        const s = tok.trim();
+        // If it's a number in string form, treat as count
+        if (/^\d+$/.test(s)) {
+          const n = Number(s);
+          if (n > 0)
+            return Array.from({ length: n }).map((_, i) => String(i + 1));
+        }
+        // Otherwise allow comma or whitespace separated list like "1,2,3"
+        const parts = s.split(/[\s,;|]+/).filter(Boolean);
+        if (parts.length > 0) return parts.map(String);
+      }
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }, [selectedBarilga]);
   const { zardluud } = useAshiglaltiinZardluud();
+  // Per-floor unit storage (toots) under building tokhirgoo
+  const tootMap: Record<string, string[]> = useMemo(() => {
+    const out: Record<string, string[]> = {};
+    try {
+      const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
+      // 1) New canonical shape: a map like { "1": ["101","102"], ... }
+      const map = (tokhirgoo as any)?.davkhariinToonuud;
+      if (map && typeof map === "object" && !Array.isArray(map)) {
+        Object.entries(map).forEach(([floor, arr]) => {
+          const list = Array.isArray(arr) ? arr : [];
+          out[String(floor)] = list.map((x: any) => String(x));
+        });
+      }
+
+      // 2) Backward-compat: davkhar can be array with items having { davkhar, toonuud }
+      const tok = (tokhirgoo as any)?.davkhar;
+      if (Array.isArray(tok)) {
+        tok.forEach((it: any) => {
+          const floor = String(it?.davkhar ?? it);
+          const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
+          if (floor && !out[floor])
+            out[floor] = list.map((x: any) => String(x));
+        });
+      }
+    } catch {}
+    return out;
+  }, [selectedBarilga]);
+  const [unitInputs, setUnitInputs] = useState<Record<string, string>>({});
+  const [isSavingUnits, setIsSavingUnits] = useState(false);
+  // Selections for simplified Units UI
+  const [selectedOrts, setSelectedOrts] = useState<string>("");
+  const [selectedFloor, setSelectedFloor] = useState<string>("");
+
+  // keep selection in sync with options
+  useEffect(() => {
+    setSelectedOrts((prev) => prev || ortsOptions[0] || "");
+  }, [ortsOptions]);
+  useEffect(() => {
+    setSelectedFloor((prev) => prev || (davkharOptions?.[0] ?? ""));
+  }, [davkharOptions]);
+
+  const composeKey = useCallback((orts: string, floor: string) => {
+    const f = String(floor || "").trim();
+    const o = String(orts || "").trim();
+    return o ? `${o}::${f}` : f;
+  }, []);
+
+  const unitsForSelection: string[] = useMemo(() => {
+    try {
+      const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
+      const map = (tokhirgoo as any)?.davkhariinToonuud || {};
+      if (!selectedFloor) return [];
+      const key = composeKey(selectedOrts, selectedFloor);
+      const arr = Array.isArray(map?.[key])
+        ? map[key]
+        : Array.isArray(map?.[selectedFloor])
+        ? map[selectedFloor]
+        : [];
+      return (arr as any[]).map((x) => String(x));
+    } catch {
+      return [];
+    }
+  }, [selectedBarilga, selectedOrts, selectedFloor, composeKey]);
   // Residents list
   const {
     orshinSuugchGaralt,
@@ -758,6 +866,15 @@ export default function Geree() {
             title: "Оршин суугч бүртгэх",
             description:
               "Шинэ оршин суугч гараас бүртгэх товч. Дараад шаардлагатай мэдээллээ бөглөнө.",
+            side: "bottom",
+          },
+        },
+        {
+          element: "#resident-download-list-btn",
+          popover: {
+            title: "Оршин суугчдын жагсаалтыг татах",
+            description:
+              "Оршин суугчдын жагсаалтыг Excel файлын хэлбэрээр татаж авах товч.",
             side: "bottom",
           },
         },
@@ -2172,6 +2289,44 @@ export default function Geree() {
 
   // Removed Step 4 (Төлбөр) and related invoice fetch.
 
+  // Preview a processed contract template for a single contract (eye icon)
+  const handlePreviewContractTemplate = async (gereeId: string) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    try {
+      // Choose a template id: prefer the first available template from list
+      const templateId =
+        zagvaruud && zagvaruud[0]?._id
+          ? String(zagvaruud[0]._id)
+          : "690b0f42130c4a7c9d641fa9"; // fallback example id
+
+      const resp = await uilchilgee(token).post("/gereeniiZagvarSoliyo", {
+        gereeniiZagvariinId: templateId,
+        gereeniiId: gereeId,
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
+      });
+
+      const d: any = resp?.data;
+      const html =
+        d?.aguulga ||
+        d?.result?.aguulga ||
+        (Array.isArray(d?.result) ? d.result[0]?.aguulga : null) ||
+        (Array.isArray(d) ? d[0]?.aguulga : null) ||
+        "";
+      if (!html) {
+        openErrorOverlay("Харах өгөгдөл олдсонгүй");
+        return;
+      }
+      setPreviewTemplate({ aguulga: html });
+      setShowPreviewModal(true);
+    } catch (e) {
+      openErrorOverlay("Загварыг боловсруулахад алдаа гарлаа");
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="flex items-start justify-between p-4 gap-4 mb-4">
@@ -2237,6 +2392,17 @@ export default function Geree() {
               }`}
             >
               Ажилтан
+            </button>
+            <button
+              id="tab-units"
+              onClick={() => setActiveTab("units")}
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "units"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
+              }`}
+            >
+              Тоот бүртгэл
             </button>
           </div>
         </div>
@@ -2379,6 +2545,7 @@ export default function Geree() {
                 className="btn-minimal"
                 aria-label="Оршин суугч Excel татах"
                 title="Оршин суугчдын Excel татах"
+                id="resident-download-list-btn"
               >
                 <Download className="w-5 h-5" />
                 <span className="hidden sm:inline text-xs ml-1">
@@ -2532,6 +2699,250 @@ export default function Geree() {
         </div>
       </div>
 
+      {activeTab === "units" && (
+        <div className="neu-panel allow-overflow p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-theme">Тоот бүртгэл</h3>
+              <p className="text-sm text-slate-500">
+                Эхлээд Орц болон Давхар сонгоод, тухайн хэсгийн Тоотыг нэмнэ.
+              </p>
+            </div>
+            {isSavingUnits && (
+              <div className="text-xs text-slate-500">Хадгалж байна…</div>
+            )}
+          </div>
+
+          {davkharOptions.length === 0 ? (
+            <div className="p-3 rounded-md border border-amber-300 text-amber-700 text-sm">
+              Давхарын тохиргоо хийгдээгүй байна. Эхлээд "Барилгын тохиргоо"
+              дээрээс давхар оруулна уу.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {ortsOptions.length === 0 && (
+                <div className="p-3 rounded-2xl border border-blue-300 text-blue-700 text-sm">
+                  Орцын тохиргоо хийгдээгүй байна. "Барилгын тохиргоо" хэсгээс
+                  Орцын тоог оруулбал энд сонгох боломжтой болно.
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                <div className="sm:col-span-1">
+                  <label className="block text-xs text-theme mb-1">Орц</label>
+                  <TusgaiZagvar
+                    value={selectedOrts}
+                    onChange={(val) => setSelectedOrts(val)}
+                    options={ortsOptions.map((o) => ({ value: o, label: o }))}
+                    className="w-full z-9999"
+                    placeholder={
+                      ortsOptions.length === 0
+                        ? "Орц тохируулаагүй"
+                        : "Сонгох..."
+                    }
+                    disabled={ortsOptions.length === 0}
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="block text-xs text-theme mb-1">
+                    Давхар
+                  </label>
+                  <TusgaiZagvar
+                    value={selectedFloor}
+                    onChange={(val) => setSelectedFloor(val)}
+                    options={davkharOptions.map((f) => ({
+                      value: f,
+                      label: f,
+                    }))}
+                    className="w-full"
+                    placeholder="Сонгох..."
+                  />
+                </div>
+                <div className="sm:col-span-1">
+                  <label className="block text-xs text-theme mb-1">Тоот</label>
+                  <input
+                    type="text"
+                    value={
+                      unitInputs[composeKey(selectedOrts, selectedFloor)] || ""
+                    }
+                    onChange={(e) =>
+                      setUnitInputs((prev) => ({
+                        ...prev,
+                        [composeKey(selectedOrts, selectedFloor)]:
+                          e.target.value,
+                      }))
+                    }
+                    placeholder="ж. 101"
+                    className="w-full px-3 py-2 btn-neu focus:outline-none"
+                    disabled={!selectedFloor}
+                  />
+                </div>
+                <div className="sm:col-span-1 flex gap-2 justify-end">
+                  <button
+                    className="btn-minimal btn-save"
+                    disabled={!selectedFloor}
+                    onClick={async () => {
+                      const key = composeKey(selectedOrts, selectedFloor);
+                      const raw = String(unitInputs[key] || "").trim();
+                      if (!raw) return;
+                      if (unitsForSelection.includes(raw)) {
+                        openErrorOverlay("Давхардсан тоот байна");
+                        return;
+                      }
+                      try {
+                        setIsSavingUnits(true);
+                        const updatedBarilguud = (
+                          baiguullaga?.barilguud || []
+                        ).map((b: any) => {
+                          if (
+                            String(b._id) !==
+                            String(selectedBuildingId || barilgiinId)
+                          )
+                            return b;
+                          const existing =
+                            (b.tokhirgoo &&
+                              (b.tokhirgoo as any).davkhariinToonuud) ||
+                            {};
+                          const nextMap: Record<string, string[]> = {
+                            ...existing,
+                            [key]: Array.from(
+                              new Set([...(existing[key] || []), raw])
+                            ),
+                          };
+                          return {
+                            ...b,
+                            tokhirgoo: {
+                              ...(b.tokhirgoo || {}),
+                              davkhariinToonuud: nextMap,
+                            },
+                          };
+                        });
+                        const payload = {
+                          ...(baiguullaga as any),
+                          _id: baiguullaga?._id,
+                          barilguud: updatedBarilguud,
+                        };
+                        const res = await updateBaiguullaga(
+                          token || undefined,
+                          (baiguullaga as any)._id as string,
+                          payload
+                        );
+                        if (res) await baiguullagaMutate(res, false);
+                        await baiguullagaMutate();
+                        setUnitInputs((prev) => ({ ...prev, [key]: "" }));
+                        openSuccessOverlay("Тоот нэмэгдлээ");
+                      } catch (e) {
+                        openErrorOverlay("Хадгалах явцад алдаа гарлаа");
+                      } finally {
+                        setIsSavingUnits(false);
+                      }
+                    }}
+                  >
+                    Нэмэх
+                  </button>
+                </div>
+              </div>
+
+              <div className="border rounded-2xl border-g p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-medium text-theme">
+                    {selectedOrts ? `Орц ${selectedOrts}, ` : ""}
+                    {selectedFloor && `${selectedFloor}-р давхар`}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    Нийт: {unitsForSelection.length}
+                  </div>
+                </div>
+                {unitsForSelection.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {unitsForSelection.map((t) => (
+                      <span
+                        key={String(t)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme"
+                      >
+                        {String(t)}
+                        <button
+                          className="ml-1 text-red-500 hover:text-red-600"
+                          onClick={async () => {
+                            try {
+                              setIsSavingUnits(true);
+                              const key = composeKey(
+                                selectedOrts,
+                                selectedFloor
+                              );
+                              const updatedBarilguud = (
+                                baiguullaga?.barilguud || []
+                              ).map((b: any) => {
+                                if (
+                                  String(b._id) !==
+                                  String(selectedBuildingId || barilgiinId)
+                                )
+                                  return b;
+                                const existing =
+                                  (b.tokhirgoo &&
+                                    (b.tokhirgoo as any).davkhariinToonuud) ||
+                                  {};
+                                const baseArr: any[] = Array.isArray(
+                                  existing[key]
+                                )
+                                  ? existing[key]
+                                  : Array.isArray(existing[selectedFloor])
+                                  ? existing[selectedFloor]
+                                  : [];
+                                const arr = baseArr.filter(
+                                  (x: any) => String(x) !== String(t)
+                                );
+                                const nextMap: Record<string, string[]> = {
+                                  ...existing,
+                                  [key]: arr,
+                                };
+                                // keep backward compat: if we mutated fallback floor-only key, also update it
+                                if (!existing[key] && existing[selectedFloor]) {
+                                  nextMap[selectedFloor] = arr;
+                                }
+                                return {
+                                  ...b,
+                                  tokhirgoo: {
+                                    ...(b.tokhirgoo || {}),
+                                    davkhariinToonuud: nextMap,
+                                  },
+                                };
+                              });
+                              const payload = {
+                                ...(baiguullaga as any),
+                                _id: baiguullaga?._id,
+                                barilguud: updatedBarilguud,
+                              };
+                              const res = await updateBaiguullaga(
+                                token || undefined,
+                                (baiguullaga as any)._id as string,
+                                payload
+                              );
+                              if (res) await baiguullagaMutate(res, false);
+                              await baiguullagaMutate();
+                              openSuccessOverlay("Устгагдлаа");
+                            } catch (e) {
+                              openErrorOverlay("Хадгалах явцад алдаа гарлаа");
+                            } finally {
+                              setIsSavingUnits(false);
+                            }
+                          }}
+                          aria-label="Устгах"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500">Бүртгэлгүй</div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === "contracts" &&
         (isValidatingGeree ? (
           <div className="text-center py-8 text-subtle">Уншиж байна...</div>
@@ -2614,6 +3025,18 @@ export default function Geree() {
                                 >
                                   <Edit className="w-4 h-4" />
                                 </button>
+                                <button
+                                  onClick={() =>
+                                    handlePreviewContractTemplate(
+                                      String(contract._id)
+                                    )
+                                  }
+                                  className="p-1 rounded-2xl hover-surface transition-colors"
+                                  title="Харах"
+                                  id="geree-eye-btn"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
                               </div>
                             </td>
                           </tr>
@@ -2640,7 +3063,7 @@ export default function Geree() {
                         search: searchTerm,
                       });
                     }}
-                    className="text-xs px-2 py-1"
+                    className="text-xs px-2"
                   />
 
                   <div
@@ -2679,7 +3102,7 @@ export default function Geree() {
           <div className="text-center py-8 text-subtle">Уншиж байна...</div>
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
-            <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
+            <div className="rounded-3xl p-6 neu-table allow-overflow">
               <div
                 className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full "
                 id="resident-table"
@@ -2730,11 +3153,6 @@ export default function Geree() {
                           </td>
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
-                            {(p.email || p.mail) && (
-                              <div className="text-xxs text-theme/70">
-                                {p.email || p.mail}
-                              </div>
-                            )}
                           </td>
                           <td className="p-1 text-center">
                             {(() => {
@@ -2798,7 +3216,7 @@ export default function Geree() {
                     setResPageSize(v);
                     setResPage(1);
                   }}
-                  className="text-xs px-2 py-1"
+                  className="text-xs px-2"
                 />
 
                 <div
@@ -2837,7 +3255,7 @@ export default function Geree() {
           <div className="text-center py-8 text-subtle">Уншиж байна...</div>
         ) : (
           <div className="table-surface overflow-hidden rounded-2xl w-full">
-            <div className="rounded-3xl p-6 mb-2 neu-table allow-overflow">
+            <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
               <div
                 className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
                 id="employees-table"
@@ -2892,11 +3310,6 @@ export default function Geree() {
 
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
-                            {(p.email || p.mail) && (
-                              <div className="text-xxs text-theme/70">
-                                {p.email || p.mail}
-                              </div>
-                            )}
                           </td>
                           <td className="p-1 text-center">
                             {p.albanTushaal || "-"}
@@ -2981,7 +3394,7 @@ export default function Geree() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
@@ -3775,13 +4188,13 @@ export default function Geree() {
                   </h3>
                   <button
                     onClick={() => setShowPreviewModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                    className="p-2 hover:bg-gray-300 rounded-2xl transition-colors"
                     aria-label="Хаах"
                     title="Хаах"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
+                      className="h-6 w-6 text-theme"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -3797,16 +4210,33 @@ export default function Geree() {
                   </button>
                 </div>
 
-                <div className="paper-viewport">
+                <div className="paper-viewport theme-print-preview">
                   <div className="paper-legal">
                     {/* Render main content (aguulga) returned by the API */}
                     <div
-                      className="prose prose-sm max-w-none text-sm text-slate-800"
+                      className="preview-content prose prose-sm max-w-none text-sm"
                       dangerouslySetInnerHTML={{
                         __html: previewTemplate?.aguulga || "",
                       }}
                     />
                   </div>
+                  <style jsx global>{`
+                    /* Make paper and text follow app theme */
+                    .theme-print-preview .preview-content,
+                    .theme-print-preview .preview-content * {
+                      color: var(--panel-text) !important;
+                    }
+                    .theme-print-preview .paper-legal {
+                      background: var(--surface-bg) !important;
+                    }
+                    .theme-print-preview .preview-content a {
+                      color: var(--panel-text) !important;
+                      text-decoration: underline;
+                    }
+                    .theme-print-preview .preview-content table {
+                      color: var(--panel-text) !important;
+                    }
+                  `}</style>
                 </div>
               </motion.div>
             </motion.div>
@@ -3818,7 +4248,7 @@ export default function Geree() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
             >
               <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
               <motion.div
@@ -4358,7 +4788,7 @@ export default function Geree() {
                         clearable
                         classNames={{
                           input:
-                            "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
+                            "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
                         }}
                       />
                     </div>

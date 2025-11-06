@@ -30,7 +30,9 @@ const AdminLayout = ({
   children: React.ReactNode;
 }) => (
   <div className="min-h-screen text-theme">
-    <h1 className="text-3xl font-bold mb-8 text-theme">{title}</h1>
+    <h1 className="text-2xl font-semibold mb-4 text-[color:var(--panel-text)] leading-tight mt-2 ml-4">
+      {title}
+    </h1>
     <div className="grid grid-cols-12 gap-6">{children}</div>
   </div>
 );
@@ -142,7 +144,7 @@ function Tokhirgoo() {
     <AdminLayout title="Тохиргоо">
       <div className="col-span-12 lg:col-span-3">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto custom-scrollbar">
+          <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-hidden custom-scrollbar">
             {tokhirgoo.map((item: any, i) => {
               const isActive = i === selectedIndex;
               const isSoon = Boolean(item?.comingSoon);
@@ -175,21 +177,19 @@ function Tokhirgoo() {
       </div>
 
       <div className="col-span-12 lg:col-span-9 text-theme">
-        <div className="bg-transparent rounded-2xl shadow-lg p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {Tsonkh &&
-            ajiltan &&
-            (() => {
-              const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
-              return (
-                <AnyWindow
-                  ajiltan={ajiltan}
-                  baiguullaga={baiguullaga}
-                  token={token || ""}
-                  setSongogdsonTsonkhniiIndex={setSelectedIndex}
-                />
-              );
-            })()}
-        </div>
+        {Tsonkh &&
+          ajiltan &&
+          (() => {
+            const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
+            return (
+              <AnyWindow
+                ajiltan={ajiltan}
+                baiguullaga={baiguullaga}
+                token={token || ""}
+                setSongogdsonTsonkhniiIndex={setSelectedIndex}
+              />
+            );
+          })()}
       </div>
     </AdminLayout>
   );

@@ -15,6 +15,9 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
+import { message } from "antd";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
@@ -102,8 +105,92 @@ export default function DansniiKhuulga() {
     [dansList]
   );
 
-  const exceleerTatya = () => {
-    alert("Excel татах товч дарлаа!");
+  const exceleerTatya = async () => {
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+      if (!selectedDansId) {
+        message.warning("Эхлээд данс сонгоно уу");
+        return;
+      }
+      // Resolve selected account number (dugaar)
+      const chosen = (() => {
+        const byId = (dansList || []).find(
+          (d: any) => String(d._id) === String(selectedDansId)
+        );
+        if (byId?.dugaar) return String(byId.dugaar);
+        const byDugaar = (dansList || []).find(
+          (d: any) => String(d.dugaar) === String(selectedDansId)
+        );
+        if (byDugaar?.dugaar) return String(byDugaar.dugaar);
+        return String(selectedDansId);
+      })();
+
+      const [s, e] = ekhlekhOgnoo || [];
+      const filters: Record<string, any> = {};
+      if (s) filters.ekhlekhOgnoo = s;
+      if (e) filters.duusakhOgnoo = e;
+      if (chosen) filters.dansniiDugaar = chosen;
+
+      const body = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || null,
+        filters,
+        historical: false,
+        fileName: undefined as string | undefined,
+      };
+
+      const path = "/bankniiGuilgeeExcelDownload";
+      const hide = message.loading({
+        content: "Excel бэлдэж байна…",
+        duration: 0,
+      });
+      let resp: any;
+      try {
+        resp = await uilchilgee(token).post(path, body, {
+          responseType: "blob" as any,
+        });
+      } catch (err: any) {
+        if (err?.response?.status === 404 && typeof window !== "undefined") {
+          resp = await uilchilgee(token).post(
+            `${window.location.origin}${path}`,
+            body,
+            { responseType: "blob" as any, baseURL: undefined as any }
+          );
+        } else {
+          throw err;
+        }
+      }
+      hide();
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const cd = (resp.headers?.["content-disposition"] ||
+        resp.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "bank_guilgee.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      message.success("Excel татагдлаа");
+    } catch (e) {
+      console.error(e);
+      message.error("Excel татахад алдаа гарлаа");
+    }
   };
   const t = (text: string) => text;
 
@@ -153,13 +240,13 @@ export default function DansniiKhuulga() {
           description: "Энд дарж И-баримтын цонх нээнэ.",
         },
       },
-      // {
-      //   element: "#dans-excel-btn",
-      //   popover: {
-      //     title: "Excel татах",
-      //     description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
-      //   },
-      // },
+      {
+        element: "#dans-excel-btn",
+        popover: {
+          title: "Excel татах",
+          description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+        },
+      },
       {
         element: "#dans-table",
         popover: {
@@ -448,6 +535,17 @@ export default function DansniiKhuulga() {
             </div>
             <div className="flex items-center gap-1">
               <motion.div
+                id="guilgee-excel-btn"
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.3 }}
+              >
+                <IconTextButton
+                  onClick={exceleerTatya}
+                  icon={<Download className="w-5 h-5" />}
+                  label={t("Excel татах")}
+                />
+              </motion.div>
+              <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
@@ -470,15 +568,6 @@ export default function DansniiKhuulga() {
                   Зардал
                 </button> */}
               </motion.div>
-              {/* <motion.div
-                id="dans-excel-btn"
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <button onClick={exceleerTatya} className="btn-minimal">
-                  {t("Excel татах")}
-                </button>
-              </motion.div> */}
             </div>
           </div>
         </div>

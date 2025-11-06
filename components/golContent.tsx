@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Search as SearchIcon, X } from "lucide-react";
+import { Settings, Search as SearchIcon, X, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
@@ -47,8 +47,19 @@ export default function GolContent({ children }: GolContentProps) {
   const [showLogout, setShowLogout] = useState<boolean>(false);
   const { searchTerm, setSearchTerm } = useSearch();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
+  const [isMobile, setIsMobile] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   const { ajiltan, token, garya } = useAuth();
   const { baiguullaga } = useBaiguullaga(
@@ -142,21 +153,18 @@ export default function GolContent({ children }: GolContentProps) {
     setShowLogout(false);
 
     try {
-      // Call the logout function
       console.log("Calling garya()...");
       await garya();
       console.log("garya() completed");
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Always redirect to login regardless of garya() success
       console.log("Redirecting to /login");
       router.replace("/login");
     }
   };
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
-  // Show logout controls whenever a valid token exists, even if user profile isn't loaded yet
   const isLoggedIn = !!token;
 
   // Register global tour steps that exist across most pages
@@ -171,14 +179,23 @@ export default function GolContent({ children }: GolContentProps) {
       },
     },
     {
-      element: "input[aria-label='Global search']",
+      element: isMobile ? "#barilga-songoh-mobile" : "#barilga-songoh",
+      popover: {
+        title: "Барилга сонгох",
+        description: "Өөр барилга руу шилжихдээ эндээс сонгоно.",
+        side: "bottom",
+      },
+    },
+    {
+      element: isMobile
+        ? "button[aria-label='Open search']"
+        : "input[aria-label='Global search']",
       popover: {
         title: "Хайлт",
         description: "Нийт систем доторх мэдээллийг хурдан хайна.",
         side: "bottom",
       },
     },
-
     {
       element: "#tokhirgoo",
       popover: {
@@ -194,13 +211,16 @@ export default function GolContent({ children }: GolContentProps) {
   return (
     <>
       <nav className="w-full sticky top-0 z-[1000] neu-nav">
-        <div className="max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+        <div className="max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-3">
           {/* Top row on mobile: Logo + Building Selector */}
-          <div className="flex md:hidden items-center justify-between gap-2 mb-2">
+          <div className="flex lg:hidden items-center justify-between gap-2 mb-2">
             <div className="shrink-0">
               <ThemedLogo />
             </div>
-            <div className="flex-1 max-w-[200px]">
+            <div
+              id="barilga-songoh-mobile"
+              className="flex-1 min-w-0 max-w-[200px]"
+            >
               <TusgaiZagvar
                 value={selectedBuildingId ?? ""}
                 onChange={(v: string) => setSelectedBuildingId(v || null)}
@@ -214,12 +234,12 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
 
           {/* Desktop layout: Logo, Building, Menu, Actions */}
-          <div className="hidden md:flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="hidden lg:flex items-center justify-between gap-2 xl:gap-4">
+            <div className="flex items-center gap-2 xl:gap-3 shrink-0">
               <div className="shrink-0">
                 <ThemedLogo />
               </div>
-              <div className="w-56">
+              <div id="barilga-songoh" className="w-36 xl:w-56">
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
                   onChange={(v: string) => setSelectedBuildingId(v || null)}
@@ -235,9 +255,9 @@ export default function GolContent({ children }: GolContentProps) {
             </div>
 
             {/* Center: Desktop Menu */}
-            <div className="flex flex-1 items-center justify-center px-2">
+            <div className="flex flex-1 items-center justify-center px-1 xl:px-2 min-w-0">
               <div
-                className="flex items-center justify-center gap-3 relative"
+                className="flex items-center justify-center gap-1.5 xl:gap-3 relative"
                 ref={menuRef}
               >
                 {menuItems.map((item, i) => {
@@ -255,7 +275,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
                               isParentActive
                                 ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                                 : "hover:menu-surface"
@@ -265,7 +285,7 @@ export default function GolContent({ children }: GolContentProps) {
                           </button>
 
                           {isOpen && (
-                            <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto">
+                            <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-48 xl:w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto">
                               <ul className="py-2">
                                 {item.submenu.map((sub, j) => {
                                   const subPath = `/${item.path}/${sub.path}`;
@@ -279,7 +299,7 @@ export default function GolContent({ children }: GolContentProps) {
                                           setOpenSubmenuIndex(null);
                                           router.push(subPath);
                                         }}
-                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-xs xl:text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                                           isSubActive
                                             ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                                             : "hover:translate-x-0.5 hover:menu-surface/80"
@@ -301,7 +321,7 @@ export default function GolContent({ children }: GolContentProps) {
                             setOpenSubmenuIndex(null);
                             router.push(`/${item.path}`);
                           }}
-                          className={`menu-pro-font px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
                             isParentActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                               : "hover:menu-surface"
@@ -317,12 +337,12 @@ export default function GolContent({ children }: GolContentProps) {
             </div>
 
             {/* Desktop actions */}
-            <div className="flex items-center justify-end gap-3 shrink-0">
-              <div className="relative h-10 w-64 flex items-center neu-panel">
-                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
+            <div className="flex items-center justify-end gap-1.5 xl:gap-3 shrink-0">
+              <div className="relative h-9 xl:h-10 w-40 xl:w-64 flex items-center neu-panel">
+                <SearchIcon className="absolute left-2 xl:left-3 top-1/2 -translate-y-1/2 w-3.5 xl:w-4 h-3.5 xl:h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                 <input
                   aria-label="Global search"
-                  className="w-full h-full pl-10 pr-3 rounded-2xl border border-transparent bg-transparent text-theme focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
+                  className="w-full h-full pl-8 xl:pl-10 pr-2 xl:pr-3 rounded-2xl border border-transparent bg-transparent text-theme text-xs xl:text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
                   placeholder="Хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -330,15 +350,7 @@ export default function GolContent({ children }: GolContentProps) {
               </div>
 
               <UnguSongokh />
-              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
-
-              <button
-                onClick={() => router.push("/tokhirgoo")}
-                id="tokhirgoo"
-                className="inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
+              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
               {isLoggedIn && (
                 <div className="relative z-[150]" ref={avatarRef}>
@@ -348,14 +360,15 @@ export default function GolContent({ children }: GolContentProps) {
                       e.stopPropagation();
                       setShowLogout(!showLogout);
                     }}
-                    className="w-10 h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                    id="tokhirgoo"
+                    className="w-9 h-9 xl:w-10 xl:h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm xl:text-base font-bold shadow-md hover:scale-105 transition-transform"
                   >
                     {userName.charAt(0).toUpperCase()}
                   </button>
 
                   {showLogout && (
                     <div
-                      className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute left-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
                       onMouseLeave={() => setShowLogout(false)}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -366,14 +379,30 @@ export default function GolContent({ children }: GolContentProps) {
                             onMouseDown={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              console.log(
-                                "Mouse down on logout button - triggering logout"
-                              );
+                              setShowLogout(false);
+                              router.push("/tokhirgoo");
+                            }}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          >
+                            <Settings className="w-4 h-4 opacity-80" />
+                            <span>Тохиргоо</span>
+                          </button>
+                        </li>
+                      </ul>
+                      <div className="border border-b-gray-400"></div>
+                      <ul>
+                        <li>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
                               handleLogout(e);
                             }}
-                            className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto"
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
                           >
-                            Гарах
+                            <LogOut className="w-4 h-4 opacity-80" />
+                            <span>Гарах</span>
                           </button>
                         </li>
                       </ul>
@@ -384,8 +413,7 @@ export default function GolContent({ children }: GolContentProps) {
             </div>
           </div>
 
-          {/* Mobile actions row */}
-          <div className="flex md:hidden items-center justify-end gap-2">
+          <div className="flex lg:hidden items-center justify-end gap-1.5 sm:gap-2">
             <button
               type="button"
               aria-label="Open search"
@@ -394,20 +422,13 @@ export default function GolContent({ children }: GolContentProps) {
                 e.stopPropagation();
                 setMobileSearchOpen(true);
               }}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+              className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
             >
               <SearchIcon className="w-4 h-4 pointer-events-none" />
             </button>
 
             <UnguSongokh />
-            <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
-
-            <button
-              onClick={() => router.push("/tokhirgoo")}
-              className="inline-flex items-center justify-center h-9 w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300"
-            >
-              <Settings className="w-4 h-4" />
-            </button>
+            <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
             {isLoggedIn && (
               <div className="relative z-[150]" ref={avatarRef}>
@@ -416,18 +437,33 @@ export default function GolContent({ children }: GolContentProps) {
                     e.stopPropagation();
                     setShowLogout(!showLogout);
                   }}
-                  className="w-9 h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none font-bold shadow-md hover:scale-105 transition-transform"
+                  id="tokhirgoo"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm font-bold shadow-md hover:scale-105 transition-transform"
                 >
                   {userName.charAt(0).toUpperCase()}
                 </div>
 
                 {showLogout && (
-                  <div className="absolute right-0 mt-2 w-40 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
+                  <div className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
                     <ul className="py-2">
                       <li>
                         <button
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setShowLogout(false);
+                            router.push("/tokhirgoo");
+                          }}
+                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                        >
+                          <Settings className="w-4 h-4 opacity-80" />
+                          <span>Тохиргоо</span>
+                        </button>
+                      </li>
+                      <li>
+                        <button
                           onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm rounded-2xl hover:menu-surface/80 transition-all text-[color:var(--panel-text)] cursor-pointer"
+                          className="w-full text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
                         >
                           Гарах
                         </button>
@@ -441,9 +477,9 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </nav>
 
-      <div className="md:hidden w-full bg-[color:var(--surface-bg)] sticky top-[120px] z-[9]">
-        <div className="px-3 pb-2">
-          <div className="flex items-center justify-center gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar">
+      <div className="lg:hidden w-full bg-[color:var(--surface-bg)] sticky top-[100px] sm:top-[120px] z-[9]">
+        <div className="px-2 sm:px-3 pb-2">
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar pb-1">
             {menuItems.map((item, i) => {
               const isParentActive = pathname.startsWith(`/${item.path}`);
               return (
@@ -455,7 +491,7 @@ export default function GolContent({ children }: GolContentProps) {
                       ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
                       : router.push(`/${item.path}`)
                   }
-                  className={`menu-pro-font px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
+                  className={`menu-pro-font px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
                     isParentActive
                       ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                       : "hover:menu-surface"
@@ -483,7 +519,7 @@ export default function GolContent({ children }: GolContentProps) {
                             setOpenSubmenuIndex(null);
                             router.push(subPath);
                           }}
-                          className={`menu-pro-font w-full text-left block px-4 py-2 text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                          className={`menu-pro-font w-full text-left block px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                             isSubActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                               : "hover:translate-x-0.5 hover:menu-surface/80"
@@ -500,8 +536,8 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </div>
 
-      <main className="flex-1 relative md:h-[calc(100vh-80px)]">
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 h-full">
+      <main className="flex-1 relative">
+        <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
             <div className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain">
               {children}
@@ -515,28 +551,28 @@ export default function GolContent({ children }: GolContentProps) {
 
       {mobileSearchOpen && (
         <ModalPortal>
-          <div className="fixed inset-0 z-[1200] flex items-start p-4 pointer-events-auto">
+          <div className="fixed inset-0 z-[1200] flex items-start p-3 sm:p-4 pointer-events-auto">
             <div
               className="absolute inset-0 bg-black/50"
               onClick={() => setMobileSearchOpen(false)}
             />
-            <div className="relative w-full max-w-xl mx-auto mt-24">
-              <div className="flex items-center gap-2 bg-[color:var(--surface-bg)] p-3 rounded-2xl shadow-lg">
-                <SearchIcon className="w-5 h-5 text-theme" />
+            <div className="relative w-full max-w-xl mx-auto mt-16 sm:mt-24">
+              <div className="flex items-center gap-2 bg-[color:var(--surface-bg)] p-2.5 sm:p-3 rounded-2xl shadow-lg">
+                <SearchIcon className="w-4 sm:w-5 h-4 sm:h-5 text-theme shrink-0" />
                 <input
                   ref={mobileSearchInputRef}
-                  aria-label="Mobile search"
+                  aria-label="Global search"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-theme px-2"
+                  className="flex-1 bg-transparent outline-none text-theme px-1 sm:px-2 text-sm sm:text-base min-w-0"
                   placeholder="Хайх..."
                 />
                 <button
                   aria-label="Close search"
                   onClick={() => setMobileSearchOpen(false)}
-                  className="p-2 text-theme"
+                  className="p-1.5 sm:p-2 text-theme shrink-0"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
               </div>
             </div>

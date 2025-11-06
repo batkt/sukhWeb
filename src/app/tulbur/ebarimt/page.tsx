@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import useSWR from "swr";
-import { Spin } from "antd";
+import { Spin, message } from "antd";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
@@ -219,7 +219,77 @@ export default function Ebarimt() {
 
   const eBarimtMedeelel = { extraInfo: { lastSentDate: new Date() } };
 
-  const exceleerTatya = () => alert("Excel татах товч дарлаа!");
+  const exceleerTatya = async () => {
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+      const [s, e] = ekhlekhOgnoo || [];
+      const filters: Record<string, any> = {};
+      const sIso = toISO(s);
+      const eIso = toISO(e);
+      if (sIso) filters.ekhlekhOgnoo = sIso;
+      if (eIso) filters.duusakhOgnoo = eIso;
+      if (uilchilgeeAvi) filters.uilchilgee = uilchilgeeAvi;
+
+      const body = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: barilgiinId || null,
+        filters,
+        fileName: undefined as string | undefined,
+      };
+
+      const path = "/ebarimtExcelDownload";
+      const hide = message.loading({
+        content: "Excel бэлдэж байна…",
+        duration: 0,
+      });
+      let resp: any;
+      try {
+        resp = await uilchilgee(token).post(path, body, {
+          responseType: "blob" as any,
+        });
+      } catch (err: any) {
+        if (err?.response?.status === 404 && typeof window !== "undefined") {
+          resp = await uilchilgee(token).post(
+            `${window.location.origin}${path}`,
+            body,
+            { responseType: "blob" as any, baseURL: undefined as any }
+          );
+        } else {
+          throw err;
+        }
+      }
+      hide();
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const cd = (resp.headers?.["content-disposition"] ||
+        resp.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "ebarimt.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      message.success("Excel татагдлаа");
+    } catch (e) {
+      console.error(e);
+      message.error("Excel татахад алдаа гарлаа");
+    }
+  };
   const ebarimtIlgeeye = () => {
     setLoading(true);
     setTimeout(() => setLoading(false), 2000);
@@ -407,18 +477,19 @@ export default function Ebarimt() {
             </div>
 
             <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
-              {/* <motion.div
+              <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
                 <button
+                  id="ebarimt-excel-btn"
                   onClick={exceleerTatya}
                   className="btn-minimal px-6 py-3 rounded-xl"
                 >
                   {t("Excel татах")}
                 </button>
-              </motion.div> */}
+              </motion.div>
 
               <motion.div
                 whileHover={{ scale: 1.05 }}
@@ -462,25 +533,25 @@ export default function Ebarimt() {
               <table className="table-ui text-sm min-w-full">
                 <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
                   <tr>
-                    <th className="p-4 text-xs font-bold text-theme text-center w-12 rounded-tl-2xl bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       №
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Огноо
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Гэрээний дугаар
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Төрөл
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       ДДТД
                     </th>
-                    <th className="py-4 px-6 text-right text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Дүн
                     </th>
-                    <th className="py-4 px-6 text-left text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
                       Үйлчилгээ
                     </th>
                   </tr>
@@ -497,13 +568,13 @@ export default function Ebarimt() {
                         <td className="py-4 px-4 text-center font-medium">
                           {index + 1}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
                           {item.date}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
                           {item.gereeniiDugaar}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
+                        <td className="py-4 px-6 whitespace-nowrap text-center">
                           <span
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
                               item.type === "B2C_RECEIPT"
@@ -520,13 +591,13 @@ export default function Ebarimt() {
                               : item.type || "-"}
                           </span>
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 font-mono">
+                        <td className="py-4 px-6 text-center whitespace-nowrap text-gray-700 font-mono">
                           {item.ddtd || item.receiptId || "-"}
                         </td>
-                        <td className="py-4 px-6 text-right whitespace-nowrap font-bold text-gray-800">
+                        <td className="py-4 px-6 text-center whitespace-nowrap font-bold text-gray-800">
                           {formatNumber(item.total ?? 0, 0)} ₮
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                        <td className="py-4 px-6 text-center text-gray-700 whitespace-nowrap">
                           {item.service}
                         </td>
                       </motion.tr>

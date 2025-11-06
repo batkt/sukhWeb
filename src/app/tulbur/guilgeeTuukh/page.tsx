@@ -18,6 +18,8 @@ import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
+import IconTextButton from "@/components/ui/IconTextButton";
+import { Download } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
 import DatePickerInput from "@/components/ui/DatePickerInput";
@@ -233,8 +235,78 @@ export default function DansniiKhuulga() {
     ];
   }, [filteredItems]);
 
-  const exceleerTatya = () => {
-    message.info("Excel татах боломж удахгүй");
+  const exceleerTatya = async () => {
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      // Build filters for backend
+      const [s, e] = ekhlekhOgnoo || [];
+      const filters: Record<string, any> = {};
+      if (s) filters.ekhlekhOgnoo = s;
+      if (e) filters.duusakhOgnoo = e;
+      if (tuluvFilter && tuluvFilter !== "all") filters.tuluv = tuluvFilter;
+      if (searchTerm) filters.search = searchTerm;
+
+      const body = {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: effectiveBarilgiinId || null,
+        filters,
+        fileName: undefined as string | undefined,
+      };
+
+      const path = "/guilgeeniiTuukhExcelDownload";
+      const hide = message.loading({
+        content: "Excel бэлдэж байна…",
+        duration: 0,
+      });
+      let resp: any;
+      try {
+        resp = await uilchilgee(token).post(path, body, {
+          responseType: "blob" as any,
+        });
+      } catch (err: any) {
+        if (err?.response?.status === 404 && typeof window !== "undefined") {
+          resp = await uilchilgee(token).post(
+            `${window.location.origin}${path}`,
+            body,
+            { responseType: "blob" as any, baseURL: undefined as any }
+          );
+        } else {
+          throw err;
+        }
+      }
+      hide();
+
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      // Try to infer filename from headers or fallback
+      const cd = (resp.headers?.["content-disposition"] ||
+        resp.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "guilgee_tuukh.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      message.success("Excel татагдлаа");
+    } catch (e) {
+      console.error(e);
+      message.error("Excel татахад алдаа гарлаа");
+    }
   };
   const t = (text: string) => text;
 
@@ -285,13 +357,13 @@ export default function DansniiKhuulga() {
           description: "Энд дарж нэхэмжлэхийн цонх нээнэ.",
         },
       },
-      // {
-      //   element: "#guilgee-excel-btn",
-      //   popover: {
-      //     title: "Excel татах",
-      //     description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
-      //   },
-      // },
+      {
+        element: "#guilgee-excel-btn",
+        popover: {
+          title: "Excel татах",
+          description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
+        },
+      },
       {
         element: "#guilgee-table",
         popover: {
@@ -400,6 +472,17 @@ export default function DansniiKhuulga() {
 
             <div className="flex items-center gap-3">
               <motion.div
+                id="guilgee-excel-btn"
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.3 }}
+              >
+                <IconTextButton
+                  onClick={exceleerTatya}
+                  icon={<Download className="w-5 h-5" />}
+                  label={t("Excel татах")}
+                />
+              </motion.div>
+              <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
               >
@@ -421,17 +504,6 @@ export default function DansniiKhuulga() {
                 >
                   Хөнгөлөлт
                 </button>
-              </motion.div> */}
-              {/* <motion.div
-                id="guilgee-excel-btn"
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <IconTextButton
-                  onClick={exceleerTatya}
-                  icon={<Download className="w-5 h-5" />}
-                  label={t("Excel татах")}
-                />
               </motion.div> */}
             </div>
           </div>

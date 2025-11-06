@@ -9,7 +9,15 @@ import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { useSpinner } from "@/context/SpinnerContext";
-
+import {
+  Tooltip,
+  Switch,
+  TextInput,
+  PasswordInput,
+  Modal,
+  Select,
+  Loader,
+} from "@mantine/core";
 type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function EbarimtTokhirgoo() {
@@ -27,40 +35,6 @@ export default function EbarimtTokhirgoo() {
   const [ebShine, setEbShine] = useState<boolean>(false);
   const [merchantTin, setMerchantTin] = useState<string>("");
 
-  const MSwitch = ({
-    checked,
-    onChange,
-    id,
-    className,
-  }: {
-    checked: boolean;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    id?: string;
-    className?: string;
-  }) => (
-    <label
-      className={`inline-flex items-center cursor-pointer select-none ${
-        className ?? ""
-      }`}
-      htmlFor={id}
-    >
-      <input
-        id={id}
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        className="sr-only peer"
-      />
-      <div className="relative w-11 h-6 bg-blue-200 rounded-full transition-colors peer-checked:bg-blue-500 peer-focus:ring-2 peer-focus:ring-[var(--color-primary)]">
-        <span
-          className={`absolute left-0.5 top-0.5 w-5 h-5 bg-blue-800 rounded-full shadow transform transition-transform ${
-            checked ? "translate-x-5" : "translate-x-0"
-          }`}
-        />
-      </div>
-    </label>
-  );
-
   useEffect(() => {
     if (!baiguullaga) return;
     // Resolve selected branch first
@@ -76,7 +50,11 @@ export default function EbarimtTokhirgoo() {
       selectedBarilga?.tokhirgoo?.eBarimtAutomataarIlgeekh ??
         baiguullaga.eBarimtAutomataarIlgeekh
     );
-    let nuat = Boolean(baiguullaga.nuatTulukhEsekh);
+    // Prefer branch-level VAT flag if backend stores it there; fallback to org-level
+    let nuat = Boolean(
+      (selectedBarilga?.tokhirgoo as any)?.nuatTulukhEsekh ??
+        baiguullaga.nuatTulukhEsekh
+    );
     let ashiglakh = Boolean(
       selectedBarilga?.tokhirgoo?.eBarimtAshiglakhEsekh ??
         baiguullaga.eBarimtAshiglakhEsekh ??
@@ -93,28 +71,7 @@ export default function EbarimtTokhirgoo() {
         ""
     );
 
-    // If server data is missing, try localStorage
-    if (
-      !baiguullaga.eBarimtAutomataarIlgeekh &&
-      !baiguullaga.nuatTulukhEsekh &&
-      baiguullaga.eBarimtAshiglakhEsekh === undefined &&
-      !baiguullaga.eBarimtShine &&
-      typeof window !== "undefined"
-    ) {
-      try {
-        const saved = localStorage.getItem("baiguullaga_ebarimt");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          autoSend = Boolean(parsed.eBarimtAutomataarIlgeekh ?? autoSend);
-          nuat = Boolean(parsed.nuatTulukhEsekh ?? nuat);
-          ashiglakh = Boolean(parsed.eBarimtAshiglakhEsekh ?? ashiglakh);
-          shine = Boolean(parsed.eBarimtShine ?? shine);
-          tin = String(parsed.merchantTin ?? tin);
-        }
-      } catch (e) {
-        // ignore
-      }
-    }
+    // Removed localStorage fallback: always prefer backend state
 
     setEbAutoSend(autoSend);
     setEbNuat(nuat);
@@ -199,7 +156,7 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <MSwitch
+                <Switch
                   checked={ebAshiglakh}
                   onChange={(e) => setEbAshiglakh(e.target.checked)}
                   aria-label="И-Баримт ашиглах эсэх"
@@ -214,7 +171,7 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <MSwitch
+                <Switch
                   checked={ebShine}
                   onChange={(e) => setEbShine(e.target.checked)}
                   aria-label="И-Баримт 3.0 эсэх"
@@ -229,7 +186,7 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <MSwitch
+                <Switch
                   checked={ebAutoSend}
                   onChange={(e) => setEbAutoSend(e.target.checked)}
                   aria-label="И-Баримт автоматаар илгээх эсэх"
@@ -244,7 +201,7 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <MSwitch
+                <Switch
                   checked={ebNuat}
                   onChange={(e) => setEbNuat(e.target.checked)}
                   aria-label="И-Баримт нөат эсэх"
@@ -305,10 +262,13 @@ export default function EbarimtTokhirgoo() {
                               tokhirgoo: {
                                 ...(b?.tokhirgoo || {}),
                                 ...(shouldUpdateTin ? { merchantTin } : {}),
-                                // Save ebarimt flags at branch level
+                                // Save ebarimt flags at branch level (include VAT if present)
                                 eBarimtAshiglakhEsekh: ebAshiglakh,
                                 eBarimtShine: ebShine,
                                 eBarimtAutomataarIlgeekh: ebAutoSend,
+                                ...(typeof payload.nuatTulukhEsekh === "boolean"
+                                  ? { nuatTulukhEsekh: payload.nuatTulukhEsekh }
+                                  : {}),
                               },
                             };
                           }
@@ -329,23 +289,7 @@ export default function EbarimtTokhirgoo() {
                       setEbShine(payload.eBarimtShine);
                       setMerchantTin(payload.merchantTin);
                     }
-                    // Save to localStorage as fallback since backend may not persist
-                    try {
-                      if (typeof window !== "undefined") {
-                        localStorage.setItem(
-                          "baiguullaga_ebarimt",
-                          JSON.stringify({
-                            eBarimtAutomataarIlgeekh: ebAutoSend,
-                            nuatTulukhEsekh: ebNuat,
-                            eBarimtAshiglakhEsekh: ebAshiglakh,
-                            eBarimtShine: ebShine,
-                            merchantTin: merchantTin,
-                          })
-                        );
-                      }
-                    } catch (e) {
-                      // ignore storage errors
-                    }
+                    // Removed localStorage persistence for API-backed data
                     openSuccessOverlay("Хадгалагдлаа");
                   } catch (err) {
                     openErrorOverlay("Хадгалахдаа алдаа гарлаа");
@@ -353,7 +297,7 @@ export default function EbarimtTokhirgoo() {
                     hideSpinner();
                   }
                 }}
-                className="btn-minimal btn-minimal-lg"
+                className="btn-minimal btn-save"
               >
                 {t("Хадгалах")}
               </button>

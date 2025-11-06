@@ -71,14 +71,18 @@ const KhuviinMedeelel: React.FC<Props> = ({
         );
         setTatvariinAlbaData(res.data);
 
-        // preload sohNer if available - check barilguud tokhirgoo first
-        const firstBuilding =
-          Array.isArray(baiguullaga?.barilguud) &&
-          baiguullaga.barilguud.length > 0
-            ? baiguullaga.barilguud[0]
-            : null;
-        if (firstBuilding?.tokhirgoo?.sohNer) {
-          setSohNer(String(firstBuilding.tokhirgoo.sohNer));
+        // Preload sohNer if available - prefer selected building, then first building, then org-level, then org name
+        const effBarilgaId = selectedBuildingId || null;
+        const allBuildings = Array.isArray(baiguullaga?.barilguud)
+          ? baiguullaga!.barilguud!
+          : [];
+        const selectedBarilga = effBarilgaId
+          ? allBuildings.find(
+              (b: any) => String(b._id) === String(effBarilgaId)
+            )
+          : allBuildings[0];
+        if (selectedBarilga?.tokhirgoo?.sohNer) {
+          setSohNer(String(selectedBarilga.tokhirgoo.sohNer));
         } else if (
           baiguullaga?.tokhirgoo &&
           (baiguullaga.tokhirgoo as any)?.sohNer
@@ -88,21 +92,9 @@ const KhuviinMedeelel: React.FC<Props> = ({
           setSohNer(String(baiguullaga.ner));
         }
 
-        let effectiveTokhirgoo = baiguullaga?.tokhirgoo;
-        if (
-          !baiguullaga?.tokhirgoo?.districtCode &&
-          typeof window !== "undefined"
-        ) {
-          try {
-            const savedTok = localStorage.getItem("baiguullaga_tokhirgoo");
-            if (savedTok) {
-              effectiveTokhirgoo = JSON.parse(savedTok);
-              setSohNer(String((effectiveTokhirgoo as any)?.sohNer || ""));
-            }
-          } catch (e) {
-            // ignore
-          }
-        }
+        // Prefer building-level tokhirgoo when available; fallback to org-level
+        const effectiveTokhirgoo =
+          selectedBarilga?.tokhirgoo || baiguullaga?.tokhirgoo;
 
         // Always try to derive selectedDuureg and selectedHoroo from effectiveTokhirgoo if available
         if (res.data?.jagsaalt && effectiveTokhirgoo) {
@@ -155,21 +147,25 @@ const KhuviinMedeelel: React.FC<Props> = ({
     if (initializedRef.current) return;
     if (!tatvariinAlbaData?.jagsaalt) return;
 
-    // Derive effective tokhirgoo from org or localStorage
-    let effectiveTokhirgoo = baiguullaga?.tokhirgoo as any;
-    if (!effectiveTokhirgoo?.districtCode && typeof window !== "undefined") {
-      try {
-        const savedTok = localStorage.getItem("baiguullaga_tokhirgoo");
-        if (savedTok) effectiveTokhirgoo = JSON.parse(savedTok);
-      } catch (_) {}
-    }
+    // Prefer selected building tokhirgoo; fallback to org-level (no localStorage)
+    const effBarilgaId = selectedBuildingId || null;
+    const allBuildings = Array.isArray(baiguullaga?.barilguud)
+      ? baiguullaga!.barilguud!
+      : [];
+    const selectedBarilga = effBarilgaId
+      ? allBuildings.find((b: any) => String(b._id) === String(effBarilgaId))
+      : allBuildings[0];
+    const effectiveTokhirgoo = (selectedBarilga?.tokhirgoo ||
+      baiguullaga?.tokhirgoo) as any;
 
     // Derive SÖH name first to avoid async setState timing issues
     const firstBuilding =
       Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0
         ? baiguullaga.barilguud[0]
         : null;
-    const derivedSohNer = firstBuilding?.tokhirgoo?.sohNer
+    const derivedSohNer = selectedBarilga?.tokhirgoo?.sohNer
+      ? String(selectedBarilga.tokhirgoo.sohNer)
+      : firstBuilding?.tokhirgoo?.sohNer
       ? String(firstBuilding.tokhirgoo.sohNer)
       : (baiguullaga?.tokhirgoo as any)?.sohNer
       ? String((baiguullaga!.tokhirgoo as any).sohNer)
@@ -373,13 +369,7 @@ const KhuviinMedeelel: React.FC<Props> = ({
       // Revalidate in background
       const revalidated = await baiguullagaMutate();
 
-      // Save to localStorage
-      if (typeof window !== "undefined") {
-        localStorage.setItem(
-          "baiguullaga_tokhirgoo",
-          JSON.stringify(payload.tokhirgoo)
-        );
-      }
+      // Removed localStorage persistence for API-backed tokhirgoo
 
       // Update initial values after successful save
       setInitialValues({

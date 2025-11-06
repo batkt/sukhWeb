@@ -9,6 +9,23 @@ export default function TourReplayButton() {
   const { start, disable, enable, disabled } = useTour();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  // Check if user has interacted before (stored in localStorage)
+  useEffect(() => {
+    const interacted = localStorage.getItem("tour-button-interacted");
+    if (interacted === "true") {
+      setHasInteracted(true);
+    }
+  }, []);
+
+  const handleClick = () => {
+    if (!hasInteracted) {
+      setHasInteracted(true);
+      localStorage.setItem("tour-button-interacted", "true");
+    }
+    setOpen((o) => !o);
+  };
 
   // hide on login page
   if (pathname === "/login") return null;
@@ -19,8 +36,10 @@ export default function TourReplayButton() {
         <button
           type="button"
           aria-label="Open tour controls"
-          onClick={() => setOpen((o) => !o)}
-          className="inline-flex items-center justify-center h-12 w-12 md:h-11 md:w-11 rounded-full neu-panel hover:scale-105 transition-all duration-300 shadow-md"
+          onClick={handleClick}
+          className={`inline-flex items-center justify-center h-12 w-12 md:h-11 md:w-11 rounded-full neu-panel hover:scale-105 transition-all duration-300 shadow-md ${
+            !hasInteracted ? "animate-pulse" : ""
+          }`}
           title="Тусламж / Tour"
         >
           <HelpCircle className="w-6 h-6 md:w-5 md:h-5" />

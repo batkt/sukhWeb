@@ -1530,7 +1530,7 @@ export default function InvoicingZardluud() {
                         <td className="py-4 px-4 text-center font-medium">
                           {index + 1}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
+                        <td className="py-4 px-6 whitespace-nowrap text-left">
                           <div className="flex items-center gap-3">
                             <div className="min-w-0">
                               <div className="font-semibold text-theme truncate">
@@ -1539,20 +1539,20 @@ export default function InvoicingZardluud() {
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
+                        <td className="py-4 px-6 whitespace-nowrap text-center">
                           <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm font-medium">
                             {resident.toot || "-"}
                           </span>
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700">
+                        <td className="py-4 px-6 whitespace-nowrap text-center text-gray-700">
                           {resident.duureg && resident.horoo && resident.davkhar
                             ? `${resident.duureg}, ${resident.horoo}, ${resident.davkhar}`
                             : resident.khayag || "Хаяг тодорхойгүй"}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 font-mono">
+                        <td className="py-4 px-6 whitespace-nowrap text-center text-gray-700 font-mono">
                           {resident.utas || "-"}
                         </td>
-                        <td className="py-4 px-6 whitespace-nowrap">
+                        <td className="py-4 px-6 whitespace-nowrap text-center">
                           {(() => {
                             const id = String(resident?._id || "");
                             const label =

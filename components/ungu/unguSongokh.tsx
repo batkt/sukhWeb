@@ -37,25 +37,28 @@ export default function ӨнгөнийЗагварСонгох() {
     }, 400);
   };
 
-  const themes = [
+  const themes: Array<{
+    id: Theme;
+    name: string;
+    colors: string[];
+  }> = [
     {
-      id: "soft-sage" as Theme,
+      id: "soft-sage",
       name: "Зөөлөн ногоон",
       colors: ["#eaf7f0", "#d9f1e7", "#9fd3c0", "#0f1730"],
     },
     {
-      id: "blue-gradient" as Theme,
+      id: "blue-gradient",
       name: "Цэнхэр градиент",
       colors: ["#e6f0ff", "#d7e7ff", "#c7ddff", "#b7d2ff"],
     },
     {
-      id: "colorful" as Theme,
+      id: "colorful",
       name: "Өнгөлөг",
       colors: ["#806bdf", "#f64770", "#f6bb32", "#5cbf9b"],
     },
-
     {
-      id: "white-gray" as Theme,
+      id: "white-gray",
       name: "Цагаан саарал",
       colors: ["#e6e9ed", "#d9dde1", "#cbd2d6", "#b0b8be"],
     },
@@ -65,66 +68,43 @@ export default function ӨнгөнийЗагварСонгох() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative inline-flex items-center justify-center h-10 w-10 rounded-2xl neu-panel text-slate-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 hover:text-[#1e3a8a] hover:scale-105 hover:shadow-md transition-all duration-300 overflow-hidden"
+        className="group relative inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel text-slate-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 hover:text-[#1e3a8a] hover:scale-105 hover:shadow-md transition-all duration-300 overflow-hidden"
         title="Өнгөний загварыг солих"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-current/10 to-current/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Palette className="w-5 h-5 relative z-10" />
-        <div className="absolute inset-0 rounded-xl ring-2 ring-current/20 group-hover:ring-current/40 transition-all duration-300" />
+        <div className="absolute inset-0 rounded-full ring-2 ring-current/20 group-hover:ring-current/40 transition-all duration-300" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-64 rounded-2xl z-[120] menu-surface overflow-hidden animate-in slide-in-from-top-2 duration-300">
-          <div className="p-3">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                <Palette className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs font-semibold text-theme">
-                  Өнгөний загвар
-                </h3>
-                <p className="text-xs text-theme">Загварыг сонгоно уу</p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              {themes.map((theme) => (
+        <div className="absolute right-0 mt-2 rounded-2xl z-[120] menu-surface overflow-hidden animate-in slide-in-from-top-2 duration-300">
+          <div className="p-2">
+            <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
+              {themes.map((t) => (
                 <button
-                  key={theme.id}
-                  onClick={() => handleThemeChange(theme.id)}
-                  className={`w-full group relative overflow-hidden rounded-xl border transition-all duration-300 ease-out ${
-                    currentTheme === theme.id
-                      ? "border-blue-500 bg-blue-50/50 shadow-md scale-[1.01]"
-                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50/50 hover:shadow-sm"
-                  } ${clickedTheme === theme.id ? "scale-95" : "scale-100"}`}
+                  key={t.id}
+                  onClick={() => handleThemeChange(t.id)}
+                  title={t.name}
+                  className={`group relative h-9 w-9 rounded-full border transition-all duration-200 ease-out flex-none ${
+                    currentTheme === t.id
+                      ? "ring-2 ring-blue-500 border-transparent"
+                      : "border-slate-200 hover:border-slate-300"
+                  } ${clickedTheme === t.id ? "scale-90" : "scale-90"}`}
                 >
-                  <div className="flex items-center justify-between p-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="h-8 w-8 rounded-lg border border-white/50 shadow-sm transition-all duration-300 group-hover:scale-105"
-                        style={{
-                          background: `linear-gradient(135deg, ${theme.colors.join(
-                            ", "
-                          )})`,
-                        }}
-                      />
-                      <div className="text-left">
-                        <p className="text-xs font-medium text-theme">
-                          {theme.name}
-                        </p>
-                      </div>
+                  <span className="sr-only">{t.name}</span>
+                  <div
+                    className="absolute inset-0 rounded-full shadow-sm"
+                    style={{
+                      background: `linear-gradient(135deg, ${t.colors.join(
+                        ", "
+                      )})`,
+                    }}
+                  />
+                  {currentTheme === t.id && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Check className="w-4 h-4 text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.6)]" />
                     </div>
-
-                    {currentTheme === theme.id && (
-                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-blue-500 text-white">
-                        <Check className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Animated background on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out" />
+                  )}
                 </button>
               ))}
             </div>
