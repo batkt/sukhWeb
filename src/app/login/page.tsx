@@ -515,7 +515,7 @@ export default function LoginPage() {
             <motion.button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-2xl font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden group"
+              className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
               variants={{
                 hidden: { y: 8, opacity: 0 },
                 show: { y: 0, opacity: 1 },
@@ -524,87 +524,52 @@ export default function LoginPage() {
               whileTap={{ scale: 0.98 }}
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(96, 165, 250, 0.15) 50%, rgba(147, 197, 253, 0.12) 100%)",
-                backdropFilter: "blur(20px) saturate(180%)",
-                WebkitBackdropFilter: "blur(20px) saturate(180%)",
-                border: "2px solid rgba(59, 130, 246, 0.3)",
-                boxShadow: `
-      0 8px 32px rgba(59, 130, 246, 0.15),
-      0 4px 16px rgba(96, 165, 250, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      inset 0 0 20px rgba(147, 197, 253, 0.3)
-    `,
-                color: "#2563eb",
-                textShadow: "0 1px 2px rgba(255, 255, 255, 0.5)",
+                  "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",
+                color: "var(--panel-text)",
+                border:
+                  "1px solid " +
+                  (getComputedStyle?.(document.documentElement)
+                    .getPropertyValue("--surface-border")
+                    ?.trim() || "rgba(15,23,42,0.12)"),
+                boxShadow:
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)",
               }}
               onMouseDown={(e) => {
-                e.currentTarget.style.boxShadow = `
-      0 4px 16px rgba(59, 130, 246, 0.2),
-      inset 0 2px 12px rgba(59, 130, 246, 0.15),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6)
-    `;
+                e.currentTarget.style.boxShadow =
+                  "inset 0 1px 0 var(--glass-highlight), 0 8px 20px var(--glass-shadow)";
               }}
               onMouseUp={(e) => {
-                e.currentTarget.style.boxShadow = `
-      0 8px 32px rgba(59, 130, 246, 0.15),
-      0 4px 16px rgba(96, 165, 250, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      inset 0 0 20px rgba(147, 197, 253, 0.3)
-    `;
+                e.currentTarget.style.boxShadow =
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = `
-      0 8px 32px rgba(59, 130, 246, 0.15),
-      0 4px 16px rgba(96, 165, 250, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      inset 0 0 20px rgba(147, 197, 253, 0.3)
-    `;
+                e.currentTarget.style.boxShadow =
+                  "0 12px 28px var(--glass-shadow), inset 0 1px 0 var(--glass-highlight)";
               }}
             >
-              {/* Animated gradient overlay on hover */}
-              <span
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(96, 165, 250, 0.1) 50%, rgba(147, 197, 253, 0.08) 100%)",
-                }}
-              />
-
-              {/* Glass shine effect */}
-              <span
-                className="absolute top-0 left-0 w-full h-1/2 opacity-60"
-                style={{
-                  background:
-                    "linear-gradient(180deg, rgba(255, 255, 255, 0.6) 0%, transparent 100%)",
-                  borderRadius: "1rem 1rem 0 0",
-                }}
-              />
-
-              <span className="relative z-10 flex items-center gap-2">
-                {loading && (
-                  <svg
-                    className="animate-spin h-5 w-5"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                )}
-                {loading ? "Түр хүлээнэ үү..." : "Нэвтрэх"}
-              </span>
+              {loading && (
+                <svg
+                  className="animate-spin h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+              )}
+              {loading ? "Түр хүлээнэ үү..." : "Нэвтрэх"}
             </motion.button>
           </motion.form>
 
