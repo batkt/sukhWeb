@@ -161,7 +161,7 @@ export default function Ebarimt() {
         params: {
           baiguullagiinId: orgId,
           ...(branch ? { barilgiinId: branch } : {}),
-          ...(s || e ? { query: { ekhlekhOgnoo: s, duusakhOgnoo: e } } : {}),
+          ...(s || e ? { ekhlekhOgnoo: s, duusakhOgnoo: e } : {}),
           ...(service ? { uilchilgee: service } : {}),
         },
       });
