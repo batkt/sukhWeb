@@ -807,8 +807,19 @@ export default function Khynalt() {
   const filteredTotalEmployees = filteredEmployees.length;
   // Building count should always reflect total organization buildings, not the selected filter
   const buildingCount = useMemo(() => {
-    const orgCount = (baiguullaga as any)?.barilguud?.length;
-    if (typeof orgCount === "number" && orgCount > 0) return orgCount;
+    const raw = (baiguullaga as any)?.barilguud;
+    if (Array.isArray(raw) && raw.length > 0) {
+      // Exclude any entry that appears to be the organisation itself (same name)
+      const filtered = raw.filter((b: any) => {
+        if (!b) return false;
+        if (!b.ner) return true; // keep entries without a name field
+        return b.ner !== (baiguullaga as any)?.ner;
+      });
+      // If filtered has entries, use its length. If raw had entries but all were
+      // filtered out (e.g. they were org-name duplicates), return 0.
+      return filtered.length;
+    }
+
     // Fallback: derive from all resident records if org data not available yet
     const set = new Set<string>();
     (residents || []).forEach((r: any) => {

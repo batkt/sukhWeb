@@ -1,10 +1,10 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../lib/uilchilgee";
+import uilchilgee, { updateBaiguullaga } from "../../lib/uilchilgee";
 
 interface ZardalItem {
-  _id: string;
+  _id?: string;
   ner: string;
   turul: string;
   tariff: number;
@@ -16,6 +16,16 @@ interface ZardalItem {
   bodokhArga?: string; // e.g., "тогтмол"
   tariffUsgeer?: string; // e.g., "₮"
   nuatNemekhEsekh?: boolean; // API expects this
+  tsakhilgaanUrjver?: number;
+  tsakhilgaanChadal?: number;
+  tsakhilgaanDemjikh?: number;
+  togtmolUtga?: number;
+  choloolugdsonDavkhar?: boolean;
+  dun?: number;
+  ognoonuud?: string[];
+  tseverUsDun?: number;
+  bokhirUsDun?: number;
+  usKhalaasniiDun?: number;
 }
 
 interface UseAshiglaltiinZardluudReturn {
@@ -44,69 +54,39 @@ export function useAshiglaltiinZardluud(overrides?: {
   const shouldFetch = !!token && !!currentOrg;
 
   const { data, error, mutate } = useSWR(
-    shouldFetch
-      ? ["/ashiglaltiinZardluud", token, currentOrg, currentBarilga]
+    shouldFetch && currentBarilga
+      ? [`/baiguullaga/${currentOrg}`, token, currentBarilga]
       : null,
-    async ([url, token, baiguullagiinId, barilgiinId]) => {
-      const response = await uilchilgee(token).get(url, {
-        params: {
-          baiguullagiinId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: pageSize,
-        },
-      });
-      const list: ZardalItem[] = response.data?.jagsaalt || [];
-      if (!Array.isArray(list) || list.length === 0) return [] as ZardalItem[];
-
-      // Prefer branch-specific entries; fallback to org-level (no barilgiinId)
-      const keyOf = (it: any) =>
-        `${String(it.zardliinTurul || "").trim()}::${String(
-          it.ner || ""
-        ).trim()}`;
-      const groups = new Map<string, ZardalItem[]>();
-      for (const it of list) {
-        const k = keyOf(it);
-        if (!groups.has(k)) groups.set(k, []);
-        groups.get(k)!.push(it);
-      }
-      const pickLatest = (arr: ZardalItem[]) =>
-        [...arr].sort(
-          (a: any, b: any) =>
-            new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
-            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
-        )[0];
-
-      const chosen: ZardalItem[] = [];
-      const barilgaStr = barilgiinId ? String(barilgiinId) : "";
-      for (const [, arr] of groups) {
-        const branchMatches = barilgaStr
-          ? arr.filter((x) => String(x?.barilgiinId || "") === barilgaStr)
-          : [];
-        if (branchMatches.length > 0) {
-          chosen.push(pickLatest(branchMatches));
-          continue;
-        }
-        const orgDefaults = arr.filter(
-          (x) => x?.barilgiinId == null || String(x.barilgiinId) === ""
-        );
-        if (orgDefaults.length > 0) {
-          chosen.push(pickLatest(orgDefaults));
-        } else {
-          chosen.push(pickLatest(arr));
-        }
-      }
-
-      return chosen;
+    async ([url, token, barilgaId]) => {
+      const response = await uilchilgee(token).get(url);
+      const org = response.data;
+      const barilga = org.barilguud?.find((b: any) => b._id === barilgaId);
+      if (!barilga) return [] as ZardalItem[];
+      return barilga.tokhirgoo?.ashiglaltiinZardluud || [];
+    },
+    {
+      dedupingInterval: 0,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateOnMount: true,
     }
   );
 
   const addZardal = async (
     zardalData: Partial<ZardalItem> & { lift?: string | null }
   ) => {
-    if (!token || !currentOrg) return;
+    if (!token || !currentOrg || !currentBarilga) return;
 
-    await uilchilgee(token).post("/ashiglaltiinZardluud", {
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const org = orgResp.data;
+    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
+    if (!barilga) throw new Error("Building not found");
+
+    if (!barilga.tokhirgoo) barilga.tokhirgoo = {};
+    if (!barilga.tokhirgoo.ashiglaltiinZardluud)
+      barilga.tokhirgoo.ashiglaltiinZardluud = [];
+
+    const newItem: ZardalItem = {
       ner: zardalData.ner ?? "Лифт",
       turul: zardalData.turul ?? "лифт",
       zardliinTurul:
@@ -121,10 +101,22 @@ export function useAshiglaltiinZardluud(overrides?: {
         (typeof zardalData.nuatBodokhEsekh === "boolean"
           ? zardalData.nuatBodokhEsekh
           : false),
-      baiguullagiinId: String(currentOrg),
-      ...(currentBarilga ? { barilgiinId: String(currentBarilga) } : {}),
-    });
+      tsakhilgaanUrjver: 1,
+      tsakhilgaanChadal: 0,
+      tsakhilgaanDemjikh: 0,
+      togtmolUtga: 0,
+      choloolugdsonDavkhar: false,
+      dun: 0,
+      ognoonuud: [],
+      nuatBodokhEsekh: zardalData.nuatBodokhEsekh ?? false,
+      tseverUsDun: 0,
+      bokhirUsDun: 0,
+      usKhalaasniiDun: 0,
+    };
 
+    barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);
+
+    await updateBaiguullaga(token, String(currentOrg), org);
     mutate();
   };
 
@@ -132,9 +124,22 @@ export function useAshiglaltiinZardluud(overrides?: {
     id: string,
     zardalData: Partial<ZardalItem> & { lift?: string | null }
   ) => {
-    if (!token || !currentOrg) return;
+    if (!token || !currentOrg || !currentBarilga) return;
 
-    await uilchilgee(token).put(`/ashiglaltiinZardluud/${id}`, {
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const org = orgResp.data;
+    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
+    if (!barilga) throw new Error("Building not found");
+
+    if (!barilga.tokhirgoo?.ashiglaltiinZardluud) return;
+
+    const index = barilga.tokhirgoo.ashiglaltiinZardluud.findIndex(
+      (item: any) => item._id === id
+    );
+    if (index === -1) return;
+
+    barilga.tokhirgoo.ashiglaltiinZardluud[index] = {
+      ...barilga.tokhirgoo.ashiglaltiinZardluud[index],
       ...zardalData,
       zardliinTurul:
         zardalData.zardliinTurul ??
@@ -146,17 +151,28 @@ export function useAshiglaltiinZardluud(overrides?: {
         (typeof zardalData.nuatBodokhEsekh === "boolean"
           ? zardalData.nuatBodokhEsekh
           : undefined),
-      baiguullagiinId: String(currentOrg),
-      ...(currentBarilga ? { barilgiinId: String(currentBarilga) } : {}),
-    });
+    };
 
+    await updateBaiguullaga(token, String(currentOrg), org);
     mutate();
   };
 
   const deleteZardal = async (id: string) => {
-    if (!token || !currentOrg) return;
+    if (!token || !currentOrg || !currentBarilga) return;
 
-    await uilchilgee(token).delete(`/ashiglaltiinZardluud/${id}`);
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const org = orgResp.data;
+    const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
+    if (!barilga) throw new Error("Building not found");
+
+    if (!barilga.tokhirgoo?.ashiglaltiinZardluud) return;
+
+    barilga.tokhirgoo.ashiglaltiinZardluud =
+      barilga.tokhirgoo.ashiglaltiinZardluud.filter(
+        (item: any) => item._id !== id
+      );
+
+    await updateBaiguullaga(token, String(currentOrg), org);
     mutate();
   };
 

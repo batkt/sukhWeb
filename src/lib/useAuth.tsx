@@ -167,9 +167,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
     if (newToken) {
-      // Session cookie only (no maxAge) so it doesn't persist across browser restarts
+      // Persist token until explicit logout (30 days). Use secure flag in production.
+      const isProduction =
+        typeof window !== "undefined" && window.location.protocol === "https:";
       setCookie(null, "tureestoken", newToken, {
+        maxAge: 30 * 24 * 60 * 60, // 30 days
         path: "/",
+        secure: isProduction,
+        sameSite: "lax",
       });
     } else {
       destroyCookie(null, "tureestoken", { path: "/" });

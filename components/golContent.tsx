@@ -67,6 +67,15 @@ export default function GolContent({ children }: GolContentProps) {
     ajiltan?.baiguullagiinId || null
   );
   const buildings = baiguullaga?.barilguud || [];
+  // Exclude organisation-level name entries (e.g. when an admin's baiguullagiinNer
+  // appears as a "building"). This prevents the org name from showing in the
+  // building selector. If necessary, adjust the exclusion condition.
+  const filteredBuildings = buildings.filter((b: any) => {
+    // If the building has a name that exactly matches the organisation
+    // profile name, hide it from the selectable list.
+    if (!b || !b.ner) return false;
+    return b.ner !== baiguullaga?.ner;
+  });
   const avatarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
@@ -224,11 +233,13 @@ export default function GolContent({ children }: GolContentProps) {
               <TusgaiZagvar
                 value={selectedBuildingId ?? ""}
                 onChange={(v: string) => setSelectedBuildingId(v || null)}
-                options={buildings.map((b: any) => ({
+                options={filteredBuildings.map((b: any) => ({
                   value: b._id,
                   label: b.ner,
                 }))}
-                placeholder={buildings.length ? "Барилга" : "Барилга олдсонгүй"}
+                placeholder={
+                  filteredBuildings.length ? "Барилга" : "Барилга нэмнэ үү"
+                }
               />
             </div>
           </div>
@@ -243,12 +254,14 @@ export default function GolContent({ children }: GolContentProps) {
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
                   onChange={(v: string) => setSelectedBuildingId(v || null)}
-                  options={buildings.map((b: any) => ({
+                  options={filteredBuildings.map((b: any) => ({
                     value: b._id,
                     label: b.ner,
                   }))}
                   placeholder={
-                    buildings.length ? "Барилга сонгох" : "Барилга олдсонгүй"
+                    filteredBuildings.length
+                      ? "Барилга сонгох"
+                      : "Барилга нэмнэ үү"
                   }
                 />
               </div>

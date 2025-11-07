@@ -1,22 +1,98 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Loader } from "@mantine/core";
+import {
+  Edit,
+  Trash2,
+  Plus,
+  Building2,
+  MapPin,
+  Users,
+  Save,
+  Home,
+} from "lucide-react";
+import uilchilgee, {
+  aldaaBarigch,
+  updateBaiguullaga,
+} from "../../../lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { updateBaiguullaga } from "../../../lib/uilchilgee";
+import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
+
+interface Horoo {
+  _id?: string;
+  ner: string;
+  kod: string;
+}
+
+interface Duureg {
+  _id?: string;
+  ner: string;
+  kod: string;
+  ded?: Horoo[];
+}
+
+interface TatvariinAlbaResponse {
+  jagsaalt: Duureg[];
+}
+
+interface Ajiltan {
+  _id: string;
+  [key: string]: any;
+  selectedHoroo?: string;
+  selectedDuureg?: string;
+  selectedDuuregData?: Duureg;
+  selectedHorooData?: Horoo;
+}
 
 export default function BarilgiinTokhirgoo() {
   const { baiguullaga, token, baiguullagaMutate, barilgiinId } = useAuth();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
-
   const activeBuildingId = useMemo(() => {
     return (
       selectedBuildingId ||
       barilgiinId ||
-      (baiguullaga?.barilguud?.[0]?._id ?? null)
+      // prefer a real building for this organization (avoid org-level duplicate entry)
+      (Array.isArray(baiguullaga?.barilguud)
+        ? (() => {
+            const orgName = (baiguullaga?.ner || "").trim();
+            const isRealBuilding = (b: any) => {
+              try {
+                const name = (b?.ner || "").trim();
+                if (!name) return false;
+                // If building name differs from organization name, treat as real building
+                if (orgName && name !== orgName) return true;
+                // If building has floors/entrances/address/register it is likely a real building
+                const tok = b?.tokhirgoo || {};
+                if (Array.isArray(tok?.davkhar) && tok.davkhar.length > 0)
+                  return true;
+                if (tok?.orts || b?.khayag || b?.register) return true;
+              } catch (_) {}
+              return false;
+            };
+
+            // Prefer the first building that looks like an actual building for this org
+            const preferred = baiguullaga.barilguud.find(
+              (b: any) =>
+                (String(b.baiguullagiinId) === String(baiguullaga._id) ||
+                  !b.baiguullagiinId) &&
+                isRealBuilding(b)
+            );
+            if (preferred) return preferred._id;
+
+            // Fallback: any building belonging to this org
+            const anyForOrg = baiguullaga.barilguud.find(
+              (b: any) =>
+                !b?.baiguullagiinId ||
+                String(b.baiguullagiinId) === String(baiguullaga._id)
+            );
+            return anyForOrg?._id ?? null;
+          })()
+        : null)
     );
   }, [selectedBuildingId, barilgiinId, baiguullaga?.barilguud]);
 
@@ -26,15 +102,44 @@ export default function BarilgiinTokhirgoo() {
     );
   }, [baiguullaga?.barilguud, activeBuildingId]);
 
+  // Filter buildings that belong to this organization (baiguullagiinId) or lack the field
+  const orgBuildings = useMemo(() => {
+    if (!Array.isArray(baiguullaga?.barilguud)) return [];
+    return baiguullaga!.barilguud!.filter(
+      (b: any) =>
+        !b?.baiguullagiinId ||
+        String(b.baiguullagiinId) === String(baiguullaga?._id)
+    );
+  }, [baiguullaga?.barilguud, baiguullaga?._id]);
+
   // If no building is selected and there are buildings available,
   // automatically select the first available building.
   useEffect(() => {
     const list = Array.isArray(baiguullaga?.barilguud)
-      ? baiguullaga!.barilguud!
+      ? baiguullaga!.barilguud!.filter(
+          (b: any) =>
+            !b?.baiguullagiinId ||
+            String(b.baiguullagiinId) === String(baiguullaga!._id)
+        )
       : [];
     if (baiguullaga && !selectedBuildingId && list.length > 0) {
-      const firstId = String(list[0]._id);
-      setSelectedBuildingId(firstId);
+      // Prefer a real building (name differs from org or has building-specific data)
+      const orgName = (baiguullaga?.ner || "").trim();
+      const isRealBuilding = (b: any) => {
+        try {
+          const name = (b?.ner || "").trim();
+          if (!name) return false;
+          if (orgName && name !== orgName) return true;
+          const tok = b?.tokhirgoo || {};
+          if (Array.isArray(tok?.davkhar) && tok.davkhar.length > 0)
+            return true;
+          if (tok?.orts || b?.khayag || b?.register) return true;
+        } catch (_) {}
+        return false;
+      };
+
+      const preferred = list.find(isRealBuilding) || list[0];
+      setSelectedBuildingId(String(preferred._id));
     }
   }, [
     baiguullaga?.barilguud,
@@ -53,6 +158,137 @@ export default function BarilgiinTokhirgoo() {
 
   // Field for adding a new building (added via main save button)
   const [newBarilgaNer, setNewBarilgaNer] = useState<string>("");
+
+  // State from UndsenMedeelel
+  const [state, setState] = useState<Ajiltan>({ _id: "" });
+  const [tatvariinAlbaData, setTatvariinAlbaData] =
+    useState<TatvariinAlbaResponse | null>(null);
+  const [sohNer, setSohNer] = useState<string>("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [initialValues, setInitialValues] = useState({
+    selectedDuureg: "",
+    selectedHoroo: "",
+    sohNer: "",
+  });
+
+  // Modal state for new building
+  const [isNewBuildingModalOpen, setIsNewBuildingModalOpen] = useState(false);
+
+  // Small centered modal rendered via portal for creating a new building
+  const NewBuildingModal: React.FC<{
+    open: boolean;
+    onClose: () => void;
+  }> = ({ open, onClose }) => {
+    // close on ESC
+    useEffect(() => {
+      if (!open) return;
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      document.addEventListener("keydown", onKey);
+      return () => document.removeEventListener("keydown", onKey);
+    }, [open, onClose]);
+
+    // disable body scroll while modal is open
+    useEffect(() => {
+      if (!open) return;
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev || "";
+      };
+    }, [open]);
+
+    if (!open) return null;
+
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={onClose}
+          style={{
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        />
+
+        <div className="relative w-full max-w-xl">
+          <div className="neu-panel rounded-lg p-6 shadow-lg">
+            <h3 className="font-medium text-theme mb-3">Шинэ барилга</h3>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                autoFocus
+                value={newBarilgaNer}
+                onChange={(e) => setNewBarilgaNer(e.target.value)}
+                placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
+                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div className="text-xs text-slate-500 mt-2">
+              Тайлбар: Шинэ барилга нэмэхдээ доорх Орц/Давхар тоог оруулаад
+              "Хадгалах" товчийг дарна.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Нийт орцын тоо
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={ortsCount}
+                  onChange={(e) =>
+                    setOrtsCount(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                  className="w-28 px-3 py-2 neu-panel focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Нийт давхарын тоо
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={davkharCount}
+                  onChange={(e) =>
+                    setDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    )
+                  }
+                  className="w-28 px-3 py-2 neu-panel focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-minimal" onClick={onClose} type="button">
+                Болих
+              </button>
+              <button
+                className={`btn-minimal btn-save ${
+                  isSaving ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+                onClick={handleSaveSettings}
+                disabled={isSaving}
+                type="button"
+              >
+                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
 
   // Initialize basic info only
   useEffect(() => {
@@ -84,11 +320,265 @@ export default function BarilgiinTokhirgoo() {
     }
   }, [barilga]);
 
+  // useEffects from UndsenMedeelel
+  useEffect(() => {
+    if (!token) return;
+    const fetchTatvariinAlba = async () => {
+      try {
+        const res = await uilchilgee(token).get<TatvariinAlbaResponse>(
+          "/tatvariinAlba"
+        );
+        setTatvariinAlbaData(res.data);
+
+        // Preload sohNer if available - prefer selected building, then first building, then org-level, then org name
+        const effBarilgaId = selectedBuildingId || null;
+        const allBuildings = Array.isArray(baiguullaga?.barilguud)
+          ? baiguullaga!.barilguud!
+          : [];
+        const selectedBarilga = effBarilgaId
+          ? allBuildings.find(
+              (b: any) => String(b._id) === String(effBarilgaId)
+            )
+          : allBuildings[0];
+        if (selectedBarilga?.tokhirgoo?.sohNer) {
+          setSohNer(String(selectedBarilga.tokhirgoo.sohNer));
+        } else if (
+          baiguullaga?.tokhirgoo &&
+          (baiguullaga.tokhirgoo as any)?.sohNer
+        ) {
+          setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
+        } else if (baiguullaga?.ner) {
+          setSohNer(String(baiguullaga.ner));
+        }
+        // Prefer building-level tokhirgoo when available; fallback to org-level
+        const effectiveTokhirgoo =
+          selectedBarilga?.tokhirgoo || baiguullaga?.tokhirgoo;
+
+        // Always try to derive selectedDuureg and selectedHoroo from effectiveTokhirgoo if available
+        if (res.data?.jagsaalt && effectiveTokhirgoo) {
+          try {
+            const tok = effectiveTokhirgoo as any;
+            // try to infer duureg by districtCode prefix or duuregNer
+            let duuregMatch: Duureg | undefined;
+            if (tok?.districtCode) {
+              const code = String(tok.districtCode);
+              const duuregKodGuess =
+                code.length > 2
+                  ? code.slice(0, code.length - 2)
+                  : code.slice(0, 2);
+              duuregMatch = res.data.jagsaalt.find(
+                (d) => d.kod === duuregKodGuess || d.ner === tok.duuregNer
+              );
+            }
+            if (!duuregMatch && tok?.duuregNer) {
+              duuregMatch = res.data.jagsaalt.find(
+                (d) => d.ner === tok.duuregNer
+              );
+            }
+
+            if (duuregMatch) {
+              const horooMatch = (duuregMatch.ded || []).find(
+                (h) => h.kod === tok?.horoo?.kod || h.ner === tok?.horoo?.ner
+              );
+
+              setState((s) => ({
+                ...s,
+                selectedDuureg: duuregMatch?._id || s.selectedDuureg,
+                selectedDuuregData: duuregMatch || s.selectedDuuregData,
+                selectedHoroo: horooMatch?.kod || s.selectedHoroo,
+                selectedHorooData: horooMatch || s.selectedHorooData,
+              }));
+            }
+          } catch (e) {
+            // ignore parsing errors
+          }
+        }
+      } catch (err) {
+        // surface fetch errors to the shared handler
+        aldaaBarigch(err);
+      }
+
+      // Initialize form state and initial snapshot whenever relevant data or selection changes
+    };
+
+    fetchTatvariinAlba();
+  }, [token, baiguullaga]);
+
+  // Initialize form state and initial snapshot whenever relevant data or selection changes
+  useEffect(() => {
+    if (!tatvariinAlbaData?.jagsaalt) return;
+
+    // Prefer selected building tokhirgoo; fallback to org-level (no localStorage)
+    const effBarilgaId = selectedBuildingId || null;
+    const allBuildings = Array.isArray(baiguullaga?.barilguud)
+      ? baiguullaga!.barilguud!
+      : [];
+    const selectedBarilga = effBarilgaId
+      ? allBuildings.find((b: any) => String(b._id) === String(effBarilgaId))
+      : allBuildings[0];
+    const effectiveTokhirgoo = (selectedBarilga?.tokhirgoo ||
+      baiguullaga?.tokhirgoo) as any;
+
+    // Derive SÖH name first to avoid async setState timing issues
+    // Prefer a first "real" building that is not just a duplicate of organization
+    const firstBuilding = (() => {
+      if (
+        !Array.isArray(baiguullaga?.barilguud) ||
+        baiguullaga.barilguud.length === 0
+      )
+        return null;
+      const orgName = (baiguullaga?.ner || "").trim();
+      const isRealBuilding = (b: any) => {
+        try {
+          const name = (b?.ner || "").trim();
+          if (!name) return false;
+          if (orgName && name !== orgName) return true;
+          const tok = b?.tokhirgoo || {};
+          if (Array.isArray(tok?.davkhar) && tok.davkhar.length > 0)
+            return true;
+          if (tok?.orts || b?.khayag || b?.register) return true;
+        } catch (_) {}
+        return false;
+      };
+      return (
+        baiguullaga.barilguud.find(isRealBuilding) || baiguullaga.barilguud[0]
+      );
+    })();
+    const derivedSohNer = selectedBarilga?.tokhirgoo?.sohNer
+      ? String(selectedBarilga.tokhirgoo.sohNer)
+      : firstBuilding?.tokhirgoo?.sohNer
+      ? String(firstBuilding.tokhirgoo.sohNer)
+      : (baiguullaga?.tokhirgoo as any)?.sohNer
+      ? String((baiguullaga!.tokhirgoo as any).sohNer)
+      : baiguullaga?.ner
+      ? String(baiguullaga.ner)
+      : "";
+
+    // Find duureg and horoo matches from tax office data
+    let duuregMatch: Duureg | undefined;
+    let horooMatch: Horoo | undefined;
+    if (effectiveTokhirgoo) {
+      const tok = effectiveTokhirgoo as any;
+      if (tok?.districtCode) {
+        const code = String(tok.districtCode);
+        const duuregKodGuess =
+          code.length > 2 ? code.slice(0, code.length - 2) : code.slice(0, 2);
+        duuregMatch = tatvariinAlbaData.jagsaalt.find(
+          (d) => d.kod === duuregKodGuess || d.ner === tok.duuregNer
+        );
+      }
+      if (!duuregMatch && tok?.duuregNer) {
+        duuregMatch = tatvariinAlbaData.jagsaalt.find(
+          (d) => d.ner === tok.duuregNer
+        );
+      }
+      if (duuregMatch) {
+        horooMatch = (duuregMatch.ded || []).find(
+          (h) => h.kod === tok?.horoo?.kod || h.ner === tok?.horoo?.ner
+        );
+      }
+    }
+
+    // Apply to state (reset to the currently selected building's values)
+    setState((s) => ({
+      ...s,
+      selectedDuureg: duuregMatch?._id || "",
+      selectedDuuregData: duuregMatch || undefined,
+      selectedHoroo: horooMatch?.kod || "",
+      selectedHorooData: horooMatch || undefined,
+    }));
+    setSohNer(derivedSohNer);
+
+    // Capture initial snapshot for dirty-checking for the current selection
+    setInitialValues({
+      selectedDuureg: duuregMatch?._id || "",
+      selectedHoroo: horooMatch?.kod || "",
+      sohNer: derivedSohNer,
+    });
+  }, [tatvariinAlbaData, baiguullaga, selectedBuildingId]);
+
+  // Update sohNer state when baiguullaga changes (after save operations)
+  useEffect(() => {
+    // Prefer a first "real" building when deriving sohNer and initial values
+    const firstBuilding = (() => {
+      if (
+        !Array.isArray(baiguullaga?.barilguud) ||
+        baiguullaga.barilguud.length === 0
+      )
+        return null;
+      const orgName = (baiguullaga?.ner || "").trim();
+      const isRealBuilding = (b: any) => {
+        try {
+          const name = (b?.ner || "").trim();
+          if (!name) return false;
+          if (orgName && name !== orgName) return true;
+          const tok = b?.tokhirgoo || {};
+          if (Array.isArray(tok?.davkhar) && tok.davkhar.length > 0)
+            return true;
+          if (tok?.orts || b?.khayag || b?.register) return true;
+        } catch (_) {}
+        return false;
+      };
+      return (
+        baiguullaga.barilguud.find(isRealBuilding) || baiguullaga.barilguud[0]
+      );
+    })();
+    if (firstBuilding?.tokhirgoo?.sohNer) {
+      setSohNer(String(firstBuilding.tokhirgoo.sohNer));
+    } else if ((baiguullaga as any)?.sohNer) {
+      setSohNer(String((baiguullaga as any).sohNer));
+    } else if (
+      baiguullaga?.tokhirgoo &&
+      (baiguullaga.tokhirgoo as any)?.sohNer
+    ) {
+      setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
+    }
+  }, [baiguullaga]);
+
   const incrementOrts = () => {
     setOrtsCount((prev: any) => {
       const n = Number(prev) || 0;
       return n + 1;
     });
+  };
+
+  // Handlers from UndsenMedeelel
+  const handleDuuregChange = (duuregId: string) => {
+    const selectedDuuregData = tatvariinAlbaData?.jagsaalt.find(
+      (d) => d._id === duuregId
+    );
+
+    if (selectedDuuregData) {
+      setState((s) => ({
+        ...s,
+        selectedDuureg: duuregId,
+        selectedDuuregData: selectedDuuregData,
+        selectedHoroo: "",
+        selectedHorooData: undefined,
+      }));
+    }
+  };
+
+  const handleHorooChange = (horooKod: string) => {
+    if (!state.selectedDuureg) {
+      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
+      return;
+    }
+
+    const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
+      (d) => d._id === state.selectedDuureg
+    );
+    const selectedHorooData = selectedDistrict?.ded?.find(
+      (h: Horoo) => h.kod === horooKod
+    );
+
+    if (selectedHorooData) {
+      setState((s) => ({
+        ...s,
+        selectedHoroo: horooKod,
+        selectedHorooData: selectedHorooData,
+      }));
+    }
   };
 
   const handleSaveSettings = async () => {
@@ -164,7 +654,12 @@ export default function BarilgiinTokhirgoo() {
             davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
           },
           davkharuud: [],
+          // associate building with organization explicitly
+          baiguullagiinId: baiguullaga?._id,
         };
+        // mark newly created building as inheriting organization/main tokhirgoo
+        // until the user explicitly edits this building
+        (newBuilding.tokhirgoo as any).__inherited = true;
         updatedBarilguud = [...updatedBarilguud, newBuilding];
       } else if (activeBuildingId) {
         // Update existing building's settings
@@ -201,6 +696,9 @@ export default function BarilgiinTokhirgoo() {
             orts: String(ortsNum),
             davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
           } as any;
+          // Mark this building as customized because user saved changes for it
+          // so it should no longer be overwritten by org-level updates
+          (tokhirgoo as any).__inherited = false;
           return { ...b, tokhirgoo };
         });
       }
@@ -208,6 +706,8 @@ export default function BarilgiinTokhirgoo() {
       const payload = {
         ...(baiguullaga as any),
         _id: baiguullaga._id,
+        // explicit organization id to ensure server updates the correct org
+        baiguullagiinId: String(baiguullaga._id),
         barilguud: updatedBarilguud,
       };
 
@@ -228,6 +728,8 @@ export default function BarilgiinTokhirgoo() {
             res.barilguud[res.barilguud.length - 1];
           if (added?._id) setSelectedBuildingId(String(added._id));
         }
+        // close modal after successful add
+        setIsNewBuildingModalOpen(false);
       } else {
         openSuccessOverlay("Барилгын тохиргоо амжилттай хадгалагдлаа");
       }
@@ -235,6 +737,270 @@ export default function BarilgiinTokhirgoo() {
       openErrorOverlay("Тохиргоо хадгалах явцад алдаа гарлаа");
     }
   };
+
+  const handleEditBuilding = (id: string) => {
+    try {
+      setSelectedBuildingId(String(id));
+      // scroll to editor area if needed
+      const el = document.querySelector(".neu-panel.allow-overflow");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleDeleteBuilding = async (id: string) => {
+    if (!token) return openErrorOverlay("Нэвтрэх шаардлагатай");
+    if (!baiguullaga?._id) return openErrorOverlay("Байгууллага олдсонгүй");
+
+    const confirm = window.confirm(
+      "Энэхүү барилгыг устгах уу? Энэ үйлдлийг буцаах боломжгүй."
+    );
+    if (!confirm) return;
+
+    try {
+      const updatedBarilguud = (baiguullaga?.barilguud || []).filter(
+        (b: any) => String(b._id) !== String(id)
+      );
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga._id,
+        baiguullagiinId: String(baiguullaga._id),
+        barilguud: updatedBarilguud,
+      } as any;
+
+      const res = await updateBaiguullaga(
+        token || undefined,
+        baiguullaga._id,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+
+      openSuccessOverlay("Барилга устгагдлаа");
+
+      // If deleted building was selected, pick first available or clear
+      if (String(selectedBuildingId) === String(id)) {
+        const first = (updatedBarilguud || []).find(
+          (b: any) =>
+            !b?.baiguullagiinId ||
+            String(b.baiguullagiinId) === String(baiguullaga._id)
+        );
+        setSelectedBuildingId(first?._id ? String(first._id) : null);
+      }
+    } catch (e) {
+      openErrorOverlay("Барилга устгах явцад алдаа гарлаа");
+    }
+  };
+
+  // Functions from UndsenMedeelel
+  const khadgalakh = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх токен олдсонгүй");
+      return;
+    }
+
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+
+    // Check if there are any changes
+    const hasChanges =
+      state.selectedDuureg !== initialValues.selectedDuureg ||
+      state.selectedHoroo !== initialValues.selectedHoroo ||
+      sohNer.trim() !== (initialValues.sohNer || "").trim();
+
+    if (!hasChanges) {
+      openErrorOverlay("Өөрчлөлт байхгүй байна");
+      return;
+    }
+
+    if (!state.selectedDuuregData) {
+      openErrorOverlay("Дүүрэг сонгоно уу");
+      return;
+    }
+
+    if (!state.selectedHorooData) {
+      openErrorOverlay("Хороо сонго уу");
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const duuregKod = state.selectedDuuregData.kod || "";
+      const horooKod = state.selectedHorooData.kod || "";
+      const districtCodeCombined = `${duuregKod}${horooKod}`;
+
+      // Ensure we have a valid sohNer value
+      const finalSohNer = sohNer || baiguullaga?.ner || "";
+
+      // Propagate shared location and SÖH name across all buildings too
+      const newTokhirgoo = {
+        ...(baiguullaga?.tokhirgoo || {}),
+        duuregNer: state.selectedDuuregData.ner,
+        districtCode: districtCodeCombined,
+        horoo: {
+          ner: state.selectedHorooData.ner,
+          kod: state.selectedHorooData.kod,
+        },
+        sohNer: finalSohNer,
+      } as any;
+
+      // If a branch (non-main) building is selected, update only that
+      // building's tokhirgoo and mark it as customized. Otherwise
+      // propagate org/main changes to buildings that still inherit.
+      const effBarilgaId = selectedBuildingId || null;
+      const mainId = Array.isArray(baiguullaga?.barilguud)
+        ? baiguullaga!.barilguud![0]?._id
+        : null;
+
+      let newBarilguud: any[] = [];
+      if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
+        newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+          if (String(b._id) !== String(effBarilgaId)) return b;
+          const tok = {
+            ...(b.tokhirgoo || {}),
+            duuregNer: newTokhirgoo.duuregNer,
+            districtCode: newTokhirgoo.districtCode,
+            horoo: { ...(newTokhirgoo.horoo || {}) },
+            sohNer: newTokhirgoo.sohNer,
+          } as any;
+          (tok as any).__inherited = false;
+          return {
+            ...b,
+            tokhirgoo: tok,
+            baiguullagiinId: b.baiguullagiinId || baiguullaga?._id,
+          };
+        });
+      } else {
+        newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+          try {
+            if (b && b.tokhirgoo && (b.tokhirgoo as any).__inherited === false)
+              return b;
+          } catch (_) {}
+          return {
+            ...b,
+            baiguullagiinId: b.baiguullagiinId || baiguullaga?._id,
+            tokhirgoo: {
+              ...(b.tokhirgoo || {}),
+              duuregNer: newTokhirgoo.duuregNer,
+              districtCode: newTokhirgoo.districtCode,
+              horoo: { ...(newTokhirgoo.horoo || {}) },
+              sohNer: newTokhirgoo.sohNer,
+            },
+          };
+        });
+      }
+
+      // Build payload: if we're saving for a branch (non-main) - don't overwrite org-level tokhirgoo
+      let payload: any;
+      if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
+        // Branch-only save: only update barilguud array (per-building tokhirgoo)
+        payload = {
+          ...(baiguullaga || {}),
+          _id: baiguullaga!._id,
+          baiguullagiinId: String(baiguullaga!._id),
+          barilguud: newBarilguud,
+        };
+      } else {
+        // Org/main save: update org-level tokhirgoo and propagate to inheriting buildings
+        payload = {
+          ...(baiguullaga || {}),
+          _id: baiguullaga!._id,
+          // ensure server receives organization id explicitly
+          baiguullagiinId: String(baiguullaga!._id),
+          eBarimtAutomataarIlgeekh:
+            typeof baiguullaga?.eBarimtAutomataarIlgeekh === "boolean"
+              ? baiguullaga?.eBarimtAutomataarIlgeekh
+              : false,
+          nuatTulukhEsekh:
+            typeof baiguullaga?.nuatTulukhEsekh === "boolean"
+              ? baiguullaga?.nuatTulukhEsekh
+              : false,
+          eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
+          eBarimtShine: baiguullaga?.eBarimtShine ?? false,
+          tokhirgoo: newTokhirgoo,
+          barilguud: newBarilguud,
+        };
+      }
+
+      const updated = await updateBaiguullaga(
+        token || undefined,
+        baiguullaga!._id,
+        payload
+      );
+
+      if (updated) {
+        // Optimistically update cache with server response
+        await baiguullagaMutate(updated, false);
+        // Additionally, if this was a branch-only save, ensure the local
+        // cache reflects the per-building tokhirgoo immediately by
+        // applying the computed newBarilguud to the current cache.
+        if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
+          try {
+            await baiguullagaMutate((prev: any) => {
+              if (!prev) return updated;
+              return { ...prev, barilguud: newBarilguud } as any;
+            }, false);
+          } catch (_) {
+            // ignore mutate errors
+          }
+        }
+      }
+
+      // Show success overlay
+      openSuccessOverlay("Амжилттай хадгаллаа", 2000);
+
+      // Revalidate in background
+      const revalidated = await baiguullagaMutate();
+
+      // Removed localStorage persistence for API-backed tokhirgoo
+
+      // Update initial values after successful save
+      setInitialValues({
+        selectedDuureg: state.selectedDuureg || "",
+        selectedHoroo: state.selectedHoroo || "",
+        sohNer: sohNer || "",
+      });
+
+      // Stay on the current tab after save
+    } catch (err) {
+      aldaaBarigch(err);
+      openErrorOverlay("Хадгалахад алдаа гарлаа");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
+    (d) => d._id === state.selectedDuureg
+  );
+
+  // Derived dirty flag for UI (disable Save when no changes)
+  const isDirty = useMemo(() => {
+    return (
+      (state.selectedDuureg || "") !== (initialValues.selectedDuureg || "") ||
+      (state.selectedHoroo || "") !== (initialValues.selectedHoroo || "") ||
+      (sohNer || "").trim() !== (initialValues.sohNer || "").trim()
+    );
+  }, [state.selectedDuureg, state.selectedHoroo, sohNer, initialValues]);
+
+  // Only allow editing from main (first) building; otherwise read-only
+  const mainBuildingId = useMemo(() => {
+    const first =
+      Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0
+        ? baiguullaga.barilguud[0]
+        : null;
+    return first?._id ? String(first._id) : null;
+  }, [baiguullaga?.barilguud]);
+
+  const isMainBuildingSelected = useMemo(() => {
+    if (!mainBuildingId) return true; // no buildings means allow
+    if (!selectedBuildingId) return true; // no selection means allow first
+    return String(selectedBuildingId) === String(mainBuildingId);
+  }, [selectedBuildingId, mainBuildingId]);
 
   // Removed save handler since орц/давхар settings are no longer editable from here
 
@@ -247,120 +1013,185 @@ export default function BarilgiinTokhirgoo() {
   }
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 max-h-[42rem] overflow-visible overflow-y-auto custom-scrollbar">
       <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
-        {/* Empty state when no building is available */}
+        {/* Buildings list with edit/delete actions */}
+        {/* Show building list only when main building is selected */}
+        {isMainBuildingSelected && orgBuildings && orgBuildings.length > 0 && (
+          <div className="space-y-2 border-b pb-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium text-theme">Бүртгэлтэй барилгууд</h3>
+              <div className="text-sm text-slate-500">
+                Нийт: {orgBuildings.length}
+              </div>
+            </div>
+            <ul className="divide-y max-h-64 overflow-y-auto">
+              {orgBuildings.map((b: any, index: number) => {
+                const isMain = index === 0;
+                return (
+                  <li
+                    key={b._id}
+                    className={`py-2 flex items-center justify-between ${
+                      isMain ? "bg-primary/20 border-l-4 border-primary/50" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => handleEditBuilding(String(b._id))}
+                        className="text-left px-2 py-1 hover:underline"
+                      >
+                        {b.ner || "-"}
+                        {isMain && (
+                          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                            Үндсэн
+                          </span>
+                        )}
+                      </button>
+                      <div className="text-xs text-slate-500">
+                        {(() => {
+                          try {
+                            const inh = (b?.tokhirgoo as any)?.__inherited;
+                            if (inh === false) return "(Тохируулсан)";
+                          } catch (_) {}
+                          return;
+                        })()}
+                      </div>
+                    </div>
+                    {/* Edit/Delete are available only when main building is selected */}
+                    <div className="flex items-center gap-2">
+                      {isMainBuildingSelected && (
+                        <>
+                          {isMain && (
+                            <button
+                              onClick={() => setIsNewBuildingModalOpen(true)}
+                              className="btn-minimal btn-add p-2"
+                              title="Шинэ барилга нэмэх"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEditBuilding(String(b._id))}
+                            className="btn-minimal btn-edit p-2"
+                            title="Засах"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteBuilding(String(b._id))}
+                            className="btn-minimal btn-delete p-2"
+                            title="Устгах"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
         {!barilga && (
-          <div className="p-3 rounded-md border border-blue-300 text-blue-700 text-sm">
-            Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох
-            эсвэл шинээр нэмнэ үү.
+          <div className="p-3 rounded-2xl border border-blue-300 text-blue-700 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга
+              сонгох эсвэл шинээр нэмнэ үү.
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Allow adding a building even when none exist */}
+              <button
+                onClick={() => setIsNewBuildingModalOpen(true)}
+                className="btn-minimal btn-add p-2"
+                title="Шинэ барилга нэмэх"
+              >
+                <Plus className="w-4 h-4 mr-2 inline" /> Шинэ барилга
+              </button>
+            </div>
           </div>
         )}
 
         {/* Info grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-theme mb-1">
-              Барилгын нэр
-            </label>
-            <input
-              type="text"
-              value={barilgaNer}
-              readOnly
-              placeholder="Барилгын нэр"
-              className="w-full px-3 py-2 neu-panel focus:outline-none bg-gray-100 cursor-not-allowed"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-theme mb-1">
-              Байршил
-            </label>
-            <div className="w-full px-3 py-3 neu-panel text-sm text-theme">
-              {(() => {
-                const duureg =
-                  barilga?.tokhirgoo?.duuregNer ||
-                  (baiguullaga?.tokhirgoo as any)?.duuregNer;
-                const horoo =
-                  (barilga?.tokhirgoo as any)?.horoo?.ner ||
-                  (baiguullaga?.tokhirgoo as any)?.horoo?.ner;
-                if (duureg || horoo) return `${duureg || ""} / ${horoo || ""}`;
-                return "Байршил тохируулаагүй (Үндсэн мэдээлэл хэсгээс тохируулна уу)";
-              })()}
-            </div>
-          </div>
-        </div>
-        {String(activeBuildingId || "") === String(barilgiinId || "") && (
-          <div className="border-t pt-4">
-            <h3 className="font-medium text-theme mb-2">Шинэ барилга</h3>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={newBarilgaNer}
-                onChange={(e) => setNewBarilgaNer(e.target.value)}
-                placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
-                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        {tatvariinAlbaData?.jagsaalt && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 1) Дүүрэг */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                Дүүрэг
+              </label>
+              <TusgaiZagvar
+                value={state.selectedDuureg || ""}
+                onChange={(v) => handleDuuregChange(v)}
+                options={(tatvariinAlbaData?.jagsaalt || []).map((duureg) => ({
+                  value: duureg._id || "",
+                  label: duureg.ner,
+                }))}
+                placeholder="Сонгоно уу"
+                className="w-full"
+                // allow selecting district per-branch as well
+                disabled={false}
               />
             </div>
-            <div className="text-xs text-slate-500 mt-1">
-              Тайлбар: Шинэ барилга нэмэхдээ доорх Орц/Давхар тоог оруулаад
-              "Хадгалах" товчийг дарна.
+
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                Хороо
+              </label>
+              <TusgaiZagvar
+                value={state.selectedHoroo || ""}
+                onChange={(v) => handleHorooChange(v)}
+                options={(selectedDistrict?.ded || []).map((horoo) => ({
+                  value: horoo.kod,
+                  label: horoo.ner,
+                }))}
+                placeholder="Сонгоно уу"
+                className="w-full"
+                // enable horoo selection when duureg selected (branch-level editable)
+                disabled={!state.selectedDuureg}
+              />
+            </div>
+
+            {/* 4) СӨХ-ийн нэр */}
+            <div className="w-full">
+              <label className="block text-sm font-medium text-theme mb-1">
+                СӨХ-ийн нэр
+              </label>
+              <input
+                type="text"
+                value={sohNer}
+                onChange={(e) => setSohNer(e.target.value)}
+                placeholder="СӨХ-ийн нэрийг оруулна уу"
+                className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled
+                // allow editing SÖH name per-branch as well; save handler will decide scope
+              />
             </div>
           </div>
         )}
-        {/* Entrances (Орц) and Floors (Давхар) settings */}
-        <div className="border-t pt-4">
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт орцын тоо
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    value={ortsCount}
-                    onChange={(e) =>
-                      setOrtsCount(
-                        e.target.value === "" ? "" : Number(e.target.value)
-                      )
-                    }
-                    className="w-full px-3 py-2 neu-panel focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* Давхар */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт давхарын тоо
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={davkharCount}
-                  onChange={(e) =>
-                    setDavkharCount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                  className="w-full px-3 py-2 neu-panel focus:outline-none"
-                />
-              </div>
-              <div className="sm:col-span-2 flex gap-2 justify-end">
-                <button
-                  className="btn-minimal btn-save"
-                  onClick={handleSaveSettings}
-                >
-                  Хадгалах
-                </button>
-              </div>
-            </div>
+        {/* Single Save button */}
+        {tatvariinAlbaData?.jagsaalt && (
+          <div className="flex justify-end">
+            <button
+              onClick={khadgalakh}
+              className={`btn-minimal btn-save ${
+                !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+              // allow saving for branch-level edits as well
+              disabled={!isDirty || isSaving}
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
           </div>
-        </div>
+        )}
+        {/* New building modal (portal) */}
+        <NewBuildingModal
+          open={isNewBuildingModalOpen}
+          onClose={() => setIsNewBuildingModalOpen(false)}
+        />
+        {/* Entrances and Floors moved inside the modal (full-screen) */}
       </div>
     </div>
   );

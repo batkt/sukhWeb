@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
-import updateMethod from "../../tools/function/updateMethod";
 
 interface BuildingContextType {
   selectedBuildingId: string | null;
@@ -40,31 +39,20 @@ export const BuildingProvider = ({
     setSelectedBuildingIdState(id);
     if (id) {
       localStorage.setItem("selectedBuildingId", id);
-      // Also save to user's profile
-      if (token && ajiltan) {
-        updateMethod("ajiltan", token, { ...ajiltan, defaultBarilga: id })
-          .then((resp: any) => {
-            const updated = resp?.data ?? resp;
-            ajiltanMutate(updated);
-          })
-          .catch(() => {
-            // Ignore API errors
-          });
+      // Update local user data only (do not call server PUT). Persisting the
+      // selected building to the server caused unexpected PUTs to /ajiltan
+      // whenever the user changed the selection. We keep the selection in
+      // localStorage and update the in-memory `ajiltan` so the UI reflects it.
+      if (ajiltan) {
+        ajiltanMutate({ ...ajiltan, defaultBarilga: id });
       }
     } else {
       localStorage.removeItem("selectedBuildingId");
-      // Also remove from user's profile
-      if (token && ajiltan && ajiltan.defaultBarilga) {
-        const updatedAjiltan = { ...ajiltan };
+      // Remove local defaultBarilga without calling server
+      if (ajiltan && ajiltan.defaultBarilga) {
+        const updatedAjiltan = { ...ajiltan } as any;
         delete updatedAjiltan.defaultBarilga;
-        updateMethod("ajiltan", token, updatedAjiltan)
-          .then((resp: any) => {
-            const updated = resp?.data ?? resp;
-            ajiltanMutate(updated);
-          })
-          .catch(() => {
-            // Ignore API errors
-          });
+        ajiltanMutate(updatedAjiltan);
       }
     }
   };

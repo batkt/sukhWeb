@@ -14,9 +14,7 @@ import TuslamjTokhirgoo from "./TuslamjTokhirgoo";
 
 import Medegdel from "./Medegdel";
 import NevtreltiinTuukh from "./NevtreltiinTuukh";
-import NuutsUgSolikh from "./NuutsUgSolikh";
 
-import UndsenMedeelel from "./UndsenMedeelel";
 import Zogsool from "./Zogsool";
 import UstgasanTuukh from "./UstsanTuukh";
 import ZassanTuukh from "./ZassanTuukh";
@@ -33,7 +31,7 @@ const AdminLayout = ({
     <h1 className="text-2xl font-semibold mb-4 text-[color:var(--panel-text)] leading-tight mt-2 ml-4">
       {title}
     </h1>
-    <div className="grid grid-cols-12 gap-6">{children}</div>
+    <div className="grid grid-cols-12 gap-6 overflow-y-auto custom-scrollbar">{children}</div>
   </div>
 );
 
@@ -45,11 +43,6 @@ function Tokhirgoo() {
   const tokhirgoo = useMemo(() => {
     if (ajiltan?.erkh === "Admin") {
       return [
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Ерөнхий мэдээлэл",
-          tsonkh: UndsenMedeelel,
-        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Барилгын тохиргоо",
@@ -80,6 +73,7 @@ function Tokhirgoo() {
           icon: <Settings className="w-5 h-5" />,
           text: "Данс",
           tsonkh: Dans,
+          comingSoon: true,
         },
         // {
         //   icon: <Settings className="w-5 h-5" />,
@@ -126,11 +120,11 @@ function Tokhirgoo() {
       ];
     } else {
       return [
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Нууц үг солих",
-          tsonkh: NuutsUgSolikh,
-        },
+        // {
+        //   icon: <Settings className="w-5 h-5" />,
+        //   text: "Нууц үг солих",
+        //   tsonkh: NuutsUgSolikh,
+        // },
       ];
     }
   }, [ajiltan]);

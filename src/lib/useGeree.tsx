@@ -321,8 +321,8 @@ export function useGereeCRUD() {
         }
       );
 
-      if (response.data.success) {
-        toast.success(response.data.message || "Гэрээ амжилттай засагдлаа");
+      if (response.status === 200 || response.data.success !== false) {
+        // toast.success(response.data.message || "Гэрээ амжилттай засагдлаа");
         return true;
       }
       return false;

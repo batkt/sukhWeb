@@ -22,9 +22,10 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2 } from "lucide-react";
+import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
 
 interface ZardalItem {
-  _id: string;
+  _id?: string;
   ner: string;
   turul: string;
   tariff: number;
@@ -64,7 +65,9 @@ export default function AshiglaltiinZardluud() {
     updateZardal,
     deleteZardal,
     mutate: refreshZardluud,
-  } = useAshiglaltiinZardluud();
+  } = useAshiglaltiinZardluud({
+    barilgiinId: selectedBuildingId || barilgiinId,
+  });
 
   const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
   const [liftMaxFloor, setLiftMaxFloor] = useState<number | null>(null);
@@ -204,65 +207,39 @@ export default function AshiglaltiinZardluud() {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
-      const response = await fetch(
-        `http://103.143.40.46:8084/liftShalgaya?baiguullagiinId=${
-          ajiltan.baiguullagiinId
-        }&barilgiinId=${
-          selectedBuildingId || barilgiinId || ""
-        }&khuudasniiDugaar=1&khuudasniiKhemjee=100`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const response = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`
+      );
+      const org = response.data;
+      const barilga = org.barilguud?.find(
+        (b: any) => b._id === (selectedBuildingId || barilgiinId)
       );
 
-      if (!response.ok) {
+      if (!barilga || !barilga.tokhirgoo?.liftShalgaya?.choloolugdokhDavkhar) {
+        setLiftMaxFloor(null);
+        setLiftMaxInput("");
+        setLiftEnabled(false);
         return;
       }
 
-      const data = await response.json();
-
-      if (
-        data.jagsaalt &&
-        Array.isArray(data.jagsaalt) &&
-        data.jagsaalt.length > 0
-      ) {
-        const sortedRecords = [...data.jagsaalt].sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-
-        const mostRecent = sortedRecords[0];
-
-        if (
-          mostRecent.choloolugdokhDavkhar &&
-          Array.isArray(mostRecent.choloolugdokhDavkhar) &&
-          mostRecent.choloolugdokhDavkhar.length > 0
-        ) {
-          const parsed = mostRecent.choloolugdokhDavkhar
-            .map((f: any) => String(f).trim())
-            .filter(Boolean);
-          const maxFloor = Math.max(...parsed.map((f: any) => Number(f) || 0));
-          setLiftMaxFloor(maxFloor);
-          setLiftMaxInput(
-            Number.isFinite(maxFloor) && maxFloor > 0 ? maxFloor : ""
-          );
-          setLiftFloors(toUniqueSorted(parsed));
-          setLiftEnabled(true);
-          return;
-        }
-      }
-
+      const floors = barilga.tokhirgoo.liftShalgaya.choloolugdokhDavkhar;
+      const parsed = floors.map((f: any) => String(f).trim()).filter(Boolean);
+      const maxFloor = Math.max(...parsed.map((f: any) => Number(f) || 0));
+      setLiftMaxFloor(maxFloor);
+      setLiftMaxInput(
+        Number.isFinite(maxFloor) && maxFloor > 0 ? maxFloor : ""
+      );
+      setLiftFloors(toUniqueSorted(parsed));
+      setLiftEnabled(true);
+    } catch (error) {
       setLiftMaxFloor(null);
       setLiftMaxInput("");
       setLiftEnabled(false);
-    } catch (error) {}
+    }
   };
 
   const saveLiftSettings = async (floorsOrMax: string[] | number | null) => {
-    if (!token) {
+    if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
@@ -279,24 +256,21 @@ export default function AshiglaltiinZardluud() {
         floors = [];
       }
 
-      const payload = {
-        choloolugdokhDavkhar: floors,
-        baiguullagiinId: ajiltan?.baiguullagiinId,
-        barilgiinId: selectedBuildingId || barilgiinId || undefined,
-      } as any;
+      const orgResp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`
+      );
+      const org = orgResp.data;
+      const barilga = org.barilguud?.find(
+        (b: any) => b._id === (selectedBuildingId || barilgiinId)
+      );
+      if (!barilga) throw new Error("Building not found");
 
-      const response = await fetch("http://103.143.40.46:8084/liftShalgaya", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      if (!barilga.tokhirgoo) barilga.tokhirgoo = {};
+      if (!barilga.tokhirgoo.liftShalgaya) barilga.tokhirgoo.liftShalgaya = {};
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      barilga.tokhirgoo.liftShalgaya.choloolugdokhDavkhar = floors;
+
+      await updateBaiguullaga(token, ajiltan.baiguullagiinId, org);
 
       if (floors.length > 0) {
         openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
@@ -317,7 +291,7 @@ export default function AshiglaltiinZardluud() {
       fetchLiftFloors();
       fetchInvoiceSchedule();
     }
-  }, [token, ajiltan?.baiguullagiinId]);
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
   const toUniqueSorted = (values: (string | number)[]) => {
     const nums = values
@@ -400,6 +374,7 @@ export default function AshiglaltiinZardluud() {
       };
 
       if (editingItem) {
+        if (!editingItem._id) return;
         await updateZardal(editingItem._id, payload);
         openSuccessOverlay("Амжилттай шинэчиллээ");
       } else {
@@ -441,7 +416,7 @@ export default function AshiglaltiinZardluud() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!itemToDelete) return;
+    if (!itemToDelete || !itemToDelete._id) return;
     await deleteZardal(itemToDelete._id);
     setDeleteModalOpen(false);
     setItemToDelete(null);
@@ -679,6 +654,7 @@ export default function AshiglaltiinZardluud() {
                   </thead>
                   <tbody>
                     {ashiglaltiinZardluud
+                      .filter((x) => x._id)
                       .filter((x) =>
                         filterText.trim() === ""
                           ? true
@@ -688,8 +664,8 @@ export default function AshiglaltiinZardluud() {
                       )
                       .map((mur) => {
                         const currentValue =
-                          editedTariffs[mur._id] !== undefined
-                            ? editedTariffs[mur._id]
+                          editedTariffs[mur._id!] !== undefined
+                            ? editedTariffs[mur._id!]
                             : mur.tariff;
                         const changed = currentValue !== mur.tariff;
                         return (
@@ -715,7 +691,7 @@ export default function AshiglaltiinZardluud() {
                                 onChange={(v) =>
                                   setEditedTariffs((prev) => ({
                                     ...prev,
-                                    [mur._id]: Number(v as number),
+                                    [mur._id!]: Number(v as number),
                                   }))
                                 }
                                 rightSection={

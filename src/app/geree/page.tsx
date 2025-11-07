@@ -18,6 +18,7 @@ import {
   FileUp,
   FilePlus,
   LayoutTemplate,
+  Plus,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -146,6 +147,10 @@ export default function Geree() {
   const [showList2Modal, setShowList2Modal] = useState(false);
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  // Modal for adding a unit (тоот) instead of using window.prompt
+  const [showAddTootModal, setShowAddTootModal] = useState(false);
+  const [addTootFloor, setAddTootFloor] = useState<string>("");
+  const [addTootValue, setAddTootValue] = useState<string>("");
   // Container refs for modal panels to scope Enter key primary lookup
   const contractRef = useRef<HTMLDivElement | null>(null);
   const residentRef = useRef<HTMLDivElement | null>(null);
@@ -174,6 +179,8 @@ export default function Geree() {
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const residentExcelInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingResidents, setIsUploadingResidents] = useState(false);
+  const unitExcelInputRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingUnits, setIsUploadingUnits] = useState(false);
 
   // Stable date formatter to avoid SSR/CSR timezone mismatches
   const dateFmt = useMemo(
@@ -470,17 +477,108 @@ export default function Geree() {
   }, [selectedBarilga]);
   const [unitInputs, setUnitInputs] = useState<Record<string, string>>({});
   const [isSavingUnits, setIsSavingUnits] = useState(false);
+  const [addUnitFloor, setAddUnitFloor] = useState<string>("");
+  const [addUnitValue, setAddUnitValue] = useState<string>("");
   // Selections for simplified Units UI
   const [selectedOrts, setSelectedOrts] = useState<string>("");
-  const [selectedFloor, setSelectedFloor] = useState<string>("");
+  const [editingFloor, setEditingFloor] = useState<string | null>(null);
+  // Delete unit modal state
+  const [showDeleteUnitModal, setShowDeleteUnitModal] = useState(false);
+  const [unitToDelete, setUnitToDelete] = useState<{
+    floor: string;
+    unit: string;
+  } | null>(null);
+
+  // Delete floor modal state
+  const [showDeleteFloorModal, setShowDeleteFloorModal] = useState(false);
+  const [floorToDelete, setFloorToDelete] = useState<string | null>(null);
+
+  // Delete resident modal state
+  const [showDeleteResidentModal, setShowDeleteResidentModal] = useState(false);
+  const [residentToDelete, setResidentToDelete] = useState<any | null>(null);
+
+  // Delete employee modal state
+  const [showDeleteEmployeeModal, setShowDeleteEmployeeModal] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<any | null>(null);
+
+  // Small inline confirm popover used for delete actions to match the
+  // compact confirmation used in `Dans.tsx`.
+  function ConfirmPopover({
+    children,
+    onConfirm,
+    message,
+  }: {
+    children: React.ReactElement;
+    onConfirm: () => Promise<void> | void;
+    message?: string;
+  }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+      const onDoc = (e: MouseEvent) => {
+        if (!ref.current) return;
+        if (!ref.current.contains(e.target as Node)) setOpen(false);
+      };
+      document.addEventListener("mousedown", onDoc);
+      return () => document.removeEventListener("mousedown", onDoc);
+    }, []);
+
+    // cloneElement typing is awkward here; cast to any to avoid TS errors
+    // Preserve any existing onClick on the child so wrapping buttons keep their behavior
+    const trigger = React.cloneElement(
+      children as any,
+      {
+        onClick: (e: any) => {
+          e?.stopPropagation?.();
+          try {
+            const orig = (children as any)?.props?.onClick;
+            if (typeof orig === "function") orig(e);
+          } catch (err) {}
+          setOpen((s) => !s);
+        },
+      } as any
+    );
+
+    return (
+      <div className="relative inline-block" ref={ref}>
+        {trigger}
+        {open && (
+          <div className="absolute right-0 mt-2 w-72 rounded-xl menu-surface p-3 z-50 shadow-lg text-sm">
+            <div className="text-theme mb-3">
+              {message || "Та үүнийг устгахдаа итгэлтэй байна уу?"}
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="btn-minimal btn-cancel text-xs px-3 py-1"
+                onClick={() => setOpen(false)}
+              >
+                Болих
+              </button>
+              <button
+                type="button"
+                className="btn-minimal btn-save text-xs px-3 py-1"
+                onClick={async () => {
+                  setOpen(false);
+                  try {
+                    await onConfirm();
+                  } catch (e) {}
+                }}
+              >
+                Устгах
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // keep selection in sync with options
   useEffect(() => {
     setSelectedOrts((prev) => prev || ortsOptions[0] || "");
   }, [ortsOptions]);
-  useEffect(() => {
-    setSelectedFloor((prev) => prev || (davkharOptions?.[0] ?? ""));
-  }, [davkharOptions]);
 
   const composeKey = useCallback((orts: string, floor: string) => {
     const f = String(floor || "").trim();
@@ -488,22 +586,148 @@ export default function Geree() {
     return o ? `${o}::${f}` : f;
   }, []);
 
-  const unitsForSelection: string[] = useMemo(() => {
-    try {
-      const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
-      const map = (tokhirgoo as any)?.davkhariinToonuud || {};
-      if (!selectedFloor) return [];
-      const key = composeKey(selectedOrts, selectedFloor);
-      const arr = Array.isArray(map?.[key])
-        ? map[key]
-        : Array.isArray(map?.[selectedFloor])
-        ? map[selectedFloor]
-        : [];
-      return (arr as any[]).map((x) => String(x));
-    } catch {
-      return [];
+  useEffect(() => {
+    if (!addUnitFloor && davkharOptions && davkharOptions.length > 0) {
+      setAddUnitFloor(davkharOptions[0]);
     }
-  }, [selectedBarilga, selectedOrts, selectedFloor, composeKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [davkharOptions]);
+
+  const deleteUnit = async (floor: string, unit: string) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    try {
+      setIsSavingUnits(true);
+      const key = composeKey(selectedOrts, floor);
+      const updatedBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+        if (String(b._id) !== String(selectedBuildingId || barilgiinId))
+          return b;
+        const existing =
+          (b.tokhirgoo && (b.tokhirgoo as any).davkhariinToonuud) || {};
+        const nextMap: Record<string, string[]> = { ...existing };
+        nextMap[key] = (nextMap[key] || []).filter(
+          (u) => String(u) !== String(unit)
+        );
+        return {
+          ...b,
+          tokhirgoo: {
+            ...(b.tokhirgoo || {}),
+            davkhariinToonuud: nextMap,
+          },
+        };
+      });
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga?._id,
+        barilguud: updatedBarilguud,
+      };
+      const res = await updateBaiguullaga(
+        token || undefined,
+        (baiguullaga as any)._id as string,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+      openSuccessOverlay("Тоот устгагдлаа");
+    } catch (e) {
+      openErrorOverlay("Устгах явцад алдаа гарлаа");
+    } finally {
+      setIsSavingUnits(false);
+    }
+  };
+
+  const deleteFloor = async (floor: string) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    try {
+      setIsSavingUnits(true);
+      const key = composeKey(selectedOrts, floor);
+      const updatedBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+        if (String(b._id) !== String(selectedBuildingId || barilgiinId))
+          return b;
+        const existing =
+          (b.tokhirgoo && (b.tokhirgoo as any).davkhariinToonuud) || {};
+        const nextMap: Record<string, string[]> = { ...existing };
+        delete nextMap[key];
+        return {
+          ...b,
+          tokhirgoo: {
+            ...(b.tokhirgoo || {}),
+            davkhariinToonuud: nextMap,
+          },
+        };
+      });
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga?._id,
+        barilguud: updatedBarilguud,
+      };
+      const res = await updateBaiguullaga(
+        token || undefined,
+        (baiguullaga as any)._id as string,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+      openSuccessOverlay(`${floor}-р давхрын тоотууд устгагдлаа`);
+    } catch (e) {
+      openErrorOverlay("Устгах явцад алдаа гарлаа");
+    } finally {
+      setIsSavingUnits(false);
+    }
+  };
+
+  const addUnit = async (floor: string, value: string) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    const raw = String(value || "").trim();
+    if (!raw) return;
+    try {
+      setIsSavingUnits(true);
+      const key = composeKey(selectedOrts, floor);
+      const updatedBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+        if (String(b._id) !== String(selectedBuildingId || barilgiinId))
+          return b;
+        const existing =
+          (b.tokhirgoo && (b.tokhirgoo as any).davkhariinToonuud) || {};
+        const nextMap: Record<string, string[]> = {
+          ...existing,
+          [key]: Array.from(new Set([...(existing[key] || []), raw])),
+        };
+        return {
+          ...b,
+          tokhirgoo: {
+            ...(b.tokhirgoo || {}),
+            davkhariinToonuud: nextMap,
+          },
+        };
+      });
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga?._id,
+        barilguud: updatedBarilguud,
+      };
+      const res = await updateBaiguullaga(
+        token || undefined,
+        (baiguullaga as any)._id as string,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+      setAddUnitValue("");
+      openSuccessOverlay("Тоот нэмэгдлээ");
+    } catch (e) {
+      openErrorOverlay("Тоот нэмэхэд алдаа гарлаа");
+    } finally {
+      setIsSavingUnits(false);
+    }
+  };
   // Residents list
   const {
     orshinSuugchGaralt,
@@ -562,11 +786,14 @@ export default function Geree() {
   const [resPageSize, setResPageSize] = useState(20);
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
+  const [unitPage, setUnitPage] = useState(1);
+  const [unitPageSize, setUnitPageSize] = useState(20);
 
   // When selected building changes, reset paginations to first page
   useEffect(() => {
     setResPage(1);
     setEmpPage(1);
+    setUnitPage(1);
     setOrshinSuugchKhuudaslalt((prev: any) => ({
       ...prev,
       khuudasniiDugaar: 1,
@@ -736,6 +963,26 @@ export default function Geree() {
     isOpen: showEmployeeModal,
     onClose: () => setShowEmployeeModal(false),
     container: employeeRef.current,
+  });
+  useModalHotkeys({
+    isOpen: showDeleteResidentModal,
+    onClose: () => setShowDeleteResidentModal(false),
+  });
+  useModalHotkeys({
+    isOpen: showDeleteEmployeeModal,
+    onClose: () => setShowDeleteEmployeeModal(false),
+  });
+  useModalHotkeys({
+    isOpen: showDeleteUnitModal,
+    onClose: () => setShowDeleteUnitModal(false),
+  });
+  useModalHotkeys({
+    isOpen: showAddTootModal,
+    onClose: () => setShowAddTootModal(false),
+  });
+  useModalHotkeys({
+    isOpen: showDeleteFloorModal,
+    onClose: () => setShowDeleteFloorModal(false),
   });
   useModalHotkeys({
     isOpen: showList2Modal,
@@ -1129,6 +1376,17 @@ export default function Geree() {
     empPage * empPageSize
   );
 
+  // Client-side pagination for units (slice floors)
+  const floorsList = davkharOptions || [];
+  const unitTotalPages = Math.max(
+    1,
+    Math.ceil(floorsList.length / (unitPageSize || 1))
+  );
+  const currentFloors = floorsList.slice(
+    (unitPage - 1) * unitPageSize,
+    unitPage * unitPageSize
+  );
+
   const [newContract, setNewContract] = useState<any>({
     ovog: "",
     ner: "",
@@ -1446,12 +1704,18 @@ export default function Geree() {
       return;
     }
 
+    // Require a selected building for scoped export (match guilgee behaviour)
+    if (!selectedBuildingId) {
+      openErrorOverlay("Барилга сонгоогүй байна. Эхлээд барилга сонгоно уу.");
+      return;
+    }
+
     try {
+      const targetBarilgiinId = selectedBuildingId || barilgiinId || null;
       const query: any = {
         baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: targetBarilgiinId,
       };
-
-      query.barilgiinId = selectedBuildingId || barilgiinId || null;
 
       if (searchTerm) {
         query.$or = [
@@ -1468,6 +1732,7 @@ export default function Geree() {
       const response = await uilchilgee(token).get("/geree", {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: targetBarilgiinId,
           query: query,
           khuudasniiKhemjee: gereeGaralt?.niitMur || 1000,
           khuudasniiDugaar: 1,
@@ -1557,11 +1822,24 @@ export default function Geree() {
       }
 
       // 1) Fetch latest residents list from API
+      const exportTargetBarilgiinId = selectedBuildingId || barilgiinId || null;
+      const queryObj = {
+        baiguullagiinId: ajiltan?.baiguullagiinId,
+        barilgiinId: exportTargetBarilgiinId,
+      };
       const listResp = await uilchilgee(token).get(`/orshinSuugch`, {
         params: {
-          // fetch sufficiently large page to include all rows
+          // fetch a very large page so we get all rows regardless of current
+          // UI pagination. This avoids picking up only the current page's
+          // results when the SWR hook's page size differs.
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: (orshinSuugchGaralt?.niitMur as any) || 5000,
+          khuudasniiKhemjee: 20000,
+          // ensure backend returns residents only for the currently selected building
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          // include barilgiinId top-level too for backends that check it
+          barilgiinId: exportTargetBarilgiinId,
+          // include nested query as a JSON string (matches useOrshinSuugch fetcher)
+          query: JSON.stringify(queryObj),
         },
       });
       const orshinSuugchList =
@@ -1570,15 +1848,99 @@ export default function Geree() {
         listResp?.data ||
         [];
 
+      // Prepare normalized list for export: ensure each row explicitly
+      // references the selected building and override building-linked
+      // display fields (name, nested medeelel) when the resident points to
+      // a different building so the Excel shows the selected building's data.
+      const normalizedOrshinSuugchList = (
+        Array.isArray(orshinSuugchList) ? orshinSuugchList : []
+      ).map((r: any) => {
+        const topBar = r?.barilgiinId || r?.medeelel?.barilgiinId || null;
+        const useBar = exportTargetBarilgiinId ?? topBar ?? null;
+        const med =
+          r?.medeelel && typeof r.medeelel === "object"
+            ? { ...r.medeelel }
+            : {};
+        if (!med.barilgiinId && useBar) med.barilgiinId = useBar;
+
+        const out: any = {
+          ...r,
+          barilgiinId: r?.barilgiinId ?? med.barilgiinId ?? useBar,
+          medeelel: med,
+        };
+
+        // If resident refers to another building, override building-linked
+        // labels so exporter cannot accidentally pick values from the main
+        // building.
+        try {
+          const refersTo = String(
+            r?.barilgiinId ?? r?.medeelel?.barilgiinId ?? ""
+          );
+          const sel = String(exportTargetBarilgiinId || "");
+          if (sel && refersTo !== sel && selectedBarilga) {
+            const sb: any = selectedBarilga;
+            out.bairniiNer =
+              sb?.ner || out.bairniiNer || out.medeelel?.bairniiNer || "";
+            out.medeelel = { ...(out.medeelel || {}) };
+            out.medeelel.bairniiNer = out.medeelel.bairniiNer || sb?.ner || "";
+            // Avoid accidentally showing main-building-specific orts/toot values
+            out.orts = out.orts || "";
+            out.davkhar = out.davkhar || "";
+            out.toot = out.toot || "";
+          }
+        } catch (e) {}
+
+        return out;
+      });
+
+      // Prepare headers and ensure export rows include presentation fields
+      // the server exporter expects (e.g., ognoo, mail, utas).
+      const headers = [
+        { key: "ovog", label: "Овог" },
+        { key: "ner", label: "Нэр" },
+        { key: "utas", label: "Утас" },
+        { key: "mail", label: "И-мэйл" },
+        { key: "orts", label: "Орц" },
+        { key: "davkhar", label: "Давхар" },
+        { key: "toot", label: "Тоот" },
+        { key: "ognoo", label: "Үүссэн огноо" },
+      ];
+
+      const exportRows = normalizedOrshinSuugchList.map((r: any) => {
+        const created = r?.createdAt ? new Date(r.createdAt) : null;
+        const updated = r?.updatedAt ? new Date(r.updatedAt) : null;
+        const showDate =
+          updated && created && updated.getTime() !== created.getTime()
+            ? updated
+            : created || updated;
+        return {
+          ...r,
+          utas: Array.isArray(r?.utas) ? r.utas.join(", ") : r?.utas,
+          mail: r?.mail || r?.email,
+          ognoo: showDate ? showDate.toLocaleDateString("mn-MN") : undefined,
+        };
+      });
+
       // 2) Try server-side generation first
       let served = false;
       try {
-        const excelResp = await uilchilgee(token).post(
-          `/orshinSuugch/downloadExcelList`,
-          {
-            data: orshinSuugchList,
-            fileName: "orshinSuugch_export",
+        const postBody: any = {
+          data: exportRows,
+          headers,
+          fileName: "orshinSuugch_export",
+          // include building id so server-side exporter can filter/label correctly
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          barilgiinId: exportTargetBarilgiinId,
+          // also provide `query` object matching GET shape so exporter can use the same filters
+          query: {
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            barilgiinId: exportTargetBarilgiinId,
           },
+        };
+
+        const excelResp = await uilchilgee(token).post(
+          `/downloadExcelList`,
+          postBody,
           { responseType: "blob" }
         );
         const blob = new Blob([excelResp.data]);
@@ -1618,20 +1980,28 @@ export default function Geree() {
       const columns = [
         { title: "Овог", dataIndex: "ovog", key: "ovog" },
         { title: "Нэр", dataIndex: "ner", key: "ner" },
-        { title: "Регистр", dataIndex: "register", key: "register" },
+
         { title: "Утас", dataIndex: "utas", key: "utas" },
         { title: "И-мэйл", dataIndex: "mail", key: "mail" },
-        { title: "Аймаг/Хот", dataIndex: "aimag", key: "aimag" },
-        { title: "Дүүрэг/Сум", dataIndex: "duureg", key: "duureg" },
-        { title: "Хороо", dataIndex: "horoo", key: "horoo" },
+        { title: "Орц", dataIndex: "orts", key: "orts" },
+
         { title: "Давхар", dataIndex: "davkhar", key: "davkhar" },
         { title: "Тоот", dataIndex: "toot", key: "toot" },
-        { title: "Огноо", dataIndex: "ognoo", key: "ognoo" },
       ];
 
-      const dataSrc = (
-        Array.isArray(orshinSuugchList) ? orshinSuugchList : []
-      ).map((r: any) => {
+      const targetBarilgiinId = exportTargetBarilgiinId;
+      let filteredList = Array.isArray(normalizedOrshinSuugchList)
+        ? normalizedOrshinSuugchList
+        : [];
+      if (targetBarilgiinId) {
+        filteredList = filteredList.filter((r: any) => {
+          const cand =
+            r?.barilgiinId || r?.medeelel?.barilgiinId || r?.baiguullagiinId;
+          return String(cand || "") === String(targetBarilgiinId);
+        });
+      }
+
+      const dataSrc = filteredList.map((r: any) => {
         const created = r?.createdAt ? new Date(r.createdAt) : null;
         const updated = r?.updatedAt ? new Date(r.updatedAt) : null;
         const showDate =
@@ -1730,6 +2100,105 @@ export default function Geree() {
       openErrorOverlay(String(serverMsg));
     } finally {
       setIsUploadingResidents(false);
+      if (input) input.value = "";
+    }
+  };
+
+  const handleDownloadUnitsTemplate = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    try {
+      const resp = await uilchilgee(token).get(`/tootBurtgelExcelTemplate`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([resp.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "units_template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      openErrorOverlay("Загвар татахад алдаа гарлаа");
+    }
+  };
+
+  const handleUnitsExcelImportClick = () => {
+    if (unitExcelInputRef.current) {
+      unitExcelInputRef.current.click();
+    }
+  };
+
+  const onUnitsExcelFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    // Capture the real input element immediately — React may recycle the synthetic
+    // event after an await, which makes `e.currentTarget` null in finally blocks.
+    const input = e.currentTarget as HTMLInputElement | null;
+    const file = input?.files?.[0];
+    if (!file) return;
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      if (input) input.value = "";
+      return;
+    }
+    try {
+      setIsUploadingUnits(true);
+      const form = new FormData();
+      form.append("excelFile", file);
+      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+      // Ensure we target the currently selected building (selectedBuildingId)
+      // falling back to the auth-provided barilgiinId when none selected.
+      const targetBarilgiinId = selectedBuildingId || barilgiinId || null;
+      if (targetBarilgiinId) form.append("barilgiinId", targetBarilgiinId);
+
+      const resp: any = await uilchilgee(token).post(
+        `/tootBurtgelExcelImport`,
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      // The backend may return 200 OK even when some rows failed. Inspect
+      // response.result.failed and surface the backend-provided message or
+      // details instead of always showing success.
+      const data = resp?.data;
+      const failed = data?.result?.failed;
+      if (Array.isArray(failed) && failed.length > 0) {
+        // Build a concise details string for the user
+        const detailLines = failed
+          .map(
+            (f: any) =>
+              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+          )
+          .slice(0, 10); // limit to first 10 lines to avoid flooding
+        const details = detailLines.join("\n");
+        const topMsg =
+          data?.message || "Импортын явцад зарим мөр алдаатай байна";
+        openErrorOverlay(`${topMsg}\n${details}`);
+      } else {
+        openSuccessOverlay("Тоот бүртгэлийн Excel импорт амжилттай");
+        await baiguullagaMutate();
+      }
+    } catch (err) {
+      // Try to show backend-provided error message when available
+      const apiErr: any = err;
+      const serverMsg =
+        apiErr?.response?.data?.message ||
+        apiErr?.response?.data?.error ||
+        apiErr?.response?.data?.aldaa ||
+        (typeof apiErr?.response?.data === "string"
+          ? apiErr.response.data
+          : null) ||
+        apiErr?.message ||
+        "Импорт хийхэд алдаа гарлаа";
+      openErrorOverlay(String(serverMsg));
+    } finally {
+      setIsUploadingUnits(false);
       if (input) input.value = "";
     }
   };
@@ -1948,8 +2417,7 @@ export default function Geree() {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
-    if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
-      return;
+    // Confirmation is handled by the calling UI (ConfirmPopover)
     try {
       // 1) Find related contracts for this resident from the loaded contracts
       const related = Array.isArray(contracts)
@@ -2056,7 +2524,13 @@ export default function Geree() {
       await ajiltniiJagsaaltMutate();
       setActiveTab("employees");
     } catch (err) {
-      openErrorOverlay("Хадгалахад алдаа гарлаа");
+      // Check if backend returned a specific error message
+      const errorMessage = (err as any)?.response?.data?.aldaa;
+      if (errorMessage) {
+        openErrorOverlay(errorMessage);
+      } else {
+        openErrorOverlay("Хадгалахад алдаа гарлаа");
+      }
     }
   };
 
@@ -2083,8 +2557,7 @@ export default function Geree() {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
-    if (!window.confirm(`Та ${p.ovog || ""} ${p.ner || ""}-г устгах уу?`))
-      return;
+    // Confirmation is handled by the calling UI (ConfirmPopover)
     try {
       await deleteMethod("ajiltan", token, p._id || p.id);
       try {
@@ -2168,6 +2641,8 @@ export default function Geree() {
         utas: "",
         email: "",
       });
+      setShowContractModal(false);
+      openSuccessOverlay("Гэрээ амжилттай засагдлаа");
       gereeJagsaaltMutate();
     }
   };
@@ -2220,11 +2695,10 @@ export default function Geree() {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm("Та энэ гэрээг устгахдаа итгэлтэй байна уу?")) {
-      const success = await gereeUstgakh(id);
-      if (success) {
-        gereeJagsaaltMutate();
-      }
+    // Confirmation is handled by the calling UI (ConfirmPopover)
+    const success = await gereeUstgakh(id);
+    if (success) {
+      gereeJagsaaltMutate();
     }
   };
 
@@ -2237,17 +2711,14 @@ export default function Geree() {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
+    try {
+      await uilchilgee(token).delete(`/gereeniiZagvar/${templateId}`);
 
-    if (window.confirm("Та энэ загварыг устгахдаа итгэлтэй байна уу?")) {
-      try {
-        await uilchilgee(token).delete(`/gereeniiZagvar/${templateId}`);
+      openSuccessOverlay("Загвар амжилттай устгагдлаа");
 
-        openSuccessOverlay("Загвар амжилттай устгагдлаа");
-
-        zagvarJagsaaltMutate();
-      } catch (error) {
-        openErrorOverlay("Загвар устгахад алдаа гарлаа");
-      }
+      zagvarJagsaaltMutate();
+    } catch (error) {
+      openErrorOverlay("Загвар устгахад алдаа гарлаа");
     }
   };
   const handlePreviewTemplate = async (templateId: string) => {
@@ -2418,6 +2889,27 @@ export default function Geree() {
             >
               Тоот бүртгэл
             </button>
+            {activeTab === "units" && ortsOptions.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-theme whitespace-nowrap">
+                  Орц сонгох
+                </label>
+                <div className="w-32">
+                  <TusgaiZagvar
+                    value={selectedOrts}
+                    onChange={(val) => setSelectedOrts(val)}
+                    options={ortsOptions.map((o) => ({ value: o, label: o }))}
+                    className="w-full z-50"
+                    placeholder={
+                      ortsOptions.length === 0
+                        ? "Орц тохируулаагүй"
+                        : "Сонгох..."
+                    }
+                    disabled={ortsOptions.length === 0}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -2646,6 +3138,44 @@ export default function Geree() {
             </button>
           )}
 
+          {activeTab === "units" && (
+            <>
+              <button
+                onClick={handleDownloadUnitsTemplate}
+                className="btn-minimal"
+                id="units-download-template-btn"
+                aria-label="Загвар татах"
+                title="Тоот бүртгэлийн Excel загвар татах"
+              >
+                <FileDown className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар татах
+                </span>
+              </button>
+
+              <button
+                onClick={handleUnitsExcelImportClick}
+                className="btn-minimal"
+                id="units-upload-template-btn"
+                disabled={isUploadingUnits}
+                aria-label="Excel-ээс импортлох"
+                title="Excel-ээс тоот бүртгэлийг импортлох"
+              >
+                <FileUp className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар оруулах
+                </span>
+              </button>
+              <input
+                ref={unitExcelInputRef}
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={onUnitsExcelFileChange}
+                className="hidden"
+              />
+            </>
+          )}
+
           {activeTab === "contracts" && (
             <div className="relative flex-shrink-0" ref={columnMenuRef}>
               <button
@@ -2729,14 +3259,8 @@ export default function Geree() {
       </div>
 
       {activeTab === "units" && (
-        <div className="neu-panel allow-overflow p-4 md:p-6">
+        <div>
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-theme">Тоот бүртгэл</h3>
-              <p className="text-sm text-slate-500">
-                Эхлээд Орц болон Давхар сонгоод, тухайн хэсгийн Тоотыг нэмнэ.
-              </p>
-            </div>
             {isSavingUnits && (
               <div className="text-xs text-slate-500">Хадгалж байна…</div>
             )}
@@ -2756,217 +3280,282 @@ export default function Geree() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-                <div className="sm:col-span-1">
-                  <label className="block text-xs text-theme mb-1">Орц</label>
-                  <TusgaiZagvar
-                    value={selectedOrts}
-                    onChange={(val) => setSelectedOrts(val)}
-                    options={ortsOptions.map((o) => ({ value: o, label: o }))}
-                    className="w-full z-9999"
-                    placeholder={
-                      ortsOptions.length === 0
-                        ? "Орц тохируулаагүй"
-                        : "Сонгох..."
-                    }
-                    disabled={ortsOptions.length === 0}
-                  />
-                </div>
-                <div className="sm:col-span-1">
-                  <label className="block text-xs text-theme mb-1">
-                    Давхар
-                  </label>
-                  <TusgaiZagvar
-                    value={selectedFloor}
-                    onChange={(val) => setSelectedFloor(val)}
-                    options={davkharOptions.map((f) => ({
-                      value: f,
-                      label: f,
-                    }))}
-                    className="w-full"
-                    placeholder="Сонгох..."
-                  />
-                </div>
-                <div className="sm:col-span-1">
-                  <label className="block text-xs text-theme mb-1">Тоот</label>
-                  <input
-                    type="text"
-                    value={
-                      unitInputs[composeKey(selectedOrts, selectedFloor)] || ""
-                    }
-                    onChange={(e) =>
-                      setUnitInputs((prev) => ({
-                        ...prev,
-                        [composeKey(selectedOrts, selectedFloor)]:
-                          e.target.value,
-                      }))
-                    }
-                    placeholder="ж. 101"
-                    className="w-full px-3 py-2 btn-neu focus:outline-none"
-                    disabled={!selectedFloor}
-                  />
-                </div>
-                <div className="sm:col-span-1 flex gap-2 justify-end">
-                  <button
-                    className="btn-minimal btn-save"
-                    disabled={!selectedFloor}
-                    onClick={async () => {
-                      const key = composeKey(selectedOrts, selectedFloor);
-                      const raw = String(unitInputs[key] || "").trim();
-                      if (!raw) return;
-                      if (unitsForSelection.includes(raw)) {
-                        openErrorOverlay("Давхардсан тоот байна");
-                        return;
-                      }
-                      try {
-                        setIsSavingUnits(true);
-                        const updatedBarilguud = (
-                          baiguullaga?.barilguud || []
-                        ).map((b: any) => {
-                          if (
-                            String(b._id) !==
-                            String(selectedBuildingId || barilgiinId)
-                          )
-                            return b;
-                          const existing =
-                            (b.tokhirgoo &&
-                              (b.tokhirgoo as any).davkhariinToonuud) ||
-                            {};
-                          const nextMap: Record<string, string[]> = {
-                            ...existing,
-                            [key]: Array.from(
-                              new Set([...(existing[key] || []), raw])
-                            ),
-                          };
-                          return {
-                            ...b,
-                            tokhirgoo: {
-                              ...(b.tokhirgoo || {}),
-                              davkhariinToonuud: nextMap,
-                            },
-                          };
-                        });
-                        const payload = {
-                          ...(baiguullaga as any),
-                          _id: baiguullaga?._id,
-                          barilguud: updatedBarilguud,
-                        };
-                        const res = await updateBaiguullaga(
-                          token || undefined,
-                          (baiguullaga as any)._id as string,
-                          payload
-                        );
-                        if (res) await baiguullagaMutate(res, false);
-                        await baiguullagaMutate();
-                        setUnitInputs((prev) => ({ ...prev, [key]: "" }));
-                        openSuccessOverlay("Тоот нэмэгдлээ");
-                      } catch (e) {
-                        openErrorOverlay("Хадгалах явцад алдаа гарлаа");
-                      } finally {
-                        setIsSavingUnits(false);
-                      }
-                    }}
-                  >
-                    Нэмэх
-                  </button>
-                </div>
-              </div>
-
-              <div className="border rounded-2xl border-g p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-medium text-theme">
-                    {selectedOrts ? `Орц ${selectedOrts}, ` : ""}
-                    {selectedFloor && `${selectedFloor}-р давхар`}
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Нийт: {unitsForSelection.length}
-                  </div>
-                </div>
-                {unitsForSelection.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {unitsForSelection.map((t) => (
-                      <span
-                        key={String(t)}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme"
+              {selectedOrts && (
+                <div>
+                  <div className="table-surface overflow-hidden rounded-2xl w-full">
+                    <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
+                      <div
+                        className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+                        id="units-table"
                       >
-                        {String(t)}
-                        <button
-                          className="ml-1 text-red-500 hover:text-red-600"
-                          onClick={async () => {
-                            try {
-                              setIsSavingUnits(true);
-                              const key = composeKey(
-                                selectedOrts,
-                                selectedFloor
+                        <table className="table-ui text-xs min-w-full">
+                          <thead className="z-10 bg-white dark:bg-gray-800">
+                            <tr>
+                              <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                                №
+                              </th>
+                              <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                                Давхар
+                              </th>
+                              <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                                Тоотууд
+                              </th>
+                              <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                                Үйлдэл
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {currentFloors.map((floor, idx) => {
+                              const existing =
+                                (selectedBarilga?.tokhirgoo &&
+                                  (selectedBarilga.tokhirgoo as any)
+                                    .davkhariinToonuud) ||
+                                {};
+                              const key = composeKey(selectedOrts, floor);
+                              const units = existing[key] || [];
+                              return (
+                                <tr
+                                  key={floor}
+                                  className="transition-colors border-b last:border-b-0"
+                                >
+                                  <td className="p-1 text-center text-theme">
+                                    {(unitPage - 1) * unitPageSize + idx + 1}
+                                  </td>
+                                  <td className="p-1 text-center text-theme">
+                                    {floor}-р давхар
+                                  </td>
+                                  <td className="p-1 text-center text-theme">
+                                    {units.length > 0 ? (
+                                      <div className="flex flex-wrap gap-2 justify-center">
+                                        {units.map((t: any) => (
+                                          <span
+                                            key={String(t)}
+                                            className="inline-flex gap-1 px-2 py-1 rounded-full text-xs  text-theme"
+                                          >
+                                            {String(t)}
+                                            <button
+                                              className="ml-1 text-red-500 hover:text-red-600"
+                                              aria-label="Устгах"
+                                              onClick={() => {
+                                                setUnitToDelete({
+                                                  floor,
+                                                  unit: String(t),
+                                                });
+                                                setShowDeleteUnitModal(true);
+                                              }}
+                                            >
+                                              ×
+                                            </button>
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="text-xs text-slate-500">
+                                        Бүртгэлгүй
+                                      </div>
+                                    )}
+                                    {/* {editingFloor === floor && (
+                                      <div className="mt-2 flex gap-2 items-center justify-center">
+                                        <input
+                                          type="text"
+                                          value={unitInputs[floor] || ""}
+                                          onChange={(e) =>
+                                            setUnitInputs((prev) => ({
+                                              ...prev,
+                                              [floor]: e.target.value,
+                                            }))
+                                          }
+                                          placeholder="Тоот оруулах..."
+                                          className="px-2 py-1 text-xs border border-gray-300 rounded-md w-20"
+                                        />
+                                        <button
+                                          className="p-1 rounded-md bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                                          onClick={async () => {
+                                            const raw = String(
+                                              unitInputs[floor] || ""
+                                            ).trim();
+                                            if (!raw) return;
+                                            if (units.includes(raw)) {
+                                              openErrorOverlay(
+                                                "Давхардсан тоот байна"
+                                              );
+                                              return;
+                                            }
+                                            try {
+                                              setIsSavingUnits(true);
+                                              const updatedBarilguud = (
+                                                baiguullaga?.barilguud || []
+                                              ).map((b: any) => {
+                                                if (
+                                                  String(b._id) !==
+                                                  String(
+                                                    selectedBuildingId ||
+                                                      barilgiinId
+                                                  )
+                                                )
+                                                  return b;
+                                                const existing =
+                                                  (b.tokhirgoo &&
+                                                    (b.tokhirgoo as any)
+                                                      .davkhariinToonuud) ||
+                                                  {};
+                                                const nextMap: Record<
+                                                  string,
+                                                  string[]
+                                                > = {
+                                                  ...existing,
+                                                  [key]: Array.from(
+                                                    new Set([
+                                                      ...(existing[key] || []),
+                                                      raw,
+                                                    ])
+                                                  ),
+                                                };
+                                                return {
+                                                  ...b,
+                                                  tokhirgoo: {
+                                                    ...(b.tokhirgoo || {}),
+                                                    davkhariinToonuud: nextMap,
+                                                  },
+                                                };
+                                              });
+                                              const payload = {
+                                                ...(baiguullaga as any),
+                                                _id: baiguullaga?._id,
+                                                barilguud: updatedBarilguud,
+                                              };
+                                              const res =
+                                                await updateBaiguullaga(
+                                                  token || undefined,
+                                                  (baiguullaga as any)
+                                                    ._id as string,
+                                                  payload
+                                                );
+                                              if (res)
+                                                await baiguullagaMutate(
+                                                  res,
+                                                  false
+                                                );
+                                              await baiguullagaMutate();
+                                              setUnitInputs((prev) => ({
+                                                ...prev,
+                                                [floor]: "",
+                                              }));
+                                              openSuccessOverlay(
+                                                "Тоот нэмэгдлээ"
+                                              );
+                                            } catch (e) {
+                                              openErrorOverlay(
+                                                "Хадгалах явцад алдаа гарлаа"
+                                              );
+                                            } finally {
+                                              setIsSavingUnits(false);
+                                            }
+                                          }}
+                                          title="Тоот нэмэх"
+                                        >
+                                          <Plus className="w-3 h-3" />
+                                        </button>
+                                      </div>
+                                    )} */}
+                                  </td>
+                                  <td className="p-1 whitespace-nowrap text-center">
+                                    <div className="flex items-center justify-center gap-2">
+                                      {/* Quick add: prompt the user and call existing addUnit helper so it's fast and requires no extra clicks */}
+                                      <button
+                                        className="p-1 rounded-2xl hover-surface transition-colors"
+                                        title="Шинэ тоот нэмэх"
+                                        onClick={() => {
+                                          // open modal to add toot instead of window.prompt
+                                          setAddTootFloor(floor);
+                                          setAddTootValue("");
+                                          setShowAddTootModal(true);
+                                        }}
+                                      >
+                                        <Plus className="w-4 h-4 text-blue-500" />
+                                      </button>
+
+                                      {/* <button
+                                        className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                                        onClick={() =>
+                                          setEditingFloor(
+                                            editingFloor === floor
+                                              ? null
+                                              : floor
+                                          )
+                                        }
+                                        title="Тоот засах"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button> */}
+                                      <button
+                                        className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                                        title="Давхрын тоотуудыг устгах"
+                                        onClick={() => {
+                                          setFloorToDelete(floor);
+                                          setShowDeleteFloorModal(true);
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
                               );
-                              const updatedBarilguud = (
-                                baiguullaga?.barilguud || []
-                              ).map((b: any) => {
-                                if (
-                                  String(b._id) !==
-                                  String(selectedBuildingId || barilgiinId)
-                                )
-                                  return b;
-                                const existing =
-                                  (b.tokhirgoo &&
-                                    (b.tokhirgoo as any).davkhariinToonuud) ||
-                                  {};
-                                const baseArr: any[] = Array.isArray(
-                                  existing[key]
-                                )
-                                  ? existing[key]
-                                  : Array.isArray(existing[selectedFloor])
-                                  ? existing[selectedFloor]
-                                  : [];
-                                const arr = baseArr.filter(
-                                  (x: any) => String(x) !== String(t)
-                                );
-                                const nextMap: Record<string, string[]> = {
-                                  ...existing,
-                                  [key]: arr,
-                                };
-                                // keep backward compat: if we mutated fallback floor-only key, also update it
-                                if (!existing[key] && existing[selectedFloor]) {
-                                  nextMap[selectedFloor] = arr;
-                                }
-                                return {
-                                  ...b,
-                                  tokhirgoo: {
-                                    ...(b.tokhirgoo || {}),
-                                    davkhariinToonuud: nextMap,
-                                  },
-                                };
-                              });
-                              const payload = {
-                                ...(baiguullaga as any),
-                                _id: baiguullaga?._id,
-                                barilguud: updatedBarilguud,
-                              };
-                              const res = await updateBaiguullaga(
-                                token || undefined,
-                                (baiguullaga as any)._id as string,
-                                payload
-                              );
-                              if (res) await baiguullagaMutate(res, false);
-                              await baiguullagaMutate();
-                              openSuccessOverlay("Устгагдлаа");
-                            } catch (e) {
-                              openErrorOverlay("Хадгалах явцад алдаа гарлаа");
-                            } finally {
-                              setIsSavingUnits(false);
-                            }
-                          }}
-                          aria-label="Устгах"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ))}
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-xs text-slate-500">Бүртгэлгүй</div>
-                )}
-              </div>
+                  <div className="flex items-center justify-between px-2 py-1 text-md">
+                    <div className="text-theme/70">
+                      Нийт: {floorsList.length}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <PageSongokh
+                        value={unitPageSize}
+                        onChange={(v) => {
+                          setUnitPageSize(v);
+                          setUnitPage(1);
+                        }}
+                        className="text-xs px-2"
+                      />
+
+                      <div
+                        id="units-pagination"
+                        className="flex items-center gap-1"
+                      >
+                        <button
+                          className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                          disabled={unitPage <= 1}
+                          onClick={() => {
+                            const newPage = Math.max(1, unitPage - 1);
+                            setUnitPage(newPage);
+                          }}
+                        >
+                          Өмнөх
+                        </button>
+                        <div className="text-theme/70 px-1">{unitPage}</div>
+                        <button
+                          className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                          disabled={unitPage >= unitTotalPages}
+                          onClick={() => {
+                            const newPage = Math.min(
+                              unitTotalPages,
+                              unitPage + 1
+                            );
+                            setUnitPage(newPage);
+                          }}
+                        >
+                          Дараах
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -3220,7 +3809,10 @@ export default function Geree() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteResident(p)}
+                                onClick={() => {
+                                  setResidentToDelete(p);
+                                  setShowDeleteResidentModal(true);
+                                }}
                                 className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                 title="Устгах"
                                 id="resident-delete-btn"
@@ -3357,7 +3949,10 @@ export default function Geree() {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleDeleteEmployee(p)}
+                                onClick={() => {
+                                  setEmployeeToDelete(p);
+                                  setShowDeleteEmployeeModal(true);
+                                }}
                                 className="p-1 rounded-2xl action-delete hover-surface transition-colors"
                                 title="Устгах"
                                 id="employees-delete-btn"
@@ -3597,7 +4192,7 @@ export default function Geree() {
                               value={newContract.ovog}
                               onChange={(e) => {
                                 const value = e.target.value.replace(
-                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                                   ""
                                 );
                                 setNewContract((prev: any) => ({
@@ -3625,7 +4220,7 @@ export default function Geree() {
                               value={newContract.ner}
                               onChange={(e) => {
                                 const value = e.target.value.replace(
-                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                                  /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                                   ""
                                 );
                                 setNewContract((prev: any) => ({
@@ -4194,6 +4789,75 @@ export default function Geree() {
             </motion.div>
           </ModalPortal>
         )}
+        {showAddTootModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+              >
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    Тоот нэмэх
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-4">
+                    {addTootFloor
+                      ? `${addTootFloor}-р давхарт шинэ тоот нэмнэ үү.`
+                      : "Давхар сонгоогүй байна."}
+                  </p>
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="Тоот"
+                      value={addTootValue}
+                      onChange={(e) => setAddTootValue(e.target.value)}
+                      className="w-full px-3 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddTootModal(false)}
+                      className="btn-minimal-ghost px-4 py-2"
+                    >
+                      Болих
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          if (!addTootFloor) return;
+                          await addUnit(
+                            addTootFloor,
+                            String(addTootValue || "").trim()
+                          );
+                          setShowAddTootModal(false);
+                          setAddTootValue("");
+                        } catch (e) {
+                          // swallow - addUnit shows overlay on error
+                        }
+                      }}
+                      className="btn-minimal btn-save px-4 py-2"
+                      data-modal-primary
+                    >
+                      Нэмэх
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
         {showPreviewModal && (
           <ModalPortal>
             <motion.div
@@ -4354,7 +5018,7 @@ export default function Geree() {
                           value={newResident.ovog}
                           onChange={(e) => {
                             const value = e.target.value.replace(
-                              /[^a-zA-Za-яА-ЯөүёӨҮЁ]/g,
+                              /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
                               ""
                             );
                             setNewResident((prev: any) => ({
@@ -4375,7 +5039,7 @@ export default function Geree() {
                           value={newResident.ner}
                           onChange={(e) => {
                             const value = e.target.value.replace(
-                              /[^a-zA-Za-яА-ЯөүёӨҮЁ]/g,
+                              /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
                               ""
                             );
                             setNewResident((prev: any) => ({
@@ -4570,7 +5234,6 @@ export default function Geree() {
                               className="w-full"
                               required
                               placeholder="Сонгох..."
-                              
                             />
                           ) : (
                             <input
@@ -4730,7 +5393,7 @@ export default function Geree() {
                         value={newEmployee.ovog}
                         onChange={(e) => {
                           const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                             ""
                           );
                           setNewEmployee((p: any) => ({
@@ -4751,7 +5414,7 @@ export default function Geree() {
                         value={newEmployee.ner}
                         onChange={(e) => {
                           const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ]/g,
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
                             ""
                           );
                           setNewEmployee((p: any) => ({
@@ -4833,7 +5496,18 @@ export default function Geree() {
                           setNewEmployee((p: any) => ({
                             ...p,
                             ajildOrsonOgnoo: v
-                              ? new Date(v).toISOString().slice(0, 10)
+                              ? (() => {
+                                  const date = new Date(v);
+                                  const year = date.getFullYear();
+                                  const month = String(
+                                    date.getMonth() + 1
+                                  ).padStart(2, "0");
+                                  const day = String(date.getDate()).padStart(
+                                    2,
+                                    "0"
+                                  );
+                                  return `${year}-${month}-${day}`;
+                                })()
                               : "",
                           }))
                         }
@@ -5067,6 +5741,231 @@ export default function Geree() {
                       </button>
                     </div>
                   ))}
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showDeleteResidentModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    Оршин суугчийг устгах уу?
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Та {residentToDelete?.ovog || ""}{" "}
+                    {residentToDelete?.ner || ""}-г устгах гэж байна. Энэ үйлдэл
+                    буцаах боломжгүй.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteResidentModal(false)}
+                      className="btn-minimal-ghost px-4 py-2"
+                    >
+                      Цуцлах
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (residentToDelete) {
+                          await handleDeleteResident(residentToDelete);
+                          setShowDeleteResidentModal(false);
+                          setResidentToDelete(null);
+                        }
+                      }}
+                      className="btn-minimal btn-cancel px-4 py-2"
+                      data-modal-primary
+                    >
+                      Устгах
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showDeleteEmployeeModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    Ажилтныг устгах уу?
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Та {employeeToDelete?.ovog || ""}{" "}
+                    {employeeToDelete?.ner || ""}-г устгах гэж байна. Энэ үйлдэл
+                    буцаах боломжгүй.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteEmployeeModal(false)}
+                      className="btn-minimal-ghost  px-4 py-2"
+                    >
+                      Цуцлах
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (employeeToDelete) {
+                          await handleDeleteEmployee(employeeToDelete);
+                          setShowDeleteEmployeeModal(false);
+                          setEmployeeToDelete(null);
+                        }
+                      }}
+                      className="btn-minimal btn-cancel px-4 py-2"
+                      data-modal-primary
+                    >
+                      Устгах
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showDeleteUnitModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    Тоотыг устгах уу?
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Та {unitToDelete?.floor}-р давхрын {unitToDelete?.unit}{" "}
+                    тоотыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteUnitModal(false)}
+                      className="btn-minimal-ghost px-4 py-2"
+                    >
+                      Цуцлах
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (unitToDelete) {
+                          await deleteUnit(
+                            unitToDelete.floor,
+                            unitToDelete.unit
+                          );
+                          setShowDeleteUnitModal(false);
+                          setUnitToDelete(null);
+                        }
+                      }}
+                      className="btn-minimal btn-cancel px-4 py-2"
+                      data-modal-primary
+                    >
+                      Устгах
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </ModalPortal>
+        )}
+        {showDeleteFloorModal && (
+          <ModalPortal>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+            >
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                onClick={(e) => e.stopPropagation()}
+                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+              >
+                <div className="text-center">
+                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                    <Trash2 className="h-6 w-6 text-red-600" />
+                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">
+                    Давхрын тоотуудыг устгах уу?
+                  </h3>
+                  <p className="text-sm text-slate-500 mb-6">
+                    Та {floorToDelete}-р давхрын бүх тоотыг устгах гэж байна.
+                    Энэ үйлдэл буцаах боломжгүй.
+                  </p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteFloorModal(false)}
+                      className="btn-minimal-ghost px-4 py-2"
+                    >
+                      Цуцлах
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (floorToDelete) {
+                          await deleteFloor(floorToDelete);
+                          setShowDeleteFloorModal(false);
+                          setFloorToDelete(null);
+                        }
+                      }}
+                      className="btn-minimal btn-cancel px-4 py-2"
+                      data-modal-primary
+                    >
+                      Устгах
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             </motion.div>
