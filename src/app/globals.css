@@ -256,6 +256,7 @@
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(8, 18, 24, 0.16);
   --panel-text: #0f172a;
+  --table-hover-bg: color-mix(in oklch, #027725, transparent 90%);
 }
 
 /* White-gray */
@@ -324,6 +325,7 @@
   --glass-tint-2: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.5);
   --panel-text: #0f172a;
+  --table-hover-bg: color-mix(in oklch, #94a3b8, transparent 90%);
 }
 
 /* Dark-gray */
@@ -394,6 +396,7 @@
   --glass-highlight: rgba(255, 255, 255, 0.25);
   --glass-shadow: rgba(0, 0, 0, 0.28);
   --panel-text: #e5e7eb;
+  --table-hover-bg: color-mix(in oklch, #4a5568, transparent 90%);
 }
 
 /* Dark-green */
@@ -464,6 +467,7 @@
   --glass-highlight: rgba(255, 255, 255, 0.22);
   --glass-shadow: rgba(6, 24, 18, 0.28);
   --panel-text: #e6fffa;
+  --table-hover-bg: color-mix(in oklch, #2f7c57, transparent 90%);
 }
 
 /* Paper / contract preview styles */
@@ -689,6 +693,7 @@ textarea:-moz-autofill:focus {
   --glass-border: rgba(255, 255, 255, 0.16);
   --glass-highlight: rgba(255, 255, 255, 0.18);
   --glass-shadow: rgba(0, 0, 0, 0.35);
+  --table-hover-bg: color-mix(in oklch, #4b5563, transparent 90%);
 }
 
 /* New theme: blue gradient */
@@ -708,6 +713,7 @@ textarea:-moz-autofill:focus {
   --glass-border: rgba(15, 23, 42, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(14, 30, 60, 0.12);
+  --table-hover-bg: color-mix(in oklch, #3b82f6, transparent 90%);
 }
 
 /* New theme: gentle static green (eye-friendly) */
@@ -724,6 +730,7 @@ textarea:-moz-autofill:focus {
   --glass-border: rgba(15, 23, 42, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(14, 30, 60, 0.08);
+  --table-hover-bg: color-mix(in oklch, #10b981, transparent 90%);
 }
 
 /* Ensure page reads the variable background */
@@ -2760,7 +2767,10 @@ select,
   transition: background 0.18s ease;
 }
 .table-ui tbody tr:hover {
-  background: color-mix(in oklch, var(--glass-tint-2), white 8%);
+  background: var(
+    --table-hover-bg,
+    color-mix(in oklch, var(--glass-tint-2), white 8%)
+  );
 }
 
 /* Reusable hover surface matching table row hover */

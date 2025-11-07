@@ -58,7 +58,7 @@ export default function LoginPage() {
         return;
       }
 
-      openErrorOverlay("Нууц үг буруу,Та 6688847 нэвтрэх нэртэй хэрэглэгчийн кодыг хийсэн байна.");
+      openErrorOverlay("Нууц үг буруу байна.");
     } catch (error: any) {
       openErrorOverlay("Нэвтрэхэд алдаа гарлаа");
     } finally {

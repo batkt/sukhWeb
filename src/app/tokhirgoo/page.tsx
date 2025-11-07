@@ -31,7 +31,9 @@ const AdminLayout = ({
     <h1 className="text-2xl font-semibold mb-4 text-[color:var(--panel-text)] leading-tight mt-2 ml-4">
       {title}
     </h1>
-    <div className="grid grid-cols-12 gap-6 overflow-y-auto custom-scrollbar">{children}</div>
+    <div className="grid grid-cols-12 gap-6 overflow-y-auto custom-scrollbar h-full md:h-auto">
+      {children}
+    </div>
   </div>
 );
 
@@ -138,7 +140,7 @@ function Tokhirgoo() {
     <AdminLayout title="Тохиргоо">
       <div className="col-span-12 lg:col-span-3">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-hidden custom-scrollbar">
+          <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto md:overflow-y-hidden custom-scrollbar">
             {tokhirgoo.map((item: any, i) => {
               const isActive = i === selectedIndex;
               const isSoon = Boolean(item?.comingSoon);

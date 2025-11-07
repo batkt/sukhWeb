@@ -473,163 +473,52 @@ export default function Khynalt() {
     const run = async () => {
       if (!token || !ajiltan?.baiguullagiinId) return;
       try {
-        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: effectiveBarilgiinId || undefined,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 20000,
-            query: {
-              baiguullagiinId: ajiltan.baiguullagiinId,
-              ...(effectiveBarilgiinId
-                ? { barilgiinId: effectiveBarilgiinId }
-                : {}),
-            },
-          },
-        });
-        const list: any[] = Array.isArray(resp.data?.jagsaalt)
-          ? resp.data.jagsaalt
-          : Array.isArray(resp.data)
-          ? resp.data
-          : [];
-
-        // Build resident index for robust matching
-        const norm = (v: any) =>
-          String(v ?? "")
-            .trim()
-            .toLowerCase();
-        const resIndex = new Map<string, string>(); // key -> residentId
-        const makeResKeys = (r: any): string[] => {
-          const id = String(r?._id || "");
-          const reg = norm(r?.register);
-          const phone = norm(r?.utas);
-          const ovog = norm(r?.ovog);
-          const ner = norm(r?.ner);
-          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
-          const keys: string[] = [];
-          if (id) keys.push(`id|${id}`);
-          if (reg) keys.push(`reg|${reg}`);
-          if (phone) keys.push(`phone|${phone}`);
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          return keys;
-        };
-        residents.forEach((r: any) => {
-          const id = String(r?._id || "");
-          if (!id) return;
-          makeResKeys(r).forEach((k) => resIndex.set(k, id));
-        });
-
-        const findResidentIdFromInvoice = (it: any): string => {
-          const keys: string[] = [];
-          const osIdRaw = String(it?.orshinSuugchId || "");
-          if (osIdRaw) keys.push(`id|${osIdRaw}`);
-          const reg = norm(it?.register);
-          if (reg) keys.push(`reg|${reg}`);
-          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
-          const phone = norm(utasVal);
-          if (phone) keys.push(`phone|${phone}`);
-          const ovog = norm(it?.ovog);
-          const ner = norm(it?.ner);
-          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          for (const k of keys) {
-            const found = resIndex.get(k);
-            if (found) return found;
+        // Fetch overdue receivables 2+ months
+        const overdueResp = await uilchilgee(token).get(
+          `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
+          {
+            params: effectiveBarilgiinId
+              ? { barilgiinId: effectiveBarilgiinId }
+              : {},
           }
-          return "";
-        };
-
-        // Overdue 2+ months (>= ~60 days) and unpaid
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 60);
-        const overdueItems: any[] = [];
-        list.forEach((it) => {
-          if (!isUnpaidLike(it)) return;
-          const due = it?.tulukhOgnoo ? new Date(it.tulukhOgnoo) : null;
-          const created = it?.createdAt ? new Date(it.createdAt) : null;
-          const refDate = due && !isNaN(due.getTime()) ? due : created;
-          if (!refDate || isNaN(refDate.getTime())) return;
-          if (refDate <= cutoff) overdueItems.push(it);
-        });
-        const overdueTotal = overdueItems.reduce(
-          (s, it) =>
-            s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
-          0
         );
-        setOverdue2m({
-          count: overdueItems.length,
-          total: overdueTotal,
-          items: overdueItems,
-        });
+        if (overdueResp.data?.success) {
+          const data = overdueResp.data;
+          setOverdue2m({
+            count: data.total || 0,
+            total: data.sum || 0,
+            items: data.list || [],
+          });
+        } else {
+          setOverdue2m({ count: 0, total: 0, items: [] });
+        }
 
-        // Cancelled contracts -> receivables (unpaid invoices linked to those contracts)
-        const cancelledResidentIds = new Set<string>();
-        const makeContractKeys = (c: any): string[] => {
-          const reg = norm(c?.register);
-          const phone = norm(Array.isArray(c?.utas) ? c.utas[0] : c?.utas);
-          const ovog = norm(c?.ovog);
-          const ner = norm(c?.ner);
-          const toot = String(c?.toot ?? c?.medeelel?.toot ?? "").trim();
-          const keys: string[] = [];
-          if (reg) keys.push(`reg|${reg}`);
-          if (phone) keys.push(`phone|${phone}`);
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          return keys;
-        };
-        const isCancelledContract = (c: any) => {
-          const raw = String(c?.status ?? c?.tuluv ?? "").toLowerCase();
-          if (raw === "-1") return true;
-          if (raw.includes("цуц")) return true; // Цуцлагдсан
-          if (raw.includes("cancel")) return true; // cancelled
-          return false;
-        };
-
-        (contracts || []).forEach((c: any) => {
-          if (!isCancelledContract(c)) return;
-          const id = String(c?.orshinSuugchId || "");
-          if (id) {
-            cancelledResidentIds.add(id);
-            return;
+        // Fetch cancelled contract receivables
+        const cancelledResp = await uilchilgee(token).get(
+          `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
+          {
+            params: effectiveBarilgiinId
+              ? { barilgiinId: effectiveBarilgiinId }
+              : {},
           }
-          const keys = makeContractKeys(c);
-          for (const k of keys) {
-            const rid = resIndex.get(k);
-            if (rid) {
-              cancelledResidentIds.add(rid);
-              break;
-            }
-          }
-        });
-
-        const cancelledItems: any[] = [];
-        list.forEach((it) => {
-          if (!isUnpaidLike(it)) return;
-          const rid = findResidentIdFromInvoice(it);
-          if (rid && cancelledResidentIds.has(rid)) cancelledItems.push(it);
-        });
-        const cancelledTotal = cancelledItems.reduce(
-          (s, it) =>
-            s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
-          0
         );
-        setCancelledReceivables({
-          count: cancelledItems.length,
-          total: cancelledTotal,
-          items: cancelledItems,
-        });
+        if (cancelledResp.data?.success) {
+          const data = cancelledResp.data;
+          setCancelledReceivables({
+            count: data.total || 0,
+            total: data.sum || 0,
+            items: data.list || [],
+          });
+        } else {
+          setCancelledReceivables({ count: 0, total: 0, items: [] });
+        }
       } catch (e) {
         setOverdue2m({ count: 0, total: 0, items: [] });
         setCancelledReceivables({ count: 0, total: 0, items: [] });
       }
     };
     run();
-  }, [
-    token,
-    ajiltan?.baiguullagiinId,
-    effectiveBarilgiinId,
-    residents,
-    contracts,
-  ]);
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   useEffect(() => {
     const fetchSummary = async () => {
@@ -1072,37 +961,23 @@ export default function Khynalt() {
               </div>
               <div className="h-64 overflow-auto custom-scrollbar pr-1">
                 {overdue2m.items.slice(0, 12).map((it: any, idx: number) => {
-                  const amount =
-                    Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) ||
-                    0;
-                  const name = [
-                    it?.ovog,
-                    it?.ner,
-                    it?.toot || it?.medeelel?.toot,
-                  ]
+                  const amount = Number(it?.niitTulbur ?? 0) || 0;
+                  const name = [it?.ovog, it?.ner, it?.toot]
                     .filter(Boolean)
                     .join(" ");
-                  const due = it?.tulukhOgnoo ? new Date(it.tulukhOgnoo) : null;
-                  const created = it?.createdAt ? new Date(it.createdAt) : null;
-                  const refDate = due && !isNaN(due.getTime()) ? due : created;
-                  const days = refDate
-                    ? Math.max(
-                        0,
-                        Math.floor((Date.now() - refDate.getTime()) / 86400000)
-                      )
-                    : undefined;
+                  const months = it?.monthsOverdue || 0;
                   return (
                     <div
-                      key={it?._id || idx}
+                      key={it?.dugaalaltDugaar || idx}
                       className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
                     >
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
-                          {name || it?.register || it?.orshinSuugchId || "-"}
+                          {name || it?.gereeniiDugaar || "-"}
                         </div>
                         <div className="text-xs text-[color:var(--muted-text)] truncate">
-                          {days !== undefined
-                            ? `${days} хоног хэтэрсэн`
+                          {months > 0
+                            ? `${months} сар хэтэрсэн`
                             : `Хугацаа хэтэрсэн`}
                         </div>
                       </div>
@@ -1150,25 +1025,20 @@ export default function Khynalt() {
                 {cancelledReceivables.items
                   .slice(0, 12)
                   .map((it: any, idx: number) => {
-                    const amount =
-                      Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) ||
-                      0;
-                    const name = [
-                      it?.ovog,
-                      it?.ner,
-                      it?.toot || it?.medeelel?.toot,
-                    ]
+                    const amount = Number(it?.niitTulbur ?? 0) || 0;
+                    const name = [it?.ovog, it?.ner, it?.toot]
                       .filter(Boolean)
                       .join(" ");
-                    const label = getPaymentStatusLabel(it);
+                    const label =
+                      it?.gereeniiTuluv || it?.tuluv || "Цуцлагдсан";
                     return (
                       <div
-                        key={it?._id || idx}
+                        key={it?.dugaalaltDugaar || idx}
                         className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
                       >
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
-                            {name || it?.register || it?.orshinSuugchId || "-"}
+                            {name || it?.gereeniiDugaar || "-"}
                           </div>
                           <div className="text-xs text-[color:var(--muted-text)] truncate">
                             {label}

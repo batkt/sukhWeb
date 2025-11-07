@@ -174,6 +174,161 @@ export default function BarilgiinTokhirgoo() {
   // Modal state for new building
   const [isNewBuildingModalOpen, setIsNewBuildingModalOpen] = useState(false);
 
+  // Modal state for edit building
+  const [isEditBuildingModalOpen, setIsEditBuildingModalOpen] = useState(false);
+  const [editedBuildingId, setEditedBuildingId] = useState<string | null>(null);
+
+  // State for editing building
+  const [editBarilgaNer, setEditBarilgaNer] = useState<string>("");
+  const [editOrtsCount, setEditOrtsCount] = useState<number | "">(0);
+  const [editDavkharCount, setEditDavkharCount] = useState<number | "">(0);
+  const [hasUserEdited, setHasUserEdited] = useState<boolean>(false);
+
+  // Small centered modal rendered via portal for editing a building
+  const EditBuildingModal: React.FC<{
+    open: boolean;
+    onClose: () => void;
+  }> = ({ open, onClose }) => {
+    // close on ESC
+    useEffect(() => {
+      if (!open) return;
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Escape") onClose();
+      };
+      document.addEventListener("keydown", onKey);
+      return () => document.removeEventListener("keydown", onKey);
+    }, [open, onClose]);
+
+    // disable body scroll while modal is open
+    useEffect(() => {
+      if (!open) return;
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prev || "";
+      };
+    }, [open]);
+
+    // Pre-fill when opening
+    useEffect(() => {
+      if (!open || !editedBuildingId) return;
+      if (hasUserEdited) return; // Don't reset if user has started editing
+      const building = baiguullaga?.barilguud?.find(
+        (b: any) => String(b._id) === String(editedBuildingId)
+      );
+      if (building) {
+        setEditBarilgaNer(building.ner || "");
+        const tok = building.tokhirgoo || {};
+        const ortsFrom = tok.orts || [];
+        const ortsNum = Array.isArray(ortsFrom)
+          ? ortsFrom.length
+          : Number(ortsFrom) || 0;
+        setEditOrtsCount(ortsNum);
+        const davFrom = tok.davkhar || [];
+        const davCount = Array.isArray(davFrom)
+          ? davFrom.length
+          : Number(davFrom) || 0;
+        setEditDavkharCount(davCount);
+      }
+    }, [open, editedBuildingId, baiguullaga, hasUserEdited]);
+
+    if (!open) return null;
+
+    return createPortal(
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+        <div
+          className="absolute inset-0 bg-black/50"
+          onClick={onClose}
+          style={{
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        />
+        <div className="relative w-full max-w-xl">
+          <div className="neu-panel rounded-lg p-6 shadow-lg">
+            <h3 className="font-medium text-theme mb-3">Барилга засах</h3>
+
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                type="text"
+                autoFocus
+                value={editBarilgaNer}
+                onChange={(e) => {
+                  setEditBarilgaNer(e.target.value);
+                  setHasUserEdited(true);
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                placeholder="Барилгын нэр"
+                className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="text-xs text-slate-500 mt-2">
+              Тайлбар: Барилгын нэр болон орц/давхар тоог засна.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Нийт орцын тоо
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editOrtsCount}
+                  onChange={(e) => {
+                    setEditOrtsCount(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    );
+                    setHasUserEdited(true);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Нийт давхарын тоо
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editDavkharCount}
+                  onChange={(e) => {
+                    setEditDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value)
+                    );
+                    setHasUserEdited(true);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn-minimal" onClick={onClose} type="button">
+                Болих
+              </button>
+              <button
+                className={`btn-minimal btn-save ${
+                  isSaving ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+                onClick={handleSaveEditBuilding}
+                disabled={isSaving}
+                type="button"
+              >
+                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
   // Small centered modal rendered via portal for creating a new building
   const NewBuildingModal: React.FC<{
     open: boolean;
@@ -213,7 +368,7 @@ export default function BarilgiinTokhirgoo() {
         />
 
         <div className="relative w-full max-w-xl">
-          <div className="neu-panel rounded-lg p-6 shadow-lg">
+          <div className="neu-panel p-6 shadow-lg">
             <h3 className="font-medium text-theme mb-3">Шинэ барилга</h3>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -222,8 +377,9 @@ export default function BarilgiinTokhirgoo() {
                 autoFocus
                 value={newBarilgaNer}
                 onChange={(e) => setNewBarilgaNer(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
                 placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
-                className="w-full sm:flex-1 px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -246,7 +402,8 @@ export default function BarilgiinTokhirgoo() {
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
-                  className="w-28 px-3 py-2 neu-panel focus:outline-none"
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
                 />
               </div>
 
@@ -263,7 +420,8 @@ export default function BarilgiinTokhirgoo() {
                       e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
-                  className="w-28 px-3 py-2 neu-panel focus:outline-none"
+                  onKeyDown={(e) => e.stopPropagation()}
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
                 />
               </div>
             </div>
@@ -738,15 +896,73 @@ export default function BarilgiinTokhirgoo() {
     }
   };
 
-  const handleEditBuilding = (id: string) => {
-    try {
-      setSelectedBuildingId(String(id));
-      // scroll to editor area if needed
-      const el = document.querySelector(".neu-panel.allow-overflow");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    } catch (e) {
-      // ignore
+  const handleSaveEditBuilding = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
     }
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+    if (!editedBuildingId) {
+      openErrorOverlay("Барилга олдсонгүй");
+      return;
+    }
+
+    try {
+      const name = (editBarilgaNer || "").trim();
+      const count = Number(editDavkharCount) || 0;
+      const ortsNum = Number(editOrtsCount) || 0;
+
+      if (!name) {
+        openErrorOverlay("Барилгын нэр оруулна уу");
+        return;
+      }
+      if (count <= 0) {
+        openErrorOverlay("Барилгын давхарын тоо оруулна уу");
+        return;
+      }
+
+      // Update existing building
+      let updatedBarilguud: any[] = [...(baiguullaga?.barilguud || [])];
+      updatedBarilguud = updatedBarilguud.map((b: any) => {
+        if (String(b._id) !== String(editedBuildingId)) return b;
+        const tokhirgoo = {
+          ...(b.tokhirgoo || {}),
+          orts: String(ortsNum),
+          davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
+        } as any;
+        (tokhirgoo as any).__inherited = false;
+        return { ...b, ner: name, tokhirgoo };
+      });
+
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga._id,
+        baiguullagiinId: String(baiguullaga._id),
+        barilguud: updatedBarilguud,
+      };
+
+      const res = await updateBaiguullaga(
+        token || undefined,
+        baiguullaga._id,
+        payload
+      );
+      if (res) await baiguullagaMutate(res, false);
+      await baiguullagaMutate();
+
+      openSuccessOverlay("Барилга амжилттай засагдлаа");
+      setIsEditBuildingModalOpen(false);
+    } catch (e) {
+      openErrorOverlay("Барилга засах явцад алдаа гарлаа");
+    }
+  };
+
+  const handleEditBuilding = (id: string) => {
+    setEditedBuildingId(id);
+    setHasUserEdited(false);
+    setIsEditBuildingModalOpen(true);
   };
 
   const handleDeleteBuilding = async (id: string) => {
@@ -1036,9 +1252,9 @@ export default function BarilgiinTokhirgoo() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleEditBuilding(String(b._id))}
-                        className="text-left px-2 py-1 hover:underline"
+                      <div
+                        onClick={() => setSelectedBuildingId(String(b._id))}
+                        className="cursor-pointer text-left px-2 py-1 hover:underline"
                       >
                         {b.ner || "-"}
                         {isMain && (
@@ -1046,7 +1262,7 @@ export default function BarilgiinTokhirgoo() {
                             Үндсэн
                           </span>
                         )}
-                      </button>
+                      </div>
                       <div className="text-xs text-slate-500">
                         {(() => {
                           try {
@@ -1190,6 +1406,11 @@ export default function BarilgiinTokhirgoo() {
         <NewBuildingModal
           open={isNewBuildingModalOpen}
           onClose={() => setIsNewBuildingModalOpen(false)}
+        />
+        {/* Edit building modal (portal) */}
+        <EditBuildingModal
+          open={isEditBuildingModalOpen}
+          onClose={() => setIsEditBuildingModalOpen(false)}
         />
         {/* Entrances and Floors moved inside the modal (full-screen) */}
       </div>

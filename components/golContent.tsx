@@ -26,6 +26,7 @@ interface MenuItem {
   label: string;
   path: string;
   submenu?: SubMenuItem[];
+  comingSoon?: boolean;
 }
 
 interface SubMenuItem {
@@ -149,6 +150,7 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Санхүүгийн тайлан", path: "/financial" },
         { label: "Гүйцэтгэлийн тайлан", path: "/performance" },
       ],
+      comingSoon: true,
     },
   ];
 
@@ -284,17 +286,35 @@ export default function GolContent({ children }: GolContentProps) {
                             type="button"
                             role="menuitem"
                             onClick={() => {
+                              if (item.comingSoon) return;
                               setOpenSubmenuIndex((prev) =>
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                              item.comingSoon
+                                ? "cursor-not-allowed opacity-60"
+                                : ""
+                            } ${
                               isParentActive
                                 ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                                 : "hover:menu-surface"
-                            } relative z-[1005]`}
+                            }`}
                           >
                             {item.label}
+                            {item.comingSoon && (
+                              <div
+                                className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
+                                style={{ transform: "translate(20%, -20%)" }}
+                              >
+                                <div
+                                  className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
+                                  style={{ transform: "rotate(45deg)" }}
+                                >
+                                  Тун удахгүй
+                                </div>
+                              </div>
+                            )}
                           </button>
 
                           {isOpen && (
@@ -331,16 +351,34 @@ export default function GolContent({ children }: GolContentProps) {
                         <button
                           type="button"
                           onClick={() => {
+                            if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
                             router.push(`/${item.path}`);
                           }}
-                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto ${
+                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                            item.comingSoon
+                              ? "cursor-not-allowed opacity-60"
+                              : ""
+                          } ${
                             isParentActive
                               ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
                               : "hover:menu-surface"
-                          } relative z-[1005]`}
+                          }`}
                         >
                           {item.label}
+                          {item.comingSoon && (
+                            <div
+                              className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
+                              style={{ transform: "translate(20%, -20%)" }}
+                            >
+                              <div
+                                className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
+                                style={{ transform: "rotate(45deg)" }}
+                              >
+                                Тун удахгүй
+                              </div>
+                            </div>
+                          )}
                         </button>
                       )}
                     </div>
@@ -499,18 +537,34 @@ export default function GolContent({ children }: GolContentProps) {
                 <button
                   key={i}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    if (item.comingSoon) return;
                     item.submenu
                       ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
-                      : router.push(`/${item.path}`)
-                  }
-                  className={`menu-pro-font px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 ${
+                      : router.push(`/${item.path}`);
+                  }}
+                  className={`menu-pro-font px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 relative overflow-visible ${
+                    item.comingSoon ? "cursor-not-allowed opacity-60" : ""
+                  } ${
                     isParentActive
                       ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                       : "hover:menu-surface"
                   }`}
                 >
                   {item.label}
+                  {item.comingSoon && (
+                    <div
+                      className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
+                      style={{ transform: "translate(20%, -20%)" }}
+                    >
+                      <div
+                        className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
+                        style={{ transform: "rotate(45deg)" }}
+                      >
+                        Тун удахгүй
+                      </div>
+                    </div>
+                  )}
                 </button>
               );
             })}
