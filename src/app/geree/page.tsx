@@ -62,7 +62,6 @@ export const ALL_COLUMNS = [
   // { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
   { key: "utas", label: "Холбоо барих", default: true },
-  { key: "mail", label: "И-мэйл", default: true },
   { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
   { key: "turul", label: "Төрөл", default: false },
   // { key: "aimag", label: "Аймаг", default: false },
@@ -1369,7 +1368,6 @@ export default function Geree() {
     ner: "",
     register: "",
     utas: [""],
-    mail: "",
     khayag: "",
     aimag: "",
     duureg: "",
@@ -1385,6 +1383,7 @@ export default function Geree() {
     suhNer: "",
     suhRegister: "",
     suhUtas: [""],
+
     suhMail: "",
     suhGariinUseg: "",
     suhTamga: "",
@@ -1431,7 +1430,6 @@ export default function Geree() {
     ner: "",
     register: "",
     utas: [""],
-    mail: "",
     khayag: "",
     aimag: "Улаанбаатар",
     duureg: "",
@@ -1609,8 +1607,7 @@ export default function Geree() {
         return Array.isArray(contract.utas) && contract.utas.length > 0
           ? contract.utas.join(", ")
           : getStringValue(contract.utas);
-      case "mail":
-        return getStringValue(contract.mail || contract.email);
+      // mail field removed from contract display
       case "khayag":
         return getStringValue(contract.khayag);
       case "ognoo": {
@@ -4096,7 +4093,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[88svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[75svh] max-h-[75svh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -4441,22 +4438,7 @@ export default function Geree() {
                               />
                             )}
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              И-мэйл
-                            </label>
-                            <input
-                              type="email"
-                              value={newContract.mail}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  mail: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div>
+
                           {/* Address fields removed per UX request (aimag/duureg/horoo) */}
                           {newContract.turul === "Түр" && (
                             <div>
@@ -4765,7 +4747,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[90svh] max-h-[92svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[78vh] max-h-[78vh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -4900,23 +4882,7 @@ export default function Geree() {
                           required
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          И-мэйл
-                        </label>
-                        <input
-                          type="email"
-                          value={newResident.mail}
-                          onChange={(e) =>
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              mail: e.target.value,
-                            }))
-                          }
-                          required
-                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                        />
-                      </div>
+
                       {/* Duureg/Horoo removed from resident modal per UX request */}
 
                       <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
