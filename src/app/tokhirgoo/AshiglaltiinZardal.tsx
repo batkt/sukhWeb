@@ -206,36 +206,67 @@ export default function AshiglaltiinZardluud() {
 
   const fetchLiftFloors = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
-
     try {
-      const response = await uilchilgee(token).get(
-        `/baiguullaga/${ajiltan.baiguullagiinId}`
-      );
-      const org = response.data;
-      const barilga = org.barilguud?.find(
-        (b: any) => b._id === (selectedBuildingId || barilgiinId)
-      );
+      // Use canonical liftShalgaya endpoint so all pages read the same source
+      const resp = await uilchilgee(token).get(`/liftShalgaya`, {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 100,
+        },
+      });
+      const data = resp.data;
+      const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
 
-      if (!barilga || !barilga.tokhirgoo?.liftShalgaya?.choloolugdokhDavkhar) {
+      // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
+      const toStr = (v: any) => (v == null ? "" : String(v));
+      const branchMatches = list.filter(
+        (x: any) =>
+          toStr(x?.barilgiinId) === toStr(selectedBuildingId || barilgiinId)
+      );
+      const pickLatest = (arr: any[]) =>
+        [...arr].sort(
+          (a, b) =>
+            new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+        )[0];
+
+      let chosen = branchMatches.length > 0 ? pickLatest(branchMatches) : null;
+      if (!chosen) {
+        const orgDefaults = list.filter(
+          (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
+        );
+        chosen =
+          orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
+      }
+
+      const floors = Array.isArray(chosen?.choloolugdokhDavkhar)
+        ? chosen.choloolugdokhDavkhar
+            .map((f: any) => String(f).trim())
+            .filter(Boolean)
+        : [];
+
+      if (!floors || floors.length === 0) {
         setLiftMaxFloor(null);
         setLiftMaxInput("");
         setLiftEnabled(false);
+        setLiftFloors([]);
         return;
       }
 
-      const floors = barilga.tokhirgoo.liftShalgaya.choloolugdokhDavkhar;
-      const parsed = floors.map((f: any) => String(f).trim()).filter(Boolean);
-      const maxFloor = Math.max(...parsed.map((f: any) => Number(f) || 0));
+      const maxFloor = Math.max(...floors.map((f: any) => Number(f) || 0));
       setLiftMaxFloor(maxFloor);
       setLiftMaxInput(
         Number.isFinite(maxFloor) && maxFloor > 0 ? maxFloor : ""
       );
-      setLiftFloors(toUniqueSorted(parsed));
+      setLiftFloors(toUniqueSorted(floors));
       setLiftEnabled(true);
     } catch (error) {
       setLiftMaxFloor(null);
       setLiftMaxInput("");
       setLiftEnabled(false);
+      setLiftFloors([]);
     }
   };
 
@@ -257,21 +288,15 @@ export default function AshiglaltiinZardluud() {
         floors = [];
       }
 
-      const orgResp = await uilchilgee(token).get(
-        `/baiguullaga/${ajiltan.baiguullagiinId}`
-      );
-      const org = orgResp.data;
-      const barilga = org.barilguud?.find(
-        (b: any) => b._id === (selectedBuildingId || barilgiinId)
-      );
-      if (!barilga) throw new Error("Building not found");
+      // Persist to canonical liftShalgaya collection so other pages (invoicing)
+      // that read /liftShalgaya see the same source of truth.
+      const payload: any = {
+        choloolugdokhDavkhar: floors,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
+      };
 
-      if (!barilga.tokhirgoo) barilga.tokhirgoo = {};
-      if (!barilga.tokhirgoo.liftShalgaya) barilga.tokhirgoo.liftShalgaya = {};
-
-      barilga.tokhirgoo.liftShalgaya.choloolugdokhDavkhar = floors;
-
-      await updateBaiguullaga(token, ajiltan.baiguullagiinId, org);
+      const postResp = await uilchilgee(token).post(`/liftShalgaya`, payload);
 
       if (floors.length > 0) {
         openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
@@ -279,6 +304,7 @@ export default function AshiglaltiinZardluud() {
         openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
       }
 
+      // Refresh canonical source
       await fetchLiftFloors();
     } catch (error) {
       openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
@@ -424,8 +450,8 @@ export default function AshiglaltiinZardluud() {
   };
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
-      <div className="neu-panel allow-overflow md:p-6 max-w-[78rem] max-h-[800px]">
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 max-h-[600px] overflow-visible">
+      <div className="neu-panel allow-overflow  md:p-6 max-w-[78rem] max-h-[600px]">
         {/* 1) Нэхэмжлэх илгээх — энгийн тохиргоо */}
         <div className="box">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
@@ -798,7 +824,7 @@ export default function AshiglaltiinZardluud() {
             <MButton
               color="red"
               onClick={handleDeleteConfirm}
-              className="btn-minimal"
+              className="btn-minimal btn-cancel"
             >
               Устгах
             </MButton>

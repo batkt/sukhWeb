@@ -236,6 +236,7 @@ const InvoiceModal = ({
   // Latest invoice rows and total for accurate amounts
   const [invRows, setInvRows] = React.useState<any[]>([]);
   const [invTotal, setInvTotal] = React.useState<number | null>(null);
+  const [latestInvoice, setLatestInvoice] = React.useState<any>(null);
   const [paymentStatusLabel, setPaymentStatusLabel] = React.useState<
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
@@ -306,6 +307,7 @@ const InvoiceModal = ({
             new Date(b?.createdAt || b?.ognoo || 0).getTime() -
             new Date(a?.createdAt || a?.ognoo || 0).getTime()
         )[0];
+        setLatestInvoice(latest || null);
         const rows = Array.isArray(latest?.medeelel?.zardluud)
           ? latest.medeelel.zardluud
           : Array.isArray(latest?.zardluud)
@@ -340,6 +342,7 @@ const InvoiceModal = ({
         setInvRows([]);
         setInvTotal(null);
         setPaymentStatusLabel("Тодорхойгүй");
+        setLatestInvoice(null);
       }
     };
     run();
@@ -629,6 +632,37 @@ const InvoiceModal = ({
                           <span className="text-slate-500">Огноо:</span>{" "}
                           {formatDate(gereeData?.gereeniiOgnoo)}
                         </p>
+                      </div>
+                    </div>
+                    {/* Initial balance / note (if provided on invoice medeelel) */}
+                    <div className="mt-3">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-slate-500">
+                            Эхний үлдэгдэл:
+                          </span>{" "}
+                          <span className="font-medium">
+                            {latestInvoice?.medeelel?.ekhniiUldegdel != null
+                              ? formatCurrency(
+                                  Number(latestInvoice.medeelel.ekhniiUldegdel)
+                                )
+                              : latestInvoice?.ekhniiUldegdel != null
+                              ? formatCurrency(
+                                  Number(latestInvoice.ekhniiUldegdel)
+                                )
+                              : "-"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500">
+                            Эхний үлдэгдэл (үсгээр):
+                          </span>{" "}
+                          <div className="font-medium">
+                            {latestInvoice?.medeelel?.ekhniiUldegdelUsgeer ||
+                              latestInvoice?.ekhniiUldegdelUsgeer ||
+                              "-"}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1728,6 +1762,43 @@ export default function InvoicingZardluud() {
                                     </div>
                                   </div>
                                 </div>
+
+                                {/* Show initial balance/note for this history item if present */}
+                                {(item?.medeelel?.ekhniiUldegdel != null ||
+                                  item?.ekhniiUldegdel != null ||
+                                  item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                  item?.ekhniiUldegdelUsgeer) && (
+                                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                      <span className="text-slate-500">
+                                        Эхний үлдэгдэл:
+                                      </span>{" "}
+                                      <span className="font-medium">
+                                        {item?.medeelel?.ekhniiUldegdel != null
+                                          ? formatCurrency(
+                                              Number(
+                                                item.medeelel.ekhniiUldegdel
+                                              )
+                                            )
+                                          : item?.ekhniiUldegdel != null
+                                          ? formatCurrency(
+                                              Number(item.ekhniiUldegdel)
+                                            )
+                                          : "-"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-slate-500">
+                                        Тайлбар:
+                                      </span>{" "}
+                                      <span className="font-medium">
+                                        {item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                          item?.ekhniiUldegdelUsgeer ||
+                                          "-"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {rows.length > 0 && (
                                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">

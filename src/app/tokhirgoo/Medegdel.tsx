@@ -113,7 +113,6 @@ const Medegdel: React.FC<MedegdelProps> = ({
 
   const khungulultiinTokhirgooKhadgalya = () => {
     notification.success({ message: "Амжилттай засагдлаа (mock)" });
-    setSongogdsonTsonkhniiIndex?.(5);
   };
 
   const utasBurtgey = () => setIsModalOpen(true);

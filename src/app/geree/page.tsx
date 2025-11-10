@@ -83,6 +83,7 @@ export const ALL_COLUMNS = [
   // { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
   // { key: "niitTulbur", label: "Нийт төлбөр", default: false },
   { key: "bairniiNer", label: "Байрны нэр", default: true },
+  { key: "tuluv", label: "Төлөв", default: true },
   { key: "orts", label: "Орц", default: false },
   { key: "toot", label: "Тоот", default: false },
   { key: "davkhar", label: "Давхар", default: false },
@@ -175,6 +176,7 @@ export default function Geree() {
   };
   const { searchTerm, setSearchTerm } = useSearch();
   const [filterType, setFilterType] = useState("Бүгд");
+  const [filterTuluv, setFilterTuluv] = useState("Бүгд");
   const [editingContract, setEditingContract] = useState<GereeType | null>(
     null
   );
@@ -1301,6 +1303,11 @@ export default function Geree() {
     ? contracts.filter((c: any) => {
         // filter by type first
         if (filterType !== "Бүгд" && c.turul !== filterType) return false;
+        // filter by tuluv (status)
+        if (filterTuluv !== "Бүгд") {
+          const tv = c.tuluv || "Идэвхитэй";
+          if (String(tv) !== String(filterTuluv)) return false;
+        }
 
         if (searchTerm) {
           const qq = String(searchTerm).toLowerCase();
@@ -1442,6 +1449,10 @@ export default function Geree() {
     nuutsUg: "",
     // Resident type: Үндсэн | Түр
     turul: "Үндсэн",
+    // initial balance for resident (Эхний үлдэгдэл)
+    ekhniiUldegdel: "",
+    // free-text explanation / tail for the initial balance
+    ekhniiUldegdelTemdeglel: "",
   });
 
   // Compute next contract number from existing list
@@ -1589,6 +1600,14 @@ export default function Geree() {
         return getStringValue(contract.khugatsaa);
       case "turul":
         return getStringValue(contract.turul);
+      case "tuluv": {
+        const v = contract.tuluv || "-";
+        if (String(v) === "Цуцалсан")
+          return (
+            <span className="text-red-600 font-semibold">{String(v)}</span>
+          );
+        return <span className="text-theme">{String(v)}</span>;
+      }
       case "zoriulalt":
         return getStringValue(contract.zoriulalt);
       case "talbainDugaar":
@@ -2227,6 +2246,14 @@ export default function Geree() {
         selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
       payload.barilgiinId = selectedBuildingId || barilgiinId || null;
       if (newResident.davkhar) payload.davkhar = newResident.davkhar;
+      if (newResident.ekhniiUldegdel !== undefined) {
+        const raw = String(newResident.ekhniiUldegdel || "");
+        const digits = raw.replace(/[^0-9.-]/g, "");
+        payload.ekhniiUldegdel = digits === "" ? 0 : Number(digits);
+      }
+      if (newResident.ekhniiUldegdelTemdeglel !== undefined) {
+        payload.ekhniiUldegdelTemdeglel = newResident.ekhniiUldegdelTemdeglel;
+      }
 
       // Track newly created resident id for auto-contract creation
       let createdResidentId: string | null = null;
@@ -2309,6 +2336,18 @@ export default function Geree() {
             horoo: newResident.horoo,
             davkhar: newResident.davkhar,
             toot: newResident.toot,
+            // Propagate initial balance information so backend can include it
+            // when generating the initial invoice/nekhemjlekhiinTuukh entry.
+            medeelel: {
+              ekhniiUldegdel:
+                payload && payload.ekhniiUldegdel !== undefined
+                  ? payload.ekhniiUldegdel
+                  : newResident.ekhniiUldegdel || 0,
+              ekhniiUldegdelUsgeer:
+                payload && payload.ekhniiUldegdelTemdeglel
+                  ? payload.ekhniiUldegdelTemdeglel
+                  : newResident.ekhniiUldegdelTemdeglel || "",
+            },
           };
 
           try {
@@ -2344,6 +2383,73 @@ export default function Geree() {
 
             await gereeJagsaaltMutate();
 
+            // If the contract payload contained an initial balance (medeelel),
+            // try to create a corresponding nekhemjlekhiinTuukh record so the
+            // invoice/history UI will immediately show the value. This is a
+            // client-side fallback for backends that don't copy medeelel into
+            // generated invoices. Ignore failures here (server should still
+            // own canonical invoice creation).
+            try {
+              const initialBal =
+                autoContract?.medeelel?.ekhniiUldegdel ??
+                autoContract?.ekhniiUldegdel ??
+                0;
+              const initialBalUsgeer =
+                autoContract?.medeelel?.ekhniiUldegdelUsgeer ??
+                autoContract?.ekhniiUldegdelTemdeglel ??
+                "";
+
+              if (Number(initialBal) > 0) {
+                const invoicePayload: any = {
+                  baiguullagiinId: ajiltan?.baiguullagiinId,
+                  barilgiinId: selectedBuildingId || barilgiinId || null,
+                  orshinSuugchId: createdResidentId,
+                  gereeniiId: createdId,
+                  // Use contract's start date as invoice date when possible
+                  ognoo:
+                    autoContract?.gereeniiOgnoo || new Date().toISOString(),
+                  // Keep a small medeelel block so UI can render the initial balance
+                  medeelel: {
+                    ekhniiUldegdel: Number(initialBal),
+                    ekhniiUldegdelUsgeer: String(initialBalUsgeer || ""),
+                  },
+                };
+
+                // POST to the invoices endpoint. If backend doesn't allow
+                // direct invoice creation, this will fail silently.
+                try {
+                  await createMethod(
+                    "nekhemjlekhiinTuukh",
+                    token || "",
+                    invoicePayload
+                  );
+                  // Revalidate invoice cache so UI picks up the new invoice
+                  try {
+                    // Mutate any SWR caches by calling the same GET used elsewhere
+                    // We can't import mutate here easily; just trigger a revalidation
+                    // by calling the endpoint once (best-effort).
+                    await uilchilgee(token || undefined).get(
+                      `/nekhemjlekhiinTuukh`,
+                      {
+                        params: {
+                          baiguullagiinId: ajiltan?.baiguullagiinId,
+                          barilgiinId:
+                            selectedBuildingId || barilgiinId || null,
+                          khuudasniiDugaar: 1,
+                          khuudasniiKhemjee: 10,
+                          query: JSON.stringify({
+                            baiguullagiinId: ajiltan?.baiguullagiinId,
+                            barilgiinId:
+                              selectedBuildingId || barilgiinId || null,
+                            orshinSuugchId: String(createdResidentId),
+                          }),
+                        },
+                      }
+                    );
+                  } catch (_) {}
+                } catch (_) {}
+              }
+            } catch (_) {}
             try {
               const s = socket();
               if (s && createdId) s.emit("geree.created", { id: createdId });
@@ -2401,6 +2507,21 @@ export default function Geree() {
       baiguullagiinNer: p.baiguullagiinNer || selectedBarilga?.ner || "",
       nevtrekhNer: p.nevtrekhNer || (p.utas ? String(p.utas) : "") || "",
       nuutsUg: p.nuutsUg || "",
+      // initial balance (Эхний үлдэгдэл) — format with thousands separators for display
+      ekhniiUldegdel: (() => {
+        const raw =
+          p?.ekhniiUldegdel ||
+          p?.ehniiUldegdel ||
+          p?.medeelel?.ekhniiUldegdel ||
+          "";
+        const digits = String(raw).replace(/\D/g, "");
+        return digits ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "";
+      })(),
+      // explanation / tail for initial balance
+      ekhniiUldegdelTemdeglel:
+        p?.ekhniiUldegdelTemdeglel ||
+        p?.medeelel?.ekhniiUldegdelTemdeglel ||
+        "",
       turul: p.turul || "Үндсэн",
     });
     setShowResidentModal(true);
@@ -2422,7 +2543,7 @@ export default function Geree() {
 
       for (const c of related) {
         try {
-          if (c?._id) await gereeUstgakh(c._id);
+          if (c?._id) await gereeZasakh(c._id, { tuluv: "Цуцалсан" });
         } catch (err) {}
       }
 
@@ -2432,7 +2553,7 @@ export default function Geree() {
         const s = socket();
         s.emit("orshinSuugch.deleted", { id: p._id || p.id });
         for (const c of related) {
-          if (c?._id) s.emit("geree.deleted", { id: c._id });
+          if (c?._id) s.emit("geree.updated", { id: c._id });
         }
       } catch (err) {}
 
@@ -2938,7 +3059,7 @@ export default function Geree() {
         <div className="flex gap-2 flex-wrap">
           {activeTab === "contracts" && (
             <>
-              <button
+              {/* <button
                 id="geree-new-btn"
                 onClick={() => {
                   setEditingContract(null);
@@ -3049,7 +3170,7 @@ export default function Geree() {
                 <span className="hidden sm:inline text-xs ml-1">
                   Гэрээ байгуулах
                 </span>
-              </button>
+              </button> */}
               <button
                 id="geree-templates-btn"
                 onClick={() => setShowList2Modal(true)}
@@ -3635,7 +3756,7 @@ export default function Geree() {
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
                 <div
-                  className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+                  className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
                   id="geree-table"
                 >
                   <table className="table-ui text-xs min-w-full">
@@ -3729,6 +3850,23 @@ export default function Geree() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+              <div className="ml-2 inline-flex items-center gap-2">
+                <label className="text-sm text-theme hidden sm:inline">
+                  Төлөв
+                </label>
+                <select
+                  value={filterTuluv}
+                  onChange={(e) => {
+                    setFilterTuluv(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="text-xs rounded-md px-2 py-1 border border-[color:var(--surface-border)] bg-panel"
+                >
+                  <option value="Бүгд">Бүгд</option>
+                  <option value="Идэвхитэй">Идэвхитэй</option>
+                  <option value="Цуцалсан">Цуцалсан</option>
+                </select>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-md">
                 <div className="text-theme/70">
@@ -5004,20 +5142,70 @@ export default function Geree() {
                           )}
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Барилгын нэр
-                          </label>
-                          <input
-                            type="text"
-                            value={
-                              newResident.baiguullagiinNer ||
-                              selectedBarilga?.ner ||
-                              ""
-                            }
-                            readOnly
-                            className="w-full p-3 text-slate-900 rounded-2xl border border-gray-200 bg-gray-50"
-                          />
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className=" w-full block text-sm font-medium text-slate-700 mb-1">
+                              Барилгын нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                newResident.baiguullagiinNer ||
+                                selectedBarilga?.ner ||
+                                ""
+                              }
+                              readOnly
+                              className="w-full p-3 text-slate-900 rounded-2xl border border-gray-200 bg-gray-50"
+                            />
+                          </div>
+                          <div>
+                            <label className="block w-full text-sm font-medium text-slate-700 mb-1">
+                              Эхний үлдэгдэл
+                            </label>
+                            <div className="relative">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9,]*"
+                                value={String(newResident.ekhniiUldegdel || "")}
+                                onChange={(e) => {
+                                  const raw = String(e.target.value || "");
+                                  // keep only digits for formatting (integers)
+                                  const digits = raw.replace(/\D/g, "");
+                                  const formatted = digits.replace(
+                                    /\B(?=(\d{3})+(?!\d))/g,
+                                    ","
+                                  );
+                                  setNewResident((prev: any) => ({
+                                    ...prev,
+                                    ekhniiUldegdel: formatted,
+                                  }));
+                                }}
+                                className="w-full p-3 pr-14 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                placeholder="0"
+                              />
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-50 border border-gray-300 rounded-full px-3 text-sm text-theme pointer-events-none">
+                                ₮
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block w-full text-sm font-medium text-slate-700 mb-1">
+                              Тэмдэглэл
+                            </label>
+                            <textarea
+                              value={newResident.ekhniiUldegdelTemdeglel}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  ekhniiUldegdelTemdeglel: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300 resize-none"
+                              rows={1}
+                            />
+                          </div>
                         </div>
                       </div>
 

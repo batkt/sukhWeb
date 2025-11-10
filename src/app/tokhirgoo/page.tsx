@@ -40,7 +40,28 @@ const AdminLayout = ({
 function Tokhirgoo() {
   const { ajiltan, baiguullaga, token } = useAuth();
 
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  // Persist selected tab so saving in child windows (which may trigger
+  // re-renders/remounts) doesn't jump back to the first tab.
+  const STORAGE_KEY = "tokhirgoo_selectedIndex";
+  const [selectedIndexInternal, setSelectedIndexInternal] = useState<number>(
+    () => {
+      try {
+        const v = localStorage.getItem(STORAGE_KEY);
+        return v ? Number(v) || 0 : 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+  );
+
+  const setSelectedIndex = (i: number) => {
+    setSelectedIndexInternal(i);
+    try {
+      localStorage.setItem(STORAGE_KEY, String(i));
+    } catch (e) {
+      // ignore storage errors
+    }
+  };
 
   const tokhirgoo = useMemo(() => {
     if (ajiltan?.erkh === "Admin") {
@@ -132,8 +153,8 @@ function Tokhirgoo() {
   }, [ajiltan]);
 
   const Tsonkh = useMemo(
-    () => tokhirgoo[selectedIndex]?.tsonkh,
-    [tokhirgoo, selectedIndex]
+    () => tokhirgoo[selectedIndexInternal]?.tsonkh,
+    [tokhirgoo, selectedIndexInternal]
   );
 
   return (
@@ -142,13 +163,13 @@ function Tokhirgoo() {
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
           <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto md:overflow-y-hidden custom-scrollbar">
             {tokhirgoo.map((item: any, i) => {
-              const isActive = i === selectedIndex;
+              const isActive = i === selectedIndexInternal;
               const isSoon = Boolean(item?.comingSoon);
               return (
                 <button
                   key={item.text}
                   onClick={() => {
-                    if (isSoon) return; // block taps for coming soon
+                    if (isSoon) return;
                     setSelectedIndex(i);
                   }}
                   aria-disabled={isSoon}
