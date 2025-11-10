@@ -159,6 +159,9 @@ export default function Geree() {
   const templatesRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
+  // Number of steps in the contract modal (we collapsed the middle step)
+  const stepLabels = ["Хувийн мэдээлэл", "СӨХ мэдээлэл"];
+  const stepCount = stepLabels.length;
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     ALL_COLUMNS.filter(
       (col) => col.default && !DEFAULT_HIDDEN.includes(col.key)
@@ -234,93 +237,6 @@ export default function Geree() {
       "Багануур",
       "Багахангай",
     ],
-    // Архангай: [
-    //   "Цэцэрлэг",
-    //   "Ихтамир",
-    //   "Өлзийт",
-    //   "Хотонт",
-    //   "Тариат",
-    //   "Хайрхан",
-    //   "Хашаат",
-    //   "Өндөр-Улаан",
-    //   "Жаргалант",
-    // ],
-    // "Баян-Өлгий": ["Өлгий", "Буянт", "Толбо", "Цэнгэл", "Сагсай", "Алтай"],
-    // Баянхонгор: [
-    //   "Баянхонгор",
-    //   "Бууцагаан",
-    //   "Баян-Овоо",
-    //   "Жаргалант",
-    //   "Шинэжинст",
-    //   "Галуут",
-    // ],
-    // Булган: ["Булган", "Баяннуур", "Сайхан", "Бүрэгхангай", "Могод", "Орхон"],
-    // "Говь-Алтай": [
-    //   "Алтай",
-    //   "Тайшир",
-    //   "Есөнбулаг",
-    //   "Цогт",
-    //   "Баян-Уул",
-    //   "Хөхморьт",
-    //   "Тонхил",
-    // ],
-    // Говьсүмбэр: ["Чойр", "Шивээговь", "Баянтал"],
-    // "Дархан-Уул": ["Дархан", "Орхон", "Хонгор", "Шарын гол"],
-    // Дорноговь: [
-    //   "Сайншанд",
-    //   "Замын-Үүд",
-    //   "Эрдэнэ",
-    //   "Алтанширээ",
-    //   "Айраг",
-    //   "Хатанбулаг",
-    // ],
-    // Дорнод: ["Чойбалсан", "Баянтүмэн", "Булган", "Халхгол", "Гурванзагал"],
-    // Дундговь: [
-    //   "Мандалговь",
-    //   "Говь-Угтаал",
-    //   "Дэлгэрхангай",
-    //   "Адаацаг",
-    //   "Өлзийт",
-    // ],
-    // Завхан: [
-    //   "Улиастай",
-    //   "Идэр",
-    //   "Тэлмэн",
-    //   "Яруу",
-    //   "Тосонцэнгэл",
-    //   "Баянтэс",
-    //   "Отгон",
-    // ],
-    // Өвөрхангай: ["Арвайхээр", "Баян-Өндөр", "Бат-Өлзий", "Тарагт", "Хужирт"],
-    // Өмнөговь: ["Даланзадгад", "Манлай", "Цогтцэций", "Ханбогд", "Баяндалай"],
-    // Сүхбаатар: ["Баруун-Урт", "Мөнххаан", "Түвшинширээ", "Асгат", "Онгон"],
-    // Сэлэнгэ: [
-    //   "Сүхбаатар",
-    //   "Алтанбулаг",
-    //   "Зүүнбүрэн",
-    //   "Орхон",
-    //   "Шаамар",
-    //   "Мандал",
-    // ],
-    // Төв: [
-    //   "Зуунмод",
-    //   "Баянчандмань",
-    //   "Баянцогт",
-    //   "Баян",
-    //   "Сэргэлэн",
-    //   "Аргалант",
-    // ],
-    // Увс: ["Улаангом", "Баруунтуруун", "Зүүнговь", "Ховд", "Малчин", "Сагил"],
-    // Ховд: ["Ховд", "Булган", "Жаргалант", "Мянгад", "Дөргөн", "Чандмань"],
-    // Хэнтий: [
-    //   "Өндөрхаан",
-    //   "Бэрх",
-    //   "Батноров",
-    //   "Дэлгэрхаан",
-    //   "Баянхутаг",
-    //   "Галшар",
-    // ],
-    // Орхон: ["Баян-Өндөр", "Жаргалант"],
   };
 
   const subDistricts: Record<string, string[]> = {
@@ -586,6 +502,57 @@ export default function Geree() {
     return o ? `${o}::${f}` : f;
   }, []);
 
+  // Robustly compute toot options for a given орц and давхар.
+  // Handles multiple key shapes stored in `tokhirgoo.davkhariinToonuud` such as
+  // '1', '1::1', '1::2' and also items that contain space/comma-separated lists.
+  const getTootOptions = useCallback(
+    (orts: string, floor: string) => {
+      try {
+        const o = String(orts || "").trim();
+        const f = String(floor || "").trim();
+        const key = composeKey(o, f);
+
+        // Prefer exact orts::floor match when available. If not present,
+        // fall back only to floor-only mapping. Do NOT mix units from other
+        // floors or other orts to avoid showing unrelated units.
+        let candidates: string[] = [];
+        if (
+          tootMap[key] &&
+          Array.isArray(tootMap[key]) &&
+          tootMap[key].length > 0
+        ) {
+          candidates = tootMap[key].slice();
+        } else if (
+          f &&
+          tootMap[f] &&
+          Array.isArray(tootMap[f]) &&
+          tootMap[f].length > 0
+        ) {
+          candidates = tootMap[f].slice();
+        } else {
+          // No configuration for this orts+floor -> explicitly return empty
+          return [];
+        }
+
+        // Normalize tokens: split items by whitespace/comma/semicolon/pipe and flatten
+        const normalized = Array.from(
+          new Set(
+            candidates
+              .flatMap((it) => String(it || "").split(/[\s,;|]+/))
+              .map((s) => s.trim())
+              .map((s) => s.replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, ""))
+              .filter(Boolean)
+          )
+        );
+
+        return normalized;
+      } catch (e) {
+        return [];
+      }
+    },
+    [tootMap, composeKey]
+  );
+
   useEffect(() => {
     if (!addUnitFloor && davkharOptions && davkharOptions.length > 0) {
       setAddUnitFloor(davkharOptions[0]);
@@ -688,6 +655,12 @@ export default function Geree() {
     }
     const raw = String(value || "").trim();
     if (!raw) return;
+    // support comma/space/semicolon separated lists like "1,2,3" or "1 2 3"
+    const parts = raw
+      .split(/[\s,;|]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (parts.length === 0) return;
     try {
       setIsSavingUnits(true);
       const key = composeKey(selectedOrts, floor);
@@ -696,9 +669,13 @@ export default function Geree() {
           return b;
         const existing =
           (b.tokhirgoo && (b.tokhirgoo as any).davkhariinToonuud) || {};
+        const existingList = Array.isArray(existing[key])
+          ? existing[key].map(String)
+          : [];
+        const merged = Array.from(new Set([...existingList, ...parts]));
         const nextMap: Record<string, string[]> = {
           ...existing,
-          [key]: Array.from(new Set([...(existing[key] || []), raw])),
+          [key]: merged,
         };
         return {
           ...b,
@@ -1495,12 +1472,7 @@ export default function Geree() {
       const baseValid =
         String(newContract.ovog || "").trim() !== "" &&
         String(newContract.ner || "").trim() !== "" &&
-        hasAnyPhone(newContract.utas) &&
-        String(newContract.aimag || "").trim() !== "";
-      const ubExtraValid =
-        newContract.aimag !== "Улаанбаатар" ||
-        (String(newContract.duureg || "").trim() !== "" &&
-          String(newContract.horoo || "").trim() !== "");
+        hasAnyPhone(newContract.utas);
       const namesOk =
         isValidName(newContract.ovog || "") &&
         isValidName(newContract.ner || "");
@@ -1508,23 +1480,11 @@ export default function Geree() {
       const regOk =
         _regVal === "" || isValidRegister(newContract.register || "");
       const phonesOk = areValidPhones(newContract.utas || []);
-      return baseValid && ubExtraValid && namesOk && regOk && phonesOk;
+      return baseValid && namesOk && regOk && phonesOk;
     }
+    // We collapsed the previous step 2 (contract number/dates) out of the UI.
+    // The second step now represents the СӨХ information (previously step 3).
     if (step === 2) {
-      // Require contract number and all dates, ensure range is valid; khugatsaa is no longer required in UI
-      const hasAll =
-        String(newContract.gereeniiDugaar || "").trim() !== "" &&
-        String(newContract.gereeniiOgnoo || "").trim() !== "" &&
-        String(newContract.ekhlekhOgnoo || "").trim() !== "" &&
-        String(newContract.duusakhOgnoo || "").trim() !== "" &&
-        String(newContract.tulukhOgnoo || "").trim() !== "";
-      if (!hasAll) return false;
-      // Start <= End
-      const start = dayjs(newContract.ekhlekhOgnoo);
-      const end = dayjs(newContract.duusakhOgnoo);
-      return start.isValid() && end.isValid() && !end.isBefore(start, "day");
-    }
-    if (step === 3) {
       return (
         String(newContract.suhNer || "").trim() !== "" &&
         String(newContract.suhRegister || "").trim() !== "" &&
@@ -1533,7 +1493,12 @@ export default function Geree() {
     }
     return true;
   };
-  const isFormValid = () => [1, 2, 3].every((s) => isStepValid(s));
+  const isFormValid = () => {
+    // Validate all visible steps
+    return Array.from({ length: stepCount }, (_, i) => i + 1).every((s) =>
+      isStepValid(s)
+    );
+  };
 
   const renderCellValue = (contract: any, columnKey: string) => {
     const findResidentById = (id: any) =>
@@ -1610,7 +1575,10 @@ export default function Geree() {
       case "bairniiNer": {
         const resident = findResidentById(contract.orshinSuugchId);
         return getStringValue(
-          contract.bairniiNer || contract.bairNer || resident?.bairniiNer
+          contract.bairniiNer ||
+            contract.bairNer ||
+            resident?.bairniiNer ||
+            selectedBarilga?.ner
         );
       }
       case "orts": {
@@ -2070,13 +2038,10 @@ export default function Geree() {
       const data = resp?.data;
       const failed = data?.result?.failed;
       if (Array.isArray(failed) && failed.length > 0) {
-        // Build a concise details string for the user
-        const detailLines = failed
-          .map(
-            (f: any) =>
-              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
-          )
-          .slice(0, 10); // limit to first 10 lines to avoid flooding
+        // Show all backend-provided row errors (no arbitrary slice)
+        const detailLines = failed.map(
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+        );
         const details = detailLines.join("\n");
         const topMsg =
           data?.message || "Импортын явцад зарим мөр алдаатай байна";
@@ -2169,13 +2134,10 @@ export default function Geree() {
       const data = resp?.data;
       const failed = data?.result?.failed;
       if (Array.isArray(failed) && failed.length > 0) {
-        // Build a concise details string for the user
-        const detailLines = failed
-          .map(
-            (f: any) =>
-              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
-          )
-          .slice(0, 10); // limit to first 10 lines to avoid flooding
+        // Show all backend-provided row errors (no arbitrary slice)
+        const detailLines = failed.map(
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+        );
         const details = detailLines.join("\n");
         const topMsg =
           data?.message || "Импортын явцад зарим мөр алдаатай байна";
@@ -2352,11 +2314,46 @@ export default function Geree() {
             toot: newResident.toot,
           };
 
-          const ok = await gereeUusgekh(autoContract);
-          if (ok) {
+          try {
+            const resp: any = await createMethod(
+              "geree",
+              token || "",
+              autoContract
+            );
+            // Try to extract created id from common response shapes
+            const respData = resp?.data ?? resp;
+            const created = respData?.data || respData || null;
+            const createdId = created?._id || created?.id || null;
+
+            // Optimistically update cached contracts so the new contract shows
+            // immediately without requiring a manual refresh. We still call
+            // mutate afterwards to revalidate from server.
+            try {
+              gereeJagsaaltMutate((prev: any) => {
+                if (!prev) return prev;
+                const existing = Array.isArray(prev.jagsaalt)
+                  ? prev.jagsaalt
+                  : [];
+                const newList = created ? [created, ...existing] : existing;
+                return {
+                  ...prev,
+                  jagsaalt: newList,
+                  niitMur:
+                    (Number(prev.niitMur) || existing.length) +
+                    (created ? 1 : 0),
+                };
+              }, false);
+            } catch (_) {}
+
             await gereeJagsaaltMutate();
+
+            try {
+              const s = socket();
+              if (s && createdId) s.emit("geree.created", { id: createdId });
+            } catch (_) {}
+
             openSuccessOverlay("Гэрээ автоматаар үүсгэгдлээ");
-          } else {
+          } catch (e) {
             openErrorOverlay(
               "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэхэд алдаа гарлаа."
             );
@@ -2650,6 +2647,15 @@ export default function Geree() {
   const handleEdit = (contract: any) => {
     setEditingContract(contract);
     setCurrentStep(1);
+    const deriveStr = (val: any) =>
+      typeof val === "string"
+        ? val
+        : typeof val === "number"
+        ? String(val)
+        : typeof val?.ner === "string"
+        ? val.ner
+        : "";
+
     setNewContract((prev: any) => ({
       ...prev,
       // Personal / contract fields
@@ -2658,8 +2664,6 @@ export default function Geree() {
       register: contract.register || "",
       // Contract meta
       gereeTurul: contract.gereeTurul || contract.turul || "",
-      davkhar: contract.davkhar || "",
-      toot: contract.toot || contract.toot || "",
       startDate: contract.startDate || contract.ekhlekhOgnoo || "",
       gereeniiDugaar: contract.gereeniiDugaar || "",
       // Always store as array for inputs that use .join(", ")
@@ -2683,9 +2687,31 @@ export default function Geree() {
       // Form binds to "mail", not "email"
       mail: contract.mail || contract.email || "",
       // Address / apartment info
+      // Address / apartment info (support multiple backend shapes)
       bairniiNer:
-        contract.bairniiNer || contract.bairNer || contract.buildingName || "",
-      orts: contract.orts || contract.orts || "",
+        contract.bairniiNer ||
+        contract.bairNer ||
+        contract.buildingName ||
+        (contract.medeelel &&
+          (contract.medeelel.bairniiNer || contract.medeelel.bairNer)) ||
+        selectedBarilga?.ner ||
+        "",
+      // Permanent address (used only for temporary contracts)
+      baingiinKhayag: contract.baingiinKhayag || "",
+      orts:
+        contract.orts !== undefined && contract.orts !== null
+          ? deriveStr(contract.orts)
+          : deriveStr(contract.medeelel?.orts) ||
+            String(selectedBarilga?.tokhirgoo?.orts || "") ||
+            "",
+      davkhar:
+        contract.davkhar !== undefined && contract.davkhar !== null
+          ? String(contract.davkhar)
+          : deriveStr(contract.medeelel?.davkhar) || "",
+      toot:
+        contract.toot !== undefined && contract.toot !== null
+          ? String(contract.toot)
+          : deriveStr(contract.medeelel?.toot) || "",
       khayag: contract.khayag || contract.address || "",
       aimag: contract.aimag || "",
       duureg: contract.duureg || "",
@@ -2920,16 +2946,62 @@ export default function Geree() {
                 onClick={() => {
                   setEditingContract(null);
                   setCurrentStep(1);
+                  // helper to derive string from various shapes
+                  const deriveStr = (val: any) =>
+                    typeof val === "string"
+                      ? val
+                      : typeof val?.ner === "string"
+                      ? val.ner
+                      : "";
+
+                  const preAimag = deriveStr(
+                    (selectedBarilga as any)?.tokhirgoo?.aimagNer
+                  );
+                  const preDuureg =
+                    deriveStr((selectedBarilga as any)?.tokhirgoo?.duuregNer) ||
+                    deriveStr((selectedBarilga as any)?.bairshil?.duuregNer) ||
+                    deriveStr((selectedBarilga as any)?.duuregNer) ||
+                    "";
+                  const preHoroo =
+                    deriveStr(
+                      (selectedBarilga as any)?.tokhirgoo?.horoo?.ner
+                    ) ||
+                    deriveStr((selectedBarilga as any)?.bairshil?.horoo?.ner) ||
+                    deriveStr((selectedBarilga as any)?.horoo?.ner) ||
+                    "";
+                  // Compose a readable building address (bairshil) to show by default
+                  const tok = (selectedBarilga as any)?.tokhirgoo || {};
+                  const bsh = (selectedBarilga as any)?.bairshil || {};
+                  const parts: string[] = [];
+                  if (tok?.aimagNer) parts.push(String(tok.aimagNer));
+                  const du = tok?.duuregNer || bsh?.duuregNer;
+                  if (du) parts.push(String(du));
+                  const hr = tok?.horoo?.ner || bsh?.horoo?.ner;
+                  if (hr) parts.push(String(hr));
+                  // include building name at end for clarity
+                  if ((selectedBarilga as any)?.ner)
+                    parts.push(String((selectedBarilga as any).ner));
+                  const preBairNer = parts.filter(Boolean).join(", ") || "";
+                  const preOrts = String(
+                    (selectedBarilga as any)?.tokhirgoo?.orts || ""
+                  );
+                  const preDavkhar =
+                    davkharOptions && davkharOptions.length > 0
+                      ? davkharOptions[0]
+                      : "";
+                  const preTootList = getTootOptions(preOrts, preDavkhar) || [];
+                  const preToot = preTootList.length > 0 ? preTootList[0] : "";
+
                   setNewContract({
                     ovog: "",
                     ner: "",
                     register: "",
                     utas: [""],
                     mail: "",
-                    khayag: "",
-                    aimag: "",
-                    duureg: "",
-                    horoo: "",
+                    khayag: preAimag || "",
+                    aimag: preAimag || "",
+                    duureg: preDuureg || "",
+                    horoo: preHoroo || "",
                     baingiinKhayag: "",
 
                     gereeniiDugaar: computeNextGereeDugaar(),
@@ -2957,15 +3029,12 @@ export default function Geree() {
                     uilchilgeeniiZardalUsgeer: "",
                     niitTulbur: 0,
                     niitTulburUsgeer: "",
-                    bairniiNer: "",
-                    orts: "",
-                    toot: 0,
+                    bairniiNer: preBairNer,
+                    orts: preOrts,
+                    toot: preToot,
                     talbainKhemjee: "",
                     zoriulalt: "",
-                    davkhar:
-                      davkharOptions && davkharOptions.length > 0
-                        ? davkharOptions[0]
-                        : "",
+                    davkhar: preDavkhar,
                     burtgesenAjiltan: "",
                     temdeglel: "",
                     actOgnoo: "",
@@ -4070,11 +4139,7 @@ export default function Geree() {
                       {/* Mobile compact stepper (numbers only) */}
                       <div className="md:hidden overflow-x-auto -mx-6 px-6">
                         <div className="flex justify-center gap-4 min-w-max">
-                          {[
-                            "Хувийн мэдээлэл",
-                            "Гэрээний дугаар",
-                            "СӨХ мэдээлэл",
-                          ].map((label, i) => {
+                          {stepLabels.map((label, i) => {
                             const step = i + 1;
                             const active = currentStep === step;
                             const done = currentStep > step;
@@ -4102,11 +4167,7 @@ export default function Geree() {
                       </div>
                       {/* Desktop stepper with labels */}
                       <div className="hidden md:flex justify-center gap-3">
-                        {[
-                          "Хувийн мэдээлэл",
-                          "Гэрээний дугаар",
-                          "СӨХ мэдээлэл",
-                        ].map((label, i) => {
+                        {stepLabels.map((label, i) => {
                           const step = i + 1;
                           const active = currentStep === step;
                           const done = currentStep > step;
@@ -4144,7 +4205,7 @@ export default function Geree() {
                               >
                                 {label}
                               </button>
-                              {step < 3 && (
+                              {step < stepLabels.length && (
                                 <div className="w-8 h-[2px] bg-gray-200 mx-2" />
                               )}
                             </div>
@@ -4271,7 +4332,7 @@ export default function Geree() {
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Байрны нэр
+                              Байрны мэдээлэл
                             </label>
                             <input
                               type="text"
@@ -4289,32 +4350,61 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Орц
                             </label>
-                            <input
-                              type="text"
+                            <TusgaiZagvar
                               value={newContract.orts}
-                              onChange={(e) =>
+                              onChange={(val) =>
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  orts: e.target.value,
+                                  orts: val,
+                                  // clear toot when orts changes so toot options refresh
+                                  toot: "",
                                 }))
                               }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              options={ortsOptions.map((o) => ({
+                                value: o,
+                                label: o,
+                              }))}
+                              className="w-full"
+                              placeholder={
+                                ortsOptions.length === 0
+                                  ? "Орц тохируулаагүй"
+                                  : "Сонгох..."
+                              }
+                              disabled={ortsOptions.length === 0}
                             />
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Тоот
                             </label>
-                            <input
-                              type="number"
-                              value={newContract.toot}
-                              onChange={(e) =>
+                            {/* toot options derived from building tokhirgoo per selected orts + давхар */}
+                            <TusgaiZagvar
+                              value={String(newContract.toot || "")}
+                              onChange={(val) =>
                                 setNewContract((prev: any) => ({
                                   ...prev,
-                                  toot: Number(e.target.value),
+                                  toot: val,
                                 }))
                               }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              options={getTootOptions(
+                                newContract.orts,
+                                newContract.davkhar
+                              ).map((t) => ({ value: t, label: t }))}
+                              className="w-full"
+                              placeholder={
+                                getTootOptions(
+                                  newContract.orts,
+                                  newContract.davkhar
+                                ).length === 0
+                                  ? "Тоотын тохиргоо хийгээгүй байна"
+                                  : "Сонгох..."
+                              }
+                              disabled={
+                                getTootOptions(
+                                  newContract.orts,
+                                  newContract.davkhar
+                                ).length === 0
+                              }
                             />
                           </div>
                           <div>
@@ -4367,113 +4457,8 @@ export default function Geree() {
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                             />
                           </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Аймаг
-                            </label>
-                            <TusgaiZagvar
-                              value={newContract.aimag}
-                              onChange={(val) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  aimag: val,
-                                  khayag: val,
-                                  duureg: "",
-                                  horoo: "",
-                                }))
-                              }
-                              options={mongoliaProvinces.map((p) => ({
-                                value: p,
-                                label: p,
-                              }))}
-                              className="w-full"
-                              placeholder="Сонгох..."
-                            />
-                            {currentStep === 1 &&
-                              !String(newContract.aimag || "").trim() && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Аймаг сонгоно уу
-                                </p>
-                              )}
-                          </div>
-                          {newContract.aimag === "Улаанбаатар" ? (
-                            <>
-                              <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                  Дүүрэг
-                                </label>
-                                <TusgaiZagvar
-                                  value={newContract.duureg}
-                                  onChange={(val) =>
-                                    setNewContract((prev: any) => ({
-                                      ...prev,
-                                      duureg: val,
-                                      horoo: "",
-                                    }))
-                                  }
-                                  options={(
-                                    districts[newContract.aimag] || []
-                                  ).map((d) => ({ value: d, label: d }))}
-                                  className="w-full"
-                                  placeholder="Сонгох..."
-                                />
-                                {currentStep === 1 &&
-                                  String(newContract.aimag) === "Улаанбаатар" &&
-                                  !String(newContract.duureg || "").trim() && (
-                                    <p className="text-xs text-red-600 mt-1">
-                                      Дүүрэг сонгоно уу
-                                    </p>
-                                  )}
-                              </div>
-                              <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">
-                                  Хороо
-                                </label>
-                                <TusgaiZagvar
-                                  value={newContract.horoo}
-                                  onChange={(val) =>
-                                    setNewContract((prev: any) => ({
-                                      ...prev,
-                                      horoo: val,
-                                    }))
-                                  }
-                                  options={(
-                                    subDistricts[newContract.duureg] || []
-                                  ).map((sd) => ({ value: sd, label: sd }))}
-                                  className="w-full"
-                                  placeholder="Сонгох..."
-                                />
-                                {currentStep === 1 &&
-                                  String(newContract.aimag) === "Улаанбаатар" &&
-                                  !String(newContract.horoo || "").trim() && (
-                                    <p className="text-xs text-red-600 mt-1">
-                                      Хороо сонгоно уу
-                                    </p>
-                                  )}
-                              </div>
-                            </>
-                          ) : newContract.aimag ? (
-                            <div>
-                              <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Сум
-                              </label>
-                              <TusgaiZagvar
-                                value={newContract.duureg}
-                                onChange={(val) =>
-                                  setNewContract((prev: any) => ({
-                                    ...prev,
-                                    duureg: val,
-                                  }))
-                                }
-                                options={(
-                                  districts[newContract.aimag] || []
-                                ).map((d) => ({ value: d, label: d }))}
-                                className="w-full"
-                                placeholder="Сонгох..."
-                              />
-                            </div>
-                          ) : null}
-                          {newContract.turul !== "Үндсэн" && (
+                          {/* Address fields removed per UX request (aimag/duureg/horoo) */}
+                          {newContract.turul === "Түр" && (
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Байнгын хаяг
@@ -4496,176 +4481,6 @@ export default function Geree() {
                       {null}
 
                       {currentStep === 2 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Гэрээний дугаар
-                            </label>
-                            <input
-                              type="text"
-                              value={newContract.gereeniiDugaar}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  gereeniiDugaar: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                            {currentStep === 2 &&
-                              !String(
-                                newContract.gereeniiDugaar || ""
-                              ).trim() && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Гэрээний дугаар оруулна уу
-                                </p>
-                              )}
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Гэрээний огноо
-                            </label>
-                            <DatePickerInput
-                              className="w-full border"
-                              locale="mn"
-                              value={
-                                newContract.gereeniiOgnoo
-                                  ? new Date(newContract.gereeniiOgnoo)
-                                  : null
-                              }
-                              onChange={(value) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  gereeniiOgnoo: value
-                                    ? dayjs(value).format("YYYY-MM-DD")
-                                    : "",
-                                }))
-                              }
-                              classNames={{
-                                input:
-                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
-                              }}
-                            />
-                            {currentStep === 2 &&
-                              !String(
-                                newContract.gereeniiOgnoo || ""
-                              ).trim() && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Гэрээний огноо сонгоно уу
-                                </p>
-                              )}
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Эхлэх/Дуусах огноо
-                            </label>
-                            <DatePickerInput
-                              className="w-full"
-                              type="range"
-                              locale="mn"
-                              value={
-                                newContract.ekhlekhOgnoo &&
-                                newContract.duusakhOgnoo
-                                  ? [
-                                      new Date(newContract.ekhlekhOgnoo),
-                                      new Date(newContract.duusakhOgnoo),
-                                    ]
-                                  : undefined
-                              }
-                              onChange={(vals) => {
-                                const [start, end] = (vals || [null, null]) as [
-                                  Date | null,
-                                  Date | null
-                                ];
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  ekhlekhOgnoo: start
-                                    ? dayjs(start).format("YYYY-MM-DD")
-                                    : "",
-                                  duusakhOgnoo: end
-                                    ? dayjs(end).format("YYYY-MM-DD")
-                                    : "",
-                                }));
-                              }}
-                              classNames={{
-                                input:
-                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
-                              }}
-                            />
-                            {currentStep === 2 &&
-                              (!String(newContract.ekhlekhOgnoo || "").trim() ||
-                                !String(
-                                  newContract.duusakhOgnoo || ""
-                                ).trim()) && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Эхлэх болон дуусах огноо сонгоно уу
-                                </p>
-                              )}
-                            {currentStep === 2 &&
-                              String(newContract.ekhlekhOgnoo || "") &&
-                              String(newContract.duusakhOgnoo || "") &&
-                              dayjs(newContract.duusakhOgnoo).isBefore(
-                                dayjs(newContract.ekhlekhOgnoo),
-                                "day"
-                              ) && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Дуусах огноо эхлэх огнооноос өмнө байж
-                                  болохгүй
-                                </p>
-                              )}
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Төлөх огноо
-                            </label>
-                            <DatePickerInput
-                              className="w-full"
-                              locale="mn"
-                              value={
-                                newContract.tulukhOgnoo
-                                  ? new Date(newContract.tulukhOgnoo)
-                                  : null
-                              }
-                              onChange={(value) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  tulukhOgnoo: value
-                                    ? dayjs(value).format("YYYY-MM-DD")
-                                    : "",
-                                }))
-                              }
-                              classNames={{
-                                input:
-                                  "text-theme neu-panel placeholder:text-theme !h-[50px] !py-2 !w-[410px]",
-                              }}
-                            />
-                            {currentStep === 2 &&
-                              !String(newContract.tulukhOgnoo || "").trim() && (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Төлөх огноо сонгоно уу
-                                </p>
-                              )}
-                          </div>
-                          {/* <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Хугацаа (сар)
-                            </label>
-                            <input
-                              type="number"
-                              value={newContract.khugatsaa}
-                              onChange={(e) =>
-                                setNewContract((prev: any) => ({
-                                  ...prev,
-                                  khugatsaa: Number(e.target.value),
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            />
-                          </div> */}
-                        </div>
-                      )}
-
-                      {currentStep === 3 && (
                         <div className="grid grid-cols-1 gap-6">
                           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
                             <div className="text-sm text-slate-600 mb-3">
@@ -4748,7 +4563,7 @@ export default function Geree() {
                       >
                         Буцах
                       </button>
-                      {currentStep < 3 ? (
+                      {currentStep < stepCount ? (
                         <div className="flex items-center gap-3">
                           {!isStepValid(currentStep) && (
                             <span className="text-red-600 text-sm">
@@ -5065,10 +4880,21 @@ export default function Geree() {
                             const digits = e.target.value
                               .replace(/\D/g, "")
                               .slice(0, 8);
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              utas: [digits],
-                            }));
+                            setNewResident((prev: any) => {
+                              const prevPhone =
+                                (prev.utas && prev.utas[0]) || "";
+                              const prevUsername = prev.nevtrekhNer || "";
+                              const shouldUpdateUsername =
+                                !prevUsername ||
+                                String(prevUsername) === String(prevPhone);
+                              return {
+                                ...prev,
+                                utas: [digits],
+                                nevtrekhNer: shouldUpdateUsername
+                                  ? digits
+                                  : prevUsername,
+                              };
+                            });
                           }}
                           className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                           required
@@ -5091,73 +4917,7 @@ export default function Geree() {
                           className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Аймаг
-                        </label>
-                        <TusgaiZagvar
-                          value={newResident.aimag}
-                          onChange={(val) =>
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              aimag: val,
-                              khayag: val,
-                              duureg: "",
-                              horoo: "",
-                            }))
-                          }
-                          options={mongoliaProvinces.map((p) => ({
-                            value: p,
-                            label: p,
-                          }))}
-                          className="w-full"
-                          placeholder="Сонгох..."
-                          required
-                        />
-                      </div>
-                      {newResident.aimag === "Улаанбаатар" && (
-                        <>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Дүүрэг
-                            </label>
-                            <TusgaiZagvar
-                              value={newResident.duureg}
-                              onChange={(val) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  duureg: val,
-                                  horoo: "",
-                                }))
-                              }
-                              options={(districts[newResident.aimag] || []).map(
-                                (d) => ({ value: d, label: d })
-                              )}
-                              className="w-full"
-                              placeholder="Сонгох..."
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Хороо
-                            </label>
-                            <TusgaiZagvar
-                              value={newResident.horoo}
-                              onChange={(val) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  horoo: val,
-                                }))
-                              }
-                              options={(
-                                subDistricts[newResident.duureg] || []
-                              ).map((sd) => ({ value: sd, label: sd }))}
-                              className="w-full"
-                              placeholder="Сонгох..."
-                            />
-                          </div>
-                        </>
-                      )}
+                      {/* Duureg/Horoo removed from resident modal per UX request */}
 
                       <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
@@ -5182,17 +4942,27 @@ export default function Geree() {
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             Орц
                           </label>
-                          <input
-                            type="text"
+                          <TusgaiZagvar
                             value={newResident.orts || ""}
-                            onChange={(e) =>
+                            onChange={(val) =>
                               setNewResident((prev: any) => ({
                                 ...prev,
-                                orts: e.target.value,
+                                orts: val,
+                                toot: "",
                               }))
                             }
-                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            options={ortsOptions.map((o) => ({
+                              value: o,
+                              label: o,
+                            }))}
+                            className="w-full"
+                            placeholder={
+                              ortsOptions.length === 0
+                                ? "Орц тохируулаагүй"
+                                : "Сонгох..."
+                            }
                             required
+                            disabled={ortsOptions.length === 0}
                           />
                         </div>
 
@@ -5200,17 +4970,34 @@ export default function Geree() {
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             Тоот
                           </label>
-                          <input
-                            type="number"
-                            value={newResident.toot || ""}
-                            onChange={(e) =>
+                          <TusgaiZagvar
+                            value={String(newResident.toot || "")}
+                            onChange={(val) =>
                               setNewResident((prev: any) => ({
                                 ...prev,
-                                toot: e.target.value,
+                                toot: val,
                               }))
                             }
-                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            options={getTootOptions(
+                              newResident.orts,
+                              newResident.davkhar
+                            ).map((t) => ({ value: t, label: t }))}
+                            className="w-full"
+                            placeholder={
+                              getTootOptions(
+                                newResident.orts,
+                                newResident.davkhar
+                              ).length === 0
+                                ? "Тоотын тохиргоо хийгээгүй байна"
+                                : "Сонгох..."
+                            }
                             required
+                            disabled={
+                              getTootOptions(
+                                newResident.orts,
+                                newResident.davkhar
+                              ).length === 0
+                            }
                           />
                         </div>
 

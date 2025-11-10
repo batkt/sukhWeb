@@ -22,13 +22,20 @@ export function ErrorOverlayHost() {
   const [message, setMessage] = useState("");
   const [duration, setDuration] = useState(1800);
   const [container, setContainer] = useState<HTMLElement | null>(null);
+  const [isMultiline, setIsMultiline] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
       const ce = e as CustomEvent<OpenPayload>;
       const d = ce?.detail || { message: "", duration: 1800 };
-      setMessage(d.message || "");
+      const msg = d.message || "";
+      setMessage(msg);
       setDuration(d.duration || 1800);
+      // Consider messages with newlines or long text as multiline/error lists and
+      // render a larger, non-auto-closing panel.
+      const multi =
+        typeof msg === "string" && (msg.includes("\n") || msg.length > 300);
+      setIsMultiline(multi);
       setOpen(true);
     };
     if (typeof window !== "undefined") {
@@ -43,6 +50,10 @@ export function ErrorOverlayHost() {
 
   useEffect(() => {
     if (!open) return;
+    if (isMultiline) {
+      // Keep multiline errors visible until user closes
+      return;
+    }
     const t = setTimeout(() => setOpen(false), duration);
     return () => clearTimeout(t);
   }, [open, duration]);
@@ -55,6 +66,47 @@ export function ErrorOverlayHost() {
   }, []);
 
   if (!container) return null;
+
+  // If this is a multiline/large error message, show a centered modal with
+  // scrollable details and copy/close controls. Otherwise show a small toast
+  // in the top-right like before.
+  if (isMultiline && open) {
+    return createPortal(
+      <div className="fixed inset-0 z-[10000] flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-black/40"
+          onClick={() => setOpen(false)}
+        />
+        <div className="relative z-10 w-[min(90vw,900px)] max-h-[80vh] overflow-hidden rounded-2xl bg-white shadow-2xl p-4">
+          <div className="flex items-start justify-between gap-4">
+            <h3 className="text-lg font-semibold">Алдааны жагсаалт</h3>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigator.clipboard?.writeText(message)}
+                className="btn-minimal px-3 py-1 text-sm"
+              >
+                Хуулах
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="btn px-3 py-1 text-sm bg-slate-100 rounded"
+              >
+                Хаах
+              </button>
+            </div>
+          </div>
+          <div className="mt-3 text-sm text-slate-700 overflow-auto max-h-[64vh] p-2 border border-gray-100 rounded">
+            {message.split("\n").map((line, i) => (
+              <div key={i} className="py-1 border-b last:border-b-0">
+                {line}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>,
+      container
+    );
+  }
 
   return createPortal(
     <div

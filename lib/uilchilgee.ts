@@ -68,6 +68,31 @@ export const socket = (): Socket => {
   }
 };
 
+// Helper to call the nekhemjlekhCron service using both domain and IP fallbacks.
+// Tries amarhome.mn first, then falls back to the numeric IP if the first
+// attempt fails (network error or non-2xx response).
+export async function fetchWithDomainFallback(
+  path: string,
+  options?: RequestInit
+): Promise<Response> {
+  const CRON_DOMAIN = "https://amarhome.mn";
+  const CRON_IP = "http://103.143.40.46:8084";
+  const bases = [CRON_DOMAIN, CRON_IP];
+
+  let lastErr: any = null;
+  for (const base of bases) {
+    try {
+      const res = await fetch(base + path, options as any);
+      if (res && res.ok) return res;
+      // Keep last response as error if not ok
+      lastErr = new Error(`Request failed ${res?.status} ${base}${path}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error("Both domain and IP requests failed");
+}
+
 // Generic error handler
 export const aldaaBarigch = (e: any): void => {
   const errorMessage = e?.response?.data?.aldaa;

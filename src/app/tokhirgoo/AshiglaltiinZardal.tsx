@@ -18,6 +18,7 @@ import formatNumber from "../../../tools/function/formatNumber";
 import { useAuth } from "@/lib/useAuth";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { fetchWithDomainFallback } from "../../../lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
@@ -113,8 +114,8 @@ export default function AshiglaltiinZardluud() {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
-      const response = await fetch(
-        `http://103.143.40.46:8084/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
+      const response = await fetchWithDomainFallback(
+        `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
         {
           method: "GET",
           headers: {
@@ -167,7 +168,7 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
-      const res = await fetch("http://103.143.40.46:8084/nekhemjlekhCron", {
+      const res = await fetchWithDomainFallback(`/nekhemjlekhCron`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
