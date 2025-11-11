@@ -151,6 +151,16 @@ export default function Geree() {
   const [showAddTootModal, setShowAddTootModal] = useState(false);
   const [addTootFloor, setAddTootFloor] = useState<string>("");
   const [addTootValue, setAddTootValue] = useState<string>("");
+  // Selection and авлага modal state (admin only)
+  const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
+  const [selectAllContracts, setSelectAllContracts] = useState(false);
+  const [showAvlagaModal, setShowAvlagaModal] = useState(false);
+  const [avlagaDate, setAvlagaDate] = useState<string>(
+    new Date().toISOString()
+  );
+  const [avlagaValue, setAvlagaValue] = useState<string>("");
+  const [avlagaDescription, setAvlagaDescription] = useState<string>("");
+  const [isSavingAvlaga, setIsSavingAvlaga] = useState(false);
   // Container refs for modal panels to scope Enter key primary lookup
   const contractRef = useRef<HTMLDivElement | null>(null);
   const residentRef = useRef<HTMLDivElement | null>(null);
@@ -251,6 +261,17 @@ export default function Geree() {
       "7-р хороо",
       "8-р хороо",
       "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
     ],
     Баянгол: [
       "1-р хороо",
@@ -263,36 +284,33 @@ export default function Geree() {
       "8-р хороо",
       "9-р хороо",
       "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
     ],
+
     Чингэлтэй: [
-      "1-р хороо",
-      "2-р хороо",
-      "3-р хороо",
-      "4-р хороо",
-      "5-р хороо",
-      "6-р хороо",
-    ],
-    "Хан-Уул": [
-      "1-р хороо",
-      "2-р хороо",
-      "3-р хороо",
-      "4-р хороо",
-      "5-р хороо",
-      "6-р хороо",
-      "7-р хороо",
-    ],
-    Баянзүрх: [
-      "1-р хороо",
-      "2-р хороо",
-      "3-р хороо",
-      "4-р хороо",
-      "5-р хороо",
-      "6-р хороо",
-      "7-р хороо",
-      "8-р хороо",
-      "9-р хороо",
-    ],
-    Сонгинохайрхан: [
       "1-р хороо",
       "2-р хороо",
       "3-р хороо",
@@ -303,7 +321,142 @@ export default function Geree() {
       "8-р хороо",
       "9-р хороо",
       "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
     ],
+
+    "Хан-Уул": [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+    ],
+
+    "Баянзүрх": [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
+      "35-р хороо",
+      "36-р хороо",
+      "37-р хороо",
+      "38-р хороо",
+      "39-р хороо",
+      "40-р хороо",
+      "41-р хороо",
+      "42-р хороо",
+      "43-р хороо",
+    ],
+
+    "Сонгинохайрхан": [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
+      "35-р хороо",
+      "36-р хороо",
+      "37-р хороо",
+      "38-р хороо",
+      "39-р хороо",
+      "40-р хороо",
+      "41-р хороо",
+      "42-р хороо",
+      "43-р хороо",
+    ],
+
     Налайх: [
       "1-р хороо",
       "2-р хороо",
@@ -311,6 +464,8 @@ export default function Geree() {
       "4-р хороо",
       "5-р хороо",
       "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
     ],
     Багануур: ["1-р хороо", "2-р хороо", "3-р хороо", "4-р хороо", "5-р хороо"],
     Багахангай: ["1-р хороо", "2-р хороо"],
@@ -706,6 +861,64 @@ export default function Geree() {
       setIsSavingUnits(false);
     }
   };
+  // Save авлага for selected contracts (admin action)
+  const handleSaveAvlaga = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!selectedContracts || selectedContracts.length === 0) return;
+    try {
+      setIsSavingAvlaga(true);
+      const promises: Promise<any>[] = [];
+      for (const cid of selectedContracts) {
+        const contract = (contracts || []).find(
+          (c: any) => String(c._id) === String(cid)
+        );
+        if (!contract) continue;
+        const payload = {
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          guilgee: {
+            gereeniiId: contract._id,
+            ognoo: avlagaDate || new Date().toISOString(),
+            turul: "avlaga",
+            tailbar: String(avlagaDescription || ""),
+            tulukhDun:
+              Number(String(avlagaValue || "").replace(/[^0-9.-]+/g, "")) || 0,
+            tulsunDun: 0,
+          },
+        };
+        promises.push(
+          uilchilgee(token).post("/gereeniiGuilgeeKhadgalya", payload)
+        );
+      }
+      await Promise.all(promises);
+      // Revalidate invoice/history cache as best-effort
+      try {
+        await uilchilgee(token || undefined).get(`/nekhemjlekhiinTuukh`, {
+          params: {
+            baiguullagiinId: ajiltan?.baiguullagiinId,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 10,
+          },
+        });
+      } catch (_) {}
+      openSuccessOverlay("Авлага амжилттай хадгалагдлаа");
+      // clear selections and modal
+      setSelectedContracts([]);
+      setSelectAllContracts(false);
+      setAvlagaValue("");
+      setAvlagaDescription("");
+      setShowAvlagaModal(false);
+      await gereeJagsaaltMutate();
+    } catch (e) {
+      openErrorOverlay("Авлага хадгалах явцад алдаа гарлаа");
+    } finally {
+      setIsSavingAvlaga(false);
+    }
+  };
+
   // Residents list
   const {
     orshinSuugchGaralt,
@@ -3183,6 +3396,20 @@ export default function Geree() {
                   Загвар үүсгэх
                 </span>
               </button>
+              {ajiltan?.erkh === "Admin" && (
+                <button
+                  id="geree-avlaga-btn"
+                  onClick={() => setShowAvlagaModal(true)}
+                  className={`btn-minimal ${
+                    selectedContracts.length === 0
+                      ? "opacity-60 pointer-events-none"
+                      : ""
+                  }`}
+                  title="Авлага"
+                >
+                  Авлага
+                </button>
+              )}
               {/* <button
                 id="geree-download-template-btn"
                 onClick={() => setShowTemplatesModal(true)}
@@ -3755,6 +3982,8 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
+                {/* Avlaga button (admin only) placed top-right outside of table */}
+
                 <div
                   className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
                   id="geree-table"
@@ -3762,6 +3991,27 @@ export default function Geree() {
                   <table className="table-ui text-xs min-w-full">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
+                        {ajiltan?.erkh === "Admin" && (
+                          <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                            <input
+                              id="geree-select-all"
+                              type="checkbox"
+                              checked={selectAllContracts}
+                              onChange={(e) => {
+                                const v = e.target.checked;
+                                setSelectAllContracts(v);
+                                if (v) {
+                                  const ids = currentContracts.map((c: any) =>
+                                    String(c._id)
+                                  );
+                                  setSelectedContracts(ids);
+                                } else {
+                                  setSelectedContracts([]);
+                                }
+                              }}
+                            />
+                          </th>
+                        )}
                         <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
                           №
                         </th>
@@ -3799,6 +4049,40 @@ export default function Geree() {
                             key={contract._id || idx}
                             className="transition-colors border-b last:border-b-0"
                           >
+                            {ajiltan?.erkh === "Admin" && (
+                              <td className="p-1 text-center text-theme w-12">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedContracts.includes(
+                                    String(contract._id)
+                                  )}
+                                  onChange={(e) => {
+                                    const id = String(contract._id);
+                                    const checked = e.target.checked;
+                                    setSelectedContracts((prev) => {
+                                      if (checked)
+                                        return Array.from(
+                                          new Set([...prev, id])
+                                        );
+                                      return prev.filter((x) => x !== id);
+                                    });
+                                    // update select all
+                                    setSelectAllContracts((prev) => {
+                                      if (!checked) return false;
+                                      const allIds = currentContracts.map(
+                                        (c: any) => String(c._id)
+                                      );
+                                      const newSel = Array.from(
+                                        new Set([...selectedContracts, id])
+                                      );
+                                      return allIds.every((a) =>
+                                        newSel.includes(a)
+                                      );
+                                    });
+                                  }}
+                                />
+                              </td>
+                            )}
                             <td className="p-1 text-center text-theme">
                               {startIndex + idx + 1}
                             </td>
@@ -3851,6 +4135,127 @@ export default function Geree() {
                   </table>
                 </div>
               </div>
+
+              {showAvlagaModal && (
+                <ModalPortal>
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000]"
+                      onClick={() => setShowAvlagaModal(false)}
+                    />
+                    <motion.div
+                      initial={{ scale: 0.98, opacity: 0, y: 20 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      exit={{ scale: 0.98, opacity: 0, y: 20 }}
+                      transition={{
+                        type: "spring",
+                        damping: 25,
+                        stiffness: 300,
+                      }}
+                      className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[82vw] max-w-[220px] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
+                      onClick={(e) => e.stopPropagation()}
+                      role="dialog"
+                      aria-modal="true"
+                    >
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold">
+                            Авлага үүсгэх
+                          </h3>
+                          <button
+                            onClick={() => setShowAvlagaModal(false)}
+                            className="p-2 hover:bg-gray-100 rounded-2xl"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 items-center">
+                          <div>
+                            <label className="block text-sm text-theme mb-1">
+                              Огноо
+                            </label>
+                            <DatePickerInput
+                              value={avlagaDate ? new Date(avlagaDate) : null}
+                              onChange={(v) =>
+                                setAvlagaDate(
+                                  v
+                                    ? (() => {
+                                        const date = new Date(v as any);
+                                        const year = date.getFullYear();
+                                        const month = String(
+                                          date.getMonth() + 1
+                                        ).padStart(2, "0");
+                                        const day = String(
+                                          date.getDate()
+                                        ).padStart(2, "0");
+                                        return `${year}-${month}-${day}`;
+                                      })()
+                                    : new Date().toISOString()
+                                )
+                              }
+                              placeholder="Огноо сонгох"
+                              className="w-full"
+                              clearable
+                              classNames={{
+                                input:
+                                  "text-theme neu-panel neu-calendar !h-[44px] !py-1",
+                              }}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm text-theme mb-1">
+                              Дүн
+                            </label>
+                            <input
+                              type="text"
+                              value={avlagaValue}
+                              onChange={(e) => setAvlagaValue(e.target.value)}
+                              className="w-full p-3 rounded-2xl border bg-panel"
+                              placeholder="Дүн"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <label className="block text-sm text-theme mb-1">
+                            Тайлбар
+                          </label>
+                          <textarea
+                            value={avlagaDescription}
+                            onChange={(e) =>
+                              setAvlagaDescription(e.target.value)
+                            }
+                            className="w-full p-3 rounded-2xl border bg-panel min-h-[90px]"
+                            placeholder="Тэмдэглэл"
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-4">
+                          <button
+                            type="button"
+                            onClick={() => setShowAvlagaModal(false)}
+                            className="btn-minimal-ghost btn-cancel min-w-[100px]"
+                          >
+                            Болих
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveAvlaga}
+                            className="btn-minimal btn-save min-w-[100px]"
+                            disabled={isSavingAvlaga}
+                          >
+                            Хадгалах
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </>
+                </ModalPortal>
+              )}
               <div className="ml-2 inline-flex items-center gap-2">
                 <label className="text-sm text-theme hidden sm:inline">
                   Төлөв
@@ -3869,7 +4274,7 @@ export default function Geree() {
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-md">
-                <div className="text-theme/70">
+                <div className="font-bold text-theme/70">
                   Нийт: {filteredContracts.length}
                 </div>
 
@@ -4033,7 +4438,9 @@ export default function Geree() {
               </div>
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-md">
-              <div className="text-theme/70">Нийт: {residentsList.length}</div>
+              <div className="font-bold text-theme/70">
+                Нийт: {residentsList.length}
+              </div>
               <div className="flex items-center gap-3">
                 <PageSongokh
                   value={resPageSize}
@@ -4173,7 +4580,9 @@ export default function Geree() {
               </div>
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-md">
-              <div className="text-theme/70">Нийт: {employeesList.length}</div>
+              <div className="font-bold text-theme/70">
+                Нийт: {employeesList.length}
+              </div>
               <div className="flex items-center gap-3">
                 <PageSongokh
                   value={empPageSize}

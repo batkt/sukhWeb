@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Loader } from "@mantine/core";
+import { Loader, Modal as MModal, Button as MButton } from "@mantine/core";
 import {
   Edit,
   Trash2,
@@ -13,10 +13,7 @@ import {
   Save,
   Home,
 } from "lucide-react";
-import uilchilgee, {
-  aldaaBarigch,
-  updateBaiguullaga,
-} from "../../../lib/uilchilgee";
+import { aldaaBarigch, updateBaiguullaga } from "../../../lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -49,7 +46,526 @@ interface Ajiltan {
   selectedHorooData?: Horoo;
 }
 
+// Edit Building Modal Component
+const EditBuildingModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  editBarilgaNer: string;
+  setEditBarilgaNer: (value: string) => void;
+  editOrtsCount: number | "";
+  setEditOrtsCount: (value: number | "") => void;
+  editDavkharCount: number | "";
+  setEditDavkharCount: (value: number | "") => void;
+  hasUserEdited: boolean;
+  setHasUserEdited: (value: boolean) => void;
+  editedBuildingId: string | null;
+  baiguullaga: any;
+  handleSaveEditBuilding: () => Promise<void>;
+  isSaving: boolean;
+}> = ({
+  open,
+  onClose,
+  editBarilgaNer,
+  setEditBarilgaNer,
+  editOrtsCount,
+  setEditOrtsCount,
+  editDavkharCount,
+  setEditDavkharCount,
+  hasUserEdited,
+  setHasUserEdited,
+  editedBuildingId,
+  baiguullaga,
+  handleSaveEditBuilding,
+  isSaving,
+}) => {
+  // close on ESC
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // disable body scroll while modal is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev || "";
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        style={{
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      />
+      <div className="relative w-full max-w-xl">
+        <div className="neu-panel rounded-lg p-6 shadow-lg">
+          <h3 className="font-medium text-theme mb-3">Барилга засах</h3>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={editBarilgaNer}
+              onChange={(e) => {
+                setEditBarilgaNer(e.target.value);
+                setHasUserEdited(true);
+              }}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Барилгын нэр"
+              className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="text-xs text-slate-500 mt-2">
+            Тайлбар: Барилгын нэр болон орц/давхар тоог засна.
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Нийт орцын тоо
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={editOrtsCount}
+                onChange={(e) => {
+                  setEditOrtsCount(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  );
+                  setHasUserEdited(true);
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Нийт давхарын тоо
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={editDavkharCount}
+                onChange={(e) => {
+                  setEditDavkharCount(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  );
+                  setHasUserEdited(true);
+                }}
+                onKeyDown={(e) => e.stopPropagation()}
+                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button className="btn-minimal" onClick={onClose} type="button">
+              Болих
+            </button>
+            <button
+              className={`btn-minimal btn-save ${
+                isSaving ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+              onClick={handleSaveEditBuilding}
+              disabled={isSaving}
+              type="button"
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+// New Building Modal Component
+const NewBuildingModal: React.FC<{
+  open: boolean;
+  onClose: () => void;
+  newBarilgaNer: string;
+  setNewBarilgaNer: (value: string) => void;
+  ortsCount: number | "";
+  setOrtsCount: (value: number | "") => void;
+  davkharCount: number | "";
+  setDavkharCount: (value: number | "") => void;
+  handleSaveSettings: () => Promise<void>;
+  isSaving: boolean;
+}> = ({
+  open,
+  onClose,
+  newBarilgaNer,
+  setNewBarilgaNer,
+  ortsCount,
+  setOrtsCount,
+  davkharCount,
+  setDavkharCount,
+  handleSaveSettings,
+  isSaving,
+}) => {
+  // close on ESC
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // disable body scroll while modal is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev || "";
+    };
+  }, [open]);
+
+  if (!open) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onClose}
+        style={{
+          backdropFilter: "blur(6px)",
+          WebkitBackdropFilter: "blur(6px)",
+        }}
+      />
+
+      <div className="relative w-full max-w-xl">
+        <div className="neu-panel p-6 shadow-lg">
+          <h3 className="font-medium text-theme mb-3">Шинэ барилга</h3>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={newBarilgaNer}
+              onChange={(e) => setNewBarilgaNer(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+              placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
+              className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="text-xs text-slate-500 mt-2">
+            Тайлбар: Шинэ барилга нэмэхдээ доорх Орц/Давхар тоог оруулаад
+            "Хадгалах" товчийг дарна.
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Нийт орцын тоо
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={ortsCount}
+                onChange={(e) =>
+                  setOrtsCount(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+                onKeyDown={(e) => e.stopPropagation()}
+                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-theme mb-1">
+                Нийт давхарын тоо
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={davkharCount}
+                onChange={(e) =>
+                  setDavkharCount(
+                    e.target.value === "" ? "" : Number(e.target.value)
+                  )
+                }
+                onKeyDown={(e) => e.stopPropagation()}
+                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button className="btn-minimal" onClick={onClose} type="button">
+              Болих
+            </button>
+            <button
+              className={`btn-minimal btn-save ${
+                isSaving ? "opacity-60 cursor-not-allowed" : ""
+              }`}
+              onClick={handleSaveSettings}
+              disabled={isSaving}
+              type="button"
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 export default function BarilgiinTokhirgoo() {
+  const districts: Record<string, string[]> = {
+    Улаанбаатар: [
+      "Сүхбаатар",
+      "Баянгол",
+      "Чингэлтэй",
+      "Хан-Уул",
+      "Баянзүрх",
+      "Сонгинохайрхан",
+      "Налайх",
+      "Багануур",
+      "Багахангай",
+    ],
+  };
+
+  const subDistricts: Record<string, string[]> = {
+    Сүхбаатар: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+    ],
+    Баянгол: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
+    ],
+
+    Чингэлтэй: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+    ],
+
+    "Хан-Уул": [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+    ],
+
+    Баянзүрх: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
+      "35-р хороо",
+      "36-р хороо",
+      "37-р хороо",
+      "38-р хороо",
+      "39-р хороо",
+      "40-р хороо",
+      "41-р хороо",
+      "42-р хороо",
+      "43-р хороо",
+    ],
+
+    Сонгинохайрхан: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+      "9-р хороо",
+      "10-р хороо",
+      "11-р хороо",
+      "12-р хороо",
+      "13-р хороо",
+      "14-р хороо",
+      "15-р хороо",
+      "16-р хороо",
+      "17-р хороо",
+      "18-р хороо",
+      "19-р хороо",
+      "20-р хороо",
+      "21-р хороо",
+      "22-р хороо",
+      "23-р хороо",
+      "24-р хороо",
+      "25-р хороо",
+      "26-р хороо",
+      "27-р хороо",
+      "28-р хороо",
+      "29-р хороо",
+      "30-р хороо",
+      "31-р хороо",
+      "32-р хороо",
+      "33-р хороо",
+      "34-р хороо",
+      "35-р хороо",
+      "36-р хороо",
+      "37-р хороо",
+      "38-р хороо",
+      "39-р хороо",
+      "40-р хороо",
+      "41-р хороо",
+      "42-р хороо",
+      "43-р хороо",
+    ],
+
+    Налайх: [
+      "1-р хороо",
+      "2-р хороо",
+      "3-р хороо",
+      "4-р хороо",
+      "5-р хороо",
+      "6-р хороо",
+      "7-р хороо",
+      "8-р хороо",
+    ],
+    Багануур: ["1-р хороо", "2-р хороо", "3-р хороо", "4-р хороо", "5-р хороо"],
+    Багахангай: ["1-р хороо", "2-р хороо"],
+  };
   const { baiguullaga, token, baiguullagaMutate, barilgiinId } = useAuth();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const activeBuildingId = useMemo(() => {
@@ -184,270 +700,6 @@ export default function BarilgiinTokhirgoo() {
   const [editDavkharCount, setEditDavkharCount] = useState<number | "">(0);
   const [hasUserEdited, setHasUserEdited] = useState<boolean>(false);
 
-  // Small centered modal rendered via portal for editing a building
-  const EditBuildingModal: React.FC<{
-    open: boolean;
-    onClose: () => void;
-  }> = ({ open, onClose }) => {
-    // close on ESC
-    useEffect(() => {
-      if (!open) return;
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
-      };
-      document.addEventListener("keydown", onKey);
-      return () => document.removeEventListener("keydown", onKey);
-    }, [open, onClose]);
-
-    // disable body scroll while modal is open
-    useEffect(() => {
-      if (!open) return;
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = prev || "";
-      };
-    }, [open]);
-
-    // Pre-fill when opening
-    useEffect(() => {
-      if (!open || !editedBuildingId) return;
-      if (hasUserEdited) return; // Don't reset if user has started editing
-      const building = baiguullaga?.barilguud?.find(
-        (b: any) => String(b._id) === String(editedBuildingId)
-      );
-      if (building) {
-        setEditBarilgaNer(building.ner || "");
-        const tok = building.tokhirgoo || {};
-        const ortsFrom = tok.orts || [];
-        const ortsNum = Array.isArray(ortsFrom)
-          ? ortsFrom.length
-          : Number(ortsFrom) || 0;
-        setEditOrtsCount(ortsNum);
-        const davFrom = tok.davkhar || [];
-        const davCount = Array.isArray(davFrom)
-          ? davFrom.length
-          : Number(davFrom) || 0;
-        setEditDavkharCount(davCount);
-      }
-    }, [open, editedBuildingId, baiguullaga, hasUserEdited]);
-
-    if (!open) return null;
-
-    return createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={onClose}
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
-        />
-        <div className="relative w-full max-w-xl">
-          <div className="neu-panel rounded-lg p-6 shadow-lg">
-            <h3 className="font-medium text-theme mb-3">Барилга засах</h3>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                autoFocus
-                value={editBarilgaNer}
-                onChange={(e) => {
-                  setEditBarilgaNer(e.target.value);
-                  setHasUserEdited(true);
-                }}
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="Барилгын нэр"
-                className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="text-xs text-slate-500 mt-2">
-              Тайлбар: Барилгын нэр болон орц/давхар тоог засна.
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт орцын тоо
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={editOrtsCount}
-                  onChange={(e) => {
-                    setEditOrtsCount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    );
-                    setHasUserEdited(true);
-                  }}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт давхарын тоо
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={editDavkharCount}
-                  onChange={(e) => {
-                    setEditDavkharCount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    );
-                    setHasUserEdited(true);
-                  }}
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button className="btn-minimal" onClick={onClose} type="button">
-                Болих
-              </button>
-              <button
-                className={`btn-minimal btn-save ${
-                  isSaving ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-                onClick={handleSaveEditBuilding}
-                disabled={isSaving}
-                type="button"
-              >
-                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
-
-  // Small centered modal rendered via portal for creating a new building
-  const NewBuildingModal: React.FC<{
-    open: boolean;
-    onClose: () => void;
-  }> = ({ open, onClose }) => {
-    // close on ESC
-    useEffect(() => {
-      if (!open) return;
-      const onKey = (e: KeyboardEvent) => {
-        if (e.key === "Escape") onClose();
-      };
-      document.addEventListener("keydown", onKey);
-      return () => document.removeEventListener("keydown", onKey);
-    }, [open, onClose]);
-
-    // disable body scroll while modal is open
-    useEffect(() => {
-      if (!open) return;
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = "hidden";
-      return () => {
-        document.body.style.overflow = prev || "";
-      };
-    }, [open]);
-
-    if (!open) return null;
-
-    return createPortal(
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={onClose}
-          style={{
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
-        />
-
-        <div className="relative w-full max-w-xl">
-          <div className="neu-panel p-6 shadow-lg">
-            <h3 className="font-medium text-theme mb-3">Шинэ барилга</h3>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <input
-                type="text"
-                autoFocus
-                value={newBarilgaNer}
-                onChange={(e) => setNewBarilgaNer(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-                placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
-                className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="text-xs text-slate-500 mt-2">
-              Тайлбар: Шинэ барилга нэмэхдээ доорх Орц/Давхар тоог оруулаад
-              "Хадгалах" товчийг дарна.
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт орцын тоо
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={ortsCount}
-                  onChange={(e) =>
-                    setOrtsCount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Нийт давхарын тоо
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={davkharCount}
-                  onChange={(e) =>
-                    setDavkharCount(
-                      e.target.value === "" ? "" : Number(e.target.value)
-                    )
-                  }
-                  onKeyDown={(e) => e.stopPropagation()}
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button className="btn-minimal" onClick={onClose} type="button">
-                Болих
-              </button>
-              <button
-                className={`btn-minimal btn-save ${
-                  isSaving ? "opacity-60 cursor-not-allowed" : ""
-                }`}
-                onClick={handleSaveSettings}
-                disabled={isSaving}
-                type="button"
-              >
-                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
-    );
-  };
-
   // Initialize basic info only
   useEffect(() => {
     if (!barilga) {
@@ -478,89 +730,44 @@ export default function BarilgiinTokhirgoo() {
     }
   }, [barilga]);
 
-  // useEffects from UndsenMedeelel
+  // useEffects from UndsenMedeelel - modified to use hardcoded data
   useEffect(() => {
-    if (!token) return;
-    const fetchTatvariinAlba = async () => {
-      try {
-        const res = await uilchilgee(token).get<TatvariinAlbaResponse>(
-          "/tatvariinAlba"
-        );
-        setTatvariinAlbaData(res.data);
+    // Initialize with hardcoded data instead of API call
+    setTatvariinAlbaData({
+      jagsaalt: Object.keys(districts).flatMap((city) =>
+        districts[city].map((district) => ({
+          _id: district,
+          ner: district,
+          kod: district,
+          ded:
+            subDistricts[district]?.map((horoo) => ({
+              _id: horoo,
+              ner: horoo,
+              kod: horoo,
+            })) || [],
+        }))
+      ),
+    });
 
-        // Preload sohNer if available - prefer selected building, then first building, then org-level, then org name
-        const effBarilgaId = selectedBuildingId || null;
-        const allBuildings = Array.isArray(baiguullaga?.barilguud)
-          ? baiguullaga!.barilguud!
-          : [];
-        const selectedBarilga = effBarilgaId
-          ? allBuildings.find(
-              (b: any) => String(b._id) === String(effBarilgaId)
-            )
-          : allBuildings[0];
-        if (selectedBarilga?.tokhirgoo?.sohNer) {
-          setSohNer(String(selectedBarilga.tokhirgoo.sohNer));
-        } else if (
-          baiguullaga?.tokhirgoo &&
-          (baiguullaga.tokhirgoo as any)?.sohNer
-        ) {
-          setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
-        } else if (baiguullaga?.ner) {
-          setSohNer(String(baiguullaga.ner));
-        }
-        // Prefer building-level tokhirgoo when available; fallback to org-level
-        const effectiveTokhirgoo =
-          selectedBarilga?.tokhirgoo || baiguullaga?.tokhirgoo;
-
-        // Always try to derive selectedDuureg and selectedHoroo from effectiveTokhirgoo if available
-        if (res.data?.jagsaalt && effectiveTokhirgoo) {
-          try {
-            const tok = effectiveTokhirgoo as any;
-            // try to infer duureg by districtCode prefix or duuregNer
-            let duuregMatch: Duureg | undefined;
-            if (tok?.districtCode) {
-              const code = String(tok.districtCode);
-              const duuregKodGuess =
-                code.length > 2
-                  ? code.slice(0, code.length - 2)
-                  : code.slice(0, 2);
-              duuregMatch = res.data.jagsaalt.find(
-                (d) => d.kod === duuregKodGuess || d.ner === tok.duuregNer
-              );
-            }
-            if (!duuregMatch && tok?.duuregNer) {
-              duuregMatch = res.data.jagsaalt.find(
-                (d) => d.ner === tok.duuregNer
-              );
-            }
-
-            if (duuregMatch) {
-              const horooMatch = (duuregMatch.ded || []).find(
-                (h) => h.kod === tok?.horoo?.kod || h.ner === tok?.horoo?.ner
-              );
-
-              setState((s) => ({
-                ...s,
-                selectedDuureg: duuregMatch?._id || s.selectedDuureg,
-                selectedDuuregData: duuregMatch || s.selectedDuuregData,
-                selectedHoroo: horooMatch?.kod || s.selectedHoroo,
-                selectedHorooData: horooMatch || s.selectedHorooData,
-              }));
-            }
-          } catch (e) {
-            // ignore parsing errors
-          }
-        }
-      } catch (err) {
-        // surface fetch errors to the shared handler
-        aldaaBarigch(err);
-      }
-
-      // Initialize form state and initial snapshot whenever relevant data or selection changes
-    };
-
-    fetchTatvariinAlba();
-  }, [token, baiguullaga]);
+    // Preload sohNer if available - prefer selected building, then first building, then org-level, then org name
+    const effBarilgaId = selectedBuildingId || null;
+    const allBuildings = Array.isArray(baiguullaga?.barilguud)
+      ? baiguullaga!.barilguud!
+      : [];
+    const selectedBarilga = effBarilgaId
+      ? allBuildings.find((b: any) => String(b._id) === String(effBarilgaId))
+      : allBuildings[0];
+    if (selectedBarilga?.tokhirgoo?.sohNer) {
+      setSohNer(String(selectedBarilga.tokhirgoo.sohNer));
+    } else if (
+      baiguullaga?.tokhirgoo &&
+      (baiguullaga.tokhirgoo as any)?.sohNer
+    ) {
+      setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
+    } else if (baiguullaga?.ner) {
+      setSohNer(String(baiguullaga.ner));
+    }
+  }, [selectedBuildingId, baiguullaga]);
 
   // Initialize form state and initial snapshot whenever relevant data or selection changes
   useEffect(() => {
@@ -612,27 +819,19 @@ export default function BarilgiinTokhirgoo() {
       ? String(baiguullaga.ner)
       : "";
 
-    // Find duureg and horoo matches from tax office data
+    // Find duureg and horoo matches from hardcoded data
     let duuregMatch: Duureg | undefined;
     let horooMatch: Horoo | undefined;
     if (effectiveTokhirgoo) {
       const tok = effectiveTokhirgoo as any;
-      if (tok?.districtCode) {
-        const code = String(tok.districtCode);
-        const duuregKodGuess =
-          code.length > 2 ? code.slice(0, code.length - 2) : code.slice(0, 2);
-        duuregMatch = tatvariinAlbaData.jagsaalt.find(
-          (d) => d.kod === duuregKodGuess || d.ner === tok.duuregNer
-        );
-      }
-      if (!duuregMatch && tok?.duuregNer) {
+      if (tok?.duuregNer) {
         duuregMatch = tatvariinAlbaData.jagsaalt.find(
           (d) => d.ner === tok.duuregNer
         );
       }
       if (duuregMatch) {
         horooMatch = (duuregMatch.ded || []).find(
-          (h) => h.kod === tok?.horoo?.kod || h.ner === tok?.horoo?.ner
+          (h) => h.ner === tok?.horoo?.ner
         );
       }
     }
@@ -701,42 +900,36 @@ export default function BarilgiinTokhirgoo() {
   };
 
   // Handlers from UndsenMedeelel
-  const handleDuuregChange = (duuregId: string) => {
-    const selectedDuuregData = tatvariinAlbaData?.jagsaalt.find(
-      (d) => d._id === duuregId
-    );
-
-    if (selectedDuuregData) {
-      setState((s) => ({
-        ...s,
-        selectedDuureg: duuregId,
-        selectedDuuregData: selectedDuuregData,
-        selectedHoroo: "",
-        selectedHorooData: undefined,
-      }));
-    }
+  const handleDuuregChange = (duuregName: string) => {
+    setState((s) => ({
+      ...s,
+      selectedDuureg: duuregName,
+      selectedDuuregData: {
+        _id: duuregName,
+        ner: duuregName,
+        kod: duuregName,
+      } as Duureg,
+      selectedHoroo: "",
+      selectedHorooData: undefined,
+    }));
   };
 
-  const handleHorooChange = (horooKod: string) => {
+  const handleHorooChange = (horooName: string) => {
     if (!state.selectedDuureg) {
       openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
       return;
     }
 
-    const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
-      (d) => d._id === state.selectedDuureg
-    );
-    const selectedHorooData = selectedDistrict?.ded?.find(
-      (h: Horoo) => h.kod === horooKod
-    );
-
-    if (selectedHorooData) {
-      setState((s) => ({
-        ...s,
-        selectedHoroo: horooKod,
-        selectedHorooData: selectedHorooData,
-      }));
-    }
+    const horooData = {
+      _id: horooName,
+      ner: horooName,
+      kod: horooName,
+    } as Horoo;
+    setState((s) => ({
+      ...s,
+      selectedHoroo: horooName,
+      selectedHorooData: horooData,
+    }));
   };
 
   const handleSaveSettings = async () => {
@@ -817,7 +1010,6 @@ export default function BarilgiinTokhirgoo() {
         };
         // mark newly created building as inheriting organization/main tokhirgoo
         // until the user explicitly edits this building
-        (newBuilding.tokhirgoo as any).__inherited = true;
         updatedBarilguud = [...updatedBarilguud, newBuilding];
       } else if (activeBuildingId) {
         // Update existing building's settings
@@ -856,7 +1048,6 @@ export default function BarilgiinTokhirgoo() {
           } as any;
           // Mark this building as customized because user saved changes for it
           // so it should no longer be overwritten by org-level updates
-          (tokhirgoo as any).__inherited = false;
           return { ...b, tokhirgoo };
         });
       }
@@ -933,7 +1124,6 @@ export default function BarilgiinTokhirgoo() {
           orts: String(ortsNum),
           davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
         } as any;
-        (tokhirgoo as any).__inherited = false;
         return { ...b, ner: name, tokhirgoo };
       });
 
@@ -965,14 +1155,57 @@ export default function BarilgiinTokhirgoo() {
     setIsEditBuildingModalOpen(true);
   };
 
+  // Pre-fill edit modal when opening
+  useEffect(() => {
+    if (!isEditBuildingModalOpen || !editedBuildingId) return;
+    if (hasUserEdited) return; // Don't reset if user has started editing
+    const building = baiguullaga?.barilguud?.find(
+      (b: any) => String(b._id) === String(editedBuildingId)
+    );
+    if (building) {
+      setEditBarilgaNer(building.ner || "");
+      const tok = building.tokhirgoo || {};
+      const ortsFrom = tok.orts || [];
+      const ortsNum = Array.isArray(ortsFrom)
+        ? ortsFrom.length
+        : Number(ortsFrom) || 0;
+      setEditOrtsCount(ortsNum);
+      const davFrom = tok.davkhar || [];
+      const davCount = Array.isArray(davFrom)
+        ? davFrom.length
+        : Number(davFrom) || 0;
+      setEditDavkharCount(davCount);
+    }
+  }, [isEditBuildingModalOpen, editedBuildingId, baiguullaga, hasUserEdited]);
+
   const handleDeleteBuilding = async (id: string) => {
+    // open confirm modal instead of immediate delete
     if (!token) return openErrorOverlay("Нэвтрэх шаардлагатай");
     if (!baiguullaga?._id) return openErrorOverlay("Байгууллага олдсонгүй");
-
-    const confirm = window.confirm(
-      "Энэхүү барилгыг устгах уу? Энэ үйлдлийг буцаах боломжгүй."
+    const building = baiguullaga?.barilguud?.find(
+      (b: any) => String(b._id) === String(id)
     );
-    if (!confirm) return;
+    setBuildingToDelete({ id: String(id), ner: building?.ner || "" });
+    setDeleteModalOpen(true);
+  };
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [buildingToDelete, setBuildingToDelete] = useState<{
+    id: string;
+    ner?: string;
+  } | null>(null);
+
+  const confirmDeleteBuilding = async () => {
+    const id = buildingToDelete?.id;
+    if (!id) return setDeleteModalOpen(false);
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллага олдсонгүй");
+      return;
+    }
 
     try {
       const updatedBarilguud = (baiguullaga?.barilguud || []).filter(
@@ -1004,6 +1237,8 @@ export default function BarilgiinTokhirgoo() {
         );
         setSelectedBuildingId(first?._id ? String(first._id) : null);
       }
+      setDeleteModalOpen(false);
+      setBuildingToDelete(null);
     } catch (e) {
       openErrorOverlay("Барилга устгах явцад алдаа гарлаа");
     }
@@ -1064,83 +1299,45 @@ export default function BarilgiinTokhirgoo() {
         sohNer: finalSohNer,
       } as any;
 
-      // If a branch (non-main) building is selected, update only that
-      // building's tokhirgoo and mark it as customized. Otherwise
-      // propagate org/main changes to buildings that still inherit.
-      const effBarilgaId = selectedBuildingId || null;
-      const mainId = Array.isArray(baiguullaga?.barilguud)
-        ? baiguullaga!.barilguud![0]?._id
-        : null;
-
-      let newBarilguud: any[] = [];
-      if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
-        newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
-          if (String(b._id) !== String(effBarilgaId)) return b;
-          const tok = {
+      // Update only the selected building's tokhirgoo (do NOT overwrite other buildings)
+      const targetBuildingId =
+        activeBuildingId || selectedBuildingId || barilgiinId;
+      const newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+        if (!targetBuildingId || String(b._id) !== String(targetBuildingId))
+          return b;
+        return {
+          ...b,
+          baiguullagiinId: b.baiguullagiinId || baiguullaga?._id,
+          tokhirgoo: {
             ...(b.tokhirgoo || {}),
             duuregNer: newTokhirgoo.duuregNer,
             districtCode: newTokhirgoo.districtCode,
             horoo: { ...(newTokhirgoo.horoo || {}) },
             sohNer: newTokhirgoo.sohNer,
-          } as any;
-          (tok as any).__inherited = false;
-          return {
-            ...b,
-            tokhirgoo: tok,
-            baiguullagiinId: b.baiguullagiinId || baiguullaga?._id,
-          };
-        });
-      } else {
-        newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
-          try {
-            if (b && b.tokhirgoo && (b.tokhirgoo as any).__inherited === false)
-              return b;
-          } catch (_) {}
-          return {
-            ...b,
-            baiguullagiinId: b.baiguullagiinId || baiguullaga?._id,
-            tokhirgoo: {
-              ...(b.tokhirgoo || {}),
-              duuregNer: newTokhirgoo.duuregNer,
-              districtCode: newTokhirgoo.districtCode,
-              horoo: { ...(newTokhirgoo.horoo || {}) },
-              sohNer: newTokhirgoo.sohNer,
-            },
-          };
-        });
-      }
+          },
+        };
+      });
 
-      // Build payload: if we're saving for a branch (non-main) - don't overwrite org-level tokhirgoo
-      let payload: any;
-      if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
-        // Branch-only save: only update barilguud array (per-building tokhirgoo)
-        payload = {
-          ...(baiguullaga || {}),
-          _id: baiguullaga!._id,
-          baiguullagiinId: String(baiguullaga!._id),
-          barilguud: newBarilguud,
-        };
-      } else {
-        // Org/main save: update org-level tokhirgoo and propagate to inheriting buildings
-        payload = {
-          ...(baiguullaga || {}),
-          _id: baiguullaga!._id,
-          // ensure server receives organization id explicitly
-          baiguullagiinId: String(baiguullaga!._id),
-          eBarimtAutomataarIlgeekh:
-            typeof baiguullaga?.eBarimtAutomataarIlgeekh === "boolean"
-              ? baiguullaga?.eBarimtAutomataarIlgeekh
-              : false,
-          nuatTulukhEsekh:
-            typeof baiguullaga?.nuatTulukhEsekh === "boolean"
-              ? baiguullaga?.nuatTulukhEsekh
-              : false,
-          eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
-          eBarimtShine: baiguullaga?.eBarimtShine ?? false,
-          tokhirgoo: newTokhirgoo,
-          barilguud: newBarilguud,
-        };
-      }
+      // Update organization payload but keep org-level tokhirgoo unchanged
+      // (we only want to persist the change to the selected building)
+      const payload = {
+        ...(baiguullaga || {}),
+        _id: baiguullaga!._id,
+        baiguullagiinId: String(baiguullaga!._id),
+        eBarimtAutomataarIlgeekh:
+          typeof baiguullaga?.eBarimtAutomataarIlgeekh === "boolean"
+            ? baiguullaga?.eBarimtAutomataarIlgeekh
+            : false,
+        nuatTulukhEsekh:
+          typeof baiguullaga?.nuatTulukhEsekh === "boolean"
+            ? baiguullaga?.nuatTulukhEsekh
+            : false,
+        eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
+        eBarimtShine: baiguullaga?.eBarimtShine ?? false,
+        // keep baiguullaga.tokhirgoo as-is (do not overwrite org-level defaults)
+        tokhirgoo: baiguullaga?.tokhirgoo,
+        barilguud: newBarilguud,
+      };
 
       const updated = await updateBaiguullaga(
         token || undefined,
@@ -1151,19 +1348,6 @@ export default function BarilgiinTokhirgoo() {
       if (updated) {
         // Optimistically update cache with server response
         await baiguullagaMutate(updated, false);
-        // Additionally, if this was a branch-only save, ensure the local
-        // cache reflects the per-building tokhirgoo immediately by
-        // applying the computed newBarilguud to the current cache.
-        if (effBarilgaId && mainId && String(effBarilgaId) !== String(mainId)) {
-          try {
-            await baiguullagaMutate((prev: any) => {
-              if (!prev) return updated;
-              return { ...prev, barilguud: newBarilguud } as any;
-            }, false);
-          } catch (_) {
-            // ignore mutate errors
-          }
-        }
       }
 
       // Show success overlay
@@ -1203,21 +1387,6 @@ export default function BarilgiinTokhirgoo() {
     );
   }, [state.selectedDuureg, state.selectedHoroo, sohNer, initialValues]);
 
-  // Only allow editing from main (first) building; otherwise read-only
-  const mainBuildingId = useMemo(() => {
-    const first =
-      Array.isArray(baiguullaga?.barilguud) && baiguullaga.barilguud.length > 0
-        ? baiguullaga.barilguud[0]
-        : null;
-    return first?._id ? String(first._id) : null;
-  }, [baiguullaga?.barilguud]);
-
-  const isMainBuildingSelected = useMemo(() => {
-    if (!mainBuildingId) return true; // no buildings means allow
-    if (!selectedBuildingId) return true; // no selection means allow first
-    return String(selectedBuildingId) === String(mainBuildingId);
-  }, [selectedBuildingId, mainBuildingId]);
-
   // Removed save handler since орц/давхар settings are no longer editable from here
 
   if (!isInit) {
@@ -1229,27 +1398,93 @@ export default function BarilgiinTokhirgoo() {
   }
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 max-h-[42rem] overflow-visible overflow-y-auto custom-scrollbar">
-      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6">
+    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[650px]">
+      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar">
+        <div className="w-full">
+          <label className="block text-sm font-medium text-theme mb-1">
+            СӨХ-ийн нэр
+          </label>
+          <input
+            type="text"
+            value={sohNer}
+            onChange={(e) => setSohNer(e.target.value)}
+            placeholder="СӨХ-ийн нэрийг оруулна уу"
+            className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            disabled
+            // allow editing SÖH name per-branch as well; save handler will decide scope
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 1) Дүүрэг */}
+          <div className="w-full">
+            <label className="block text-sm font-medium text-theme mb-1">
+              Дүүрэг
+            </label>
+            <TusgaiZagvar
+              value={state.selectedDuureg || ""}
+              onChange={(v) => handleDuuregChange(v)}
+              options={Object.keys(districts).flatMap((city) =>
+                districts[city].map((district) => ({
+                  value: district,
+                  label: district,
+                }))
+              )}
+              placeholder="Сонгоно уу"
+              className="w-full"
+              // allow selecting district per-branch as well
+              disabled={false}
+            />
+          </div>
+
+          <div className="w-full">
+            <label className="block text-sm font-medium text-theme mb-1">
+              Хороо
+            </label>
+            <TusgaiZagvar
+              value={state.selectedHoroo || ""}
+              onChange={(v) => handleHorooChange(v)}
+              options={
+                state.selectedDuureg && subDistricts[state.selectedDuureg]
+                  ? subDistricts[state.selectedDuureg].map((horoo) => ({
+                      value: horoo,
+                      label: horoo,
+                    }))
+                  : []
+              }
+              placeholder="Сонгоно уу"
+              className="w-full"
+              // enable horoo selection when duureg selected (branch-level editable)
+              disabled={!state.selectedDuureg}
+            />
+          </div>
+
+          {/* 4) СӨХ-ийн нэр */}
+        </div>
         {/* Buildings list with edit/delete actions */}
-        {/* Show building list only when main building is selected */}
-        {isMainBuildingSelected && orgBuildings && orgBuildings.length > 0 && (
+        {/* Show building list for all buildings */}
+        {orgBuildings && orgBuildings.length > 0 && (
           <div className="space-y-2 border-b pb-3">
-            <div className="flex items-center justify-between">
-              <h3 className="font-medium text-theme">Бүртгэлтэй барилгууд</h3>
-              <div className="text-sm text-slate-500">
+            <div className="flex items-center gap-2">
+              <h3 className="font-medium text-theme">
+                Бүртгэлтэй барилгууд (Байр)
+              </h3>
+              <button
+                onClick={() => setIsNewBuildingModalOpen(true)}
+                className="btn-minimal btn-save"
+                title="Шинэ барилга нэмэх"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              {/* <div className="text-sm text-slate-500">
                 Нийт: {orgBuildings.length}
-              </div>
+              </div> */}
             </div>
             <ul className="divide-y max-h-64 overflow-y-auto">
               {orgBuildings.map((b: any, index: number) => {
-                const isMain = index === 0;
                 return (
                   <li
                     key={b._id}
-                    className={`py-2 flex items-center justify-between ${
-                      isMain ? "bg-primary/20 border-l-4 border-primary/50" : ""
-                    }`}
+                    className="py-2 flex items-center justify-between"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -1257,51 +1492,25 @@ export default function BarilgiinTokhirgoo() {
                         className="cursor-pointer text-left px-2 py-1 hover:underline"
                       >
                         {b.ner || "-"}
-                        {isMain && (
-                          <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                            Үндсэн
-                          </span>
-                        )}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {(() => {
-                          try {
-                            const inh = (b?.tokhirgoo as any)?.__inherited;
-                            if (inh === false) return "(Тохируулсан)";
-                          } catch (_) {}
-                          return;
-                        })()}
-                      </div>
+                      <div className="text-xs text-slate-500"></div>
                     </div>
-                    {/* Edit/Delete are available only when main building is selected */}
+                    {/* Edit/Delete are available for all buildings */}
                     <div className="flex items-center gap-2">
-                      {isMainBuildingSelected && (
-                        <>
-                          {isMain && (
-                            <button
-                              onClick={() => setIsNewBuildingModalOpen(true)}
-                              className="btn-minimal btn-add p-2"
-                              title="Шинэ барилга нэмэх"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleEditBuilding(String(b._id))}
-                            className="btn-minimal btn-edit p-2"
-                            title="Засах"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteBuilding(String(b._id))}
-                            className="btn-minimal btn-delete p-2"
-                            title="Устгах"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
+                      <button
+                        onClick={() => handleEditBuilding(String(b._id))}
+                        className="btn-minimal btn-edit p-2"
+                        title="Засах"
+                      >
+                        <Edit className="w-4 h-4 text-blue-700" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteBuilding(String(b._id))}
+                        className="btn-minimal btn-delete p-2"
+                        title="Устгах"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
                     </div>
                   </li>
                 );
@@ -1330,88 +1539,88 @@ export default function BarilgiinTokhirgoo() {
         )}
 
         {/* Info grid */}
-        {tatvariinAlbaData?.jagsaalt && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 1) Дүүрэг */}
-            <div className="w-full">
-              <label className="block text-sm font-medium text-theme mb-1">
-                Дүүрэг
-              </label>
-              <TusgaiZagvar
-                value={state.selectedDuureg || ""}
-                onChange={(v) => handleDuuregChange(v)}
-                options={(tatvariinAlbaData?.jagsaalt || []).map((duureg) => ({
-                  value: duureg._id || "",
-                  label: duureg.ner,
-                }))}
-                placeholder="Сонгоно уу"
-                className="w-full"
-                // allow selecting district per-branch as well
-                disabled={false}
-              />
-            </div>
-
-            <div className="w-full">
-              <label className="block text-sm font-medium text-theme mb-1">
-                Хороо
-              </label>
-              <TusgaiZagvar
-                value={state.selectedHoroo || ""}
-                onChange={(v) => handleHorooChange(v)}
-                options={(selectedDistrict?.ded || []).map((horoo) => ({
-                  value: horoo.kod,
-                  label: horoo.ner,
-                }))}
-                placeholder="Сонгоно уу"
-                className="w-full"
-                // enable horoo selection when duureg selected (branch-level editable)
-                disabled={!state.selectedDuureg}
-              />
-            </div>
-
-            {/* 4) СӨХ-ийн нэр */}
-            <div className="w-full">
-              <label className="block text-sm font-medium text-theme mb-1">
-                СӨХ-ийн нэр
-              </label>
-              <input
-                type="text"
-                value={sohNer}
-                onChange={(e) => setSohNer(e.target.value)}
-                placeholder="СӨХ-ийн нэрийг оруулна уу"
-                className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled
-                // allow editing SÖH name per-branch as well; save handler will decide scope
-              />
-            </div>
-          </div>
-        )}
 
         {/* Single Save button */}
-        {tatvariinAlbaData?.jagsaalt && (
-          <div className="flex justify-end">
-            <button
-              onClick={khadgalakh}
-              className={`btn-minimal btn-save ${
-                !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-              // allow saving for branch-level edits as well
-              disabled={!isDirty || isSaving}
-            >
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-            </button>
-          </div>
-        )}
+        <div className="flex justify-end">
+          <button
+            onClick={khadgalakh}
+            className={`btn-minimal btn-save ${
+              !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
+            }`}
+            // allow saving for branch-level edits as well
+            disabled={!isDirty || isSaving}
+          >
+            {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+          </button>
+        </div>
         {/* New building modal (portal) */}
         <NewBuildingModal
           open={isNewBuildingModalOpen}
           onClose={() => setIsNewBuildingModalOpen(false)}
+          newBarilgaNer={newBarilgaNer}
+          setNewBarilgaNer={setNewBarilgaNer}
+          ortsCount={ortsCount}
+          setOrtsCount={setOrtsCount}
+          davkharCount={davkharCount}
+          setDavkharCount={setDavkharCount}
+          handleSaveSettings={handleSaveSettings}
+          isSaving={isSaving}
         />
         {/* Edit building modal (portal) */}
         <EditBuildingModal
           open={isEditBuildingModalOpen}
           onClose={() => setIsEditBuildingModalOpen(false)}
+          editBarilgaNer={editBarilgaNer}
+          setEditBarilgaNer={setEditBarilgaNer}
+          editOrtsCount={editOrtsCount}
+          setEditOrtsCount={setEditOrtsCount}
+          editDavkharCount={editDavkharCount}
+          setEditDavkharCount={setEditDavkharCount}
+          hasUserEdited={hasUserEdited}
+          setHasUserEdited={setHasUserEdited}
+          editedBuildingId={editedBuildingId}
+          baiguullaga={baiguullaga}
+          handleSaveEditBuilding={handleSaveEditBuilding}
+          isSaving={isSaving}
         />
+        <MModal
+          title="Баталгаажуулалт"
+          opened={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          classNames={{
+            content: "modal-surface modal-responsive",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.5, blur: 6 }}
+          centered
+          size="sm"
+        >
+          <div className="space-y-4 mt-4">
+            <p className="text-theme">
+              Та "{buildingToDelete?.ner}" барилгыг устгахдаа итгэлтэй байна уу?
+              Энэ үйлдэл буцаагдахгүй.
+            </p>
+            <div className="flex justify-end gap-2">
+              <MButton
+                onClick={() => setDeleteModalOpen(false)}
+                className="btn-minimal"
+              >
+                Болих
+              </MButton>
+              <MButton
+                color="red"
+                onClick={confirmDeleteBuilding}
+                className="btn-minimal btn-cancel"
+              >
+                Устгах
+              </MButton>
+            </div>
+          </div>
+        </MModal>
         {/* Entrances and Floors moved inside the modal (full-screen) */}
       </div>
     </div>

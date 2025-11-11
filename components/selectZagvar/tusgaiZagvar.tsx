@@ -1,5 +1,6 @@
 "use client";
-import { useState, useRef, useEffect, ReactNode } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 
 interface Option {
@@ -37,19 +38,59 @@ export default function TusgaiZagvar({
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const portalRef = useRef<HTMLDivElement | null>(null);
   const instanceId = useRef<string>(
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  );
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(
+    null
   );
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      const clickedInsideTrigger = ref.current && ref.current.contains(target);
+      const clickedInsidePortal =
+        portalRef.current && portalRef.current.contains(target);
+      if (!clickedInsideTrigger && !clickedInsidePortal) {
         setIsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Position the portal dropdown when opened
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setPortalStyle(null);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setPortalStyle({ top: r.bottom, left: r.left, width: r.width });
+
+    // Reposition the portal on scroll/resize instead of closing it so the user
+    // can scroll the page while the dropdown stays open.
+    let raf = 0 as number | null;
+    const recalc = () => {
+      if (!el) return;
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const r2 = el.getBoundingClientRect();
+        setPortalStyle({ top: r2.bottom, left: r2.left, width: r2.width });
+      }) as unknown as number;
+    };
+
+    window.addEventListener("scroll", recalc, true);
+    window.addEventListener("resize", recalc);
+    return () => {
+      window.removeEventListener("scroll", recalc, true);
+      window.removeEventListener("resize", recalc);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [isOpen]);
 
   // Ensure only one custom select is open at a time across the page
   useEffect(() => {
@@ -121,43 +162,57 @@ export default function TusgaiZagvar({
         />
       </button>
 
-      {isOpen && (
-        <div
-          className={`absolute top-full left-0 mt-2 w-full max-h-60 z-[3000] rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
-            tone === "neutral"
-              ? "!bg-white !text-slate-900 !border !border-gray-200"
-              : ""
-          }`}
-          role="listbox"
-        >
-          <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
-            {mergedOptions.map((opt) => (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={opt.value === value}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors truncate ${
-                    tone === "neutral"
-                      ? opt.value === value
-                        ? "font-semibold text-slate-900 bg-gray-50"
-                        : "text-slate-700 hover:bg-gray-50"
-                      : opt.value === value
-                      ? "font-semibold text-theme"
-                      : "text-theme hover:bg-black/8"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {isOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={portalRef}
+            role="listbox"
+            style={{
+              position: "fixed",
+              top: portalStyle?.top ?? 0,
+              left: portalStyle?.left ?? 0,
+              width: portalStyle?.width ?? "auto",
+              zIndex: 3000,
+            }}
+          >
+            <div
+              className={`mt-2 w-full max-h-60 rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
+                tone === "neutral"
+                  ? "!bg-white !text-slate-900 !border !border-gray-200"
+                  : ""
+              }`}
+            >
+              <ul className="py-2 overflow-y-auto max-h-60 custom-scrollbar">
+                {mergedOptions.map((opt) => (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={opt.value === value}
+                      onClick={() => {
+                        onChange(opt.value);
+                        setIsOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors truncate ${
+                        tone === "neutral"
+                          ? opt.value === value
+                            ? "font-semibold text-slate-900 bg-gray-50"
+                            : "text-slate-700 hover:bg-gray-50"
+                          : opt.value === value
+                          ? "font-semibold text-theme"
+                          : "text-theme hover:bg-black/8"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>,
+          document.body
+        )}
     </div>
   );
 }

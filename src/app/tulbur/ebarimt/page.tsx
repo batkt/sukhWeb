@@ -38,6 +38,7 @@ export default function Ebarimt() {
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
   >(null);
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined
   );
@@ -198,9 +199,9 @@ export default function Ebarimt() {
               rec?.ddtd ||
               it?.barimtDugaar ||
               it?.dugaar ||
-              rec?.lottery ||
-              it?.lottery ||
-              it?.lotteryId ||
+              rec?.id ||
+              it?.id ||
+              it?.idId ||
               ""
           ) || undefined,
         date: d ? moment(d).format("YYYY-MM-DD HH:mm") : "",
@@ -216,6 +217,25 @@ export default function Ebarimt() {
       } as TableItem;
     });
   }, [data]);
+
+  // Client-side filtered view based on search input
+  const displayedData: TableItem[] = useMemo(() => {
+    const s = (searchTerm || "").trim().toLowerCase();
+    if (!s) return tableData;
+    return tableData.filter((it) => {
+      const fields = [
+        it.receiptId,
+        it.ddtd,
+        it.name,
+        it.service,
+        it.gereeniiDugaar,
+        it.id,
+      ]
+        .filter(Boolean)
+        .map((x) => String(x).toLowerCase());
+      return fields.some((f) => f.includes(s));
+    });
+  }, [tableData, searchTerm]);
 
   const eBarimtMedeelel = { extraInfo: { lastSentDate: new Date() } };
 
@@ -391,27 +411,34 @@ export default function Ebarimt() {
 
       <div className="space-y-8">
         {/* Enhanced Dashboard with Borders */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {(() => {
-            const total = tableData.reduce((s, r) => s + (r.total || 0), 0);
-            const vat = tableData.reduce((s, r) => s + (r.totalVAT || 0), 0);
-            const city = tableData.reduce(
+            const total = displayedData.reduce((s, r) => s + (r.total || 0), 0);
+            const vat = displayedData.reduce(
+              (s, r) => s + (r.totalVAT || 0),
+              0
+            );
+            const city = displayedData.reduce(
               (s, r) => s + (r.totalCityTax || 0),
               0
             );
-            const paid = tableData.filter((r) => r.payStatus === "PAID").length;
-            const unpaid = tableData.filter(
+            const paid = displayedData.filter(
+              (r) => r.payStatus === "PAID"
+            ).length;
+            const unpaid = displayedData.filter(
               (r) => r.payStatus !== "PAID"
             ).length;
-            const b2c = tableData.filter(
+            const b2c = displayedData.filter(
               (r) => r.type === "B2C_RECEIPT"
             ).length;
+            const b2b = displayedData.filter(
+              (r) => r.type === "B2B_RECEIPT"
+            ).length;
             const stats = [
-              { title: "Нийт баримт", value: tableData.length },
+              { title: "Нийт баримт", value: displayedData.length },
               { title: "Нийт дүн", value: total },
-              { title: "НӨАТ", value: vat },
-              { title: "Хотын татвар", value: city },
-              { title: "Төлсөн", value: paid },
+
+              { title: "Байгууллага", value: b2b },
               { title: "Иргэн", value: b2c },
             ];
             return stats;
@@ -452,7 +479,7 @@ export default function Ebarimt() {
           transition={{ delay: 0.2 }}
         >
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-center">
               <DatePickerInput
                 type="range"
                 locale="mn"
@@ -473,6 +500,13 @@ export default function Ebarimt() {
                     "text-theme placeholder:text-theme neu-panel bg-[var(--surface-bg)] !h-[40px] !py-2 !w-[380px]",
                 }}
                 popoverProps={{ zIndex: 2210 }}
+              />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Баримт/Нэр/ДДТД хайх"
+                className="ml-3 rounded-2xl border px-4 py-2 text-theme bg-white focus:outline-none focus:ring-2 focus:ring-black/10 w-[260px]"
               />
             </div>
 
@@ -522,132 +556,160 @@ export default function Ebarimt() {
           </div>
         </motion.div>
 
-        <motion.div
-          className="rounded-3xl overflow-hidden shadow-2xl bg-white/95 backdrop-blur-xl border border-white/30"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="p-8">
-            <div className="max-h-[45vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
-              <table className="table-ui text-sm min-w-full">
-                <thead className="bg-white/95 backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
-                  <tr>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      №
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      Огноо
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      Гэрээний дугаар
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      Төрөл
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      ДДТД
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      Дүн
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
-                      Үйлчилгээ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(isLoading ? [] : tableData).length > 0 ? (
-                    tableData.map((item, index) => (
-                      <motion.tr
-                        key={String(item.id)}
-                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <td className="py-4 px-4 text-center font-medium">
-                          {index + 1}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
-                          {item.date}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
-                          {item.gereeniiDugaar}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-center">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              item.type === "B2C_RECEIPT"
-                                ? "bg-green-500 text-green-800 dark:bg-green-500  "
-                                : item.type === "B2B_RECEIPT"
-                                ? "bg-blue-500 text-blue-800"
-                                : "bg-gray-500 text-gray-800"
-                            }`}
-                          >
-                            {item.type === "B2C_RECEIPT"
-                              ? "Иргэн"
-                              : item.type === "B2B_RECEIPT"
-                              ? "ААН"
-                              : item.type || "-"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-center whitespace-nowrap text-gray-700 font-mono">
-                          {item.ddtd || item.receiptId || "-"}
-                        </td>
-                        <td className="py-4 px-6 text-center whitespace-nowrap font-bold text-gray-800">
-                          {formatNumber(item.total ?? 0, 0)} ₮
-                        </td>
-                        <td className="py-4 px-6 text-center text-gray-700 whitespace-nowrap">
-                          {item.service}
-                        </td>
-                      </motion.tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="py-20 text-center">
-                        <motion.div
-                          className="flex flex-col items-center justify-center space-y-4"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 2,
-                              ease: "linear",
-                            }}
-                          >
-                            <svg
-                              className="w-20 h-20 text-gray-300"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </motion.div>
-                          <div className="text-gray-500 font-semibold text-lg">
-                            Хайсан мэдээлэл алга байна
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            Шүүлтүүрийг өөрчилж үзнэ үү
-                          </div>
-                        </motion.div>
+        <div className="p-8">
+          <div className="max-h-[45vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
+            <table className="table-ui text-sm min-w-full">
+              <thead className="bg-white backdrop-blur-sm sticky top-0 z-10 border-b border-gray-200 shadow-sm">
+                <tr>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    №
+                  </th>
+                  {/* <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Тоот
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Нэр
+                  </th> */}
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Огноо
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Гэрээний дугаар
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Төрөл
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    ДДТД
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Дүн
+                  </th>
+                  <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white">
+                    Үйлчилгээ
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(isLoading ? [] : displayedData).length > 0 ? (
+                  displayedData.map((item, index) => (
+                    <motion.tr
+                      key={String(item.id)}
+                      className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer"
+                      // whileHover={{ scale: 1.01 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <td className="py-4 px-4 text-center font-medium">
+                        {index + 1}
                       </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      {/* <td className="py-4 px-6 text-center whitespace-nowrap text-gray-700">
+                        {item.toot}
+                      </td>
+                      <td className="py-4 px-6 text-center whitespace-nowrap text-gray-700">
+                        {item.name}
+                      </td> */}
+                      <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
+                        {item.date}
+                      </td>
+                      <td className="py-4 px-6 whitespace-nowrap text-gray-700 text-center">
+                        {item.gereeniiDugaar}
+                      </td>
+                      <td className="py-4 px-6 whitespace-nowrap text-center">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            item.type === "B2C_RECEIPT"
+                              ? "bg-green-500 text-green-800 dark:bg-green-500  "
+                              : item.type === "B2B_RECEIPT"
+                              ? "bg-blue-500 text-blue-800"
+                              : "bg-gray-500 text-gray-800"
+                          }`}
+                        >
+                          {item.type === "B2C_RECEIPT"
+                            ? "Иргэн"
+                            : item.type === "B2B_RECEIPT"
+                            ? "ААН"
+                            : item.type || "-"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-center whitespace-nowrap text-gray-700 font-mono">
+                        {item.ddtd || item.receiptId || "-"}
+                      </td>
+                      <td className="py-4 px-6 text-right whitespace-nowrap font-bold text-gray-800">
+                        {formatNumber(item.total ?? 0, 0)} ₮
+                      </td>
+                      <td className="py-4 px-6 text-center text-gray-700 whitespace-nowrap">
+                        {item.service}
+                      </td>
+                    </motion.tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="py-20 text-center">
+                      <motion.div
+                        className="flex flex-col items-center justify-center space-y-4"
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 0, scale: 0 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 2,
+                            ease: "linear",
+                          }}
+                        >
+                          <svg
+                            className="w-20 h-20 text-gray-300"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1.5}
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                          </svg>
+                        </motion.div>
+                        <div className="text-gray-500 font-semibold text-lg">
+                          Хайсан мэдээлэл алга байна
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          Шүүлтүүрийг өөрчилж үзнэ үү
+                        </div>
+                      </motion.div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {/* Footer summary for totals under 'Дүн' */}
+              {displayedData.length > 0 && (
+                <tfoot className="bg-white border-t border-gray-200">
+                  <tr>
+                    <td className="py-3 px-4 text-center font-medium">
+                      &nbsp;
+                    </td>
+                    <td className="py-3 px-6 text-center">&nbsp;</td>
+                    <td className="py-3 px-6 text-center">&nbsp;</td>
+                    <td className="py-3 px-6 text-center">&nbsp;</td>
+                    <td className="py-3 px-6 text-center">&nbsp;</td>
+
+                    <td className="py-3 px-6 text-right font-bold text-gray-800">
+                      {formatNumber(
+                        displayedData.reduce((s, r) => s + (r.total || 0), 0),
+                        0
+                      )}{" "}
+                      ₮
+                    </td>
+                    <td className="py-3 px-6 text-center">&nbsp;</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

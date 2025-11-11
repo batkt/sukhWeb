@@ -18,6 +18,243 @@ import {
   Select,
   Loader,
 } from "@mantine/core";
+import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
+
+// Ulaanbaatar districts and subdistricts (reuse mapping from BarilgiinTokhirgoo)
+const districts: Record<string, string[]> = {
+  Улаанбаатар: [
+    "Сүхбаатар",
+    "Баянгол",
+    "Чингэлтэй",
+    "Хан-Уул",
+    "Баянзүрх",
+    "Сонгинохайрхан",
+    "Налайх",
+    "Багануур",
+    "Багахангай",
+  ],
+};
+
+const subDistricts: Record<string, string[]> = {
+  Сүхбаатар: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+  ],
+  Баянгол: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+    "21-р хороо",
+    "22-р хороо",
+    "23-р хороо",
+    "24-р хороо",
+    "25-р хороо",
+    "26-р хороо",
+    "27-р хороо",
+    "28-р хороо",
+    "29-р хороо",
+    "30-р хороо",
+    "31-р хороо",
+    "32-р хороо",
+    "33-р хороо",
+    "34-р хороо",
+  ],
+
+  Чингэлтэй: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+    "21-р хороо",
+    "22-р хороо",
+    "23-р хороо",
+    "24-р хороо",
+  ],
+
+  "Хан-Уул": [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+    "21-р хороо",
+    "22-р хороо",
+    "23-р хороо",
+    "24-р хороо",
+    "25-р хороо",
+  ],
+
+  Баянзүрх: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+    "21-р хороо",
+    "22-р хороо",
+    "23-р хороо",
+    "24-р хороо",
+    "25-р хороо",
+    "26-р хороо",
+    "27-р хороо",
+    "28-р хороо",
+    "29-р хороо",
+    "30-р хороо",
+    "31-р хороо",
+    "32-р хороо",
+    "33-р хороо",
+    "34-р хороо",
+    "35-р хороо",
+    "36-р хороо",
+    "37-р хороо",
+    "38-р хороо",
+    "39-р хороо",
+    "40-р хороо",
+    "41-р хороо",
+    "42-р хороо",
+    "43-р хороо",
+  ],
+
+  Сонгинохайрхан: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+    "9-р хороо",
+    "10-р хороо",
+    "11-р хороо",
+    "12-р хороо",
+    "13-р хороо",
+    "14-р хороо",
+    "15-р хороо",
+    "16-р хороо",
+    "17-р хороо",
+    "18-р хороо",
+    "19-р хороо",
+    "20-р хороо",
+    "21-р хороо",
+    "22-р хороо",
+    "23-р хороо",
+    "24-р хороо",
+    "25-р хороо",
+    "26-р хороо",
+    "27-р хороо",
+    "28-р хороо",
+    "29-р хороо",
+    "30-р хороо",
+    "31-р хороо",
+    "32-р хороо",
+    "33-р хороо",
+    "34-р хороо",
+    "35-р хороо",
+    "36-р хороо",
+    "37-р хороо",
+    "38-р хороо",
+    "39-р хороо",
+    "40-р хороо",
+    "41-р хороо",
+    "42-р хороо",
+    "43-р хороо",
+  ],
+
+  Налайх: [
+    "1-р хороо",
+    "2-р хороо",
+    "3-р хороо",
+    "4-р хороо",
+    "5-р хороо",
+    "6-р хороо",
+    "7-р хороо",
+    "8-р хороо",
+  ],
+  Багануур: ["1-р хороо", "2-р хороо", "3-р хороо", "4-р хороо", "5-р хороо"],
+  Багахангай: ["1-р хороо", "2-р хороо"],
+};
 type DateRangeValue = [string | null, string | null] | undefined;
 
 export default function EbarimtTokhirgoo() {
@@ -34,42 +271,65 @@ export default function EbarimtTokhirgoo() {
   const [ebAshiglakh, setEbAshiglakh] = useState<boolean>(false);
   const [ebShine, setEbShine] = useState<boolean>(false);
   const [merchantTin, setMerchantTin] = useState<string>("");
+  const [duuregNer, setDuuregNer] = useState<string>("");
+  const [horooNer, setHorooNer] = useState<string>("");
+  const [horooKod, setHorooKod] = useState<string>("");
+  const [districtCode, setDistrictCode] = useState<string>("");
 
   useEffect(() => {
     if (!baiguullaga) return;
-    // Resolve selected branch first
+    // For eBarimt-specific duureg/horoo we prefer organization-level ebarimt tokhirgoo
+    // (it should not follow building.tokhirgoo per user's request)
+    const orgTok = (baiguullaga?.tokhirgoo || {}) as any;
+    // Load toggles: prefer org-level ebarimt flags; branch-level overrides still respected for send/nuat
     const effBarilgaId = selectedBuildingId || barilgiinId || null;
     const selectedBarilga = Array.isArray(baiguullaga.barilguud)
       ? baiguullaga.barilguud.find(
           (b: any) => String(b?._id || "") === String(effBarilgaId || "")
         )
       : null;
-    // Load from server data first
-    // Prefer branch toggles when a building is selected
+
+    // Prefer selected building's tokhirgoo for eBarimt flags when a branch
+    // is selected. Fall back to org-level tokhirgoo, then top-level org flags.
+    const selectedTok = (selectedBarilga?.tokhirgoo || {}) as any;
     let autoSend = Boolean(
-      selectedBarilga?.tokhirgoo?.eBarimtAutomataarIlgeekh ??
+      (effBarilgaId ? selectedTok?.eBarimtAutomataarIlgeekh : undefined) ??
+        orgTok?.eBarimtAutomataarIlgeekh ??
         baiguullaga.eBarimtAutomataarIlgeekh
     );
-    // Prefer branch-level VAT flag if backend stores it there; fallback to org-level
     let nuat = Boolean(
-      (selectedBarilga?.tokhirgoo as any)?.nuatTulukhEsekh ??
-        baiguullaga.nuatTulukhEsekh
+      (effBarilgaId ? selectedTok?.nuatTulukhEsekh : undefined) ??
+        orgTok?.nuatTulukhEsekh ??
+        baiguullaga.nuatTulukhEsekh ??
+        selectedTok?.nuatTulukhEsekh
     );
     let ashiglakh = Boolean(
-      selectedBarilga?.tokhirgoo?.eBarimtAshiglakhEsekh ??
+      (effBarilgaId ? selectedTok?.eBarimtAshiglakhEsekh : undefined) ??
+        orgTok?.eBarimtAshiglakhEsekh ??
         baiguullaga.eBarimtAshiglakhEsekh ??
         true
     );
     let shine = Boolean(
-      selectedBarilga?.tokhirgoo?.eBarimtShine ?? baiguullaga.eBarimtShine
+      (effBarilgaId ? selectedTok?.eBarimtShine : undefined) ??
+        orgTok?.eBarimtShine ??
+        baiguullaga.eBarimtShine ??
+        false
     );
-    // Prefer branch-specific merchantTin when a building is selected
+
+    // Merchant TIN: prefer selected building's tokhirgoo.merchantTin when a branch
+    // is selected, otherwise prefer org-level tokhirgoo merchantTin or top-level merchantTin.
     let tin = String(
-      selectedBarilga?.tokhirgoo?.merchantTin ||
-        baiguullaga.merchantTin ||
-        baiguullaga.tokhirgoo?.merchantTin ||
-        ""
+      (selectedBarilga
+        ? selectedTok?.merchantTin ??
+          orgTok?.merchantTin ??
+          baiguullaga.merchantTin
+        : orgTok?.merchantTin ?? baiguullaga.merchantTin) || ""
     );
+
+    // eBarimt-specific location (duureg/horoo) should come from orgTok (not building)
+    let duureg = String(orgTok?.duuregNer || baiguullaga.duureg || "");
+    let horooObj = orgTok?.horoo || { ner: "", kod: "" };
+    let district = String(orgTok?.districtCode || "");
 
     // Removed localStorage fallback: always prefer backend state
 
@@ -78,6 +338,10 @@ export default function EbarimtTokhirgoo() {
     setEbAshiglakh(ashiglakh);
     setEbShine(shine);
     setMerchantTin(tin);
+    setDuuregNer(duureg);
+    setHorooNer(horooObj?.ner || "");
+    setHorooKod(horooObj?.kod || "");
+    setDistrictCode(district);
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const paramsKey = useMemo(() => {
@@ -124,29 +388,88 @@ export default function EbarimtTokhirgoo() {
   const t = (s: string) => s;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl p-4 neu-panel">
+    <div className="neu-panel">
+      <div className="p-4 h-full">
         {isLoading ? (
           <div className="p-8 text-center text-theme/70">
             {t("Ачааллаж байна…")}
           </div>
         ) : (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Татвар төлөгчийн дугаар (TIN)
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={merchantTin}
-                onChange={(e) => setMerchantTin(e.target.value.trim())}
-                placeholder="Татварын бүртгэлийн дугаар"
-                className="w-full rounded-2xl border px-4 py-2 text-theme bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
-                disabled={isLoading}
-              />
-            </div>
+          <div className="space-y-4 overflow-visible">
+            {/* Merchant TIN and district/horoo are only editable when И-Баримт ашиглах эсэх is enabled */}
+            {ebAshiglakh && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-theme mb-1">
+                    Татвар төлөгчийн дугаар (TIN)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={merchantTin}
+                    onChange={(e) => setMerchantTin(e.target.value.trim())}
+                    placeholder="Татварын бүртгэлийн дугаар"
+                    className="w-full rounded-2xl border px-4 py-2 text-theme bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-theme mb-1">
+                      Дүүрэг
+                    </label>
+                    <TusgaiZagvar
+                      value={duuregNer || ""}
+                      onChange={(v) => {
+                        setDuuregNer(v || "");
+                        // clear selected horoo when duureg changes
+                        setHorooNer("");
+                        setHorooKod("");
+                        // compute districtCode reset
+                        setDistrictCode("");
+                      }}
+                      options={Object.keys(districts).flatMap((city) =>
+                        districts[city].map((district) => ({
+                          value: district,
+                          label: district,
+                        }))
+                      )}
+                      placeholder="Сонгоно уу"
+                      className="w-full z-[9999]"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-theme mb-1">
+                      Хороо
+                    </label>
+                    <TusgaiZagvar
+                      value={horooNer || ""}
+                      onChange={(v) => {
+                        setHorooNer(v || "");
+                        setHorooKod(v || "");
+                        // create districtCode as duureg+horoo for backward compatibility
+                        setDistrictCode(`${duuregNer || ""}${v || ""}`);
+                      }}
+                      options={
+                        duuregNer && subDistricts[duuregNer]
+                          ? subDistricts[duuregNer].map((horoo) => ({
+                              value: horoo,
+                              label: horoo,
+                            }))
+                          : []
+                      }
+                      placeholder="Сонгоно уу"
+                      className="w-full"
+                      disabled={!duuregNer || isLoading}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-center p-4  rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
@@ -162,7 +485,7 @@ export default function EbarimtTokhirgoo() {
               </div>
             </div>
 
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
+            {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт 3.0 эсэх
@@ -175,7 +498,7 @@ export default function EbarimtTokhirgoo() {
                   aria-label="И-Баримт 3.0 эсэх"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
@@ -192,7 +515,7 @@ export default function EbarimtTokhirgoo() {
               </div>
             </div>
 
-            <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
+            {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
                 <div className="text-sm font-medium text-theme">
                   И-Баримт нөат эсэх
@@ -205,7 +528,7 @@ export default function EbarimtTokhirgoo() {
                   aria-label="И-Баримт нөат эсэх"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="flex justify-end">
               <button
@@ -215,64 +538,79 @@ export default function EbarimtTokhirgoo() {
                     return openErrorOverlay("Байгууллага олдсонгүй");
                   showSpinner();
                   try {
+                    // Build payload that persists eBarimt settings primarily to the
+                    // currently selected building's `tokhirgoo`. If no building is
+                    // selected, fall back to updating the org-level `tokhirgoo`.
                     const payload: any = {
-                      // start with the existing object to preserve fields the user didn't touch
                       ...(baiguullaga || {}),
-                      // ensure id is present
                       _id: baiguullaga._id,
-                      // also include explicit organization id like other endpoints
                       baiguullagiinId: String(baiguullaga._id),
-                      // update eBarimt settings
-                      eBarimtAutomataarIlgeekh: ebAutoSend,
-                      nuatTulukhEsekh: ebNuat,
-                      eBarimtAshiglakhEsekh: ebAshiglakh,
-                      eBarimtShine: ebShine,
-                      // update merchant TIN (do not overwrite with empty value)
-                      ...(merchantTin && merchantTin.trim() !== ""
-                        ? { merchantTin }
-                        : {}),
-                      // update tokhirgoo merchantTin as well
-                      tokhirgoo: {
+                    };
+
+                    const effBarilgaId =
+                      selectedBuildingId || barilgiinId || null;
+
+                    if (effBarilgaId && Array.isArray(baiguullaga?.barilguud)) {
+                      // Update only the selected branch's tokhirgoo
+                      payload.barilguud = baiguullaga.barilguud.map(
+                        (b: any) => {
+                          if (String(b?._id || "") !== String(effBarilgaId))
+                            return b;
+                          const shouldUpdateTin =
+                            merchantTin && merchantTin.trim() !== "";
+                          return {
+                            ...b,
+                            tokhirgoo: {
+                              ...(b?.tokhirgoo || {}),
+                              ...(shouldUpdateTin ? { merchantTin } : {}),
+                              ...(duuregNer ? { duuregNer } : {}),
+                              ...(districtCode ? { districtCode } : {}),
+                              ...(horooNer || horooKod
+                                ? {
+                                    horoo: {
+                                      ner: horooNer || "",
+                                      kod: horooKod || "",
+                                    },
+                                  }
+                                : {}),
+                              // Save ebarimt flags at branch level
+                              eBarimtAshiglakhEsekh: ebAshiglakh,
+                              eBarimtShine: ebShine,
+                              eBarimtAutomataarIlgeekh: ebAutoSend,
+                              ...(typeof ebNuat === "boolean"
+                                ? { nuatTulukhEsekh: ebNuat }
+                                : {}),
+                            },
+                          };
+                        }
+                      );
+                    } else {
+                      // No branch selected: persist at org level
+                      payload.eBarimtAutomataarIlgeekh = ebAutoSend;
+                      payload.nuatTulukhEsekh = ebNuat;
+                      payload.eBarimtAshiglakhEsekh = ebAshiglakh;
+                      payload.eBarimtShine = ebShine;
+                      if (merchantTin && merchantTin.trim() !== "")
+                        payload.merchantTin = merchantTin;
+                      payload.tokhirgoo = {
                         ...(baiguullaga?.tokhirgoo || {}),
                         merchantTin:
                           merchantTin ||
                           baiguullaga?.tokhirgoo?.merchantTin ||
                           "",
-                      },
-                    };
-
-                    // Also persist merchantTin at the selected branch under barilguud[].tokhirgoo
-                    try {
-                      const effBarilgaId =
-                        selectedBuildingId || barilgiinId || null;
-                      if (
-                        effBarilgaId &&
-                        Array.isArray(baiguullaga?.barilguud)
-                      ) {
-                        payload.barilguud = baiguullaga.barilguud.map(
-                          (b: any) => {
-                            if (String(b?._id || "") !== String(effBarilgaId))
-                              return b;
-                            const shouldUpdateTin =
-                              merchantTin && merchantTin.trim() !== "";
-                            return {
-                              ...b,
-                              tokhirgoo: {
-                                ...(b?.tokhirgoo || {}),
-                                ...(shouldUpdateTin ? { merchantTin } : {}),
-                                // Save ebarimt flags at branch level (include VAT if present)
-                                eBarimtAshiglakhEsekh: ebAshiglakh,
-                                eBarimtShine: ebShine,
-                                eBarimtAutomataarIlgeekh: ebAutoSend,
-                                ...(typeof payload.nuatTulukhEsekh === "boolean"
-                                  ? { nuatTulukhEsekh: payload.nuatTulukhEsekh }
-                                  : {}),
+                        ...(duuregNer ? { duuregNer } : {}),
+                        ...(districtCode ? { districtCode } : {}),
+                        ...(horooNer || horooKod
+                          ? {
+                              horoo: {
+                                ner: horooNer || "",
+                                kod: horooKod || "",
                               },
-                            };
-                          }
-                        );
-                      }
-                    } catch {}
+                            }
+                          : {}),
+                      };
+                    }
+
                     const updated = await updateBaiguullaga(
                       token,
                       baiguullaga._id,
@@ -280,12 +618,12 @@ export default function EbarimtTokhirgoo() {
                     );
                     if (updated) {
                       await baiguullagaMutate(updated, false);
-                      // Update local state to reflect saved values immediately
-                      setEbAutoSend(payload.eBarimtAutomataarIlgeekh);
-                      setEbNuat(payload.nuatTulukhEsekh);
-                      setEbAshiglakh(payload.eBarimtAshiglakhEsekh);
-                      setEbShine(payload.eBarimtShine);
-                      setMerchantTin(payload.merchantTin);
+                      // Reflect saved UI state directly from current form values
+                      setEbAutoSend(ebAutoSend);
+                      setEbNuat(ebNuat);
+                      setEbAshiglakh(ebAshiglakh);
+                      setEbShine(ebShine);
+                      setMerchantTin(merchantTin);
                     }
                     // Removed localStorage persistence for API-backed data
                     openSuccessOverlay("Хадгалагдлаа");

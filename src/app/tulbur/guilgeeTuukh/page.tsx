@@ -638,7 +638,7 @@ export default function DansniiKhuulga() {
               <table className="text-sm min-w-full">
                 <tbody>
                   <tr>
-                    <td className="p-1 !text-right text-theme whitespace-nowrap">
+                    <td className="p-1 !text-right font-bold text-theme whitespace-nowrap">
                       Нийт дүн: {formatNumber(totalSum, 0)} ₮
                     </td>
                     <td className="p-1 text-center text-theme whitespace-nowrap w-12"></td>

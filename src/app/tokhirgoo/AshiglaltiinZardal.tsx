@@ -24,6 +24,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2 } from "lucide-react";
 import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
+import deleteMethod from "../../../tools/function/deleteMethod";
 
 interface ZardalItem {
   _id?: string;
@@ -74,8 +75,8 @@ export default function AshiglaltiinZardluud() {
   const [liftMaxFloor, setLiftMaxFloor] = useState<number | null>(null);
   const [liftFloors, setLiftFloors] = useState<string[]>([]);
   const [liftBulkInput, setLiftBulkInput] = useState<string>("");
-  const [liftMaxInput, setLiftMaxInput] = useState<number | "">("");
-  const [showAdvancedLift, setShowAdvancedLift] = useState<boolean>(false);
+  const [liftShalgayaId, setLiftShalgayaId] = useState<string | null>(null);
+  const [liftDeleteAllOpen, setLiftDeleteAllOpen] = useState<boolean>(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
@@ -249,7 +250,7 @@ export default function AshiglaltiinZardluud() {
 
       if (!floors || floors.length === 0) {
         setLiftMaxFloor(null);
-        setLiftMaxInput("");
+        setLiftBulkInput("");
         setLiftEnabled(false);
         setLiftFloors([]);
         return;
@@ -257,16 +258,16 @@ export default function AshiglaltiinZardluud() {
 
       const maxFloor = Math.max(...floors.map((f: any) => Number(f) || 0));
       setLiftMaxFloor(maxFloor);
-      setLiftMaxInput(
-        Number.isFinite(maxFloor) && maxFloor > 0 ? maxFloor : ""
-      );
+      setLiftBulkInput(toUniqueSorted(floors).join(","));
       setLiftFloors(toUniqueSorted(floors));
+      setLiftShalgayaId(chosen?._id ?? null);
       setLiftEnabled(true);
     } catch (error) {
       setLiftMaxFloor(null);
-      setLiftMaxInput("");
+      setLiftBulkInput("");
       setLiftEnabled(false);
       setLiftFloors([]);
+      setLiftShalgayaId(null);
     }
   };
 
@@ -357,6 +358,57 @@ export default function AshiglaltiinZardluud() {
     return toUniqueSorted(expanded);
   };
 
+  const handleDeleteFloor = (floor: string) => {
+    const remaining = liftFloors.filter((f) => f !== floor);
+    setLiftFloors(remaining);
+    // persist immediately for selected building
+    (async () => {
+      try {
+        await saveLiftSettings(remaining);
+      } catch (e) {
+        // on error, refetch to restore
+        await fetchLiftFloors();
+      }
+    })();
+  };
+
+  const handleDeleteAllFloors = () => {
+    // open confirm modal
+    setLiftDeleteAllOpen(true);
+  };
+
+  const handleSaveFloors = async () => {
+    // Merge numeric input and bulk text input into existing floors, then persist
+    let merged = liftFloors || [];
+    // parse bulk input like "1-3,5,7"
+    if (liftBulkInput && liftBulkInput.trim() !== "") {
+      const parsed = parseBulk(liftBulkInput);
+      merged = toUniqueSorted([...merged, ...parsed]);
+    }
+
+    // update UI first
+    setLiftFloors(merged);
+    setLiftBulkInput(merged.length > 0 ? merged.join(",") : "");
+
+    if (merged.length > 0) {
+      await saveLiftSettings(merged);
+    } else {
+      // clear on server
+      // If we have an existing server record id, delete that record
+      try {
+        if (liftShalgayaId && token) {
+          await deleteMethod("liftShalgaya", token, liftShalgayaId);
+          setLiftShalgayaId(null);
+        } else {
+          await saveLiftSettings(null);
+        }
+      } catch (e) {
+        // fallback to save
+        await saveLiftSettings(null);
+      }
+    }
+  };
+
   const openAddModal = (isUilchilgee = false) => {
     setEditingItem(null);
     setIsUilchilgeeModal(isUilchilgee);
@@ -444,356 +496,266 @@ export default function AshiglaltiinZardluud() {
 
   const handleDeleteConfirm = async () => {
     if (!itemToDelete || !itemToDelete._id) return;
-    await deleteZardal(itemToDelete._id);
-    setDeleteModalOpen(false);
-    setItemToDelete(null);
+    try {
+      await deleteZardal(itemToDelete._id);
+      openSuccessOverlay(`"${itemToDelete.ner}" зардал устгагдлаа`);
+      setDeleteModalOpen(false);
+      setItemToDelete(null);
+      // refresh list
+      await refreshZardluud();
+    } catch (e) {
+      openErrorOverlay("Зардал устгахад алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
   };
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 max-h-[600px] overflow-visible">
-      <div className="neu-panel allow-overflow  md:p-6 max-w-[78rem] max-h-[600px]">
-        {/* 1) Нэхэмжлэх илгээх — энгийн тохиргоо */}
-        <div className="box">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-            <div className="font-medium text-theme flex-1">
-              Нэхэмжлэх илгээх
+    <div className="neu-panel">
+      <div className="box">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+          <div className="font-medium text-theme flex-1">Нэхэмжлэх илгээх</div>
+          <div className="flex items-center gap-2">
+            <MSwitch
+              checked={invoiceActive}
+              onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+            />
+          </div>
+        </div>
+        {invoiceActive && (
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
+            <div className="w-full sm:w-auto">
+              <label className="block text-sm font-medium text-theme mb-1">
+                Өдөр (сар бүр)
+              </label>
+              <MNumberInput
+                min={1}
+                max={31}
+                placeholder="Нэхэмжлэх өдөр"
+                value={invoiceDay ?? undefined}
+                onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                className="w-full sm:w-40"
+              />
             </div>
+            <MButton
+              className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
+              onClick={saveInvoiceSchedule}
+            >
+              Хадгалах
+            </MButton>
+          </div>
+        )}
+      </div>
+
+      <div className="box">
+        <div className="flex flex-col gap-3 p-4 sm:p-5">
+          <div className="flex items-center justify-between">
+            <div className="text-theme font-medium">Лифт хөнгөлөлт</div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-theme">Идэвхтэй</span>
               <MSwitch
-                checked={invoiceActive}
-                onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                checked={liftEnabled}
+                onChange={(event) => {
+                  const enabled = event.currentTarget.checked;
+                  setLiftEnabled(enabled);
+                  if (!enabled) {
+                    saveLiftSettings(null);
+                  }
+                }}
               />
             </div>
           </div>
-          {invoiceActive && (
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
-              <div className="w-full sm:w-auto">
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Өдөр (сар бүр)
+
+          {liftEnabled && (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="block text-xs text-theme">
+                  Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
                 </label>
-                <MNumberInput
-                  min={1}
-                  max={31}
-                  placeholder="Нэхэмжлэх өдөр"
-                  value={invoiceDay ?? undefined}
-                  onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                  className="w-full sm:w-40"
-                />
+
+                <div className="flex items-center gap-2">
+                  <MTextInput
+                    placeholder="1-3,5,7 эсвэл 1,2,3"
+                    value={liftBulkInput}
+                    onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
+                    className="w-40"
+                  />
+
+                  <MButton
+                    className="btn-minimal btn-save"
+                    onClick={handleSaveFloors}
+                  >
+                    Хадгалах
+                  </MButton>
+
+                  <MButton
+                    className="btn-minimal"
+                    color="red"
+                    onClick={handleDeleteAllFloors}
+                    title="Бүгдийг устгах"
+                  >
+                    <Trash2 color="red" />
+                  </MButton>
+                </div>
               </div>
+
+              <div className="flex flex-wrap">
+                {liftFloors && liftFloors.length > 0 ? (
+                  liftFloors.map((f) => (
+                    <div
+                      key={f}
+                      className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1 rounded-md border"
+                    >
+                      <span className="text-theme">{f}</span>
+                      <button
+                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                        onClick={() => handleDeleteFloor(f)}
+                        aria-label={`Удалить ${f}`}
+                      >
+                        <Trash2 color="red" size={14} />
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-sm text-slate-500">
+                    Хадгалагдсан давхаргүй
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <MButton className="btn-minimal" onClick={() => openAddModal(false)}>
+            +
+          </MButton>
+        </div>
+      </div>
+
+      {isLoadingAshiglaltiin ? (
+        <div className="flex justify-center items-center p-10">
+          <Loader />
+        </div>
+      ) : ashiglaltiinZardluud.length === 0 ? (
+        <div className="p-8 text-center text-theme">
+          Тогтмол зардал байхгүй байна
+        </div>
+      ) : (
+        <div className="px-4 sm:px-5 pb-4 flex flex-col">
+          <div className="overflow-auto max-h-[250px]">
+            <div className="min-w-full inline-block align-middle">
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="text-left text-slate-500 border-b">
+                    <th className="py-2 pr-3">Нэр</th>
+                    <th className="py-2 pr-3">Төрөл</th>
+                    <th className="py-2 pr-3">Тариф (₮)</th>
+                    <th className="py-2">Үйлдэл</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ashiglaltiinZardluud
+                    .filter((x) => x._id)
+                    .filter((x) =>
+                      filterText.trim() === ""
+                        ? true
+                        : String(x.ner || "")
+                            .toLowerCase()
+                            .includes(filterText.toLowerCase())
+                    )
+                    .map((mur) => {
+                      const currentValue =
+                        editedTariffs[mur._id!] !== undefined
+                          ? editedTariffs[mur._id!]
+                          : mur.tariff;
+                      const changed = currentValue !== mur.tariff;
+                      return (
+                        <tr key={mur._id} className="border-b last:border-b-0">
+                          <td className="py-2 pr-3 text-theme">
+                            <div className="font-medium">{mur.ner}</div>
+                          </td>
+                          <td className="py-2 pr-3 text-theme">{mur.turul}</td>
+                          <td className="py-2 pr-3">
+                            <MNumberInput
+                              className="w-36 text-right text-theme"
+                              value={currentValue}
+                              onChange={(v) =>
+                                setEditedTariffs((prev) => ({
+                                  ...prev,
+                                  [mur._id!]: Number(v as number),
+                                }))
+                              }
+                              rightSection={
+                                <span className="text-slate-500 pr-1">₮</span>
+                              }
+                            />
+                            {changed && (
+                              <span className="text-xs text-amber-600 ml-2">
+                                Өөрчлөгдсөн
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2">
+                            <div className="flex items-center gap-2">
+                              <Edit
+                                className="text-sm text-blue-500 cursor-pointer"
+                                onClick={() => openEditModal(mur, false)}
+                              />
+                              <Trash2
+                                className="text-sm text-red-500 cursor-pointer"
+                                color="red"
+                                onClick={() => {
+                                  setItemToDelete(mur);
+                                  setDeleteModalOpen(true);
+                                }}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* <div className="mt-4 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <div className="text-theme flex-1">
+              {(() => {
+                const itemsById = new Map(
+                  ashiglaltiinZardluud.map((it) => [it._id, it])
+                );
+                const changedCount = Object.entries(editedTariffs).filter(
+                  ([id, val]) => itemsById.get(id)?.tariff !== val
+                ).length;
+                return changedCount > 0
+                  ? `${changedCount} зардалд өөрчлөлт орсон байна`
+                  : "Өөрчлөлт байхгүй";
+              })()}
+            </div>
+            <div className="flex items-center gap-2 sm:gap-3">
               <MButton
-                className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
-                onClick={saveInvoiceSchedule}
+                className="btn-minimal btn-save"
+                onClick={saveAllTariffs}
+                disabled={(() => {
+                  const itemsById = new Map(
+                    ashiglaltiinZardluud.map((it) => [it._id, it])
+                  );
+                  const changedCount = Object.entries(editedTariffs).filter(
+                    ([id, val]) => itemsById.get(id)?.tariff !== val
+                  ).length;
+                  return changedCount === 0;
+                })()}
               >
                 Хадгалах
               </MButton>
             </div>
-          )}
+          </div> */}
         </div>
-
-        {/* 2) Лифт хөнгөлөлт — энгийн + дэлгэрэнгүй */}
-        <div className="box">
-          <div className="flex flex-col gap-3 p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <div className="text-theme font-medium">Лифт хөнгөлөлт</div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-theme">
-                  {liftEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                </span>
-                <MSwitch
-                  checked={liftEnabled}
-                  onChange={(event) => {
-                    const enabled = event.currentTarget.checked;
-                    setLiftEnabled(enabled);
-                    if (!enabled) {
-                      saveLiftSettings(null);
-                    }
-                  }}
-                />
-              </div>
-            </div>
-
-            {liftEnabled && (
-              <>
-                <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-                  <div>
-                    <label className="block text-sm font-medium text-theme mb-1">
-                      Хөнгөлөх давхар
-                    </label>
-                    <MNumberInput
-                      min={1}
-                      max={200}
-                      placeholder="жишээ: 16"
-                      value={liftMaxInput as any}
-                      onChange={(v) => setLiftMaxInput((v as number) || "")}
-                      className="w-40"
-                    />
-                  </div>
-                  <MButton
-                    className="btn-minimal btn-save"
-                    onClick={() =>
-                      saveLiftSettings(
-                        typeof liftMaxInput === "number" ? liftMaxInput : null
-                      )
-                    }
-                  >
-                    Хадгалах
-                  </MButton>
-                  <button
-                    type="button"
-                    className="text-sm underline text-blue-600 hover:text-blue-700"
-                    onClick={() => setShowAdvancedLift((s) => !s)}
-                  >
-                    {showAdvancedLift
-                      ? "Дэлгэрэнгүйг нуух"
-                      : "Дэлгэрэнгүй тохиргоо"}
-                  </button>
-                </div>
-
-                {showAdvancedLift && (
-                  <div className="mt-3 border-t pt-3">
-                    <div className="text-xs text-slate-500 mb-2">
-                      Нарийвчилсан: Тодорхой давхаруудыг (жишээ: 1,3,5-7) оруулж
-                      болно.
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap mb-2">
-                      {liftFloors && liftFloors.length > 0 ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {liftFloors.map((f) => (
-                            <div
-                              key={f}
-                              className="flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-3 py-1 text-sm"
-                            >
-                              <span>{f}</span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setLiftFloors((prev) =>
-                                    prev.filter((p) => p !== f)
-                                  )
-                                }
-                                className="text-blue-500 hover:text-blue-700 ml-1"
-                                aria-label={`Remove floor ${f}`}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-slate-500">
-                          Давхар сонгоогүй
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MNumberInput
-                        min={1}
-                        max={200}
-                        placeholder="Давхар"
-                        className="w-24"
-                        onChange={(v) => {
-                          const n = Number(v as number);
-                          if (!Number.isFinite(n) || n <= 0) return;
-                          const nv = String(n);
-                          setLiftFloors((prev) =>
-                            toUniqueSorted([...prev, nv])
-                          );
-                        }}
-                      />
-                      <MTextInput
-                        placeholder="1,3,5-7"
-                        value={liftBulkInput}
-                        onChange={(e) =>
-                          setLiftBulkInput(e.currentTarget.value)
-                        }
-                        className="flex-1"
-                      />
-                      <MButton
-                        onClick={() => {
-                          try {
-                            const parsed = parseBulk(liftBulkInput || "");
-                            setLiftFloors((prev) =>
-                              toUniqueSorted([...prev, ...parsed])
-                            );
-                            setLiftBulkInput("");
-                          } catch (e) {}
-                        }}
-                      >
-                        Нэмэх
-                      </MButton>
-                      <MButton
-                        className="btn-minimal btn-save"
-                        onClick={() => saveLiftSettings(liftFloors)}
-                      >
-                        Хадгалах
-                      </MButton>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* 3) Тогтмол зардлууд — хялбар хүснэгт */}
-        <div className="box">
-          <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="text-theme font-medium flex-1">
-              Тогтмол зардлууд
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <MTextInput
-                placeholder="Хайх..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.currentTarget.value)}
-                className="w-full sm:w-60"
-              />
-              <MButton
-                className="btn-minimal"
-                onClick={() => openAddModal(false)}
-              >
-                Нэмэх
-              </MButton>
-            </div>
-          </div>
-
-          {isLoadingAshiglaltiin ? (
-            <div className="flex justify-center items-center p-10">
-              <Loader />
-            </div>
-          ) : ashiglaltiinZardluud.length === 0 ? (
-            <div className="p-8 text-center text-theme">
-              Тогтмол зардал байхгүй байна
-            </div>
-          ) : (
-            <div className="px-4 sm:px-5 pb-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-slate-500 border-b">
-                      <th className="py-2 pr-3">Нэр</th>
-                      <th className="py-2 pr-3">Төрөл</th>
-                      <th className="py-2 pr-3">Суурь хураамж</th>
-                      <th className="py-2 pr-3">Тариф (₮)</th>
-                      <th className="py-2">Үйлдэл</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ashiglaltiinZardluud
-                      .filter((x) => x._id)
-                      .filter((x) =>
-                        filterText.trim() === ""
-                          ? true
-                          : String(x.ner || "")
-                              .toLowerCase()
-                              .includes(filterText.toLowerCase())
-                      )
-                      .map((mur) => {
-                        const currentValue =
-                          editedTariffs[mur._id!] !== undefined
-                            ? editedTariffs[mur._id!]
-                            : mur.tariff;
-                        const changed = currentValue !== mur.tariff;
-                        return (
-                          <tr
-                            key={mur._id}
-                            className="border-b last:border-b-0"
-                          >
-                            <td className="py-2 pr-3 text-theme">
-                              <div className="font-medium">{mur.ner}</div>
-                            </td>
-                            <td className="py-2 pr-3 text-theme">
-                              {mur.turul}
-                            </td>
-                            <td className="py-2 pr-3 text-theme">
-                              {mur.suuriKhuraamj
-                                ? formatNumber(mur.suuriKhuraamj, 0)
-                                : "-"}
-                            </td>
-                            <td className="py-2 pr-3">
-                              <MNumberInput
-                                className="w-36 text-right text-theme"
-                                value={currentValue}
-                                onChange={(v) =>
-                                  setEditedTariffs((prev) => ({
-                                    ...prev,
-                                    [mur._id!]: Number(v as number),
-                                  }))
-                                }
-                                rightSection={
-                                  <span className="text-slate-500 pr-1">₮</span>
-                                }
-                              />
-                              {changed && (
-                                <span className="text-xs text-amber-600 ml-2">
-                                  Өөрчлөгдсөн
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2">
-                              <div className="flex items-center gap-2">
-                                <Edit
-                                  className="text-sm text-blue-500"
-                                  onClick={() => openEditModal(mur, false)}
-                                >
-                                  Засах
-                                </Edit>
-                                <Trash2
-                                  className="text-sm text-red-500"
-                                  color="red"
-                                  onClick={() => {
-                                    setItemToDelete(mur);
-                                    setDeleteModalOpen(true);
-                                  }}
-                                >
-                                  Устгах
-                                </Trash2>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="text-theme flex-1">
-                  {(() => {
-                    const itemsById = new Map(
-                      ashiglaltiinZardluud.map((it) => [it._id, it])
-                    );
-                    const changedCount = Object.entries(editedTariffs).filter(
-                      ([id, val]) => itemsById.get(id)?.tariff !== val
-                    ).length;
-                    return changedCount > 0
-                      ? `${changedCount} зардалд өөрчлөлт орсон байна`
-                      : "Өөрчлөлт байхгүй";
-                  })()}
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <MButton
-                    className="btn-minimal btn-save"
-                    onClick={saveAllTariffs}
-                    disabled={(() => {
-                      const itemsById = new Map(
-                        ashiglaltiinZardluud.map((it) => [it._id, it])
-                      );
-                      const changedCount = Object.entries(editedTariffs).filter(
-                        ([id, val]) => itemsById.get(id)?.tariff !== val
-                      ).length;
-                      return changedCount === 0;
-                    })()}
-                  >
-                    Хадгалах
-                  </MButton>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
 
       <MModal
         title="Устгах уу?"
@@ -824,6 +786,56 @@ export default function AshiglaltiinZardluud() {
             <MButton
               color="red"
               onClick={handleDeleteConfirm}
+              className="btn-minimal btn-cancel"
+            >
+              Устгах
+            </MButton>
+          </div>
+        </div>
+      </MModal>
+
+      <MModal
+        title="Бүгдийг устгах уу?"
+        opened={liftDeleteAllOpen}
+        onClose={() => setLiftDeleteAllOpen(false)}
+        classNames={{
+          content: "modal-surface modal-responsive",
+          header:
+            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+          title: "text-theme font-semibold",
+          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+        }}
+        overlayProps={{ opacity: 0.5, blur: 6 }}
+        centered
+        size="sm"
+      >
+        <div className="space-y-4 mt-4">
+          <p className="text-theme">
+            Та бүх давхарыг устгах гэдэгт итгэлтэй байна уу?
+          </p>
+          <div className="flex justify-end gap-2">
+            <MButton
+              onClick={() => setLiftDeleteAllOpen(false)}
+              className="btn-minimal"
+            >
+              Болих
+            </MButton>
+            <MButton
+              color="red"
+              onClick={async () => {
+                setLiftDeleteAllOpen(false);
+                try {
+                  if (liftShalgayaId && token) {
+                    await deleteMethod("liftShalgaya", token, liftShalgayaId);
+                  } else {
+                    await saveLiftSettings(null);
+                  }
+                } catch (e) {
+                  // fallback
+                  await saveLiftSettings(null);
+                }
+                await fetchLiftFloors();
+              }}
               className="btn-minimal btn-cancel"
             >
               Устгах
@@ -885,7 +897,6 @@ export default function AshiglaltiinZardluud() {
               Зардлын төрөл
             </label>
             <MSelect
-              clearable
               value={formData.lift ?? undefined}
               onChange={(value) =>
                 setFormData({ ...formData, lift: (value as string) ?? null })
@@ -896,7 +907,7 @@ export default function AshiglaltiinZardluud() {
                 { label: "Энгийн", value: "Энгийн" },
               ]}
               placeholder="Сонгох (Лифт)"
-              searchable
+              searchable={false}
             />
           </div>
 
@@ -915,7 +926,7 @@ export default function AshiglaltiinZardluud() {
             />
           </div>
 
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium mb-1 text-theme">
               Суурь хураамж
             </label>
@@ -931,9 +942,9 @@ export default function AshiglaltiinZardluud() {
               className="text-theme"
               rightSection={<span className="text-slate-500 pr-1">₮</span>}
             />
-          </div>
+          </div> */}
 
-          <div className="flex items-center">
+          {/* <div className="flex items-center">
             <input
               type="checkbox"
               checked={formData.nuatBodokhEsekh}
@@ -947,7 +958,7 @@ export default function AshiglaltiinZardluud() {
               style={{ accentColor: "var(--panel-text)" }}
             />
             <label className="text-sm font-medium text-theme">НӨАТ бодох</label>
-          </div>
+          </div> */}
           <div className="mt-6 flex justify-end gap-2">
             <MButton
               onClick={() => setIsModalOpen(false)}

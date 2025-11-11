@@ -27,13 +27,19 @@ const AdminLayout = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="min-h-screen text-theme">
-    <h1 className="text-2xl font-semibold mb-4 text-[color:var(--panel-text)] leading-tight mt-2 ml-4">
-      {title}
-    </h1>
-    <div className="grid grid-cols-12 gap-6 overflow-y-auto custom-scrollbar h-full md:h-auto">
-      {children}
-    </div>
+  // Use a column flex layout so header stays visible and the content area
+  // can grow/shrink. Use min-h-0 on the scrolling container so children can
+  // use flex-based heights and inner scrolling works on all browsers.
+  <div>
+    <header className="px-4 pt-3">
+      <h1 className="text-2xl font-semibold mb-2 text-[color:var(--panel-text)] leading-tight">
+        {title}
+      </h1>
+    </header>
+
+    <main className="flex-1 px-4 pb-6">
+      <div className="grid grid-cols-12 gap-6">{children}</div>
+    </main>
   </div>
 );
 
@@ -161,7 +167,7 @@ function Tokhirgoo() {
     <AdminLayout title="Тохиргоо">
       <div className="col-span-12 lg:col-span-3">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-5 space-y-2 bg-transparent max-h-[560px] overflow-y-auto md:overflow-y-hidden custom-scrollbar">
+          <div className="p-5 space-y-2 bg-transparent overflow-y-auto md:overflow-y-hidden custom-scrollbar">
             {tokhirgoo.map((item: any, i) => {
               const isActive = i === selectedIndexInternal;
               const isSoon = Boolean(item?.comingSoon);
