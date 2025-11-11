@@ -948,7 +948,7 @@ export default function Khynalt() {
             <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
-                  Төлөгдөөгүй удсан авлага 2+ сар
+                  Хуримтлагдсан авлага  /+ 2сар /
                 </h3>
                 <div className="text-right">
                   <div className="text-sm text-[color:var(--muted-text)]">

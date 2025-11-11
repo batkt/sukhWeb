@@ -690,6 +690,14 @@ export default function BarilgiinTokhirgoo() {
   // Modal state for new building
   const [isNewBuildingModalOpen, setIsNewBuildingModalOpen] = useState(false);
 
+  // Open new building modal and clear inputs so previous saved data is not shown
+  const openNewBuildingModal = () => {
+    setNewBarilgaNer("");
+    setOrtsCount("");
+    setDavkharCount("");
+    setIsNewBuildingModalOpen(true);
+  };
+
   // Modal state for edit building
   const [isEditBuildingModalOpen, setIsEditBuildingModalOpen] = useState(false);
   const [editedBuildingId, setEditedBuildingId] = useState<string | null>(null);
@@ -1469,7 +1477,7 @@ export default function BarilgiinTokhirgoo() {
                 Бүртгэлтэй барилгууд (Байр)
               </h3>
               <button
-                onClick={() => setIsNewBuildingModalOpen(true)}
+                onClick={openNewBuildingModal}
                 className="btn-minimal btn-save"
                 title="Шинэ барилга нэмэх"
               >
@@ -1528,7 +1536,7 @@ export default function BarilgiinTokhirgoo() {
             <div className="flex items-center gap-2">
               {/* Allow adding a building even when none exist */}
               <button
-                onClick={() => setIsNewBuildingModalOpen(true)}
+                onClick={openNewBuildingModal}
                 className="btn-minimal btn-add p-2"
                 title="Шинэ барилга нэмэх"
               >

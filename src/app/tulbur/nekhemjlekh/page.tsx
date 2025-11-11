@@ -639,7 +639,7 @@ const InvoiceModal = ({
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-slate-500">
-                            Эхний үлдэгдэл:
+                            Өмнөх сарын үлдэгдэл:
                           </span>{" "}
                           <span className="font-medium">
                             {latestInvoice?.medeelel?.ekhniiUldegdel != null
@@ -655,7 +655,7 @@ const InvoiceModal = ({
                         </div>
                         <div>
                           <span className="text-slate-500">
-                            Эхний үлдэгдэл (үсгээр):
+                            Өмнөх сарын үлдэгдэл (үсгээр):
                           </span>{" "}
                           <div className="font-medium">
                             {latestInvoice?.medeelel?.ekhniiUldegdelUsgeer ||

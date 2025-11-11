@@ -65,8 +65,8 @@ export const ALL_COLUMNS = [
   { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
   { key: "turul", label: "Төрөл", default: false },
   // { key: "aimag", label: "Аймаг", default: false },
-  { key: "duureg", label: "Дүүрэг", default: true },
-  { key: "horoo", label: "Хороо", default: true },
+  { key: "duureg", label: "Дүүрэг", default: false },
+  { key: "horoo", label: "Хороо", default: false },
   // { key: "baingiinKhayag", label: "Байнгын хаяг", default: false },
 
   // { key: "gereeniiOgnoo", label: "Гэрээний огноо", default: false },
@@ -82,11 +82,11 @@ export const ALL_COLUMNS = [
   // { key: "suhTulbur", label: "СӨХ төлбөр", default: false },
   // { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
   // { key: "niitTulbur", label: "Нийт төлбөр", default: false },
-  { key: "bairniiNer", label: "Байрны нэр", default: true },
+  { key: "bairniiNer", label: "Байрны нэр", default: false },
   { key: "tuluv", label: "Төлөв", default: true },
-  { key: "orts", label: "Орц", default: false },
-  { key: "toot", label: "Тоот", default: false },
-  { key: "davkhar", label: "Давхар", default: false },
+  { key: "orts", label: "Орц", default: true },
+  { key: "toot", label: "Тоот", default: true },
+  { key: "davkhar", label: "Давхар", default: true },
   { key: "ognoo", label: "Үүссэн огноо", default: true },
   // { key: "temdeglel", label: "Тэмдэглэл", default: false },
 ];
@@ -365,7 +365,7 @@ export default function Geree() {
       "25-р хороо",
     ],
 
-    "Баянзүрх": [
+    Баянзүрх: [
       "1-р хороо",
       "2-р хороо",
       "3-р хороо",
@@ -411,7 +411,7 @@ export default function Geree() {
       "43-р хороо",
     ],
 
-    "Сонгинохайрхан": [
+    Сонгинохайрхан: [
       "1-р хороо",
       "2-р хороо",
       "3-р хороо",
@@ -1815,11 +1815,23 @@ export default function Geree() {
         return getStringValue(contract.turul);
       case "tuluv": {
         const v = contract.tuluv || "-";
-        if (String(v) === "Цуцалсан")
+        const str = String(v || "");
+        // Active -> green badge, Canceled -> red badge, fallback -> theme text
+        if (str === "Идэвхитэй") {
           return (
-            <span className="text-red-600 font-semibold">{String(v)}</span>
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+              {str}
+            </span>
           );
-        return <span className="text-theme">{String(v)}</span>;
+        }
+        if (str === "Цуцалсан") {
+          return (
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+              {str}
+            </span>
+          );
+        }
+        return <span className="text-theme">{str}</span>;
       }
       case "zoriulalt":
         return getStringValue(contract.zoriulalt);
@@ -2373,7 +2385,84 @@ export default function Geree() {
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
         openSuccessOverlay("Тоот бүртгэлийн Excel импорт амжилттай");
-        await baiguullagaMutate();
+        // Refresh org data from server to pick up the imported units
+        let latest: any = null;
+        try {
+          latest = await baiguullagaMutate();
+        } catch (_) {
+          // ignore
+        }
+
+        // Immediately normalize the imported building's `davkhariinToonuud`
+        // on the client so the UI shows separate unit chips (like when
+        // adding units via the + button). Then persist the normalized
+        // shape to the server via updateBaiguullaga and refresh the cache.
+        try {
+          const targetOrg = latest || baiguullaga;
+          if (
+            targetOrg &&
+            targetOrg._id &&
+            Array.isArray(targetOrg.barilguud)
+          ) {
+            const updatedBarilguud = (targetOrg.barilguud || []).map(
+              (b: any) => {
+                // clone
+                const nb = { ...b } as any;
+                try {
+                  const tok = (nb.tokhirgoo || {}) as any;
+                  const existing = tok.davkhariinToonuud || {};
+                  const nextMap: Record<string, string[]> = {};
+                  Object.entries(existing).forEach(([k, v]) => {
+                    // v may be a string like "1,2,3" or an array that contains
+                    // strings like "1,2". Normalize to an array of individual tokens.
+                    const arr = Array.isArray(v) ? v : [v];
+                    const normalized = Array.from(
+                      new Set(
+                        arr
+                          .flatMap((it: any) =>
+                            String(it || "").split(/[\s,;|]+/)
+                          )
+                          .map((s: string) => s.trim())
+                          .filter(Boolean)
+                      )
+                    );
+                    nextMap[String(k)] = normalized;
+                  });
+                  nb.tokhirgoo = {
+                    ...(nb.tokhirgoo || {}),
+                    davkhariinToonuud: nextMap,
+                  };
+                } catch (e) {
+                  // ignore per-building normalization errors
+                }
+                return nb;
+              }
+            );
+
+            const normalizedOrg = { ...targetOrg, barilguud: updatedBarilguud };
+
+            // Update SWR/local cache immediately so UI shows separate chips
+            try {
+              await baiguullagaMutate(normalizedOrg, false);
+            } catch (_) {}
+
+            // Persist normalized shape back to server for durability
+            try {
+              await updateBaiguullaga(
+                token,
+                targetOrg._id,
+                { barilguud: updatedBarilguud },
+                { barilgiinId: targetBarilgiinId }
+              );
+              // refresh cache from server to ensure consistency
+              await baiguullagaMutate();
+            } catch (persistErr) {
+              // If persistence fails, we still keep the normalized UI state
+            }
+          }
+        } catch (normErr) {
+          // Non-fatal: normalization failed, still consider import success
+        }
       }
     } catch (err) {
       // Try to show backend-provided error message when available
@@ -3164,8 +3253,19 @@ export default function Geree() {
       }
       setPreviewTemplate({ aguulga: html });
       setShowPreviewModal(true);
-    } catch (e) {
-      openErrorOverlay("Загварыг боловсруулахад алдаа гарлаа");
+    } catch (e: any) {
+      // If server returned a helpful message, show it; otherwise fall back to generic text
+      const serverMsg =
+        e?.response?.data?.message ||
+        e?.response?.data?.aldaa ||
+        e?.response?.data?.msg ||
+        e?.message ||
+        null;
+      openErrorOverlay(
+        typeof serverMsg === "string" && serverMsg
+          ? serverMsg
+          : "Загварыг боловсруулахад алдаа гарлаа"
+      );
     }
   };
 
@@ -3440,10 +3540,11 @@ export default function Geree() {
                     ner: "",
                     register: "",
                     utas: [""],
-                    davkhar:
-                      davkharOptions && davkharOptions.length > 0
-                        ? davkharOptions[0]
-                        : "",
+                    // For add-new resident we want the selects to be empty so the user
+                    // explicitly chooses Орц / Давхар / Тоот. Keep these as empty
+                    // strings here. When editing an existing resident the handler
+                    // `handleEditResident` fills these fields from the record.
+                    davkhar: "",
                     mail: "",
                     khayag: "",
                     aimag: "Улаанбаатар",
@@ -3451,7 +3552,7 @@ export default function Geree() {
                       deriveStr(selectedBarilga?.tokhirgoo?.duuregNer) || "",
                     horoo:
                       deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
-                    orts: String(selectedBarilga?.tokhirgoo?.orts || ""),
+                    orts: "",
                     toot: "",
                     soh:
                       selectedBarilga?.tokhirgoo?.sohNer ||
@@ -3466,12 +3567,12 @@ export default function Geree() {
                 }}
                 className="btn-minimal"
                 id="resident-new-btn"
-                aria-label="Оршин суугч нэмэх"
-                title="Оршин суугч нэмэх"
+                aria-label="Оршин суугч"
+                title="Оршин суугч"
               >
                 <UserPlus className="w-5 h-5" />
                 <span className="hidden sm:inline text-xs ml-1">
-                  Оршин суугч нэмэх
+                  Оршин суугч
                 </span>
               </button>
 
@@ -3745,7 +3846,7 @@ export default function Geree() {
                                         {units.map((t: any) => (
                                           <span
                                             key={String(t)}
-                                            className="inline-flex gap-1 px-2 py-1 rounded-full text-xs  text-theme"
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-theme border border-gray-300"
                                           >
                                             {String(t)}
                                             <button
@@ -6070,27 +6171,7 @@ export default function Geree() {
                 </div>
 
                 <div className="space-y-3">
-                  {templates.map((t: any) => (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between p-4 rounded-xl border border-gray-200"
-                    >
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {t.name}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          {t.description}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleDownloadTemplate(t.type)}
-                        className="btn-minimal btn-download"
-                      >
-                        Татах
-                      </button>
-                    </div>
-                  ))}
+                  <div className="text-sm text-theme">Загварууд энд байна.</div>
                 </div>
               </motion.div>
             </motion.div>

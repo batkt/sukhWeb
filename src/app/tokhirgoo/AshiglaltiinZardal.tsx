@@ -628,11 +628,10 @@ export default function AshiglaltiinZardluud() {
 
       <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <MButton className="btn-minimal" onClick={() => openAddModal(false)}>
-            +
-          </MButton>
-        </div>
+
+        <MButton className="btn-minimal" onClick={() => openAddModal(false)}>
+          +
+        </MButton>
       </div>
 
       {isLoadingAshiglaltiin ? (

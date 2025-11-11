@@ -173,7 +173,9 @@ export default function TusgaiZagvar({
               top: portalStyle?.top ?? 0,
               left: portalStyle?.left ?? 0,
               width: portalStyle?.width ?? "auto",
-              zIndex: 3000,
+              // Ensure dropdown appears above modal overlays (modals use very high z-index),
+              // set a sufficiently large zIndex so the portal is visible when used inside modals.
+              zIndex: 11000,
             }}
           >
             <div
