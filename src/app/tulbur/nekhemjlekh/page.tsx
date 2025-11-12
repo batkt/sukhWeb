@@ -29,16 +29,14 @@ import { useGereeJagsaalt } from "../../../lib/useGeree";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
+import formatNumber from "../../../../tools/function/formatNumber";
 
 import { url as API_URL } from "../../../../lib/uilchilgee";
 import uilchilgee from "../../../../lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "../../../../lib/uilchilgee";
 
-const formatNumber = (num: number) => {
-  return num?.toLocaleString("mn-MN") || "0";
-};
-const exceleerTatya = () => {};
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
 };
@@ -241,6 +239,7 @@ const InvoiceModal = ({
   const [invRows, setInvRows] = React.useState<any[]>([]);
   const [invTotal, setInvTotal] = React.useState<number | null>(null);
   const [latestInvoice, setLatestInvoice] = React.useState<any>(null);
+  const [nekhemjlekhData, setNekhemjlekhData] = React.useState<any>(null);
   const [paymentStatusLabel, setPaymentStatusLabel] = React.useState<
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
@@ -312,11 +311,17 @@ const InvoiceModal = ({
             new Date(a?.createdAt || a?.ognoo || 0).getTime()
         )[0];
         setLatestInvoice(latest || null);
-        const rows = Array.isArray(latest?.medeelel?.zardluud)
+        const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
           ? latest.medeelel.zardluud
           : Array.isArray(latest?.zardluud)
           ? latest.zardluud
           : [];
+        const guilgeenuudRows = Array.isArray(latest?.medeelel?.guilgeenuud)
+          ? latest.medeelel.guilgeenuud
+          : Array.isArray(latest?.guilgeenuud)
+          ? latest.guilgeenuud
+          : [];
+        const rows = [...zardluudRows, ...guilgeenuudRows];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -332,7 +337,12 @@ const InvoiceModal = ({
         };
         const norm = (z: any, idx: number) => ({
           _id: z._id || `inv-${idx}`,
-          ner: z.ner || z.name || "",
+          ner:
+            z.turul === "avlaga"
+              ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
+                  z.ognoo
+                )}`
+              : z.ner || z.name || "",
           tariff: pickAmount(z),
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
@@ -382,7 +392,26 @@ const InvoiceModal = ({
       ? Number((gereeData as any).niitTulbur)
       : null;
 
+  const guilgeeRows = React.useMemo(() => {
+    const raw = (gereeData as any)?.guilgeenuudForNekhemjlekh || [];
+    return Array.isArray(raw)
+      ? raw.map((g: any, idx: number) => ({
+          _id: g._id || `guilgee-${idx}`,
+          ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
+          tariff: Number(g.tulukhDun) || 0,
+          turul: "avlaga",
+          zardliinTurul: "Авлага",
+          ognoo: g.ognoo,
+        }))
+      : [];
+  }, [gereeData]);
+
   const invoiceRows = React.useMemo(() => {
+    // Prefer guilgeenuudForNekhemjlekh if available
+    if (guilgeeRows.length > 0) {
+      return guilgeeRows;
+    }
+
     // Prefer latest invoice rows if available AND they contain any positive amount
     if (invValid) return invRows;
     // If all tariffs are zero/empty, fall back to base utilization rows
@@ -492,17 +521,21 @@ const InvoiceModal = ({
     gereeData,
     invRows,
     invValid,
+    guilgeeRows,
   ]);
 
   const useBackendRows = !!(backendRows && backendRows.length > 0);
 
   const totalSum = React.useMemo(() => {
+    if (nekhemjlekhData?.niitTulbur != null) {
+      return Number(nekhemjlekhData.niitTulbur);
+    }
     if (invValid && invTotal !== null) return invTotal;
     const rowSum = invoiceRows
       .filter((item: any) => !item?.discount)
-      .reduce((sum, item: any) => sum + Number(item?.tariff ?? 0), 0);
+      .reduce((sum: any, item: any) => sum + Number(item?.tariff ?? 0), 0);
     return rowSum;
-  }, [invoiceRows, invTotal, invValid]);
+  }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
 
   if (!isOpen) return null;
 
@@ -594,7 +627,11 @@ const InvoiceModal = ({
                         </p>
                         <p className="text-sm text-slate-600">
                           <span className="font-medium">төлөх огноо:</span>{" "}
-                          {formatDate(gereeData?.tulukhOgnoo || currentDate)}
+                          {formatDate(
+                            nekhemjlekhData?.tulukhOgnoo ||
+                              gereeData?.tulukhOgnoo ||
+                              currentDate
+                          )}
                         </p>
                         <p className="text-sm text-slate-600 mt-2">
                           <span className="font-medium">Банк:</span>{" "}
@@ -646,13 +683,18 @@ const InvoiceModal = ({
                             Өмнөх сарын үлдэгдэл:
                           </span>{" "}
                           <span className="font-medium">
-                            {latestInvoice?.medeelel?.ekhniiUldegdel != null
+                            {gereeData?.ekhniiUldegdel != null
+                              ? formatCurrency(Number(gereeData.ekhniiUldegdel))
+                              : nekhemjlekhData?.medeelel?.ekhniiUldegdel !=
+                                null
                               ? formatCurrency(
-                                  Number(latestInvoice.medeelel.ekhniiUldegdel)
+                                  Number(
+                                    nekhemjlekhData.medeelel.ekhniiUldegdel
+                                  )
                                 )
-                              : latestInvoice?.ekhniiUldegdel != null
+                              : nekhemjlekhData?.ekhniiUldegdel != null
                               ? formatCurrency(
-                                  Number(latestInvoice.ekhniiUldegdel)
+                                  Number(nekhemjlekhData.ekhniiUldegdel)
                                 )
                               : "-"}
                           </span>
@@ -662,8 +704,9 @@ const InvoiceModal = ({
                             Өмнөх сарын үлдэгдэл (үсгээр):
                           </span>{" "}
                           <div className="font-medium">
-                            {latestInvoice?.medeelel?.ekhniiUldegdelUsgeer ||
-                              latestInvoice?.ekhniiUldegdelUsgeer ||
+                            {gereeData?.ekhniiUldegdelUsgeer ||
+                              nekhemjlekhData?.medeelel?.ekhniiUldegdelUsgeer ||
+                              nekhemjlekhData?.ekhniiUldegdelUsgeer ||
                               "-"}
                           </div>
                         </div>
@@ -868,7 +911,7 @@ export default function InvoicingZardluud() {
         });
         setExpenses(response.data?.jagsaalt || []);
       } catch (error) {
-        openErrorOverlay("Зардлын мэдээлэл татахад алдаа гарлаа");
+        openErrorOverlay(getErrorMessage(error));
       } finally {
         setIsLoadingExpenses(false);
       }
@@ -1216,7 +1259,7 @@ export default function InvoicingZardluud() {
 
       setHistoryItems(list);
     } catch (e) {
-      openErrorOverlay("Түүх татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
       setHistoryItems([]);
     } finally {
       setHistoryLoading(false);
@@ -1363,8 +1406,10 @@ export default function InvoicingZardluud() {
                 />
 
                 <div className="text-4xl font-bold mb-2 text-theme">
-                  {typeof stat.value === "number"
-                    ? stat.value.toLocaleString("mn-MN")
+                  {stat.title === "Нийт дүн"
+                    ? stat.value
+                    : typeof stat.value === "number"
+                    ? stat.value
                     : String(stat.value)}
                 </div>
                 <div className="text-sm text-gray-600 font-medium leading-tight">
@@ -1790,6 +1835,19 @@ export default function InvoicingZardluud() {
                                     <div className="text-xs">Нийт дүн</div>
                                     <div className="text-xl font-bold">
                                       {formatCurrency(total)}
+                                    </div>
+                                    <div className="mt-1">
+                                      <span
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                          total === 0
+                                            ? "badge-paid"
+                                            : "badge-unpaid"
+                                        }`}
+                                      >
+                                        {total === 0
+                                          ? "Төлөгдсөн"
+                                          : "Төлөгдөөгүй"}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>

@@ -475,7 +475,7 @@ export default function Ebarimt() {
 
                 <div className="text-4xl font-bold mb-2 text-theme">
                   {typeof stat.value === "number"
-                    ? stat.value.toLocaleString("mn-MN")
+                    ? formatNumber(stat.value)
                     : String(stat.value)}
                 </div>
                 <div className="text-sm text-gray-600 font-medium leading-tight">

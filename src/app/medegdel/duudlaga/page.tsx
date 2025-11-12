@@ -7,6 +7,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import formatNumber from "../../../../tools/function/formatNumber";
 
 const { Option } = Select;
 
@@ -125,17 +126,6 @@ const getStatusInfo = (tuluv: number): StatusInfo => {
     default:
       return { text: "Тодорхойгүй", color: "gray" };
   }
-};
-
-const formatNumber = (
-  num: number | undefined | null,
-  decimals: number = 0
-): string => {
-  if (num === undefined || num === null) return "0";
-  return Number(num).toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
 };
 
 export default function TaskManagementSystem() {

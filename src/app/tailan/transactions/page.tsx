@@ -7,10 +7,12 @@ import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "../../../../lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import formatNumber from "../../../../tools/function/formatNumber";
 
 export default function TransactionsPage() {
   const { token, ajiltan, barilgiinId } = useAuth();
@@ -66,14 +68,15 @@ export default function TransactionsPage() {
       );
     } catch (e) {
       console.error(e);
-      openErrorOverlay("Гүйлгээ татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     } finally {
       setLoading(false);
     }
   };
 
   const exportCsv = async () => {
-    if (!token) return openErrorOverlay("Токен алга");
+    if (!token)
+      return openErrorOverlay(getErrorMessage(new Error("Токен алга")));
     try {
       const body = { ...buildBody(), report: "guilegee", type: "csv" };
       const blobResp = await tailanApi.postExport(token, body);
@@ -90,7 +93,7 @@ export default function TransactionsPage() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       console.error(e);
-      openErrorOverlay("CSV экспорт алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     }
   };
 
@@ -212,9 +215,7 @@ export default function TransactionsPage() {
                       </td>
                       <td className="p-2 text-center">{r.type || "-"}</td>
                       <td className="p-2 text-center">
-                        {r.amount
-                          ? Number(r.amount).toLocaleString() + " ₮"
-                          : "-"}
+                        {r.amount ? formatNumber(Number(r.amount)) + " ₮" : "-"}
                       </td>
                       <td className="p-2 text-center">
                         {r.bank || r.account || "-"}

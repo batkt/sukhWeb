@@ -19,6 +19,7 @@ import { message } from "antd";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { Download } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "../../../../lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -286,7 +287,7 @@ export default function DansniiKhuulga() {
           : [];
         setBankRows(list);
       } catch (e) {
-        openErrorOverlay("Банкны гүйлгээ татахад алдаа гарлаа");
+        openErrorOverlay(getErrorMessage(e));
       } finally {
         setIsLoadingBankRows(false);
       }
@@ -485,9 +486,7 @@ export default function DansniiKhuulga() {
                   transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
                 />
                 <div className="text-3xl font-bold mb-1  bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {typeof stat.value === "number"
-                    ? stat.value.toLocaleString("mn-MN")
-                    : String(stat.value)}
+                  {stat.value}
                 </div>
                 <div className="text-xs text-theme leading-tight">
                   {stat.title}

@@ -107,6 +107,20 @@ export const aldaaBarigch = (e: any): void => {
   }
 };
 
+// Helper function to extract error message from backend response
+export const getErrorMessage = (error: any): string => {
+  // Try different possible error message fields from backend
+  const serverMessage =
+    error?.response?.data?.aldaa ||
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    (typeof error?.response?.data === "string" ? error.response.data : null) ||
+    error?.message ||
+    "Алдаа гарлаа";
+
+  return String(serverMessage);
+};
+
 // Axios instance for Togloom service
 export const togloomUilchilgee = (token?: string): AxiosInstance => {
   const headers: Record<string, string> = {

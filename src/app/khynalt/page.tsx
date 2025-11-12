@@ -30,6 +30,7 @@ import {
   ArcElement,
   BarElement,
 } from "chart.js";
+import formatNumber from "../../../tools/function/formatNumber";
 
 ChartJS.register(
   CategoryScale,
@@ -627,9 +628,6 @@ export default function Khynalt() {
     };
   }, [profitSeries]);
 
-  function formatNumber(n: number) {
-    return (n || 0).toLocaleString("mn-MN");
-  }
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
   }
@@ -948,7 +946,7 @@ export default function Khynalt() {
             <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
               <div className="mb-2 flex items-baseline justify-between gap-2">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
-                  Хуримтлагдсан авлага  /+ 2сар /
+                  Хуримтлагдсан авлага /+ 2сар /
                 </h3>
                 <div className="text-right">
                   <div className="text-sm text-[color:var(--muted-text)]">

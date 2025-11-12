@@ -33,7 +33,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import uilchilgee, { socket } from "../../../lib/uilchilgee";
+import uilchilgee, { socket, getErrorMessage } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -58,6 +58,7 @@ import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import { set } from "lodash";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
+import formatNumber from "../../../tools/function/formatNumber";
 export const ALL_COLUMNS = [
   // { key: "ovog", label: "Овог", default: true },
   { key: "ner", label: "Нэр", default: true },
@@ -151,6 +152,29 @@ export default function Geree() {
   const [showAddTootModal, setShowAddTootModal] = useState(false);
   const [addTootFloor, setAddTootFloor] = useState<string>("");
   const [addTootValue, setAddTootValue] = useState<string>("");
+  // Parse toot input to support ranges like "1-9"
+  const parseToots = (input: string): string[] => {
+    const trimmed = input.trim();
+    if (!trimmed) return [];
+    // First split by commas and spaces to handle lists
+    const parts = trimmed
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const result: string[] = [];
+    for (const part of parts) {
+      if (part.includes("-")) {
+        const [start, end] = part.split("-").map((s) => parseInt(s.trim()));
+        if (isNaN(start) || isNaN(end) || start > end) continue;
+        for (let i = start; i <= end; i++) {
+          result.push(String(i));
+        }
+      } else {
+        if (part) result.push(part);
+      }
+    }
+    return result;
+  };
   // Selection and авлага modal state (admin only)
   const [selectedContracts, setSelectedContracts] = useState<string[]>([]);
   const [selectAllContracts, setSelectAllContracts] = useState(false);
@@ -751,7 +775,7 @@ export default function Geree() {
       await baiguullagaMutate();
       openSuccessOverlay("Тоот устгагдлаа");
     } catch (e) {
-      openErrorOverlay("Устгах явцад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     } finally {
       setIsSavingUnits(false);
     }
@@ -790,24 +814,18 @@ export default function Geree() {
       await baiguullagaMutate();
       openSuccessOverlay(`${floor}-р давхрын тоотууд устгагдлаа`);
     } catch (e) {
-      openErrorOverlay("Устгах явцад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     } finally {
       setIsSavingUnits(false);
     }
   };
 
-  const addUnit = async (floor: string, value: string) => {
+  const addUnit = async (floor: string, values: string[]) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
-    const raw = String(value || "").trim();
-    if (!raw) return;
-    // support comma/space/semicolon separated lists like "1,2,3" or "1 2 3"
-    const parts = raw
-      .split(/[\s,;|]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const parts = values.filter(Boolean);
     if (parts.length === 0) return;
     try {
       setIsSavingUnits(true);
@@ -844,7 +862,7 @@ export default function Geree() {
       setAddUnitValue("");
       openSuccessOverlay("Тоот нэмэгдлээ");
     } catch (e) {
-      openErrorOverlay("Тоот нэмэхэд алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     } finally {
       setIsSavingUnits(false);
     }
@@ -901,7 +919,7 @@ export default function Geree() {
       setShowAvlagaModal(false);
       await gereeJagsaaltMutate();
     } catch (e) {
-      openErrorOverlay("Авлага хадгалах явцад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     } finally {
       setIsSavingAvlaga(false);
     }
@@ -1506,7 +1524,7 @@ export default function Geree() {
         if (filterType !== "Бүгд" && c.turul !== filterType) return false;
         // filter by tuluv (status)
         if (filterTuluv !== "Бүгд") {
-          const tv = c.tuluv || "Идэвхитэй";
+          const tv = c.tuluv || "Идэвхтэй";
           if (String(tv) !== String(filterTuluv)) return false;
         }
 
@@ -1541,21 +1559,59 @@ export default function Geree() {
 
   // Client-side pagination for residents and employees (slice loaded lists)
   const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+  const filteredResidents = useMemo(() => {
+    if (!searchTerm) return residentsList;
+    return residentsList.filter((resident: any) => {
+      const qq = String(searchTerm).toLowerCase();
+      const hay = [
+        resident.ner,
+        resident.register,
+        resident.mail || resident.email,
+        Array.isArray(resident.utas) ? resident.utas.join(" ") : resident.utas,
+        resident.orts,
+        resident.toot !== undefined && resident.toot !== null
+          ? String(resident.toot)
+          : undefined,
+        resident.davkhar,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(qq);
+    });
+  }, [residentsList, searchTerm]);
   const resTotalPages = Math.max(
     1,
-    Math.ceil(residentsList.length / (resPageSize || 1))
+    Math.ceil(filteredResidents.length / (resPageSize || 1))
   );
-  const currentResidents = residentsList.slice(
+  const currentResidents = filteredResidents.slice(
     (resPage - 1) * resPageSize,
     resPage * resPageSize
   );
 
   const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
+  const filteredEmployees = useMemo(() => {
+    if (!searchTerm) return employeesList;
+    return employeesList.filter((employee: any) => {
+      const qq = String(searchTerm).toLowerCase();
+      const hay = [
+        employee.ner,
+        employee.register,
+        employee.email,
+        employee.utas,
+        employee.albanTushaal,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(qq);
+    });
+  }, [employeesList, searchTerm]);
   const empTotalPages = Math.max(
     1,
-    Math.ceil(employeesList.length / (empPageSize || 1))
+    Math.ceil(filteredEmployees.length / (empPageSize || 1))
   );
-  const currentEmployees = employeesList.slice(
+  const currentEmployees = filteredEmployees.slice(
     (empPage - 1) * empPageSize,
     empPage * empPageSize
   );
@@ -1805,16 +1861,16 @@ export default function Geree() {
         const v = contract.tuluv || "-";
         const str = String(v || "");
         // Active -> green badge, Canceled -> red badge, fallback -> theme text
-        if (str === "Идэвхитэй") {
+        if (str === "Идэвхтэй") {
           return (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold badge-paid">
               {str}
             </span>
           );
         }
         if (str === "Цуцалсан") {
           return (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold badge-unpaid">
               {str}
             </span>
           );
@@ -1829,11 +1885,11 @@ export default function Geree() {
         return contract.talbainKhemjee ? `${contract.talbainKhemjee} м²` : "-";
       case "sariinTurees":
         return contract.sariinTurees
-          ? `${contract.sariinTurees.toLocaleString()}₮`
+          ? `${formatNumber(contract.sariinTurees)} ₮`
           : "-";
       case "baritsaaniiUldegdel":
         return contract.baritsaaniiUldegdel
-          ? `${contract.baritsaaniiUldegdel.toLocaleString()}₮`
+          ? `${formatNumber(contract.baritsaaniiUldegdel)} ₮`
           : "0₮";
       case "utas":
         return Array.isArray(contract.utas) && contract.utas.length > 0
@@ -1891,7 +1947,7 @@ export default function Geree() {
 
       openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (error) {
-      openErrorOverlay("Загвар татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(error));
     }
   };
 
@@ -1980,7 +2036,7 @@ export default function Geree() {
 
       openSuccessOverlay("Excel файл амжилттай татагдлаа");
     } catch (error) {
-      openErrorOverlay("Excel файл татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(error));
     }
   };
 
@@ -2006,7 +2062,7 @@ export default function Geree() {
       window.URL.revokeObjectURL(url);
       openSuccessOverlay("Загвар амжилттай татагдлаа");
     } catch (e) {
-      openErrorOverlay("Загвар татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     }
   };
 
@@ -2220,7 +2276,7 @@ export default function Geree() {
         .saveAs("orshinSuugch_export.xlsx");
       openSuccessOverlay("Оршин суугчдын Excel татагдлаа");
     } catch (e) {
-      openErrorOverlay("Excel татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(e));
     }
   };
 
@@ -2310,13 +2366,13 @@ export default function Geree() {
       const url = window.URL.createObjectURL(new Blob([resp.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", "units_template.xlsx");
+      link.setAttribute("download", "toot_burtgel.xlsx");
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      openErrorOverlay("Загвар татахад алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(err));
     }
   };
 
@@ -2757,7 +2813,7 @@ export default function Geree() {
       }
       setActiveTab("residents");
     } catch (err) {
-      openErrorOverlay("Нэмэхэд алдаа гарлаа");
+      openErrorOverlay(getErrorMessage(err));
     }
   };
 
@@ -2809,6 +2865,8 @@ export default function Geree() {
       ekhniiUldegdelTemdeglel:
         p?.ekhniiUldegdelTemdeglel ||
         p?.medeelel?.ekhniiUldegdelTemdeglel ||
+        p?.temdeglel ||
+        p?.medeelel?.temdeglel ||
         "",
       turul: p.turul || "Үндсэн",
     });
@@ -4237,7 +4295,7 @@ export default function Geree() {
                         damping: 25,
                         stiffness: 300,
                       }}
-                      className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[82vw] max-w-[220px] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
+                      className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[42vw] max-w-[120px] rounded-2xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
                       onClick={(e) => e.stopPropagation()}
                       role="dialog"
                       aria-modal="true"
@@ -4295,7 +4353,15 @@ export default function Geree() {
                             <input
                               type="text"
                               value={avlagaValue}
-                              onChange={(e) => setAvlagaValue(e.target.value)}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const digits = raw.replace(/\D/g, "");
+                                const formatted = digits.replace(
+                                  /\B(?=(\d{3})+(?!\d))/g,
+                                  ","
+                                );
+                                setAvlagaValue(formatted);
+                              }}
                               className="w-full p-3 rounded-2xl border bg-panel"
                               placeholder="Дүн"
                             />
@@ -4351,7 +4417,7 @@ export default function Geree() {
                   className="text-xs rounded-md px-2 py-1 border border-[color:var(--surface-border)] bg-panel"
                 >
                   <option value="Бүгд">Бүгд</option>
-                  <option value="Идэвхитэй">Идэвхитэй</option>
+                  <option value="Идэвхтэй">Идэвхтэй</option>
                   <option value="Цуцалсан">Цуцалсан</option>
                 </select>
               </div>
@@ -4521,7 +4587,7 @@ export default function Geree() {
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-md">
               <div className="font-bold text-theme/70">
-                Нийт: {residentsList.length}
+                Нийт: {filteredResidents.length}
               </div>
               <div className="flex items-center gap-3">
                 <PageSongokh
@@ -4663,7 +4729,7 @@ export default function Geree() {
             </div>
             <div className="flex items-center justify-between px-2 py-1 text-md">
               <div className="font-bold text-theme/70">
-                Нийт: {employeesList.length}
+                Нийт: {filteredEmployees.length}
               </div>
               <div className="flex items-center gap-3">
                 <PageSongokh
@@ -5243,9 +5309,15 @@ export default function Geree() {
                   <div className="mb-4">
                     <input
                       type="text"
-                      placeholder="Тоот"
+                      placeholder="Тоот (1-9 гэх мэтээр оруулна уу)"
                       value={addTootValue}
-                      onChange={(e) => setAddTootValue(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(
+                          /[^0-9A-Za-z,\-\s]/g,
+                          ""
+                        );
+                        setAddTootValue(value);
+                      }}
                       className="w-full px-3 py-2 rounded-2xl border border-gray-200 focus:outline-none focus:ring"
                       autoFocus
                     />
@@ -5261,17 +5333,14 @@ export default function Geree() {
                     <button
                       type="button"
                       onClick={async () => {
-                        try {
-                          if (!addTootFloor) return;
-                          await addUnit(
-                            addTootFloor,
-                            String(addTootValue || "").trim()
-                          );
-                          setShowAddTootModal(false);
-                          setAddTootValue("");
-                        } catch (e) {
-                          // swallow - addUnit shows overlay on error
+                        const tootsToAdd = parseToots(addTootValue);
+                        if (tootsToAdd.length === 0) {
+                          openErrorOverlay("Буруу тоот оруулсан байна");
+                          return;
                         }
+                        await addUnit(addTootFloor, tootsToAdd);
+                        setShowAddTootModal(false);
+                        setAddTootValue("");
                       }}
                       className="btn-minimal btn-save px-4 py-2"
                       data-modal-primary
@@ -5674,6 +5743,7 @@ export default function Geree() {
                                 }}
                                 className="w-full p-3 pr-14 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                                 placeholder="0"
+                                readOnly={!!editingResident}
                               />
                               <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-50 border border-gray-300 rounded-full px-3 text-sm text-theme pointer-events-none">
                                 ₮
@@ -5695,6 +5765,7 @@ export default function Geree() {
                               }
                               className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300 resize-none"
                               rows={1}
+                              readOnly={!!editingResident}
                             />
                           </div>
                         </div>

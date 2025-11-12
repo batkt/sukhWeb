@@ -7,7 +7,7 @@ import useSWR from "swr";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import NekhemjlekhPage from "../nekhemjlekh/page";
-import KhungulultPage from "../khungulult/page";
+// import KhungulultPage from "../khungulult/page";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
@@ -223,12 +223,9 @@ export default function DansniiKhuulga() {
     const unpaidCount = filteredItems.filter(
       (it: any) => isUnpaidLike(it) && !isOverdueLike(it)
     ).length;
-    const maxAmount = filteredItems.reduce((m: number, it: any) => {
-      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-      return Math.max(m, v);
-    }, 0);
 
     return [
+      { title: "Нийт гүйлгээ", value: totalCount },
       { title: "Төлсөн", value: paidCount },
       { title: "Хугацаа хэтэрсэн", value: overdueCount },
       { title: "Төлөөгүй", value: unpaidCount },
@@ -404,7 +401,7 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => (
             <motion.div
               key={idx}
@@ -415,9 +412,7 @@ export default function DansniiKhuulga() {
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 rounded-2xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
               <div className="relative rounded-2xl p-5 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
                 <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {typeof stat.value === "number"
-                    ? stat.value.toLocaleString("mn-MN")
-                    : String(stat.value)}
+                  {stat.value}
                 </div>
                 <div className="text-xs text-theme leading-tight">
                   {stat.title}
@@ -607,7 +602,7 @@ export default function DansniiKhuulga() {
                             {khayag}
                           </td> */}
                           <td className="p-1 !text-right text-theme whitespace-nowrap">
-                            {total.toLocaleString("mn-MN")} ₮
+                            {formatNumber(total)} ₮
                           </td>
                           <td className="p-1 text-center text-theme whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
@@ -774,9 +769,9 @@ export default function DansniiKhuulga() {
                   Хаах
                 </button>
               </div>
-              <div className="p-2 overflow-auto max-h-[calc(90vh-48px)] ">
+              {/* <div className="p-2 overflow-auto max-h-[calc(90vh-48px)] ">
                 <KhungulultPage />
-              </div>
+              </div> */}
             </motion.div>
           </>
         </ModalPortal>

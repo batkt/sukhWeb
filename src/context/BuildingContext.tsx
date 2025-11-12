@@ -17,7 +17,7 @@ export const BuildingProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { token, ajiltan, ajiltanMutate } = useAuth();
+  const { token, ajiltan, baiguullaga, ajiltanMutate } = useAuth();
   const [selectedBuildingId, setSelectedBuildingIdState] = useState<
     string | null
   >(null);
@@ -32,8 +32,18 @@ export const BuildingProvider = ({
     // Then try from ajiltan's defaultBarilga
     if (ajiltan?.defaultBarilga) {
       setSelectedBuildingIdState(ajiltan.defaultBarilga);
+      return;
     }
-  }, [ajiltan]);
+    // Finally, if organization has buildings and no building is selected yet, auto-select the first building
+    if (baiguullaga?.barilguud && baiguullaga.barilguud.length > 0) {
+      const firstBuilding = baiguullaga.barilguud[0];
+      if (firstBuilding?._id) {
+        setSelectedBuildingIdState(firstBuilding._id);
+        // Also set it in localStorage for persistence
+        localStorage.setItem("selectedBuildingId", firstBuilding._id);
+      }
+    }
+  }, [ajiltan, baiguullaga]);
 
   const setSelectedBuildingId = (id: string | null) => {
     setSelectedBuildingIdState(id);

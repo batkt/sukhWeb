@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import { DownloadOutlined } from "@ant-design/icons";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { t } from "i18next";
-
-const formatNumber = (num: number) => num.toLocaleString();
+import formatNumber from "../../../tools/function/formatNumber";
 
 interface BackItem {
   _id: number;
