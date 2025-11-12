@@ -78,7 +78,7 @@ export default function Ebarimt() {
     if (!x) return null;
     try {
       const d = x instanceof Date ? x : new Date(x);
-      return isNaN(d.getTime()) ? null : d.toISOString();
+      return isNaN(d.getTime()) ? null : moment(d).format("YYYY-MM-DD");
     } catch (_e) {
       return null;
     }
@@ -218,11 +218,26 @@ export default function Ebarimt() {
     });
   }, [data]);
 
-  // Client-side filtered view based on search input
+  // Client-side filtered view based on search input and date range
   const displayedData: TableItem[] = useMemo(() => {
+    let filtered = tableData;
+
+    // Filter by date range
+    if (ekhlekhOgnoo && (ekhlekhOgnoo[0] || ekhlekhOgnoo[1])) {
+      const [start, end] = ekhlekhOgnoo;
+      filtered = filtered.filter((it) => {
+        if (!it.date) return true; // if no date, include
+        const itemDate = moment(it.date, "YYYY-MM-DD HH:mm").toDate();
+        if (start && itemDate < start) return false;
+        if (end && itemDate > end) return false;
+        return true;
+      });
+    }
+
+    // Filter by search term
     const s = (searchTerm || "").trim().toLowerCase();
-    if (!s) return tableData;
-    return tableData.filter((it) => {
+    if (!s) return filtered;
+    return filtered.filter((it) => {
       const fields = [
         it.receiptId,
         it.ddtd,
@@ -235,7 +250,7 @@ export default function Ebarimt() {
         .map((x) => String(x).toLowerCase());
       return fields.some((f) => f.includes(s));
     });
-  }, [tableData, searchTerm]);
+  }, [tableData, searchTerm, ekhlekhOgnoo]);
 
   const eBarimtMedeelel = { extraInfo: { lastSentDate: new Date() } };
 

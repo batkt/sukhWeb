@@ -1,7 +1,8 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee, { updateBaiguullaga } from "../../lib/uilchilgee";
+import uilchilgee from "../../lib/uilchilgee";
+import updateMethod from "../../tools/function/updateMethod";
 
 interface ZardalItem {
   _id?: string;
@@ -116,7 +117,7 @@ export function useAshiglaltiinZardluud(overrides?: {
 
     barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);
 
-    await updateBaiguullaga(token, String(currentOrg), org);
+    await updateMethod("baiguullaga", token, org);
     mutate();
   };
 
@@ -153,7 +154,7 @@ export function useAshiglaltiinZardluud(overrides?: {
           : undefined),
     };
 
-    await updateBaiguullaga(token, String(currentOrg), org);
+    await updateMethod("baiguullaga", token, org);
     mutate();
   };
 
@@ -172,7 +173,7 @@ export function useAshiglaltiinZardluud(overrides?: {
         (item: any) => item._id !== id
       );
 
-    await updateBaiguullaga(token, String(currentOrg), org);
+    await updateMethod("baiguullaga", token, org);
     mutate();
   };
 

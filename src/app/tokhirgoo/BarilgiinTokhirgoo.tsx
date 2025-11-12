@@ -13,7 +13,8 @@ import {
   Save,
   Home,
 } from "lucide-react";
-import { aldaaBarigch, updateBaiguullaga } from "../../../lib/uilchilgee";
+import { aldaaBarigch } from "../../../lib/uilchilgee";
+import updateMethod from "../../../tools/function/updateMethod";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -1068,21 +1069,17 @@ export default function BarilgiinTokhirgoo() {
         barilguud: updatedBarilguud,
       };
 
-      const res = await updateBaiguullaga(
-        token || undefined,
-        baiguullaga._id,
-        payload
-      );
-      if (res) await baiguullagaMutate(res, false);
+      const res = await updateMethod("baiguullaga", token, payload);
+      if (res?.data) await baiguullagaMutate(res.data, false);
       await baiguullagaMutate();
 
       if (name) {
         openSuccessOverlay("Шинэ барилга нэмэгдлээ");
         setNewBarilgaNer("");
-        if (res?.barilguud && res.barilguud.length > 0) {
+        if (res?.data?.barilguud && res.data.barilguud.length > 0) {
           const added =
-            res.barilguud.find((b: any) => b.ner === name) ||
-            res.barilguud[res.barilguud.length - 1];
+            res.data.barilguud.find((b: any) => b.ner === name) ||
+            res.data.barilguud[res.data.barilguud.length - 1];
           if (added?._id) setSelectedBuildingId(String(added._id));
         }
         // close modal after successful add
@@ -1142,12 +1139,8 @@ export default function BarilgiinTokhirgoo() {
         barilguud: updatedBarilguud,
       };
 
-      const res = await updateBaiguullaga(
-        token || undefined,
-        baiguullaga._id,
-        payload
-      );
-      if (res) await baiguullagaMutate(res, false);
+      const res = await updateMethod("baiguullaga", token, payload);
+      if (res?.data) await baiguullagaMutate(res.data, false);
       await baiguullagaMutate();
 
       openSuccessOverlay("Барилга амжилттай засагдлаа");
@@ -1226,12 +1219,8 @@ export default function BarilgiinTokhirgoo() {
         barilguud: updatedBarilguud,
       } as any;
 
-      const res = await updateBaiguullaga(
-        token || undefined,
-        baiguullaga._id,
-        payload
-      );
-      if (res) await baiguullagaMutate(res, false);
+      const res = await updateMethod("baiguullaga", token, payload);
+      if (res?.data) await baiguullagaMutate(res.data, false);
       await baiguullagaMutate();
 
       openSuccessOverlay("Барилга устгагдлаа");
@@ -1347,15 +1336,11 @@ export default function BarilgiinTokhirgoo() {
         barilguud: newBarilguud,
       };
 
-      const updated = await updateBaiguullaga(
-        token || undefined,
-        baiguullaga!._id,
-        payload
-      );
+      const updated = await updateMethod("baiguullaga", token, payload);
 
-      if (updated) {
+      if (updated?.data) {
         // Optimistically update cache with server response
-        await baiguullagaMutate(updated, false);
+        await baiguullagaMutate(updated.data, false);
       }
 
       // Show success overlay
@@ -1419,7 +1404,6 @@ export default function BarilgiinTokhirgoo() {
             placeholder="СӨХ-ийн нэрийг оруулна уу"
             className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled
-            // allow editing SÖH name per-branch as well; save handler will decide scope
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

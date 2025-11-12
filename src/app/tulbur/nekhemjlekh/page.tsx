@@ -206,7 +206,11 @@ const InvoiceModal = ({
   barilgiinId,
 }: InvoiceModalProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  useModalHotkeys({ isOpen, onClose, container: containerRef.current });
+  useModalHotkeys({
+    isOpen,
+    onClose,
+    container: containerRef.current,
+  });
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
   const { gereeGaralt } = useGereeJagsaalt(
@@ -798,6 +802,9 @@ export default function InvoicingZardluud() {
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
     Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
   >({});
+  const [dateByResidentId, setDateByResidentId] = useState<
+    Record<string, string>
+  >({});
   const [selectedSukh, setSelectedSukh] = useState("");
   const [selectedDavkhar, setSelectedDavkhar] = useState("");
   const [selectedBarilga, setSelectedBarilga] = useState("");
@@ -935,7 +942,10 @@ export default function InvoicingZardluud() {
         });
 
         // Reduce invoice list to latest status per resident (matched by multi-key)
-        const byResident: Record<string, { label: string; ts: number }> = {};
+        const byResident: Record<
+          string,
+          { label: string; ts: number; date: string }
+        > = {};
         list.forEach((it) => {
           const label = getPaymentStatusLabel(it);
           const ts = new Date(
@@ -967,8 +977,14 @@ export default function InvoicingZardluud() {
           }
           if (!rid) return;
 
+          const dateStr = new Date(
+            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
+          )
+            .toISOString()
+            .split("T")[0];
           const cur = byResident[rid];
-          if (!cur || ts >= cur.ts) byResident[rid] = { label, ts };
+          if (!cur || ts >= cur.ts)
+            byResident[rid] = { label, ts, date: dateStr };
         });
 
         const out: Record<
@@ -983,6 +999,11 @@ export default function InvoicingZardluud() {
               : "Тодорхойгүй";
         });
         setTuluvByResidentId(out);
+        const dateOut: Record<string, string> = {};
+        Object.entries(byResident).forEach(([rid, v]) => {
+          dateOut[rid] = v.date;
+        });
+        setDateByResidentId(dateOut);
       } catch {
         setTuluvByResidentId({});
       }
@@ -1042,6 +1063,14 @@ export default function InvoicingZardluud() {
     if (selectedTurul)
       items = items.filter((r: any) => r.turul === selectedTurul);
 
+    if (selectedDate) {
+      items = items.filter((r: any) => {
+        const id = String(r?._id || "");
+        const invoiceDate = dateByResidentId[id];
+        return invoiceDate === selectedDate;
+      });
+    }
+
     return items;
   }, [
     residents,
@@ -1050,6 +1079,8 @@ export default function InvoicingZardluud() {
     selectedDavkhar,
     selectedBarilga,
     selectedTurul,
+    selectedDate,
+    dateByResidentId,
     tuluvByResidentId,
   ]);
 

@@ -10,11 +10,20 @@ type UseModalHotkeysOptions = {
    * Optional container to scope primary button lookup (data-modal-primary)
    */
   container?: HTMLElement | null;
+  /**
+   * Whether to allow Escape key to close the modal
+   */
+  allowEscape?: boolean;
 };
 
 /**
+ * Global stack to track open modals for ESC handling
+ */
+const modalStack: (() => void)[] = [];
+
+/**
  * Adds global key handlers when a modal is open.
- * - Escape closes the modal
+ * - Escape closes the modal only if it's the topmost one
  * - Enter triggers submit (unless focused element is textarea or contentEditable)
  * - Looks for an element with [data-modal-primary] to click if onSubmit is not provided
  */
@@ -23,7 +32,21 @@ export function useModalHotkeys({
   onClose,
   onSubmit,
   container,
+  allowEscape = true,
 }: UseModalHotkeysOptions) {
+  useEffect(() => {
+    if (isOpen) {
+      modalStack.push(onClose);
+    } else {
+      const index = modalStack.indexOf(onClose);
+      if (index > -1) modalStack.splice(index, 1);
+    }
+    return () => {
+      const index = modalStack.indexOf(onClose);
+      if (index > -1) modalStack.splice(index, 1);
+    };
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -32,8 +55,14 @@ export function useModalHotkeys({
       const tag = (target?.tagName || "").toLowerCase();
 
       if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
+        if (
+          allowEscape &&
+          modalStack.length > 0 &&
+          modalStack[modalStack.length - 1] === onClose
+        ) {
+          e.preventDefault();
+          onClose();
+        }
         return;
       }
 
@@ -70,7 +99,7 @@ export function useModalHotkeys({
 
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, onClose, onSubmit, container]);
+  }, [isOpen, onClose, onSubmit, container, allowEscape]);
 }
 
 export default useModalHotkeys;

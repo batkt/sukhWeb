@@ -33,7 +33,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import uilchilgee, { socket, updateBaiguullaga } from "../../../lib/uilchilgee";
+import uilchilgee, { socket } from "../../../lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -746,11 +746,7 @@ export default function Geree() {
         _id: baiguullaga?._id,
         barilguud: updatedBarilguud,
       };
-      const res = await updateBaiguullaga(
-        token || undefined,
-        (baiguullaga as any)._id as string,
-        payload
-      );
+      const res = await updateMethod("baiguullaga", token, payload);
       if (res) await baiguullagaMutate(res, false);
       await baiguullagaMutate();
       openSuccessOverlay("Тоот устгагдлаа");
@@ -789,11 +785,7 @@ export default function Geree() {
         _id: baiguullaga?._id,
         barilguud: updatedBarilguud,
       };
-      const res = await updateBaiguullaga(
-        token || undefined,
-        (baiguullaga as any)._id as string,
-        payload
-      );
+      const res = await updateMethod("baiguullaga", token, payload);
       if (res) await baiguullagaMutate(res, false);
       await baiguullagaMutate();
       openSuccessOverlay(`${floor}-р давхрын тоотууд устгагдлаа`);
@@ -846,11 +838,7 @@ export default function Geree() {
         _id: baiguullaga?._id,
         barilguud: updatedBarilguud,
       };
-      const res = await updateBaiguullaga(
-        token || undefined,
-        (baiguullaga as any)._id as string,
-        payload
-      );
+      const res = await updateMethod("baiguullaga", token, payload);
       if (res) await baiguullagaMutate(res, false);
       await baiguullagaMutate();
       setAddUnitValue("");
@@ -2396,7 +2384,7 @@ export default function Geree() {
         // Immediately normalize the imported building's `davkhariinToonuud`
         // on the client so the UI shows separate unit chips (like when
         // adding units via the + button). Then persist the normalized
-        // shape to the server via updateBaiguullaga and refresh the cache.
+        // shape to the server via updateMethod and refresh the cache.
         try {
           const targetOrg = latest || baiguullaga;
           if (
@@ -2448,12 +2436,10 @@ export default function Geree() {
 
             // Persist normalized shape back to server for durability
             try {
-              await updateBaiguullaga(
-                token,
-                targetOrg._id,
-                { barilguud: updatedBarilguud },
-                { barilgiinId: targetBarilgiinId }
-              );
+              await updateMethod("baiguullaga", token, {
+                _id: targetOrg._id,
+                barilguud: updatedBarilguud,
+              });
               // refresh cache from server to ensure consistency
               await baiguullagaMutate();
             } catch (persistErr) {
@@ -3941,15 +3927,10 @@ export default function Geree() {
                                                 barilguud: updatedBarilguud,
                                               };
                                               const res =
-                                                await updateBaiguullaga(
-                                                  token || undefined,
-                                                  (baiguullaga as any)
-                                                    ._id as string,
-                                                  payload
-                                                );
-                                              if (res)
+                                                await updateMethod("baiguullaga", token, payload);
+                                              if (res?.data)
                                                 await baiguullagaMutate(
-                                                  res,
+                                                  res.data,
                                                   false
                                                 );
                                               await baiguullagaMutate();

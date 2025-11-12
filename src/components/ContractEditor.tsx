@@ -273,38 +273,7 @@ export default function ContractEditor({
         types: ["heading", "paragraph"],
       }),
     ],
-    content:
-      initialData?.aguulga ||
-      `
-    <h2 style="text-align: center;"><strong>ОРОН СУУЦНЫ ТҮРЭЭСИЙН ГЭРЭЭ</strong></h2>
-    <p style="text-align: center;">Дугаар: <span class="custom-tag" data-tag-type="gereeniiDugaar"></span></p>
-    <p><br></p>
-    <p><strong>1. ГЭРЭЭНИЙ ТАЛУУД</strong></p>
-    <p>Түрээслэгч: <span class="custom-tag" data-tag-type="ovog"></span> <span class="custom-tag" data-tag-type="ner"></span></p>
-    <p>Регистр: <span class="custom-tag" data-tag-type="register"></span>, Утас: <span class="custom-tag" data-tag-type="utas"></span></p>
-    <p>Хаяг: <span class="custom-tag" data-tag-type="khayag"></span></p>
-    <p><br></p>
-    <p>Түрээслүүлэгч: <span class="custom-tag" data-tag-type="suhNer"></span></p>
-    <p>Регистр: <span class="custom-tag" data-tag-type="suhRegister"></span>, Утас: <span class="custom-tag" data-tag-type="suhUtas"></span></p>
-    <p><br></p>
-    <p><strong>2. ГЭРЭЭНИЙ ХУГАЦАА</strong></p>
-    <p>Эхлэх: <span class="custom-tag" data-tag-type="EhlehOn"></span> оны <span class="custom-tag" data-tag-type="EhlehSar"></span> сарын <span class="custom-tag" data-tag-type="EhlehUdur"></span></p>
-    <p>Дуусах: <span class="custom-tag" data-tag-type="DuusahOn"></span> оны <span class="custom-tag" data-tag-type="DuusahSar"></span> сарын <span class="custom-tag" data-tag-type="DuusahUdur"></span></p>
-    <p><br></p>
-    <p><strong>3. ТҮРЭЭСИЙН ТӨЛБӨР</strong></p>
-    <p>Сарын хураамж: <span class="custom-tag" data-tag-type="suhTulbur"></span>₮ (<span class="custom-tag" data-tag-type="suhTulburUsgeer"></span>)</p>
-    <p>Ашиглалтын зардал: <span class="custom-tag" data-tag-type="ashiglaltiinZardal"></span>₮</p>
-    <p>Нийт: <span class="custom-tag" data-tag-type="niitTulbur"></span>₮ (<span class="custom-tag" data-tag-type="niitTulburUsgeer"></span>)</p>
-    <p>Төлөх огноо: Сар бүрийн <span class="custom-tag" data-tag-type="tulukhOgnoo"></span>-ны өдөр</p>
-    <p><br></p>
-    <p><strong>4. БАЙРНЫ МЭДЭЭЛЭЛ</strong></p>
-    <p>Байр: <span class="custom-tag" data-tag-type="bairNer"></span>, Орц: <span class="custom-tag" data-tag-type="orts"></span>, Тоот: <span class="custom-tag" data-tag-type="toot"></span></p>
-    <p>Талбай: <span class="custom-tag" data-tag-type="talbainKhemjee"></span> м², Давхар: <span class="custom-tag" data-tag-type="davkhar"></span></p>
-    <p><br></p>
-    <p><strong>Талуудын гарын үсэг:</strong></p>
-    <p>Түрээслэгч: _______________</p>
-    <p>Түрээслүүлэгч: <span class="custom-tag" data-tag-type="suhGariinUseg"></span></p>
-  `,
+    content: initialData?.aguulga || "",
     editorProps: {
       attributes: {
         class: "prose prose-sm max-w-none focus:outline-none min-h-[29.7cm]",
@@ -553,7 +522,7 @@ export default function ContractEditor({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="relative flex-1 flex flex-col overflow-hidden">
         <div className="bg-transparent border-b border-[color:var(--surface-border)] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => (onBack ? onBack() : router.push("/geree"))}
@@ -735,14 +704,6 @@ export default function ContractEditor({
             </button>
 
             <div className="w-px bg-[color:var(--surface-border)] mx-1" />
-
-            <button
-              onClick={handleSave}
-              className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-[color:var(--btn-border)] bg-[color:var(--btn-bg)] text-[color:var(--btn-text)] hover:bg-[color:var(--btn-bg-hover)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save size={18} />
-              Хадгалах
-            </button>
           </div>
         </div>
 
@@ -826,6 +787,18 @@ export default function ContractEditor({
               </div>
             </div>
           </div>
+        </div>
+
+        <div className="fixed right-6 bottom-6 z-[11000] pointer-events-auto">
+          <button
+            onClick={handleSave}
+            className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-transparent bg-sky-600 !text-white hover:bg-sky-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg"
+            aria-label="Save template"
+            title="Хадгалах"
+          >
+            <Save size={18} />
+            Хадгалах
+          </button>
         </div>
       </div>
     </div>

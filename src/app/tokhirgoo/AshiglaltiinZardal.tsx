@@ -23,7 +23,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2 } from "lucide-react";
-import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
+import uilchilgee from "../../../lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 
 interface ZardalItem {
@@ -681,6 +681,7 @@ export default function AshiglaltiinZardluud() {
                             <MNumberInput
                               className="w-36 text-right text-theme"
                               value={currentValue}
+                              disabled
                               onChange={(v) =>
                                 setEditedTariffs((prev) => ({
                                   ...prev,

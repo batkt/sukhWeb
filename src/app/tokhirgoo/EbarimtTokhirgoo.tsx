@@ -5,7 +5,8 @@ import useSWR from "swr";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import uilchilgee, { updateBaiguullaga } from "../../../lib/uilchilgee";
+import uilchilgee from "../../../lib/uilchilgee";
+import updateMethod from "../../../tools/function/updateMethod";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { useSpinner } from "@/context/SpinnerContext";
@@ -326,10 +327,19 @@ export default function EbarimtTokhirgoo() {
         : orgTok?.merchantTin ?? baiguullaga.merchantTin) || ""
     );
 
-    // eBarimt-specific location (duureg/horoo) should come from orgTok (not building)
-    let duureg = String(orgTok?.duuregNer || baiguullaga.duureg || "");
-    let horooObj = orgTok?.horoo || { ner: "", kod: "" };
-    let district = String(orgTok?.districtCode || "");
+    // eBarimt-specific location (duureg/horoo) should follow building selection like flags
+    let duureg = String(
+      (effBarilgaId ? selectedTok?.EbarimtDuuregNer : undefined) ??
+        orgTok?.EbarimtDuuregNer ??
+        (baiguullaga.duureg || "")
+    );
+    let horooObj = (effBarilgaId ? selectedTok?.EbarimtDHoroo : undefined) ??
+      orgTok?.EbarimtDHoroo ?? { ner: "", kod: "" };
+    let district = String(
+      ((effBarilgaId ? selectedTok?.EbarimtDistrictCode : undefined) ??
+        orgTok?.EbarimtDistrictCode) ||
+        ""
+    );
 
     // Removed localStorage fallback: always prefer backend state
 
@@ -563,11 +573,15 @@ export default function EbarimtTokhirgoo() {
                             tokhirgoo: {
                               ...(b?.tokhirgoo || {}),
                               ...(shouldUpdateTin ? { merchantTin } : {}),
-                              ...(duuregNer ? { duuregNer } : {}),
-                              ...(districtCode ? { districtCode } : {}),
+                              ...(duuregNer
+                                ? { EbarimtDuuregNer: duuregNer }
+                                : {}),
+                              ...(districtCode
+                                ? { EbarimtDistrictCode: districtCode }
+                                : {}),
                               ...(horooNer || horooKod
                                 ? {
-                                    horoo: {
+                                    EbarimtDHoroo: {
                                       ner: horooNer || "",
                                       kod: horooKod || "",
                                     },
@@ -598,11 +612,13 @@ export default function EbarimtTokhirgoo() {
                           merchantTin ||
                           baiguullaga?.tokhirgoo?.merchantTin ||
                           "",
-                        ...(duuregNer ? { duuregNer } : {}),
-                        ...(districtCode ? { districtCode } : {}),
+                        ...(duuregNer ? { EbarimtDuuregNer: duuregNer } : {}),
+                        ...(districtCode
+                          ? { EbarimtDistrictCode: districtCode }
+                          : {}),
                         ...(horooNer || horooKod
                           ? {
-                              horoo: {
+                              EbarimtDHoroo: {
                                 ner: horooNer || "",
                                 kod: horooKod || "",
                               },
@@ -611,13 +627,13 @@ export default function EbarimtTokhirgoo() {
                       };
                     }
 
-                    const updated = await updateBaiguullaga(
+                    const updated = await updateMethod(
+                      "baiguullaga",
                       token,
-                      baiguullaga._id,
                       payload
                     );
-                    if (updated) {
-                      await baiguullagaMutate(updated, false);
+                    if (updated?.data) {
+                      await baiguullagaMutate(updated.data, false);
                       // Reflect saved UI state directly from current form values
                       setEbAutoSend(ebAutoSend);
                       setEbNuat(ebNuat);

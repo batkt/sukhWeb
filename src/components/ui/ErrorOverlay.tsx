@@ -8,7 +8,7 @@ type OpenPayload = { message: string; duration?: number };
 
 const EVENT = "error-overlay:open";
 
-export function openErrorOverlay(message: string, duration = 1800) {
+export function openErrorOverlay(message: string, duration = 3000) {
   if (typeof window !== "undefined") {
     const ev = new CustomEvent<OpenPayload>(EVENT, {
       detail: { message, duration },
@@ -20,17 +20,17 @@ export function openErrorOverlay(message: string, duration = 1800) {
 export function ErrorOverlayHost() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
-  const [duration, setDuration] = useState(1800);
+  const [duration, setDuration] = useState(3000);
   const [container, setContainer] = useState<HTMLElement | null>(null);
   const [isMultiline, setIsMultiline] = useState(false);
 
   useEffect(() => {
     const handler = (e: Event) => {
       const ce = e as CustomEvent<OpenPayload>;
-      const d = ce?.detail || { message: "", duration: 1800 };
+      const d = ce?.detail || { message: "", duration: 3000 };
       const msg = d.message || "";
       setMessage(msg);
-      setDuration(d.duration || 1800);
+      setDuration(d.duration || 3000);
       // Consider messages with newlines or long text as multiline/error lists and
       // render a larger, non-auto-closing panel.
       const multi =
@@ -118,7 +118,7 @@ export function ErrorOverlayHost() {
         <div
           role="alert"
           onClick={() => setOpen(false)}
-          className="menu-surface rounded-2xl shadow-xl px-4 py-3 md:px-5 md:py-4 flex items-center gap-3 max-w-sm pointer-events-auto cursor-pointer"
+          className="menu-surface rounded-2xl shadow-xl px-4 py-3 md:px-5 md:py-4 flex items-center gap-3 w-full max-w-2xl pointer-events-auto cursor-pointer"
           style={{
             opacity: open ? 1 : 0,
             transform: open ? "translateY(0)" : "translateY(-8px)",
