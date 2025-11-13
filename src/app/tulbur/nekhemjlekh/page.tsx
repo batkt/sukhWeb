@@ -607,11 +607,47 @@ const InvoiceModal = ({
                       <div className="space-y-2 text-sm text-slate-600">
                         <p className="flex items-center gap-2">
                           <span className="font-medium">Имэйл:</span>{" "}
-                          {baiguullaga?.email || "-"}
+                          {(() => {
+                            const mailFromTokhirgoo = Array.isArray(
+                              (baiguullaga as any)?.tokhirgoo?.mail
+                            )
+                              ? (baiguullaga as any).tokhirgoo.mail[0]
+                              : undefined;
+                            const mailFromOrg = Array.isArray(
+                              (baiguullaga as any)?.mail
+                            )
+                              ? (baiguullaga as any).mail[0]
+                              : undefined;
+                            const mailLegacy = (baiguullaga as any)?.email;
+                            return (
+                              mailFromTokhirgoo ||
+                              mailFromOrg ||
+                              mailLegacy ||
+                              "-"
+                            );
+                          })()}
                         </p>
                         <p className="flex items-center gap-2">
                           <span className="font-medium">Утас:</span>{" "}
-                          {baiguullaga?.utas || "-"}
+                          {(() => {
+                            const utasFromTokhirgoo = Array.isArray(
+                              (baiguullaga as any)?.tokhirgoo?.utas
+                            )
+                              ? (baiguullaga as any).tokhirgoo.utas[0]
+                              : undefined;
+                            const utasFromOrg = Array.isArray(
+                              (baiguullaga as any)?.utas
+                            )
+                              ? (baiguullaga as any).utas[0]
+                              : undefined;
+                            const utasLegacy = (baiguullaga as any)?.utas;
+                            return (
+                              utasFromTokhirgoo ||
+                              utasFromOrg ||
+                              utasLegacy ||
+                              "-"
+                            );
+                          })()}
                         </p>
                         <p className="flex items-center gap-2">
                           <span className="font-medium">Хаяг:</span>{" "}

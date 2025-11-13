@@ -1519,37 +1519,43 @@ export default function Geree() {
   }, []);
 
   const filteredContracts = Array.isArray(contracts)
-    ? contracts.filter((c: any) => {
-        // filter by type first
-        if (filterType !== "Бүгд" && c.turul !== filterType) return false;
-        // filter by tuluv (status)
-        if (filterTuluv !== "Бүгд") {
-          const tv = c.tuluv || "Идэвхтэй";
-          if (String(tv) !== String(filterTuluv)) return false;
-        }
+    ? contracts
+        .filter((c: any) => {
+          // filter by type first
+          if (filterType !== "Бүгд" && c.turul !== filterType) return false;
+          // filter by tuluv (status)
+          if (filterTuluv !== "Бүгд") {
+            const tv = c.tuluv || "Идэвхтэй";
+            if (String(tv) !== String(filterTuluv)) return false;
+          }
 
-        if (searchTerm) {
-          const qq = String(searchTerm).toLowerCase();
-          const hay = [
-            c.ner,
-            c.gereeniiDugaar,
-            c.mail || c.email,
-            Array.isArray(c.utas) ? c.utas.join(" ") : c.utas,
-            c.orts,
+          if (searchTerm) {
+            const qq = String(searchTerm).toLowerCase();
+            const hay = [
+              c.ner,
+              c.gereeniiDugaar,
+              c.mail || c.email,
+              Array.isArray(c.utas) ? c.utas.join(" ") : c.utas,
+              c.orts,
 
-            c.toot !== undefined && c.toot !== null
-              ? String(c.toot)
-              : undefined,
-            c.davkhar,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-          if (!hay.includes(qq)) return false;
-        }
+              c.toot !== undefined && c.toot !== null
+                ? String(c.toot)
+                : undefined,
+              c.davkhar,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            if (!hay.includes(qq)) return false;
+          }
 
-        return true;
-      })
+          return true;
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+        )
     : [];
 
   const totalPages = Math.ceil(filteredContracts.length / rowsPerPage);
@@ -1560,25 +1566,34 @@ export default function Geree() {
   // Client-side pagination for residents and employees (slice loaded lists)
   const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
   const filteredResidents = useMemo(() => {
-    if (!searchTerm) return residentsList;
-    return residentsList.filter((resident: any) => {
-      const qq = String(searchTerm).toLowerCase();
-      const hay = [
-        resident.ner,
-        resident.register,
-        resident.mail || resident.email,
-        Array.isArray(resident.utas) ? resident.utas.join(" ") : resident.utas,
-        resident.orts,
-        resident.toot !== undefined && resident.toot !== null
-          ? String(resident.toot)
-          : undefined,
-        resident.davkhar,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(qq);
-    });
+    let list = residentsList;
+    if (searchTerm) {
+      list = list.filter((resident: any) => {
+        const qq = String(searchTerm).toLowerCase();
+        const hay = [
+          resident.ner,
+          resident.register,
+          resident.mail || resident.email,
+          Array.isArray(resident.utas)
+            ? resident.utas.join(" ")
+            : resident.utas,
+          resident.orts,
+          resident.toot !== undefined && resident.toot !== null
+            ? String(resident.toot)
+            : undefined,
+          resident.davkhar,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(qq);
+      });
+    }
+    return list.sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    );
   }, [residentsList, searchTerm]);
   const resTotalPages = Math.max(
     1,
@@ -1591,21 +1606,28 @@ export default function Geree() {
 
   const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
   const filteredEmployees = useMemo(() => {
-    if (!searchTerm) return employeesList;
-    return employeesList.filter((employee: any) => {
-      const qq = String(searchTerm).toLowerCase();
-      const hay = [
-        employee.ner,
-        employee.register,
-        employee.email,
-        employee.utas,
-        employee.albanTushaal,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-      return hay.includes(qq);
-    });
+    let list = employeesList;
+    if (searchTerm) {
+      list = list.filter((employee: any) => {
+        const qq = String(searchTerm).toLowerCase();
+        const hay = [
+          employee.ner,
+          employee.register,
+          employee.email,
+          employee.utas,
+          employee.albanTushaal,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return hay.includes(qq);
+      });
+    }
+    return list.sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime()
+    );
   }, [employeesList, searchTerm]);
   const empTotalPages = Math.max(
     1,
@@ -1707,9 +1729,9 @@ export default function Geree() {
     // Resident type: Үндсэн | Түр
     turul: "Үндсэн",
     // initial balance for resident (Эхний үлдэгдэл)
-    ekhniiUldegdel: "",
+
     // free-text explanation / tail for the initial balance
-    ekhniiUldegdelTemdeglel: "",
+    tailbar: "",
   });
 
   // Compute next contract number from existing list
@@ -2598,6 +2620,9 @@ export default function Geree() {
       if (newResident.ekhniiUldegdelTemdeglel !== undefined) {
         payload.ekhniiUldegdelTemdeglel = newResident.ekhniiUldegdelTemdeglel;
       }
+      if (newResident.tailbar !== undefined) {
+        payload.tailbar = newResident.tailbar;
+      }
 
       // Track newly created resident id for auto-contract creation
       let createdResidentId: string | null = null;
@@ -2868,6 +2893,7 @@ export default function Geree() {
         p?.temdeglel ||
         p?.medeelel?.temdeglel ||
         "",
+      tailbar: p?.tailbar || "",
       turul: p.turul || "Үндсэн",
     });
     setShowResidentModal(true);
@@ -3257,7 +3283,22 @@ export default function Geree() {
             ? baiguullaga.utas.map((u: any) => String(u))
             : [String(baiguullaga.utas)]
           : [],
-        suhMail: baiguullaga?.email || "",
+        // Derive email consistently from possible shapes returned by the API:
+        // - building/organization tokhirgoo.mail (array)
+        // - top-level mail (array)
+        // - legacy email (string)
+        suhMail: (() => {
+          try {
+            const tok = (baiguullaga as any)?.tokhirgoo || {};
+            const tb = tok?.mail ?? (baiguullaga as any)?.mail ?? [];
+            const mailFromTok = Array.isArray(tb) ? tb[0] : tb;
+            if (mailFromTok) return String(mailFromTok);
+            const legacy = (baiguullaga as any)?.email || "";
+            return legacy;
+          } catch (e) {
+            return "";
+          }
+        })(),
       }));
     }
   }, [showContractModal, uilchilgeeNiit, baiguullaga]);
@@ -3604,7 +3645,7 @@ export default function Geree() {
                       "",
                     baiguullagiinNer: selectedBarilga?.ner || "",
                     nevtrekhNer: "",
-                    nuutsUg: "",
+                    nuutsUg: "1234",
                     turul: "Үндсэн",
                   });
                   setShowResidentModal(true);
@@ -4788,7 +4829,7 @@ export default function Geree() {
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[75svh] max-h-[75svh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[70vh] max-h-[70vh] rounded-2xl shadow-2xl p-0 flex flex-col"
               >
                 <div className="flex items-center justify-between px-6 py-4 border-b">
                   <h2 className="text-2xl font-bold text-slate-900">
@@ -4911,7 +4952,7 @@ export default function Geree() {
                       currentStep !== 1 ? "pb-32" : "pb-8"
                     } md:pb-6 min-h-0`}
                   >
-                    <div className="min-h-[60vh]">
+                    <div className="min-h-[40vh]">
                       {currentStep === 1 && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {
@@ -5354,766 +5395,202 @@ export default function Geree() {
           </ModalPortal>
         )}
         {showPreviewModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-              onClick={() => setShowPreviewModal(false)}
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+                onClick={() => setShowPreviewModal(false)}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Загварын урьдчилсан харалт
-                  </h3>
-                  <button
-                    onClick={() => setShowPreviewModal(false)}
-                    className="p-2 hover:bg-gray-300 rounded-2xl transition-colors"
-                    aria-label="Хаах"
-                    title="Хаах"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-theme"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      Загварын урьдчилсан харалт
+                    </h3>
+                    <button
+                      onClick={() => setShowPreviewModal(false)}
+                      className="p-2 hover:bg-gray-300 rounded-2xl transition-colors"
+                      aria-label="Хаах"
+                      title="Хаах"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="paper-viewport theme-print-preview">
-                  <div className="paper-legal">
-                    {/* Render main content (aguulga) returned by the API */}
-                    <div
-                      className="preview-content prose prose-sm max-w-none text-sm"
-                      dangerouslySetInnerHTML={{
-                        __html: previewTemplate?.aguulga || "",
-                      }}
-                    />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-theme"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
                   </div>
-                  <style jsx global>{`
-                    /* Make paper and text follow app theme */
-                    .theme-print-preview .preview-content,
-                    .theme-print-preview .preview-content * {
-                      color: var(--panel-text) !important;
-                    }
-                    .theme-print-preview .paper-legal {
-                      background: var(--surface-bg) !important;
-                    }
-                    .theme-print-preview .preview-content a {
-                      color: var(--panel-text) !important;
-                      text-decoration: underline;
-                    }
-                    .theme-print-preview .preview-content table {
-                      color: var(--panel-text) !important;
-                    }
-                  `}</style>
-                </div>
+
+                  <div className="paper-viewport theme-print-preview">
+                    <div className="paper-legal">
+                      {/* Render all template sections: headers, main content, footers */}
+                      {previewTemplate?.zuunTolgoi && (
+                        <div
+                          className="preview-section header-left"
+                          dangerouslySetInnerHTML={{
+                            __html: previewTemplate.zuunTolgoi,
+                          }}
+                        />
+                      )}
+                      {previewTemplate?.baruunTolgoi && (
+                        <div
+                          className="preview-section header-right"
+                          dangerouslySetInnerHTML={{
+                            __html: previewTemplate.baruunTolgoi,
+                          }}
+                        />
+                      )}
+                      {/* Render main content (aguulga) returned by the API */}
+                      <div
+                        className="preview-content prose prose-sm max-w-none text-sm"
+                        dangerouslySetInnerHTML={{
+                          __html: previewTemplate?.aguulga || "",
+                        }}
+                      />
+                      {previewTemplate?.zuunKhul && (
+                        <div
+                          className="preview-section footer-left"
+                          dangerouslySetInnerHTML={{
+                            __html: previewTemplate.zuunKhul,
+                          }}
+                        />
+                      )}
+                      {previewTemplate?.baruunKhul && (
+                        <div
+                          className="preview-section footer-right"
+                          dangerouslySetInnerHTML={{
+                            __html: previewTemplate.baruunKhul,
+                          }}
+                        />
+                      )}
+                    </div>
+                    <style jsx global>{`
+                      /* Make paper and text follow app theme */
+                      .theme-print-preview .preview-content,
+                      .theme-print-preview .preview-content *,
+                      .theme-print-preview .preview-section,
+                      .theme-print-preview .preview-section * {
+                        color: var(--panel-text) !important;
+                      }
+                      .theme-print-preview .paper-legal {
+                        background: var(--surface-bg) !important;
+                      }
+                      .theme-print-preview .preview-content a,
+                      .theme-print-preview .preview-section a {
+                        color: var(--panel-text) !important;
+                        text-decoration: underline;
+                      }
+                      .theme-print-preview .preview-content table,
+                      .theme-print-preview .preview-section table {
+                        color: var(--panel-text) !important;
+                      }
+                      /* Style custom tags to appear as styled elements */
+                      .theme-print-preview .preview-content span[data-tag-type],
+                      .theme-print-preview
+                        .preview-section
+                        span[data-tag-type] {
+                        background: var(--surface-hover) !important;
+                        border: 1px solid var(--surface-border) !important;
+                        border-radius: 4px !important;
+                        padding: 2px 6px !important;
+                        margin: 0 2px !important;
+                        font-weight: 500 !important;
+                        display: inline-block !important;
+                      }
+                      .theme-print-preview
+                        .preview-content
+                        span[data-tag-type]:before,
+                      .theme-print-preview
+                        .preview-section
+                        span[data-tag-type]:before {
+                        content: attr(data-tag-type) ": " !important;
+                        font-weight: bold !important;
+                        color: var(--theme-color) !important;
+                      }
+                      /* Header and footer positioning */
+                      .theme-print-preview .header-left {
+                        position: absolute;
+                        top: 20px;
+                        left: 20px;
+                        max-width: 40%;
+                      }
+                      .theme-print-preview .header-right {
+                        position: absolute;
+                        top: 20px;
+                        right: 20px;
+                        max-width: 40%;
+                        text-align: right;
+                      }
+                      .theme-print-preview .footer-left {
+                        position: absolute;
+                        bottom: 20px;
+                        left: 20px;
+                        max-width: 40%;
+                      }
+                      .theme-print-preview .footer-right {
+                        position: absolute;
+                        bottom: 20px;
+                        right: 20px;
+                        max-width: 40%;
+                        text-align: right;
+                      }
+                      .theme-print-preview .paper-legal {
+                        position: relative;
+                        min-height: 100%;
+                        padding: 60px 20px 60px 20px;
+                      }
+                    `}</style>
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showResidentModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                ref={residentRef}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[78vh] max-h-[78vh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
               >
-                <div className="flex items-center justify-between px-6 py-4 border-b">
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    {editingResident
-                      ? "Оршин суугчийн мэдээлэл засах"
-                      : "Оршин суугч нэмэх"}
-                  </h2>
-                  <button
-                    onClick={() => setShowResidentModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
-                    aria-label="Хаах"
-                    title="Хаах"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-
-                <form
-                  onSubmit={handleCreateResident}
-                  className="flex-1 flex flex-col"
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  ref={residentRef}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[80vh] max-h-[80vh] rounded-2xl shadow-2xl p-0 flex flex-col"
                 >
-                  <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-28">
-                    <div className="min-h-[55vh] grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Төрөл
-                        </label>
-                        <TusgaiZagvar
-                          value={newResident.turul}
-                          onChange={(val) =>
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              turul: val,
-                            }))
-                          }
-                          options={[
-                            { value: "Үндсэн", label: "Үндсэн" },
-                            { value: "Түр", label: "Түр" },
-                          ]}
-                          className="w-full"
-                          placeholder="Сонгох..."
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Овог
-                        </label>
-                        <input
-                          type="text"
-                          value={newResident.ovog}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(
-                              /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
-                              ""
-                            );
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              ovog: value,
-                            }));
-                          }}
-                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Нэр
-                        </label>
-                        <input
-                          type="text"
-                          value={newResident.ner}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(
-                              /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
-                              ""
-                            );
-                            setNewResident((prev: any) => ({
-                              ...prev,
-                              ner: value,
-                            }));
-                          }}
-                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                          Утас
-                        </label>
-                        <input
-                          type="tel"
-                          inputMode="numeric"
-                          maxLength={8}
-                          value={(newResident.utas?.[0] as any) || ""}
-                          onChange={(e) => {
-                            const digits = e.target.value
-                              .replace(/\D/g, "")
-                              .slice(0, 8);
-                            setNewResident((prev: any) => {
-                              const prevPhone =
-                                (prev.utas && prev.utas[0]) || "";
-                              const prevUsername = prev.nevtrekhNer || "";
-                              const shouldUpdateUsername =
-                                !prevUsername ||
-                                String(prevUsername) === String(prevPhone);
-                              return {
-                                ...prev,
-                                utas: [digits],
-                                nevtrekhNer: shouldUpdateUsername
-                                  ? digits
-                                  : prevUsername,
-                              };
-                            });
-                          }}
-                          className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                          required
-                        />
-                      </div>
-
-                      {/* Duureg/Horoo removed from resident modal per UX request */}
-
-                      <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            СӨХ нэр
-                          </label>
-                          <input
-                            type="text"
-                            value={newResident.soh || ""}
-                            onChange={(e) =>
-                              setNewResident((prev: any) => ({
-                                ...prev,
-                                soh: e.target.value,
-                              }))
-                            }
-                            readOnly
-                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Орц
-                          </label>
-                          <TusgaiZagvar
-                            value={newResident.orts || ""}
-                            onChange={(val) =>
-                              setNewResident((prev: any) => ({
-                                ...prev,
-                                orts: val,
-                                toot: "",
-                              }))
-                            }
-                            options={ortsOptions.map((o) => ({
-                              value: o,
-                              label: o,
-                            }))}
-                            className="w-full"
-                            placeholder={
-                              ortsOptions.length === 0
-                                ? "Орц тохируулаагүй"
-                                : "Сонгох..."
-                            }
-                            required
-                            disabled={ortsOptions.length === 0}
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Тоот
-                          </label>
-                          <TusgaiZagvar
-                            value={String(newResident.toot || "")}
-                            onChange={(val) =>
-                              setNewResident((prev: any) => ({
-                                ...prev,
-                                toot: val,
-                              }))
-                            }
-                            options={getTootOptions(
-                              newResident.orts,
-                              newResident.davkhar
-                            ).map((t) => ({ value: t, label: t }))}
-                            className="w-full"
-                            placeholder={
-                              getTootOptions(
-                                newResident.orts,
-                                newResident.davkhar
-                              ).length === 0
-                                ? "Тоотын тохиргоо хийгээгүй байна"
-                                : "Сонгох..."
-                            }
-                            required
-                            disabled={
-                              getTootOptions(
-                                newResident.orts,
-                                newResident.davkhar
-                              ).length === 0
-                            }
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Давхар
-                          </label>
-                          {davkharOptions && davkharOptions.length > 0 ? (
-                            <TusgaiZagvar
-                              value={newResident.davkhar}
-                              onChange={(val) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  davkhar: val,
-                                }))
-                              }
-                              options={davkharOptions.map((d) => ({
-                                value: d,
-                                label: d,
-                              }))}
-                              className="w-full"
-                              required
-                              placeholder="Сонгох..."
-                            />
-                          ) : (
-                            <input
-                              type="text"
-                              value={newResident.davkhar || ""}
-                              onChange={(e) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  davkhar: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              required
-                            />
-                          )}
-                        </div>
-
-                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div>
-                            <label className=" w-full block text-sm font-medium text-slate-700 mb-1">
-                              Барилгын нэр
-                            </label>
-                            <input
-                              type="text"
-                              value={
-                                newResident.baiguullagiinNer ||
-                                selectedBarilga?.ner ||
-                                ""
-                              }
-                              readOnly
-                              className="w-full p-3 text-slate-900 rounded-2xl border border-gray-200 bg-gray-50"
-                            />
-                          </div>
-                          <div>
-                            <label className="block w-full text-sm font-medium text-slate-700 mb-1">
-                              Эхний үлдэгдэл
-                            </label>
-                            <div className="relative">
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9,]*"
-                                value={String(newResident.ekhniiUldegdel || "")}
-                                onChange={(e) => {
-                                  const raw = String(e.target.value || "");
-                                  // keep only digits for formatting (integers)
-                                  const digits = raw.replace(/\D/g, "");
-                                  const formatted = digits.replace(
-                                    /\B(?=(\d{3})+(?!\d))/g,
-                                    ","
-                                  );
-                                  setNewResident((prev: any) => ({
-                                    ...prev,
-                                    ekhniiUldegdel: formatted,
-                                  }));
-                                }}
-                                className="w-full p-3 pr-14 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                                placeholder="0"
-                                readOnly={!!editingResident}
-                              />
-                              <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-50 border border-gray-300 rounded-full px-3 text-sm text-theme pointer-events-none">
-                                ₮
-                              </div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block w-full text-sm font-medium text-slate-700 mb-1">
-                              Тэмдэглэл
-                            </label>
-                            <textarea
-                              value={newResident.ekhniiUldegdelTemdeglel}
-                              onChange={(e) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  ekhniiUldegdelTemdeglel: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300 resize-none"
-                              rows={1}
-                              readOnly={!!editingResident}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="md:col-span-2 mt-2 pt-4 border-t border-gray-200">
-                        <h3 className="text-lg font-semibold mb-4 text-slate-900">
-                          Нэвтрэх мэдээлэл
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Нэвтрэх нэр
-                            </label>
-                            <input
-                              type="text"
-                              value={newResident.nevtrekhNer}
-                              onChange={(e) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  nevtrekhNer: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              placeholder="Нэвтрэх нэр"
-                              required
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Нууц үг
-                            </label>
-                            <input
-                              type="password"
-                              value={newResident.nuutsUg}
-                              onChange={(e) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  nuutsUg: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              placeholder="Нууц үг"
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-end px-6 py-4 border-t sticky bottom-2 left-0 right-0 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setShowResidentModal(false)}
-                        className="btn-minimal-ghost btn-cancel min-w-[100px]"
-                      >
-                        Цуцлах
-                      </button>
-                      <button
-                        type="submit"
-                        className="btn-minimal btn-save h-11"
-                        data-modal-primary
-                      >
-                        {editingResident ? "Хадгалах" : "Хадгалах"}
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          </ModalPortal>
-        )}
-        {showEmployeeModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-              <motion.div
-                ref={employeeRef}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
-              >
-                <div className="flex items-center justify-between px-6 py-4 border-b">
-                  <h2 className="text-2xl font-bold text-slate-900">
-                    {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
-                  </h2>
-                  <button
-                    onClick={() => setShowEmployeeModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
-                    aria-label="Хаах"
-                    title="Хаах"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <form
-                  onSubmit={handleCreateOrUpdateEmployee}
-                  className="p-6 space-y-4"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Овог
-                      </label>
-                      <input
-                        type="text"
-                        value={newEmployee.ovog}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                            ""
-                          );
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            ovog: value,
-                          }));
-                        }}
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Нэр
-                      </label>
-                      <input
-                        type="text"
-                        value={newEmployee.ner}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(
-                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                            ""
-                          );
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            ner: value,
-                          }));
-                        }}
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Утас
-                      </label>
-                      <input
-                        type="tel"
-                        value={newEmployee.utas}
-                        onChange={(e) => {
-                          const value = e.target.value
-                            .replace(/[^0-9]/g, "")
-                            .slice(0, 8);
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            utas: value,
-                          }));
-                        }}
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        maxLength={8}
-                        pattern="[0-9]{8}"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        И-мэйл
-                      </label>
-                      <input
-                        type="email"
-                        value={newEmployee.email}
-                        onChange={(e) =>
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            email: e.target.value,
-                          }))
-                        }
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Албан тушаал
-                      </label>
-                      <input
-                        type="text"
-                        value={newEmployee.albanTushaal}
-                        onChange={(e) =>
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            albanTushaal: e.target.value,
-                          }))
-                        }
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Ажилд орсон огноо
-                      </label>
-                      <DatePickerInput
-                        value={
-                          newEmployee.ajildOrsonOgnoo
-                            ? new Date(newEmployee.ajildOrsonOgnoo)
-                            : null
-                        }
-                        onChange={(v) =>
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            ajildOrsonOgnoo: v
-                              ? (() => {
-                                  const date = new Date(v);
-                                  const year = date.getFullYear();
-                                  const month = String(
-                                    date.getMonth() + 1
-                                  ).padStart(2, "0");
-                                  const day = String(date.getDate()).padStart(
-                                    2,
-                                    "0"
-                                  );
-                                  return `${year}-${month}-${day}`;
-                                })()
-                              : "",
-                          }))
-                        }
-                        placeholder="Огноо сонгох"
-                        className="w-full"
-                        required
-                        clearable
-                        classNames={{
-                          input:
-                            "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Нэвтрэх нэр
-                      </label>
-                      <input
-                        type="text"
-                        value={newEmployee.nevtrekhNer}
-                        onChange={(e) =>
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            nevtrekhNer: e.target.value,
-                          }))
-                        }
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
-                        Нууц үг
-                      </label>
-                      <input
-                        type="password"
-                        value={newEmployee.nuutsUg}
-                        onChange={(e) =>
-                          setNewEmployee((p: any) => ({
-                            ...p,
-                            nuutsUg: e.target.value,
-                          }))
-                        }
-                        className="w-full p-3 rounded-2xl border border-gray-400"
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-2">
+                  <div className="flex items-center justify-between px-6 py-4 border-b">
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {editingResident
+                        ? "Оршин суугчийн мэдээлэл засах"
+                        : "Оршин суугч нэмэх"}
+                    </h2>
                     <button
-                      type="button"
-                      onClick={() => setShowEmployeeModal(false)}
-                      className="btn-minimal-ghost btn-cancel min-w-[100px]"
-                    >
-                      Цуцлах
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn-minimal btn-save"
-                      data-modal-primary
-                    >
-                      {editingEmployee ? "Хадгалах" : "Хадгалах"}
-                    </button>
-                  </div>
-                </form>
-              </motion.div>
-            </motion.div>
-          </ModalPortal>
-        )}
-        {showList2Modal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-              onClick={() => setShowList2Modal(false)}
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-              <motion.div
-                ref={list2Ref}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Гэрээний Загвар
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setShowList2Modal(false);
-                        router.push("/geree/zagvar/gereeniiZagvar");
-                      }}
-                      className="btn-minimal btn-save"
-                    >
-                      Шинэ загвар
-                    </button>
-                    <button
-                      onClick={() => setShowList2Modal(false)}
+                      onClick={() => setShowResidentModal(false)}
                       className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                       aria-label="Хаах"
                       title="Хаах"
@@ -6135,324 +5612,1004 @@ export default function Geree() {
                       </svg>
                     </button>
                   </div>
-                </div>
-                <div className="space-y-3 max-h-[70vh] overflow-y-auto">
-                  {(zagvaruud || []).map((z: any) => (
-                    <div
-                      key={z._id}
-                      className="flex items-center justify-between p-3 rounded-2xl border"
-                    >
-                      <div>
-                        <div className="font-semibold text-theme">{z.ner}</div>
-                        <div className="text-sm text-theme">{z.turul}</div>
+
+                  <form
+                    onSubmit={handleCreateResident}
+                    className="flex-1 flex flex-col"
+                  >
+                    <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-4">
+                      <div className="min-h-[55vh] grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Төрөл
+                          </label>
+                          <TusgaiZagvar
+                            value={newResident.turul}
+                            onChange={(val) =>
+                              setNewResident((prev: any) => ({
+                                ...prev,
+                                turul: val,
+                              }))
+                            }
+                            options={[
+                              { value: "Үндсэн", label: "Үндсэн" },
+                              { value: "Түр", label: "Түр" },
+                            ]}
+                            className="w-full"
+                            placeholder="Сонгох..."
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Овог
+                          </label>
+                          <input
+                            type="text"
+                            value={newResident.ovog}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
+                                ""
+                              );
+                              setNewResident((prev: any) => ({
+                                ...prev,
+                                ovog: value,
+                              }));
+                            }}
+                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Нэр
+                          </label>
+                          <input
+                            type="text"
+                            value={newResident.ner}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(
+                                /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
+                                ""
+                              );
+                              setNewResident((prev: any) => ({
+                                ...prev,
+                                ner: value,
+                              }));
+                            }}
+                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            required
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700 mb-1">
+                            Утас
+                          </label>
+                          <input
+                            type="tel"
+                            inputMode="numeric"
+                            maxLength={8}
+                            value={(newResident.utas?.[0] as any) || ""}
+                            onChange={(e) => {
+                              const digits = e.target.value
+                                .replace(/\D/g, "")
+                                .slice(0, 8);
+                              setNewResident((prev: any) => {
+                                const prevPhone =
+                                  (prev.utas && prev.utas[0]) || "";
+                                const prevUsername = prev.nevtrekhNer || "";
+                                const shouldUpdateUsername =
+                                  !prevUsername ||
+                                  String(prevUsername) === String(prevPhone);
+                                return {
+                                  ...prev,
+                                  utas: [digits],
+                                  nevtrekhNer: shouldUpdateUsername
+                                    ? digits
+                                    : prevUsername,
+                                };
+                              });
+                            }}
+                            className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            required
+                          />
+                        </div>
+
+                        {/* Duureg/Horoo removed from resident modal per UX request */}
+
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              СӨХ нэр
+                            </label>
+                            <input
+                              type="text"
+                              value={newResident.soh || ""}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  soh: e.target.value,
+                                }))
+                              }
+                              readOnly
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Орц
+                            </label>
+                            <TusgaiZagvar
+                              value={newResident.orts || ""}
+                              onChange={(val) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  orts: val,
+                                  toot: "",
+                                }))
+                              }
+                              options={ortsOptions.map((o) => ({
+                                value: o,
+                                label: o,
+                              }))}
+                              className="w-full"
+                              placeholder={
+                                ortsOptions.length === 0
+                                  ? "Орц тохируулаагүй"
+                                  : "Сонгох..."
+                              }
+                              required
+                              disabled={ortsOptions.length === 0}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Давхар
+                            </label>
+                            {davkharOptions && davkharOptions.length > 0 ? (
+                              <TusgaiZagvar
+                                value={newResident.davkhar}
+                                onChange={(val) =>
+                                  setNewResident((prev: any) => ({
+                                    ...prev,
+                                    davkhar: val,
+                                  }))
+                                }
+                                options={davkharOptions.map((d) => ({
+                                  value: d,
+                                  label: d,
+                                }))}
+                                className="w-full"
+                                required
+                                placeholder="Сонгох..."
+                              />
+                            ) : (
+                              <input
+                                type="text"
+                                value={newResident.davkhar || ""}
+                                onChange={(e) =>
+                                  setNewResident((prev: any) => ({
+                                    ...prev,
+                                    davkhar: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                required
+                              />
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Тоот
+                            </label>
+                            <TusgaiZagvar
+                              value={String(newResident.toot || "")}
+                              onChange={(val) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  toot: val,
+                                }))
+                              }
+                              options={getTootOptions(
+                                newResident.orts,
+                                newResident.davkhar
+                              ).map((t) => ({ value: t, label: t }))}
+                              className="w-full"
+                              placeholder={
+                                getTootOptions(
+                                  newResident.orts,
+                                  newResident.davkhar
+                                ).length === 0
+                                  ? "Тоотын тохиргоо хийгээгүй байна"
+                                  : "Сонгох..."
+                              }
+                              required
+                              disabled={
+                                getTootOptions(
+                                  newResident.orts,
+                                  newResident.davkhar
+                                ).length === 0
+                              }
+                            />
+                          </div>
+
+                          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className=" w-full block text-sm font-medium text-slate-700 mb-1">
+                                Барилгын нэр
+                              </label>
+                              <input
+                                type="text"
+                                value={
+                                  newResident.baiguullagiinNer ||
+                                  selectedBarilga?.ner ||
+                                  ""
+                                }
+                                readOnly
+                                className="w-full p-3 text-slate-900 rounded-2xl border border-gray-200 bg-gray-50"
+                              />
+                            </div>
+                            <div>
+                              <label className="block w-full text-sm font-medium text-slate-700 mb-1">
+                                Эхний үлдэгдэл
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="[0-9,]*"
+                                  value={String(
+                                    newResident.ekhniiUldegdel || ""
+                                  )}
+                                  onChange={(e) => {
+                                    const raw = String(e.target.value || "");
+                                    // keep only digits for formatting (integers)
+                                    const digits = raw.replace(/\D/g, "");
+                                    const formatted = digits.replace(
+                                      /\B(?=(\d{3})+(?!\d))/g,
+                                      ","
+                                    );
+                                    setNewResident((prev: any) => ({
+                                      ...prev,
+                                      ekhniiUldegdel: formatted,
+                                    }));
+                                  }}
+                                  className="w-full p-3 pr-14 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                  placeholder="0"
+                                  readOnly={!!editingResident}
+                                />
+                                <div className="absolute right-2 top-1/2 -translate-y-1/2  px-3 text-sm text-theme pointer-events-none">
+                                  ₮
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className=" md:col-span-2 grid grid-cols-1 w-full">
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                              Тайлбар
+                            </label>
+                            <textarea
+                              value={newResident.tailbar}
+                              onChange={(e) =>
+                                setNewResident((prev: any) => ({
+                                  ...prev,
+                                  tailbar: e.target.value,
+                                }))
+                              }
+                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                              rows={1}
+                              placeholder="Тайлбар..."
+                              readOnly={!!editingResident}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="md:col-span-2 mt-2 pt-4 border-t border-gray-200">
+                          <h3 className="text-lg font-semibold mb-4 text-slate-900">
+                            Нэвтрэх мэдээлэл
+                          </h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Нэвтрэх нэр
+                              </label>
+                              <input
+                                type="text"
+                                value={newResident.nevtrekhNer}
+                                onChange={(e) =>
+                                  setNewResident((prev: any) => ({
+                                    ...prev,
+                                    nevtrekhNer: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                placeholder="Нэвтрэх нэр"
+                                required
+                                readOnly
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-slate-700 mb-1">
+                                Нууц үг
+                              </label>
+                              <input
+                                type="password"
+                                value={newResident.nuutsUg}
+                                onChange={(e) =>
+                                  setNewResident((prev: any) => ({
+                                    ...prev,
+                                    nuutsUg: e.target.value,
+                                  }))
+                                }
+                                className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
+                                placeholder="Нууц үг"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
+
+                      <div className="flex justify-end px-6 py-4 border-t sticky bottom-2 left-0 right-0 gap-2">
                         <button
-                          onClick={() => handlePreviewTemplate(z._id)}
-                          className="p-2 text-blue-500 hover:bg-blue-100 rounded-2xl"
-                          title="Харах"
+                          type="button"
+                          onClick={() => setShowResidentModal(false)}
+                          className="btn-minimal-ghost btn-cancel min-w-[100px]"
                         >
-                          <Eye className="w-5 h-5" />
+                          Цуцлах
                         </button>
                         <button
-                          onClick={() => handleEditTemplate(z._id)}
-                          className="p-2 hover:bg-blue-100 rounded-2xl"
-                          title="Засах"
+                          type="submit"
+                          className="btn-minimal btn-save h-11"
+                          data-modal-primary
                         >
-                          <Edit className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTemplate(z._id)}
-                          className="p-2 hover:bg-red-50 rounded-2xl action-delete"
-                          title="Устгах"
-                        >
-                          <Trash2 className="w-5 h-5 text-red-500" />
+                          {editingResident ? "Хадгалах" : "Хадгалах"}
                         </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </form>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
+        )}
+        {showEmployeeModal && (
+          <AnimatePresence>
+            <ModalPortal>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+              >
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  ref={employeeRef}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
+                >
+                  <div className="flex items-center justify-between px-6 py-4 border-b">
+                    <h2 className="text-2xl font-bold text-slate-900">
+                      {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
+                    </h2>
+                    <button
+                      onClick={() => setShowEmployeeModal(false)}
+                      className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                      aria-label="Хаах"
+                      title="Хаах"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-slate-700"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <form
+                    onSubmit={handleCreateOrUpdateEmployee}
+                    className="p-6 space-y-4"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Овог
+                        </label>
+                        <input
+                          type="text"
+                          value={newEmployee.ovog}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                              ""
+                            );
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              ovog: value,
+                            }));
+                          }}
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Нэр
+                        </label>
+                        <input
+                          type="text"
+                          value={newEmployee.ner}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(
+                              /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                              ""
+                            );
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              ner: value,
+                            }));
+                          }}
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Утас
+                        </label>
+                        <input
+                          type="tel"
+                          value={newEmployee.utas}
+                          onChange={(e) => {
+                            const value = e.target.value
+                              .replace(/[^0-9]/g, "")
+                              .slice(0, 8);
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              utas: value,
+                            }));
+                          }}
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          maxLength={8}
+                          pattern="[0-9]{8}"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          И-мэйл
+                        </label>
+                        <input
+                          type="email"
+                          value={newEmployee.email}
+                          onChange={(e) =>
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              email: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Албан тушаал
+                        </label>
+                        <input
+                          type="text"
+                          value={newEmployee.albanTushaal}
+                          onChange={(e) =>
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              albanTushaal: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Ажилд орсон огноо
+                        </label>
+                        <DatePickerInput
+                          value={
+                            newEmployee.ajildOrsonOgnoo
+                              ? new Date(newEmployee.ajildOrsonOgnoo)
+                              : null
+                          }
+                          onChange={(v) =>
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              ajildOrsonOgnoo: v
+                                ? (() => {
+                                    const date = new Date(v);
+                                    const year = date.getFullYear();
+                                    const month = String(
+                                      date.getMonth() + 1
+                                    ).padStart(2, "0");
+                                    const day = String(date.getDate()).padStart(
+                                      2,
+                                      "0"
+                                    );
+                                    return `${year}-${month}-${day}`;
+                                  })()
+                                : "",
+                            }))
+                          }
+                          placeholder="Огноо сонгох"
+                          className="w-full"
+                          required
+                          clearable
+                          classNames={{
+                            input:
+                              "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Нэвтрэх нэр
+                        </label>
+                        <input
+                          type="text"
+                          value={newEmployee.nevtrekhNer}
+                          onChange={(e) =>
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              nevtrekhNer: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">
+                          Нууц үг
+                        </label>
+                        <input
+                          type="password"
+                          value={newEmployee.nuutsUg}
+                          onChange={(e) =>
+                            setNewEmployee((p: any) => ({
+                              ...p,
+                              nuutsUg: e.target.value,
+                            }))
+                          }
+                          className="w-full p-3 rounded-2xl border border-gray-400"
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setShowEmployeeModal(false)}
+                        className="btn-minimal-ghost btn-cancel min-w-[100px]"
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn-minimal btn-save"
+                        data-modal-primary
+                      >
+                        {editingEmployee ? "Хадгалах" : "Хадгалах"}
+                      </button>
+                    </div>
+                  </form>
+                </motion.div>
+              </motion.div>
+            </ModalPortal>
+          </AnimatePresence>
+        )}
+        {showList2Modal && (
+          <AnimatePresence>
+            <ModalPortal>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                onClick={() => setShowList2Modal(false)}
+              >
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  ref={list2Ref}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      Гэрээний Загвар
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setShowList2Modal(false);
+                          router.push("/geree/zagvar/gereeniiZagvar");
+                        }}
+                        className="btn-minimal btn-save"
+                      >
+                        Шинэ загвар
+                      </button>
+                      <button
+                        onClick={() => setShowList2Modal(false)}
+                        className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                        aria-label="Хаах"
+                        title="Хаах"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 text-slate-700"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="space-y-3 max-h-[70vh] overflow-y-auto">
+                    {(zagvaruud || []).map((z: any) => (
+                      <div
+                        key={z._id}
+                        className="flex items-center justify-between p-3 rounded-2xl border"
+                      >
+                        <div>
+                          <div className="font-semibold text-theme">
+                            {z.ner}
+                          </div>
+                          <div className="text-sm text-theme">{z.turul}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handlePreviewTemplate(z._id)}
+                            className="p-2 text-blue-500 hover:bg-blue-100 rounded-2xl"
+                            title="Харах"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleEditTemplate(z._id)}
+                            className="p-2 hover:bg-blue-100 rounded-2xl"
+                            title="Засах"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTemplate(z._id)}
+                            className="p-2 hover:bg-red-50 rounded-2xl action-delete"
+                            title="Устгах"
+                          >
+                            <Trash2 className="w-5 h-5 text-red-500" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              </motion.div>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showTemplatesModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-              onClick={() => setShowTemplatesModal(false)}
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                ref={templatesRef}
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+                onClick={() => setShowTemplatesModal(false)}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-semibold text-slate-900">
-                    Загвар татах
-                  </h3>
-                  <button
-                    onClick={() => setShowTemplatesModal(false)}
-                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
-                    aria-label="Хаах"
-                    title="Хаах"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  ref={templatesRef}
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-slate-900">
+                      Загвар татах
+                    </h3>
+                    <button
+                      onClick={() => setShowTemplatesModal(false)}
+                      className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                      aria-label="Хаах"
+                      title="Хаах"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-slate-700"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
 
-                <div className="space-y-3">
-                  <div className="text-sm text-theme">Загварууд энд байна.</div>
-                </div>
+                  <div className="space-y-3">
+                    <div className="text-sm text-theme">
+                      Загварууд энд байна.
+                    </div>
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showDeleteResidentModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
               >
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      Оршин суугчийг устгах уу?
+                    </h3>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Та {residentToDelete?.ovog || ""}{" "}
+                      {residentToDelete?.ner || ""}-г устгах гэж байна. Энэ
+                      үйлдэл буцаах боломжгүй.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteResidentModal(false)}
+                        className="btn-minimal-ghost px-4 py-2"
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (residentToDelete) {
+                            await handleDeleteResident(residentToDelete);
+                            setShowDeleteResidentModal(false);
+                            setResidentToDelete(null);
+                          }
+                        }}
+                        className="btn-minimal btn-cancel px-4 py-2"
+                        data-modal-primary
+                      >
+                        Устгах
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">
-                    Оршин суугчийг устгах уу?
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-6">
-                    Та {residentToDelete?.ovog || ""}{" "}
-                    {residentToDelete?.ner || ""}-г устгах гэж байна. Энэ үйлдэл
-                    буцаах боломжгүй.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteResidentModal(false)}
-                      className="btn-minimal-ghost px-4 py-2"
-                    >
-                      Цуцлах
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (residentToDelete) {
-                          await handleDeleteResident(residentToDelete);
-                          setShowDeleteResidentModal(false);
-                          setResidentToDelete(null);
-                        }
-                      }}
-                      className="btn-minimal btn-cancel px-4 py-2"
-                      data-modal-primary
-                    >
-                      Устгах
-                    </button>
-                  </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showDeleteEmployeeModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
               >
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      Ажилтныг устгах уу?
+                    </h3>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Та {employeeToDelete?.ovog || ""}{" "}
+                      {employeeToDelete?.ner || ""}-г устгах гэж байна. Энэ
+                      үйлдэл буцаах боломжгүй.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteEmployeeModal(false)}
+                        className="btn-minimal-ghost  px-4 py-2"
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (employeeToDelete) {
+                            await handleDeleteEmployee(employeeToDelete);
+                            setShowDeleteEmployeeModal(false);
+                            setEmployeeToDelete(null);
+                          }
+                        }}
+                        className="btn-minimal btn-cancel px-4 py-2"
+                        data-modal-primary
+                      >
+                        Устгах
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">
-                    Ажилтныг устгах уу?
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-6">
-                    Та {employeeToDelete?.ovog || ""}{" "}
-                    {employeeToDelete?.ner || ""}-г устгах гэж байна. Энэ үйлдэл
-                    буцаах боломжгүй.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteEmployeeModal(false)}
-                      className="btn-minimal-ghost  px-4 py-2"
-                    >
-                      Цуцлах
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (employeeToDelete) {
-                          await handleDeleteEmployee(employeeToDelete);
-                          setShowDeleteEmployeeModal(false);
-                          setEmployeeToDelete(null);
-                        }
-                      }}
-                      className="btn-minimal btn-cancel px-4 py-2"
-                      data-modal-primary
-                    >
-                      Устгах
-                    </button>
-                  </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showDeleteUnitModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
               >
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      Тоотыг устгах уу?
+                    </h3>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Та {unitToDelete?.floor}-р давхрын {unitToDelete?.unit}{" "}
+                      тоотыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteUnitModal(false)}
+                        className="btn-minimal-ghost px-4 py-2"
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (unitToDelete) {
+                            await deleteUnit(
+                              unitToDelete.floor,
+                              unitToDelete.unit
+                            );
+                            setShowDeleteUnitModal(false);
+                            setUnitToDelete(null);
+                          }
+                        }}
+                        className="btn-minimal btn-cancel px-4 py-2"
+                        data-modal-primary
+                      >
+                        Устгах
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">
-                    Тоотыг устгах уу?
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-6">
-                    Та {unitToDelete?.floor}-р давхрын {unitToDelete?.unit}{" "}
-                    тоотыг устгах гэж байна. Энэ үйлдэл буцаах боломжгүй.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteUnitModal(false)}
-                      className="btn-minimal-ghost px-4 py-2"
-                    >
-                      Цуцлах
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (unitToDelete) {
-                          await deleteUnit(
-                            unitToDelete.floor,
-                            unitToDelete.unit
-                          );
-                          setShowDeleteUnitModal(false);
-                          setUnitToDelete(null);
-                        }
-                      }}
-                      className="btn-minimal btn-cancel px-4 py-2"
-                      data-modal-primary
-                    >
-                      Устгах
-                    </button>
-                  </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
         {showDeleteFloorModal && (
-          <ModalPortal>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            >
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <AnimatePresence>
+            <ModalPortal>
               <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                onClick={(e) => e.stopPropagation()}
-                className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
               >
-                <div className="text-center">
-                  <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-                    <Trash2 className="h-6 w-6 text-red-600" />
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.95, opacity: 0 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
+                >
+                  <div className="text-center">
+                    <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                      <Trash2 className="h-6 w-6 text-red-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">
+                      Давхрын тоотуудыг устгах уу?
+                    </h3>
+                    <p className="text-sm text-slate-500 mb-6">
+                      Та {floorToDelete}-р давхрын бүх тоотыг устгах гэж байна.
+                      Энэ үйлдэл буцаах боломжгүй.
+                    </p>
+                    <div className="flex justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowDeleteFloorModal(false)}
+                        className="btn-minimal-ghost px-4 py-2"
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (floorToDelete) {
+                            await deleteFloor(floorToDelete);
+                            setShowDeleteFloorModal(false);
+                            setFloorToDelete(null);
+                          }
+                        }}
+                        className="btn-minimal btn-cancel px-4 py-2"
+                        data-modal-primary
+                      >
+                        Устгах
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">
-                    Давхрын тоотуудыг устгах уу?
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-6">
-                    Та {floorToDelete}-р давхрын бүх тоотыг устгах гэж байна.
-                    Энэ үйлдэл буцаах боломжгүй.
-                  </p>
-                  <div className="flex justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteFloorModal(false)}
-                      className="btn-minimal-ghost px-4 py-2"
-                    >
-                      Цуцлах
-                    </button>
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (floorToDelete) {
-                          await deleteFloor(floorToDelete);
-                          setShowDeleteFloorModal(false);
-                          setFloorToDelete(null);
-                        }
-                      }}
-                      className="btn-minimal btn-cancel px-4 py-2"
-                      data-modal-primary
-                    >
-                      Устгах
-                    </button>
-                  </div>
-                </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
-          </ModalPortal>
+            </ModalPortal>
+          </AnimatePresence>
         )}
       </AnimatePresence>
     </div>

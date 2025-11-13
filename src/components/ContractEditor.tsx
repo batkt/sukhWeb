@@ -147,13 +147,17 @@ const CustomTag = Node.create({
   },
 
   parseHTML() {
-    const allTags: TagType[] = Object.values(tagCategories).flatMap((cat) =>
-      cat.tags.map((t) => t.type)
-    );
-    return allTags.map((tag) => ({
-      tag: tag,
-      getAttrs: () => ({ tagType: tag }),
-    }));
+    return [
+      {
+        tag: "span[data-tag-type]",
+        getAttrs: (element: any) => {
+          if (element.hasAttribute("data-tag-type")) {
+            return { tagType: element.getAttribute("data-tag-type") };
+          }
+          return false;
+        },
+      },
+    ];
   },
 
   renderHTML({ node, HTMLAttributes }) {

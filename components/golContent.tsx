@@ -147,10 +147,11 @@ export default function GolContent({ children }: GolContentProps) {
       label: "Тайлан",
       path: "tailan",
       submenu: [
-        { label: "Санхүүгийн тайлан", path: "/financial" },
-        { label: "Гүйцэтгэлийн тайлан", path: "/performance" },
+        { label: "Орлого авлага", path: "/orlogo-avlaga" },
+        { label: "Сарын төлбөр", path: "/sariin-tulbur" },
+        { label: "Нэхэмжлэхийн түүх", path: "/nekhemjlekhiin-tuukh" },
+        { label: "Авлагийн насжилт", path: "/avlagiin-nasjilt" },
       ],
-      comingSoon: true,
     },
   ];
 

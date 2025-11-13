@@ -57,11 +57,11 @@ export default function ӨнгөнийЗагварСонгох() {
       name: "Өнгөлөг",
       colors: ["#806bdf", "#f64770", "#f6bb32", "#5cbf9b"],
     },
-    {
-      id: "white-gray",
-      name: "Цагаан саарал",
-      colors: ["#e6e9ed", "#d9dde1", "#cbd2d6", "#b0b8be"],
-    },
+    // {
+    //   id: "white-gray",
+    //   name: "Цагаан саарал",
+    //   colors: ["#e6e9ed", "#d9dde1", "#cbd2d6", "#b0b8be"],
+    // },
   ];
 
   return (

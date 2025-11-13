@@ -12,6 +12,19 @@ export function getApiUrl(): string {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
+  // If this deployment is for the 'dev' branch, prefer the dev IP override.
+  // Check several environment variables that platforms set for branch name.
+  const branchName =
+    process.env.NEXT_PUBLIC_BRANCH ||
+    process.env.VERCEL_GIT_COMMIT_REF ||
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF ||
+    process.env.GITHUB_REF_NAME ||
+    process.env.BRANCH ||
+    null;
+  if (branchName === "dev") {
+    return "http://103.50.205.80:8084";
+  }
+
   // Runtime check: if we're in browser and on HTTPS, use nginx proxy
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     return "/api";
@@ -31,8 +44,8 @@ export function getApiUrl(): string {
 
 // Export url for backward compatibility and direct access
 // Note: This will use default on server-side, runtime check happens in functions
-export const url =
-  process.env.NEXT_PUBLIC_API_URL || "http://103.143.40.46:8084";
+// Export a runtime-resolved url so server-side code can also pick up branch overrides
+export const url = process.env.NEXT_PUBLIC_API_URL || getApiUrl();
 
 // Export for debugging - can be accessed in browser console
 if (typeof window !== "undefined") {
