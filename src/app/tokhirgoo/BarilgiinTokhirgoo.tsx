@@ -681,11 +681,15 @@ export default function BarilgiinTokhirgoo() {
   const [tatvariinAlbaData, setTatvariinAlbaData] =
     useState<TatvariinAlbaResponse | null>(null);
   const [sohNer, setSohNer] = useState<string>("");
+  const [sukhDugaar, setSukhDugaar] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
   const [initialValues, setInitialValues] = useState({
     selectedDuureg: "",
     selectedHoroo: "",
     sohNer: "",
+    sukhDugaar: "",
+    email: "",
   });
 
   // Modal state for new building
@@ -768,13 +772,34 @@ export default function BarilgiinTokhirgoo() {
       : allBuildings[0];
     if (selectedBarilga?.tokhirgoo?.sohNer) {
       setSohNer(String(selectedBarilga.tokhirgoo.sohNer));
+      // try to set phone/email from building tokhirgoo (best-effort)
+      const ut =
+        (selectedBarilga as any).tokhirgoo?.utas ||
+        (selectedBarilga as any).utas ||
+        [];
+      const ml =
+        (selectedBarilga as any).tokhirgoo?.mail ||
+        (selectedBarilga as any).mail ||
+        [];
+      setSukhDugaar(String((Array.isArray(ut) ? ut[0] : ut) || ""));
+      setEmail(String((Array.isArray(ml) ? ml[0] : ml) || ""));
     } else if (
       baiguullaga?.tokhirgoo &&
       (baiguullaga.tokhirgoo as any)?.sohNer
     ) {
       setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
+      const ut =
+        (baiguullaga as any).tokhirgoo?.utas || (baiguullaga as any).utas || [];
+      const ml =
+        (baiguullaga as any).tokhirgoo?.mail || (baiguullaga as any).mail || [];
+      setSukhDugaar(String((Array.isArray(ut) ? ut[0] : ut) || ""));
+      setEmail(String((Array.isArray(ml) ? ml[0] : ml) || ""));
     } else if (baiguullaga?.ner) {
       setSohNer(String(baiguullaga.ner));
+      const ut = (baiguullaga as any).utas || [];
+      const ml = (baiguullaga as any).mail || [];
+      setSukhDugaar(String((Array.isArray(ut) ? ut[0] : ut) || ""));
+      setEmail(String((Array.isArray(ml) ? ml[0] : ml) || ""));
     }
   }, [selectedBuildingId, baiguullaga]);
 
@@ -855,14 +880,31 @@ export default function BarilgiinTokhirgoo() {
     }));
     setSohNer(derivedSohNer);
 
+    // Derive contact fields (phone/email) from selected building, then org
+    const rawPhone =
+      (selectedBarilga as any)?.tokhirgoo?.utas ||
+      (selectedBarilga as any)?.utas ||
+      (baiguullaga as any)?.tokhirgoo?.utas ||
+      (baiguullaga as any)?.utas ||
+      [];
+    const rawEmail =
+      (selectedBarilga as any)?.tokhirgoo?.mail ||
+      (selectedBarilga as any)?.mail ||
+      (baiguullaga as any)?.tokhirgoo?.mail ||
+      (baiguullaga as any)?.mail ||
+      [];
+    const derivedPhone = Array.isArray(rawPhone) ? rawPhone[0] : rawPhone || "";
+    const derivedEmail = Array.isArray(rawEmail) ? rawEmail[0] : rawEmail || "";
+
     // Capture initial snapshot for dirty-checking for the current selection
     setInitialValues({
       selectedDuureg: duuregMatch?._id || "",
       selectedHoroo: horooMatch?.kod || "",
       sohNer: derivedSohNer,
+      sukhDugaar: derivedPhone || "",
+      email: derivedEmail || "",
     });
   }, [tatvariinAlbaData, baiguullaga, selectedBuildingId]);
-
   // Update sohNer state when baiguullaga changes (after save operations)
   useEffect(() => {
     // Prefer a first "real" building when deriving sohNer and initial values
@@ -889,6 +931,7 @@ export default function BarilgiinTokhirgoo() {
         baiguullaga.barilguud.find(isRealBuilding) || baiguullaga.barilguud[0]
       );
     })();
+
     if (firstBuilding?.tokhirgoo?.sohNer) {
       setSohNer(String(firstBuilding.tokhirgoo.sohNer));
     } else if ((baiguullaga as any)?.sohNer) {
@@ -899,198 +942,51 @@ export default function BarilgiinTokhirgoo() {
     ) {
       setSohNer(String((baiguullaga.tokhirgoo as any).sohNer));
     }
-  }, [baiguullaga]);
 
-  const incrementOrts = () => {
-    setOrtsCount((prev: any) => {
-      const n = Number(prev) || 0;
-      return n + 1;
-    });
-  };
-
-  // Handlers from UndsenMedeelel
-  const handleDuuregChange = (duuregName: string) => {
-    setState((s) => ({
-      ...s,
-      selectedDuureg: duuregName,
-      selectedDuuregData: {
-        _id: duuregName,
-        ner: duuregName,
-        kod: duuregName,
-      } as Duureg,
-      selectedHoroo: "",
-      selectedHorooData: undefined,
-    }));
-  };
-
-  const handleHorooChange = (horooName: string) => {
-    if (!state.selectedDuureg) {
-      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
-      return;
-    }
-
-    const horooData = {
-      _id: horooName,
-      ner: horooName,
-      kod: horooName,
-    } as Horoo;
-    setState((s) => ({
-      ...s,
-      selectedHoroo: horooName,
-      selectedHorooData: horooData,
-    }));
-  };
-
-  const handleSaveSettings = async () => {
-    if (!token) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-    if (!baiguullaga?._id) {
-      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
-      return;
-    }
-
+    // Also update contact fields (phone/email) from the server-provided
+    // selected building first, then organization-level tokhirgoo, then
+    // top-level arrays. This is executed directly (no nested hooks).
     try {
-      const name = (newBarilgaNer || "").trim();
-      const count = Number(davkharCount) || 0;
-      const ortsNum = Number(ortsCount) || 0;
+      const serverOrg = baiguullaga as any;
+      const sel = barilga as any;
+      let phone: any = "";
+      let mailAddr: any = "";
 
-      // Choose the best available location source:
-      // 1) Active building with non-empty location
-      // 2) Organization-level location
-      // 3) First building that has a non-empty location
-      const pickLocationSource = () => {
-        const safeTrim = (v: any) => (typeof v === "string" ? v.trim() : "");
-        const hasLoc = (t: any) =>
-          !!(safeTrim(t?.duuregNer) || safeTrim(t?.horoo?.ner));
-
-        const activeTok = (barilga?.tokhirgoo as any) || {};
-        if (hasLoc(activeTok)) return activeTok;
-
-        const orgTok = ((baiguullaga?.tokhirgoo as any) || {}) as any;
-        if (hasLoc(orgTok)) return orgTok;
-
-        const firstWithLoc = (baiguullaga?.barilguud || [])
-          .map((b: any) => b?.tokhirgoo)
-          .find((t: any) => hasLoc(t));
-        return firstWithLoc || {};
-      };
-      const bestLoc = pickLocationSource();
-
-      let updatedBarilguud: any[] = [...(baiguullaga?.barilguud || [])];
-
-      if (name) {
-        // Validation for new building creation
-
-        if (count <= 0) {
-          openErrorOverlay("Шинэ барилгын давхарын тоо оруулна уу");
-          return;
-        }
-        // Duplicate name check
-        const hasDup = updatedBarilguud.some(
-          (b: any) => String(b?.ner || "").trim() === name
-        );
-        if (hasDup) {
-          openErrorOverlay("Ижил нэртэй барилга аль хэдийн бүртгэлтэй байна");
-          return;
-        }
-        // Prefer active building; fallback to org-level; then any building with location
-        const locSrc = bestLoc as any;
-
-        const newBuilding = {
-          ner: name,
-          bairshil: { coordinates: [] },
-          tokhirgoo: {
-            duuregNer: locSrc?.duuregNer || "",
-            districtCode: locSrc?.districtCode || "",
-            horoo: {
-              ner: locSrc?.horoo?.ner || "",
-              kod: locSrc?.horoo?.kod || "",
-            },
-            sohNer: locSrc?.sohNer || "",
-            // initialize entrances (орц) as a String count per schema
-            orts: String(ortsNum),
-            davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
-          },
-          davkharuud: [],
-          // associate building with organization explicitly
-          baiguullagiinId: baiguullaga?._id,
-        };
-        // mark newly created building as inheriting organization/main tokhirgoo
-        // until the user explicitly edits this building
-        updatedBarilguud = [...updatedBarilguud, newBuilding];
-      } else if (activeBuildingId) {
-        // Update existing building's settings
-        updatedBarilguud = updatedBarilguud.map((b: any) => {
-          if (String(b._id) !== String(activeBuildingId)) return b;
-          const orgTokhirgoo = ((baiguullaga?.tokhirgoo as any) || {}) as any;
-          const locSrc = pickLocationSource() as any;
-          const tokhirgoo = {
-            ...(b.tokhirgoo || {}),
-            // Ensure building has location; prefer existing non-empty, else best available
-            duuregNer:
-              typeof (b?.tokhirgoo as any)?.duuregNer === "string" &&
-              (b?.tokhirgoo as any)?.duuregNer?.trim()
-                ? (b?.tokhirgoo as any)?.duuregNer
-                : (locSrc as any)?.duuregNer || "",
-            districtCode:
-              typeof (b?.tokhirgoo as any)?.districtCode === "string" &&
-              (b?.tokhirgoo as any)?.districtCode?.trim()
-                ? (b?.tokhirgoo as any)?.districtCode
-                : (locSrc as any)?.districtCode || "",
-            horoo: {
-              ner:
-                typeof (b?.tokhirgoo as any)?.horoo?.ner === "string" &&
-                (b?.tokhirgoo as any)?.horoo?.ner?.trim()
-                  ? (b?.tokhirgoo as any)?.horoo?.ner
-                  : (locSrc as any)?.horoo?.ner || "",
-              kod:
-                typeof (b?.tokhirgoo as any)?.horoo?.kod === "string" &&
-                (b?.tokhirgoo as any)?.horoo?.kod?.trim()
-                  ? (b?.tokhirgoo as any)?.horoo?.kod
-                  : (locSrc as any)?.horoo?.kod || "",
-            },
-            // Recompute entrances (орц) as a String count per schema
-            orts: String(ortsNum),
-            davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
-          } as any;
-          // Mark this building as customized because user saved changes for it
-          // so it should no longer be overwritten by org-level updates
-          return { ...b, tokhirgoo };
-        });
+      if (sel) {
+        const sbTok = sel.tokhirgoo || {};
+        const sbU = sbTok.utas ?? sel.utas ?? [];
+        const sbM = sbTok.mail ?? sel.mail ?? [];
+        if (Array.isArray(sbU) && sbU.length > 0) phone = sbU[0];
+        else if (sbU && !Array.isArray(sbU)) phone = sbU;
+        if (Array.isArray(sbM) && sbM.length > 0) mailAddr = sbM[0];
+        else if (sbM && !Array.isArray(sbM)) mailAddr = sbM;
       }
 
-      const payload = {
-        ...(baiguullaga as any),
-        _id: baiguullaga._id,
-        // explicit organization id to ensure server updates the correct org
-        baiguullagiinId: String(baiguullaga._id),
-        barilguud: updatedBarilguud,
-      };
-
-      const res = await updateMethod("baiguullaga", token, payload);
-      if (res?.data) await baiguullagaMutate(res.data, false);
-      await baiguullagaMutate();
-
-      if (name) {
-        openSuccessOverlay("Шинэ барилга нэмэгдлээ");
-        setNewBarilgaNer("");
-        if (res?.data?.barilguud && res.data.barilguud.length > 0) {
-          const added =
-            res.data.barilguud.find((b: any) => b.ner === name) ||
-            res.data.barilguud[res.data.barilguud.length - 1];
-          if (added?._id) setSelectedBuildingId(String(added._id));
-        }
-        // close modal after successful add
-        setIsNewBuildingModalOpen(false);
-      } else {
-        openSuccessOverlay("Барилгын тохиргоо амжилттай хадгалагдлаа");
+      if (!phone) {
+        const orgTok = (serverOrg?.tokhirgoo as any) || {};
+        const orgU = orgTok.utas ?? serverOrg?.utas ?? [];
+        if (Array.isArray(orgU) && orgU.length > 0) phone = orgU[0];
+        else if (orgU && !Array.isArray(orgU)) phone = orgU;
       }
+
+      if (!mailAddr) {
+        const orgTok = (serverOrg?.tokhirgoo as any) || {};
+        const orgM = orgTok.mail ?? serverOrg?.mail ?? [];
+        if (Array.isArray(orgM) && orgM.length > 0) mailAddr = orgM[0];
+        else if (orgM && !Array.isArray(orgM)) mailAddr = orgM;
+      }
+
+      setSukhDugaar(String(phone || ""));
+      setEmail(String(mailAddr || ""));
+      setInitialValues((prev) => ({
+        ...prev,
+        sukhDugaar: String(phone || ""),
+        email: String(mailAddr || ""),
+      }));
     } catch (e) {
-      openErrorOverlay("Тохиргоо хадгалах явцад алдаа гарлаа");
+      // ignore
     }
-  };
+  }, [baiguullaga, barilga, selectedBuildingId]);
 
   const handleSaveEditBuilding = async () => {
     if (!token) {
@@ -1241,7 +1137,117 @@ export default function BarilgiinTokhirgoo() {
     }
   };
 
+  // Handler for creating a new building (used by NewBuildingModal)
+  const handleSaveSettings = async () => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!baiguullaga?._id) {
+      openErrorOverlay("Байгууллагын мэдээлэл олдсонгүй");
+      return;
+    }
+
+    const name = (newBarilgaNer || "").trim();
+    const davCount = Number(davkharCount) || 0;
+    const ortsNum = Number(ortsCount) || 0;
+
+    if (!name) {
+      openErrorOverlay("Барилгын нэр оруулна уу");
+      return;
+    }
+    if (davCount <= 0) {
+      openErrorOverlay("Барилгын давхарын тоо оруулна уу");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const newBuilding: any = {
+        // backend will assign _id; keep minimal required fields
+        ner: name,
+        baiguullagiinId: String(baiguullaga._id),
+        tokhirgoo: {
+          orts: String(ortsNum),
+          davkhar: Array.from({ length: davCount }, (_, i) => String(i + 1)),
+        },
+      };
+
+      const updatedBarilguud = [...(baiguullaga?.barilguud || []), newBuilding];
+
+      const payload = {
+        ...(baiguullaga as any),
+        _id: baiguullaga._id,
+        baiguullagiinId: String(baiguullaga._id),
+        barilguud: updatedBarilguud,
+      } as any;
+
+      const res = await updateMethod("baiguullaga", token, payload);
+
+      if (res?.data) {
+        await baiguullagaMutate(res.data, false);
+        // set the selected building to the newly created one if backend returned an id
+        try {
+          const server = res.data as any;
+          const created = (server.barilguud || []).find(
+            (b: any) =>
+              b.ner === name &&
+              String(b.baiguullagiinId) === String(baiguullaga._id)
+          );
+          if (created && created._id)
+            setSelectedBuildingId(String(created._id));
+        } catch (_) {}
+      }
+
+      // Revalidate to ensure freshest data
+      await baiguullagaMutate();
+
+      openSuccessOverlay("Шинэ барилга амжилттай нэмэгдлээ");
+      setIsNewBuildingModalOpen(false);
+      // clear inputs
+      setNewBarilgaNer("");
+      setOrtsCount("");
+      setDavkharCount("");
+    } catch (e) {
+      aldaaBarigch(e);
+      openErrorOverlay("Шинэ барилга нэмэх явцад алдаа гарлаа");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Functions from UndsenMedeelel
+  const handleDuuregChange = (duuregName: string) => {
+    setState((s) => ({
+      ...s,
+      selectedDuureg: duuregName,
+      selectedDuuregData: {
+        _id: duuregName,
+        ner: duuregName,
+        kod: duuregName,
+      } as Duureg,
+      selectedHoroo: "",
+      selectedHorooData: undefined,
+    }));
+  };
+
+  const handleHorooChange = (horooName: string) => {
+    if (!state.selectedDuureg) {
+      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
+      return;
+    }
+    const horooData = {
+      _id: horooName,
+      ner: horooName,
+      kod: horooName,
+    } as Horoo;
+    setState((s) => ({
+      ...s,
+      selectedHoroo: horooName,
+      selectedHorooData: horooData,
+    }));
+  };
+
   const khadgalakh = async () => {
     if (!token) {
       openErrorOverlay("Нэвтрэх токен олдсонгүй");
@@ -1257,7 +1263,9 @@ export default function BarilgiinTokhirgoo() {
     const hasChanges =
       state.selectedDuureg !== initialValues.selectedDuureg ||
       state.selectedHoroo !== initialValues.selectedHoroo ||
-      sohNer.trim() !== (initialValues.sohNer || "").trim();
+      sohNer.trim() !== (initialValues.sohNer || "").trim() ||
+      (sukhDugaar || "") !== (initialValues.sukhDugaar || "") ||
+      (email || "") !== (initialValues.email || "");
 
     if (!hasChanges) {
       openErrorOverlay("Өөрчлөлт байхгүй байна");
@@ -1271,6 +1279,16 @@ export default function BarilgiinTokhirgoo() {
 
     if (!state.selectedHorooData) {
       openErrorOverlay("Хороо сонго уу");
+      return;
+    }
+
+    // Validate contacts if provided: phone must be exactly 8 digits, email must contain '@'
+    if (sukhDugaar && !/^\d{8}$/.test(sukhDugaar)) {
+      openErrorOverlay("Утас 8 оронтой тоо байх ёстой");
+      return;
+    }
+    if (email && !/@/.test(email)) {
+      openErrorOverlay("Email хаяг зөв байх ёстой (@ агуулагдана)");
       return;
     }
 
@@ -1294,6 +1312,17 @@ export default function BarilgiinTokhirgoo() {
           kod: state.selectedHorooData.kod,
         },
         sohNer: finalSohNer,
+        // persist contact info as arrays per backend shape
+        utas: sukhDugaar
+          ? [sukhDugaar]
+          : (baiguullaga as any)?.tokhirgoo?.utas ||
+            (baiguullaga as any)?.utas ||
+            [],
+        mail: email
+          ? [email]
+          : (baiguullaga as any)?.tokhirgoo?.mail ||
+            (baiguullaga as any)?.mail ||
+            [],
       } as any;
 
       // Update only the selected building's tokhirgoo (do NOT overwrite other buildings)
@@ -1317,6 +1346,22 @@ export default function BarilgiinTokhirgoo() {
 
       // Update organization payload but keep org-level tokhirgoo unchanged
       // (we only want to persist the change to the selected building)
+      // Build org-level tokhirgoo to include contact fields so the
+      // backend will save them against the current organization
+      const orgTokhirgoo = {
+        ...(baiguullaga?.tokhirgoo || {}),
+        utas: sukhDugaar
+          ? [sukhDugaar]
+          : (baiguullaga as any)?.tokhirgoo?.utas ||
+            (baiguullaga as any)?.utas ||
+            [],
+        mail: email
+          ? [email]
+          : (baiguullaga as any)?.tokhirgoo?.mail ||
+            (baiguullaga as any)?.mail ||
+            [],
+      } as any;
+
       const payload = {
         ...(baiguullaga || {}),
         _id: baiguullaga!._id,
@@ -1331,16 +1376,57 @@ export default function BarilgiinTokhirgoo() {
             : false,
         eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
         eBarimtShine: baiguullaga?.eBarimtShine ?? false,
-        // keep baiguullaga.tokhirgoo as-is (do not overwrite org-level defaults)
-        tokhirgoo: baiguullaga?.tokhirgoo,
+        // write updated org-level tokhirgoo (including utas/mail)
+        tokhirgoo: orgTokhirgoo,
+        // also keep top-level utas/mail in sync
+        utas: orgTokhirgoo.utas || [],
+        mail: orgTokhirgoo.mail || [],
         barilguud: newBarilguud,
-      };
+      } as any;
 
       const updated = await updateMethod("baiguullaga", token, payload);
 
       if (updated?.data) {
         // Optimistically update cache with server response
         await baiguullagaMutate(updated.data, false);
+        // Also update local UI state from the server response so contacts show immediately
+        try {
+          const server = updated.data as any;
+          const serverTok = server.tokhirgoo || {};
+          const serverUtas = Array.isArray(serverTok?.utas)
+            ? serverTok.utas
+            : Array.isArray(server?.utas)
+            ? server.utas
+            : serverTok?.utas
+            ? [serverTok.utas]
+            : server?.utas
+            ? [server.utas]
+            : [];
+          const serverMail = Array.isArray(serverTok?.mail)
+            ? serverTok.mail
+            : Array.isArray(server?.mail)
+            ? server.mail
+            : serverTok?.mail
+            ? [serverTok.mail]
+            : server?.mail
+            ? [server.mail]
+            : [];
+          setSukhDugaar(String(serverUtas[0] || ""));
+          setEmail(String(serverMail[0] || ""));
+          // update displayed SÖH name if server provided one
+          if (serverTok?.sohNer) setSohNer(String(serverTok.sohNer));
+          // reflect saved values in initial snapshot
+          setInitialValues((prev) => ({
+            ...prev,
+            sukhDugaar: String(serverUtas[0] || ""),
+            email: String(serverMail[0] || ""),
+            sohNer: String(
+              serverTok?.sohNer || server.ner || prev.sohNer || ""
+            ),
+          }));
+        } catch (e) {
+          // ignore UI-sync errors
+        }
       }
 
       // Show success overlay
@@ -1351,11 +1437,13 @@ export default function BarilgiinTokhirgoo() {
 
       // Removed localStorage persistence for API-backed tokhirgoo
 
-      // Update initial values after successful save
+      // Update initial values after successful save (include contact fields)
       setInitialValues({
         selectedDuureg: state.selectedDuureg || "",
         selectedHoroo: state.selectedHoroo || "",
         sohNer: sohNer || "",
+        sukhDugaar: sukhDugaar || "",
+        email: email || "",
       });
 
       // Stay on the current tab after save
@@ -1376,9 +1464,18 @@ export default function BarilgiinTokhirgoo() {
     return (
       (state.selectedDuureg || "") !== (initialValues.selectedDuureg || "") ||
       (state.selectedHoroo || "") !== (initialValues.selectedHoroo || "") ||
-      (sohNer || "").trim() !== (initialValues.sohNer || "").trim()
+      (sohNer || "").trim() !== (initialValues.sohNer || "").trim() ||
+      (sukhDugaar || "") !== (initialValues.sukhDugaar || "") ||
+      (email || "") !== (initialValues.email || "")
     );
-  }, [state.selectedDuureg, state.selectedHoroo, sohNer, initialValues]);
+  }, [
+    state.selectedDuureg,
+    state.selectedHoroo,
+    sohNer,
+    sukhDugaar,
+    email,
+    initialValues,
+  ]);
 
   // Removed save handler since орц/давхар settings are no longer editable from here
 
@@ -1405,6 +1502,40 @@ export default function BarilgiinTokhirgoo() {
             className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled
           />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="w-full">
+            <label className="block text-sm font-medium text-theme mb-1">
+              Утас
+            </label>
+            <input
+              type="tel"
+              inputMode="numeric"
+              pattern="\d*"
+              maxLength={8}
+              value={sukhDugaar}
+              onChange={(e) => {
+                // Allow only digits and limit to 8 characters
+                const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                setSukhDugaar(digits);
+              }}
+              placeholder="Утас дугаар оруулна уу"
+              className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="w-full">
+            <label className="block text-sm font-medium text-theme mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email хаяг оруулна уу"
+              className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* 1) Дүүрэг */}

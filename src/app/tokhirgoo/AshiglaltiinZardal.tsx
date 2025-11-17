@@ -681,7 +681,7 @@ export default function AshiglaltiinZardluud() {
                             <MNumberInput
                               className="w-36 text-right text-theme"
                               value={currentValue}
-                              disabled
+                              readOnly
                               onChange={(v) =>
                                 setEditedTariffs((prev) => ({
                                   ...prev,
@@ -718,6 +718,29 @@ export default function AshiglaltiinZardluud() {
                       );
                     })}
                 </tbody>
+                <tfoot className="sticky bottom-0 bg-white border-t">
+                  <tr className="font-semibold">
+                    <td colSpan={2} className="py-2 text-right text-theme">
+                      Нийт:
+                    </td>
+                    <td className="py-2 pr-3 text-theme">
+                      {formatNumber(
+                        ashiglaltiinZardluud
+                          .filter((x) => x._id)
+                          .filter((x) =>
+                            filterText.trim() === ""
+                              ? true
+                              : String(x.ner || "")
+                                  .toLowerCase()
+                                  .includes(filterText.toLowerCase())
+                          )
+                          .reduce((sum, item) => sum + item.tariff, 0)
+                      )}{" "}
+                      ₮
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
