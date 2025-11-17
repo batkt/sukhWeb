@@ -629,7 +629,10 @@ export default function AshiglaltiinZardluud() {
       <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
 
-        <MButton className="btn-minimal" onClick={() => openAddModal(false)}>
+        <MButton
+          className="btn-minimal-prime"
+          onClick={() => openAddModal(false)}
+        >
           +
         </MButton>
       </div>
@@ -647,8 +650,8 @@ export default function AshiglaltiinZardluud() {
           <div className="overflow-auto max-h-[250px]">
             <div className="min-w-full inline-block align-middle">
               <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-white z-10">
-                  <tr className="text-left text-slate-500 border-b">
+                <thead className="top-0 z-10">
+                  <tr className="text-center text-slate-500 border-b">
                     <th className="py-2 pr-3">Нэр</th>
                     <th className="py-2 pr-3">Төрөл</th>
                     <th className="py-2 pr-3">Тариф (₮)</th>
@@ -672,20 +675,27 @@ export default function AshiglaltiinZardluud() {
                           : mur.tariff;
                       const changed = currentValue !== mur.tariff;
                       return (
-                        <tr key={mur._id} className="border-b last:border-b-0">
+                        <tr
+                          key={mur._id}
+                          className="border-b last:border-b-0 text-center"
+                        >
                           <td className="py-2 pr-3 text-theme">
                             <div className="font-medium">{mur.ner}</div>
                           </td>
                           <td className="py-2 pr-3 text-theme">{mur.turul}</td>
                           <td className="py-2 pr-3">
-                            <MNumberInput
-                              className="w-36 text-right text-theme"
-                              value={currentValue}
-                              readOnly
-                              onChange={(v) =>
+                            <MTextInput
+                              className="w-36 text-center text-theme mx-auto"
+                              value={formatNumber(currentValue, 0)}
+                              onChange={(e) =>
                                 setEditedTariffs((prev) => ({
                                   ...prev,
-                                  [mur._id!]: Number(v as number),
+                                  [mur._id!]: Number(
+                                    String(e.currentTarget.value).replace(
+                                      /[^0-9.-]/g,
+                                      ""
+                                    )
+                                  ),
                                 }))
                               }
                               rightSection={
@@ -699,7 +709,7 @@ export default function AshiglaltiinZardluud() {
                             )}
                           </td>
                           <td className="py-2">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center gap-2">
                               <Edit
                                 className="text-sm text-blue-500 cursor-pointer"
                                 onClick={() => openEditModal(mur, false)}
@@ -718,25 +728,28 @@ export default function AshiglaltiinZardluud() {
                       );
                     })}
                 </tbody>
-                <tfoot className="sticky bottom-0 bg-white border-t">
+                <tfoot className="bottom-0 border-t">
                   <tr className="font-semibold">
-                    <td colSpan={2} className="py-2 text-right text-theme">
-                      Нийт:
-                    </td>
-                    <td className="py-2 pr-3 text-theme">
-                      {formatNumber(
-                        ashiglaltiinZardluud
-                          .filter((x) => x._id)
-                          .filter((x) =>
-                            filterText.trim() === ""
-                              ? true
-                              : String(x.ner || "")
-                                  .toLowerCase()
-                                  .includes(filterText.toLowerCase())
-                          )
-                          .reduce((sum, item) => sum + item.tariff, 0)
-                      )}{" "}
-                      ₮
+                    <td colSpan={2}></td>
+                    <td className="text-theme">
+                      <div className="flex flex-col items-center">
+                        <span className="text-xs text-slate-500">Нийт:</span>
+                        <span>
+                          {formatNumber(
+                            ashiglaltiinZardluud
+                              .filter((x) => x._id)
+                              .filter((x) =>
+                                filterText.trim() === ""
+                                  ? true
+                                  : String(x.ner || "")
+                                      .toLowerCase()
+                                      .includes(filterText.toLowerCase())
+                              )
+                              .reduce((sum, item) => sum + item.tariff, 0)
+                          )}{" "}
+                          ₮
+                        </span>
+                      </div>
                     </td>
                     <td></td>
                   </tr>
@@ -938,11 +951,20 @@ export default function AshiglaltiinZardluud() {
             <label className="block text-sm font-medium mb-1 text-theme">
               Тариф (₮)
             </label>
-            <MNumberInput
-              value={formData.tariff}
-              onChange={(v) =>
-                setFormData({ ...formData, tariff: Number(v as number) })
+            <MTextInput
+              value={
+                formData.tariff !== undefined && formData.tariff !== null
+                  ? formatNumber(formData.tariff, 0)
+                  : ""
               }
+              onChange={(e) => {
+                const raw = e.currentTarget.value;
+                const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
+                setFormData({
+                  ...formData,
+                  tariff: Number.isFinite(n) ? n : 0,
+                });
+              }}
               placeholder="0"
               className="text-theme"
               rightSection={<span className="text-slate-500 pr-1">₮</span>}
@@ -985,12 +1007,12 @@ export default function AshiglaltiinZardluud() {
           <div className="mt-6 flex justify-end gap-2">
             <MButton
               onClick={() => setIsModalOpen(false)}
-              className="btn-minimal"
+              className="btn-minimal btn-cancel"
             >
               Болих
             </MButton>
             <MButton
-              className="btn-minimal h-11"
+              className="btn-minimal btn-save h-11"
               onClick={handleSave}
               data-modal-primary
             >

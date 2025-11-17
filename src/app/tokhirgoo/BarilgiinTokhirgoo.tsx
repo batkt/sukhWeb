@@ -149,7 +149,7 @@ const EditBuildingModal: React.FC<{
                   setHasUserEdited(true);
                 }}
                 onKeyDown={(e) => e.stopPropagation()}
-                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
+                className="w-28 px-3 py-2 border border-blue-500 rounded-2xl focus:outline-none"
               />
             </div>
 
@@ -174,7 +174,11 @@ const EditBuildingModal: React.FC<{
           </div>
 
           <div className="mt-6 flex justify-end gap-2">
-            <button className="btn-minimal" onClick={onClose} type="button">
+            <button
+              className="btn-minimal btn-cancel"
+              onClick={onClose}
+              type="button"
+            >
               Болих
             </button>
             <button
@@ -1523,6 +1527,23 @@ export default function BarilgiinTokhirgoo() {
               className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+          {/* Save button appears only when changes exist (placed under Дүүрэг/Хороо) */}
+          {isDirty && (
+            <div className="mt-4">
+              <button
+                onClick={khadgalakh}
+                className={`w-full md:w-1/2 mx-auto block bg-blue-600 text-white py-3 rounded-2xl text-lg font-semibold ${
+                  isSaving
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:bg-blue-700"
+                }`}
+                disabled={isSaving}
+                type="button"
+              >
+                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+              </button>
+            </div>
+          )}
 
           <div className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
@@ -1663,19 +1684,7 @@ export default function BarilgiinTokhirgoo() {
 
         {/* Info grid */}
 
-        {/* Single Save button */}
-        <div className="flex justify-end">
-          <button
-            onClick={khadgalakh}
-            className={`btn-minimal btn-save ${
-              !isDirty || isSaving ? "opacity-60 cursor-not-allowed" : ""
-            }`}
-            // allow saving for branch-level edits as well
-            disabled={!isDirty || isSaving}
-          >
-            {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-          </button>
-        </div>
+        {/* removed bottom save duplicate - primary save now under Дүүрэг/Хороо */}
         {/* New building modal (portal) */}
         <NewBuildingModal
           open={isNewBuildingModalOpen}

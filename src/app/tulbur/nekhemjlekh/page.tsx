@@ -69,13 +69,20 @@ const PrintStyles = () => (
       }
 
       .invoice-modal {
-        position: absolute !important;
+        position: static !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
         background: white !important;
+        page-break-after: avoid;
+        page-break-before: avoid;
+        page-break-inside: avoid;
+      }
+
+      .invoice-modal * {
+        color: black !important;
       }
 
       .no-print {
@@ -100,6 +107,23 @@ const PrintStyles = () => (
       .invoice-modal td,
       .invoice-modal th {
         font-size: 11pt !important;
+      }
+
+      .invoice-modal table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .invoice-modal th,
+      .invoice-modal td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+      }
+
+      .invoice-modal th {
+        background-color: #f0f0f0;
+        font-weight: bold;
       }
     }
   `}</style>
@@ -541,336 +565,314 @@ const InvoiceModal = ({
 
   return (
     <ModalPortal>
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <PrintStyles />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
-              onClick={onClose}
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto"
-              onClick={(e) => e.stopPropagation()}
-              ref={containerRef}
-              role="dialog"
-              aria-modal="true"
+      <PrintStyles />
+      <div
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
+        onClick={onClose}
+      />
+      <div
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto"
+        onClick={(e) => e.stopPropagation()}
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="invoice-modal h-full flex flex-col">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
+            <div className="flex items-center gap-4">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  Үйлчилгээний нэхэмжлэх
+                </h2>
+                <p className="text-sm text-slate-500">
+                  Нэхэмжлэхийн дугаар: {invoiceNumber}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => onClose()}
+              className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+              aria-label="Хаах"
+              title="Хаах"
             >
-              <div className="invoice-modal h-full flex flex-col">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <h2 className="text-xl font-bold text-slate-800">
-                        Үйлчилгээний нэхэмжлэх
-                      </h2>
-                      <p className="text-sm text-slate-500">
-                        Нэхэмжлэхийн дугаар: {invoiceNumber}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => onClose()}
-                    className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
-                    aria-label="Хаах"
-                    title="Хаах"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      aria-hidden="true"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-slate-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
+            <div className="grid grid-cols-2 gap-6 print-break">
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 mb-3">
+                  {baiguullaga?.ner}
+                </h3>
+                <div className="space-y-2 text-sm text-slate-600">
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Имэйл:</span>{" "}
+                    {(() => {
+                      const mailFromTokhirgoo = Array.isArray(
+                        (baiguullaga as any)?.tokhirgoo?.mail
+                      )
+                        ? (baiguullaga as any).tokhirgoo.mail[0]
+                        : undefined;
+                      const mailFromOrg = Array.isArray(
+                        (baiguullaga as any)?.mail
+                      )
+                        ? (baiguullaga as any).mail[0]
+                        : undefined;
+                      const mailLegacy = (baiguullaga as any)?.email;
+                      return (
+                        mailFromTokhirgoo || mailFromOrg || mailLegacy || "-"
+                      );
+                    })()}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Утас:</span>{" "}
+                    {(() => {
+                      const utasFromTokhirgoo = Array.isArray(
+                        (baiguullaga as any)?.tokhirgoo?.utas
+                      )
+                        ? (baiguullaga as any).tokhirgoo.utas[0]
+                        : undefined;
+                      const utasFromOrg = Array.isArray(
+                        (baiguullaga as any)?.utas
+                      )
+                        ? (baiguullaga as any).utas[0]
+                        : undefined;
+                      const utasLegacy = (baiguullaga as any)?.utas;
+                      return (
+                        utasFromTokhirgoo || utasFromOrg || utasLegacy || "-"
+                      );
+                    })()}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="font-medium">Хаяг:</span>{" "}
+                    {baiguullaga?.khayag || "-"}
+                  </p>
                 </div>
-
-                <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
-                  <div className="grid grid-cols-2 gap-6 print-break">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-800 mb-3">
-                        {baiguullaga?.ner}
-                      </h3>
-                      <div className="space-y-2 text-sm text-slate-600">
-                        <p className="flex items-center gap-2">
-                          <span className="font-medium">Имэйл:</span>{" "}
-                          {(() => {
-                            const mailFromTokhirgoo = Array.isArray(
-                              (baiguullaga as any)?.tokhirgoo?.mail
-                            )
-                              ? (baiguullaga as any).tokhirgoo.mail[0]
-                              : undefined;
-                            const mailFromOrg = Array.isArray(
-                              (baiguullaga as any)?.mail
-                            )
-                              ? (baiguullaga as any).mail[0]
-                              : undefined;
-                            const mailLegacy = (baiguullaga as any)?.email;
-                            return (
-                              mailFromTokhirgoo ||
-                              mailFromOrg ||
-                              mailLegacy ||
-                              "-"
-                            );
-                          })()}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <span className="font-medium">Утас:</span>{" "}
-                          {(() => {
-                            const utasFromTokhirgoo = Array.isArray(
-                              (baiguullaga as any)?.tokhirgoo?.utas
-                            )
-                              ? (baiguullaga as any).tokhirgoo.utas[0]
-                              : undefined;
-                            const utasFromOrg = Array.isArray(
-                              (baiguullaga as any)?.utas
-                            )
-                              ? (baiguullaga as any).utas[0]
-                              : undefined;
-                            const utasLegacy = (baiguullaga as any)?.utas;
-                            return (
-                              utasFromTokhirgoo ||
-                              utasFromOrg ||
-                              utasLegacy ||
-                              "-"
-                            );
-                          })()}
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <span className="font-medium">Хаяг:</span>{" "}
-                          {baiguullaga?.khayag || "-"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-2">
-                      <div className="inline-block text-left bg-transparent p-3 rounded-xl">
-                        <p className="text-sm text-slate-600">
-                          <span className="font-medium">Огноо:</span>{" "}
-                          {currentDate}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          <span className="font-medium">төлөх огноо:</span>{" "}
-                          {formatDate(
-                            nekhemjlekhData?.tulukhOgnoo ||
-                              gereeData?.tulukhOgnoo ||
-                              currentDate
-                          )}
-                        </p>
-                        <p className="text-sm text-slate-600 mt-2">
-                          <span className="font-medium">Банк:</span>{" "}
-                          {baiguullaga?.bankNer || "-"}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          <span className="font-medium">Данс:</span>{" "}
-                          {baiguullaga?.dans || "-"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-100 rounded-xl p-4 print-break">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div>
-                        <h3 className="font-medium text-slate-800">
-                          {resident?.ovog} {resident?.ner}
-                        </h3>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="space-y-1">
-                        <p>
-                          <span className="text-slate-500">Тоот:</span>{" "}
-                          {resident?.toot}
-                        </p>
-                        <p>
-                          <span className="text-slate-500">Гэрээ №:</span>{" "}
-                          {gereeData?.gereeniiDugaar}
-                        </p>
-                      </div>
-                      <div className="space-y-1">
-                        <p>
-                          <span className="text-slate-500">Утас:</span>{" "}
-                          {resident?.utas}
-                        </p>
-                        <p>
-                          <span className="text-slate-500">Огноо:</span>{" "}
-                          {formatDate(gereeData?.gereeniiOgnoo)}
-                        </p>
-                      </div>
-                    </div>
-                    {/* Initial balance / note (if provided on invoice medeelel) */}
-                    <div className="mt-3">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-slate-500">
-                            Өмнөх сарын үлдэгдэл:
-                          </span>{" "}
-                          <span className="font-medium">
-                            {gereeData?.ekhniiUldegdel != null
-                              ? formatCurrency(Number(gereeData.ekhniiUldegdel))
-                              : nekhemjlekhData?.medeelel?.ekhniiUldegdel !=
-                                null
-                              ? formatCurrency(
-                                  Number(
-                                    nekhemjlekhData.medeelel.ekhniiUldegdel
-                                  )
-                                )
-                              : nekhemjlekhData?.ekhniiUldegdel != null
-                              ? formatCurrency(
-                                  Number(nekhemjlekhData.ekhniiUldegdel)
-                                )
-                              : "-"}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-slate-500">
-                            Өмнөх сарын үлдэгдэл (үсгээр):
-                          </span>{" "}
-                          <div className="font-medium">
-                            {gereeData?.ekhniiUldegdelUsgeer ||
-                              nekhemjlekhData?.medeelel?.ekhniiUldegdelUsgeer ||
-                              nekhemjlekhData?.ekhniiUldegdelUsgeer ||
-                              "-"}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="py-2 px-3 text-left text-slate-600">
-                            Зардал
-                          </th>
-                          <th className="py-2 px-3 text-right text-slate-600">
-                            Тариф
-                          </th>
-                          <th className="py-2 px-3 text-right text-slate-600">
-                            Нийт
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {invoiceRows.map((row: any) => (
-                          <tr key={row._id}>
-                            <td
-                              className={`py-2 px-3 ${
-                                row.discount
-                                  ? "text-green-700 font-medium italic"
-                                  : ""
-                              }`}
-                            >
-                              {row.ner}
-                            </td>
-                            <td
-                              className={`py-2 px-3 text-right ${
-                                row.discount
-                                  ? "text-green-700 font-semibold line-through"
-                                  : ""
-                              }`}
-                            >
-                              {row.tariff == null
-                                ? "-"
-                                : formatNumber(Number(row.tariff))}
-                              ₮
-                            </td>
-                            <td
-                              className={`py-2 px-3 text-right ${
-                                row.discount
-                                  ? "text-green-700 font-semibold line-through"
-                                  : ""
-                              }`}
-                            >
-                              {row.tariff == null
-                                ? "-"
-                                : formatNumber(Number(row.tariff))}
-                              ₮
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                      <tfoot className="bg-gray-50">
-                        <tr>
-                          <td colSpan={2} className="py-2 px-3 font-medium">
-                            Нийт дүн:
-                          </td>
-                          <td className="py-2 px-3 text-right font-medium">
-                            {formatNumber(totalSum)} ₮
-                          </td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-4 print-break">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-slate-500">
-                            Төлбөрийн төлөв:
-                          </span>
-                          <span
-                            className={`badge-status ${
-                              paymentStatusLabel === "Төлсөн"
-                                ? "badge-paid"
-                                : paymentStatusLabel === "Төлөөгүй" ||
-                                  paymentStatusLabel === "Хугацаа хэтэрсэн"
-                                ? "badge-unpaid"
-                                : "badge-unknown"
-                            }`}
-                          >
-                            {paymentStatusLabel}
-                          </span>
-                        </div>
-                        <span className="text-sm text-slate-500">
-                          Нийт дүн:{" "}
-                          <span className="font-bold text-slate-900">
-                            {formatNumber(totalSum)} ₮
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+              </div>
+              <div className="text-right space-y-2">
+                <div className="inline-block text-left bg-transparent p-3 rounded-xl">
+                  <p className="text-sm text-slate-600">
+                    <span className="font-medium">Огноо:</span> {currentDate}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    <span className="font-medium">төлөх огноо:</span>{" "}
+                    {formatDate(
+                      nekhemjlekhData?.tulukhOgnoo ||
+                        gereeData?.tulukhOgnoo ||
+                        currentDate
+                    )}
+                  </p>
+                  <p className="text-sm text-slate-600 mt-2">
+                    <span className="font-medium">Банк:</span>{" "}
+                    {baiguullaga?.bankNer || "-"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    <span className="font-medium">Данс:</span>{" "}
+                    {baiguullaga?.dans || "-"}
+                  </p>
                 </div>
+              </div>
+            </div>
 
-                <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
-                  <div className="flex justify-end gap-3">
-                    <button
-                      onClick={onClose}
-                      className="btn-minimal btn-cancel"
-                      data-modal-primary
-                    >
-                      Хаах
-                    </button>
-                    <button
-                      onClick={() => window.print()}
-                      className="btn-minimal btn-print"
-                      data-prevent-enter
-                    >
-                      Хэвлэх
-                    </button>
+            <div className="border border-blue-400 rounded-xl p-4 print-break">
+              <div className="flex items-center gap-3 mb-3">
+                <div>
+                  <h3 className="font-medium text-slate-800">
+                    {resident?.ovog} {resident?.ner}
+                  </h3>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p>
+                    <span className="text-slate-500">Тоот:</span>{" "}
+                    {resident?.toot}
+                  </p>
+                  <p>
+                    <span className="text-slate-500">Гэрээ №:</span>{" "}
+                    {gereeData?.gereeniiDugaar}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p>
+                    <span className="text-slate-500">Утас:</span>{" "}
+                    {resident?.utas}
+                  </p>
+                  <p>
+                    <span className="text-slate-500">Огноо:</span>{" "}
+                    {formatDate(gereeData?.gereeniiOgnoo)}
+                  </p>
+                </div>
+              </div>
+              {/* Initial balance / note (if provided on invoice medeelel) */}
+              <div className="mt-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-500">
+                      Өмнөх сарын үлдэгдэл:
+                    </span>{" "}
+                    <span className="font-medium">
+                      {gereeData?.ekhniiUldegdel != null
+                        ? formatCurrency(Number(gereeData.ekhniiUldegdel))
+                        : nekhemjlekhData?.medeelel?.ekhniiUldegdel != null
+                        ? formatCurrency(
+                            Number(nekhemjlekhData.medeelel.ekhniiUldegdel)
+                          )
+                        : nekhemjlekhData?.ekhniiUldegdel != null
+                        ? formatCurrency(Number(nekhemjlekhData.ekhniiUldegdel))
+                        : "-"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">
+                      Өмнөх сарын үлдэгдэл (үсгээр):
+                    </span>{" "}
+                    <div className="font-medium">
+                      {gereeData?.ekhniiUldegdelUsgeer ||
+                        nekhemjlekhData?.medeelel?.ekhniiUldegdelUsgeer ||
+                        nekhemjlekhData?.ekhniiUldegdelUsgeer ||
+                        "-"}
+                    </div>
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+            </div>
+
+            <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="py-2 px-3 text-left text-slate-600">
+                      Зардал
+                    </th>
+                    <th className="py-2 px-3 text-right text-slate-600">
+                      Тариф
+                    </th>
+                    <th className="py-2 px-3 text-right text-slate-600">
+                      Нийт
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {invoiceRows.map((row: any) => (
+                    <tr key={row._id}>
+                      <td
+                        className={`py-2 px-3 ${
+                          row.discount
+                            ? "text-green-700 font-medium italic"
+                            : ""
+                        }`}
+                      >
+                        {row.ner}
+                      </td>
+                      <td
+                        className={`py-2 px-3 text-right ${
+                          row.discount
+                            ? "text-green-700 font-semibold line-through"
+                            : ""
+                        }`}
+                      >
+                        {row.tariff == null
+                          ? "-"
+                          : formatNumber(Number(row.tariff))}
+                        ₮
+                      </td>
+                      <td
+                        className={`py-2 px-3 text-right ${
+                          row.discount
+                            ? "text-green-700 font-semibold line-through"
+                            : ""
+                        }`}
+                      >
+                        {row.tariff == null
+                          ? "-"
+                          : formatNumber(Number(row.tariff))}
+                        ₮
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-gray-50">
+                  <tr>
+                    <td colSpan={2} className="py-2 px-3 font-medium">
+                      Нийт дүн:
+                    </td>
+                    <td className="py-2 px-3 text-right font-medium">
+                      {formatNumber(totalSum)} ₮
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div className="border-t border-gray-100 pt-4 print-break">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {paymentStatusLabel !== "Тодорхойгүй" && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-slate-500">
+                        Төлбөрийн төлөв:
+                      </span>
+                      <span
+                        className={`badge-status ${
+                          paymentStatusLabel === "Төлсөн"
+                            ? "badge-paid"
+                            : paymentStatusLabel === "Төлөөгүй" ||
+                              paymentStatusLabel === "Хугацаа хэтэрсэн"
+                            ? "badge-unpaid"
+                            : "badge-unknown"
+                        }`}
+                      >
+                        {paymentStatusLabel}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm text-slate-500">
+                    Нийт дүн:{" "}
+                    <span className="font-bold text-slate-900">
+                      {formatNumber(totalSum)} ₮
+                    </span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={onClose}
+                className="btn-minimal btn-cancel"
+                data-modal-primary
+              >
+                Хаах
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="btn-minimal btn-print"
+                data-prevent-enter
+              >
+                Хэвлэх
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </ModalPortal>
   );
 };
@@ -879,7 +881,7 @@ export default function InvoicingZardluud() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
-    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй">
+    Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "">
   >({});
   const [dateByResidentId, setDateByResidentId] = useState<
     Record<string, string>
@@ -1066,10 +1068,8 @@ export default function InvoicingZardluud() {
             byResident[rid] = { label, ts, date: dateStr };
         });
 
-        const out: Record<
-          string,
-          "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
-        > = {};
+        const out: Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн"> =
+          {};
         Object.entries(byResident).forEach(([rid, v]) => {
           const l = v.label as any;
           out[rid] =
@@ -1496,7 +1496,6 @@ export default function InvoicingZardluud() {
                   { value: "Төлсөн", label: "Төлсөн" },
                   { value: "Хугацаа хэтэрсэн", label: "Хугацаа хэтэрсэн" },
                   { value: "Төлөөгүй", label: "Төлөөгүй" },
-                  { value: "Тодорхойгүй", label: "Тодорхойгүй" },
                 ]}
                 placeholder="Бүх төлөв"
                 className="h-[40px] w-[140px]"
