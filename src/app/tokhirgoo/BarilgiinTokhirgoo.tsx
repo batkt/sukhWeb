@@ -16,6 +16,7 @@ import {
 import { aldaaBarigch } from "../../../lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
 import { useAuth } from "@/lib/useAuth";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -117,6 +118,7 @@ const EditBuildingModal: React.FC<{
 
           <div className="flex flex-col sm:flex-row gap-3">
             <input
+              id="barilgiin-edit-name"
               type="text"
               value={editBarilgaNer}
               onChange={(e) => {
@@ -186,6 +188,7 @@ const EditBuildingModal: React.FC<{
                 isSaving ? "opacity-60 cursor-not-allowed" : ""
               }`}
               onClick={handleSaveEditBuilding}
+              id="barilgiin-edit-save"
               disabled={isSaving}
               type="button"
             >
@@ -323,6 +326,7 @@ const NewBuildingModal: React.FC<{
                 isSaving ? "opacity-60 cursor-not-allowed" : ""
               }`}
               onClick={handleSaveSettings}
+              id="barilgiin-new-save"
               disabled={isSaving}
               type="button"
             >
@@ -1481,6 +1485,85 @@ export default function BarilgiinTokhirgoo() {
     initialValues,
   ]);
 
+  // Register tour steps for BarilgiinTokhirgoo
+  const barilgaTourSteps: DriverStep[] = useMemo(() => {
+    return [
+      {
+        element: "#barilgiin-panel",
+        popover: {
+          title: "Барилгын тохиргоо",
+          description:
+            "Эндээс СӨХ / барилгын үндсэн тохиргоонууд (СӨХ нэр, хаяг, холбоо) болон барилгуудыг удирдна.",
+          side: "bottom",
+        },
+      },
+      {
+        element: "#barilgiin-soh-name",
+        popover: {
+          title: "СӨХ-ийн нэр",
+          description: "СӨХ (удирдлагын нэр) өөрчлөх боломжтой талбар.",
+          side: "right",
+        },
+      },
+      
+      {
+        element: "#barilgiin-phone",
+        popover: {
+          title: "Утас",
+          description: "СӨХ-ийн холбоо барих утасны дугаар.",
+          side: "left",
+        },
+      },
+      {
+        element: "#barilgiin-email",
+        popover: {
+          title: "Email",
+          description: "СӨХ-ийн холбогдох и-мэйл хаяг.",
+          side: "left",
+        },
+      },
+      {
+        element: "#barilgiin-duureg",
+        popover: {
+          title: "Дүүрэг",
+          description: "Барилгын дүүрэг/хаягийг эндээс сонгон тохируулна.",
+          side: "right",
+        },
+      },
+      {
+        element: "#barilgiin-horoo",
+        popover: {
+          title: "Хороо",
+          description: "Дүүрэг сонгосны дараа хороо(г) сонгоно.",
+          side: "right",
+        },
+      },
+      {
+        element: "#barilgiin-buildings-list",
+        popover: {
+          title: "Бүртгэлтэй барилгууд",
+          description:
+            "Эндээс байгууллагад хамаарах барилгуудын жагсаалтыг харах, засах, устгах боломжтой.",
+          side: "top",
+        },
+      },
+      {
+        element: "#barilgiin-new-building-btn",
+        popover: {
+          title: "Шинэ барилга нэмэх",
+          description:
+            "Шинэ барилга нэмэх товч. Барилга нэмэхдээ орц/давхарын тоог оруулна.",
+          side: "left",
+        },
+      },
+    ];
+  }, []);
+
+  useRegisterTourSteps("/tokhirgoo/BarilgiinTokhirgoo", barilgaTourSteps);
+  // Also register under the parent pathname so the tour is available
+  // when the browser URL is `/tokhirgoo` (parent page renders this child).
+  useRegisterTourSteps("/tokhirgoo", barilgaTourSteps);
+
   // Removed save handler since орц/давхар settings are no longer editable from here
 
   if (!isInit) {
@@ -1492,13 +1575,17 @@ export default function BarilgiinTokhirgoo() {
   }
 
   return (
-    <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[650px]">
+    <div
+      id="barilgiin-panel"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[650px]"
+    >
       <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar">
         <div className="w-full">
           <label className="block text-sm font-medium text-theme mb-1">
             СӨХ-ийн нэр
           </label>
           <input
+            id="barilgiin-soh-name"
             type="text"
             value={sohNer}
             onChange={(e) => setSohNer(e.target.value)}
@@ -1508,7 +1595,7 @@ export default function BarilgiinTokhirgoo() {
           />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="w-full">
+          <div id="barilgiin-phone" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Утас
             </label>
@@ -1545,7 +1632,7 @@ export default function BarilgiinTokhirgoo() {
             </div>
           )}
 
-          <div className="w-full">
+          <div id="barilgiin-email" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Email
             </label>
@@ -1559,8 +1646,8 @@ export default function BarilgiinTokhirgoo() {
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* 1) Дүүрэг */}
-          <div className="w-full">
+    
+          <div id="barilgiin-duureg" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Дүүрэг
             </label>
@@ -1580,7 +1667,7 @@ export default function BarilgiinTokhirgoo() {
             />
           </div>
 
-          <div className="w-full">
+          <div id="barilgiin-horoo" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Хороо
             </label>
@@ -1613,6 +1700,7 @@ export default function BarilgiinTokhirgoo() {
                 Бүртгэлтэй барилгууд (Байр)
               </h3>
               <button
+                id="barilgiin-new-building-btn"
                 onClick={openNewBuildingModal}
                 className="btn-minimal btn-save"
                 title="Шинэ барилга нэмэх"
@@ -1623,7 +1711,10 @@ export default function BarilgiinTokhirgoo() {
                 Нийт: {orgBuildings.length}
               </div> */}
             </div>
-            <ul className="divide-y max-h-64 overflow-y-auto">
+            <ul
+              id="barilgiin-buildings-list"
+              className="divide-y max-h-64 overflow-y-auto"
+            >
               {orgBuildings.map((b: any, index: number) => {
                 return (
                   <li
@@ -1632,6 +1723,7 @@ export default function BarilgiinTokhirgoo() {
                   >
                     <div className="flex items-center gap-3">
                       <div
+                        id={`barilgiin-select-${b._id}`}
                         onClick={() => setSelectedBuildingId(String(b._id))}
                         className="cursor-pointer text-left px-2 py-1 hover:underline"
                       >
@@ -1642,6 +1734,7 @@ export default function BarilgiinTokhirgoo() {
                     {/* Edit/Delete are available for all buildings */}
                     <div className="flex items-center gap-2">
                       <button
+                        id={`barilgiin-edit-${b._id}`}
                         onClick={() => handleEditBuilding(String(b._id))}
                         className="btn-minimal btn-edit p-2"
                         title="Засах"
@@ -1649,6 +1742,7 @@ export default function BarilgiinTokhirgoo() {
                         <Edit className="w-4 h-4 text-blue-700" />
                       </button>
                       <button
+                        id={`barilgiin-delete-${b._id}`}
                         onClick={() => handleDeleteBuilding(String(b._id))}
                         className="btn-minimal btn-delete p-2"
                         title="Устгах"

@@ -81,9 +81,31 @@ export default function GolContent({ children }: GolContentProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
 
+  // Refs to detect login transition and to trigger selection when buildings load
+  const prevTokenRef = useRef<string | null | undefined>(null);
+  const justLoggedInRef = useRef(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Detect token transition from falsy -> truthy (user just logged in)
+  useEffect(() => {
+    if (!prevTokenRef.current && token) {
+      justLoggedInRef.current = true;
+    }
+    prevTokenRef.current = token;
+  }, [token]);
+
+  // When buildings are available after a login, auto-select the first one.
+  useEffect(() => {
+    if (justLoggedInRef.current) {
+      if (filteredBuildings.length > 0) {
+        setSelectedBuildingId(filteredBuildings[0]._id);
+        justLoggedInRef.current = false;
+      }
+    }
+  }, [filteredBuildings, setSelectedBuildingId]);
 
   useEffect(() => {
     setOpenSubmenuIndex(null);

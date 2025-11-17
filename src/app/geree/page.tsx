@@ -2290,6 +2290,19 @@ export default function Geree() {
       if (input) input.value = "";
       return;
     }
+    // Only allow the unit/template file for importing units. Reject other
+    // templates (e.g., resident templates) on the client side to avoid
+    // accidental uploads.
+    try {
+      const filename = String(file.name || "").toLowerCase();
+      if (!/toot/.test(filename)) {
+        openErrorOverlay(
+          "Зөв Excel загвар (Тоот бүртгэлийн загвар) оруулна уу."
+        );
+        if (input) input.value = "";
+        return;
+      }
+    } catch (_) {}
     try {
       setIsUploadingResidents(true);
       const form = new FormData();
@@ -2519,10 +2532,15 @@ export default function Geree() {
   const handleCreateResident = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate basic fields
-    if (!isValidName(newResident.ovog) || !isValidName(newResident.ner)) {
+    // Validate basic fields: `ner` (name) is required; `ovog` (surname) may
+    // be left blank. If provided, `ovog` must be a valid name.
+    if (
+      !isValidName(newResident.ner) ||
+      (String(newResident.ovog || "").trim() !== "" &&
+        !isValidName(newResident.ovog))
+    ) {
       openErrorOverlay(
-        "Овог, Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+        "Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой). Овог хоосон байж болно."
       );
       return;
     }

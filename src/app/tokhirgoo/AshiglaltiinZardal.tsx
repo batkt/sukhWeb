@@ -16,6 +16,7 @@ import {
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
 import formatNumber from "../../../tools/function/formatNumber";
 import { useAuth } from "@/lib/useAuth";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { fetchWithDomainFallback } from "../../../lib/uilchilgee";
@@ -510,119 +511,183 @@ export default function AshiglaltiinZardluud() {
     }
   };
 
-  return (
-    <div className="neu-panel">
-      <div className="box">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-          <div className="font-medium text-theme flex-1">Нэхэмжлэх илгээх</div>
-          <div className="flex items-center gap-2">
-            <MSwitch
-              checked={invoiceActive}
-              onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
-            />
-          </div>
-        </div>
-        {invoiceActive && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5">
-            <div className="w-full sm:w-auto">
-              <label className="block text-sm font-medium text-theme mb-1">
-                Өдөр (сар бүр)
-              </label>
-              <MNumberInput
-                min={1}
-                max={31}
-                placeholder="Нэхэмжлэх өдөр"
-                value={invoiceDay ?? undefined}
-                onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                className="w-full sm:w-40"
-              />
-            </div>
-            <MButton
-              className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
-              onClick={saveInvoiceSchedule}
-            >
-              Хадгалах
-            </MButton>
-          </div>
-        )}
-      </div>
+  // Register tour steps for AshiglaltiinZardal
+  const zardalTourSteps: DriverStep[] = React.useMemo(() => {
+    return [
+      {
+        element: "#zardal-panel",
+        popover: {
+          title: "Ашиглалтын зардал",
+          description:
+            "Зардлын жагсаалт болон лифт/нэхэмжлэхийн тохиргоонууд энд байна.",
+          side: "bottom",
+        },
+      },
+      {
+        element: "#zardal-invoice-settings",
+        popover: {
+          title: "Нэхэмжлэх илгээх",
+          description: "Нэхэмжлэх илгээх өдрийг тохируулж, идэвхжүүлэх/хаах.",
+          side: "right",
+        },
+      },
+      {
+        element: "#zardal-lift-settings",
+        popover: {
+          title: "Лифт тохиргоо",
+          description:
+            "Лифт хөнгөлөлтийн давхаруудыг оруулах болон хадгалах хэсэг.",
+          side: "right",
+        },
+      },
+      {
+        element: "#zardal-add-btn",
+        popover: {
+          title: "Зардал нэмэх",
+          description: "Тогтмол зардал эсвэл үйлчилгээ нэмэх товч.",
+          side: "left",
+        },
+      },
+      {
+        element: "#zardal-list",
+        popover: {
+          title: "Зардлын жагсаалт",
+          description: "Хадгалагдсан тогтмол зардлуудын жагсаалт.",
+          side: "top",
+        },
+      },
+    ];
+  }, []);
 
-      <div className="box">
-        <div className="flex flex-col gap-3 p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <div className="text-theme font-medium">Лифт хөнгөлөлт</div>
+  useRegisterTourSteps("/tokhirgoo/zardal", zardalTourSteps);
+  // Also register these steps under the parent `/tokhirgoo` pathname
+  // so they show up when the page is visited at `/tokhirgoo`.
+  useRegisterTourSteps("/tokhirgoo", zardalTourSteps);
+
+  return (
+    <div id="zardal-panel" className="neu-panel">
+      <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-3">
+        {/* Invoice box */}
+        <div id="zardal-invoice-box" className="box flex-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+            <div className="font-medium text-theme flex-1">
+              Нэхэмжлэх илгээх
+            </div>
             <div className="flex items-center gap-2">
               <MSwitch
-                checked={liftEnabled}
-                onChange={(event) => {
-                  const enabled = event.currentTarget.checked;
-                  setLiftEnabled(enabled);
-                  if (!enabled) {
-                    saveLiftSettings(null);
-                  }
-                }}
+                checked={invoiceActive}
+                onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
               />
             </div>
           </div>
-
-          {liftEnabled && (
-            <>
-              <div className="flex flex-col gap-1">
-                <label className="block text-xs text-theme">
-                  Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
+          {invoiceActive && (
+            <div
+              id="zardal-invoice-settings"
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5"
+            >
+              <div className="w-full sm:w-auto">
+                <label className="block text-sm font-medium text-theme mb-1">
+                  Өдөр (сар бүр)
                 </label>
-
-                <div className="flex items-center gap-2">
-                  <MTextInput
-                    placeholder="1-3,5,7 эсвэл 1,2,3"
-                    value={liftBulkInput}
-                    onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
-                    className="w-40"
-                  />
-
-                  <MButton
-                    className="btn-minimal btn-save"
-                    onClick={handleSaveFloors}
-                  >
-                    Хадгалах
-                  </MButton>
-
-                  <MButton
-                    className="btn-minimal"
-                    color="red"
-                    onClick={handleDeleteAllFloors}
-                    title="Бүгдийг устгах"
-                  >
-                    <Trash2 color="red" />
-                  </MButton>
-                </div>
+                <MNumberInput
+                  min={1}
+                  max={31}
+                  placeholder="Нэхэмжлэх өдөр"
+                  value={invoiceDay ?? undefined}
+                  onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                  className="w-full sm:w-40"
+                />
               </div>
-
-              <div className="flex flex-wrap">
-                {liftFloors && liftFloors.length > 0 ? (
-                  liftFloors.map((f) => (
-                    <div
-                      key={f}
-                      className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1 rounded-md border"
-                    >
-                      <span className="text-theme">{f}</span>
-                      <button
-                        className="p-1 text-red-500 hover:bg-red-50 rounded"
-                        onClick={() => handleDeleteFloor(f)}
-                        aria-label={`Удалить ${f}`}
-                      >
-                        <Trash2 color="red" size={14} />
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-sm text-slate-500">
-                    Хадгалагдсан давхаргүй
-                  </div>
-                )}
-              </div>
-            </>
+              <MButton
+                id="zardal-invoice-save"
+                className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
+                onClick={saveInvoiceSchedule}
+              >
+                Хадгалах
+              </MButton>
+            </div>
           )}
+        </div>
+
+        {/* Lift box */}
+        <div id="zardal-lift-settings" className="box flex-1">
+          <div className="flex flex-col gap-3 p-4 sm:p-5">
+            <div className="flex items-center justify-between">
+              <div className="text-theme font-medium mb-1">Лифт хөнгөлөлт</div>
+              <div className="flex items-center gap-2">
+                <MSwitch
+                  checked={liftEnabled}
+                  onChange={(event) => {
+                    const enabled = event.currentTarget.checked;
+                    setLiftEnabled(enabled);
+                    if (!enabled) {
+                      saveLiftSettings(null);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {liftEnabled && (
+              <>
+                <div className="flex flex-col gap-1">
+                  <label className="block text-xs text-theme">
+                    Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                    <MTextInput
+                      placeholder="1-3,5,7 эсвэл 1,2,3"
+                      value={liftBulkInput}
+                      onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
+                      className="w-40"
+                    />
+
+                    <MButton
+                      id="zardal-lift-save"
+                      className="btn-minimal btn-save"
+                      onClick={handleSaveFloors}
+                    >
+                      Хадгалах
+                    </MButton>
+
+                    <MButton
+                      className="btn-minimal"
+                      color="red"
+                      onClick={handleDeleteAllFloors}
+                      title="Бүгдийг устгах"
+                    >
+                      <Trash2 color="red" />
+                    </MButton>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap">
+                  {liftFloors && liftFloors.length > 0 ? (
+                    liftFloors.map((f) => (
+                      <div
+                        key={f}
+                        className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1 rounded-md border"
+                      >
+                        <span className="text-theme">{f}</span>
+                        <button
+                          className="p-1 text-red-500 hover:bg-red-50 rounded"
+                          onClick={() => handleDeleteFloor(f)}
+                          aria-label={`Удалить ${f}`}
+                        >
+                          <Trash2 color="red" size={14} />
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-slate-500">
+                      Хадгалагдсан давхаргүй
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -630,6 +695,7 @@ export default function AshiglaltiinZardluud() {
         <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
 
         <MButton
+          id="zardal-add-btn"
           className="btn-minimal-prime"
           onClick={() => openAddModal(false)}
         >
@@ -646,8 +712,8 @@ export default function AshiglaltiinZardluud() {
           Тогтмол зардал байхгүй байна
         </div>
       ) : (
-        <div className="px-4 sm:px-5 pb-4 flex flex-col">
-          <div className="overflow-auto max-h-[250px]">
+        <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
+          <div className="overflow-auto max-h-[350px]">
             <div className="min-w-full inline-block align-middle">
               <table className="w-full text-sm">
                 <thead className="top-0 z-10">

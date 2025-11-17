@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useAuth } from "@/lib/useAuth";
+import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee from "../../../lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
@@ -354,6 +355,68 @@ export default function EbarimtTokhirgoo() {
     setDistrictCode(district);
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
+  // Register tour steps for eBarimt tokhirgoo
+  const ebarimtTourSteps: DriverStep[] = useMemo(() => {
+    return [
+      {
+        element: "#ebarimt-panel",
+        popover: {
+          title: "И-Баримт тохиргоо",
+          description:
+            "И-Баримт системтэй холбох тохиргоонууд (TIN, дүүрэг, хороо, автоматаар илгээх) энд байна.",
+          side: "bottom",
+        },
+      },
+      {
+        element: "#ebarimt-tin",
+        popover: {
+          title: "Merchant TIN",
+          description:
+            "И-баримт системд ашиглах татвар төлөгчийн дугаар (TIN).",
+          side: "right",
+        },
+      },
+      {
+        element: "#ebarimt-duureg",
+        popover: {
+          title: "Дүүрэг",
+          description: "И-баримт-д ашиглах дүүрэг.",
+          side: "right",
+        },
+      },
+      {
+        element: "#ebarimt-horoo",
+        popover: {
+          title: "Хороо",
+          description: "Дүүрэг-с сонгосон хороо.",
+          side: "right",
+        },
+      },
+      {
+        element: "#ebarimt-autosend",
+        popover: {
+          title: "Автоматаар илгээх",
+          description:
+            "Нэхэмжлэх/баримтыг хэрэглэгчийн нэрийн өмнөөс автоматаар илгээх тохиргоо.",
+          side: "left",
+        },
+      },
+      {
+        element: "#ebarimt-save-btn",
+        popover: {
+          title: "Хадгалах",
+          description: "Тохиргоог серверт хадгалах.",
+          side: "left",
+        },
+      },
+    ];
+  }, [ebAutoSend, ebAshiglakh, duuregNer, horooNer]);
+
+  useRegisterTourSteps("/tokhirgoo/ebarimt", ebarimtTourSteps);
+  // Also register under the parent pathname so the tour appears when
+  // the URL is `/tokhirgoo` (parent page renders this child component).
+  useRegisterTourSteps("/tokhirgoo", ebarimtTourSteps);
+
   const paramsKey = useMemo(() => {
     if (!token || !ajiltan?.baiguullagiinId) return null;
     const [s, e] = ognoo || [];
@@ -398,7 +461,7 @@ export default function EbarimtTokhirgoo() {
   const t = (s: string) => s;
 
   return (
-    <div className="neu-panel">
+    <div id="ebarimt-panel" className="neu-panel">
       <div className="p-4 h-full">
         {isLoading ? (
           <div className="p-8 text-center text-theme/70">
@@ -414,6 +477,7 @@ export default function EbarimtTokhirgoo() {
                     Татвар төлөгчийн дугаар (TIN)
                   </label>
                   <input
+                    id="ebarimt-tin"
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -427,7 +491,10 @@ export default function EbarimtTokhirgoo() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-theme mb-1">
+                    <label
+                      className="block text-sm font-medium text-theme mb-1"
+                      id="ebarimt-duureg"
+                    >
                       Дүүрэг
                     </label>
                     <TusgaiZagvar
@@ -453,7 +520,10 @@ export default function EbarimtTokhirgoo() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-theme mb-1">
+                    <label
+                      className="block text-sm font-medium text-theme mb-1"
+                      id="ebarimt-horoo"
+                    >
                       Хороо
                     </label>
                     <TusgaiZagvar
@@ -518,6 +588,7 @@ export default function EbarimtTokhirgoo() {
               </div>
               <div className="ml-auto">
                 <Switch
+                  id="ebarimt-autosend"
                   checked={ebAutoSend}
                   onChange={(e) => setEbAutoSend(e.target.checked)}
                   aria-label="И-Баримт автоматаар илгээх эсэх"
@@ -649,6 +720,7 @@ export default function EbarimtTokhirgoo() {
                     hideSpinner();
                   }
                 }}
+                id="ebarimt-save-btn"
                 className="btn-minimal btn-save"
               >
                 {t("Хадгалах")}
