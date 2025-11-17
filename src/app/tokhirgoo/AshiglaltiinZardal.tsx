@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   Modal as MModal,
   Tooltip as MTooltip,
-  Switch as MSwitch,
   NumberInput as MNumberInput,
   Badge,
   Button as MButton,
@@ -111,6 +110,10 @@ export default function AshiglaltiinZardluud() {
   const [filterText, setFilterText] = useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ZardalItem | null>(null);
+  const [confirmDeleteFloorOpen, setConfirmDeleteFloorOpen] = useState(false);
+  const [floorToDeleteConfirm, setFloorToDeleteConfirm] = useState<
+    string | null
+  >(null);
 
   const fetchInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
@@ -565,266 +568,296 @@ export default function AshiglaltiinZardluud() {
   useRegisterTourSteps("/tokhirgoo", zardalTourSteps);
 
   return (
-    <div id="zardal-panel" className="neu-panel">
-      <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-3">
-        {/* Invoice box */}
-        <div id="zardal-invoice-box" className="box flex-1">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-            <div className="font-medium text-theme flex-1">
-              Нэхэмжлэх илгээх
-            </div>
-            <div className="flex items-center gap-2">
-              <MSwitch
-                checked={invoiceActive}
-                onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
-              />
-            </div>
-          </div>
-          {invoiceActive && (
-            <div
-              id="zardal-invoice-settings"
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5"
-            >
-              <div className="w-full sm:w-auto">
-                <label className="block text-sm font-medium text-theme mb-1">
-                  Өдөр (сар бүр)
-                </label>
-                <MNumberInput
-                  min={1}
-                  max={31}
-                  placeholder="Нэхэмжлэх өдөр"
-                  value={invoiceDay ?? undefined}
-                  onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                  className="w-full sm:w-40"
-                />
+    <div
+      id="barilgiin-panel"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
+    >
+      <div
+        id="zardal-panel"
+        className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-3">
+          {/* Invoice box */}
+          <div id="zardal-invoice-box" className="box flex-1">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
+              <div className="font-medium text-theme flex-1">
+                Нэхэмжлэх илгээх
               </div>
-              <MButton
-                id="zardal-invoice-save"
-                className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
-                onClick={saveInvoiceSchedule}
-              >
-                Хадгалах
-              </MButton>
-            </div>
-          )}
-        </div>
-
-        {/* Lift box */}
-        <div id="zardal-lift-settings" className="box flex-1">
-          <div className="flex flex-col gap-3 p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <div className="text-theme font-medium mb-1">Лифт хөнгөлөлт</div>
               <div className="flex items-center gap-2">
-                <MSwitch
-                  checked={liftEnabled}
-                  onChange={(event) => {
-                    const enabled = event.currentTarget.checked;
-                    setLiftEnabled(enabled);
-                    if (!enabled) {
-                      saveLiftSettings(null);
-                    }
-                  }}
-                />
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={invoiceActive}
+                    onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                    aria-label="Нэхэмжлэх идэвхжүүлэх"
+                  />
+                  <span className="slider" />
+                </label>
               </div>
             </div>
-
-            {liftEnabled && (
-              <>
-                <div className="flex flex-col gap-1">
-                  <label className="block text-xs text-theme">
-                    Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
+            {invoiceActive && (
+              <div
+                id="zardal-invoice-settings"
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5"
+              >
+                <div className="w-full sm:w-auto">
+                  <label className="block text-sm font-medium text-theme mb-1">
+                    Өдөр (сар бүр)
                   </label>
-
-                  <div className="flex items-center gap-2">
-                    <MTextInput
-                      placeholder="1-3,5,7 эсвэл 1,2,3"
-                      value={liftBulkInput}
-                      onChange={(e) => setLiftBulkInput(e.currentTarget.value)}
-                      className="w-40"
-                    />
-
-                    <MButton
-                      id="zardal-lift-save"
-                      className="btn-minimal btn-save"
-                      onClick={handleSaveFloors}
-                    >
-                      Хадгалах
-                    </MButton>
-
-                    <MButton
-                      className="btn-minimal"
-                      color="red"
-                      onClick={handleDeleteAllFloors}
-                      title="Бүгдийг устгах"
-                    >
-                      <Trash2 color="red" />
-                    </MButton>
-                  </div>
+                  <MNumberInput
+                    min={1}
+                    max={31}
+                    placeholder="Нэхэмжлэх өдөр"
+                    value={invoiceDay ?? undefined}
+                    onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                    className="w-full sm:w-40"
+                  />
                 </div>
-
-                <div className="flex flex-wrap">
-                  {liftFloors && liftFloors.length > 0 ? (
-                    liftFloors.map((f) => (
-                      <div
-                        key={f}
-                        className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1 rounded-md border"
-                      >
-                        <span className="text-theme">{f}</span>
-                        <button
-                          className="p-1 text-red-500 hover:bg-red-50 rounded"
-                          onClick={() => handleDeleteFloor(f)}
-                          aria-label={`Удалить ${f}`}
-                        >
-                          <Trash2 color="red" size={14} />
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-sm text-slate-500">
-                      Хадгалагдсан давхаргүй
-                    </div>
-                  )}
-                </div>
-              </>
+                <MButton
+                  id="zardal-invoice-save"
+                  className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
+                  onClick={saveInvoiceSchedule}
+                >
+                  Хадгалах
+                </MButton>
+              </div>
             )}
           </div>
-        </div>
-      </div>
 
-      <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
+          {/* Lift box */}
+          <div id="zardal-lift-settings" className="box flex-1">
+            <div className="flex flex-col gap-3 p-4 sm:p-5">
+              <div className="flex items-center justify-between">
+                <div className="text-theme font-medium mb-1">
+                  Лифт хөнгөлөлт
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="switch">
+                    <input
+                      type="checkbox"
+                      checked={liftEnabled}
+                      onChange={(event) => {
+                        const enabled = event.currentTarget.checked;
+                        setLiftEnabled(enabled);
+                        if (!enabled) {
+                          saveLiftSettings(null);
+                        }
+                      }}
+                      aria-label="Лифт идэвхжүүлэх"
+                    />
+                    <span className="slider" />
+                  </label>
+                </div>
+              </div>
 
-        <MButton
-          id="zardal-add-btn"
-          className="btn-minimal-prime"
-          onClick={() => openAddModal(false)}
-        >
-          +
-        </MButton>
-      </div>
+              {liftEnabled && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="block text-xs text-theme">
+                      Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
+                    </label>
 
-      {isLoadingAshiglaltiin ? (
-        <div className="flex justify-center items-center p-10">
-          <Loader />
-        </div>
-      ) : ashiglaltiinZardluud.length === 0 ? (
-        <div className="p-8 text-center text-theme">
-          Тогтмол зардал байхгүй байна
-        </div>
-      ) : (
-        <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
-          <div className="overflow-auto max-h-[350px]">
-            <div className="min-w-full inline-block align-middle">
-              <table className="w-full text-sm">
-                <thead className="top-0 z-10">
-                  <tr className="text-center text-slate-500 border-b">
-                    <th className="py-2 pr-3">Нэр</th>
-                    <th className="py-2 pr-3">Төрөл</th>
-                    <th className="py-2 pr-3">Тариф (₮)</th>
-                    <th className="py-2">Үйлдэл</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ashiglaltiinZardluud
-                    .filter((x) => x._id)
-                    .filter((x) =>
-                      filterText.trim() === ""
-                        ? true
-                        : String(x.ner || "")
-                            .toLowerCase()
-                            .includes(filterText.toLowerCase())
-                    )
-                    .map((mur) => {
-                      const currentValue =
-                        editedTariffs[mur._id!] !== undefined
-                          ? editedTariffs[mur._id!]
-                          : mur.tariff;
-                      const changed = currentValue !== mur.tariff;
-                      return (
-                        <tr
-                          key={mur._id}
-                          className="border-b last:border-b-0 text-center"
+                    <div className="flex items-center gap-2">
+                      <MTextInput
+                        placeholder="1-3,5,7 эсвэл 1,2,3"
+                        value={liftBulkInput}
+                        onChange={(e) =>
+                          setLiftBulkInput(e.currentTarget.value)
+                        }
+                        className="w-40"
+                      />
+
+                      <MButton
+                        id="zardal-lift-save"
+                        className="btn-minimal btn-save"
+                        onClick={handleSaveFloors}
+                      >
+                        Хадгалах
+                      </MButton>
+
+                      <MButton
+                        className="btn-minimal"
+                        color="red"
+                        onClick={handleDeleteAllFloors}
+                        title="Бүгдийг устгах"
+                      >
+                        <Trash2 color="red" />
+                      </MButton>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {liftFloors && liftFloors.length > 0 ? (
+                      liftFloors.map((f) => (
+                        <div
+                          key={f}
+                          className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1.5 rounded-2xl border border-gray-200 shadow-sm"
                         >
-                          <td className="py-2 pr-3 text-theme">
-                            <div className="font-medium">{mur.ner}</div>
-                          </td>
-                          <td className="py-2 pr-3 text-theme">{mur.turul}</td>
-                          <td className="py-2 pr-3">
-                            <MTextInput
-                              className="w-36 text-center text-theme mx-auto"
-                              value={formatNumber(currentValue, 0)}
-                              onChange={(e) =>
-                                setEditedTariffs((prev) => ({
-                                  ...prev,
-                                  [mur._id!]: Number(
-                                    String(e.currentTarget.value).replace(
-                                      /[^0-9.-]/g,
-                                      ""
-                                    )
-                                  ),
-                                }))
-                              }
-                              rightSection={
-                                <span className="text-slate-500 pr-1">₮</span>
-                              }
-                            />
-                            {changed && (
-                              <span className="text-xs text-amber-600 ml-2">
-                                Өөрчлөгдсөн
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-2">
-                            <div className="flex items-center justify-center gap-2">
-                              <Edit
-                                className="text-sm text-blue-500 cursor-pointer"
-                                onClick={() => openEditModal(mur, false)}
-                              />
-                              <Trash2
-                                className="text-sm text-red-500 cursor-pointer"
-                                color="red"
-                                onClick={() => {
-                                  setItemToDelete(mur);
-                                  setDeleteModalOpen(true);
-                                }}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-                <tfoot className="bottom-0 border-t">
-                  <tr className="font-semibold">
-                    <td colSpan={2}></td>
-                    <td className="text-theme">
-                      <div className="flex flex-col items-center">
-                        <span className="text-xs text-slate-500">Нийт:</span>
-                        <span>
-                          {formatNumber(
-                            ashiglaltiinZardluud
-                              .filter((x) => x._id)
-                              .filter((x) =>
-                                filterText.trim() === ""
-                                  ? true
-                                  : String(x.ner || "")
-                                      .toLowerCase()
-                                      .includes(filterText.toLowerCase())
-                              )
-                              .reduce((sum, item) => sum + item.tariff, 0)
-                          )}{" "}
-                          ₮
-                        </span>
+                          <span className="text-theme text-sm">{f}</span>
+                          <button
+                            className="w-6 h-6 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full"
+                            onClick={() => {
+                              setFloorToDeleteConfirm(f);
+                              setConfirmDeleteFloorOpen(true);
+                            }}
+                            aria-label={`Давхарыг устгах ${f}`}
+                            title="Устгах"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-slate-500">
+                        Хадгалагдсан давхаргүй
                       </div>
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* <div className="mt-4 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
+
+          <button
+            id="zardal-add-btn"
+            type="button"
+            className="cssbuttons-io-button"
+            onClick={() => openAddModal(false)}
+          >
+            +
+          </button>
+        </div>
+
+        {isLoadingAshiglaltiin ? (
+          <div className="flex justify-center items-center p-10">
+            <Loader />
+          </div>
+        ) : ashiglaltiinZardluud.length === 0 ? (
+          <div className="p-8 text-center text-theme">
+            Тогтмол зардал байхгүй байна
+          </div>
+        ) : (
+          <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
+            <div className="overflow-auto max-h-[350px]">
+              <div className="min-w-full inline-block align-middle">
+                <table className="w-full text-sm">
+                  <thead className="top-0 z-10">
+                    <tr className="text-center text-slate-500 border-b">
+                      <th className="py-2 pr-3">Нэр</th>
+                      <th className="py-2 pr-3">Төрөл</th>
+                      <th className="py-2 pr-3">Тариф (₮)</th>
+                      <th className="py-2">Үйлдэл</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ashiglaltiinZardluud
+                      .filter((x) => x._id)
+                      .filter((x) =>
+                        filterText.trim() === ""
+                          ? true
+                          : String(x.ner || "")
+                              .toLowerCase()
+                              .includes(filterText.toLowerCase())
+                      )
+                      .map((mur) => {
+                        const currentValue =
+                          editedTariffs[mur._id!] !== undefined
+                            ? editedTariffs[mur._id!]
+                            : mur.tariff;
+                        const changed = currentValue !== mur.tariff;
+                        return (
+                          <tr
+                            key={mur._id}
+                            className="border-b last:border-b-0 text-left"
+                          >
+                            <td className="py-2 pr-3 text-theme">
+                              <div className="font-medium">{mur.ner}</div>
+                            </td>
+
+                            <td className="py-2 pr-3 text-theme">
+                              {mur.turul}
+                            </td>
+
+                            <td className="py-2 pr-3">
+                              <MTextInput
+                                className="w-36 text-center text-theme mx-auto"
+                                value={formatNumber(currentValue, 0)}
+                                onChange={(e) =>
+                                  setEditedTariffs((prev) => ({
+                                    ...prev,
+                                    [mur._id!]: Number(
+                                      String(e.currentTarget.value).replace(
+                                        /[^0-9.-]/g,
+                                        ""
+                                      )
+                                    ),
+                                  }))
+                                }
+                                rightSection={
+                                  <span className="text-slate-500 pr-1">₮</span>
+                                }
+                              />
+                              {changed && (
+                                <span className="text-xs text-amber-600 ml-2">
+                                  Өөрчлөгдсөн
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2">
+                              <div className="flex items-center justify-center gap-2">
+                                <Edit
+                                  className="text-sm text-blue-500 cursor-pointer"
+                                  onClick={() => openEditModal(mur, false)}
+                                />
+                                <Trash2
+                                  className="text-sm text-red-500 cursor-pointer"
+                                  color="red"
+                                  onClick={() => {
+                                    setItemToDelete(mur);
+                                    setDeleteModalOpen(true);
+                                  }}
+                                />
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                  <tfoot className="bottom-0 border-t">
+                    <tr className="font-semibold">
+                      <td colSpan={2}></td>
+                      <td className="text-theme">
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-slate-500">Нийт:</span>
+                          <span>
+                            {formatNumber(
+                              ashiglaltiinZardluud
+                                .filter((x) => x._id)
+                                .filter((x) =>
+                                  filterText.trim() === ""
+                                    ? true
+                                    : String(x.ner || "")
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase())
+                                )
+                                .reduce((sum, item) => sum + item.tariff, 0)
+                            )}{" "}
+                            ₮
+                          </span>
+                        </div>
+                      </td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* <div className="mt-4 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <div className="text-theme flex-1">
               {(() => {
                 const itemsById = new Map(
@@ -856,188 +889,242 @@ export default function AshiglaltiinZardluud() {
               </MButton>
             </div>
           </div> */}
-        </div>
-      )}
-
-      <MModal
-        title="Устгах уу?"
-        opened={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        classNames={{
-          content: "modal-surface modal-responsive",
-          header:
-            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-          title: "text-theme font-semibold",
-          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-        }}
-        overlayProps={{ opacity: 0.5, blur: 6 }}
-        centered
-        size="sm"
-      >
-        <div className="space-y-4 mt-4">
-          <p className="text-theme">
-            Та "{itemToDelete?.ner}" зардал устгахдаа итгэлтэй байна уу?
-          </p>
-          <div className="flex justify-end gap-2">
-            <MButton
-              onClick={() => setDeleteModalOpen(false)}
-              className="btn-minimal"
-            >
-              Болих
-            </MButton>
-            <MButton
-              color="red"
-              onClick={handleDeleteConfirm}
-              className="btn-minimal btn-cancel"
-            >
-              Устгах
-            </MButton>
           </div>
-        </div>
-      </MModal>
+        )}
 
-      <MModal
-        title="Бүгдийг устгах уу?"
-        opened={liftDeleteAllOpen}
-        onClose={() => setLiftDeleteAllOpen(false)}
-        classNames={{
-          content: "modal-surface modal-responsive",
-          header:
-            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-          title: "text-theme font-semibold",
-          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-        }}
-        overlayProps={{ opacity: 0.5, blur: 6 }}
-        centered
-        size="sm"
-      >
-        <div className="space-y-4 mt-4">
-          <p className="text-theme">
-            Та бүх давхарыг устгах гэдэгт итгэлтэй байна уу?
-          </p>
-          <div className="flex justify-end gap-2">
-            <MButton
-              onClick={() => setLiftDeleteAllOpen(false)}
-              className="btn-minimal"
-            >
-              Болих
-            </MButton>
-            <MButton
-              color="red"
-              onClick={async () => {
-                setLiftDeleteAllOpen(false);
-                try {
-                  if (liftShalgayaId && token) {
-                    await deleteMethod("liftShalgaya", token, liftShalgayaId);
-                  } else {
+        <MModal
+          title="Устгах уу?"
+          opened={deleteModalOpen}
+          onClose={() => setDeleteModalOpen(false)}
+          classNames={{
+            content: "modal-surface modal-responsive",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.5, blur: 6 }}
+          centered
+          size="sm"
+        >
+          <div className="space-y-4 mt-4">
+            <p className="text-theme">
+              Та "{itemToDelete?.ner}" зардал устгахдаа итгэлтэй байна уу?
+            </p>
+            <div className="flex justify-end gap-2">
+              <MButton
+                onClick={() => setDeleteModalOpen(false)}
+                className="btn-minimal"
+              >
+                Болих
+              </MButton>
+              <MButton
+                color="red"
+                onClick={handleDeleteConfirm}
+                className="btn-minimal btn-cancel"
+              >
+                Устгах
+              </MButton>
+            </div>
+          </div>
+        </MModal>
+
+        <MModal
+          title="Бүгдийг устгах уу?"
+          opened={liftDeleteAllOpen}
+          onClose={() => setLiftDeleteAllOpen(false)}
+          classNames={{
+            content: "modal-surface modal-responsive",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.5, blur: 6 }}
+          centered
+          size="sm"
+        >
+          <div className="space-y-4 mt-4">
+            <p className="text-theme">
+              Та бүх давхарыг устгах гэдэгт итгэлтэй байна уу?
+            </p>
+            <div className="flex justify-end gap-2">
+              <MButton
+                onClick={() => setLiftDeleteAllOpen(false)}
+                className="btn-minimal"
+              >
+                Болих
+              </MButton>
+              <MButton
+                color="red"
+                onClick={async () => {
+                  setLiftDeleteAllOpen(false);
+                  try {
+                    if (liftShalgayaId && token) {
+                      await deleteMethod("liftShalgaya", token, liftShalgayaId);
+                    } else {
+                      await saveLiftSettings(null);
+                    }
+                  } catch (e) {
+                    // fallback
                     await saveLiftSettings(null);
                   }
-                } catch (e) {
-                  // fallback
-                  await saveLiftSettings(null);
+                  await fetchLiftFloors();
+                }}
+                className="btn-minimal btn-cancel"
+              >
+                Устгах
+              </MButton>
+            </div>
+          </div>
+        </MModal>
+
+        {/* Small confirmation modal for deleting a single floor */}
+        <MModal
+          title="Давхарыг устгах уу?"
+          opened={confirmDeleteFloorOpen}
+          onClose={() => {
+            setConfirmDeleteFloorOpen(false);
+            setFloorToDeleteConfirm(null);
+          }}
+          classNames={{
+            content: "modal-surface modal-responsive max-w-sm",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.6, blur: 6 }}
+          centered
+          size="xs"
+        >
+          <div className="space-y-4 mt-2">
+            <p className="text-theme">
+              Та "{floorToDeleteConfirm}" давхарыг устгахдаа итгэлтэй байна уу?
+              Энэ үйлдэл буцаагдахгүй.
+            </p>
+            <div className="flex justify-end gap-2">
+              <MButton
+                onClick={() => {
+                  setConfirmDeleteFloorOpen(false);
+                  setFloorToDeleteConfirm(null);
+                }}
+                className="btn-minimal"
+              >
+                Үгүй
+              </MButton>
+              <MButton
+                color="red"
+                onClick={async () => {
+                  const f = floorToDeleteConfirm;
+                  setConfirmDeleteFloorOpen(false);
+                  setFloorToDeleteConfirm(null);
+                  if (f) await handleDeleteFloor(f);
+                }}
+                className="btn-minimal btn-cancel"
+              >
+                Тийм
+              </MButton>
+            </div>
+          </div>
+        </MModal>
+
+        <MModal
+          title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
+          opened={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          classNames={{
+            content: "modal-surface modal-responsive",
+            header:
+              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+            title: "text-theme font-semibold",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+          }}
+          overlayProps={{ opacity: 0.5, blur: 6 }}
+          centered
+        >
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Зардлын нэр
+              </label>
+              <MTextInput
+                value={formData.ner}
+                onChange={(e) =>
+                  setFormData({ ...formData, ner: e.currentTarget.value })
                 }
-                await fetchLiftFloors();
-              }}
-              className="btn-minimal btn-cancel"
-            >
-              Устгах
-            </MButton>
-          </div>
-        </div>
-      </MModal>
+                placeholder="Зардлын нэр оруулах"
+                className="text-sm text-theme"
+              />
+            </div>
 
-      <MModal
-        title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
-        opened={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        classNames={{
-          content: "modal-surface modal-responsive",
-          header:
-            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-          title: "text-theme font-semibold",
-          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-        }}
-        overlayProps={{ opacity: 0.5, blur: 6 }}
-        centered
-      >
-        <div className="space-y-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Зардлын нэр
-            </label>
-            <MTextInput
-              value={formData.ner}
-              onChange={(e) =>
-                setFormData({ ...formData, ner: e.currentTarget.value })
-              }
-              placeholder="Зардлын нэр оруулах"
-              className="text-sm text-theme"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Төрөл
+              </label>
+              <MSelect
+                value={formData.turul}
+                onChange={(value) =>
+                  setFormData({ ...formData, turul: value ?? "" })
+                }
+                className="w-full text-theme"
+                data={expenseTypes.map((type) => ({
+                  label: type,
+                  value: type,
+                }))}
+                placeholder="Сонгох"
+                searchable
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Төрөл
-            </label>
-            <MSelect
-              value={formData.turul}
-              onChange={(value) =>
-                setFormData({ ...formData, turul: value ?? "" })
-              }
-              className="w-full text-theme"
-              data={expenseTypes.map((type) => ({
-                label: type,
-                value: type,
-              }))}
-              placeholder="Сонгох"
-              searchable
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Зардлын төрөл
+              </label>
+              <MSelect
+                value={formData.lift ?? undefined}
+                onChange={(value) =>
+                  setFormData({ ...formData, lift: (value as string) ?? null })
+                }
+                className="w-full text-theme"
+                data={[
+                  { label: "Лифт", value: "Лифт" },
+                  { label: "Энгийн", value: "Энгийн" },
+                ]}
+                placeholder="Сонгох (Лифт)"
+                searchable={false}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Зардлын төрөл
-            </label>
-            <MSelect
-              value={formData.lift ?? undefined}
-              onChange={(value) =>
-                setFormData({ ...formData, lift: (value as string) ?? null })
-              }
-              className="w-full text-theme"
-              data={[
-                { label: "Лифт", value: "Лифт" },
-                { label: "Энгийн", value: "Энгийн" },
-              ]}
-              placeholder="Сонгох (Лифт)"
-              searchable={false}
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Тариф (₮)
+              </label>
+              <MTextInput
+                value={
+                  formData.tariff !== undefined && formData.tariff !== null
+                    ? formatNumber(formData.tariff, 0)
+                    : ""
+                }
+                onChange={(e) => {
+                  const raw = e.currentTarget.value;
+                  const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
+                  setFormData({
+                    ...formData,
+                    tariff: Number.isFinite(n) ? n : 0,
+                  });
+                }}
+                placeholder="0"
+                className="text-theme"
+                rightSection={<span className="text-slate-500 pr-1">₮</span>}
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Тариф (₮)
-            </label>
-            <MTextInput
-              value={
-                formData.tariff !== undefined && formData.tariff !== null
-                  ? formatNumber(formData.tariff, 0)
-                  : ""
-              }
-              onChange={(e) => {
-                const raw = e.currentTarget.value;
-                const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
-                setFormData({
-                  ...formData,
-                  tariff: Number.isFinite(n) ? n : 0,
-                });
-              }}
-              placeholder="0"
-              className="text-theme"
-              rightSection={<span className="text-slate-500 pr-1">₮</span>}
-            />
-          </div>
-
-          {/* <div>
+            {/* <div>
             <label className="block text-sm font-medium mb-1 text-theme">
               Суурь хураамж
             </label>
@@ -1055,7 +1142,7 @@ export default function AshiglaltiinZardluud() {
             />
           </div> */}
 
-          {/* <div className="flex items-center">
+            {/* <div className="flex items-center">
             <input
               type="checkbox"
               checked={formData.nuatBodokhEsekh}
@@ -1070,23 +1157,24 @@ export default function AshiglaltiinZardluud() {
             />
             <label className="text-sm font-medium text-theme">НӨАТ бодох</label>
           </div> */}
-          <div className="mt-6 flex justify-end gap-2">
-            <MButton
-              onClick={() => setIsModalOpen(false)}
-              className="btn-minimal btn-cancel"
-            >
-              Болих
-            </MButton>
-            <MButton
-              className="btn-minimal btn-save h-11"
-              onClick={handleSave}
-              data-modal-primary
-            >
-              Хадгалах
-            </MButton>
+            <div className="mt-6 flex justify-end gap-2">
+              <MButton
+                onClick={() => setIsModalOpen(false)}
+                className="btn-minimal btn-cancel"
+              >
+                Болих
+              </MButton>
+              <MButton
+                className="btn-minimal btn-save h-11"
+                onClick={handleSave}
+                data-modal-primary
+              >
+                Хадгалах
+              </MButton>
+            </div>
           </div>
-        </div>
-      </MModal>
+        </MModal>
+      </div>
     </div>
   );
 }

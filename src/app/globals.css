@@ -1,4 +1,194 @@
 /* iOS 26 Glassy Minimal Button - works across all themes */
+/* From Uiverse.io by MuhammadHasann */
+.toggle-cont {
+  --primary: #54a8fc;
+  --light: #d9d9d9;
+  --dark: #121212;
+  --gray: #414344;
+
+  position: relative;
+  z-index: 10;
+
+  width: fit-content;
+  height: 50px;
+
+  border-radius: 9999px;
+}
+
+.toggle-cont .toggle-input {
+  display: none;
+}
+
+.toggle-cont .toggle-label {
+  --gap: 5px;
+  --width: 50px;
+
+  cursor: pointer;
+
+  position: relative;
+  display: inline-block;
+
+  padding: 0.5rem;
+  width: calc((var(--width) + var(--gap)) * 2);
+  height: 100%;
+  background-color: var(--dark);
+
+  border: 1px solid #777777;
+  border-bottom: 0;
+
+  border-radius: 9999px;
+  box-sizing: content-box;
+  transition: all 0.3s ease-in-out;
+}
+.toggle-label::before {
+  content: "";
+
+  position: absolute;
+  z-index: -10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: calc(100% + 1.5rem);
+  height: calc(100% + 1.5rem);
+  background-color: var(--gray);
+
+  border: 1px solid #777777;
+  border-bottom: 0;
+  border-radius: 9999px;
+
+  transition: all 0.3s ease-in-out;
+}
+.toggle-label::after {
+  content: "";
+
+  position: absolute;
+  z-index: -10;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(
+    circle at 50% -100%,
+    rgb(58, 155, 252) 0%,
+    rgba(12, 12, 12, 1) 80%
+  );
+
+  border-radius: 9999px;
+}
+
+.toggle-cont .toggle-label .cont-icon {
+  position: relative;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  position: relative;
+  width: var(--width);
+  height: 50px;
+  background-image: radial-gradient(
+    circle at 50% 0%,
+    #666666 0%,
+    var(--gray) 100%
+  );
+
+  border: 1px solid #aaaaaa;
+  border-bottom: 0;
+  border-radius: 9999px;
+  box-shadow: inset 0 -0.15rem 0.15rem var(--primary),
+    inset 0 0 0.5rem 0.75rem var(--second);
+
+  transition: transform 0.3s ease-in-out;
+}
+
+.cont-icon {
+  overflow: clip;
+  position: relative;
+}
+
+.cont-icon .sparkle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+
+  display: block;
+
+  width: calc(var(--width) * 1px);
+  aspect-ratio: 1;
+  background-color: var(--light);
+
+  border-radius: 50%;
+  transform-origin: 50% 50%;
+  rotate: calc(1deg * var(--deg));
+  transform: translate(-50%, -50%);
+  animation: sparkle calc(100s / var(--duration)) linear
+    calc(0s / var(--duration)) infinite;
+}
+
+@keyframes sparkle {
+  to {
+    width: calc(var(--width) * 0.5px);
+    transform: translate(2000%, -50%);
+  }
+}
+
+.cont-icon .icon {
+  width: 1.1rem;
+  fill: var(--light);
+}
+
+.toggle-cont:has(.toggle-input:checked) {
+  --checked: true;
+}
+
+@container style(--checked: true) {
+  .toggle-cont .toggle-label {
+    background-color: #41434400;
+
+    border: 1px solid #3d6970;
+    border-bottom: 0;
+  }
+
+  .toggle-cont .toggle-label::before {
+    box-shadow: 0 1rem 2.5rem -2rem #0080ff;
+  }
+
+  .toggle-cont .toggle-label .cont-icon {
+    overflow: visible;
+
+    background-image: radial-gradient(
+      circle at 50% 0%,
+      #045ab1 0%,
+      var(--primary) 100%
+    );
+
+    border: 1px solid var(--primary);
+    border-bottom: 0;
+
+    transform: translateX(calc((var(--gap) * 2) + 100%)) rotate(-225deg);
+  }
+
+  .toggle-cont .toggle-label .cont-icon .sparkle {
+    z-index: -10;
+
+    width: calc(var(--width) * 1.5px);
+    background-color: #acacac;
+
+    animation: sparkle calc(100s / var(--duration)) linear
+      calc(10s / var(--duration)) infinite;
+  }
+
+  @keyframes sparkle {
+    to {
+      width: calc(var(--width) * 1px);
+      transform: translate(5000%, -50%);
+    }
+  }
+}
+
 .btn-minimal {
   position: relative;
   border-radius: 0.75rem;
@@ -63,6 +253,44 @@
       color-mix(in oklch, var(--glass-shadow), transparent 40%),
     0 2px 8px color-mix(in oklch, var(--glass-shadow), transparent 60%),
     inset 0 1px 0 color-mix(in oklch, var(--glass-highlight), transparent 50%);
+}
+/* From Uiverse.io by catraco — adapted to follow theme accent */
+.cssbuttons-io-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px; /* slightly smaller */
+  padding: 0.35em 1em; /* more compact */
+  color: white;
+  /* Use theme accent so button color follows current theme */
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklch, var(--tab-accent, var(--primary, #10b981)), white 18%),
+    var(--tab-accent, var(--primary, #10b981))
+  );
+  border: none;
+  outline: none;
+  border-bottom: 2px solid
+    color-mix(in oklch, var(--tab-accent, var(--primary, #0b6fb0)), black 12%);
+  box-shadow: 0 0.35em 0.35em -0.28em rgba(0, 0, 0, 0.45);
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 180ms ease, filter 180ms ease, box-shadow 180ms ease;
+}
+
+.cssbuttons-io-button:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.cssbuttons-io-button:active {
+  transition: 120ms;
+  transform: translateY(0) scale(0.995) rotate(-2deg);
 }
 @import "tailwindcss";
 .scrollable::-webkit-scrollbar {
@@ -2191,6 +2419,69 @@ html[data-mode="dark"]:not([data-theme]),
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.14);
 }
+.btn-minimal-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+
+  /* Glassy neomorphism background */
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.6)
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  color: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  cursor: pointer;
+
+  /* Neomorphism shadows - both inset and outer */
+  box-shadow: 
+    /* Outer glow */ 0 4px 16px rgba(59, 130, 246, 0.12),
+    /* Light source top-left */ -4px -4px 12px rgba(255, 255, 255, 0.5),
+    /* Shadow bottom-right */ 4px 4px 12px rgba(59, 130, 246, 0.15),
+    /* Inner highlight */ inset 0 1px 2px rgba(255, 255, 255, 0.8);
+
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-minimal-add:hover {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.7)
+  );
+  transform: translateY(-2px);
+
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.18),
+    -5px -5px 15px rgba(255, 255, 255, 0.6),
+    5px 5px 15px rgba(59, 130, 246, 0.2),
+    inset 0 1px 3px rgba(255, 255, 255, 0.9);
+}
+
+.btn-minimal-add:active {
+  transform: translateY(0);
+
+  /* Pressed-in neomorphism effect */
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1),
+    inset 2px 2px 8px rgba(59, 130, 246, 0.15),
+    inset -2px -2px 8px rgba(255, 255, 255, 0.7);
+}
+
+/* Plus icon */
+.btn-minimal-add::before {
+  content: "+";
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+}
 :focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px var(--focus-ring);
@@ -3256,6 +3547,25 @@ body .mantine-Month-weekday {
   --logo-border: var(--surface-border);
 }
 
+/* Ensure save/cancel role buttons keep good contrast in dark mode */
+[data-mode="dark"] .btn-save,
+[data-theme="soft-sage"][data-mode="dark"] .btn-save {
+  --btn-bg: linear-gradient(145deg, #14386b, #0b254f) !important;
+  --btn-bg-hover: #0b2e58 !important;
+  --btn-bg-active: #07203f !important;
+  --btn-text: #e6f0ff !important;
+  --btn-border: rgba(255, 255, 255, 0.06) !important;
+}
+
+[data-mode="dark"] .btn-cancel,
+[data-theme="soft-sage"][data-mode="dark"] .btn-cancel {
+  --btn-bg: linear-gradient(145deg, #7f1d1d, #5f0f0f) !important;
+  --btn-bg-hover: #6f1414 !important;
+  --btn-bg-active: #4f0b0b !important;
+  --btn-text: #fff0f0 !important;
+  --btn-border: rgba(255, 255, 255, 0.06) !important;
+}
+
 /* === React Day Picker theming (for DatePickerInput component) ========= */
 /* Goals: Match the Mantine theming - weekends red, out-of-month gray, themed weekdays, range selection */
 
@@ -3370,6 +3680,173 @@ body .mantine-Month-weekday {
     var(--tab-accent, #34d399),
     transparent 70%
   ) !important;
+}
+
+/* Clean toggle switch with green-blue theme */
+.switch {
+  font-size: 13px;
+  position: relative;
+  display: inline-block;
+  width: 2.6em;
+  height: 1.6em;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+  display: none;
+}
+
+/* The slider track */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    #10b981 0%,
+    #06b6d4 50%,
+    #3b82f6 100%
+  );
+  background-size: 300% 300%;
+  background-position: right center;
+  transition: 0.5s cubic-bezier(0.24, 0.51, 0.32, 0.98);
+  border-radius: 30px;
+  box-shadow: inset 2px 2px 4px rgba(16, 185, 129, 0.3),
+    inset -2px -2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* The slider knob */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 1.1em;
+  width: 1.1em;
+  border-radius: 50%;
+  left: 0.22em;
+  bottom: 0.22em;
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #e0f2fe 50%,
+    #dbeafe 100%
+  );
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2),
+    -1px -1px 3px rgba(255, 255, 255, 0.8);
+  transition: 0.4s cubic-bezier(0.7, 0.34, 0.5, 1);
+}
+
+/* Checked state - slide and glow */
+.switch input:checked + .slider {
+  background-position: left center;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.6),
+    inset 2px 2px 4px rgba(6, 182, 212, 0.4);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(1em) scale(1.12);
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    #d1fae5 50%,
+    #a7f3d0 100%
+  );
+  box-shadow: 2px 2px 6px rgba(16, 185, 129, 0.4),
+    -2px -2px 4px rgba(255, 255, 255, 0.9),
+    0 0 8px rgba(6, 182, 212, 0.3);
+  animation: bounce 0.36s ease;
+}
+
+/* Unchecked state animation */
+.switch input:not(:checked) + .slider:before {
+  animation: bounce-reverse 0.36s ease;
+}
+
+/* Bounce animations */
+@keyframes bounce {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    transform: translateX(1em) scale(0.95);
+  }
+  100% {
+    transform: translateX(1em) scale(1.12);
+  }
+}
+
+@keyframes bounce-reverse {
+  0% {
+    transform: translateX(1em) scale(1.12);
+  }
+  50% {
+    transform: translateX(0.5em) scale(0.95);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+/* ---------------------------------------------------------------------------
+   Neomorphic square button with circular inset control (from provided image)
+----------------------------------------------------------------------------*/
+.neo-square {
+  --size: 56px;
+  width: var(--size);
+  height: var(--size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #e9edf0, #d7dbe0);
+  box-shadow: 6px 6px 18px rgba(11, 24, 50, 0.08),
+    -6px -6px 18px rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  position: relative;
+  padding: 6px;
+}
+.neo-square:hover {
+  transform: translateY(-2px);
+}
+.neo-square:active {
+  transform: translateY(0);
+}
+
+.neo-circle {
+  width: calc(var(--size) * 0.68);
+  height: calc(var(--size) * 0.68);
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f5f7f8, #dfe5e8);
+  box-shadow: -6px -6px 12px rgba(255, 255, 255, 0.95) inset,
+    8px 8px 18px rgba(11, 24, 50, 0.06);
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 20px;
+  border: 1px solid rgba(15, 23, 42, 0.04);
+}
+.neo-circle svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.2;
+}
+
+/* Dark mode variants for neo button */
+[data-mode="dark"] .neo-square,
+[data-theme="soft-sage"][data-mode="dark"] .neo-square {
+  background: linear-gradient(180deg, #0f1720, #081018);
+  box-shadow: 6px 6px 18px rgba(0, 0, 0, 0.6),
+    -6px -6px 18px rgba(255, 255, 255, 0.03) inset;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+[data-mode="dark"] .neo-circle,
+[data-theme="soft-sage"][data-mode="dark"] .neo-circle {
+  background: linear-gradient(180deg, #111827, #0b1220);
+  box-shadow: -6px -6px 12px rgba(255, 255, 255, 0.03) inset,
+    8px 8px 18px rgba(0, 0, 0, 0.6);
+  color: #d1d5db;
 }
 
 /* Hover: subtle accent */

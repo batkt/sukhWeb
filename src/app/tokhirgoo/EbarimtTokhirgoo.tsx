@@ -13,7 +13,6 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { useSpinner } from "@/context/SpinnerContext";
 import {
   Tooltip,
-  Switch,
   TextInput,
   PasswordInput,
   Modal,
@@ -557,11 +556,15 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <Switch
-                  checked={ebAshiglakh}
-                  onChange={(e) => setEbAshiglakh(e.target.checked)}
-                  aria-label="И-Баримт ашиглах эсэх"
-                />
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={ebAshiglakh}
+                    onChange={(e) => setEbAshiglakh(e.target.checked)}
+                    aria-label="И-Баримт ашиглах эсэх"
+                  />
+                  <span className="slider" />
+                </label>
               </div>
             </div>
 
@@ -587,12 +590,16 @@ export default function EbarimtTokhirgoo() {
                 </div>
               </div>
               <div className="ml-auto">
-                <Switch
-                  id="ebarimt-autosend"
-                  checked={ebAutoSend}
-                  onChange={(e) => setEbAutoSend(e.target.checked)}
-                  aria-label="И-Баримт автоматаар илгээх эсэх"
-                />
+                <label className="switch">
+                  <input
+                    id="ebarimt-autosend"
+                    type="checkbox"
+                    checked={ebAutoSend}
+                    onChange={(e) => setEbAutoSend(e.target.checked)}
+                    aria-label="И-Баримт автоматаар илгээх эсэх"
+                  />
+                  <span className="slider" />
+                </label>
               </div>
             </div>
 

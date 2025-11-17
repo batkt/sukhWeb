@@ -1505,7 +1505,7 @@ export default function BarilgiinTokhirgoo() {
           side: "right",
         },
       },
-      
+
       {
         element: "#barilgiin-phone",
         popover: {
@@ -1577,7 +1577,7 @@ export default function BarilgiinTokhirgoo() {
   return (
     <div
       id="barilgiin-panel"
-      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[650px]"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
     >
       <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar">
         <div className="w-full">
@@ -1615,23 +1615,6 @@ export default function BarilgiinTokhirgoo() {
             />
           </div>
           {/* Save button appears only when changes exist (placed under Дүүрэг/Хороо) */}
-          {isDirty && (
-            <div className="mt-4">
-              <button
-                onClick={khadgalakh}
-                className={`w-full md:w-1/2 mx-auto block bg-blue-600 text-white py-3 rounded-2xl text-lg font-semibold ${
-                  isSaving
-                    ? "opacity-60 cursor-not-allowed"
-                    : "hover:bg-blue-700"
-                }`}
-                disabled={isSaving}
-                type="button"
-              >
-                {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-              </button>
-            </div>
-          )}
-
           <div id="barilgiin-email" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Email
@@ -1645,8 +1628,22 @@ export default function BarilgiinTokhirgoo() {
             />
           </div>
         </div>
+
+        {isDirty && (
+          <div className="mt-2 md:mt-4 flex justify-end">
+            <button
+              onClick={khadgalakh}
+              className={`btn-minimal btn-save ${
+                isSaving ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700"
+              }`}
+              disabled={isSaving}
+              type="button"
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-    
           <div id="barilgiin-duureg" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
               Дүүрэг
@@ -1702,10 +1699,10 @@ export default function BarilgiinTokhirgoo() {
               <button
                 id="barilgiin-new-building-btn"
                 onClick={openNewBuildingModal}
-                className="btn-minimal btn-save"
+                className="cssbuttons-io-button"
                 title="Шинэ барилга нэмэх"
               >
-                <Plus className="w-4 h-4" />
+                +
               </button>
               {/* <div className="text-sm text-slate-500">
                 Нийт: {orgBuildings.length}
