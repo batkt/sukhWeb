@@ -8,29 +8,26 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 // In local development, use full URL
 // Priority: env variable > detect production (HTTPS + /api) > default local dev URL
 export function getApiUrl(): string {
+  // Always use dev API URL on dev branch
+  if (
+    process.env.NEXT_PUBLIC_BRANCH === "dev" ||
+    process.env.VERCEL_GIT_COMMIT_REF === "dev" ||
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF === "dev" ||
+    process.env.GITHUB_REF_NAME === "dev" ||
+    process.env.BRANCH === "dev"
+  ) {
+    return "http://103.50.205.80:8084";
+  }
+
+  // Otherwise, use env variable if set
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
-  // If this deployment is for the 'dev' branch, prefer the dev IP override.
-  // Check several environment variables that platforms set for branch name.
-  const branchName =
-    process.env.NEXT_PUBLIC_BRANCH ||
-    process.env.VERCEL_GIT_COMMIT_REF ||
-    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_REF ||
-    process.env.GITHUB_REF_NAME ||
-    process.env.BRANCH ||
-    null;
-  if (branchName === "dev") {
-    return "http://103.50.205.80:8084";
-  }
-
-  // Runtime check: if we're in browser and on HTTPS, use nginx proxy
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     return "/api";
   }
 
-  // Check if we're on the production domain
   if (
     typeof window !== "undefined" &&
     window.location.hostname === "amarhome.mn"
@@ -38,7 +35,6 @@ export function getApiUrl(): string {
     return "https://amarhome.mn/api";
   }
 
-  // Default: local development URL
   return "http://103.143.40.46:8084";
 }
 
