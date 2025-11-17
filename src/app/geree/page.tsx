@@ -59,38 +59,7 @@ import deleteMethod from "../../../tools/function/deleteMethod";
 import { set } from "lodash";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import formatNumber from "../../../tools/function/formatNumber";
-export const ALL_COLUMNS = [
-  // { key: "ovog", label: "Овог", default: true },
-  { key: "ner", label: "Нэр", default: true },
-  { key: "utas", label: "Холбоо барих", default: true },
-  { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
-  { key: "turul", label: "Төрөл", default: false },
-  // { key: "aimag", label: "Аймаг", default: false },
-  { key: "duureg", label: "Дүүрэг", default: false },
-  { key: "horoo", label: "Хороо", default: false },
-  // { key: "baingiinKhayag", label: "Байнгын хаяг", default: false },
-
-  // { key: "gereeniiOgnoo", label: "Гэрээний огноо", default: false },
-
-  // { key: "ekhlekhOgnoo", label: "Эхлэх огноо", default: false },
-  // { key: "duusakhOgnoo", label: "Дуусах огноо", default: false },
-  // { key: "tulukhOgnoo", label: "Төлөх огноо", default: false },
-  // { key: "khugatsaa", label: "Хугацаа (сар)", default: false },
-  // { key: "suhNer", label: "СӨХ-ийн нэр", default: false },
-  // { key: "suhRegister", label: "СӨХ-ийн регистр", default: false },
-  // { key: "suhUtas", label: "СӨХ-ийн утас", default: false },
-  // { key: "suhMail", label: "СӨХ-ийн и-мэйл", default: false },
-  // { key: "suhTulbur", label: "СӨХ төлбөр", default: false },
-  // { key: "uilchilgeeniiZardal", label: "Үйлчилгээний зардал", default: false },
-  // { key: "niitTulbur", label: "Нийт төлбөр", default: false },
-  { key: "bairniiNer", label: "Байрны нэр", default: false },
-  { key: "tuluv", label: "Төлөв", default: true },
-  { key: "orts", label: "Орц", default: true },
-  { key: "toot", label: "Тоот", default: true },
-  { key: "davkhar", label: "Давхар", default: true },
-  { key: "ognoo", label: "Үүссэн огноо", default: true },
-  // { key: "temdeglel", label: "Тэмдэглэл", default: false },
-];
+import { ALL_COLUMNS } from "./columns";
 
 export default function Geree() {
   const router = useRouter();
