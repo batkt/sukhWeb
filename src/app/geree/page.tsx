@@ -2144,9 +2144,9 @@ export default function Geree() {
         { key: "ner", label: "Нэр" },
         { key: "utas", label: "Утас" },
         { key: "mail", label: "И-мэйл" },
-        { key: "orts", label: "Орц" },
-        { key: "davkhar", label: "Давхар" },
-        { key: "toot", label: "Тоот" },
+        // { key: "orts", label: "Орц" },
+        // { key: "davkhar", label: "Давхар" },
+        // { key: "toot", label: "Тоот" },
         { key: "ognoo", label: "Үүссэн огноо" },
       ];
 
@@ -2227,10 +2227,10 @@ export default function Geree() {
 
         { title: "Утас", dataIndex: "utas", key: "utas" },
         { title: "И-мэйл", dataIndex: "mail", key: "mail" },
-        { title: "Орц", dataIndex: "orts", key: "orts" },
+        // { title: "Орц", dataIndex: "orts", key: "orts" },
 
-        { title: "Давхар", dataIndex: "davkhar", key: "davkhar" },
-        { title: "Тоот", dataIndex: "toot", key: "toot" },
+        // { title: "Давхар", dataIndex: "davkhar", key: "davkhar" },
+        // { title: "Тоот", dataIndex: "toot", key: "toot" },
       ];
 
       const targetBarilgiinId = exportTargetBarilgiinId;
@@ -4440,13 +4440,9 @@ export default function Geree() {
                   <PageSongokh
                     value={rowsPerPage}
                     onChange={(v) => {
+                      // Update local pagination immediately (match residents behavior)
                       setRowsPerPage(v);
                       setCurrentPage(1);
-                      setGereeKhuudaslalt({
-                        khuudasniiDugaar: 1,
-                        khuudasniiKhemjee: v,
-                        search: searchTerm,
-                      });
                     }}
                     className="text-xs px-2"
                   />
@@ -4503,6 +4499,15 @@ export default function Geree() {
                       </th>
 
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Орц
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Давхар
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Тоот
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Холбоо барих
                       </th>
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
@@ -4516,7 +4521,7 @@ export default function Geree() {
                   <tbody>
                     {!currentResidents.length ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-subtle">
+                        <td colSpan={8} className="p-8 text-center text-subtle">
                           Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
@@ -4536,6 +4541,12 @@ export default function Geree() {
                                 }`.trim() || "-"
                               : p.ner || "-"}
                           </td>
+
+                          <td className="p-1 text-center">{p.orts || "-"}</td>
+                          <td className="p-1 text-center">
+                            {p.davkhar || "-"}
+                          </td>
+                          <td className="p-1 text-center">{p.toot || "-"}</td>
                           <td className="p-1 text-center">
                             <div className="text-xs text-theme">{p.utas}</div>
                           </td>

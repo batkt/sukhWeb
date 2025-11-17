@@ -8,7 +8,8 @@ export const ALL_COLUMNS = [
   { key: "bairniiNer", label: "Байрны нэр", default: false },
   { key: "tuluv", label: "Төлөв", default: true },
   { key: "orts", label: "Орц", default: true },
-  { key: "toot", label: "Тоот", default: true },
   { key: "davkhar", label: "Давхар", default: true },
+  { key: "toot", label: "Тоот", default: true },
+
   { key: "ognoo", label: "Үүссэн огноо", default: true },
 ];
