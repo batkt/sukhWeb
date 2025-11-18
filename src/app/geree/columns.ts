@@ -1,7 +1,7 @@
 export const ALL_COLUMNS = [
   { key: "ner", label: "Нэр", default: true },
 
-  { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: false },
+  { key: "gereeniiDugaar", label: "Гэрээний дугаар", default: true },
   { key: "turul", label: "Төрөл", default: false },
   { key: "duureg", label: "Дүүрэг", default: false },
   { key: "horoo", label: "Хороо", default: false },

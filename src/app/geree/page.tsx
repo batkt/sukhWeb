@@ -2630,7 +2630,7 @@ export default function Geree() {
       openErrorOverlay(explainPhoneRule());
       return;
     }
-    if (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4) {
+    if (!editingResident && (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4)) {
       openErrorOverlay("Нууц үг хамгийн багадаа 4 тэмдэгт байх ёстой.");
       return;
     }
@@ -2692,8 +2692,12 @@ export default function Geree() {
       let createdResidentId: string | null = null;
 
       if (editingResident?._id) {
+        const updatePayload: any = { ...payload };
+        if (!newResident.nuutsUg) {
+          delete updatePayload.nuutsUg;
+        }
         await updateMethod("orshinSuugch", token || "", {
-          ...payload,
+          ...updatePayload,
           _id: editingResident._id,
         });
       } else {
@@ -2939,7 +2943,7 @@ export default function Geree() {
       baiguullagiinId: p.baiguullagiinId || p.baiguullagiin_id || "",
       baiguullagiinNer: p.baiguullagiinNer || selectedBarilga?.ner || "",
       nevtrekhNer: p.nevtrekhNer || (p.utas ? String(p.utas) : "") || "",
-      nuutsUg: p.nuutsUg || "",
+      nuutsUg: "",
       // initial balance (Эхний үлдэгдэл) — format with thousands separators for display
       ekhniiUldegdel: (() => {
         const raw =
@@ -5850,7 +5854,6 @@ export default function Geree() {
                               }));
                             }}
                             className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                            required
                           />
                         </div>
                         <div>
@@ -5953,7 +5956,7 @@ export default function Geree() {
                                   ? "Орц тохируулаагүй"
                                   : "Сонгох..."
                               }
-                              required
+                              required={!editingResident}
                               disabled={ortsOptions.length === 0}
                             />
                           </div>
@@ -5976,7 +5979,7 @@ export default function Geree() {
                                   label: d,
                                 }))}
                                 className="w-full"
-                                required
+                                required={!editingResident}
                                 placeholder="Сонгох..."
                               />
                             ) : (
@@ -5990,7 +5993,7 @@ export default function Geree() {
                                   }))
                                 }
                                 className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                                required
+                                required={!editingResident}
                               />
                             )}
                           </div>
@@ -6019,7 +6022,7 @@ export default function Geree() {
                                   ? "Тоотын тохиргоо хийгээгүй байна"
                                   : "Сонгох..."
                               }
-                              required
+                              required={!editingResident}
                               disabled={
                                 getTootOptions(
                                   newResident.orts,
@@ -6120,7 +6123,6 @@ export default function Geree() {
                                 }
                                 className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                                 placeholder="Нэвтрэх нэр"
-                                required
                                 readOnly
                               />
                             </div>
@@ -6139,7 +6141,7 @@ export default function Geree() {
                                 }
                                 className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                                 placeholder="Нууц үг"
-                                required
+                                required={!editingResident}
                               />
                             </div>
                           </div>
