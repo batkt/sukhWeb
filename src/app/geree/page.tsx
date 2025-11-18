@@ -14,11 +14,13 @@ import {
   Eye,
   Columns3Cog,
   UserPlus,
-  FileDown,
-  FileUp,
   FilePlus,
+  FileUp,
+  FileDown,
   LayoutTemplate,
   Plus,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -202,6 +204,19 @@ export default function Geree() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
+  // Sorting state: which key and direction. Default: newest first by createdAt
+  const [sortKey, setSortKey] = useState<
+    "createdAt" | "toot" | "orts" | "davkhar"
+  >("createdAt");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const toggleSortFor = (key: "createdAt" | "toot" | "orts" | "davkhar") => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortOrder("asc");
+    } else {
+      setSortOrder((s) => (s === "asc" ? "desc" : "asc"));
+    }
+  };
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -650,6 +665,75 @@ export default function Geree() {
     const o = String(orts || "").trim();
     return o ? `${o}::${f}` : f;
   }, []);
+
+  // comparator: ascending by `toot`, then `davkhar`, then `orts`
+  const compareTootDavkharOrtsAsc = (a: any, b: any) => {
+    const cmp = (x: any, y: any) => {
+      const sx = String(x ?? "").trim();
+      const sy = String(y ?? "").trim();
+      const nx = Number(sx.replace(/[^0-9.-]/g, ""));
+      const ny = Number(sy.replace(/[^0-9.-]/g, ""));
+      const xNum = sx !== "" && !isNaN(nx);
+      const yNum = sy !== "" && !isNaN(ny);
+      if (xNum && yNum) return nx - ny;
+      if (xNum && !yNum) return -1;
+      if (!xNum && yNum) return 1;
+      return sx.localeCompare(sy);
+    };
+
+    const aToot = a?.toot ?? a?.medeelel?.toot ?? "";
+    const bToot = b?.toot ?? b?.medeelel?.toot ?? "";
+    const resToot = cmp(aToot, bToot);
+    if (resToot !== 0) return resToot;
+
+    const resDav = cmp(a?.davkhar, b?.davkhar);
+    if (resDav !== 0) return resDav;
+
+    const resOrts = cmp(a?.orts, b?.orts);
+    if (resOrts !== 0) return resOrts;
+
+    // fallback: newest first
+    return (
+      new Date(b?.createdAt || 0).getTime() -
+      new Date(a?.createdAt || 0).getTime()
+    );
+  };
+
+  // helper: compare two values preferring numeric comparison when possible
+  const cmpPreferNumber = (x: any, y: any) => {
+    const sx = String(x ?? "").trim();
+    const sy = String(y ?? "").trim();
+    const nx = Number(sx.replace(/[^0-9.-]/g, ""));
+    const ny = Number(sy.replace(/[^0-9.-]/g, ""));
+    const xNum = sx !== "" && !isNaN(nx);
+    const yNum = sy !== "" && !isNaN(ny);
+    if (xNum && yNum) return nx - ny;
+    if (xNum && !yNum) return -1;
+    if (!xNum && yNum) return 1;
+    return sx.localeCompare(sy);
+  };
+
+  // general comparator that respects `sortKey` and `sortOrder`
+  const sortBySelectedKey = (a: any, b: any) => {
+    let res = 0;
+    if (sortKey === "toot") {
+      res = compareTootDavkharOrtsAsc(a, b);
+    } else if (sortKey === "orts") {
+      res = cmpPreferNumber(a?.orts, b?.orts);
+      if (res === 0) res = cmpPreferNumber(a?.davkhar, b?.davkhar);
+      if (res === 0) res = cmpPreferNumber(a?.toot, b?.toot);
+    } else if (sortKey === "davkhar") {
+      res = cmpPreferNumber(a?.davkhar, b?.davkhar);
+      if (res === 0) res = cmpPreferNumber(a?.toot, b?.toot);
+      if (res === 0) res = cmpPreferNumber(a?.orts, b?.orts);
+    } else {
+      // createdAt
+      const ta = new Date(a?.createdAt || a?.ognoo || 0).getTime();
+      const tb = new Date(b?.createdAt || b?.ognoo || 0).getTime();
+      res = ta - tb;
+    }
+    return sortOrder === "asc" ? res : -res;
+  };
 
   // Robustly compute toot options for a given орц and давхар.
   // Handles multiple key shapes stored in `tokhirgoo.davkhariinToonuud` such as
@@ -1520,11 +1604,7 @@ export default function Geree() {
 
           return true;
         })
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt || 0).getTime() -
-            new Date(a.createdAt || 0).getTime()
-        )
+        .sort((a: any, b: any) => sortBySelectedKey(a, b))
     : [];
 
   const totalPages = Math.ceil(filteredContracts.length / rowsPerPage);
@@ -1558,12 +1638,8 @@ export default function Geree() {
         return hay.includes(qq);
       });
     }
-    return list.sort(
-      (a, b) =>
-        new Date(b.createdAt || 0).getTime() -
-        new Date(a.createdAt || 0).getTime()
-    );
-  }, [residentsList, searchTerm]);
+    return list.sort((a: any, b: any) => sortBySelectedKey(a, b));
+  }, [residentsList, searchTerm, sortKey, sortOrder]);
   const resTotalPages = Math.max(
     1,
     Math.ceil(filteredResidents.length / (resPageSize || 1))
@@ -2142,11 +2218,12 @@ export default function Geree() {
       const headers = [
         { key: "ovog", label: "Овог" },
         { key: "ner", label: "Нэр" },
-        { key: "utas", label: "Утас" },
+
         { key: "mail", label: "И-мэйл" },
         // { key: "orts", label: "Орц" },
         // { key: "davkhar", label: "Давхар" },
         // { key: "toot", label: "Тоот" },
+        { key: "utas", label: "Утас" },
         { key: "ognoo", label: "Үүссэн огноо" },
       ];
 
@@ -2295,7 +2372,7 @@ export default function Geree() {
     // accidental uploads.
     try {
       const filename = String(file.name || "").toLowerCase();
-      if (!/toot/.test(filename)) {
+      if (!/orshin/.test(filename)) {
         openErrorOverlay(
           "Зөв Excel загвар (Тоот бүртгэлийн загвар) оруулна уу."
         );
@@ -4187,6 +4264,54 @@ export default function Geree() {
                           const column = ALL_COLUMNS.find(
                             (col) => col.key === columnKey
                           );
+                          const isSortable =
+                            column?.key === "toot" ||
+                            column?.key === "orts" ||
+                            column?.key === "davkhar" ||
+                            column?.key === "ognoo";
+                          if (isSortable) {
+                            // map column key to internal sort key
+                            const keyMap: Record<string, any> = {
+                              ognoo: "createdAt",
+                              toot: "toot",
+                              orts: "orts",
+                              davkhar: "davkhar",
+                            };
+                            const targetKey = keyMap[column?.key || ""];
+                            return (
+                              <th
+                                key={columnKey}
+                                className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
+                              >
+                                <button
+                                  type="button"
+                                  onClick={() => toggleSortFor(targetKey)}
+                                  className="w-full inline-flex items-center justify-center gap-2"
+                                  title={`Эрэмбэлэх: ${column?.label}`}
+                                >
+                                  <span>{column?.label}</span>
+                                  <span className="flex flex-col items-center">
+                                    <ChevronUp
+                                      className={`w-3 h-3 ${
+                                        sortKey === targetKey &&
+                                        sortOrder === "asc"
+                                          ? "text-blue-500"
+                                          : "text-subtle"
+                                      }`}
+                                    />
+                                    <ChevronDown
+                                      className={`w-3 h-3 ${
+                                        sortKey === targetKey &&
+                                        sortOrder === "desc"
+                                          ? "text-blue-500"
+                                          : "text-subtle"
+                                      }`}
+                                    />
+                                  </span>
+                                </button>
+                              </th>
+                            );
+                          }
                           return (
                             <th
                               key={columnKey}
@@ -4517,13 +4642,82 @@ export default function Geree() {
                       </th>
 
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                        Орц
+                        <button
+                          type="button"
+                          onClick={() => toggleSortFor("orts")}
+                          className="w-full inline-flex items-center justify-center gap-2"
+                          title="Орц-аар эрэмбэлэх"
+                        >
+                          <span>Орц</span>
+                          <span className="flex flex-col items-center">
+                            <ChevronUp
+                              className={`w-3 h-3 ${
+                                sortKey === "orts" && sortOrder === "asc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                            <ChevronDown
+                              className={`w-3 h-3 ${
+                                sortKey === "orts" && sortOrder === "desc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                          </span>
+                        </button>
                       </th>
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                        Давхар
+                        <button
+                          type="button"
+                          onClick={() => toggleSortFor("davkhar")}
+                          className="w-full inline-flex items-center justify-center gap-2"
+                          title="Давхар-аар эрэмбэлэх"
+                        >
+                          <span>Давхар</span>
+                          <span className="flex flex-col items-center">
+                            <ChevronUp
+                              className={`w-3 h-3 ${
+                                sortKey === "davkhar" && sortOrder === "asc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                            <ChevronDown
+                              className={`w-3 h-3 ${
+                                sortKey === "davkhar" && sortOrder === "desc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                          </span>
+                        </button>
                       </th>
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                        Тоот
+                        <button
+                          type="button"
+                          onClick={() => toggleSortFor("toot")}
+                          className="w-full inline-flex items-center justify-center gap-2"
+                          title="Тоот-аар эрэмбэлэх"
+                        >
+                          <span>Тоот</span>
+                          <span className="flex flex-col items-center">
+                            <ChevronUp
+                              className={`w-3 h-3 ${
+                                sortKey === "toot" && sortOrder === "asc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                            <ChevronDown
+                              className={`w-3 h-3 ${
+                                sortKey === "toot" && sortOrder === "desc"
+                                  ? "text-blue-500"
+                                  : "text-subtle"
+                              }`}
+                            />
+                          </span>
+                        </button>
                       </th>
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Холбоо барих
