@@ -30,7 +30,10 @@ export default function RootLayout({
 var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('data-theme',savedTheme);if(!localStorage.getItem('app-theme')){localStorage.setItem('app-theme',savedTheme);} }catch(e){}})();`}
         </Script>
       </head>
-      <body className="min-h-screen bg-card text-foreground font-sans">
+      <body
+        className="min-h-screen bg-card text-foreground font-sans"
+        suppressHydrationWarning
+      >
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>
