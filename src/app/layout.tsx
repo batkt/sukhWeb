@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
 import Script from "next/script";
+import LocatorWarningSuppress from "./locator-setup";
 
 export const metadata: Metadata = {
   title: "Амар Сөх",
@@ -34,6 +35,7 @@ var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('da
         className="min-h-screen bg-card text-foreground font-sans"
         suppressHydrationWarning
       >
+        {process.env.NODE_ENV === "development" && <LocatorWarningSuppress />}
         <AuthProvider>
           <ClientLayout>{children}</ClientLayout>
         </AuthProvider>

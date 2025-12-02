@@ -41,6 +41,7 @@ interface ZardalItem {
   tseverUsDun?: number;
   bokhirUsDun?: number;
   usKhalaasniiDun?: number;
+  tailbar?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -53,6 +54,7 @@ interface ZardalFormData {
   lift: string | null;
   suuriKhuraamj?: number;
   nuatBodokhEsekh?: boolean;
+  tailbar?: string;
 }
 
 export default function AshiglaltiinZardluud() {
@@ -97,6 +99,7 @@ export default function AshiglaltiinZardluud() {
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
     lift: null,
+    tailbar: "",
   });
 
   const [expenseTypes] = useState<string[]>([
@@ -397,8 +400,6 @@ export default function AshiglaltiinZardluud() {
     if (merged.length > 0) {
       await saveLiftSettings(merged);
     } else {
-      // clear on server
-      // If we have an existing server record id, delete that record
       try {
         if (liftShalgayaId && token) {
           await deleteMethod("liftShalgaya", token, liftShalgayaId);
@@ -407,7 +408,6 @@ export default function AshiglaltiinZardluud() {
           await saveLiftSettings(null);
         }
       } catch (e) {
-        // fallback to save
         await saveLiftSettings(null);
       }
     }
@@ -423,6 +423,7 @@ export default function AshiglaltiinZardluud() {
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
       lift: null,
+      tailbar: "",
     });
     setIsModalOpen(true);
   };
@@ -438,6 +439,7 @@ export default function AshiglaltiinZardluud() {
       suuriKhuraamj: item.suuriKhuraamj || 0,
       nuatBodokhEsekh: item.nuatBodokhEsekh || false,
       lift: item.lift ?? null,
+      tailbar: item.tailbar || "",
     });
     setIsModalOpen(true);
   };
@@ -785,7 +787,7 @@ export default function AshiglaltiinZardluud() {
                             <td className="py-2 pr-3">
                               <MTextInput
                                 className="w-36 text-center text-theme mx-auto"
-                                value={formatNumber(currentValue, 0)}
+                                value={formatNumber(currentValue, 2)}
                                 onChange={(e) =>
                                   setEditedTariffs((prev) => ({
                                     ...prev,
@@ -856,39 +858,6 @@ export default function AshiglaltiinZardluud() {
                 </table>
               </div>
             </div>
-
-            {/* <div className="mt-4 pt-3 border-t flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="text-theme flex-1">
-              {(() => {
-                const itemsById = new Map(
-                  ashiglaltiinZardluud.map((it) => [it._id, it])
-                );
-                const changedCount = Object.entries(editedTariffs).filter(
-                  ([id, val]) => itemsById.get(id)?.tariff !== val
-                ).length;
-                return changedCount > 0
-                  ? `${changedCount} зардалд өөрчлөлт орсон байна`
-                  : "Өөрчлөлт байхгүй";
-              })()}
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <MButton
-                className="btn-minimal btn-save"
-                onClick={saveAllTariffs}
-                disabled={(() => {
-                  const itemsById = new Map(
-                    ashiglaltiinZardluud.map((it) => [it._id, it])
-                  );
-                  const changedCount = Object.entries(editedTariffs).filter(
-                    ([id, val]) => itemsById.get(id)?.tariff !== val
-                  ).length;
-                  return changedCount === 0;
-                })()}
-              >
-                Хадгалах
-              </MButton>
-            </div>
-          </div> */}
           </div>
         )}
 
@@ -1123,40 +1092,19 @@ export default function AshiglaltiinZardluud() {
                 rightSection={<span className="text-slate-500 pr-1">₮</span>}
               />
             </div>
-
-            {/* <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Суурь хураамж
-            </label>
-            <MNumberInput
-              value={formData.suuriKhuraamj}
-              onChange={(v) =>
-                setFormData({
-                  ...formData,
-                  suuriKhuraamj: Number(v as number),
-                })
-              }
-              placeholder="0"
-              className="text-theme"
-              rightSection={<span className="text-slate-500 pr-1">₮</span>}
-            />
-          </div> */}
-
-            {/* <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={formData.nuatBodokhEsekh}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  nuatBodokhEsekh: e.target.checked,
-                })
-              }
-              className="mr-2"
-              style={{ accentColor: "var(--panel-text)" }}
-            />
-            <label className="text-sm font-medium text-theme">НӨАТ бодох</label>
-          </div> */}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                Тайлбар
+              </label>
+              <MTextarea
+                value={formData.tailbar}
+                onChange={(e) =>
+                  setFormData({ ...formData, tailbar: e.currentTarget.value })
+                }
+                placeholder="Тайлбар оруулах"
+                className="text-theme"
+              />
+            </div>
             <div className="mt-6 flex justify-end gap-2">
               <MButton
                 onClick={() => setIsModalOpen(false)}
