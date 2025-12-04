@@ -8,8 +8,8 @@ const nextConfig: NextConfig = {
   },
   // Suppress hydration warnings caused by locator in development
   reactStrictMode: true,
-  webpack: (config, { dev, isServer }) => {
-    if (dev && !isServer) {
+  webpack: (config, { dev }) => {
+    if (dev) {
       config.module.rules.push({
         test: /\.(tsx|ts|js|mjs|jsx)$/,
         exclude: /node_modules/,

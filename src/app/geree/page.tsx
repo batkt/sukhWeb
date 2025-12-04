@@ -2630,7 +2630,10 @@ export default function Geree() {
       openErrorOverlay(explainPhoneRule());
       return;
     }
-    if (!editingResident && (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4)) {
+    if (
+      !editingResident &&
+      (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4)
+    ) {
       openErrorOverlay("Нууц үг хамгийн багадаа 4 тэмдэгт байх ёстой.");
       return;
     }

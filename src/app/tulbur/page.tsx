@@ -6,32 +6,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import GuilgeeTuukhPage from "./guilgeeTuukh/page";
 import DansKhuulgaPage from "./dansKhuulga/page";
-
-const TabButton = ({
-  id,
-  active,
-  onClick,
-  children,
-}: {
-  id?: string;
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) => (
-  <button
-    id={id}
-    onClick={onClick}
-    aria-pressed={active}
-    className={
-      `relative whitespace-nowrap px-6 py-2.5 text-sm font-semibold rounded-2xl transition-all duration-300 backdrop-blur-md border ` +
-      (active
-        ? `bg-primary-gradient/30 text-theme border-primary/50 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 hover:border-primary/70 scale-105`
-        : `bg-white/20 dark:bg-gray-800/20 text-theme/70 border-white/30 dark:border-gray-700/30 hover:bg-white/30 dark:hover:bg-gray-800/30 hover:border-white/50 dark:hover:border-gray-700/50`)
-    }
-  >
-    {children}
-  </button>
-);
+import TabButton from "components/tabButton/tabButton";
 
 export default function TulburPage() {
   const [active, setActive] = useState<"guilgee" | "dans">("guilgee");

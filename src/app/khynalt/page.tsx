@@ -5,7 +5,6 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
-import { postSummary } from "@/lib/useTailan";
 import uilchilgee from "../../../lib/uilchilgee";
 import {
   getPaymentStatusLabel,
@@ -191,8 +190,6 @@ export default function Khynalt() {
     labels: string[];
     profits: number[];
   }>({ labels: [], profits: [] });
-
-  const [summaryData, setSummaryData] = useState<any>(null);
 
   // Overdue 2+ months and cancelled-contract receivables
   const [overdue2m, setOverdue2m] = useState<{
@@ -519,24 +516,6 @@ export default function Khynalt() {
       }
     };
     run();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      try {
-        const resp = await postSummary(token, {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId
-            ? { barilgiinId: effectiveBarilgiinId }
-            : {}),
-        });
-        setSummaryData(resp.data);
-      } catch (error) {
-        console.error("Failed to fetch summary:", error);
-      }
-    };
-    fetchSummary();
   }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   const incomeLineData: Dataset = useMemo(() => {

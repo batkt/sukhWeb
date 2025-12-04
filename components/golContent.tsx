@@ -175,6 +175,28 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Авлагийн насжилт", path: "/avlagiin-nasjilt" },
       ],
     },
+    {
+      label: "Мэдэгдэл",
+      path: "medegdel",
+      submenu: [
+        {
+          label: "Мэдэгдэл",
+          path: "/medegdel",
+        },
+        {
+          label: "Шаардлага",
+          path: "/shaardlaga",
+        },
+        {
+          label: "Дуудлага",
+          path: "/duudlaga",
+        },
+        {
+          label: "Санал хүсэлт",
+          path: "/sanalKhuselt",
+        },
+      ],
+    },
   ];
 
   const handleLogout = async (e?: React.MouseEvent) => {
