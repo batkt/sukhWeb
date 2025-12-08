@@ -187,10 +187,10 @@ export default function GolContent({ children }: GolContentProps) {
           label: "Шаардлага",
           path: "/shaardlaga",
         },
-        {
-          label: "Дуудлага",
-          path: "/duudlaga",
-        },
+        // {
+        //   label: "Дуудлага",
+        //   path: "/duudlaga",
+        // },
         {
           label: "Санал хүсэлт",
           path: "/sanalKhuselt",
@@ -205,17 +205,12 @@ export default function GolContent({ children }: GolContentProps) {
       e.stopPropagation();
     }
 
-    console.log("Logout button clicked - starting logout process");
     setShowLogout(false);
 
     try {
-      console.log("Calling garya()...");
       await garya();
-      console.log("garya() completed");
     } catch (error) {
-      console.error("Logout error:", error);
     } finally {
-      console.log("Redirecting to /login");
       router.replace("/login");
     }
   };
