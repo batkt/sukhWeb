@@ -83,11 +83,11 @@ function Tokhirgoo() {
           text: "И-Баримт",
           tsonkh: EbarimtTokhirgoo,
         },
-        // {
-        //   icon: <Settings className="w-5 h-5" />,
-        //   text: "Зогсоол",
-        //   tsonkh: Zogsool,
-        // },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Зогсоол",
+          tsonkh: Zogsool,
+        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: " Ашиглалтын зардал",

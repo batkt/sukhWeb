@@ -102,6 +102,8 @@ export default function AshiglaltiinZardluud() {
     tailbar: "",
   });
 
+  const [tariffInputValue, setTariffInputValue] = useState<string>("");
+
   const [expenseTypes] = useState<string[]>([
     "1м3/талбай",
     "нэгж/талбай",
@@ -425,6 +427,7 @@ export default function AshiglaltiinZardluud() {
       lift: null,
       tailbar: "",
     });
+    setTariffInputValue("");
     setIsModalOpen(true);
   };
 
@@ -441,6 +444,7 @@ export default function AshiglaltiinZardluud() {
       lift: item.lift ?? null,
       tailbar: item.tailbar || "",
     });
+    setTariffInputValue(formatNumber(item.tariff, 2));
     setIsModalOpen(true);
   };
 
@@ -788,6 +792,7 @@ export default function AshiglaltiinZardluud() {
                               <MTextInput
                                 className="w-36 text-center text-theme mx-auto"
                                 value={formatNumber(currentValue, 2)}
+                                readOnly
                                 onChange={(e) =>
                                   setEditedTariffs((prev) => ({
                                     ...prev,
@@ -1074,18 +1079,38 @@ export default function AshiglaltiinZardluud() {
                 Тариф (₮)
               </label>
               <MTextInput
-                value={
-                  formData.tariff !== undefined && formData.tariff !== null
-                    ? formatNumber(formData.tariff, 0)
-                    : ""
-                }
+                value={tariffInputValue}
                 onChange={(e) => {
                   const raw = e.currentTarget.value;
-                  const n = Number(String(raw).replace(/[^0-9.-]/g, ""));
+                  const cleanValue = String(raw).replace(/[^0-9.,]/g, "");
+                  const numericValue = cleanValue.replace(/,/g, "");
+                  const n = Number(numericValue);
+
+                  setTariffInputValue(cleanValue);
                   setFormData({
                     ...formData,
                     tariff: Number.isFinite(n) ? n : 0,
                   });
+                }}
+                onBlur={() => {
+                  if (
+                    formData.tariff !== undefined &&
+                    formData.tariff !== null &&
+                    formData.tariff !== 0
+                  ) {
+                    setTariffInputValue(formatNumber(formData.tariff, 2));
+                  } else if (tariffInputValue === "" || formData.tariff === 0) {
+                    setTariffInputValue("");
+                  }
+                }}
+                onFocus={() => {
+                  if (
+                    formData.tariff !== undefined &&
+                    formData.tariff !== null &&
+                    formData.tariff !== 0
+                  ) {
+                    setTariffInputValue(formData.tariff.toString());
+                  }
                 }}
                 placeholder="0"
                 className="text-theme"
