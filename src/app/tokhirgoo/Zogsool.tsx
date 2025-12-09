@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import moment from "moment";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
-
+import { Modal as MModal, Button as MButton } from "@mantine/core";
+import ZogsoolBurtgekh from "./ZogsoolBurtgekh";
+import { useAuth } from "@/lib/useAuth";
 interface ZogsoolItem {
   key: number;
   ner: string;
@@ -24,6 +26,10 @@ interface SmsItem {
 export default function Zogsool() {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(5);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<ZogsoolItem | null>(null);
+  const { token, barilgiinId } = useAuth();
+  const zogsoolRef = useRef<any>(null);
 
   const [zogsoolData, setZogsoolData] = useState<ZogsoolItem[]>(
     Array.from({ length: 20 }).map((_, i) => ({
@@ -47,20 +53,13 @@ export default function Zogsool() {
   );
 
   const addZogsool = () => {
-    const newItem: ZogsoolItem = {
-      key: Date.now(),
-      ner: "Шинэ зогсоол",
-      ajiltniiNer: "Дотор",
-      khaalga: ["Х1"],
-      too: 1,
-      undsenUne: "1000₮",
-      ognoo: new Date(),
-    };
-    setZogsoolData((prev) => [newItem, ...prev]);
+    setEditingItem(null);
+    setIsModalOpen(true);
   };
 
   const editZogsool = (item: ZogsoolItem) => {
-    alert(`Edit ${item.ner}`);
+    setEditingItem(item);
+    setIsModalOpen(true);
   };
 
   const deleteZogsool = (key: number) => {
@@ -81,7 +80,7 @@ export default function Zogsool() {
         <h2 className="text-lg font-medium">Зогсоол тохиргоо</h2>
         <button
           onClick={addZogsool}
-          className="flex items-center px-2 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          className="flex items-center px-2 py-2 btn-neu  transition"
         >
           <PlusOutlined className="mr-2" /> Зогсоол бүртгэх
         </button>
@@ -187,6 +186,49 @@ export default function Zogsool() {
           </tbody>
         </table>
       </div>
+
+      {/* Zogsool Modal */}
+      <MModal
+        opened={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingItem ? "Зогсоол засах" : "Зогсоол бүртгэх"}
+        size="xl"
+        classNames={{
+          content: "modal-surface modal-responsive",
+          header:
+            "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
+          title: "text-theme font-semibold",
+          close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+        }}
+        overlayProps={{ opacity: 0.5, blur: 6 }}
+        centered
+      >
+        <ZogsoolBurtgekh
+          ref={zogsoolRef}
+          data={editingItem}
+          jagsaalt={zogsoolData}
+          barilgiinId={barilgiinId || undefined}
+          token={token || ""}
+          refresh={() => {
+            console.log("Refreshing zogsool list...");
+          }}
+          onClose={() => setIsModalOpen(false)}
+        />
+        <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+          <MButton
+            onClick={() => zogsoolRef.current?.khaaya()}
+            className="btn-minimal btn-cancel"
+          >
+            Хаах
+          </MButton>
+          <MButton
+            onClick={() => zogsoolRef.current?.khadgalya()}
+            className="btn-minimal btn-save"
+          >
+            Хадгалах
+          </MButton>
+        </div>
+      </MModal>
     </div>
   );
 }

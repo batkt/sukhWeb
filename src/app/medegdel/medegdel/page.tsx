@@ -83,7 +83,7 @@ export default function KhyanaltFrontend() {
             animate={{ opacity: 1 }}
           >
             {["SMS", "App", "Mail"].map((m) => (
-              <div key={m} className="col-span-4">
+              <div key={m} className="2xl:col-span-4 col-span-12">
                 <TabButton
                   active={turul === m}
                   onClick={() => {
