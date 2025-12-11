@@ -91,20 +91,44 @@ export default function KhyanaltFrontend() {
 
     setLoading(true);
     try {
-      const orshinSuugchIdArray = songogdsonKhariltsagch.map(
-        (user) => user.orshinSuugchId
-      );
+      // When turul is "Мессеж", use msgIlgeeye endpoint with different payload
+      if (turul === "Мессеж") {
+        // Build msgnuud array for SMS service
+        const msgnuud = songogdsonKhariltsagch.flatMap((user) => {
+          const phoneNumbers = Array.isArray(user.utas)
+            ? user.utas
+            : [user.utas];
+          return phoneNumbers
+            .filter((phone) => phone && phone.trim() !== "")
+            .map((phone) => ({
+              to: phone,
+              text: `${title}\n${msj}`,
+              gereeniiId: user._id,
+            }));
+        });
 
-      await uilchilgee(token).post("/medegdelIlgeeye", {
-        medeelel: {
-          title: title,
-          body: msj,
-        },
-        orshinSuugchId: orshinSuugchIdArray,
-        baiguullagiinId: baiguullagiinId,
-        barilgiinId: barilgiinId,
-        turul: turul,
-      });
+        await uilchilgee(token).post("/msgIlgeeye", {
+          baiguullagiinId: baiguullagiinId,
+          barilgiinId: barilgiinId,
+          msgnuud: msgnuud,
+        });
+      } else {
+        // For App and Mail, use medegdelIlgeeye endpoint
+        const orshinSuugchIdArray = songogdsonKhariltsagch.map(
+          (user) => user.orshinSuugchId
+        );
+
+        await uilchilgee(token).post("/medegdelIlgeeye", {
+          medeelel: {
+            title: title,
+            body: msj,
+          },
+          orshinSuugchId: orshinSuugchIdArray,
+          baiguullagiinId: baiguullagiinId,
+          barilgiinId: barilgiinId,
+          turul: turul,
+        });
+      }
 
       notification.success({ message: "Мэдэгдэл амжилттай илгээгдлээ" });
       setTitle("");
