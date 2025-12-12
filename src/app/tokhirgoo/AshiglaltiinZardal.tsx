@@ -32,12 +32,13 @@ interface ZardalItem {
   turul: string;
   tariff: number;
   tariffUsgeer?: string;
+
   suuriKhuraamj?: number;
   ognoonuud?: string[];
   nuatBodokhEsekh?: boolean;
   baiguullagiinId?: string;
   barilgiinId?: string;
-  lift?: string;
+  zardliinTurul?: string;
   tseverUsDun?: number;
   bokhirUsDun?: number;
   usKhalaasniiDun?: number;
@@ -51,7 +52,7 @@ interface ZardalFormData {
   ner: string;
   turul: string;
   tariff: number;
-  lift: string | null;
+  zardliinTurul?: string;
   suuriKhuraamj?: number;
   nuatBodokhEsekh?: boolean;
   tailbar?: string;
@@ -98,7 +99,7 @@ export default function AshiglaltiinZardluud() {
     tariff: 0,
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
-    lift: null,
+    zardliinTurul: undefined,
     tailbar: "",
   });
 
@@ -424,7 +425,7 @@ export default function AshiglaltiinZardluud() {
       tariff: 0,
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
-      lift: null,
+      zardliinTurul: undefined,
       tailbar: "",
     });
     setTariffInputValue("");
@@ -441,7 +442,7 @@ export default function AshiglaltiinZardluud() {
       tariff: item.tariff,
       suuriKhuraamj: item.suuriKhuraamj || 0,
       nuatBodokhEsekh: item.nuatBodokhEsekh || false,
-      lift: item.lift ?? null,
+      zardliinTurul: item.zardliinTurul,
       tailbar: item.tailbar || "",
     });
     setTariffInputValue(formatNumber(item.tariff, 2));
@@ -458,7 +459,6 @@ export default function AshiglaltiinZardluud() {
     try {
       const payload = {
         ...formData,
-        lift: formData.lift ?? null,
         barilgiinId: selectedBuildingId || barilgiinId || undefined,
       };
 
@@ -756,6 +756,7 @@ export default function AshiglaltiinZardluud() {
                       <th className="py-2 pr-3">Нэр</th>
                       <th className="py-2 pr-3">Төрөл</th>
                       <th className="py-2 pr-3">Тариф (₮)</th>
+                      <th className="py-2 pr-3">Тайлбар</th>
                       <th className="py-2">Үйлдэл</th>
                     </tr>
                   </thead>
@@ -813,6 +814,9 @@ export default function AshiglaltiinZardluud() {
                                   Өөрчлөгдсөн
                                 </span>
                               )}
+                            </td>
+                            <td className="py-2 pr-3 text-theme">
+                              {mur.tailbar}
                             </td>
                             <td className="py-2">
                               <div className="flex items-center justify-center gap-2">
@@ -1060,9 +1064,9 @@ export default function AshiglaltiinZardluud() {
                 Зардлын төрөл
               </label>
               <MSelect
-                value={formData.lift ?? undefined}
+                value={formData.zardliinTurul ?? undefined}
                 onChange={(value) =>
-                  setFormData({ ...formData, lift: (value as string) ?? null })
+                  setFormData({ ...formData, zardliinTurul: value as string })
                 }
                 className="w-full text-theme"
                 data={[

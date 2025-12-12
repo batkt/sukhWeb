@@ -190,11 +190,11 @@ export default function KhyanaltFrontend() {
 
   const filteredGeree = geree.filter((mur) => {
     const query = searchQuery.toLowerCase();
-    const nerMatch = mur.ner.toLowerCase().includes(query);
+    const nerMatch = mur.ner ? mur.ner.toLowerCase().includes(query) : false;
 
     // Handle utas as either string or array
     const utasMatch = Array.isArray(mur.utas)
-      ? mur.utas.some((utas) => utas.toLowerCase().includes(query))
+      ? mur.utas.some((utas) => utas?.toLowerCase().includes(query))
       : typeof mur.utas === "string"
       ? mur.utas.toLowerCase().includes(query)
       : false;
@@ -323,7 +323,7 @@ export default function KhyanaltFrontend() {
                         className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded cursor-pointer pointer-events-none"
                       />
                       <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md">
-                        {mur.ner[0]}
+                        {mur.ner?.[0] || "?"}
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -365,7 +365,7 @@ export default function KhyanaltFrontend() {
                         className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/20 border border-white/30"
                       >
                         <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xs">
-                          {mur.ner[0]}
+                          {mur.ner?.[0] || "?"}
                         </div>
                         <span className="text-xs text-slate-700 font-medium">
                           {mur.ner}
