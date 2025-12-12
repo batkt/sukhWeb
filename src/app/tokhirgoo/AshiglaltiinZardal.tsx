@@ -1082,8 +1082,10 @@ export default function AshiglaltiinZardluud() {
                 value={tariffInputValue}
                 onChange={(e) => {
                   const raw = e.currentTarget.value;
-                  const cleanValue = String(raw).replace(/[^0-9.,]/g, "");
-                  const numericValue = cleanValue.replace(/,/g, "");
+                  // Only allow digits and dot (if you want decimal numbers)
+                  const cleanValue = raw.replace(/[^0-9.]/g, "");
+
+                  const numericValue = cleanValue; // no need to remove comma now
                   const n = Number(numericValue);
 
                   setTariffInputValue(cleanValue);
@@ -1093,22 +1095,14 @@ export default function AshiglaltiinZardluud() {
                   });
                 }}
                 onBlur={() => {
-                  if (
-                    formData.tariff !== undefined &&
-                    formData.tariff !== null &&
-                    formData.tariff !== 0
-                  ) {
+                  if (formData.tariff) {
                     setTariffInputValue(formatNumber(formData.tariff, 2));
-                  } else if (tariffInputValue === "" || formData.tariff === 0) {
+                  } else {
                     setTariffInputValue("");
                   }
                 }}
                 onFocus={() => {
-                  if (
-                    formData.tariff !== undefined &&
-                    formData.tariff !== null &&
-                    formData.tariff !== 0
-                  ) {
+                  if (formData.tariff) {
                     setTariffInputValue(formData.tariff.toString());
                   }
                 }}
