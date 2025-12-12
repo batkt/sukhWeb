@@ -466,12 +466,10 @@ export default function Khynalt() {
     residents,
   ]);
 
-  // Fetch invoices once (broad window) to compute overdue 2+ months and cancelled-contract receivables
   useEffect(() => {
     const run = async () => {
       if (!token || !ajiltan?.baiguullagiinId) return;
       try {
-        // Fetch overdue receivables 2+ months
         const overdueResp = await uilchilgee(token).get(
           `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
           {
@@ -491,7 +489,6 @@ export default function Khynalt() {
           setOverdue2m({ count: 0, total: 0, items: [] });
         }
 
-        // Fetch cancelled contract receivables
         const cancelledResp = await uilchilgee(token).get(
           `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
           {

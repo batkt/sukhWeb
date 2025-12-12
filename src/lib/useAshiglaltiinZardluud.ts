@@ -27,6 +27,7 @@ interface ZardalItem {
   tseverUsDun?: number;
   bokhirUsDun?: number;
   usKhalaasniiDun?: number;
+  tailbar?: string;
 }
 
 interface UseAshiglaltiinZardluudReturn {
@@ -74,7 +75,7 @@ export function useAshiglaltiinZardluud(overrides?: {
   );
 
   const addZardal = async (
-    zardalData: Partial<ZardalItem> & { lift?: string | null }
+    zardalData: Partial<ZardalItem>
   ) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
@@ -90,9 +91,7 @@ export function useAshiglaltiinZardluud(overrides?: {
     const newItem: ZardalItem = {
       ner: zardalData.ner ?? "Лифт",
       turul: zardalData.turul ?? "лифт",
-      zardliinTurul:
-        zardalData.zardliinTurul ??
-        ((zardalData as any).lift === "Лифт" ? "Лифт" : "Энгийн"),
+      zardliinTurul: zardalData.zardliinTurul ?? "Энгийн",
       bodokhArga: zardalData.bodokhArga ?? "тогтмол",
       tariff: zardalData.tariff ?? 50000,
       tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
@@ -113,6 +112,7 @@ export function useAshiglaltiinZardluud(overrides?: {
       tseverUsDun: 0,
       bokhirUsDun: 0,
       usKhalaasniiDun: 0,
+      tailbar: zardalData.tailbar ?? "",
     };
 
     barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);
@@ -123,7 +123,7 @@ export function useAshiglaltiinZardluud(overrides?: {
 
   const updateZardal = async (
     id: string,
-    zardalData: Partial<ZardalItem> & { lift?: string | null }
+    zardalData: Partial<ZardalItem>
   ) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
@@ -142,9 +142,6 @@ export function useAshiglaltiinZardluud(overrides?: {
     barilga.tokhirgoo.ashiglaltiinZardluud[index] = {
       ...barilga.tokhirgoo.ashiglaltiinZardluud[index],
       ...zardalData,
-      zardliinTurul:
-        zardalData.zardliinTurul ??
-        ((zardalData as any).lift === "Лифт" ? "Лифт" : "Энгийн"),
       bodokhArga: zardalData.bodokhArga ?? "тогтмол",
       tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
       nuatNemekhEsekh:

@@ -22,6 +22,7 @@ export interface Ajiltan {
   erkh: string;
   baiguullagiinId: string;
   barilguud?: string[];
+  barilgiinId?: string;
   salbaruud?: Array<{
     salbariinId: string;
     duusakhOgnoo: string;

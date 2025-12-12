@@ -183,12 +183,14 @@ function Tokhirgoo() {
                     isActive
                       ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-semibold"
                       : "text-theme opacity-80 hover:opacity-100"
-                  } ${isSoon ? "cursor-not-allowed" : ""}`}
+                  } ${isSoon ? "cursor-not-allowed pr-24" : ""}`}
                 >
                   {item.icon}
-                  <span>{item.text}</span>
+                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                    {item.text}
+                  </span>
                   {isSoon && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-green-500">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-green-500 max-w-20 overflow-hidden text-ellipsis whitespace-nowrap">
                       Тун удахгүй
                     </span>
                   )}
