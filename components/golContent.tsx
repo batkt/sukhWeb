@@ -183,10 +183,10 @@ export default function GolContent({ children }: GolContentProps) {
           label: "Мэдэгдэл",
           path: "/medegdel",
         },
-        {
-          label: "Шаардлага",
-          path: "/shaardlaga",
-        },
+        // {
+        //   label: "Шаардлага",
+        //   path: "/shaardlaga",
+        // },
         // {
         //   label: "Дуудлага",
         //   path: "/duudlaga",
@@ -197,6 +197,32 @@ export default function GolContent({ children }: GolContentProps) {
         },
       ],
     },
+    // {
+    //   label: "Зогсоол",
+    //   path: "zogsool",
+    //   submenu: [
+    //     {
+    //       label: "Жагсаалт",
+    //       path: "/jagsaalt",
+    //     },
+    //     {
+    //       label: "Машин бүртгэл",
+    //       path: "/mashinBurtgel",
+    //     },
+    //     {
+    //       label: "Камер касс",
+    //       path: "/camera",
+    //     },
+    //     {
+    //       label: "Камерын хяналт",
+    //       path: "/cameraKhyanalt",
+    //     },
+    //     {
+    //       label: "Оршин суугч",
+    //       path: "/orshinSuugch",
+    //     },
+    //   ],
+    // },
   ];
 
   const handleLogout = async (e?: React.MouseEvent) => {
