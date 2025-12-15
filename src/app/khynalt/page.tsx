@@ -719,6 +719,21 @@ export default function Khynalt() {
     );
   })();
 
+  // Inactive contracts (cancelled or expired) within the current filter
+  const filteredNonAvtiveGereeCount = useMemo(() => {
+    const now = new Date();
+    return filteredContracts.filter((c: any) => {
+      const status = String(c?.tuluv || c?.status || "").trim();
+      const end = c?.duusakhOgnoo ? new Date(c.duusakhOgnoo) : null;
+      const isCancelled =
+        status === "Цуцалсан" ||
+        status === "Идэвхгүй" ||
+        status === "Идэвхигүй";
+      const isExpired = end ? end < now : false;
+      return isCancelled || isExpired;
+    }).length;
+  }, [filteredContracts]);
+
   // Calculate totals from chart data
   const totalIncome = incomeSeries.paid.reduce((sum, val) => sum + val, 0);
   const totalExpenses = expenseSeries.expenses.reduce(
@@ -736,16 +751,11 @@ export default function Khynalt() {
 
   const kpiCards = [
     {
-      title: "Гэрээ",
-      value: filteredTotalContracts,
-      subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
-      color: "from-blue-500 to-blue-600",
-      onClick: () => {
-        try {
-          localStorage.setItem("geree.activeTab", "contracts");
-        } catch (e) {}
-        router.push("/geree?tab=contracts");
-      },
+      title: "Барилга",
+      value: buildingCount,
+      subtitle: "Нийт барилга",
+      color: "from-indigo-500 to-indigo-600",
+
       delay: 0,
     },
     {
@@ -762,12 +772,33 @@ export default function Khynalt() {
       delay: 100,
     },
     {
+      title: "Гэрээ",
+      value: filteredTotalContracts,
+      subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
+      color: "from-blue-500 to-blue-600",
+      onClick: () => {
+        try {
+          localStorage.setItem("geree.activeTab", "contracts");
+        } catch (e) {}
+        router.push("/geree?tab=contracts");
+      },
+      delay: 200,
+    },
+    {
+      title: "Идэвхигүй тоот",
+      value: filteredNonAvtiveGereeCount,
+      subtitle: "Идэвхигүй тоотны тоо",
+      color: "from-yellow-500 to-yellow-600",
+      delay: 300,
+    },
+
+    {
       title: "Орлого",
       value: formatCurrency(incomeTotals.paid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
       onClick: () => router.push("/tulbur"),
-      delay: 200,
+      delay: 400,
     },
     {
       title: "Төлбөр дутуу",
@@ -775,27 +806,6 @@ export default function Khynalt() {
       subtitle: "Төлөөгүй дүн",
       color: "from-red-500 to-red-600",
       onClick: () => router.push("/tulbur"),
-      delay: 300,
-    },
-    {
-      title: "Ажилчид",
-      value: filteredTotalEmployees,
-      subtitle: "Нийт ажилчид",
-      color: "from-yellow-500 to-yellow-600",
-      onClick: () => {
-        try {
-          localStorage.setItem("geree.activeTab", "employees");
-        } catch (e) {}
-        router.push("/geree?tab=employees");
-      },
-      delay: 400,
-    },
-    {
-      title: "Барилга",
-      value: buildingCount,
-      subtitle: "Нийт барилга",
-      color: "from-indigo-500 to-indigo-600",
-
       delay: 500,
     },
   ];
