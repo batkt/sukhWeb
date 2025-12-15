@@ -35,7 +35,7 @@ export function getApiUrl(): string {
     return "https://amarhome.mn/api";
   }
 
-  return "http://103.143.40.46:8084";
+  return "http://103.50.205.80:8084";
 }
 
 // Export url for backward compatibility and direct access
