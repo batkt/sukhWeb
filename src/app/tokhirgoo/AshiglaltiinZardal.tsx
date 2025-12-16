@@ -45,6 +45,10 @@ interface ZardalItem {
   tailbar?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Electricity meter-based fields
+  zaalt?: boolean;
+  zaaltTariff?: number;
+  zaaltDefaultDun?: number;
   // Electricity tiered pricing
   tariff150kv?: number;
   tariff150to300kv?: number;
@@ -56,10 +60,15 @@ interface ZardalFormData {
   ner: string;
   turul: string;
   tariff: number;
+  tariffUsgeer?: string;
   zardliinTurul?: string;
   suuriKhuraamj?: number;
   nuatBodokhEsekh?: boolean;
   tailbar?: string;
+  // Electricity meter-based fields
+  zaalt?: boolean;
+  zaaltTariff?: number;
+  zaaltDefaultDun?: number;
   // Electricity tiered pricing
   tariff150kv?: number;
   tariff150to300kv?: number;
@@ -105,16 +114,22 @@ export default function AshiglaltiinZardluud() {
     ner: "",
     turul: "",
     tariff: 0,
+    tariffUsgeer: undefined,
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
     zardliinTurul: undefined,
     tailbar: "",
+    zaalt: false,
+    zaaltTariff: 0,
+    zaaltDefaultDun: 0,
     tariff150kv: 0,
     tariff150to300kv: 0,
     tariff300pluskv: 0,
   });
 
   const [tariffInputValue, setTariffInputValue] = useState<string>("");
+  const [zaaltTariffInput, setZaaltTariffInput] = useState<string>("");
+  const [zaaltDefaultDunInput, setZaaltDefaultDunInput] = useState<string>("");
   const [tariff150kvInput, setTariff150kvInput] = useState<string>("");
   const [tariff150to300kvInput, setTariff150to300kvInput] =
     useState<string>("");
@@ -438,15 +453,21 @@ export default function AshiglaltiinZardluud() {
       ner: "",
       turul: isUilchilgee ? "Дурын" : "Тогтмол",
       tariff: 0,
+      tariffUsgeer: undefined,
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
       zardliinTurul: undefined,
       tailbar: "",
+      zaalt: false,
+      zaaltTariff: 0,
+      zaaltDefaultDun: 0,
       tariff150kv: 0,
       tariff150to300kv: 0,
       tariff300pluskv: 0,
     });
     setTariffInputValue("");
+    setZaaltTariffInput("");
+    setZaaltDefaultDunInput("");
     setTariff150kvInput("");
     setTariff150to300kvInput("");
     setTariff300pluskvInput("");
@@ -461,15 +482,25 @@ export default function AshiglaltiinZardluud() {
       ner: item.ner,
       turul: item.turul,
       tariff: item.tariff,
+      tariffUsgeer: item.tariffUsgeer,
       suuriKhuraamj: item.suuriKhuraamj || 0,
       nuatBodokhEsekh: item.nuatBodokhEsekh || false,
       zardliinTurul: item.zardliinTurul,
       tailbar: item.tailbar || "",
+      zaalt: item.zaalt || false,
+      zaaltTariff: item.zaaltTariff || 0,
+      zaaltDefaultDun: item.zaaltDefaultDun || 0,
       tariff150kv: item.tariff150kv || 0,
       tariff150to300kv: item.tariff150to300kv || 0,
       tariff300pluskv: item.tariff300pluskv || 0,
     });
     setTariffInputValue(formatNumber(item.tariff, 2));
+    setZaaltTariffInput(
+      item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : ""
+    );
+    setZaaltDefaultDunInput(
+      item.zaaltDefaultDun ? formatNumber(item.zaaltDefaultDun, 2) : ""
+    );
     setTariff150kvInput(
       item.tariff150kv ? formatNumber(item.tariff150kv, 2) : ""
     );
@@ -490,8 +521,11 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
+      // Ensure zaalt is true for electricity expenses
+      const isCakhilgaan = formData.ner.toLowerCase().includes("цахилгаан");
       const payload = {
         ...formData,
+        zaalt: isCakhilgaan ? true : formData.zaalt,
         barilgiinId: selectedBuildingId || barilgiinId || undefined,
       };
 
@@ -816,11 +850,18 @@ export default function AshiglaltiinZardluud() {
                                   .includes(filterText.toLowerCase())
                           )
                           .map((mur) => {
+                            // For electricity expenses, show zaaltTariff instead of tariff
+                            const isCakhilgaan = mur.ner
+                              .toLowerCase()
+                              .includes("цахилгаан");
+                            const displayValue = isCakhilgaan
+                              ? mur.zaaltTariff || 0
+                              : mur.tariff;
                             const currentValue =
                               editedTariffs[mur._id!] !== undefined
                                 ? editedTariffs[mur._id!]
-                                : mur.tariff;
-                            const changed = currentValue !== mur.tariff;
+                                : displayValue;
+                            const changed = currentValue !== displayValue;
                             return (
                               <tr
                                 key={mur._id}
@@ -905,7 +946,15 @@ export default function AshiglaltiinZardluud() {
                                             .toLowerCase()
                                             .includes(filterText.toLowerCase())
                                     )
-                                    .reduce((sum, item) => sum + item.tariff, 0)
+                                    .reduce((sum, item) => {
+                                      const isCakhilgaan = item.ner
+                                        .toLowerCase()
+                                        .includes("цахилгаан");
+                                      const value = isCakhilgaan
+                                        ? item.zaaltTariff || 0
+                                        : item.tariff;
+                                      return sum + value;
+                                    }, 0)
                                 )}{" "}
                                 ₮
                               </span>
@@ -982,11 +1031,18 @@ export default function AshiglaltiinZardluud() {
                                   .includes(filterText.toLowerCase())
                           )
                           .map((mur) => {
+                            // For electricity expenses, show zaaltTariff instead of tariff
+                            const isCakhilgaan = mur.ner
+                              .toLowerCase()
+                              .includes("цахилгаан");
+                            const displayValue = isCakhilgaan
+                              ? mur.zaaltTariff || 0
+                              : mur.tariff;
                             const currentValue =
                               editedTariffs[mur._id!] !== undefined
                                 ? editedTariffs[mur._id!]
-                                : mur.tariff;
-                            const changed = currentValue !== mur.tariff;
+                                : displayValue;
+                            const changed = currentValue !== displayValue;
                             return (
                               <tr
                                 key={mur._id}
@@ -1071,7 +1127,15 @@ export default function AshiglaltiinZardluud() {
                                             .toLowerCase()
                                             .includes(filterText.toLowerCase())
                                     )
-                                    .reduce((sum, item) => sum + item.tariff, 0)
+                                    .reduce((sum, item) => {
+                                      const isCakhilgaan = item.ner
+                                        .toLowerCase()
+                                        .includes("цахилгаан");
+                                      const value = isCakhilgaan
+                                        ? item.zaaltTariff || 0
+                                        : item.tariff;
+                                      return sum + value;
+                                    }, 0)
                                 )}{" "}
                                 ₮
                               </span>
@@ -1250,9 +1314,18 @@ export default function AshiglaltiinZardluud() {
               </label>
               <MTextInput
                 value={formData.ner}
-                onChange={(e) =>
-                  setFormData({ ...formData, ner: e.currentTarget.value })
-                }
+                onChange={(e) => {
+                  const newName = e.currentTarget.value;
+                  const isCakhilgaan = newName
+                    .toLowerCase()
+                    .includes("цахилгаан");
+                  setFormData({
+                    ...formData,
+                    ner: newName,
+                    zaalt: isCakhilgaan ? true : formData.zaalt,
+                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
+                  });
+                }}
                 placeholder="Зардлын нэр оруулах"
                 className="text-sm text-theme"
               />
@@ -1277,150 +1350,28 @@ export default function AshiglaltiinZardluud() {
               />
             </div> */}
 
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Зардлын төрөл
-              </label>
-              <MSelect
-                value={formData.zardliinTurul ?? undefined}
-                onChange={(value) =>
-                  setFormData({ ...formData, zardliinTurul: value as string })
-                }
-                className="w-full text-theme"
-                data={[
-                  { label: "Лифт", value: "Лифт" },
-                  { label: "Энгийн", value: "Энгийн" },
-                ]}
-                placeholder="Сонгох (Лифт)"
-                searchable={false}
-              />
-            </div>
+            {!formData.ner.toLowerCase().includes("цахилгаан") && (
+              <div>
+                <label className="block text-sm font-medium mb-1 text-theme">
+                  Зардлын төрөл
+                </label>
+                <MSelect
+                  value={formData.zardliinTurul ?? undefined}
+                  onChange={(value) =>
+                    setFormData({ ...formData, zardliinTurul: value as string })
+                  }
+                  className="w-full text-theme"
+                  data={[
+                    { label: "Лифт", value: "Лифт" },
+                    { label: "Энгийн", value: "Энгийн" },
+                  ]}
+                  placeholder="Сонгох (Лифт)"
+                  searchable={false}
+                />
+              </div>
+            )}
 
-            {/* Conditional: Show tiered electricity pricing if name contains "Цахилгаан" */}
-            {formData.ner.toLowerCase().includes("цахилгаан") ? (
-              <>
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-theme">
-                    150кв (₮)
-                  </label>
-                  <MTextInput
-                    value={tariff150kvInput}
-                    onChange={(e) => {
-                      const raw = e.currentTarget.value;
-                      const cleanValue = raw.replace(/[^0-9.]/g, "");
-                      const n = Number(cleanValue);
-
-                      setTariff150kvInput(cleanValue);
-                      setFormData({
-                        ...formData,
-                        tariff150kv: Number.isFinite(n) ? n : 0,
-                      });
-                    }}
-                    onBlur={() => {
-                      if (formData.tariff150kv) {
-                        setTariff150kvInput(
-                          formatNumber(formData.tariff150kv, 2)
-                        );
-                      } else {
-                        setTariff150kvInput("");
-                      }
-                    }}
-                    onFocus={() => {
-                      if (formData.tariff150kv) {
-                        setTariff150kvInput(formData.tariff150kv.toString());
-                      }
-                    }}
-                    placeholder="0"
-                    className="text-theme"
-                    rightSection={
-                      <span className="text-slate-500 pr-1">₮</span>
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-theme">
-                    150-300кв (₮)
-                  </label>
-                  <MTextInput
-                    value={tariff150to300kvInput}
-                    onChange={(e) => {
-                      const raw = e.currentTarget.value;
-                      const cleanValue = raw.replace(/[^0-9.]/g, "");
-                      const n = Number(cleanValue);
-
-                      setTariff150to300kvInput(cleanValue);
-                      setFormData({
-                        ...formData,
-                        tariff150to300kv: Number.isFinite(n) ? n : 0,
-                      });
-                    }}
-                    onBlur={() => {
-                      if (formData.tariff150to300kv) {
-                        setTariff150to300kvInput(
-                          formatNumber(formData.tariff150to300kv, 2)
-                        );
-                      } else {
-                        setTariff150to300kvInput("");
-                      }
-                    }}
-                    onFocus={() => {
-                      if (formData.tariff150to300kv) {
-                        setTariff150to300kvInput(
-                          formData.tariff150to300kv.toString()
-                        );
-                      }
-                    }}
-                    placeholder="0"
-                    className="text-theme"
-                    rightSection={
-                      <span className="text-slate-500 pr-1">₮</span>
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1 text-theme">
-                    300+ кв (₮)
-                  </label>
-                  <MTextInput
-                    value={tariff300pluskvInput}
-                    onChange={(e) => {
-                      const raw = e.currentTarget.value;
-                      const cleanValue = raw.replace(/[^0-9.]/g, "");
-                      const n = Number(cleanValue);
-
-                      setTariff300pluskvInput(cleanValue);
-                      setFormData({
-                        ...formData,
-                        tariff300pluskv: Number.isFinite(n) ? n : 0,
-                      });
-                    }}
-                    onBlur={() => {
-                      if (formData.tariff300pluskv) {
-                        setTariff300pluskvInput(
-                          formatNumber(formData.tariff300pluskv, 2)
-                        );
-                      } else {
-                        setTariff300pluskvInput("");
-                      }
-                    }}
-                    onFocus={() => {
-                      if (formData.tariff300pluskv) {
-                        setTariff300pluskvInput(
-                          formData.tariff300pluskv.toString()
-                        );
-                      }
-                    }}
-                    placeholder="0"
-                    className="text-theme"
-                    rightSection={
-                      <span className="text-slate-500 pr-1">₮</span>
-                    }
-                  />
-                </div>
-              </>
-            ) : (
+            {!formData.ner.toLowerCase().includes("цахилгаан") && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-theme">
                   Тариф (₮)
@@ -1455,6 +1406,91 @@ export default function AshiglaltiinZardluud() {
                   rightSection={<span className="text-slate-500 pr-1">₮</span>}
                 />
               </div>
+            )}
+
+            {/* Zaalt fields for electricity */}
+            {formData.ner.toLowerCase().includes("цахилгаан") && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme">
+                    Заалтын тариф (₮/кВт)
+                  </label>
+                  <MTextInput
+                    value={zaaltTariffInput}
+                    onChange={(e) => {
+                      const raw = e.currentTarget.value;
+                      const cleanValue = raw.replace(/[^0-9.]/g, "");
+                      const n = Number(cleanValue);
+
+                      setZaaltTariffInput(cleanValue);
+                      setFormData({
+                        ...formData,
+                        zaaltTariff: Number.isFinite(n) ? n : 0,
+                      });
+                    }}
+                    onBlur={() => {
+                      if (formData.zaaltTariff) {
+                        setZaaltTariffInput(
+                          formatNumber(formData.zaaltTariff, 2)
+                        );
+                      } else {
+                        setZaaltTariffInput("");
+                      }
+                    }}
+                    onFocus={() => {
+                      if (formData.zaaltTariff) {
+                        setZaaltTariffInput(formData.zaaltTariff.toString());
+                      }
+                    }}
+                    placeholder="150"
+                    className="text-theme"
+                    rightSection={
+                      <span className="text-slate-500 pr-1">₮</span>
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme">
+                    Үндсэн дүн (₮)
+                  </label>
+                  <MTextInput
+                    value={zaaltDefaultDunInput}
+                    onChange={(e) => {
+                      const raw = e.currentTarget.value;
+                      const cleanValue = raw.replace(/[^0-9.]/g, "");
+                      const n = Number(cleanValue);
+
+                      setZaaltDefaultDunInput(cleanValue);
+                      setFormData({
+                        ...formData,
+                        zaaltDefaultDun: Number.isFinite(n) ? n : 0,
+                      });
+                    }}
+                    onBlur={() => {
+                      if (formData.zaaltDefaultDun) {
+                        setZaaltDefaultDunInput(
+                          formatNumber(formData.zaaltDefaultDun, 2)
+                        );
+                      } else {
+                        setZaaltDefaultDunInput("");
+                      }
+                    }}
+                    onFocus={() => {
+                      if (formData.zaaltDefaultDun) {
+                        setZaaltDefaultDunInput(
+                          formData.zaaltDefaultDun.toString()
+                        );
+                      }
+                    }}
+                    placeholder="2000"
+                    className="text-theme"
+                    rightSection={
+                      <span className="text-slate-500 pr-1">₮</span>
+                    }
+                  />
+                </div>
+              </>
             )}
             <div>
               <label className="block text-sm font-medium mb-1 text-theme">
