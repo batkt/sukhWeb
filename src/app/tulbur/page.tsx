@@ -10,10 +10,18 @@ import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
-import { Upload, Download, ChevronDown, FileSpreadsheet } from "lucide-react";
+import {
+  Upload,
+  Download,
+  ChevronDown,
+  FileSpreadsheet,
+  Zap,
+} from "lucide-react";
 import GuilgeeTuukhPage from "./guilgeeTuukh/page";
 import DansKhuulgaPage from "./dansKhuulga/page";
 import TabButton from "components/tabButton/tabButton";
+import { Modal as MModal } from "@mantine/core";
+import formatNumber from "../../../tools/function/formatNumber";
 
 export default function TulburPage() {
   const [active, setActive] = useState<"guilgee" | "dans">("guilgee");
@@ -26,6 +34,11 @@ export default function TulburPage() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+
+  // Electricity meter modal state
+  const [isZaaltModalOpen, setIsZaaltModalOpen] = useState(false);
+  const [zaaltData, setZaaltData] = useState<any[]>([]);
+  const [isLoadingZaalt, setIsLoadingZaalt] = useState(false);
 
   const gereeTourSteps: DriverStep[] = useMemo(() => {
     if (activeTab === "guilgee") {
@@ -204,7 +217,11 @@ export default function TulburPage() {
           ? "/guilgeeniiTuukhExcelImport"
           : "/bankniiGuilgeeExcelImport";
 
-      message.loading({ content: "Excel импорт хийж байна…", key: "import", duration: 0 });
+      message.loading({
+        content: "Excel импорт хийж байна…",
+        key: "import",
+        duration: 0,
+      });
 
       const resp: any = await uilchilgee(token).post(endpoint, form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -310,6 +327,43 @@ export default function TulburPage() {
     }
   };
 
+  // Fetch electricity meter data
+  const fetchZaaltData = async () => {
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      setIsLoadingZaalt(true);
+      setIsZaaltModalOpen(true);
+
+      const response = await uilchilgee(token).post("/zaaltExcelDataAvya", {
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: effectiveBarilgiinId,
+      });
+
+      // Handle different response structures
+      const data = response.data;
+      if (Array.isArray(data)) {
+        setZaaltData(data);
+      } else if (data && Array.isArray(data.data)) {
+        setZaaltData(data.data);
+      } else if (data && Array.isArray(data.result)) {
+        setZaaltData(data.result);
+      } else {
+        console.log("Response structure:", data);
+        setZaaltData([]);
+      }
+    } catch (err: any) {
+      const errorMsg = getErrorMessage(err);
+      openErrorOverlay(errorMsg);
+      setIsZaaltModalOpen(false);
+    } finally {
+      setIsLoadingZaalt(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       <div className="rounded-2xl p-4 table-surface">
@@ -350,22 +404,6 @@ export default function TulburPage() {
           </div>
           <div className="flex items-center justify-end gap-2 flex-wrap">
             <div ref={zaaltButtonRef} className="relative">
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-                onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
-                className="btn-minimal inline-flex items-center gap-2"
-                id="zaalt-btn"
-              >
-                <FileSpreadsheet className="w-5 h-5" />
-                <span className="text-xs">Заалт</span>
-                <ChevronDown
-                  className={`w-4 h-4 transition-transform ${
-                    isZaaltDropdownOpen ? "rotate-180" : ""
-                  }`}
-                />
-              </motion.button>
-
               {isZaaltDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                   <button
@@ -415,6 +453,13 @@ export default function TulburPage() {
             >
               Дансны хуулга
             </TabButton>
+            <button
+              onClick={fetchZaaltData}
+              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" />
+              Цахилгаан заалт
+            </button>
           </div>
         </div>
 
@@ -422,6 +467,90 @@ export default function TulburPage() {
           {active === "guilgee" ? <GuilgeeTuukhPage /> : <DansKhuulgaPage />}
         </div>
       </div>
+
+      {/* Electricity Meter Modal */}
+      <MModal
+        opened={isZaaltModalOpen}
+        onClose={() => setIsZaaltModalOpen(false)}
+        title="Цахилгаан заалт"
+        size={zaaltData.length > 0 ? "xl" : "md"}
+        centered
+        classNames={{
+          title: "text-xl font-bold text-theme",
+        }}
+      >
+        {isLoadingZaalt ? (
+          <div className="flex justify-center items-center p-10">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        ) : zaaltData.length === 0 ? (
+          <div className="text-center p-10 text-gray-500">
+            Цахилгааны заалтын мэдээлэл олдсонгүй
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100 dark:bg-gray-800">
+                <tr>
+                  <th className="px-3 py-2 text-left">Гэрээний дугаар</th>
+                  <th className="px-3 py-2 text-left">Тоот</th>
+                  <th className="px-3 py-2 text-right">Өмнө</th>
+                  <th className="px-3 py-2 text-right">Өдөр</th>
+                  <th className="px-3 py-2 text-right">Шөнө</th>
+                  <th className="px-3 py-2 text-right">Нийт (одоо)</th>
+                  <th className="px-3 py-2 text-right">Зөрүү</th>
+                  <th className="px-3 py-2 text-right">Тариф (кВт)</th>
+                  <th className="px-3 py-2 text-right">Default дүн</th>
+                  <th className="px-3 py-2 text-right">Төлбөр</th>
+                  <th className="px-3 py-2 text-left">Тооцоолсон огноо</th>
+                </tr>
+              </thead>
+              <tbody>
+                {zaaltData.map((item: any, idx: number) => (
+                  <tr
+                    key={idx}
+                    className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  >
+                    <td className="px-3 py-2">{item.gereeniinDugaar || "-"}</td>
+                    <td className="px-3 py-2">{item.toot || "-"}</td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.umnukhZaalt || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.zaaltTog || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.zaaltUs || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.suuliinZaalt || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(
+                        (item.suuliinZaalt || 0) - (item.umnukhZaalt || 0)
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.tariff || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      {formatNumber(item.defaultDun || 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right font-semibold">
+                      {formatNumber(item.zaaltDun || 0)} ₮
+                    </td>
+                    <td className="px-3 py-2">
+                      {item.tootsoosonOgnoo
+                        ? new Date(item.tootsoosonOgnoo).toLocaleString("mn-MN")
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </MModal>
     </div>
   );
 }

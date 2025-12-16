@@ -86,8 +86,8 @@ export async function fetchWithDomainFallback(
 ): Promise<Response> {
   // Use the api proxy path on the domain so URLs become
   // https://amarhome.mn/api/nekhemjlekhCron/...
-  const CRON_DOMAIN = "https://amarhome.mn/api";
-  const CRON_IP = "http://103.143.40.46:8084";
+  const CRON_DOMAIN = "http://103.50.205.80:8084";
+  const CRON_IP = "http://103.50.205.80:8084";
   const bases = [CRON_DOMAIN, CRON_IP];
 
   let lastErr: any = null;
@@ -256,5 +256,3 @@ export const getRequestScope = () => ({
   baiguullagiinId: globalBaiguullagiinId,
   barilgiinId: globalBarilgiinId,
 });
-
-

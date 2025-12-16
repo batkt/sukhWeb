@@ -877,26 +877,21 @@ export default function AshiglaltiinZardluud() {
 
                                 <td className="py-2 pr-3">
                                   <MTextInput
-                                    className="w-36 text-center text-theme mx-auto"
+                                    className="w-36 mx-auto"
                                     value={formatNumber(currentValue, 2)}
                                     readOnly
-                                    onChange={(e) =>
-                                      setEditedTariffs((prev) => ({
-                                        ...prev,
-                                        [mur._id!]: Number(
-                                          String(e.currentTarget.value).replace(
-                                            /[^0-9.-]/g,
-                                            ""
-                                          )
-                                        ),
-                                      }))
-                                    }
+                                    styles={{
+                                      input: {
+                                        textAlign: "right",
+                                      },
+                                    }}
                                     rightSection={
                                       <span className="text-slate-500 pr-1">
                                         ₮
                                       </span>
                                     }
                                   />
+
                                   {changed && (
                                     <span className="text-xs text-amber-600 ml-2">
                                       Өөрчлөгдсөн
@@ -1127,15 +1122,7 @@ export default function AshiglaltiinZardluud() {
                                             .toLowerCase()
                                             .includes(filterText.toLowerCase())
                                     )
-                                    .reduce((sum, item) => {
-                                      const isCakhilgaan = item.ner
-                                        .toLowerCase()
-                                        .includes("цахилгаан");
-                                      const value = isCakhilgaan
-                                        ? item.zaaltTariff || 0
-                                        : item.tariff;
-                                      return sum + value;
-                                    }, 0)
+                                    .reduce((sum, item) => sum + item.tariff, 0)
                                 )}{" "}
                                 ₮
                               </span>
