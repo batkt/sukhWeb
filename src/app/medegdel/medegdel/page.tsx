@@ -138,7 +138,7 @@ export default function KhyanaltFrontend() {
       } else {
         // For App, use medegdelIlgeeye endpoint
         const orshinSuugchIdArray = songogdsonKhariltsagch.map(
-          (user) => user.orshinSuugchId
+          (user) => user._id
         );
 
         await uilchilgee(token).post("/medegdelIlgeeye", {
