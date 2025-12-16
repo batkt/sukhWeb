@@ -35,7 +35,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import uilchilgee, { socket, getErrorMessage } from "../../../lib/uilchilgee";
+import uilchilgee, { socket, getErrorMessage } from "@/lib/uilchilgee";
 import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";

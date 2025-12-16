@@ -31,11 +31,11 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import formatNumber from "../../../../tools/function/formatNumber";
 
-import { url as API_URL } from "../../../../lib/uilchilgee";
-import uilchilgee from "../../../../lib/uilchilgee";
+import { url as API_URL } from "@/lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { getErrorMessage } from "../../../../lib/uilchilgee";
+import { getErrorMessage } from "@/lib/uilchilgee";
 
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;

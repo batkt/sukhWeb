@@ -1,4 +1,4 @@
-import uilchilgee from "lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 
 export async function postSummary(token: string, body: any) {
   return uilchilgee(token).get(`/tailan/summary`, { params: body });

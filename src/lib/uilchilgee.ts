@@ -256,3 +256,5 @@ export const getRequestScope = () => ({
   baiguullagiinId: globalBaiguullagiinId,
   barilgiinId: globalBarilgiinId,
 });
+
+

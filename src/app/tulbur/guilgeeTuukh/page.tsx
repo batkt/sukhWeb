@@ -11,7 +11,7 @@ import NekhemjlekhPage from "../nekhemjlekh/page";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
-import uilchilgee from "../../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -21,7 +21,7 @@ import { set } from "lodash";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { Download, Upload, ChevronDown, FileSpreadsheet } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { getErrorMessage } from "../../../../lib/uilchilgee";
+import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
 import DatePickerInput from "@/components/ui/DatePickerInput";
@@ -244,24 +244,14 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Build filters for backend
-      const [s, e] = ekhlekhOgnoo || [];
-      const filters: Record<string, any> = {};
-      if (s) filters.ekhlekhOgnoo = s;
-      if (e) filters.duusakhOgnoo = e;
-      if (tuluvFilter && tuluvFilter !== "all") filters.tuluv = tuluvFilter;
-      if (searchTerm) filters.search = searchTerm;
-
       const body = {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: effectiveBarilgiinId || null,
-        filters,
-        fileName: undefined as string | undefined,
       };
 
-      const path = "/guilgeeniiTuukhExcelDownload";
+      const path = "/zaaltExcelTemplateAvya";
       const hide = message.loading({
-        content: "Excel бэлдэж байна…",
+        content: "Excel загвар бэлдэж байна…",
         duration: 0,
       });
       let resp: any;
@@ -288,7 +278,7 @@ export default function DansniiKhuulga() {
       // Try to infer filename from headers or fallback
       const cd = (resp.headers?.["content-disposition"] ||
         resp.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "guilgee_tuukh.xlsx";
+      let filename = "zaalt_template.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
@@ -304,10 +294,10 @@ export default function DansniiKhuulga() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      message.success("Excel татагдлаа");
+      message.success("Excel загвар татагдлаа");
     } catch (e) {
       console.error(e);
-      message.error("Excel татахад алдаа гарлаа");
+      message.error("Excel загвар татахад алдаа гарлаа");
     }
   };
 
@@ -360,13 +350,17 @@ export default function DansniiKhuulga() {
       }
 
       const form = new FormData();
-      form.append("excelFile", file);
+      form.append("file", file); // Field name must be "file" as expected by backend
       form.append("baiguullagiinId", ajiltan.baiguullagiinId);
       if (effectiveBarilgiinId) {
         form.append("barilgiinId", effectiveBarilgiinId);
       }
+      // Add ognoo (date) field - using current date in YYYY-MM-DD format
+      const today = new Date();
+      const ognoo = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      form.append("ognoo", ognoo);
 
-      const endpoint = "/guilgeeniiTuukhExcelImport";
+      const endpoint = "/zaaltExcelTatya";
 
       message.loading({ content: "Excel импорт хийж байна…", key: "import", duration: 0 });
 

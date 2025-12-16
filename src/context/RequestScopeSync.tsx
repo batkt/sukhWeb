@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { setRequestScope } from "../../lib/uilchilgee";
+import { setRequestScope } from "@/lib/uilchilgee";
 
 export default function RequestScopeSync() {
   const { ajiltan, barilgiinId, baiguullaga } = useAuth();

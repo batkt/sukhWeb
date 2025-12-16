@@ -18,12 +18,12 @@ import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { fetchWithDomainFallback } from "../../../lib/uilchilgee";
+import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2 } from "lucide-react";
-import uilchilgee from "../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 
 interface ZardalItem {

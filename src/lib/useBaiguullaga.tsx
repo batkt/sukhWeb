@@ -1,4 +1,4 @@
-import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import useSWR, { KeyedMutator } from "swr";
 import { AxiosError } from "axios";
 import { Baiguullaga } from "@/types/baiguullaga";

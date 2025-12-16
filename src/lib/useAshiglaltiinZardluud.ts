@@ -1,7 +1,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import updateMethod from "../../tools/function/updateMethod";
 
 interface ZardalItem {

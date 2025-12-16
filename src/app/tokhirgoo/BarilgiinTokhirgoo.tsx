@@ -13,7 +13,7 @@ import {
   Save,
   Home,
 } from "lucide-react";
-import { aldaaBarigch } from "../../../lib/uilchilgee";
+import { aldaaBarigch } from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";

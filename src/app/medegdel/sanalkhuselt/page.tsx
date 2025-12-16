@@ -7,7 +7,7 @@ import moment from "moment";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
