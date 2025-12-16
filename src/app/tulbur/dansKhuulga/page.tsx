@@ -17,7 +17,7 @@ import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "../../../../lib/uilchilgee";
 import { message } from "antd";
 import IconTextButton from "@/components/ui/IconTextButton";
-import { Download } from "lucide-react";
+import { Download, Upload, ChevronDown, FileSpreadsheet } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "../../../../lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -60,6 +60,9 @@ export default function DansniiKhuulga() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const ebarimtRef = useRef<HTMLDivElement | null>(null);
   const { selectedBuildingId } = useBuilding();
+  const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
+  const zaaltButtonRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load selectedDansId from URL on mount
   useEffect(() => {
@@ -193,6 +196,96 @@ export default function DansniiKhuulga() {
       message.error("Excel татахад алдаа гарлаа");
     }
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        zaaltButtonRef.current &&
+        !zaaltButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsZaaltDropdownOpen(false);
+      }
+    };
+
+    if (isZaaltDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isZaaltDropdownOpen]);
+
+  // Excel Import handler
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      ".xlsx",
+      ".xls",
+    ];
+    const isValidType =
+      validTypes.includes(file.type) ||
+      file.name.endsWith(".xlsx") ||
+      file.name.endsWith(".xls");
+
+    if (!isValidType) {
+      message.error("Зөвхөн Excel файл (.xlsx, .xls) оруулна уу");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const form = new FormData();
+      form.append("excelFile", file);
+      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+      if (selectedBuildingId || barilgiinId) {
+        form.append("barilgiinId", selectedBuildingId || barilgiinId || "");
+      }
+
+      const endpoint = "/bankniiGuilgeeExcelImport";
+
+      message.loading({ content: "Excel импорт хийж байна…", key: "import", duration: 0 });
+
+      const resp: any = await uilchilgee(token).post(endpoint, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      message.destroy("import");
+
+      const data = resp?.data;
+      const failed = data?.result?.failed;
+      if (Array.isArray(failed) && failed.length > 0) {
+        const detailLines = failed.map(
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+        );
+        const details = detailLines.join("\n");
+        const topMsg =
+          data?.message || "Импортын явцад зарим мөр алдаатай байна";
+        openErrorOverlay(`${topMsg}\n${details}`);
+      } else {
+        message.success("Excel импорт амжилттай");
+        // Refresh the page data by reloading
+        window.location.reload();
+      }
+    } catch (err: any) {
+      message.destroy("import");
+      const errorMsg = getErrorMessage(err);
+      openErrorOverlay(errorMsg);
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const t = (text: string) => text;
 
   // Bank transfers (банкны гүйлгээ) fetched from /bankniiGuilgee
@@ -533,6 +626,55 @@ export default function DansniiKhuulga() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <div ref={zaaltButtonRef} className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                  onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
+                  className="btn-minimal inline-flex items-center gap-2"
+                  id="zaalt-btn"
+                >
+                  <FileSpreadsheet className="w-5 h-5" />
+                  <span className="text-xs">Заалт</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition-transform ${
+                      isZaaltDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </motion.button>
+
+                {isZaaltDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span>Excel импорт</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        exceleerTatya();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Excel татах</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                onChange={handleExcelImport}
+                className="hidden"
+              />
               <motion.div
                 id="guilgee-excel-btn"
                 whileHover={{ scale: 1.03 }}
