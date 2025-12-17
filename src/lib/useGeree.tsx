@@ -51,6 +51,7 @@ export interface Geree {
   suhMail?: string;
   temdeglel?: string;
   status?: string;
+  tsahilgaaniiZaalt?: string | number;
   [key: string]: any;
 }
 

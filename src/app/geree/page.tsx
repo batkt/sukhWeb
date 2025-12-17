@@ -1509,6 +1509,7 @@ export default function Geree() {
     orts: "",
     toot: "",
     davkhar: "",
+    tsahilgaaniiZaalt: "",
     // Resident account fields
     nevtrekhNer: "",
     nuutsUg: "",
@@ -2684,6 +2685,7 @@ export default function Geree() {
       davkhar:
         p.davkhar ||
         (davkharOptions && davkharOptions.length > 0 ? davkharOptions[0] : ""),
+      tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
       baiguullagiinId: p.baiguullagiinId || p.baiguullagiin_id || "",
       baiguullagiinNer: p.baiguullagiinNer || selectedBarilga?.ner || "",
       nevtrekhNer: p.nevtrekhNer || (p.utas ? String(p.utas) : "") || "",
@@ -2935,6 +2937,7 @@ export default function Geree() {
         gereeTurul: "Үндсэн гэрээ",
         davkhar: "",
         toot: "",
+        tsahilgaaniiZaalt: "",
         startDate: "",
         gereeniiDugaar: "",
         utas: "",
@@ -3014,6 +3017,7 @@ export default function Geree() {
         contract.toot !== undefined && contract.toot !== null
           ? String(contract.toot)
           : deriveStr(contract.medeelel?.toot) || "",
+      tsahilgaaniiZaalt: contract.tsahilgaaniiZaalt || "",
       khayag: contract.khayag || contract.address || "",
       aimag: contract.aimag || "",
       duureg: contract.duureg || "",
@@ -3360,6 +3364,7 @@ export default function Geree() {
                     bairniiNer: preBairNer,
                     orts: preOrts,
                     toot: preToot,
+                    tsahilgaaniiZaalt: "",
                     talbainKhemjee: "",
                     zoriulalt: "",
                     davkhar: preDavkhar,
@@ -3451,6 +3456,7 @@ export default function Geree() {
                       deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
                     orts: "",
                     toot: "",
+                    tsahilgaaniiZaalt: "",
                     soh:
                       selectedBarilga?.tokhirgoo?.sohNer ||
                       baiguullaga?.ner ||
@@ -5080,6 +5086,7 @@ export default function Geree() {
                               }
                             />
                           </div>
+
                           <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Давхар
@@ -5521,10 +5528,10 @@ export default function Geree() {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.95, opacity: 0 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[80vh] max-h-[80vh] rounded-2xl shadow-2xl p-0 flex flex-col"
+                  className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl max-h-[90vh] rounded-2xl shadow-2xl p-0 flex flex-col"
                 >
-                  <div className="flex items-center justify-between px-6 py-4 border-b">
-                    <h2 className="text-2xl font-bold text-slate-900">
+                  <div className="flex items-center justify-between px-6 py-3 border-b">
+                    <h2 className="text-xl font-bold text-slate-900">
                       {editingResident
                         ? "Оршин суугчийн мэдээлэл засах"
                         : "Оршин суугч нэмэх"}
@@ -5557,8 +5564,8 @@ export default function Geree() {
                     onSubmit={handleCreateResident}
                     className="flex-1 flex flex-col"
                   >
-                    <div className="flex-1 overflow-y-auto px-6 space-y-6 pb-4">
-                      <div className="min-h-[55vh] grid grid-cols-1 md:grid-cols-2 gap-6 pt-6">
+                    <div className="flex-1 overflow-y-auto px-6 pb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                         <div>
                           <label className="block text-sm font-medium text-slate-700 mb-1">
                             Төрөл
@@ -5775,8 +5782,10 @@ export default function Geree() {
                               }
                             />
                           </div>
+                        </div>
 
-                          <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className=" w-full block text-sm font-medium text-slate-700 mb-1">
                                 Барилгын нэр
@@ -5826,73 +5835,46 @@ export default function Geree() {
                                 </div>
                               </div>
                             </div>
-                          </div>
-                          <div className=" md:col-span-2 grid grid-cols-1 w-full">
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
-                              Тайлбар
-                            </label>
-                            <textarea
-                              value={newResident.tailbar}
-                              onChange={(e) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  tailbar: e.target.value,
-                                }))
-                              }
-                              className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                              rows={1}
-                              placeholder="Тайлбар..."
-                              readOnly={!!editingResident}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="md:col-span-2 mt-2 pt-4 border-t border-gray-200">
-                          <h3 className="text-lg font-semibold mb-4 text-slate-900">
-                            Нэвтрэх мэдээлэл
-                          </h3>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Нэвтрэх нэр
+                                Тайлбар
                               </label>
-                              <input
-                                type="text"
-                                value={newResident.nevtrekhNer}
+                              <textarea
+                                value={newResident.tailbar}
                                 onChange={(e) =>
                                   setNewResident((prev: any) => ({
                                     ...prev,
-                                    nevtrekhNer: e.target.value,
+                                    tailbar: e.target.value,
                                   }))
                                 }
                                 className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                                placeholder="Нэвтрэх нэр"
-                                readOnly
+                                rows={1}
+                                placeholder="Тайлбар..."
+                                readOnly={!!editingResident}
                               />
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-slate-700 mb-1">
-                                Нууц үг
+                                Цахилгааны заалт
                               </label>
                               <input
-                                type="password"
-                                value={newResident.nuutsUg}
+                                type="text"
+                                value={newResident.tsahilgaaniiZaalt || ""}
                                 onChange={(e) =>
                                   setNewResident((prev: any) => ({
                                     ...prev,
-                                    nuutsUg: e.target.value,
+                                    tsahilgaaniiZaalt: e.target.value,
                                   }))
                                 }
                                 className="w-full p-3 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
-                                placeholder="Нууц үг"
-                                required={!editingResident}
+                                placeholder="Заалт оруулах..."
                               />
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex justify-end px-6 py-4 border-t sticky bottom-2 left-0 right-0 gap-2">
+                      <div className="flex justify-end px-6 py-3 border-t sticky bottom-0 left-0 right-0 gap-2 bg-white">
                         <button
                           type="button"
                           onClick={() => setShowResidentModal(false)}

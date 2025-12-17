@@ -203,6 +203,7 @@ interface Zardal {
   _id: string;
   ner: string;
   tariff: number | null | undefined;
+  dun: number | null | undefined;
   turul?: string;
   zardliinTurul?: string;
 }
@@ -367,7 +368,8 @@ const InvoiceModal = ({
                   z.ognoo
                 )}`
               : z.ner || z.name || "",
-          tariff: pickAmount(z),
+          tariff: Number(z?.tariff) || 0,
+          dun: pickAmount(z),
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
         });
@@ -404,7 +406,8 @@ const InvoiceModal = ({
       ? raw.map((r: any, idx: number) => ({
           _id: r._id || `row-${idx}`,
           ner: r.ner || r.name || "",
-          tariff: pickAmount(r),
+          tariff: Number(r?.tariff) || 0,
+          dun: pickAmount(r),
           turul: r.turul,
           zardliinTurul: r.zardliinTurul,
         }))
@@ -422,7 +425,8 @@ const InvoiceModal = ({
       ? raw.map((g: any, idx: number) => ({
           _id: g._id || `guilgee-${idx}`,
           ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
-          tariff: Number(g.tulukhDun) || 0,
+          tariff: 0,
+          dun: Number(g.tulukhDun) || 0,
           turul: "avlaga",
           zardliinTurul: "Авлага",
           ognoo: g.ognoo,
@@ -480,7 +484,8 @@ const InvoiceModal = ({
             {
               _id: "lift-discount-display",
               ner: "Лифт хөнгөлөлт",
-              tariff: -liftTariffAbs,
+              tariff: 0,
+              dun: -liftTariffAbs,
               discount: true as const,
             } as any,
           ];
@@ -497,15 +502,18 @@ const InvoiceModal = ({
       return Number.isFinite(n) ? n : null;
     };
     const normalize = (z: Zardal) => {
-      const tar =
-        parseNum((z as any)?.dun) ??
-        parseNum((z as any)?.tulukhDun) ??
-        parseNum((z as any)?.tariff);
-      const isEmpty = tar === null;
+      const dunVal =
+        parseNum((z as any)?.dun) ?? parseNum((z as any)?.tulukhDun);
+      const tariffVal = parseNum((z as any)?.tariff);
+      const isEmpty = dunVal === null && tariffVal === null;
       if (isLiftItem(z) && isEmpty) {
-        return { ...z, tariff: null };
+        return { ...z, tariff: null, dun: null };
       }
-      return { ...z, tariff: tar ?? 0 } as Zardal;
+      return {
+        ...z,
+        tariff: tariffVal ?? 0,
+        dun: dunVal ?? tariffVal ?? 0,
+      } as Zardal;
     };
 
     const normalized = (baseZardluud as Zardal[]).map(normalize);
@@ -513,27 +521,28 @@ const InvoiceModal = ({
     if (!isLiftExempt) return normalized;
 
     const nonLift = normalized.filter((z) => !isLiftItem(z));
-    const liftTariffs = normalized
+    const liftDuns = normalized
       .filter((z) => isLiftItem(z))
-      .map((z) => (z as any)?.tariff)
+      .map((z) => (z as any)?.dun)
       .filter(
         (v) =>
           v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v))
       )
       .map((v) => Number(v));
 
-    if (liftTariffs.length === 0) {
+    if (liftDuns.length === 0) {
       return nonLift;
     }
 
-    const liftSum = liftTariffs.reduce((s, v) => s + v, 0);
+    const liftSum = liftDuns.reduce((s, v) => s + v, 0);
 
     return [
       ...nonLift,
       {
         _id: "lift-discount-fallback",
         ner: "Лифт хөнгөлөлт",
-        tariff: liftSum === 0 ? 0 : -Math.abs(liftSum),
+        tariff: 0,
+        dun: liftSum === 0 ? 0 : -Math.abs(liftSum),
         discount: true as const,
       } as any,
     ];
@@ -557,7 +566,7 @@ const InvoiceModal = ({
     if (invValid && invTotal !== null) return invTotal;
     const rowSum = invoiceRows
       .filter((item: any) => !item?.discount)
-      .reduce((sum: any, item: any) => sum + Number(item?.tariff ?? 0), 0);
+      .reduce((sum: any, item: any) => sum + Number(item?.dun ?? 0), 0);
     return rowSum;
   }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
 
@@ -799,10 +808,7 @@ const InvoiceModal = ({
                             : ""
                         }`}
                       >
-                        {row.tariff == null
-                          ? "-"
-                          : formatNumber(Number(row.tariff))}
-                        ₮
+                        {row.dun == null ? "-" : formatNumber(Number(row.dun))}₮
                       </td>
                     </tr>
                   ))}

@@ -29,6 +29,7 @@ interface OrshinSuugch {
   tuluv?: string;
   toot?: string | number;
   baiguullagiinId?: string;
+  tsahilgaaniiZaalt?: string | number;
   [key: string]: any;
 }
 
