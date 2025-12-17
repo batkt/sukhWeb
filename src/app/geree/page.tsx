@@ -1478,6 +1478,7 @@ export default function Geree() {
     actOgnoo: "",
     tooluuriinDugaar: "",
     baritsaaAvakhDun: 0,
+    tsahilgaaniiZaalt: "",
   });
 
   const selectedResidentForModal = useMemo(() => {
@@ -2421,6 +2422,8 @@ export default function Geree() {
         selectedBarilga?.tokhirgoo?.sohNer || baiguullaga?.ner || "";
       payload.barilgiinId = selectedBuildingId || barilgiinId || null;
       if (newResident.davkhar) payload.davkhar = newResident.davkhar;
+      if (newResident.tsahilgaaniiZaalt)
+        payload.tsahilgaaniiZaalt = newResident.tsahilgaaniiZaalt;
       if (newResident.ekhniiUldegdel !== undefined) {
         const raw = String(newResident.ekhniiUldegdel || "");
         const digits = raw.replace(/[^0-9.-]/g, "");

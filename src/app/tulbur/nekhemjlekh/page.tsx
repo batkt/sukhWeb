@@ -1946,6 +1946,14 @@ export default function InvoicingZardluud() {
                                 {rows.length > 0 && (
                                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                                     {rows
+                                      .filter((z: any) => {
+                                        const name = (
+                                          z.ner ||
+                                          z.name ||
+                                          ""
+                                        ).toLowerCase();
+                                        return !name.includes("цахилгаан");
+                                      })
                                       .slice(0, 6)
                                       .map((z: any, zi: number) => {
                                         const amount = (() => {
