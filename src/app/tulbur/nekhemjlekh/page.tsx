@@ -912,6 +912,27 @@ export default function InvoicingZardluud() {
   const [historyIndex, setHistoryIndex] = useState(0);
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
+  const baiguullagiinId = ajiltan?.baiguullagiinId || null;
+  const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+
+  // Populate davkharList from baiguullaga tokhirgoo
+  useEffect(() => {
+    if (baiguullaga && baiguullaga.barilguud) {
+      const effectiveBuildingId = selectedBuildingId || barilgiinId;
+      const building = baiguullaga.barilguud.find(
+        (b: any) => b._id === effectiveBuildingId
+      );
+      if (
+        building &&
+        building.tokhirgoo &&
+        Array.isArray(building.tokhirgoo.davkhar)
+      ) {
+        setDavkharList(building.tokhirgoo.davkhar);
+      } else {
+        setDavkharList([]);
+      }
+    }
+  }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const filterQuery = useMemo(() => {
     const query: any = {};
@@ -1167,20 +1188,15 @@ export default function InvoicingZardluud() {
 
   useEffect(() => {
     if (displayResidents.length > 0) {
-      const uniqueDavkhar = [
-        ...new Set(displayResidents.map((r: any) => r.davkhar).filter(Boolean)),
-      ];
       const uniqueBarilga = [
         ...new Set(displayResidents.map((r: any) => r.barilga).filter(Boolean)),
       ];
       const uniqueTurul = [
         ...new Set(displayResidents.map((r: any) => r.turul).filter(Boolean)),
       ];
-      setDavkharList(uniqueDavkhar as string[]);
       setBarilgaList(uniqueBarilga as string[]);
       setTurulList(uniqueTurul as string[]);
     } else {
-      setDavkharList([]);
       setBarilgaList([]);
       setTurulList([]);
     }
@@ -1504,10 +1520,7 @@ export default function InvoicingZardluud() {
               <TusgaiZagvar
                 value={selectedDavkhar}
                 onChange={setSelectedDavkhar}
-                options={[
-                  { value: "", label: "Давхар" },
-                  ...davkharList.map((d) => ({ value: d, label: d })),
-                ]}
+                options={[...davkharList.map((d) => ({ value: d, label: d }))]}
                 placeholder="Давхар"
                 className="h-[40px] w-[120px]"
                 tone="theme"
@@ -1520,7 +1533,7 @@ export default function InvoicingZardluud() {
                   ...barilgaList.map((b) => ({ value: b, label: b })),
                 ]}
                 placeholder="Бүх барилга"
-                className="h-[40px] w-[140px]"
+                className="h-[40px] w-[250px]"
                 tone="theme"
               />
             </div>

@@ -453,13 +453,6 @@ export default function TulburPage() {
             >
               Дансны хуулга
             </TabButton>
-            <button
-              onClick={fetchZaaltData}
-              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium transition-colors flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4" />
-              Цахилгаан заалт
-            </button>
           </div>
         </div>
 

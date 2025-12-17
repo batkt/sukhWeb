@@ -90,7 +90,6 @@ export default function SanalKhuselt() {
   };
 
   const getStatusColor = (status: string) => {
-    // Default to pending if status is null, undefined, or empty
     const normalizedStatus = status || "pending";
 
     switch (normalizedStatus) {
