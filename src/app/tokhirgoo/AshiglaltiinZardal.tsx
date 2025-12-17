@@ -923,39 +923,39 @@ export default function AshiglaltiinZardluud() {
                       </tbody>
                       <tfoot className="bottom-0 border-t">
                         <tr className="font-semibold">
-                          <td colSpan={2}></td>
-                          <td className="text-theme">
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-slate-500">
-                                Нийт:
-                              </span>
-                              <span>
-                                {formatNumber(
-                                  ashiglaltiinZardluud
-                                    .filter((x) => x._id)
-                                    .filter((x) => x.turul === "Тогтмол")
-                                    .filter((x) =>
-                                      filterText.trim() === ""
-                                        ? true
-                                        : String(x.ner || "")
-                                            .toLowerCase()
-                                            .includes(filterText.toLowerCase())
-                                    )
-                                    .reduce((sum, item) => {
-                                      const isCakhilgaan = item.ner
-                                        .toLowerCase()
-                                        .includes("цахилгаан");
-                                      const value = isCakhilgaan
-                                        ? item.zaaltTariff || 0
-                                        : item.tariff;
-                                      return sum + value;
-                                    }, 0)
-                                )}{" "}
-                                ₮
-                              </span>
-                            </div>
+                          <td className="py-2 pr-3 text-theme">
+                            <div className="font-medium">Нийт:</div>
                           </td>
                           <td></td>
+                          <td className="text-theme text-center">
+                            {formatNumber(
+                              ashiglaltiinZardluud
+                                .filter((x) => x._id)
+                                .filter((x) => x.turul === "Тогтмол")
+                                .filter((x) =>
+                                  filterText.trim() === ""
+                                    ? true
+                                    : String(x.ner || "")
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase())
+                                )
+                                .reduce((sum, item) => {
+                                  const isCakhilgaan = item.ner
+                                    .toLowerCase()
+                                    .includes("цахилгаан");
+                                  const displayValue = isCakhilgaan
+                                    ? item.zaaltTariff || 0
+                                    : item.tariff;
+                                  const currentValue =
+                                    editedTariffs[item._id!] !== undefined
+                                      ? editedTariffs[item._id!]
+                                      : displayValue;
+                                  return sum + currentValue;
+                                }, 0)
+                            )}{" "}
+                            ₮
+                          </td>
+                          <td colSpan={2}></td>
                         </tr>
                       </tfoot>
                     </table>
@@ -1104,31 +1104,39 @@ export default function AshiglaltiinZardluud() {
                       </tbody>
                       <tfoot className="bottom-0 border-t">
                         <tr className="font-semibold">
-                          <td colSpan={2}></td>
-                          <td className="text-theme">
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-slate-500">
-                                Нийт:
-                              </span>
-                              <span>
-                                {formatNumber(
-                                  ashiglaltiinZardluud
-                                    .filter((x) => x._id)
-                                    .filter((x) => x.turul !== "Тогтмол")
-                                    .filter((x) =>
-                                      filterText.trim() === ""
-                                        ? true
-                                        : String(x.ner || "")
-                                            .toLowerCase()
-                                            .includes(filterText.toLowerCase())
-                                    )
-                                    .reduce((sum, item) => sum + item.tariff, 0)
-                                )}{" "}
-                                ₮
-                              </span>
-                            </div>
+                          <td className="py-2 pr-3 text-theme">
+                            <div className="font-medium">Нийт:</div>
                           </td>
                           <td></td>
+                          <td className="text-theme text-center">
+                            {formatNumber(
+                              ashiglaltiinZardluud
+                                .filter((x) => x._id)
+                                .filter((x) => x.turul !== "Тогтмол")
+                                .filter((x) =>
+                                  filterText.trim() === ""
+                                    ? true
+                                    : String(x.ner || "")
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase())
+                                )
+                                .reduce((sum, item) => {
+                                  const isCakhilgaan = item.ner
+                                    .toLowerCase()
+                                    .includes("цахилгаан");
+                                  const displayValue = isCakhilgaan
+                                    ? item.zaaltTariff || 0
+                                    : item.tariff;
+                                  const currentValue =
+                                    editedTariffs[item._id!] !== undefined
+                                      ? editedTariffs[item._id!]
+                                      : displayValue;
+                                  return sum + currentValue;
+                                }, 0)
+                            )}{" "}
+                            ₮
+                          </td>
+                          <td colSpan={2}></td>
                         </tr>
                       </tfoot>
                     </table>

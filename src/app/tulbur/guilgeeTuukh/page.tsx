@@ -237,6 +237,63 @@ export default function DansniiKhuulga() {
     ];
   }, [filteredItems]);
 
+  const zaaltOruulakh = async () => {
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const hide = message.loading({
+        content: "Заалтын Excel файл бэлдэж байна…",
+        duration: 0,
+      });
+
+      const response = await uilchilgee(token).post(
+        "/zaaltExcelDataAvya",
+        {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+        },
+        {
+          responseType: "blob" as any,
+        }
+      );
+
+      hide();
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      // Try to infer filename from headers or fallback
+      const cd = (response.headers?.["content-disposition"] ||
+        response.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "zaalt_data.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      message.success("Заалтын мэдээлэл амжилттай татагдлаа");
+    } catch (err: any) {
+      const errorMsg = getErrorMessage(err);
+      openErrorOverlay(errorMsg);
+    }
+  };
+
   const exceleerTatya = async () => {
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
@@ -357,12 +414,16 @@ export default function DansniiKhuulga() {
       }
       // Add ognoo (date) field - using current date in YYYY-MM-DD format
       const today = new Date();
-      const ognoo = today.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const ognoo = today.toISOString().split("T")[0]; // YYYY-MM-DD format
       form.append("ognoo", ognoo);
 
       const endpoint = "/zaaltExcelTatya";
 
-      message.loading({ content: "Excel импорт хийж байна…", key: "import", duration: 0 });
+      message.loading({
+        content: "Excel импорт хийж байна…",
+        key: "import",
+        duration: 0,
+      });
 
       const resp: any = await uilchilgee(token).post(endpoint, form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -593,6 +654,16 @@ export default function DansniiKhuulga() {
                     >
                       <Download className="w-4 h-4" />
                       <span>Excel татах</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        zaaltOruulakh();
+                        setIsZaaltDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Заалт жагсаалт авах</span>
                     </button>
                   </div>
                 )}
