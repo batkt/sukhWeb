@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
  
 import ContractEditor from "@/components/ContractEditor";
 import { ErrorOverlayHost, openErrorOverlay } from "@/components/ui/ErrorOverlay";

@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
-import uilchilgee from "../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import {
   getPaymentStatusLabel,
   isPaidLike,

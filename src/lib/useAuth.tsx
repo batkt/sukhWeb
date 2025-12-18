@@ -10,7 +10,7 @@ import React, {
 } from "react";
 import toast from "react-hot-toast";
 import { parseCookies, setCookie, destroyCookie } from "nookies";
-import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { Baiguullaga } from "@/types/baiguullaga";
 import { AxiosError } from "axios";

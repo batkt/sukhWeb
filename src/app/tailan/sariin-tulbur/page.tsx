@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import DatePickerInput from "../../../components/ui/DatePickerInput";
-import uilchilgee from "../../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 

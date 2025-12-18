@@ -24,18 +24,16 @@ import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import LordIcon from "@/components/ui/LordIcon";
 import matchesSearch from "../../../tools/function/matchesSearch";
 import { useAuth } from "@/lib/useAuth";
-import { useOrshinSuugchJagsaalt } from "../../../lib/useOrshinSuugch";
-import { useGereeJagsaalt } from "../../../lib/useGeree";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import formatNumber from "../../../../tools/function/formatNumber";
 
-import { url as API_URL } from "../../../../lib/uilchilgee";
-import uilchilgee from "../../../../lib/uilchilgee";
+import { url as API_URL } from "@/lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { getErrorMessage } from "../../../../lib/uilchilgee";
+import { getErrorMessage } from "@/lib/uilchilgee";
 
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
@@ -203,6 +201,7 @@ interface Zardal {
   _id: string;
   ner: string;
   tariff: number | null | undefined;
+  dun: number | null | undefined;
   turul?: string;
   zardliinTurul?: string;
 }
@@ -235,18 +234,12 @@ const InvoiceModal = ({
   });
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
-  const { gereeGaralt } = useGereeJagsaalt(
-    { orshinSuugchId: String(resident?._id || "") },
-    token,
-    baiguullagiinId
-  );
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud({
     token,
     baiguullagiinId,
     barilgiinId: selectedBuildingId || barilgiinId || null,
   });
 
-  const gereeData = gereeGaralt?.jagsaalt?.[0];
   const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
   const currentDate = new Date().toLocaleDateString("mn-MN");
   const isLiftExempt = liftFloors?.includes(String(resident?.davkhar));
@@ -279,48 +272,13 @@ const InvoiceModal = ({
     const run = async () => {
       try {
         if (!isOpen || !token || !baiguullagiinId || !resident?._id) return;
-        // Resolve contract ID for this resident
-        let gereeniiId: string | undefined = undefined;
-        try {
-          const gResp = await uilchilgee(token).get(`/geree`, {
-            params: {
-              baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-              khuudasniiDugaar: 1,
-              khuudasniiKhemjee: 50,
-              query: JSON.stringify({
-                baiguullagiinId,
-                barilgiinId: selectedBuildingId || barilgiinId || null,
-                orshinSuugchId: String(resident._id || ""),
-              }),
-            },
-          });
-          const gList = Array.isArray(gResp.data?.jagsaalt)
-            ? gResp.data.jagsaalt
-            : Array.isArray(gResp.data)
-            ? gResp.data
-            : [];
-          const pick = gList.sort(
-            (a: any, b: any) =>
-              new Date(b?.createdAt || 0).getTime() -
-              new Date(a?.createdAt || 0).getTime()
-          )[0];
-          gereeniiId = pick?._id;
-        } catch {}
 
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId,
             barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 10,
-            query: JSON.stringify({
-              baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-              ...(gereeniiId
-                ? { gereeniiId }
-                : { orshinSuugchId: String(resident._id || "") }),
-            }),
+            khuudasniiKhemjee: 100,
           },
         });
         const data = resp.data;
@@ -329,12 +287,33 @@ const InvoiceModal = ({
           : Array.isArray(data)
           ? data
           : [];
-        const latest = [...list].sort(
+        // Filter by resident to get the correct invoice
+        // Match by ovog, ner, and utas (phone number)
+        const residentInvoices = list.filter((item: any) => {
+          const ovogMatch =
+            !resident?.ovog ||
+            !item?.ovog ||
+            String(item.ovog).trim() === String(resident.ovog).trim();
+          const nerMatch =
+            !resident?.ner ||
+            !item?.ner ||
+            String(item.ner).trim() === String(resident.ner).trim();
+          const utasMatch =
+            !resident?.utas?.[0] ||
+            !item?.utas?.[0] ||
+            String(item.utas?.[0] || "").trim() ===
+              String(resident.utas?.[0] || "").trim();
+          return ovogMatch && nerMatch && utasMatch;
+        });
+        const latest = [
+          ...(residentInvoices.length > 0 ? residentInvoices : list),
+        ].sort(
           (a: any, b: any) =>
             new Date(b?.createdAt || b?.ognoo || 0).getTime() -
             new Date(a?.createdAt || a?.ognoo || 0).getTime()
         )[0];
         setLatestInvoice(latest || null);
+        setNekhemjlekhData(latest || null);
         const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
           ? latest.medeelel.zardluud
           : Array.isArray(latest?.zardluud)
@@ -367,7 +346,8 @@ const InvoiceModal = ({
                   z.ognoo
                 )}`
               : z.ner || z.name || "",
-          tariff: pickAmount(z),
+          tariff: Number(z?.tariff) || 0,
+          dun: pickAmount(z),
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
         });
@@ -384,10 +364,20 @@ const InvoiceModal = ({
       }
     };
     run();
-  }, [isOpen, token, baiguullagiinId, resident?._id]);
+  }, [
+    isOpen,
+    token,
+    baiguullagiinId,
+    resident?._id,
+    selectedBuildingId,
+    barilgiinId,
+  ]);
 
+  // Use data from nekhemjlekhiinTuukh response instead of geree service
+  const contractData = latestInvoice || nekhemjlekhData;
   const backendRows: Zardal[] | null = React.useMemo(() => {
-    const raw = (gereeData as any)?.zardluud || [];
+    const raw =
+      contractData?.medeelel?.zardluud || contractData?.zardluud || [];
     const pickAmount = (obj: any) => {
       const n = (v: any) => {
         const num = Number(v);
@@ -404,31 +394,34 @@ const InvoiceModal = ({
       ? raw.map((r: any, idx: number) => ({
           _id: r._id || `row-${idx}`,
           ner: r.ner || r.name || "",
-          tariff: pickAmount(r),
+          tariff: Number(r?.tariff) || 0,
+          dun: pickAmount(r),
           turul: r.turul,
           zardliinTurul: r.zardliinTurul,
         }))
       : null;
-  }, [gereeData]);
+  }, [contractData]);
 
   const backendTotal: number | null =
-    typeof (gereeData as any)?.niitTulbur === "number"
-      ? Number((gereeData as any).niitTulbur)
+    typeof contractData?.niitTulbur === "number"
+      ? Number(contractData.niitTulbur)
       : null;
 
   const guilgeeRows = React.useMemo(() => {
-    const raw = (gereeData as any)?.guilgeenuudForNekhemjlekh || [];
+    const raw =
+      contractData?.medeelel?.guilgeenuud || contractData?.guilgeenuud || [];
     return Array.isArray(raw)
       ? raw.map((g: any, idx: number) => ({
           _id: g._id || `guilgee-${idx}`,
           ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
-          tariff: Number(g.tulukhDun) || 0,
+          tariff: 0,
+          dun: Number(g.tulukhDun) || 0,
           turul: "avlaga",
           zardliinTurul: "Авлага",
           ognoo: g.ognoo,
         }))
       : [];
-  }, [gereeData]);
+  }, [contractData]);
 
   const invoiceRows = React.useMemo(() => {
     // Prefer guilgeenuudForNekhemjlekh if available
@@ -436,11 +429,16 @@ const InvoiceModal = ({
       return guilgeeRows;
     }
 
-    // Prefer latest invoice rows if available AND they contain any positive amount
-    if (invValid) return invRows;
-    // If all tariffs are zero/empty, fall back to base utilization rows
+    // Prefer invRows from API response if available (most complete and up-to-date)
+    // The API response from /nekhemjlekhiinTuukh has the complete zardluud data
+    if (invRows.length > 0) {
+      return invRows;
+    }
+
+    // Fall back to backendRows from contractData if invRows is not available
     if (backendRows && backendRows.length > 0) {
-      const raw = (gereeData as any)?.zardluud || [];
+      const raw =
+        contractData?.medeelel?.zardluud || contractData?.zardluud || [];
       const liftEntries = Array.isArray(raw)
         ? raw.filter(
             (r: any) =>
@@ -480,7 +478,8 @@ const InvoiceModal = ({
             {
               _id: "lift-discount-display",
               ner: "Лифт хөнгөлөлт",
-              tariff: -liftTariffAbs,
+              tariff: 0,
+              dun: -liftTariffAbs,
               discount: true as const,
             } as any,
           ];
@@ -497,15 +496,18 @@ const InvoiceModal = ({
       return Number.isFinite(n) ? n : null;
     };
     const normalize = (z: Zardal) => {
-      const tar =
-        parseNum((z as any)?.dun) ??
-        parseNum((z as any)?.tulukhDun) ??
-        parseNum((z as any)?.tariff);
-      const isEmpty = tar === null;
+      const dunVal =
+        parseNum((z as any)?.dun) ?? parseNum((z as any)?.tulukhDun);
+      const tariffVal = parseNum((z as any)?.tariff);
+      const isEmpty = dunVal === null && tariffVal === null;
       if (isLiftItem(z) && isEmpty) {
-        return { ...z, tariff: null };
+        return { ...z, tariff: null, dun: null };
       }
-      return { ...z, tariff: tar ?? 0 } as Zardal;
+      return {
+        ...z,
+        tariff: tariffVal ?? 0,
+        dun: dunVal ?? tariffVal ?? 0,
+      } as Zardal;
     };
 
     const normalized = (baseZardluud as Zardal[]).map(normalize);
@@ -513,27 +515,28 @@ const InvoiceModal = ({
     if (!isLiftExempt) return normalized;
 
     const nonLift = normalized.filter((z) => !isLiftItem(z));
-    const liftTariffs = normalized
+    const liftDuns = normalized
       .filter((z) => isLiftItem(z))
-      .map((z) => (z as any)?.tariff)
+      .map((z) => (z as any)?.dun)
       .filter(
         (v) =>
           v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v))
       )
       .map((v) => Number(v));
 
-    if (liftTariffs.length === 0) {
+    if (liftDuns.length === 0) {
       return nonLift;
     }
 
-    const liftSum = liftTariffs.reduce((s, v) => s + v, 0);
+    const liftSum = liftDuns.reduce((s, v) => s + v, 0);
 
     return [
       ...nonLift,
       {
         _id: "lift-discount-fallback",
         ner: "Лифт хөнгөлөлт",
-        tariff: liftSum === 0 ? 0 : -Math.abs(liftSum),
+        tariff: 0,
+        dun: liftSum === 0 ? 0 : -Math.abs(liftSum),
         discount: true as const,
       } as any,
     ];
@@ -542,7 +545,7 @@ const InvoiceModal = ({
     isLiftExempt,
     backendRows,
     backendTotal,
-    gereeData,
+    contractData,
     invRows,
     invValid,
     guilgeeRows,
@@ -557,7 +560,7 @@ const InvoiceModal = ({
     if (invValid && invTotal !== null) return invTotal;
     const rowSum = invoiceRows
       .filter((item: any) => !item?.discount)
-      .reduce((sum: any, item: any) => sum + Number(item?.tariff ?? 0), 0);
+      .reduce((sum: any, item: any) => sum + Number(item?.dun ?? 0), 0);
     return rowSum;
   }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
 
@@ -671,11 +674,7 @@ const InvoiceModal = ({
                   </p>
                   <p className="text-sm text-slate-600">
                     <span className="font-medium">төлөх огноо:</span>{" "}
-                    {formatDate(
-                      nekhemjlekhData?.tulukhOgnoo ||
-                        gereeData?.tulukhOgnoo ||
-                        currentDate
-                    )}
+                    {formatDate(contractData?.tulukhOgnoo || currentDate)}
                   </p>
                   <p className="text-sm text-slate-600 mt-2">
                     <span className="font-medium">Банк:</span>{" "}
@@ -705,7 +704,7 @@ const InvoiceModal = ({
                   </p>
                   <p>
                     <span className="text-slate-500">Гэрээ №:</span>{" "}
-                    {gereeData?.gereeniiDugaar}
+                    {contractData?.gereeniiDugaar || "-"}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -715,7 +714,7 @@ const InvoiceModal = ({
                   </p>
                   <p>
                     <span className="text-slate-500">Огноо:</span>{" "}
-                    {formatDate(gereeData?.gereeniiOgnoo)}
+                    {formatDate(contractData?.gereeniiOgnoo)}
                   </p>
                 </div>
               </div>
@@ -727,14 +726,12 @@ const InvoiceModal = ({
                       Өмнөх сарын үлдэгдэл:
                     </span>{" "}
                     <span className="font-medium">
-                      {gereeData?.ekhniiUldegdel != null
-                        ? formatCurrency(Number(gereeData.ekhniiUldegdel))
-                        : nekhemjlekhData?.medeelel?.ekhniiUldegdel != null
+                      {contractData?.medeelel?.ekhniiUldegdel != null
                         ? formatCurrency(
-                            Number(nekhemjlekhData.medeelel.ekhniiUldegdel)
+                            Number(contractData.medeelel.ekhniiUldegdel)
                           )
-                        : nekhemjlekhData?.ekhniiUldegdel != null
-                        ? formatCurrency(Number(nekhemjlekhData.ekhniiUldegdel))
+                        : contractData?.ekhniiUldegdel != null
+                        ? formatCurrency(Number(contractData.ekhniiUldegdel))
                         : "-"}
                     </span>
                   </div>
@@ -743,9 +740,8 @@ const InvoiceModal = ({
                       Өмнөх сарын үлдэгдэл (үсгээр):
                     </span>{" "}
                     <div className="font-medium">
-                      {gereeData?.ekhniiUldegdelUsgeer ||
-                        nekhemjlekhData?.medeelel?.ekhniiUldegdelUsgeer ||
-                        nekhemjlekhData?.ekhniiUldegdelUsgeer ||
+                      {contractData?.medeelel?.ekhniiUldegdelUsgeer ||
+                        contractData?.ekhniiUldegdelUsgeer ||
                         "-"}
                     </div>
                   </div>
@@ -799,10 +795,7 @@ const InvoiceModal = ({
                             : ""
                         }`}
                       >
-                        {row.tariff == null
-                          ? "-"
-                          : formatNumber(Number(row.tariff))}
-                        ₮
+                        {row.dun == null ? "-" : formatNumber(Number(row.dun))}₮
                       </td>
                     </tr>
                   ))}
@@ -888,7 +881,10 @@ export default function InvoicingZardluud() {
   >({});
   const [selectedSukh, setSelectedSukh] = useState("");
   const [selectedDavkhar, setSelectedDavkhar] = useState("");
-  const [selectedBarilga, setSelectedBarilga] = useState("");
+  // Default to the currently selected building ID from context
+  const [selectedBarilga, setSelectedBarilga] = useState<string>(() =>
+    String(selectedBuildingId || barilgiinId || "")
+  );
   const [selectedTurul, setSelectedTurul] = useState("");
   const [selectedTuluv, setSelectedTuluv] = useState("");
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
@@ -898,7 +894,9 @@ export default function InvoicingZardluud() {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
   const [davkharList, setDavkharList] = useState<string[]>([]);
-  const [barilgaList, setBarilgaList] = useState<string[]>([]);
+  const [barilgaList, setBarilgaList] = useState<
+    Array<{ _id: string; ner: string }>
+  >([]);
   const [turulList, setTurulList] = useState<string[]>([]);
   const [selectedResident, setSelectedResident] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -912,26 +910,51 @@ export default function InvoicingZardluud() {
   const [historyIndex, setHistoryIndex] = useState(0);
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
+  const baiguullagiinId = ajiltan?.baiguullagiinId || null;
+  const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+
+  // Populate davkharList from baiguullaga tokhirgoo
+  useEffect(() => {
+    if (baiguullaga && baiguullaga.barilguud) {
+      const effectiveBuildingId = selectedBuildingId || barilgiinId;
+      const building = baiguullaga.barilguud.find(
+        (b: any) => b._id === effectiveBuildingId
+      );
+      if (
+        building &&
+        building.tokhirgoo &&
+        Array.isArray(building.tokhirgoo.davkhar)
+      ) {
+        setDavkharList(building.tokhirgoo.davkhar);
+      } else {
+        setDavkharList([]);
+      }
+    }
+  }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const filterQuery = useMemo(() => {
     const query: any = {};
     if (selectedDavkhar) query.davkhar = selectedDavkhar;
-    if (selectedBarilga) query.barilga = selectedBarilga;
+    // Note: selectedBarilga is now a building ID, not a name
+    // The backend filter might still use barilga name, but we filter by barilgiinId on client
+    if (selectedBarilga) query.barilgiinId = selectedBarilga;
     if (selectedTurul) query.turul = selectedTurul;
 
     return query;
   }, [selectedDavkhar, selectedBarilga, selectedTurul]);
 
-  const {
-    orshinSuugchGaralt,
-    setOrshinSuugchKhuudaslalt,
-    isValidating: isLoadingResidents,
-  } = useOrshinSuugchJagsaalt(
-    token || "",
-    ajiltan?.baiguullagiinId || "",
-    filterQuery,
-    selectedBuildingId || barilgiinId || null
-  );
+  // Use selectedBarilga if set (and not empty), otherwise fall back to global building selection
+  // Empty string means "all buildings" (null), so we don't fall back in that case
+  const effectiveBarilgiinId = useMemo(() => {
+    if (selectedBarilga && selectedBarilga.trim() !== "") {
+      return selectedBarilga;
+    }
+    return selectedBuildingId || barilgiinId || null;
+  }, [selectedBarilga, selectedBuildingId, barilgiinId]);
+
+  // State for nekhemjlekhiinTuukh data (invoices/residents)
+  const [nekhemjlekhList, setNekhemjlekhList] = useState<any[]>([]);
+  const [isLoadingResidents, setIsLoadingResidents] = useState(false);
 
   useEffect(() => {
     const fetchExpenses = async () => {
@@ -942,7 +965,7 @@ export default function InvoicingZardluud() {
         const response = await uilchilgee(token).get("/ashiglaltiinZardluud", {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
+            barilgiinId: effectiveBarilgiinId,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 100,
           },
@@ -956,145 +979,138 @@ export default function InvoicingZardluud() {
     };
 
     fetchExpenses();
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
+  // Fetch nekhemjlekhiinTuukh data instead of orshinSuugch
   useEffect(() => {
-    setOrshinSuugchKhuudaslalt({
-      khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 100,
-      search: searchTerm,
-      davkhar: selectedDavkhar || undefined,
-      barilga: selectedBarilga || undefined,
-      turul: selectedTurul || undefined,
-    });
-  }, [selectedDavkhar, selectedBarilga, selectedTurul, searchTerm]);
-
-  const residents = orshinSuugchGaralt?.jagsaalt || [];
-
-  // Fetch latest payment status per resident from nekhemjlekhiinTuukh (canonical source)
-  useEffect(() => {
-    const run = async () => {
+    const fetchNekhemjlekh = async () => {
       if (!token || !ajiltan?.baiguullagiinId) return;
+      setIsLoadingResidents(true);
       try {
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
+            barilgiinId: effectiveBarilgiinId,
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 1000,
-            query: {
-              baiguullagiinId: ajiltan.baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-            },
           },
         });
-        const list: any[] = Array.isArray(resp.data?.jagsaalt)
+        const list = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
           ? resp.data
           : [];
-
-        // Build a resident index by multiple keys to match invoices without explicit orshinSuugchId
-        const norm = (v: any) =>
-          String(v ?? "")
-            .trim()
-            .toLowerCase();
-        const makeResKeys = (r: any): string[] => {
-          const keys: string[] = [];
-          const id = String(r?._id || "");
-          if (!id) return keys;
-          const reg = norm(r?.register);
-          const phone = norm(r?.utas);
-          const ovog = norm(r?.ovog);
-          const ner = norm(r?.ner);
-          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
-          if (reg) keys.push(`reg|${reg}`);
-          if (phone) keys.push(`phone|${phone}`);
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          // also map direct id for convenience
-          keys.push(`id|${id}`);
-          return keys;
-        };
-        const residentKeyToId = new Map<string, string>();
-        (residents || []).forEach((r: any) => {
-          const id = String(r?._id || "");
-          if (!id) return;
-          makeResKeys(r).forEach((k) => residentKeyToId.set(k, id));
-        });
-
-        // Reduce invoice list to latest status per resident (matched by multi-key)
-        const byResident: Record<
-          string,
-          { label: string; ts: number; date: string }
-        > = {};
-        list.forEach((it) => {
-          const label = getPaymentStatusLabel(it);
-          const ts = new Date(
-            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
-          ).getTime();
-
-          const invoiceKeys: string[] = [];
-          const osId = String(it?.orshinSuugchId || "");
-          if (osId) invoiceKeys.push(`id|${osId}`);
-          const reg = norm(it?.register);
-          if (reg) invoiceKeys.push(`reg|${reg}`);
-          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
-          const phone = norm(utasVal);
-          if (phone) invoiceKeys.push(`phone|${phone}`);
-          const ovog = norm(it?.ovog);
-          const ner = norm(it?.ner);
-          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
-          if (ovog || ner || toot)
-            invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
-
-          // Find a resident id via the first matching key
-          let rid = "";
-          for (const k of invoiceKeys) {
-            const found = residentKeyToId.get(k);
-            if (found) {
-              rid = found;
-              break;
-            }
-          }
-          if (!rid) return;
-
-          const dateStr = new Date(
-            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
-          )
-            .toISOString()
-            .split("T")[0];
-          const cur = byResident[rid];
-          if (!cur || ts >= cur.ts)
-            byResident[rid] = { label, ts, date: dateStr };
-        });
-
-        const out: Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн"> =
-          {};
-        Object.entries(byResident).forEach(([rid, v]) => {
-          const l = v.label as any;
-          out[rid] =
-            l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
-              ? l
-              : "Тодорхойгүй";
-        });
-        setTuluvByResidentId(out);
-        const dateOut: Record<string, string> = {};
-        Object.entries(byResident).forEach(([rid, v]) => {
-          dateOut[rid] = v.date;
-        });
-        setDateByResidentId(dateOut);
-      } catch {
-        setTuluvByResidentId({});
+        setNekhemjlekhList(list);
+      } catch (error) {
+        openErrorOverlay(getErrorMessage(error));
+        setNekhemjlekhList([]);
+      } finally {
+        setIsLoadingResidents(false);
       }
     };
-    run();
-  }, [
-    token,
-    ajiltan?.baiguullagiinId,
-    selectedBuildingId,
-    barilgiinId,
-    residents,
-  ]);
+    fetchNekhemjlekh();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  // Transform nekhemjlekhiinTuukh data into resident-like structure for table display
+  // Group by unique resident (ovog + ner + utas) and get the latest invoice per resident
+  const residents = useMemo(() => {
+    const residentMap = new Map<string, any>();
+
+    nekhemjlekhList.forEach((invoice: any) => {
+      // Create a unique key for each resident
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
+
+      // Get existing or create new resident entry
+      const existing = residentMap.get(key);
+      const invoiceDate = new Date(
+        invoice?.createdAt || invoice?.ognoo || 0
+      ).getTime();
+
+      if (
+        !existing ||
+        invoiceDate >
+          new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
+      ) {
+        // Use the latest invoice data for this resident
+        residentMap.set(key, {
+          _id: invoice._id || key, // Use invoice ID or key as ID
+          ovog: invoice.ovog || "",
+          ner: invoice.ner || "",
+          utas: invoice.utas || [],
+          toot: invoice.medeelel?.toot || invoice.toot || "",
+          davkhar: invoice.davkhar || "",
+          khayag: invoice.khayag || "",
+          barilgiinId: invoice.barilgiinId || "",
+          baiguullagiinId: invoice.baiguullagiinId || "",
+          turul: invoice.turul || "",
+          gereeniiId: invoice.gereeniiId || "",
+          gereeniiDugaar: invoice.gereeniiDugaar || "",
+          tuluv: invoice.tuluv || "",
+          niitTulbur: invoice.niitTulbur || 0,
+          createdAt: invoice.createdAt || invoice.ognoo || "",
+          // Keep reference to the invoice for payment status
+          _invoice: invoice,
+        });
+      }
+    });
+
+    return Array.from(residentMap.values());
+  }, [nekhemjlekhList]);
+
+  // Extract payment status and dates from nekhemjlekhiinTuukh data (already fetched)
+  useEffect(() => {
+    const byResident: Record<
+      string,
+      { label: string; ts: number; date: string }
+    > = {};
+
+    nekhemjlekhList.forEach((invoice: any) => {
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
+      const label = getPaymentStatusLabel(invoice);
+      const ts = new Date(
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0
+      ).getTime();
+      const dateStr = new Date(
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0
+      )
+        .toISOString()
+        .split("T")[0];
+
+      const cur = byResident[key];
+      if (!cur || ts >= cur.ts) {
+        byResident[key] = { label, ts, date: dateStr };
+      }
+    });
+
+    // Map to resident IDs
+    const tuluvMap: Record<
+      string,
+      "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | ""
+    > = {};
+    const dateMap: Record<string, string> = {};
+
+    residents.forEach((r: any) => {
+      const key = `${r.ovog || ""}_${r.ner || ""}_${r.utas?.[0] || ""}`;
+      const status = byResident[key];
+      if (status) {
+        const label = status.label as any;
+        tuluvMap[r._id] =
+          label === "Төлсөн" ||
+          label === "Төлөөгүй" ||
+          label === "Хугацаа хэтэрсэн"
+            ? label
+            : "";
+        dateMap[r._id] = status.date;
+      }
+    });
+
+    setTuluvByResidentId(tuluvMap);
+    setDateByResidentId(dateMap);
+  }, [nekhemjlekhList, residents]);
 
   const displayResidents = useMemo(() => {
     let items = [...residents];
@@ -1106,11 +1122,11 @@ export default function InvoicingZardluud() {
         String(ajiltan?.baiguullagiinId || "")
     );
     let branchItems = orgItems;
-    if (selectedBuildingId || barilgiinId) {
+    if (effectiveBarilgiinId) {
       branchItems = orgItems.filter(
         (r: any) =>
           r?.barilgiinId == null ||
-          String(r.barilgiinId) === String(selectedBuildingId || barilgiinId)
+          String(r.barilgiinId) === String(effectiveBarilgiinId)
       );
       // If branch filter yields nothing, fall back to org-only
       if (branchItems.length === 0) {
@@ -1138,7 +1154,9 @@ export default function InvoicingZardluud() {
     if (selectedDavkhar)
       items = items.filter((r: any) => r.davkhar === selectedDavkhar);
     if (selectedBarilga)
-      items = items.filter((r: any) => r.barilga === selectedBarilga);
+      items = items.filter(
+        (r: any) => String(r.barilgiinId || "") === String(selectedBarilga)
+      );
     if (selectedTurul)
       items = items.filter((r: any) => r.turul === selectedTurul);
 
@@ -1161,30 +1179,66 @@ export default function InvoicingZardluud() {
     selectedDate,
     dateByResidentId,
     tuluvByResidentId,
+    effectiveBarilgiinId,
+    ajiltan?.baiguullagiinId,
   ]);
 
   const totalRecords = displayResidents.length;
 
+  // Update selectedBarilga when the global building selection changes
+  // Only sync if selectedBarilga is empty (user hasn't made a selection yet)
   useEffect(() => {
+    const effectiveBuildingId = selectedBuildingId || barilgiinId || "";
+    // Only update if local selection is empty and we have a global selection
+    // This allows user to manually change the filter without it being reset
+    if (
+      effectiveBuildingId &&
+      (!selectedBarilga || selectedBarilga.trim() === "")
+    ) {
+      setSelectedBarilga(String(effectiveBuildingId));
+    }
+  }, [selectedBuildingId, barilgiinId]);
+
+  useEffect(() => {
+    // Populate building list from baiguullaga.barilguud, not from residents
+    if (baiguullaga?.barilguud && Array.isArray(baiguullaga.barilguud)) {
+      const buildings = baiguullaga.barilguud
+        .filter((b: any) => b && b._id && b.ner)
+        .map((b: any) => ({ _id: b._id, ner: b.ner }));
+      setBarilgaList(buildings);
+
+      // If no building is selected but we have a default building ID, set it
+      if (!selectedBarilga && (selectedBuildingId || barilgiinId)) {
+        const defaultId = selectedBuildingId || barilgiinId;
+        if (defaultId) {
+          const buildingExists = buildings.some(
+            (b) => b._id === String(defaultId)
+          );
+          if (buildingExists) {
+            setSelectedBarilga(String(defaultId));
+          }
+        }
+      }
+    } else {
+      setBarilgaList([]);
+    }
+
+    // Populate turul list from residents
     if (displayResidents.length > 0) {
-      const uniqueDavkhar = [
-        ...new Set(displayResidents.map((r: any) => r.davkhar).filter(Boolean)),
-      ];
-      const uniqueBarilga = [
-        ...new Set(displayResidents.map((r: any) => r.barilga).filter(Boolean)),
-      ];
       const uniqueTurul = [
         ...new Set(displayResidents.map((r: any) => r.turul).filter(Boolean)),
       ];
-      setDavkharList(uniqueDavkhar as string[]);
-      setBarilgaList(uniqueBarilga as string[]);
       setTurulList(uniqueTurul as string[]);
     } else {
-      setDavkharList([]);
-      setBarilgaList([]);
       setTurulList([]);
     }
-  }, [displayResidents]);
+  }, [
+    baiguullaga?.barilguud,
+    displayResidents,
+    selectedBuildingId,
+    barilgiinId,
+    selectedBarilga,
+  ]);
 
   const handleSelectAll = () => {
     if (selectedExpenses.length === displayResidents.length) {
@@ -1214,68 +1268,13 @@ export default function InvoicingZardluud() {
     // Clear previous items to avoid stale display while loading
     setHistoryItems([]);
     try {
-      // First, resolve the user's contract (geree) id to fetch precise history
-      let gereeniiId: string | undefined = undefined;
-      try {
-        // Fetch a reasonable page size and filter client-side to guard against backend over-return
-        const gereeResp = await uilchilgee(token).get(`/geree`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 100,
-            query: JSON.stringify({
-              baiguullagiinId: ajiltan.baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-              orshinSuugchId: String(resident?._id || ""),
-            }),
-          },
-        });
-        const gListRaw = Array.isArray(gereeResp.data?.jagsaalt)
-          ? gereeResp.data.jagsaalt
-          : Array.isArray(gereeResp.data)
-          ? gereeResp.data
-          : [];
-        // Prefer exact match by toot and davkhar when available
-        const matches = gListRaw.filter((g: any) => {
-          const tootOk =
-            resident?.toot != null
-              ? String(g?.toot ?? "") === String(resident.toot)
-              : true;
-          const davkharOk =
-            resident?.davkhar != null
-              ? String(g?.davkhar ?? "") === String(resident.davkhar)
-              : true;
-          const orshOk =
-            String(g?.orshinSuugchId || "") === String(resident?._id || "");
-          return orshOk && tootOk && davkharOk;
-        });
-        const pick = (matches.length > 0 ? matches : gListRaw)
-          // Prefer latest by createdAt if available
-          .sort(
-            (a: any, b: any) =>
-              new Date(b?.createdAt || 0).getTime() -
-              new Date(a?.createdAt || 0).getTime()
-          )[0];
-        gereeniiId = pick?._id;
-      } catch (e) {
-        // Non-fatal: we'll fall back to orshinSuugchId
-      }
-
-      // Use API's standard filtering mechanism: params.query for server-side filter
+      // Use nekhemjlekhiinTuukh response which already contains all contract data
       const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: selectedBuildingId || barilgiinId || null,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 10,
-          query: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            ...(gereeniiId
-              ? { gereeniiId }
-              : { orshinSuugchId: String(resident._id || "") }),
-          },
         },
       });
       const data = resp.data;
@@ -1286,14 +1285,25 @@ export default function InvoicingZardluud() {
         ? data
         : [];
 
-      // Final guard: if backend didn't filter correctly, enforce by contract id on client
-      if (gereeniiId) {
-        list = list.filter(
-          (it: any) => String(it?.gereeniiId || "") === String(gereeniiId)
-        );
-      }
+      // Filter by resident to show only their invoices
+      const residentInvoices = list.filter((item: any) => {
+        const ovogMatch =
+          !resident?.ovog ||
+          !item?.ovog ||
+          String(item.ovog).trim() === String(resident.ovog).trim();
+        const nerMatch =
+          !resident?.ner ||
+          !item?.ner ||
+          String(item.ner).trim() === String(resident.ner).trim();
+        const utasMatch =
+          !resident?.utas?.[0] ||
+          !item?.utas?.[0] ||
+          String(item.utas?.[0] || "").trim() ===
+            String(resident.utas?.[0] || "").trim();
+        return ovogMatch && nerMatch && utasMatch;
+      });
 
-      setHistoryItems(list);
+      setHistoryItems(residentInvoices.length > 0 ? residentInvoices : list);
     } catch (e) {
       openErrorOverlay(getErrorMessage(e));
       setHistoryItems([]);
@@ -1504,23 +1514,26 @@ export default function InvoicingZardluud() {
               <TusgaiZagvar
                 value={selectedDavkhar}
                 onChange={setSelectedDavkhar}
-                options={[
-                  { value: "", label: "Давхар" },
-                  ...davkharList.map((d) => ({ value: d, label: d })),
-                ]}
+                options={[...davkharList.map((d) => ({ value: d, label: d }))]}
                 placeholder="Давхар"
                 className="h-[40px] w-[120px]"
                 tone="theme"
               />
               <TusgaiZagvar
                 value={selectedBarilga}
-                onChange={setSelectedBarilga}
+                onChange={(v: string) => {
+                  // Allow clearing the selection to show all buildings
+                  setSelectedBarilga(v || "");
+                }}
                 options={[
-                  { value: "", label: "Бүх барилга" },
-                  ...barilgaList.map((b) => ({ value: b, label: b })),
+                  ...barilgaList.map((b) => ({ value: b._id, label: b.ner })),
                 ]}
-                placeholder="Бүх барилга"
-                className="h-[40px] w-[140px]"
+                placeholder={
+                  selectedBarilga
+                    ? barilgaList.find((b) => b._id === selectedBarilga)?.ner
+                    : "Бүх барилга"
+                }
+                className="h-[40px] w-[250px]"
                 tone="theme"
               />
             </div>
@@ -1927,6 +1940,14 @@ export default function InvoicingZardluud() {
                                 {rows.length > 0 && (
                                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
                                     {rows
+                                      .filter((z: any) => {
+                                        const name = (
+                                          z.ner ||
+                                          z.name ||
+                                          ""
+                                        ).toLowerCase();
+                                        return !name.includes("цахилгаан");
+                                      })
                                       .slice(0, 6)
                                       .map((z: any, zi: number) => {
                                         const amount = (() => {

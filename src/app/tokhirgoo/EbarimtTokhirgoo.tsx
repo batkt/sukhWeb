@@ -6,7 +6,7 @@ import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
-import uilchilgee from "../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";

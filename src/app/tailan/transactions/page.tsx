@@ -7,7 +7,7 @@ import ReportsControls from "@/components/tailan/ReportsControls";
 import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { getErrorMessage } from "../../../../lib/uilchilgee";
+import { getErrorMessage } from "@/lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";

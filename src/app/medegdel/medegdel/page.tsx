@@ -6,7 +6,7 @@ import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchIcon } from "lucide-react";
 import TabButton from "components/tabButton/tabButton";
-import uilchilgee from "lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
@@ -138,7 +138,7 @@ export default function KhyanaltFrontend() {
       } else {
         // For App, use medegdelIlgeeye endpoint
         const orshinSuugchIdArray = songogdsonKhariltsagch.map(
-          (user) => user.orshinSuugchId
+          (user) => user._id
         );
 
         await uilchilgee(token).post("/medegdelIlgeeye", {
