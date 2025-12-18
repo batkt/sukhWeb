@@ -31,7 +31,6 @@ function Baaz({ token }: BaazProps) {
     niit: 2,
   };
 
-  // Columns are rendered in a semantic table below
 
   function backTatya() {
     setLoading(true);

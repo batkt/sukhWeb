@@ -2500,7 +2500,26 @@ export default function Geree() {
       setShowResidentModal(false);
       setEditingResident(null);
       setCurrentStep(1);
-      await orshinSuugchJagsaaltMutate();
+
+      // Reset pagination to page 1 and clear search to ensure new user appears
+      // This will trigger SWR to re-fetch automatically since khuudaslalt is part of the cache key
+      setOrshinSuugchKhuudaslalt((prev: any) => ({
+        ...prev,
+        khuudasniiDugaar: 1,
+        search: "",
+      }));
+
+      // Small delay to allow:
+      // 1. React state update to complete
+      // 2. Backend to index the new user
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Explicitly refresh both services to show updated data in the table
+      // Force revalidation by passing true as second parameter
+      await Promise.all([
+        orshinSuugchJagsaaltMutate(undefined, true),
+        gereeJagsaaltMutate(),
+      ]);
 
       // Auto-create a basic contract for newly created resident
       if (!wasEdit && createdResidentId) {

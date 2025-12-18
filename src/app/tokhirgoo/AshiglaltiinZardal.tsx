@@ -155,15 +155,18 @@ export default function AshiglaltiinZardluud() {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
-      const response = await fetchWithDomainFallback(
-        `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Use selectedBuildingId from context, fallback to barilgiinId from auth
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+      const url = effectiveBarilgiinId
+        ? `/nekhemjlekhCron/${ajiltan.baiguullagiinId}?barilgiinId=${effectiveBarilgiinId}`
+        : `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`;
+
+      const response = await fetchWithDomainFallback(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -209,6 +212,9 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
+      // Use selectedBuildingId from context, fallback to barilgiinId from auth
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+
       const res = await fetchWithDomainFallback(`/nekhemjlekhCron`, {
         method: "POST",
         headers: {
@@ -217,6 +223,7 @@ export default function AshiglaltiinZardluud() {
         },
         body: JSON.stringify({
           baiguullagiinId: ajiltan?.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
           nekhemjlekhUusgekhOgnoo: invoiceDay,
           idevkhitei: invoiceActive,
         }),
@@ -418,12 +425,16 @@ export default function AshiglaltiinZardluud() {
   };
 
   const handleSaveFloors = async () => {
-    // Merge numeric input and bulk text input into existing floors, then persist
-    let merged = liftFloors || [];
-    // parse bulk input like "1-3,5,7"
+    // Use the input as the source of truth, not merge with existing floors
+    // parse bulk input like "1-3,5,7" or "1,2,3"
+    let merged: string[] = [];
     if (liftBulkInput && liftBulkInput.trim() !== "") {
       const parsed = parseBulk(liftBulkInput);
-      merged = toUniqueSorted([...merged, ...parsed]);
+      merged = toUniqueSorted(parsed);
+    } else {
+      // Safety: if input is accidentally cleared, preserve existing floors
+      // User must use the delete button to remove all floors
+      merged = liftFloors || [];
     }
 
     // update UI first
@@ -521,7 +532,6 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
-    
       const isCakhilgaan = formData.ner.toLowerCase().includes("цахилгаан");
       const payload = {
         ...formData,
