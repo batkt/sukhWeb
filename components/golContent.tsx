@@ -2,7 +2,7 @@
 
 import { Settings, Search as SearchIcon, X, LogOut } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
@@ -68,15 +68,24 @@ export default function GolContent({ children }: GolContentProps) {
     ajiltan?.baiguullagiinId || null
   );
   const buildings = baiguullaga?.barilguud || [];
-  // Exclude organisation-level name entries (e.g. when an admin's baiguullagiinNer
-  // appears as a "building"). This prevents the org name from showing in the
-  // building selector. If necessary, adjust the exclusion condition.
+
   const filteredBuildings = buildings.filter((b: any) => {
-    // If the building has a name that exactly matches the organisation
-    // profile name, hide it from the selectable list.
     if (!b || !b.ner) return false;
     return b.ner !== baiguullaga?.ner;
   });
+
+  // Memoized handler to prevent unnecessary updates and ensure building selection persists
+  const handleBuildingChange = useCallback(
+    (v: string) => {
+      const newValue = v && v.trim() ? v.trim() : null;
+      // Only update if the value actually changed to prevent unnecessary side effects
+      if (newValue !== selectedBuildingId) {
+        setSelectedBuildingId(newValue);
+      }
+    },
+    [selectedBuildingId, setSelectedBuildingId]
+  );
+
   const avatarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
@@ -97,11 +106,18 @@ export default function GolContent({ children }: GolContentProps) {
     prevTokenRef.current = token;
   }, [token]);
 
-  // When buildings are available after a login, auto-select the first one.
   useEffect(() => {
+    // Only auto-select on login if there's no existing selection in localStorage
+    // This prevents resetting the user's building choice
     if (justLoggedInRef.current) {
-      if (filteredBuildings.length > 0) {
+      const stored =
+        typeof window !== "undefined"
+          ? localStorage.getItem("selectedBuildingId")
+          : null;
+      if (filteredBuildings.length > 0 && !stored) {
         setSelectedBuildingId(filteredBuildings[0]._id);
+        justLoggedInRef.current = false;
+      } else {
         justLoggedInRef.current = false;
       }
     }
@@ -111,7 +127,6 @@ export default function GolContent({ children }: GolContentProps) {
     setOpenSubmenuIndex(null);
   }, [pathname]);
 
-  // Close open submenu when clicking outside the menu area
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -300,7 +315,7 @@ export default function GolContent({ children }: GolContentProps) {
             >
               <TusgaiZagvar
                 value={selectedBuildingId ?? ""}
-                onChange={(v: string) => setSelectedBuildingId(v || null)}
+                onChange={handleBuildingChange}
                 options={filteredBuildings.map((b: any) => ({
                   value: b._id,
                   label: b.ner,
@@ -321,7 +336,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div id="barilga-songoh" className="w-36 xl:w-56">
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
-                  onChange={(v: string) => setSelectedBuildingId(v || null)}
+                  onChange={handleBuildingChange}
                   options={filteredBuildings.map((b: any) => ({
                     value: b._id,
                     label: b.ner,

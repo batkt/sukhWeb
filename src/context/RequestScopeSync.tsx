@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { setRequestScope } from "@/lib/uilchilgee";
@@ -8,14 +8,18 @@ import { setRequestScope } from "@/lib/uilchilgee";
 export default function RequestScopeSync() {
   const { ajiltan, barilgiinId, baiguullaga } = useAuth();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
+  const hasAutoSelectedRef = useRef(false);
 
   useEffect(() => {
-    // If user hasn't explicitly selected a building yet, prefer to auto-select
-    // a sensible default: 1) previously chosen cookie `barilgiinId`, 2)
-    // ajiltan.barilguud[0], 3) baiguullaga.barilguud[0]. This makes the UI
-    // friendlier immediately after login.
+    // Only auto-select on initial load, not on every change
+    // This prevents resetting the building when user has explicitly selected one
     try {
-      if (!selectedBuildingId && !localStorage.getItem("selectedBuildingId")) {
+      const stored = localStorage.getItem("selectedBuildingId");
+      // Only auto-select if:
+      // 1. We haven't auto-selected before
+      // 2. There's no selectedBuildingId in state
+      // 3. There's no stored value in localStorage
+      if (!hasAutoSelectedRef.current && !selectedBuildingId && !stored) {
         const candidate =
           barilgiinId ||
           (ajiltan?.barilguud && ajiltan.barilguud.length > 0
@@ -26,7 +30,11 @@ export default function RequestScopeSync() {
             : null);
         if (candidate) {
           setSelectedBuildingId(String(candidate));
+          hasAutoSelectedRef.current = true;
         }
+      } else if (stored || selectedBuildingId) {
+        // Mark as auto-selected if there's already a selection to prevent future auto-selection
+        hasAutoSelectedRef.current = true;
       }
     } catch (e) {}
 

@@ -521,7 +521,7 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
-      // Ensure zaalt is true for electricity expenses
+    
       const isCakhilgaan = formData.ner.toLowerCase().includes("цахилгаан");
       const payload = {
         ...formData,

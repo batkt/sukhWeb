@@ -2781,7 +2781,7 @@ export default function Geree() {
         } catch (err) {}
       }
 
-      await updateMethod("orshinSuugch", token, { _id: residentId });
+      await deleteMethod("orshinSuugch", token, residentId);
 
       try {
         const s = socket();

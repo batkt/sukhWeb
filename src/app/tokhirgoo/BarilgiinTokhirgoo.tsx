@@ -637,8 +637,6 @@ export default function BarilgiinTokhirgoo() {
     );
   }, [baiguullaga?.barilguud, baiguullaga?._id]);
 
-  // If no building is selected and there are buildings available,
-  // automatically select the first available building.
   useEffect(() => {
     const list = Array.isArray(baiguullaga?.barilguud)
       ? baiguullaga!.barilguud!.filter(
@@ -647,8 +645,12 @@ export default function BarilgiinTokhirgoo() {
             String(b.baiguullagiinId) === String(baiguullaga!._id)
         )
       : [];
-    if (baiguullaga && !selectedBuildingId && list.length > 0) {
-      // Prefer a real building (name differs from org or has building-specific data)
+
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("selectedBuildingId")
+        : null;
+    if (baiguullaga && !selectedBuildingId && !stored && list.length > 0) {
       const orgName = (baiguullaga?.ner || "").trim();
       const isRealBuilding = (b: any) => {
         try {
