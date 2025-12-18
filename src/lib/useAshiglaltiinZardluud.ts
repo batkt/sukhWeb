@@ -1,7 +1,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import updateMethod from "../../tools/function/updateMethod";
 
 interface ZardalItem {
@@ -28,6 +28,10 @@ interface ZardalItem {
   bokhirUsDun?: number;
   usKhalaasniiDun?: number;
   tailbar?: string;
+  // Electricity meter-based fields
+  zaalt?: boolean;
+  zaaltTariff?: number;
+  zaaltDefaultDun?: number;
 }
 
 interface UseAshiglaltiinZardluudReturn {
@@ -113,6 +117,9 @@ export function useAshiglaltiinZardluud(overrides?: {
       bokhirUsDun: 0,
       usKhalaasniiDun: 0,
       tailbar: zardalData.tailbar ?? "",
+      zaalt: zardalData.zaalt ?? false,
+      zaaltTariff: zardalData.zaaltTariff ?? 0,
+      zaaltDefaultDun: zardalData.zaaltDefaultDun ?? 0,
     };
 
     barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);

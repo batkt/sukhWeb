@@ -13,7 +13,7 @@ import { SuccessOverlayHost } from "@/components/ui/SuccessOverlay";
 import { ErrorOverlayHost } from "@/components/ui/ErrorOverlay";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { mutate } from "swr";
-import { socket } from "../../lib/uilchilgee";
+import { socket } from "@/lib/uilchilgee";
 import { SocketProvider } from "../context/SocketContext";
 import { SearchProvider } from "@/context/SearchContext";
 import { BuildingProvider } from "@/context/BuildingContext";

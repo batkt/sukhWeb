@@ -6,7 +6,7 @@ import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchIcon } from "lucide-react";
 import TabButton from "components/tabButton/tabButton";
-import uilchilgee from "lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
@@ -61,7 +61,6 @@ export default function KhyanaltFrontend() {
     });
   }, [setOrshinSuugchKhuudaslalt]);
 
-  // Extract the jagsaalt array from the response
   const geree = (orshinSuugchGaralt?.jagsaalt || []) as Geree[];
 
   const khariltsagchSongokh = (mur: Geree) => {
@@ -139,7 +138,7 @@ export default function KhyanaltFrontend() {
       } else {
         // For App, use medegdelIlgeeye endpoint
         const orshinSuugchIdArray = songogdsonKhariltsagch.map(
-          (user) => user.orshinSuugchId
+          (user) => user._id
         );
 
         await uilchilgee(token).post("/medegdelIlgeeye", {
@@ -212,12 +211,13 @@ export default function KhyanaltFrontend() {
         Мэдэгдэл
       </motion.h1>
       <div className="flex flex-col lg:flex-row min-h-screen gap-4 lg:gap-6 bg-transparent">
-        <div className="rounded-2xl bg-white/10 p-4 sm:p-6 backdrop-blur-sm w-full lg:w-1/4">
-          <motion.div
-            className="grid grid-cols-12 gap-2 sm:gap-5 mb-4 sm:mb-6"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
+        <motion.div
+          className="rounded-2xl bg-white/10 p-4 sm:p-6 backdrop-blur-sm w-full lg:w-1/4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 20 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div className="grid grid-cols-12 gap-2 sm:gap-5 mb-4 sm:mb-6">
             {(["App", "Мессеж", "Mail"] as const).map((m) => (
               <div key={m} className="2xl:col-span-4 col-span-12">
                 <TabButton active={turul === m} onClick={() => setTurul(m)}>
@@ -237,16 +237,17 @@ export default function KhyanaltFrontend() {
               </button>
             </motion.div>
           </div>
-        </div>
+        </motion.div>
 
         <div className="rounded-2xl bg-white/10 p-4 sm:p-6 backdrop-blur-sm w-full lg:w-1/4 min-h-[200px]">
           <motion.div
             className="rounded-2xl p-2 sm:p-4"
-            initial={{ opacity: 0, x: 0 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 20 }}
+            transition={{ duration: 0.5 }}
           >
             <div className="flex items-center justify-between mb-2 sm:mb-3">
-              <h2 className="font-semibold text-sm sm:text-base text-slate-700">
+              <h2 className="font-semibold text-sm sm:text-base text-slate-700 dark:text-white">
                 Харилцагчид
               </h2>
               {orshinSuugchGaralt && (
@@ -266,7 +267,7 @@ export default function KhyanaltFrontend() {
                 className="w-4 h-4 rounded cursor-pointer"
               />
               <label
-                className="text-sm text-slate-700 cursor-pointer"
+                className="text-sm text-slate-700 cursor-pointer dark:text-white"
                 onClick={handleSelectAll}
               >
                 Бүгд сонгох
@@ -327,10 +328,10 @@ export default function KhyanaltFrontend() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-slate-900 text-xs sm:text-sm truncate">
+                        <div className="font-semibold text-slate-900 text-xs sm:text-sm truncate dark:text-white">
                           {mur.ner}
                         </div>
-                        <div className="text-xs text-slate-500">
+                        <div className="text-xs text-slate-500 dark:text-slate-200">
                           {Array.isArray(mur.utas)
                             ? mur.utas.join(", ")
                             : mur.utas}
@@ -355,7 +356,7 @@ export default function KhyanaltFrontend() {
                 transition={{ type: "spring", stiffness: 120 }}
               >
                 <div className="rounded-2xl bg-white/10 p-3 sm:p-4 backdrop-blur-sm">
-                  <h3 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-slate-700">
+                  <h3 className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 text-slate-700 dark:text-white">
                     Сонгогдсон харилцагчид ({songogdsonKhariltsagch.length})
                   </h3>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2 max-h-[100px] sm:max-h-[150px] overflow-y-auto">
@@ -398,7 +399,7 @@ export default function KhyanaltFrontend() {
                       onClick={send}
                       loading={loading}
                       disabled={!title || !msj}
-                      className="mt-3 w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 font-semibold shadow-md px-4 py-2"
+                      className="mt-3 w-full rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 font-semibold shadow-md px-4 py-2 dark:text-white"
                     >
                       Илгээх
                     </Button>

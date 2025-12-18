@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import uilchilgee, { aldaaBarigch } from "../../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";

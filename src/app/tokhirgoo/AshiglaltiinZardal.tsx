@@ -18,12 +18,12 @@ import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { fetchWithDomainFallback } from "../../../lib/uilchilgee";
+import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2 } from "lucide-react";
-import uilchilgee from "../../../lib/uilchilgee";
+import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 
 interface ZardalItem {
@@ -45,6 +45,14 @@ interface ZardalItem {
   tailbar?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Electricity meter-based fields
+  zaalt?: boolean;
+  zaaltTariff?: number;
+  zaaltDefaultDun?: number;
+  // Electricity tiered pricing
+  tariff150kv?: number;
+  tariff150to300kv?: number;
+  tariff300pluskv?: number;
 }
 
 interface ZardalFormData {
@@ -52,10 +60,19 @@ interface ZardalFormData {
   ner: string;
   turul: string;
   tariff: number;
+  tariffUsgeer?: string;
   zardliinTurul?: string;
   suuriKhuraamj?: number;
   nuatBodokhEsekh?: boolean;
   tailbar?: string;
+  // Electricity meter-based fields
+  zaalt?: boolean;
+  zaaltTariff?: number;
+  zaaltDefaultDun?: number;
+  // Electricity tiered pricing
+  tariff150kv?: number;
+  tariff150to300kv?: number;
+  tariff300pluskv?: number;
 }
 
 export default function AshiglaltiinZardluud() {
@@ -97,19 +114,32 @@ export default function AshiglaltiinZardluud() {
     ner: "",
     turul: "",
     tariff: 0,
+    tariffUsgeer: undefined,
     suuriKhuraamj: 0,
     nuatBodokhEsekh: false,
     zardliinTurul: undefined,
     tailbar: "",
+    zaalt: false,
+    zaaltTariff: 0,
+    zaaltDefaultDun: 0,
+    tariff150kv: 0,
+    tariff150to300kv: 0,
+    tariff300pluskv: 0,
   });
 
   const [tariffInputValue, setTariffInputValue] = useState<string>("");
+  const [zaaltTariffInput, setZaaltTariffInput] = useState<string>("");
+  const [zaaltDefaultDunInput, setZaaltDefaultDunInput] = useState<string>("");
+  const [tariff150kvInput, setTariff150kvInput] = useState<string>("");
+  const [tariff150to300kvInput, setTariff150to300kvInput] =
+    useState<string>("");
+  const [tariff300pluskvInput, setTariff300pluskvInput] = useState<string>("");
 
   const [expenseTypes] = useState<string[]>([
     "1м3/талбай",
     "нэгж/талбай",
-    "тогтмол",
-    "үйлчилгээ",
+    "Тогтмол",
+    "Дурын",
   ]);
 
   const [pageSize] = useState(100);
@@ -120,20 +150,23 @@ export default function AshiglaltiinZardluud() {
   const [floorToDeleteConfirm, setFloorToDeleteConfirm] = useState<
     string | null
   >(null);
-
+  const [turul, setTurul] = useState("");
   const fetchInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
     try {
-      const response = await fetchWithDomainFallback(
-        `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      // Use selectedBuildingId from context, fallback to barilgiinId from auth
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+      const url = effectiveBarilgiinId
+        ? `/nekhemjlekhCron/${ajiltan.baiguullagiinId}?barilgiinId=${effectiveBarilgiinId}`
+        : `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`;
+
+      const response = await fetchWithDomainFallback(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const result = await response.json();
@@ -179,6 +212,9 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
+      // Use selectedBuildingId from context, fallback to barilgiinId from auth
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+
       const res = await fetchWithDomainFallback(`/nekhemjlekhCron`, {
         method: "POST",
         headers: {
@@ -187,6 +223,7 @@ export default function AshiglaltiinZardluud() {
         },
         body: JSON.stringify({
           baiguullagiinId: ajiltan?.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
           nekhemjlekhUusgekhOgnoo: invoiceDay,
           idevkhitei: invoiceActive,
         }),
@@ -388,12 +425,16 @@ export default function AshiglaltiinZardluud() {
   };
 
   const handleSaveFloors = async () => {
-    // Merge numeric input and bulk text input into existing floors, then persist
-    let merged = liftFloors || [];
-    // parse bulk input like "1-3,5,7"
+    // Use the input as the source of truth, not merge with existing floors
+    // parse bulk input like "1-3,5,7" or "1,2,3"
+    let merged: string[] = [];
     if (liftBulkInput && liftBulkInput.trim() !== "") {
       const parsed = parseBulk(liftBulkInput);
-      merged = toUniqueSorted([...merged, ...parsed]);
+      merged = toUniqueSorted(parsed);
+    } else {
+      // Safety: if input is accidentally cleared, preserve existing floors
+      // User must use the delete button to remove all floors
+      merged = liftFloors || [];
     }
 
     // update UI first
@@ -421,14 +462,26 @@ export default function AshiglaltiinZardluud() {
     setIsUilchilgeeModal(isUilchilgee);
     setFormData({
       ner: "",
-      turul: isUilchilgee ? "үйлчилгээ" : "тогтмол",
+      turul: isUilchilgee ? "Дурын" : "Тогтмол",
       tariff: 0,
+      tariffUsgeer: undefined,
       suuriKhuraamj: 0,
       nuatBodokhEsekh: false,
       zardliinTurul: undefined,
       tailbar: "",
+      zaalt: false,
+      zaaltTariff: 0,
+      zaaltDefaultDun: 0,
+      tariff150kv: 0,
+      tariff150to300kv: 0,
+      tariff300pluskv: 0,
     });
     setTariffInputValue("");
+    setZaaltTariffInput("");
+    setZaaltDefaultDunInput("");
+    setTariff150kvInput("");
+    setTariff150to300kvInput("");
+    setTariff300pluskvInput("");
     setIsModalOpen(true);
   };
 
@@ -440,12 +493,34 @@ export default function AshiglaltiinZardluud() {
       ner: item.ner,
       turul: item.turul,
       tariff: item.tariff,
+      tariffUsgeer: item.tariffUsgeer,
       suuriKhuraamj: item.suuriKhuraamj || 0,
       nuatBodokhEsekh: item.nuatBodokhEsekh || false,
       zardliinTurul: item.zardliinTurul,
       tailbar: item.tailbar || "",
+      zaalt: item.zaalt || false,
+      zaaltTariff: item.zaaltTariff || 0,
+      zaaltDefaultDun: item.zaaltDefaultDun || 0,
+      tariff150kv: item.tariff150kv || 0,
+      tariff150to300kv: item.tariff150to300kv || 0,
+      tariff300pluskv: item.tariff300pluskv || 0,
     });
     setTariffInputValue(formatNumber(item.tariff, 2));
+    setZaaltTariffInput(
+      item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : ""
+    );
+    setZaaltDefaultDunInput(
+      item.zaaltDefaultDun ? formatNumber(item.zaaltDefaultDun, 2) : ""
+    );
+    setTariff150kvInput(
+      item.tariff150kv ? formatNumber(item.tariff150kv, 2) : ""
+    );
+    setTariff150to300kvInput(
+      item.tariff150to300kv ? formatNumber(item.tariff150to300kv, 2) : ""
+    );
+    setTariff300pluskvInput(
+      item.tariff300pluskv ? formatNumber(item.tariff300pluskv, 2) : ""
+    );
     setIsModalOpen(true);
   };
 
@@ -457,8 +532,10 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
+      const isCakhilgaan = formData.ner.toLowerCase().includes("цахилгаан");
       const payload = {
         ...formData,
+        zaalt: isCakhilgaan ? true : formData.zaalt,
         barilgiinId: selectedBuildingId || barilgiinId || undefined,
       };
 
@@ -725,129 +802,146 @@ export default function AshiglaltiinZardluud() {
           </div>
         </div>
 
-        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="text-theme font-medium flex-1">Тогтмол зардлууд</div>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="text-theme font-medium flex-1">
+                Тогтмол зардлууд
+              </div>
 
-          <button
-            id="zardal-add-btn"
-            type="button"
-            className="cssbuttons-io-button"
-            onClick={() => openAddModal(false)}
-          >
-            +
-          </button>
-        </div>
+              <button
+                id="zardal-add-btn"
+                type="button"
+                className="cssbuttons-io-button"
+                onClick={() => {
+                  setFormData({
+                    ...formData,
+                    turul: "Тогтмол",
+                  });
+                  openAddModal(false);
+                }}
+              >
+                +
+              </button>
+            </div>
 
-        {isLoadingAshiglaltiin ? (
-          <div className="flex justify-center items-center p-10">
-            <Loader />
-          </div>
-        ) : ashiglaltiinZardluud.length === 0 ? (
-          <div className="p-8 text-center text-theme">
-            Тогтмол зардал байхгүй байна
-          </div>
-        ) : (
-          <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
-            <div className="overflow-auto max-h-[350px]">
-              <div className="min-w-full inline-block align-middle">
-                <table className="w-full text-sm">
-                  <thead className="top-0 z-10">
-                    <tr className="text-center text-slate-500 border-b">
-                      <th className="py-2 pr-3">Нэр</th>
-                      <th className="py-2 pr-3">Төрөл</th>
-                      <th className="py-2 pr-3">Тариф (₮)</th>
-                      <th className="py-2 pr-3">Тайлбар</th>
-                      <th className="py-2">Үйлдэл</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ashiglaltiinZardluud
-                      .filter((x) => x._id)
-                      .filter((x) =>
-                        filterText.trim() === ""
-                          ? true
-                          : String(x.ner || "")
+            {isLoadingAshiglaltiin ? (
+              <div className="flex justify-center items-center p-10">
+                <Loader />
+              </div>
+            ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
+                .length === 0 ? (
+              <div className="p-8 text-center text-theme">
+                Тогтмол зардал байхгүй байна
+              </div>
+            ) : (
+              <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
+                <div className="overflow-auto max-h-[350px]">
+                  <div className="min-w-full inline-block align-middle">
+                    <table className="w-full text-sm">
+                      <thead className="top-0 z-10">
+                        <tr className="text-center text-slate-500 border-b">
+                          <th className="py-2 pr-3">Нэр</th>
+                          <th className="py-2 pr-3">Төрөл</th>
+                          <th className="py-2 pr-3">Тариф (₮)</th>
+                          <th className="py-2 pr-3">Тайлбар</th>
+                          <th className="py-2">Үйлдэл</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ashiglaltiinZardluud
+                          .filter((x) => x._id)
+                          .filter((x) => x.turul === "Тогтмол")
+                          .filter((x) =>
+                            filterText.trim() === ""
+                              ? true
+                              : String(x.ner || "")
+                                  .toLowerCase()
+                                  .includes(filterText.toLowerCase())
+                          )
+                          .map((mur) => {
+                            // For electricity expenses, show zaaltTariff instead of tariff
+                            const isCakhilgaan = mur.ner
                               .toLowerCase()
-                              .includes(filterText.toLowerCase())
-                      )
-                      .map((mur) => {
-                        const currentValue =
-                          editedTariffs[mur._id!] !== undefined
-                            ? editedTariffs[mur._id!]
-                            : mur.tariff;
-                        const changed = currentValue !== mur.tariff;
-                        return (
-                          <tr
-                            key={mur._id}
-                            className="border-b last:border-b-0 text-left"
-                          >
-                            <td className="py-2 pr-3 text-theme">
-                              <div className="font-medium">{mur.ner}</div>
-                            </td>
+                              .includes("цахилгаан");
+                            const displayValue = isCakhilgaan
+                              ? mur.zaaltTariff || 0
+                              : mur.tariff;
+                            const currentValue =
+                              editedTariffs[mur._id!] !== undefined
+                                ? editedTariffs[mur._id!]
+                                : displayValue;
+                            const changed = currentValue !== displayValue;
+                            return (
+                              <tr
+                                key={mur._id}
+                                className="border-b last:border-b-0 text-left"
+                              >
+                                <td className="py-2 pr-3 text-theme">
+                                  <div className="font-medium">{mur.ner}</div>
+                                </td>
 
-                            <td className="py-2 pr-3 text-theme">
-                              {mur.turul}
-                            </td>
+                                <td className="py-2 pr-3 text-theme">
+                                  {mur.turul}
+                                </td>
 
-                            <td className="py-2 pr-3">
-                              <MTextInput
-                                className="w-36 text-center text-theme mx-auto"
-                                value={formatNumber(currentValue, 2)}
-                                readOnly
-                                onChange={(e) =>
-                                  setEditedTariffs((prev) => ({
-                                    ...prev,
-                                    [mur._id!]: Number(
-                                      String(e.currentTarget.value).replace(
-                                        /[^0-9.-]/g,
-                                        ""
-                                      )
-                                    ),
-                                  }))
-                                }
-                                rightSection={
-                                  <span className="text-slate-500 pr-1">₮</span>
-                                }
-                              />
-                              {changed && (
-                                <span className="text-xs text-amber-600 ml-2">
-                                  Өөрчлөгдсөн
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-2 pr-3 text-theme">
-                              {mur.tailbar}
-                            </td>
-                            <td className="py-2">
-                              <div className="flex items-center justify-center gap-2">
-                                <Edit
-                                  className="text-sm text-blue-500 cursor-pointer"
-                                  onClick={() => openEditModal(mur, false)}
-                                />
-                                <Trash2
-                                  className="text-sm text-red-500 cursor-pointer"
-                                  color="red"
-                                  onClick={() => {
-                                    setItemToDelete(mur);
-                                    setDeleteModalOpen(true);
-                                  }}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                  <tfoot className="bottom-0 border-t">
-                    <tr className="font-semibold">
-                      <td colSpan={2}></td>
-                      <td className="text-theme">
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs text-slate-500">Нийт:</span>
-                          <span>
+                                <td className="py-2 pr-3">
+                                  <MTextInput
+                                    className="w-36 mx-auto"
+                                    value={formatNumber(currentValue, 2)}
+                                    readOnly
+                                    styles={{
+                                      input: {
+                                        textAlign: "right",
+                                      },
+                                    }}
+                                    rightSection={
+                                      <span className="text-slate-500 pr-1">
+                                        ₮
+                                      </span>
+                                    }
+                                  />
+
+                                  {changed && (
+                                    <span className="text-xs text-amber-600 ml-2">
+                                      Өөрчлөгдсөн
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-2 pr-3 text-theme">
+                                  {mur.tailbar}
+                                </td>
+                                <td className="py-2">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <Edit
+                                      className="text-sm text-blue-500 cursor-pointer"
+                                      onClick={() => openEditModal(mur, false)}
+                                    />
+                                    <Trash2
+                                      className="text-sm text-red-500 cursor-pointer"
+                                      color="red"
+                                      onClick={() => {
+                                        setItemToDelete(mur);
+                                        setDeleteModalOpen(true);
+                                      }}
+                                    />
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                      <tfoot className="bottom-0 border-t">
+                        <tr className="font-semibold">
+                          <td className="py-2 pr-3 text-theme">
+                            <div className="font-medium">Нийт:</div>
+                          </td>
+                          <td></td>
+                          <td className="text-theme text-center">
                             {formatNumber(
                               ashiglaltiinZardluud
                                 .filter((x) => x._id)
+                                .filter((x) => x.turul === "Тогтмол")
                                 .filter((x) =>
                                   filterText.trim() === ""
                                     ? true
@@ -855,20 +949,32 @@ export default function AshiglaltiinZardluud() {
                                         .toLowerCase()
                                         .includes(filterText.toLowerCase())
                                 )
-                                .reduce((sum, item) => sum + item.tariff, 0)
+                                .reduce((sum, item) => {
+                                  const isCakhilgaan = item.ner
+                                    .toLowerCase()
+                                    .includes("цахилгаан");
+                                  const displayValue = isCakhilgaan
+                                    ? item.zaaltTariff || 0
+                                    : item.tariff;
+                                  const currentValue =
+                                    editedTariffs[item._id!] !== undefined
+                                      ? editedTariffs[item._id!]
+                                      : displayValue;
+                                  return sum + currentValue;
+                                }, 0)
                             )}{" "}
                             ₮
-                          </span>
-                        </div>
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
+                          </td>
+                          <td colSpan={2}></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+        </div>
 
         <MModal
           title="Устгах уу?"
@@ -1032,15 +1138,24 @@ export default function AshiglaltiinZardluud() {
               </label>
               <MTextInput
                 value={formData.ner}
-                onChange={(e) =>
-                  setFormData({ ...formData, ner: e.currentTarget.value })
-                }
+                onChange={(e) => {
+                  const newName = e.currentTarget.value;
+                  const isCakhilgaan = newName
+                    .toLowerCase()
+                    .includes("цахилгаан");
+                  setFormData({
+                    ...formData,
+                    ner: newName,
+                    zaalt: isCakhilgaan ? true : formData.zaalt,
+                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
+                  });
+                }}
                 placeholder="Зардлын нэр оруулах"
                 className="text-sm text-theme"
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium mb-1 text-theme">
                 Төрөл
               </label>
@@ -1057,64 +1172,150 @@ export default function AshiglaltiinZardluud() {
                 placeholder="Сонгох"
                 searchable
               />
-            </div>
+            </div> */}
 
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Зардлын төрөл
-              </label>
-              <MSelect
-                value={formData.zardliinTurul ?? undefined}
-                onChange={(value) =>
-                  setFormData({ ...formData, zardliinTurul: value as string })
-                }
-                className="w-full text-theme"
-                data={[
-                  { label: "Лифт", value: "Лифт" },
-                  { label: "Энгийн", value: "Энгийн" },
-                ]}
-                placeholder="Сонгох (Лифт)"
-                searchable={false}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Тариф (₮)
-              </label>
-              <MTextInput
-                value={tariffInputValue}
-                onChange={(e) => {
-                  const raw = e.currentTarget.value;
-                  // Only allow digits and dot (if you want decimal numbers)
-                  const cleanValue = raw.replace(/[^0-9.]/g, "");
-
-                  const numericValue = cleanValue; // no need to remove comma now
-                  const n = Number(numericValue);
-
-                  setTariffInputValue(cleanValue);
-                  setFormData({
-                    ...formData,
-                    tariff: Number.isFinite(n) ? n : 0,
-                  });
-                }}
-                onBlur={() => {
-                  if (formData.tariff) {
-                    setTariffInputValue(formatNumber(formData.tariff, 2));
-                  } else {
-                    setTariffInputValue("");
+            {!formData.ner.toLowerCase().includes("цахилгаан") && (
+              <div>
+                <label className="block text-sm font-medium mb-1 text-theme">
+                  Зардлын төрөл
+                </label>
+                <MSelect
+                  value={formData.zardliinTurul ?? undefined}
+                  onChange={(value) =>
+                    setFormData({ ...formData, zardliinTurul: value as string })
                   }
-                }}
-                onFocus={() => {
-                  if (formData.tariff) {
-                    setTariffInputValue(formData.tariff.toString());
-                  }
-                }}
-                placeholder="0"
-                className="text-theme"
-                rightSection={<span className="text-slate-500 pr-1">₮</span>}
-              />
-            </div>
+                  className="w-full text-theme"
+                  data={[
+                    { label: "Лифт", value: "Лифт" },
+                    { label: "Энгийн", value: "Энгийн" },
+                  ]}
+                  placeholder="Сонгох (Лифт)"
+                  searchable={false}
+                />
+              </div>
+            )}
+
+            {!formData.ner.toLowerCase().includes("цахилгаан") && (
+              <div>
+                <label className="block text-sm font-medium mb-1 text-theme">
+                  Тариф (₮)
+                </label>
+                <MTextInput
+                  value={tariffInputValue}
+                  onChange={(e) => {
+                    const raw = e.currentTarget.value;
+                    const cleanValue = raw.replace(/[^0-9.]/g, "");
+                    const n = Number(cleanValue);
+
+                    setTariffInputValue(cleanValue);
+                    setFormData({
+                      ...formData,
+                      tariff: Number.isFinite(n) ? n : 0,
+                    });
+                  }}
+                  onBlur={() => {
+                    if (formData.tariff) {
+                      setTariffInputValue(formatNumber(formData.tariff, 2));
+                    } else {
+                      setTariffInputValue("");
+                    }
+                  }}
+                  onFocus={() => {
+                    if (formData.tariff) {
+                      setTariffInputValue(formData.tariff.toString());
+                    }
+                  }}
+                  placeholder="0"
+                  className="text-theme"
+                  rightSection={<span className="text-slate-500 pr-1">₮</span>}
+                />
+              </div>
+            )}
+
+            {/* Zaalt fields for electricity */}
+            {formData.ner.toLowerCase().includes("цахилгаан") && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme">
+                    Заалтын тариф (₮/кВт)
+                  </label>
+                  <MTextInput
+                    value={zaaltTariffInput}
+                    onChange={(e) => {
+                      const raw = e.currentTarget.value;
+                      const cleanValue = raw.replace(/[^0-9.]/g, "");
+                      const n = Number(cleanValue);
+
+                      setZaaltTariffInput(cleanValue);
+                      setFormData({
+                        ...formData,
+                        zaaltTariff: Number.isFinite(n) ? n : 0,
+                      });
+                    }}
+                    onBlur={() => {
+                      if (formData.zaaltTariff) {
+                        setZaaltTariffInput(
+                          formatNumber(formData.zaaltTariff, 2)
+                        );
+                      } else {
+                        setZaaltTariffInput("");
+                      }
+                    }}
+                    onFocus={() => {
+                      if (formData.zaaltTariff) {
+                        setZaaltTariffInput(formData.zaaltTariff.toString());
+                      }
+                    }}
+                    placeholder="150"
+                    className="text-theme"
+                    rightSection={
+                      <span className="text-slate-500 pr-1">₮</span>
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1 text-theme">
+                    Үндсэн дүн (₮)
+                  </label>
+                  <MTextInput
+                    value={zaaltDefaultDunInput}
+                    onChange={(e) => {
+                      const raw = e.currentTarget.value;
+                      const cleanValue = raw.replace(/[^0-9.]/g, "");
+                      const n = Number(cleanValue);
+
+                      setZaaltDefaultDunInput(cleanValue);
+                      setFormData({
+                        ...formData,
+                        zaaltDefaultDun: Number.isFinite(n) ? n : 0,
+                      });
+                    }}
+                    onBlur={() => {
+                      if (formData.zaaltDefaultDun) {
+                        setZaaltDefaultDunInput(
+                          formatNumber(formData.zaaltDefaultDun, 2)
+                        );
+                      } else {
+                        setZaaltDefaultDunInput("");
+                      }
+                    }}
+                    onFocus={() => {
+                      if (formData.zaaltDefaultDun) {
+                        setZaaltDefaultDunInput(
+                          formData.zaaltDefaultDun.toString()
+                        );
+                      }
+                    }}
+                    placeholder="2000"
+                    className="text-theme"
+                    rightSection={
+                      <span className="text-slate-500 pr-1">₮</span>
+                    }
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className="block text-sm font-medium mb-1 text-theme">
                 Тайлбар

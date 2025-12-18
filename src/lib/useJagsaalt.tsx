@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import { AxiosError } from "axios";
 
 interface SearchQuery {

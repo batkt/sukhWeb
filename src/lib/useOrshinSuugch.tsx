@@ -1,5 +1,5 @@
 import { useState } from "react";
-import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import useSWR, { SWRResponse } from "swr";
 
 interface Khuudaslalt {
@@ -29,6 +29,7 @@ interface OrshinSuugch {
   tuluv?: string;
   toot?: string | number;
   baiguullagiinId?: string;
+  tsahilgaaniiZaalt?: string | number;
   [key: string]: any;
 }
 

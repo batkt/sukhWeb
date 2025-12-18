@@ -6,6 +6,8 @@ import { ChevronDown } from "lucide-react";
 interface Option {
   value: string;
   label: string;
+  disabled?: boolean;
+  title?: string;
 }
 
 interface CustomSelectProps {
@@ -192,12 +194,17 @@ export default function TusgaiZagvar({
                       type="button"
                       role="option"
                       aria-selected={opt.value === value}
+                      disabled={opt.disabled}
+                      title={opt.title}
                       onClick={() => {
+                        if (opt.disabled) return;
                         onChange(opt.value);
                         setIsOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-sm transition-colors truncate ${
-                        tone === "neutral"
+                        opt.disabled
+                          ? "opacity-50 cursor-not-allowed text-gray-400"
+                          : tone === "neutral"
                           ? opt.value === value
                             ? "font-semibold text-slate-900 bg-gray-50"
                             : "text-slate-700 hover:bg-gray-50"

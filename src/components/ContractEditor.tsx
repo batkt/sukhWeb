@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useGereeniiZagvar, useGereeZagvarCRUD } from "@/lib/useGereeniiZagvar";
 import { useAuth } from "@/lib/useAuth";
-import { aldaaBarigch } from "../../lib/uilchilgee";
+import { aldaaBarigch } from "@/lib/uilchilgee";
 import { useSpinner } from "@/context/SpinnerContext";
 
 type TagType = string;

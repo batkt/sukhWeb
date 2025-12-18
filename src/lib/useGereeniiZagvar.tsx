@@ -1,6 +1,6 @@
 import { useState } from "react";
 import useSWR, { SWRResponse } from "swr";
-import uilchilgee, { aldaaBarigch } from "../../lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import toast from "react-hot-toast";
 

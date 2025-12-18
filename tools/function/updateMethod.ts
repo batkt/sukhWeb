@@ -1,4 +1,4 @@
-import uilchilgee from "../../lib/uilchilgee";
+import uilchilgee from "../../src/lib/uilchilgee";
 
 function updateMethod<T = any>(
   modelName: string,

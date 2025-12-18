@@ -17,7 +17,7 @@ import useJagsaalt from "@/lib/useJagsaalt";
 import createMethod from "../../../tools/function/createMethod";
 import updateMethod from "../../../tools/function/updateMethod";
 import deleteMethod from "../../../tools/function/deleteMethod";
-import { aldaaBarigch } from "../../../lib/uilchilgee";
+import { aldaaBarigch } from "@/lib/uilchilgee";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useSpinner } from "@/context/SpinnerContext";
 
