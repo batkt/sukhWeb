@@ -1629,20 +1629,6 @@ export default function BarilgiinTokhirgoo() {
           </div>
         </div>
 
-        {isDirty && (
-          <div className="mt-2 md:mt-4 flex justify-end">
-            <button
-              onClick={khadgalakh}
-              className={`btn-minimal btn-save ${
-                isSaving ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700"
-              }`}
-              disabled={isSaving}
-              type="button"
-            >
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-            </button>
-          </div>
-        )}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div id="barilgiin-duureg" className="w-full">
             <label className="block text-sm font-medium text-theme mb-1">
@@ -1685,11 +1671,21 @@ export default function BarilgiinTokhirgoo() {
               disabled={!state.selectedDuureg}
             />
           </div>
-
-          {/* 4) СӨХ-ийн нэр */}
         </div>
-        {/* Buildings list with edit/delete actions */}
-        {/* Show building list for all buildings */}
+        {isDirty && (
+          <div className="mt-2 md:mt-4 flex justify-end">
+            <button
+              onClick={khadgalakh}
+              className={`btn-minimal btn-save ${
+                isSaving ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700"
+              }`}
+              disabled={isSaving}
+              type="button"
+            >
+              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
+            </button>
+          </div>
+        )}
         {orgBuildings && orgBuildings.length > 0 && (
           <div className="space-y-2 border-b pb-3">
             <div className="flex items-center gap-2">

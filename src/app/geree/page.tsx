@@ -1355,8 +1355,30 @@ export default function Geree() {
 
   // Client-side pagination for residents and employees (slice loaded lists)
   const residentsList = (orshinSuugchGaralt?.jagsaalt || []) as any[];
+
+  // Get active contract resident IDs (tuluv: "Идэвхтэй")
+  const activeResidentIds = useMemo(() => {
+    if (!Array.isArray(contracts)) return new Set<string>();
+    const activeContracts = contracts.filter((c: any) => {
+      const tuluv = c.tuluv || "Идэвхтэй";
+      return String(tuluv) === "Идэвхтэй";
+    });
+    return new Set(
+      activeContracts
+        .map((c: any) => String(c?.orshinSuugchId || "").trim())
+        .filter(Boolean)
+    );
+  }, [contracts]);
+
   const filteredResidents = useMemo(() => {
     let list = residentsList;
+
+    // Filter to show only residents with active contracts (tuluv: "Идэвхтэй")
+    list = list.filter((resident: any) => {
+      const residentId = String(resident?._id || "").trim();
+      return activeResidentIds.has(residentId);
+    });
+
     if (searchTerm) {
       list = list.filter((resident: any) => {
         const qq = String(searchTerm).toLowerCase();
@@ -1380,7 +1402,7 @@ export default function Geree() {
       });
     }
     return list.sort((a: any, b: any) => sortBySelectedKey(a, b));
-  }, [residentsList, searchTerm, sortKey, sortOrder]);
+  }, [residentsList, activeResidentIds, searchTerm, sortKey, sortOrder]);
   const resTotalPages = Math.max(
     1,
     Math.ceil(filteredResidents.length / (resPageSize || 1))
@@ -2721,12 +2743,35 @@ export default function Geree() {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
     }
+
+    // Extract ID - check _id first, then id
+    let residentId: string | undefined = undefined;
+    if (p && typeof p === "object") {
+      if (p._id !== undefined && p._id !== null) {
+        residentId = String(p._id).trim();
+      } else if (p.id !== undefined && p.id !== null) {
+        residentId = String(p.id).trim();
+      }
+    }
+
+    // Validate ID exists and is not empty/undefined/null
+    if (
+      !residentId ||
+      residentId === "" ||
+      residentId === "undefined" ||
+      residentId === "null"
+    ) {
+      console.error("Resident ID not found or invalid:", { p, residentId });
+      openErrorOverlay("Оршин суугчийн ID олдсонгүй эсвэл буруу байна");
+      return;
+    }
+
     // Confirmation is handled by the calling UI (ConfirmPopover)
     try {
       // 1) Find related contracts for this resident from the loaded contracts
       const related = Array.isArray(contracts)
         ? contracts.filter(
-            (c: any) => String(c?.orshinSuugchId || "") === String(p?._id || "")
+            (c: any) => String(c?.orshinSuugchId || "") === residentId
           )
         : [];
 
@@ -2736,11 +2781,11 @@ export default function Geree() {
         } catch (err) {}
       }
 
-      await deleteMethod("orshinSuugch", token, p._id || p.id);
+      await updateMethod("orshinSuugch", token, { _id: residentId });
 
       try {
         const s = socket();
-        s.emit("orshinSuugch.deleted", { id: p._id || p.id });
+        s.emit("orshinSuugch.deleted", { id: residentId });
         for (const c of related) {
           if (c?._id) s.emit("geree.updated", { id: c._id });
         }
@@ -2751,6 +2796,7 @@ export default function Geree() {
       await orshinSuugchJagsaaltMutate();
       await gereeJagsaaltMutate();
     } catch (e) {
+      console.error("Error deleting resident:", e);
       openErrorOverlay("Устгахад алдаа гарлаа");
     }
   };
@@ -3429,98 +3475,100 @@ export default function Geree() {
           )}
           {activeTab === "residents" && (
             <>
-              <button
-                onClick={() => {
-                  const deriveStr = (val: any) =>
-                    typeof val === "string"
-                      ? val
-                      : typeof val?.ner === "string"
-                      ? val.ner
-                      : "";
-                  setCurrentStep(1);
-                  setEditingContract(null);
-                  setEditingResident(null);
-                  setNewResident({
-                    ovog: "",
-                    ner: "",
-                    register: "",
-                    utas: [""],
-                    // For add-new resident we want the selects to be empty so the user
-                    // explicitly chooses Орц / Давхар / Тоот. Keep these as empty
-                    // strings here. When editing an existing resident the handler
-                    // `handleEditResident` fills these fields from the record.
-                    davkhar: "",
-                    mail: "",
-                    khayag: "",
-                    aimag: "Улаанбаатар",
-                    duureg:
-                      deriveStr(selectedBarilga?.tokhirgoo?.duuregNer) || "",
-                    horoo:
-                      deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
-                    orts: "",
-                    toot: "",
-                    tsahilgaaniiZaalt: "",
-                    soh:
-                      selectedBarilga?.tokhirgoo?.sohNer ||
-                      baiguullaga?.ner ||
-                      "",
-                    baiguullagiinNer: selectedBarilga?.ner || "",
-                    nevtrekhNer: "",
-                    nuutsUg: "1234",
-                    turul: "Үндсэн",
-                  });
-                  setShowResidentModal(true);
-                }}
-                className="btn-minimal"
-                id="resident-new-btn"
-                aria-label="Оршин суугч"
-                title="Оршин суугч"
-              >
-                <UserPlus className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">
-                  Оршин суугч
-                </span>
-              </button>
+              <div className="grid grid-cols-3 min-[1200px]:grid-cols-4 gap-2 w-full">
+                <button
+                  onClick={() => {
+                    const deriveStr = (val: any) =>
+                      typeof val === "string"
+                        ? val
+                        : typeof val?.ner === "string"
+                        ? val.ner
+                        : "";
+                    setCurrentStep(1);
+                    setEditingContract(null);
+                    setEditingResident(null);
+                    setNewResident({
+                      ovog: "",
+                      ner: "",
+                      register: "",
+                      utas: [""],
+                      // For add-new resident we want the selects to be empty so the user
+                      // explicitly chooses Орц / Давхар / Тоот. Keep these as empty
+                      // strings here. When editing an existing resident the handler
+                      // `handleEditResident` fills these fields from the record.
+                      davkhar: "",
+                      mail: "",
+                      khayag: "",
+                      aimag: "Улаанбаатар",
+                      duureg:
+                        deriveStr(selectedBarilga?.tokhirgoo?.duuregNer) || "",
+                      horoo:
+                        deriveStr(selectedBarilga?.tokhirgoo?.horoo?.ner) || "",
+                      orts: "",
+                      toot: "",
+                      tsahilgaaniiZaalt: "",
+                      soh:
+                        selectedBarilga?.tokhirgoo?.sohNer ||
+                        baiguullaga?.ner ||
+                        "",
+                      baiguullagiinNer: selectedBarilga?.ner || "",
+                      nevtrekhNer: "",
+                      nuutsUg: "1234",
+                      turul: "Үндсэн",
+                    });
+                    setShowResidentModal(true);
+                  }}
+                  className="btn-minimal"
+                  id="resident-new-btn"
+                  aria-label="Оршин суугч"
+                  title="Оршин суугч"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs ml-1">
+                    Оршин суугч
+                  </span>
+                </button>
 
-              <button
-                onClick={handleExportResidentsExcel}
-                className="btn-minimal"
-                aria-label="Оршин суугч Excel татах"
-                title="Оршин суугчдын Excel татах"
-                id="resident-download-list-btn"
-              >
-                <Download className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">
-                  Жагсаалт татах
-                </span>
-              </button>
+                <button
+                  onClick={handleExportResidentsExcel}
+                  className="btn-minimal"
+                  aria-label="Оршин суугч Excel татах"
+                  title="Оршин суугчдын Excel татах"
+                  id="resident-download-list-btn"
+                >
+                  <Download className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs ml-1">
+                    Жагсаалт татах
+                  </span>
+                </button>
 
-              <button
-                onClick={handleDownloadResidentsTemplate}
-                className="btn-minimal"
-                id="resident-download-template-btn"
-                aria-label="Загвар татах"
-                title="Оршин суугчийн Excel загвар татах"
-              >
-                <FileDown className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">
-                  Загвар татах
-                </span>
-              </button>
+                <button
+                  onClick={handleDownloadResidentsTemplate}
+                  className="btn-minimal"
+                  id="resident-download-template-btn"
+                  aria-label="Загвар татах"
+                  title="Оршин суугчийн Excel загвар татах"
+                >
+                  <FileDown className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs ml-1">
+                    Загвар татах
+                  </span>
+                </button>
 
-              <button
-                onClick={handleResidentsExcelImportClick}
-                className="btn-minimal"
-                id="resident-upload-template-btn"
-                disabled={isUploadingResidents}
-                aria-label="Excel-ээс импортлох"
-                title="Excel-ээс оршин суугчдыг импортлох"
-              >
-                <FileUp className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">
-                  Загвар оруулах
-                </span>
-              </button>
+                <button
+                  onClick={handleResidentsExcelImportClick}
+                  className="btn-minimal"
+                  id="resident-upload-template-btn"
+                  disabled={isUploadingResidents}
+                  aria-label="Excel-ээс импортлох"
+                  title="Excel-ээс оршин суугчдыг импортлох"
+                >
+                  <FileUp className="w-5 h-5" />
+                  <span className="hidden sm:inline text-xs ml-1">
+                    Загвар оруулах
+                  </span>
+                </button>
+              </div>
               <input
                 ref={residentExcelInputRef}
                 type="file"
@@ -3727,7 +3775,7 @@ export default function Geree() {
                             </tr>
                           </thead>
                           <tbody>
-                            {currentFloors.map((floor, idx) => {
+                            {currentFloors.map((floor: string, idx: number) => {
                               const existing =
                                 (selectedBarilga?.tokhirgoo &&
                                   (selectedBarilga.tokhirgoo as any)
@@ -3735,6 +3783,53 @@ export default function Geree() {
                                 {};
                               const key = composeKey(selectedOrts, floor);
                               const units = existing[key] || [];
+
+                              const activeContractsForFloor = contracts.filter(
+                                (c: any) => {
+                                  const tuluv = c.tuluv || "Идэвхтэй";
+                                  if (String(tuluv) !== "Идэвхтэй")
+                                    return false;
+
+                                  // Normalize floor comparison (handle number/string)
+                                  const contractFloor = String(
+                                    c.davkhar || ""
+                                  ).trim();
+                                  const floorStr = String(floor || "").trim();
+                                  const matchesFloor =
+                                    contractFloor === floorStr;
+
+                                  if (!matchesFloor) return false;
+
+                                  // Normalize orts comparison (handle number/string, empty string, missing field)
+                                  const contractOrts = String(
+                                    c.orts || ""
+                                  ).trim();
+                                  const selectedOrtsStr = String(
+                                    selectedOrts || ""
+                                  ).trim();
+
+                                  // Match if:
+                                  // 1. Contract has no orts (empty/missing) - be lenient and match if floor matches
+                                  // 2. Both are empty/missing
+                                  // 3. Both are the same
+                                  const matchesOrts =
+                                    contractOrts === "" ||
+                                    contractOrts === selectedOrtsStr;
+
+                                  return matchesOrts;
+                                }
+                              );
+                              const activeToots = new Set(
+                                activeContractsForFloor
+                                  .map((c: any) => {
+                                    const toot = c.toot;
+                                    if (toot === null || toot === undefined)
+                                      return null;
+                                    return String(toot).trim();
+                                  })
+                                  .filter((t): t is string => Boolean(t))
+                              );
+
                               return (
                                 <tr
                                   key={floor}
@@ -3749,27 +3844,52 @@ export default function Geree() {
                                   <td className="p-1 text-center text-theme">
                                     {units.length > 0 ? (
                                       <div className="flex flex-wrap gap-2 justify-center">
-                                        {units.map((t: any) => (
-                                          <span
-                                            key={String(t)}
-                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs text-theme border border-gray-300"
-                                          >
-                                            {String(t)}
-                                            <button
-                                              className="ml-1 text-red-500 hover:text-red-600"
-                                              aria-label="Устгах"
-                                              onClick={() => {
-                                                setUnitToDelete({
-                                                  floor,
-                                                  unit: String(t),
-                                                });
-                                                setShowDeleteUnitModal(true);
-                                              }}
+                                        {units.map((t: any) => {
+                                          const unitStr = String(t).trim();
+                                          const hasActive =
+                                            activeToots.has(unitStr);
+                                          return (
+                                            <span
+                                              key={String(t)}
+                                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${
+                                                hasActive
+                                                  ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                                                  : "border-gray-300"
+                                              }`}
                                             >
-                                              ×
-                                            </button>
-                                          </span>
-                                        ))}
+                                              <span
+                                                className={
+                                                  hasActive
+                                                    ? "text-green-600 font-semibold"
+                                                    : "text-theme"
+                                                }
+                                              >
+                                                {String(t)}
+                                              </span>
+                                              {hasActive && (
+                                                <span
+                                                  className="text-green-600 text-[10px] font-semibold"
+                                                  title="Идэвхтэй"
+                                                >
+                                                  ●
+                                                </span>
+                                              )}
+                                              <button
+                                                className="ml-1 text-red-500 hover:text-red-600"
+                                                aria-label="Устгах"
+                                                onClick={() => {
+                                                  setUnitToDelete({
+                                                    floor,
+                                                    unit: String(t),
+                                                  });
+                                                  setShowDeleteUnitModal(true);
+                                                }}
+                                              >
+                                                ×
+                                              </button>
+                                            </span>
+                                          );
+                                        })}
                                       </div>
                                     ) : (
                                       <div className="text-xs text-slate-500">
@@ -5755,35 +5875,90 @@ export default function Geree() {
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                               Тоот
                             </label>
-                            <TusgaiZagvar
-                              value={String(newResident.toot || "")}
-                              onChange={(val) =>
-                                setNewResident((prev: any) => ({
-                                  ...prev,
-                                  toot: val,
-                                }))
-                              }
-                              options={getTootOptions(
+                            {(() => {
+                              const tootOptions = getTootOptions(
                                 newResident.orts,
                                 newResident.davkhar
-                              ).map((t) => ({ value: t, label: t }))}
-                              className="w-full"
-                              placeholder={
-                                getTootOptions(
-                                  newResident.orts,
-                                  newResident.davkhar
-                                ).length === 0
-                                  ? "Тоотын тохиргоо хийгээгүй байна"
-                                  : "Сонгох..."
-                              }
-                              required={!editingResident}
-                              disabled={
-                                getTootOptions(
-                                  newResident.orts,
-                                  newResident.davkhar
-                                ).length === 0
-                              }
-                            />
+                              );
+
+                              // Get active contracts (tuluv="Идэвхтэй") matching current orts and floor
+                              const activeContractsForResident =
+                                contracts.filter((c: any) => {
+                                  const tuluv = c.tuluv || "Идэвхтэй";
+                                  if (String(tuluv) !== "Идэвхтэй")
+                                    return false;
+
+                                  // Normalize floor comparison
+                                  const contractFloor = String(
+                                    c.davkhar || ""
+                                  ).trim();
+                                  const residentFloor = String(
+                                    newResident.davkhar || ""
+                                  ).trim();
+                                  const matchesFloor =
+                                    contractFloor === residentFloor;
+
+                                  if (!matchesFloor) return false;
+
+                                  // Normalize orts comparison
+                                  const contractOrts = String(
+                                    c.orts || ""
+                                  ).trim();
+                                  const residentOrts = String(
+                                    newResident.orts || ""
+                                  ).trim();
+
+                                  const matchesOrts =
+                                    contractOrts === "" ||
+                                    contractOrts === residentOrts;
+
+                                  return matchesOrts;
+                                });
+
+                              // Get toot values from active contracts
+                              const activeToots = new Set(
+                                activeContractsForResident
+                                  .map((c: any) => {
+                                    const toot = c.toot;
+                                    if (toot === null || toot === undefined)
+                                      return null;
+                                    return String(toot).trim();
+                                  })
+                                  .filter((t): t is string => Boolean(t))
+                              );
+
+                              return (
+                                <TusgaiZagvar
+                                  value={String(newResident.toot || "")}
+                                  onChange={(val) =>
+                                    setNewResident((prev: any) => ({
+                                      ...prev,
+                                      toot: val,
+                                    }))
+                                  }
+                                  options={tootOptions.map((t) => {
+                                    const tootStr = String(t).trim();
+                                    const isActive = activeToots.has(tootStr);
+                                    return {
+                                      value: t,
+                                      label: t,
+                                      disabled: isActive,
+                                      title: isActive
+                                        ? "Энэ тоотод оршин суугч бүртгэлтэй байна"
+                                        : undefined,
+                                    };
+                                  })}
+                                  className="w-full"
+                                  placeholder={
+                                    tootOptions.length === 0
+                                      ? "Тоотын тохиргоо хийгээгүй байна"
+                                      : "Сонгох..."
+                                  }
+                                  required={!editingResident}
+                                  disabled={tootOptions.length === 0}
+                                />
+                              );
+                            })()}
                           </div>
                         </div>
 
@@ -6342,6 +6517,14 @@ export default function Geree() {
                         type="button"
                         onClick={async () => {
                           if (residentToDelete) {
+                            const id =
+                              residentToDelete?._id || residentToDelete?.id;
+                            if (!id) {
+                              openErrorOverlay("Оршин суугчийн ID олдсонгүй");
+                              setShowDeleteResidentModal(false);
+                              setResidentToDelete(null);
+                              return;
+                            }
                             await handleDeleteResident(residentToDelete);
                             setShowDeleteResidentModal(false);
                             setResidentToDelete(null);
