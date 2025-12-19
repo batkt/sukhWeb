@@ -97,6 +97,7 @@ export default function AshiglaltiinZardluud() {
   const [liftBulkInput, setLiftBulkInput] = useState<string>("");
   const [liftShalgayaId, setLiftShalgayaId] = useState<string | null>(null);
   const [liftDeleteAllOpen, setLiftDeleteAllOpen] = useState<boolean>(false);
+  const [liftFloorsBackup, setLiftFloorsBackup] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
@@ -300,13 +301,16 @@ export default function AshiglaltiinZardluud() {
         setLiftBulkInput("");
         setLiftEnabled(false);
         setLiftFloors([]);
+        setLiftFloorsBackup([]);
         return;
       }
 
       const maxFloor = Math.max(...floors.map((f: any) => Number(f) || 0));
+      const sortedFloors = toUniqueSorted(floors);
       setLiftMaxFloor(maxFloor);
-      setLiftBulkInput(toUniqueSorted(floors).join(","));
-      setLiftFloors(toUniqueSorted(floors));
+      setLiftBulkInput(sortedFloors.join(","));
+      setLiftFloors(sortedFloors);
+      setLiftFloorsBackup([...sortedFloors]); // Backup the original floors
       setLiftShalgayaId(chosen?._id ?? null);
       setLiftEnabled(true);
     } catch (error) {
@@ -314,11 +318,15 @@ export default function AshiglaltiinZardluud() {
       setLiftBulkInput("");
       setLiftEnabled(false);
       setLiftFloors([]);
+      setLiftFloorsBackup([]);
       setLiftShalgayaId(null);
     }
   };
 
-  const saveLiftSettings = async (floorsOrMax: string[] | number | null) => {
+  const saveLiftSettings = async (
+    floorsOrMax: string[] | number | null,
+    skipFetch = false
+  ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -348,12 +356,16 @@ export default function AshiglaltiinZardluud() {
 
       if (floors.length > 0) {
         openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
+        setLiftFloorsBackup([...floors]); // Update backup when saved
       } else {
         openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+        setLiftFloorsBackup([]); // Clear backup when disabled
       }
 
-      // Refresh canonical source
-      await fetchLiftFloors();
+      // Refresh canonical source (skip if explicitly requested to prevent restoring old data)
+      if (!skipFetch) {
+        await fetchLiftFloors();
+      }
     } catch (error) {
       openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
     } finally {
@@ -419,9 +431,30 @@ export default function AshiglaltiinZardluud() {
     })();
   };
 
-  const handleDeleteAllFloors = () => {
-    // open confirm modal
-    setLiftDeleteAllOpen(true);
+  const handleDeleteAllFloors = async () => {
+    // Clear all inputted lifts, save, and turn off liftEnabled
+    const originalLiftShalgayaId = liftShalgayaId;
+    setLiftFloors([]);
+    setLiftBulkInput("");
+    setLiftEnabled(false);
+    setLiftFloorsBackup([]);
+    setLiftShalgayaId(null);
+    try {
+      if (originalLiftShalgayaId && token) {
+        await deleteMethod("liftShalgaya", token, originalLiftShalgayaId);
+      }
+      // Always save null to ensure server has empty floors, skip fetch to prevent restoring old data
+      await saveLiftSettings(null, true);
+      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+    } catch (e) {
+      // fallback
+      try {
+        await saveLiftSettings(null, true);
+      } catch (e2) {
+        // ignore
+      }
+      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+    }
   };
 
   const handleSaveFloors = async () => {
@@ -440,6 +473,7 @@ export default function AshiglaltiinZardluud() {
     // update UI first
     setLiftFloors(merged);
     setLiftBulkInput(merged.length > 0 ? merged.join(",") : "");
+    setLiftFloorsBackup([...merged]); // Update backup when saved
 
     if (merged.length > 0) {
       await saveLiftSettings(merged);
@@ -1186,10 +1220,10 @@ export default function AshiglaltiinZardluud() {
                   }
                   className="w-full text-theme"
                   data={[
-                    { label: "Лифт", value: "Лифт" },
                     { label: "Энгийн", value: "Энгийн" },
+                    { label: "Лифт", value: "Лифт" },
                   ]}
-                  placeholder="Сонгох (Лифт)"
+                  placeholder="Сонгох (Энгийн)"
                   searchable={false}
                 />
               </div>

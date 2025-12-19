@@ -74,6 +74,11 @@ export default function Khynalt() {
 
   useEffect(() => setMounted(true), []);
 
+  // State for building configuration, all residents and all contracts
+  const [buildingConfig, setBuildingConfig] = useState<any>(null);
+  const [allResidents, setAllResidents] = useState<any[]>([]);
+  const [allContracts, setAllContracts] = useState<any[]>([]);
+
   const { orshinSuugchGaralt, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
       token || "",
@@ -110,6 +115,89 @@ export default function Khynalt() {
       search: "",
     });
   }, [setOrshinSuugchKhuudaslalt, setGereeKhuudaslalt, setAjiltniiKhuudaslalt]);
+
+  // Fetch building configuration
+  useEffect(() => {
+    const fetchBuildingConfig = async () => {
+      if (!token || !ajiltan?.baiguullagiinId || !effectiveBarilgiinId) return;
+      try {
+        const response = await uilchilgee(token).get(`/baiguullaga/`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId,
+          },
+        });
+        setBuildingConfig(response.data);
+      } catch (error) {
+        console.error("Failed to fetch building config:", error);
+      }
+    };
+    fetchBuildingConfig();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  // Fetch all residents (with large page size to get all)
+  useEffect(() => {
+    const fetchAllResidents = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const queryObj = {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
+        };
+        const response = await uilchilgee(token).get(`/orshinSuugch`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 500,
+            query: JSON.stringify(queryObj),
+            ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
+          },
+        });
+        const residents = Array.isArray(response.data?.jagsaalt)
+          ? response.data.jagsaalt
+          : [];
+        setAllResidents(residents);
+      } catch (error) {
+        console.error("Failed to fetch all residents:", error);
+      }
+    };
+    fetchAllResidents();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+
+  // Fetch all contracts (with large page size to get all)
+  useEffect(() => {
+    const fetchAllContracts = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+      try {
+        const queryObj = {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
+          $or: [
+            { ner: { $regex: "", $options: "i" } },
+            { gereeniiDugaar: { $regex: "", $options: "i" } },
+            { register: { $regex: "", $options: "i" } },
+            { toot: { $regex: "", $options: "i" } },
+          ],
+        };
+        const response = await uilchilgee(token).get(`/geree`, {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 500,
+            query: JSON.stringify(queryObj),
+            ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
+          },
+        });
+        const contracts = Array.isArray(response.data?.jagsaalt)
+          ? response.data.jagsaalt
+          : [];
+        setAllContracts(contracts);
+      } catch (error) {
+        console.error("Failed to fetch all contracts:", error);
+      }
+    };
+    fetchAllContracts();
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   const residents = useMemo(
     () => orshinSuugchGaralt?.jagsaalt || [],
@@ -719,20 +807,68 @@ export default function Khynalt() {
     );
   })();
 
-  // Inactive contracts (cancelled or expired) within the current filter
   const filteredNonAvtiveGereeCount = useMemo(() => {
     const now = new Date();
     return filteredContracts.filter((c: any) => {
       const status = String(c?.tuluv || c?.status || "").trim();
       const end = c?.duusakhOgnoo ? new Date(c.duusakhOgnoo) : null;
       const isCancelled =
-        status === "Цуцалсан" ||
-        status === "Идэвхгүй" ||
-        status === "Идэвхигүй";
+        status === "Цуцалсан" || status === "Идэвхгүй" || status === "Идэвхгүй";
       const isExpired = end ? end < now : false;
       return isCancelled || isExpired;
     }).length;
   }, [filteredContracts]);
+
+  // Count unique "toot" values from baiguullaga that are not signed in orshinSuugch
+  const tootWithoutActiveGereeCount = useMemo(() => {
+    // Get all toots from building configuration (davkhariinToonuud)
+    const allTootsFromBaiguullaga = new Set<string>();
+    if (buildingConfig?.barilguud && Array.isArray(buildingConfig.barilguud)) {
+      buildingConfig.barilguud.forEach((building: any) => {
+        if (building?._id === effectiveBarilgiinId) {
+          const davkhariinToonuud = building?.tokhirgoo?.davkhariinToonuud;
+          if (davkhariinToonuud && typeof davkhariinToonuud === "object") {
+            // Extract all toots from davkhariinToonuud (including keys like "1::5")
+            Object.values(davkhariinToonuud).forEach((toots: any) => {
+              if (Array.isArray(toots)) {
+                toots.forEach((toot: any) => {
+                  const tootStr = String(toot || "").trim();
+                  if (tootStr) allTootsFromBaiguullaga.add(tootStr);
+                });
+              }
+            });
+          }
+        }
+      });
+    }
+
+    // Get all unique toot values from orshinSuugch
+    // Include both the main `toot` field and all toots from the `toots` array
+    const allTootsFromOrshinSuugch = new Set<string>();
+    allResidents.forEach((r: any) => {
+      // Add main toot field
+      const mainToot = String(r?.toot || "").trim();
+      if (mainToot) allTootsFromOrshinSuugch.add(mainToot);
+
+      // Add all toots from the toots array
+      if (Array.isArray(r?.toots)) {
+        r.toots.forEach((tootObj: any) => {
+          const toot = String(tootObj?.toot || "").trim();
+          if (toot) allTootsFromOrshinSuugch.add(toot);
+        });
+      }
+    });
+
+    // Count toots from baiguullaga that are NOT in orshinSuugch
+    let count = 0;
+    allTootsFromBaiguullaga.forEach((toot) => {
+      if (!allTootsFromOrshinSuugch.has(toot)) {
+        count++;
+      }
+    });
+
+    return count;
+  }, [buildingConfig, allResidents, effectiveBarilgiinId]);
 
   // Calculate totals from chart data
   const totalIncome = incomeSeries.paid.reduce((sum, val) => sum + val, 0);
@@ -784,13 +920,13 @@ export default function Khynalt() {
       },
       delay: 200,
     },
-    {
-      title: "Идэвхигүй тоот",
-      value: filteredNonAvtiveGereeCount,
-      subtitle: "Идэвхигүй тоотны тоо",
-      color: "from-yellow-500 to-yellow-600",
-      delay: 300,
-    },
+    // {
+    //   title: "Идэвхгүй тоот",
+    //   value: tootWithoutActiveGereeCount,
+    //   subtitle: "Идэвхтэй гэрээгүй тоотны тоо",
+    //   color: "from-yellow-500 to-yellow-600",
+    //   delay: 300,
+    // },
 
     {
       title: "Орлого",

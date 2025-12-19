@@ -3239,7 +3239,7 @@ export default function Geree() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="w-full pb-6" style={{ minHeight: "calc(100vh - 140px)" }}>
       <div className="flex items-start justify-between p-4 gap-4 mb-4">
         <div>
           <div className="flex items-center gap-3">
@@ -3827,10 +3827,6 @@ export default function Geree() {
                                     selectedOrts || ""
                                   ).trim();
 
-                                  // Match if:
-                                  // 1. Contract has no orts (empty/missing) - be lenient and match if floor matches
-                                  // 2. Both are empty/missing
-                                  // 3. Both are the same
                                   const matchesOrts =
                                     contractOrts === "" ||
                                     contractOrts === selectedOrtsStr;
@@ -4785,9 +4781,7 @@ export default function Geree() {
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Албан тушаал
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                        Эрх
-                      </th>
+
                       <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
                         Үйлдэл
                       </th>
@@ -4823,7 +4817,7 @@ export default function Geree() {
                           <td className="p-1 text-center">
                             {p.albanTushaal || "-"}
                           </td>
-                          <td className="p-1 text-center">{p.erkh || "-"}</td>
+
                           <td className="p-1 whitespace-nowrap">
                             <div className="flex gap-2 justify-center">
                               <button
