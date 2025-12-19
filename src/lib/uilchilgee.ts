@@ -144,8 +144,17 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
     try {
       if (config.method?.toLowerCase() === "get") {
         const p: Record<string, any> = { ...(config.params || {}) };
+        
+        // Check if baiguullagiinId is already in the URL path
+        const urlPath = config.url || "";
+        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
+        
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
-          p.baiguullagiinId = globalBaiguullagiinId;
+          // Don't add as query param if it's already in the URL path
+          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+            p.baiguullagiinId = globalBaiguullagiinId;
+          }
         }
         if (globalBarilgiinId && p.barilgiinId == null) {
           p.barilgiinId = globalBarilgiinId;
@@ -173,8 +182,17 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
     try {
       if (config.method?.toLowerCase() === "get") {
         const p: Record<string, any> = { ...(config.params || {}) };
+        
+        // Check if baiguullagiinId is already in the URL path
+        const urlPath = config.url || "";
+        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
+        
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
-          p.baiguullagiinId = globalBaiguullagiinId;
+          // Don't add as query param if it's already in the URL path
+          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+            p.baiguullagiinId = globalBaiguullagiinId;
+          }
         }
         if (globalBarilgiinId && p.barilgiinId == null) {
           p.barilgiinId = globalBarilgiinId;
@@ -206,9 +224,18 @@ const uilchilgee = (token?: string): AxiosInstance => {
         // Initialize params object if missing
         const p: Record<string, any> = { ...(config.params || {}) };
 
-        // Only set if not explicitly provided by the caller
+        // Check if baiguullagiinId is already in the URL path
+        // Pattern: /baiguullaga/{id} or /baiguullaga/{id}/...
+        const urlPath = config.url || "";
+        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
+
+        // Only set if not explicitly provided by the caller AND not already in URL path
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
-          p.baiguullagiinId = globalBaiguullagiinId;
+          // Don't add as query param if it's already in the URL path
+          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+            p.baiguullagiinId = globalBaiguullagiinId;
+          }
         }
         // Allow callers to opt-out of auto-injecting barilgiinId via header
         const orgOnly = (config.headers as any)?.["X-Org-Only"] === "1";

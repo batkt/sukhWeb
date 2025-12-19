@@ -30,15 +30,20 @@ const AdminLayout = ({
   // Use a column flex layout so header stays visible and the content area
   // can grow/shrink. Use min-h-0 on the scrolling container so children can
   // use flex-based heights and inner scrolling works on all browsers.
-  <div>
+  <div className="w-full pb-6" style={{ minHeight: "calc(100vh - 140px)" }}>
     <header className="px-4 pt-3">
       <h1 className="text-2xl font-semibold mb-2 text-[color:var(--panel-text)] leading-tight">
         {title}
       </h1>
     </header>
 
-    <main className="flex-1 px-4 pb-6">
-      <div className="grid grid-cols-12 gap-6">{children}</div>
+    <main
+      className="px-4 overflow-y-auto lg:overflow-y-visible custom-scrollbar"
+      style={{ maxHeight: "calc(100vh - 200px)" }}
+    >
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+        {children}
+      </div>
     </main>
   </div>
 );
@@ -85,11 +90,6 @@ function Tokhirgoo() {
         },
         {
           icon: <Settings className="w-5 h-5" />,
-          text: "Зогсоол",
-          tsonkh: Zogsool,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
           text: " Ашиглалтын зардал",
           tsonkh: AshiglaltiinZardal,
         },
@@ -102,6 +102,12 @@ function Tokhirgoo() {
           icon: <Settings className="w-5 h-5" />,
           text: "Данс",
           tsonkh: Dans,
+        },
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Зогсоол",
+          tsonkh: Zogsool,
+          comingSoon: true,
         },
         // {
         //   icon: <Settings className="w-5 h-5" />,
@@ -164,9 +170,9 @@ function Tokhirgoo() {
 
   return (
     <AdminLayout title="Тохиргоо">
-      <div className="col-span-12 lg:col-span-3">
+      <div className="w-full lg:col-span-3 ">
         <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-5 space-y-2 bg-transparent overflow-y-auto md:overflow-y-hidden custom-scrollbar">
+          <div className="p-5 space-y-2 bg-transparent">
             {tokhirgoo.map((item: any, i) => {
               const isActive = i === selectedIndexInternal;
               const isSoon = Boolean(item?.comingSoon);
@@ -185,11 +191,11 @@ function Tokhirgoo() {
                   } ${isSoon ? "cursor-not-allowed pr-24" : ""}`}
                 >
                   {item.icon}
-                  <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                  <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left">
                     {item.text}
                   </span>
                   {isSoon && (
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-green-500 max-w-20 overflow-hidden text-ellipsis whitespace-nowrap">
+                    <span className="text-xs font-semibold text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
                       Тун удахгүй
                     </span>
                   )}
@@ -200,7 +206,7 @@ function Tokhirgoo() {
         </div>
       </div>
 
-      <div className="col-span-12 lg:col-span-9 text-theme">
+      <div className="w-full lg:col-span-9 text-theme">
         {Tsonkh &&
           ajiltan &&
           (() => {
