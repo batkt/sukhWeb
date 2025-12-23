@@ -308,11 +308,18 @@ const InvoiceModal = ({
         });
         const latest = [
           ...(residentInvoices.length > 0 ? residentInvoices : list),
-        ].sort(
-          (a: any, b: any) =>
-            new Date(b?.createdAt || b?.ognoo || 0).getTime() -
-            new Date(a?.createdAt || a?.ognoo || 0).getTime()
-        )[0];
+        ].sort((a: any, b: any) => {
+          // Prioritize ognoo field for sorting to get the latest document
+          const aOgnoo = a?.ognoo ? new Date(a.ognoo).getTime() : 0;
+          const bOgnoo = b?.ognoo ? new Date(b.ognoo).getTime() : 0;
+          if (aOgnoo !== bOgnoo) {
+            return bOgnoo - aOgnoo;
+          }
+          // Fallback to createdAt if ognoo is not available
+          const aCreated = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const bCreated = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return bCreated - aCreated;
+        })[0];
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
         const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
@@ -616,6 +623,15 @@ const InvoiceModal = ({
                     latestInvoice?.nekhemjlekhiinDugaar ||
                     "-"}
                 </p>
+                <p className="text-sm text-slate-500">
+                  Огноо:{" "}
+                  {formatDate(
+                    contractData?.ognoo ||
+                      nekhemjlekhData?.ognoo ||
+                      latestInvoice?.ognoo ||
+                      ""
+                  ) || "-"}
+                </p>
               </div>
             </div>
             <button
@@ -693,22 +709,19 @@ const InvoiceModal = ({
                   </p>
                 </div>
               </div>
-              <div className="text-right space-y-2">
+              <div className="space-y-2">
                 <div className="inline-block text-left bg-transparent p-3 rounded-xl">
                   <p className="text-sm text-slate-600">
-                    <span className="font-medium">Огноо:</span> {currentDate}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    <span className="font-medium">төлөх огноо:</span>{" "}
+                    <span className="font-medium">Огноо:</span>{" "}
                     {formatDate(
                       contractData?.ognoo ||
                         nekhemjlekhData?.ognoo ||
                         latestInvoice?.ognoo ||
-                        contractData?.tulukhOgnoo ||
                         currentDate
                     )}
                   </p>
-                  {cronData && (
+
+                  {/* {cronData && (
                     <>
                       <p className="text-sm text-slate-600">
                         <span className="font-medium">
@@ -716,13 +729,8 @@ const InvoiceModal = ({
                         </span>{" "}
                         {cronData.nekhemjlekhUusgekhOgnoo || "-"}
                       </p>
-
-                      <p className="text-sm text-slate-600">
-                        <span className="font-medium">Үүссэн огноо:</span>{" "}
-                        {formatDate(cronData.uussenOgnoo) || "-"}
-                      </p>
                     </>
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>
@@ -751,10 +759,6 @@ const InvoiceModal = ({
                     <span className="text-slate-500">Утас:</span>{" "}
                     {resident?.utas}
                   </p>
-                  <p>
-                    <span className="text-slate-500">Огноо:</span>{" "}
-                    {formatDate(contractData?.gereeniiOgnoo)}
-                  </p>
                 </div>
               </div>
               {/* Initial balance / note (if provided on invoice medeelel) */}
@@ -773,16 +777,6 @@ const InvoiceModal = ({
                         ? formatCurrency(Number(contractData.ekhniiUldegdel))
                         : "-"}
                     </span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500">
-                      Өмнөх сарын үлдэгдэл (үсгээр):
-                    </span>{" "}
-                    <div className="font-medium">
-                      {contractData?.medeelel?.ekhniiUldegdelUsgeer ||
-                        contractData?.ekhniiUldegdelUsgeer ||
-                        "-"}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1313,7 +1307,7 @@ export default function InvoicingZardluud() {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: selectedBuildingId || barilgiinId || null,
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 10,
+          khuudasniiKhemjee: 500,
         },
       });
       const data = resp.data;
@@ -1881,14 +1875,42 @@ export default function InvoicingZardluud() {
                               item.gereeniiDugaar ??
                               item.invoiceNo ??
                               "-";
-                            const total = Number(
-                              item.niitTulbur ?? item.niitDun ?? item.total ?? 0
-                            );
-                            const rows = Array.isArray(item.medeelel?.zardluud)
+                            const zardluudRows = Array.isArray(
+                              item.medeelel?.zardluud
+                            )
                               ? item.medeelel.zardluud
                               : Array.isArray(item.zardluud)
                               ? item.zardluud
                               : [];
+                            const guilgeenuudRows = Array.isArray(
+                              item.medeelel?.guilgeenuud
+                            )
+                              ? item.medeelel.guilgeenuud
+                              : Array.isArray(item.guilgeenuud)
+                              ? item.guilgeenuud
+                              : [];
+                            const rows = [...zardluudRows, ...guilgeenuudRows];
+
+                            // Calculate total from expense items for accuracy
+                            const total =
+                              rows.reduce((sum: number, z: any) => {
+                                const n = (v: any) => {
+                                  const num = Number(v);
+                                  return Number.isNaN(num) ? null : num;
+                                };
+                                const dun = n(z?.dun);
+                                if (dun !== null && dun > 0) return sum + dun;
+                                const td = n(z?.tulukhDun);
+                                if (td !== null && td > 0) return sum + td;
+                                const tariff = n(z?.tariff);
+                                return sum + (tariff ?? 0);
+                              }, 0) ||
+                              Number(
+                                item.niitTulbur ??
+                                  item.niitDun ??
+                                  item.total ??
+                                  0
+                              );
 
                             return (
                               <div
@@ -1909,12 +1931,6 @@ export default function InvoicingZardluud() {
                                               dateStr
                                             ).toLocaleDateString("mn-MN")
                                           : "-"}
-                                      </span>
-                                    </div>
-                                    <div className="mt-1 text-sm">
-                                      Дугаар:{" "}
-                                      <span className="font-medium">
-                                        {numberStr}
                                       </span>
                                     </div>
                                   </div>
@@ -1978,48 +1994,35 @@ export default function InvoicingZardluud() {
 
                                 {rows.length > 0 && (
                                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                                    {rows
-                                      .filter((z: any) => {
-                                        const name = (
-                                          z.ner ||
-                                          z.name ||
-                                          ""
-                                        ).toLowerCase();
-                                        return !name.includes("цахилгаан");
-                                      })
-                                      .slice(0, 6)
-                                      .map((z: any, zi: number) => {
-                                        const amount = (() => {
-                                          const n = (v: any) => {
-                                            const num = Number(v);
-                                            return Number.isNaN(num)
-                                              ? null
-                                              : num;
-                                          };
-                                          const dun = n(z?.dun);
-                                          if (dun !== null && dun > 0)
-                                            return dun;
-                                          const td = n(z?.tulukhDun);
-                                          if (td !== null && td > 0) return td;
+                                    {rows.map((z: any, zi: number) => {
+                                      const amount = (() => {
+                                        const n = (v: any) => {
+                                          const num = Number(v);
+                                          return Number.isNaN(num) ? null : num;
+                                        };
+                                        const dun = n(z?.dun);
+                                        if (dun !== null && dun > 0) return dun;
+                                        const td = n(z?.tulukhDun);
+                                        if (td !== null && td > 0) return td;
 
-                                          const tariff = n(z?.tariff);
-                                          return tariff ?? 0;
-                                        })();
+                                        const tariff = n(z?.tariff);
+                                        return tariff ?? 0;
+                                      })();
 
-                                        return (
-                                          <div
-                                            key={zi}
-                                            className="flex items-center justify-between"
-                                          >
-                                            <span className="truncate">
-                                              {z.ner || z.name}
-                                            </span>
-                                            <span className="font-medium">
-                                              {formatNumber(amount)} ₮
-                                            </span>
-                                          </div>
-                                        );
-                                      })}
+                                      return (
+                                        <div
+                                          key={zi}
+                                          className="flex items-center justify-between"
+                                        >
+                                          <span className="truncate">
+                                            {z.ner || z.name}
+                                          </span>
+                                          <span className="font-medium">
+                                            {formatNumber(amount)} ₮
+                                          </span>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
