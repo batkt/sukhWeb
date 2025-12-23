@@ -44,8 +44,8 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
   const [deleteOpened, setDeleteOpened] = useState(false);
 
   return (
-    <div className="flex items-center justify-between bg-transparent rounded-2xl shadow p-4 mb-3 hover:shadow-md transition">
-      <div className="flex flex-col sm:flex-row sm:gap-6 w-full">
+    <div className="flex items-center  flex-col justify-between bg-transparent rounded-2xl shadow p-4 mb-3 hover:shadow-md transition">
+      <div className="flex justify-between  flex-col sm:flex-row   w-full">
         <div>
           <div className="font-medium text-theme">{t("Данс")}</div>
           <div className="text-theme">{data.dugaar}</div>
@@ -53,63 +53,59 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
         <div>
           <div className="font-medium text-theme">{t("Дансны нэр")}</div>
           <div className="text-theme">{data.dansniiNer}</div>
-        </div>
-        <div>
-          <div className="font-medium text-theme">{t("Валют")}</div>
-          <div className="text-theme">{data.valyut}</div>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Popover
-          opened={deleteOpened}
-          onChange={setDeleteOpened}
-          width={200}
-          position="bottom-end"
-        >
-          <Popover.Target>
-            <Tooltip label={t("Устгах")} withArrow>
+          <div className="flex justify-end mt-3  gap-2">
+            <Popover
+              opened={deleteOpened}
+              onChange={setDeleteOpened}
+              width={200}
+              position="bottom-end"
+            >
+              <Popover.Target>
+                <Tooltip label={t("Устгах")} withArrow>
+                  <button
+                    onClick={() => setDeleteOpened(true)}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
+                    aria-label={t("Устгах")}
+                  >
+                    ×
+                  </button>
+                </Tooltip>
+              </Popover.Target>
+              <Popover.Dropdown>
+                <div className="text-sm text-theme">
+                  <p className="mb-3">{data.dugaar} данс устгах уу?</p>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      className="btn-minimal btn-cancel text-xs px-2 py-1"
+                      onClick={() => setDeleteOpened(false)}
+                    >
+                      {t("Болих")}
+                    </button>
+                    <button
+                      className="btn-minimal btn-save text-xs px-3 py-1"
+                      onClick={() => {
+                        onDelete(data._id);
+                        setDeleteOpened(false);
+                      }}
+                    >
+                      {t("Устгах")}
+                    </button>
+                  </div>
+                </div>
+              </Popover.Dropdown>
+            </Popover>
+
+            <Tooltip label={t("Засах")} withArrow>
               <button
-                onClick={() => setDeleteOpened(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600 transition"
-                aria-label={t("Устгах")}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition"
+                onClick={() => onEdit(data)}
+                aria-label={t("Засах")}
               >
-                ×
+                ✎
               </button>
             </Tooltip>
-          </Popover.Target>
-          <Popover.Dropdown>
-            <div className="text-sm text-theme">
-              <p className="mb-3">{data.dugaar} данс устгах уу?</p>
-              <div className="flex gap-2 justify-end">
-                <button
-                  className="btn-minimal btn-cancel text-xs px-3 py-1"
-                  onClick={() => setDeleteOpened(false)}
-                >
-                  {t("Болих")}
-                </button>
-                <button
-                  className="btn-minimal btn-save text-xs px-3 py-1"
-                  onClick={() => {
-                    onDelete(data._id);
-                    setDeleteOpened(false);
-                  }}
-                >
-                  {t("Устгах")}
-                </button>
-              </div>
-            </div>
-          </Popover.Dropdown>
-        </Popover>
-
-        <Tooltip label={t("Засах")} withArrow>
-          <button
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition"
-            onClick={() => onEdit(data)}
-            aria-label={t("Засах")}
-          >
-            ✎
-          </button>
-        </Tooltip>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -311,8 +307,8 @@ function Dans() {
 
   return (
     <div className="xxl:col-span-9 col-span-12 lg:col-span-12 h-full overflow-visible">
-      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
-        <div className="grid grid-cols-12 gap-6">
+      <div className="neu-panel  allow-overflow p-4 md:p-6 space-y-6 min-h-[24rem]">
+        <div className="grid grid-cols-12 gap-6 ">
           <div className="col-span-12 lg:col-span-6">
             <BankCard
               title={t("Хаан банк")}
@@ -381,22 +377,7 @@ function Dans() {
                   className="text-theme"
                 />
               </div>
-              <div>
-                <div className="text-sm mb-1">{t("Валют")}</div>
-                <Select
-                  data={[
-                    { label: "MNT", value: "MNT" },
-                    { label: "USD", value: "USD" },
-                    { label: "EUR", value: "EUR" },
-                  ]}
-                  value={formState.valyut}
-                  onChange={(v) =>
-                    setFormState((s) => ({ ...s, valyut: v || "MNT" }))
-                  }
-                  comboboxProps={{ classNames: { dropdown: "tusgaiZagvar" } }}
-                  classNames={{ input: "" }}
-                />
-              </div>
+
               <div className="flex justify-end gap-2 mt-2">
                 <button
                   className="btn-minimal btn-cancel"

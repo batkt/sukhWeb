@@ -35,7 +35,7 @@ export function getApiUrl(): string {
     return "https://amarhome.mn/api";
   }
 
-  return "http://103.50.205.80:8084";
+  return "http://103.143.40.46:8084";
 }
 
 // Export url for backward compatibility and direct access
@@ -144,15 +144,20 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
     try {
       if (config.method?.toLowerCase() === "get") {
         const p: Record<string, any> = { ...(config.params || {}) };
-        
+
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
-        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagaPathMatch = urlPath.match(
+          /^\/baiguullaga\/([^\/\?]+)/
+        );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
-        
+
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
           // Don't add as query param if it's already in the URL path
-          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+          if (
+            !baiguullagiinIdInPath ||
+            baiguullagiinIdInPath !== globalBaiguullagiinId
+          ) {
             p.baiguullagiinId = globalBaiguullagiinId;
           }
         }
@@ -182,15 +187,20 @@ export const zogsoolUilchilgee = (token?: string): AxiosInstance => {
     try {
       if (config.method?.toLowerCase() === "get") {
         const p: Record<string, any> = { ...(config.params || {}) };
-        
+
         // Check if baiguullagiinId is already in the URL path
         const urlPath = config.url || "";
-        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagaPathMatch = urlPath.match(
+          /^\/baiguullaga\/([^\/\?]+)/
+        );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
-        
+
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
           // Don't add as query param if it's already in the URL path
-          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+          if (
+            !baiguullagiinIdInPath ||
+            baiguullagiinIdInPath !== globalBaiguullagiinId
+          ) {
             p.baiguullagiinId = globalBaiguullagiinId;
           }
         }
@@ -227,13 +237,18 @@ const uilchilgee = (token?: string): AxiosInstance => {
         // Check if baiguullagiinId is already in the URL path
         // Pattern: /baiguullaga/{id} or /baiguullaga/{id}/...
         const urlPath = config.url || "";
-        const baiguullagaPathMatch = urlPath.match(/^\/baiguullaga\/([^\/\?]+)/);
+        const baiguullagaPathMatch = urlPath.match(
+          /^\/baiguullaga\/([^\/\?]+)/
+        );
         const baiguullagiinIdInPath = baiguullagaPathMatch?.[1];
 
         // Only set if not explicitly provided by the caller AND not already in URL path
         if (globalBaiguullagiinId && p.baiguullagiinId == null) {
           // Don't add as query param if it's already in the URL path
-          if (!baiguullagiinIdInPath || baiguullagiinIdInPath !== globalBaiguullagiinId) {
+          if (
+            !baiguullagiinIdInPath ||
+            baiguullagiinIdInPath !== globalBaiguullagiinId
+          ) {
             p.baiguullagiinId = globalBaiguullagiinId;
           }
         }

@@ -260,6 +260,7 @@ const InvoiceModal = ({
   const [paymentStatusLabel, setPaymentStatusLabel] = React.useState<
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
+  const [cronData, setCronData] = React.useState<any>(null);
   const invValid = React.useMemo(() => {
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
     const invSum = invRows.reduce(
@@ -356,11 +357,32 @@ const InvoiceModal = ({
           latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0
         );
         setInvTotal(Number.isFinite(t) ? t : null);
+
+        // Fetch cron data
+        try {
+          const cronResp = await uilchilgee(token).get(
+            `/nekhemjlekhCron/${baiguullagiinId}`,
+            {
+              params: {
+                barilgiinId: selectedBuildingId || barilgiinId || null,
+              },
+            }
+          );
+          if (cronResp.data?.success && Array.isArray(cronResp.data?.data)) {
+            setCronData(cronResp.data.data[0] || null);
+          } else {
+            setCronData(null);
+          }
+        } catch (cronError) {
+          // Silently fail for cron data - it's optional
+          setCronData(null);
+        }
       } catch (e) {
         setInvRows([]);
         setInvTotal(null);
         setPaymentStatusLabel("Тодорхойгүй");
         setLatestInvoice(null);
+        setCronData(null);
       }
     };
     run();
@@ -588,7 +610,11 @@ const InvoiceModal = ({
                   Үйлчилгээний нэхэмжлэх
                 </h2>
                 <p className="text-sm text-slate-500">
-                  Нэхэмжлэхийн дугаар: {invoiceNumber}
+                  Нэхэмжлэхийн дугаар:{" "}
+                  {contractData?.nekhemjlekhiinDugaar ||
+                    nekhemjlekhData?.nekhemjlekhiinDugaar ||
+                    latestInvoice?.nekhemjlekhiinDugaar ||
+                    "-"}
                 </p>
               </div>
             </div>
@@ -674,16 +700,29 @@ const InvoiceModal = ({
                   </p>
                   <p className="text-sm text-slate-600">
                     <span className="font-medium">төлөх огноо:</span>{" "}
-                    {formatDate(contractData?.tulukhOgnoo || currentDate)}
+                    {formatDate(
+                      contractData?.ognoo ||
+                        nekhemjlekhData?.ognoo ||
+                        latestInvoice?.ognoo ||
+                        contractData?.tulukhOgnoo ||
+                        currentDate
+                    )}
                   </p>
-                  <p className="text-sm text-slate-600 mt-2">
-                    <span className="font-medium">Банк:</span>{" "}
-                    {baiguullaga?.bankNer || "-"}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    <span className="font-medium">Данс:</span>{" "}
-                    {baiguullaga?.dans || "-"}
-                  </p>
+                  {cronData && (
+                    <>
+                      <p className="text-sm text-slate-600">
+                        <span className="font-medium">
+                          Нэхэмжлэх үүсгэх өдөр:
+                        </span>{" "}
+                        {cronData.nekhemjlekhUusgekhOgnoo || "-"}
+                      </p>
+
+                      <p className="text-sm text-slate-600">
+                        <span className="font-medium">Үүссэн огноо:</span>{" "}
+                        {formatDate(cronData.uussenOgnoo) || "-"}
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
