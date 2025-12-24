@@ -16,7 +16,7 @@ export function getApiUrl(): string {
     process.env.GITHUB_REF_NAME === "dev" ||
     process.env.BRANCH === "dev"
   ) {
-    return "http://103.50.205.80:8084";
+    return "https://amarhome.mn/api/";
   }
 
   // Otherwise, use env variable if set
@@ -32,10 +32,10 @@ export function getApiUrl(): string {
     typeof window !== "undefined" &&
     window.location.hostname === "amarhome.mn"
   ) {
-    return "http://103.50.205.80:8084/";
+    return "https://amarhome.mn/api/";
   }
 
-  return "http://103.50.205.80:8084/";
+  return "https://amarhome.mn/api/";
 }
 
 // Export url for backward compatibility and direct access

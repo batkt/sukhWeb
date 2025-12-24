@@ -365,7 +365,7 @@ export default function TulburPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-y-auto">
       <div className="rounded-2xl p-4 table-surface">
         <div className="flex items-center justify-between gap-3 flex-wrap px-1 mb-4">
           <div className="flex items-center gap-3">
@@ -473,7 +473,7 @@ export default function TulburPage() {
         }}
       >
         {isLoadingZaalt ? (
-          <div className="flex justify-center items-center p-10">
+          <div className="flex justify-center items-center p-10 ">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
           </div>
         ) : zaaltData.length === 0 ? (
