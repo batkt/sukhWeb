@@ -3267,8 +3267,7 @@ export default function Geree() {
             Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
 
-          <div className="flex mt-3 w-48 pointer-events-none select-none justify-start"></div>
-          <div className="mt-3 flex flex-wrap items-center gap-2 tabbar">
+          <div className="mt-3 grid grid-cols-2 md:grid-cols-4 flex-wrap items-center gap-2 tabbar">
             {/* Tabs */}
             <button
               id="tab-residents"
@@ -3494,7 +3493,7 @@ export default function Geree() {
           )}
           {activeTab === "residents" && (
             <>
-              <div className="grid grid-cols-3 min-[1200px]:grid-cols-4 gap-2 w-full">
+              <div className="grid grid-cols-2 min-[1200px]:grid-cols-4 gap-2 w-full">
                 <button
                   onClick={() => {
                     const deriveStr = (val: any) =>

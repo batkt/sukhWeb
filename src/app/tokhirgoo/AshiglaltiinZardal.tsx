@@ -256,6 +256,7 @@ export default function AshiglaltiinZardluud() {
   const fetchLiftFloors = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
     try {
+      // Use canonical liftShalgaya endpoint so all pages read the same source
       const resp = await uilchilgee(token).get(`/liftShalgaya`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
@@ -267,6 +268,7 @@ export default function AshiglaltiinZardluud() {
       const data = resp.data;
       const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
 
+      // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
       const toStr = (v: any) => (v == null ? "" : String(v));
       const branchMatches = list.filter(
         (x: any) =>
@@ -1161,10 +1163,14 @@ export default function AshiglaltiinZardluud() {
                 value={formData.ner}
                 onChange={(e) => {
                   const newName = e.currentTarget.value;
-
+                  const isCakhilgaan = newName
+                    .toLowerCase()
+                    .includes("цахилгаан");
                   setFormData({
                     ...formData,
                     ner: newName,
+                    zaalt: isCakhilgaan ? true : formData.zaalt,
+                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
                   });
                 }}
                 placeholder="Зардлын нэр оруулах"
@@ -1190,6 +1196,7 @@ export default function AshiglaltiinZardluud() {
                 searchable
               />
             </div> */}
+
             {!formData.ner.toLowerCase().includes("цахилгаан") && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-theme">
@@ -1210,6 +1217,7 @@ export default function AshiglaltiinZardluud() {
                 />
               </div>
             )}
+
             <div>
               <label className="block text-sm font-medium mb-1 text-theme">
                 {formData.ner.toLowerCase().includes("цахилгаан")
