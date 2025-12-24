@@ -256,7 +256,6 @@ export default function AshiglaltiinZardluud() {
   const fetchLiftFloors = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
     try {
-      // Use canonical liftShalgaya endpoint so all pages read the same source
       const resp = await uilchilgee(token).get(`/liftShalgaya`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
@@ -268,7 +267,6 @@ export default function AshiglaltiinZardluud() {
       const data = resp.data;
       const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
 
-      // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
       const toStr = (v: any) => (v == null ? "" : String(v));
       const branchMatches = list.filter(
         (x: any) =>
@@ -894,13 +892,7 @@ export default function AshiglaltiinZardluud() {
                                   .includes(filterText.toLowerCase())
                           )
                           .map((mur) => {
-                            // For electricity expenses, show zaaltTariff instead of tariff
-                            const isCakhilgaan = mur.ner
-                              .toLowerCase()
-                              .includes("цахилгаан");
-                            const displayValue = isCakhilgaan
-                              ? mur.zaaltTariff || 0
-                              : mur.tariff;
+                            const displayValue = mur.tariff;
                             const currentValue =
                               editedTariffs[mur._id!] !== undefined
                                 ? editedTariffs[mur._id!]
@@ -984,12 +976,7 @@ export default function AshiglaltiinZardluud() {
                                         .includes(filterText.toLowerCase())
                                 )
                                 .reduce((sum, item) => {
-                                  const isCakhilgaan = item.ner
-                                    .toLowerCase()
-                                    .includes("цахилгаан");
-                                  const displayValue = isCakhilgaan
-                                    ? item.zaaltTariff || 0
-                                    : item.tariff;
+                                  const displayValue = item.tariff;
                                   const currentValue =
                                     editedTariffs[item._id!] !== undefined
                                       ? editedTariffs[item._id!]
@@ -1174,14 +1161,10 @@ export default function AshiglaltiinZardluud() {
                 value={formData.ner}
                 onChange={(e) => {
                   const newName = e.currentTarget.value;
-                  const isCakhilgaan = newName
-                    .toLowerCase()
-                    .includes("цахилгаан");
+
                   setFormData({
                     ...formData,
                     ner: newName,
-                    zaalt: isCakhilgaan ? true : formData.zaalt,
-                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
                   });
                 }}
                 placeholder="Зардлын нэр оруулах"
@@ -1207,7 +1190,6 @@ export default function AshiglaltiinZardluud() {
                 searchable
               />
             </div> */}
-
             {!formData.ner.toLowerCase().includes("цахилгаан") && (
               <div>
                 <label className="block text-sm font-medium mb-1 text-theme">
@@ -1228,43 +1210,42 @@ export default function AshiglaltiinZardluud() {
                 />
               </div>
             )}
+            <div>
+              <label className="block text-sm font-medium mb-1 text-theme">
+                {formData.ner.toLowerCase().includes("цахилгаан")
+                  ? "Суурь хураамж (₮)"
+                  : "Тариф (₮)"}
+              </label>
+              <MTextInput
+                value={tariffInputValue}
+                onChange={(e) => {
+                  const raw = e.currentTarget.value;
+                  const cleanValue = raw.replace(/[^0-9.]/g, "");
+                  const n = Number(cleanValue);
 
-            {!formData.ner.toLowerCase().includes("цахилгаан") && (
-              <div>
-                <label className="block text-sm font-medium mb-1 text-theme">
-                  Тариф (₮)
-                </label>
-                <MTextInput
-                  value={tariffInputValue}
-                  onChange={(e) => {
-                    const raw = e.currentTarget.value;
-                    const cleanValue = raw.replace(/[^0-9.]/g, "");
-                    const n = Number(cleanValue);
-
-                    setTariffInputValue(cleanValue);
-                    setFormData({
-                      ...formData,
-                      tariff: Number.isFinite(n) ? n : 0,
-                    });
-                  }}
-                  onBlur={() => {
-                    if (formData.tariff) {
-                      setTariffInputValue(formatNumber(formData.tariff, 2));
-                    } else {
-                      setTariffInputValue("");
-                    }
-                  }}
-                  onFocus={() => {
-                    if (formData.tariff) {
-                      setTariffInputValue(formData.tariff.toString());
-                    }
-                  }}
-                  placeholder="0"
-                  className="text-theme"
-                  rightSection={<span className="text-slate-500 pr-1">₮</span>}
-                />
-              </div>
-            )}
+                  setTariffInputValue(cleanValue);
+                  setFormData({
+                    ...formData,
+                    tariff: Number.isFinite(n) ? n : 0,
+                  });
+                }}
+                onBlur={() => {
+                  if (formData.tariff) {
+                    setTariffInputValue(formatNumber(formData.tariff, 2));
+                  } else {
+                    setTariffInputValue("");
+                  }
+                }}
+                onFocus={() => {
+                  if (formData.tariff) {
+                    setTariffInputValue(formData.tariff.toString());
+                  }
+                }}
+                placeholder="0"
+                className="text-theme"
+                rightSection={<span className="text-slate-500 pr-1">₮</span>}
+              />
+            </div>
 
             <div>
               <label className="block text-sm font-medium mb-1 text-theme">
