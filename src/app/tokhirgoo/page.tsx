@@ -1,24 +1,79 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, lazy, Suspense, Component, ReactNode } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { Settings } from "lucide-react";
 
-import AppTokhirgoo from "./AppTokhirgoo";
-import AshiglaltiinZardal from "./AshiglaltiinZardal";
-import Baaz from "./Baaz";
-import EbarimtTokhirgoo from "./EbarimtTokhirgoo";
-import Dans from "./Dans";
-import EmailTokhirgoo from "./EmailTokhirgoo";
-import TuslamjTokhirgoo from "./TuslamjTokhirgoo";
+// Dynamic imports for better code splitting
+const AppTokhirgoo = lazy(() => import("./AppTokhirgoo"));
+const AshiglaltiinZardal = lazy(() => import("./AshiglaltiinZardal"));
+const Baaz = lazy(() => import("./Baaz"));
+const EbarimtTokhirgoo = lazy(() => import("./EbarimtTokhirgoo"));
+const Dans = lazy(() => import("./Dans"));
+const EmailTokhirgoo = lazy(() => import("./EmailTokhirgoo"));
+const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
+const Medegdel = lazy(() => import("./Medegdel"));
+const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
+const Zogsool = lazy(() => import("./Zogsool"));
+const UstgasanTuukh = lazy(() => import("./UstsanTuukh"));
+const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
+const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
 
-import Medegdel from "./Medegdel";
-import NevtreltiinTuukh from "./NevtreltiinTuukh";
+// Error boundary for chunk loading errors
+class ChunkErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-import Zogsool from "./Zogsool";
-import UstgasanTuukh from "./UstsanTuukh";
-import ZassanTuukh from "./ZassanTuukh";
-import BarilgiinTokhirgoo from "./BarilgiinTokhirgoo";
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    // Check if it's a chunk loading error
+    if (
+      error?.message?.includes("Loading chunk") ||
+      error?.name === "ChunkLoadError"
+    ) {
+      console.error("Chunk loading error:", error, errorInfo);
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      const isChunkError =
+        this.state.error?.message?.includes("Loading chunk") ||
+        this.state.error?.name === "ChunkLoadError";
+
+      return (
+        <div className="flex flex-col items-center justify-center p-8 text-theme">
+          <div className="text-lg font-semibold mb-4">
+            {isChunkError ? "Хуудас ачааллахад алдаа гарлаа" : "Алдаа гарлаа"}
+          </div>
+          <div className="text-sm opacity-70 mb-4 text-center max-w-md">
+            {isChunkError
+              ? "Хуудас шинэчлэгдсэн байна. Дахин ачааллах товчийг дарна уу."
+              : this.state.error?.message || "Тодорхой бус алдаа гарлаа"}
+          </div>
+          <button
+            onClick={() => {
+              window.location.reload();
+            }}
+            className="px-4 py-2 bg-theme text-white rounded-lg hover:opacity-90 transition-opacity"
+          >
+            Дахин ачааллах
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const AdminLayout = ({
   title,
@@ -212,12 +267,24 @@ function Tokhirgoo() {
           (() => {
             const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
             return (
-              <AnyWindow
-                ajiltan={ajiltan}
-                baiguullaga={baiguullaga}
-                token={token || ""}
-                setSongogdsonTsonkhniiIndex={setSelectedIndex}
-              />
+              <ChunkErrorBoundary>
+                <Suspense
+                  fallback={
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-theme opacity-60">
+                        Ачааллаж байна...
+                      </div>
+                    </div>
+                  }
+                >
+                  <AnyWindow
+                    ajiltan={ajiltan}
+                    baiguullaga={baiguullaga}
+                    token={token || ""}
+                    setSongogdsonTsonkhniiIndex={setSelectedIndex}
+                  />
+                </Suspense>
+              </ChunkErrorBoundary>
             );
           })()}
       </div>
