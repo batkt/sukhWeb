@@ -17,6 +17,7 @@ export function getApiUrl(): string {
     process.env.BRANCH === "dev"
   ) {
     return "https://amarhome.mn/api/";
+    // buynaa
   }
 
   // Otherwise, use env variable if set
