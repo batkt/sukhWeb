@@ -79,7 +79,6 @@ const fetcherJagsaalt = async ([
       khuudasniiDugaar: khuudaslalt.khuudasniiDugaar,
       khuudasniiKhemjee: khuudaslalt.khuudasniiKhemjee,
       // Stringify query for backends expecting JSON in params
-      query: JSON.stringify(queryObj),
     };
 
     if (barilgiinId) paramsBase.barilgiinId = barilgiinId;
@@ -172,7 +171,7 @@ export function useOrshinSuugchJagsaalt(
 ) {
   const [khuudaslalt, setOrshinSuugchKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 500,
+    khuudasniiKhemjee: 1000,
     search: "",
   });
 
@@ -185,14 +184,7 @@ export function useOrshinSuugchJagsaalt(
 
   const { data, mutate, isValidating, error }: SWRResponse<any, any> = useSWR(
     shouldFetch
-      ? [
-          "/orshinSuugch",
-          token,
-          baiguullagiinId,
-          barilgiinId,
-          khuudaslalt,
-          query,
-        ]
+      ? ["/orshinSuugch", token, baiguullagiinId, barilgiinId, khuudaslalt]
       : null,
     fetcherJagsaalt,
     {

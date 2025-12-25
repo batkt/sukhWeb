@@ -254,7 +254,11 @@ export default function DansniiKhuulga() {
 
       const endpoint = "/bankniiGuilgeeExcelImport";
 
-      message.loading({ content: "Excel импорт хийж байна…", key: "import", duration: 0 });
+      message.loading({
+        content: "Excel импорт хийж байна…",
+        key: "import",
+        duration: 0,
+      });
 
       const resp: any = await uilchilgee(token).post(endpoint, form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -663,7 +667,7 @@ export default function DansniiKhuulga() {
                       className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Excel татах</span>
+                      <span>Заалт татах</span>
                     </button>
                   </div>
                 )}

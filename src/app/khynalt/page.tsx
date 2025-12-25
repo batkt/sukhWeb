@@ -101,22 +101,21 @@ export default function Khynalt() {
   useEffect(() => {
     setOrshinSuugchKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 100,
+      khuudasniiKhemjee: 500,
       search: "",
     });
     setGereeKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 100,
+      khuudasniiKhemjee: 500,
       search: "",
     });
     setAjiltniiKhuudaslalt({
       khuudasniiDugaar: 1,
-      khuudasniiKhemjee: 100,
+      khuudasniiKhemjee: 500,
       search: "",
     });
   }, [setOrshinSuugchKhuudaslalt, setGereeKhuudaslalt, setAjiltniiKhuudaslalt]);
 
-  // Fetch building configuration
   useEffect(() => {
     const fetchBuildingConfig = async () => {
       if (!token || !ajiltan?.baiguullagiinId || !effectiveBarilgiinId) return;
@@ -133,70 +132,6 @@ export default function Khynalt() {
       }
     };
     fetchBuildingConfig();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
-
-  // Fetch all residents (with large page size to get all)
-  useEffect(() => {
-    const fetchAllResidents = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      try {
-        const queryObj = {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
-        };
-        const response = await uilchilgee(token).get(`/orshinSuugch`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 500,
-            query: JSON.stringify(queryObj),
-            ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
-          },
-        });
-        const residents = Array.isArray(response.data?.jagsaalt)
-          ? response.data.jagsaalt
-          : [];
-        setAllResidents(residents);
-      } catch (error) {
-        console.error("Failed to fetch all residents:", error);
-      }
-    };
-    fetchAllResidents();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
-
-  // Fetch all contracts (with large page size to get all)
-  useEffect(() => {
-    const fetchAllContracts = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      try {
-        const queryObj = {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
-          $or: [
-            { ner: { $regex: "", $options: "i" } },
-            { gereeniiDugaar: { $regex: "", $options: "i" } },
-            { register: { $regex: "", $options: "i" } },
-            { toot: { $regex: "", $options: "i" } },
-          ],
-        };
-        const response = await uilchilgee(token).get(`/geree`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 500,
-            query: JSON.stringify(queryObj),
-            ...(effectiveBarilgiinId && { barilgiinId: effectiveBarilgiinId }),
-          },
-        });
-        const contracts = Array.isArray(response.data?.jagsaalt)
-          ? response.data.jagsaalt
-          : [];
-        setAllContracts(contracts);
-      } catch (error) {
-        console.error("Failed to fetch all contracts:", error);
-      }
-    };
-    fetchAllContracts();
   }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   const residents = useMemo(
@@ -638,65 +573,10 @@ export default function Khynalt() {
     };
   }, [incomeSeries]);
 
-  const expenseLineData: Dataset = useMemo(() => {
-    const pretty = expenseSeries.labels.map((lb) => {
-      if (lb.length === 7) {
-        const [y, m] = lb.split("-");
-        return `${m}.${y.slice(2)}`;
-      }
-      const d = new Date(lb);
-      return d.toLocaleDateString("mn-MN", {
-        month: "2-digit",
-        day: "2-digit",
-      });
-    });
-    return {
-      labels: pretty,
-      datasets: [
-        {
-          label: "Зарлага",
-          data: expenseSeries.expenses,
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.25)",
-          fill: true,
-          tension: 0.3,
-        },
-      ],
-    };
-  }, [expenseSeries]);
-
-  const profitLineData: Dataset = useMemo(() => {
-    const pretty = profitSeries.labels.map((lb) => {
-      if (lb.length === 7) {
-        const [y, m] = lb.split("-");
-        return `${m}.${y.slice(2)}`;
-      }
-      const d = new Date(lb);
-      return d.toLocaleDateString("mn-MN", {
-        month: "2-digit",
-        day: "2-digit",
-      });
-    });
-    return {
-      labels: pretty,
-      datasets: [
-        {
-          label: "Ашиг",
-          data: profitSeries.profits,
-          borderColor: "#22c55e",
-          backgroundColor: "rgba(34,197,94,0.25)",
-          fill: true,
-          tension: 0.3,
-        },
-      ],
-    };
-  }, [profitSeries]);
-
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
   }
 
-  // apply the selected time filter to other KPI counts where possible
   const _startDate = new Date(rangeStart + "T00:00:00Z");
   const _endDate = new Date(rangeEnd + "T23:59:59Z");
   const _inRange = (dStr?: string | null) => {
@@ -753,7 +633,7 @@ export default function Khynalt() {
     return false;
   });
 
-  const filteredTotalResidents = filteredResidents.length;
+  const filteredTotalResidents = filteredResidents.length - 1;
   const filteredTotalContracts = filteredContracts.length;
   const filteredTotalEmployees = filteredEmployees.length;
   // Building count should always reflect total organization buildings, not the selected filter
@@ -897,7 +777,6 @@ export default function Khynalt() {
     {
       title: "Оршин суугч",
       value: filteredTotalResidents,
-      subtitle: `Нийт барилга: ${buildingCount}`,
       color: "from-green-500 to-green-600",
       onClick: () => {
         try {

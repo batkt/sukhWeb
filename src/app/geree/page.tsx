@@ -772,15 +772,13 @@ export default function Geree() {
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
-  // Pagination for residents/employees
   const [resPage, setResPage] = useState(1);
-  const [resPageSize, setResPageSize] = useState(20);
+  const [resPageSize, setResPageSize] = useState(50);
   const [empPage, setEmpPage] = useState(1);
   const [empPageSize, setEmpPageSize] = useState(10);
   const [unitPage, setUnitPage] = useState(1);
-  const [unitPageSize, setUnitPageSize] = useState(20);
+  const [unitPageSize, setUnitPageSize] = useState(50);
 
-  // When selected building changes, reset paginations to first page
   useEffect(() => {
     setResPage(1);
     setEmpPage(1);
@@ -816,10 +814,6 @@ export default function Geree() {
             khuudasniiDugaar: 1,
             khuudasniiKhemjee: 20000,
             // Pass object (matches other working pages like guilgeeTuukh)
-            query: {
-              baiguullagiinId: ajiltan.baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-            },
           },
         });
         const list: any[] = Array.isArray(resp.data?.jagsaalt)
@@ -1015,7 +1009,6 @@ export default function Geree() {
   ]);
   useEffect(() => setMounted(true), []);
 
-  // Register tour steps for /geree page (dynamic based on activeTab)
   const gereeTourSteps: DriverStep[] = useMemo(() => {
     if (activeTab === "contracts") {
       return [
@@ -1748,130 +1741,6 @@ export default function Geree() {
     }
   };
 
-  const handleDownloadTemplate = async (templateType: string) => {
-    if (!token) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-
-    // If the user hasn't chosen a building in the UI, require selection.
-    if (!selectedBuildingId) {
-      openErrorOverlay("Барилга сонгоогүй байна. Эхлээд барилга сонгоно уу.");
-      return;
-    }
-
-    try {
-      const response = await uilchilgee(token).get("/gereeniiZagvarAvya", {
-        responseType: "blob",
-        params: {
-          templateType: templateType,
-        },
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${templateType}_загвар.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      openSuccessOverlay("Загвар амжилттай татагдлаа");
-    } catch (error) {
-      openErrorOverlay(getErrorMessage(error));
-    }
-  };
-
-  const handleDownloadExcel = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-
-    // Require a selected building for scoped export (match guilgee behaviour)
-    if (!selectedBuildingId) {
-      openErrorOverlay("Барилга сонгоогүй байна. Эхлээд барилга сонгоно уу.");
-      return;
-    }
-
-    try {
-      const targetBarilgiinId = selectedBuildingId || barilgiinId || null;
-      const query: any = {
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: targetBarilgiinId,
-      };
-
-      if (searchTerm) {
-        query.$or = [
-          { ner: { $regex: searchTerm, $options: "i" } },
-          { gereeniiDugaar: { $regex: searchTerm, $options: "i" } },
-          { register: { $regex: searchTerm, $options: "i" } },
-        ];
-      }
-
-      if (filterType !== "Бүгд") {
-        query.turul = filterType;
-      }
-
-      const response = await uilchilgee(token).get("/geree", {
-        params: {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: targetBarilgiinId,
-          query: query,
-          khuudasniiKhemjee: gereeGaralt?.niitMur || 1000,
-          khuudasniiDugaar: 1,
-        },
-      });
-
-      // Lazy load Excel export lib at runtime using ESM dynamic import
-      let ExcelCtor: any = null;
-      try {
-        const mod = await import("antd-table-saveas-excel");
-        ExcelCtor = (mod as any)?.Excel ?? null;
-      } catch (e) {
-        ExcelCtor = null;
-      }
-      if (!ExcelCtor) {
-        openErrorOverlay(
-          "Excel экспорт хийх боломжгүй байна. 'antd-table-saveas-excel' санг суулгана уу."
-        );
-        return;
-      }
-      const excel = new ExcelCtor();
-
-      const columns = ALL_COLUMNS.map((col) => ({
-        title: col.label,
-        dataIndex: col.key,
-        key: col.key,
-      }));
-
-      // Prepare data source with computed fields (e.g., ognoo)
-      const dataSrc = (response.data?.jagsaalt || []).map((row: any) => {
-        const created = row.createdAt ? new Date(row.createdAt) : null;
-        const updated = row.updatedAt ? new Date(row.updatedAt) : null;
-        const showDate =
-          updated && created && updated.getTime() !== created.getTime()
-            ? updated
-            : created || updated;
-        return {
-          ...row,
-          ognoo: showDate ? showDate.toLocaleDateString("mn-MN") : undefined,
-        };
-      });
-
-      excel
-        .addSheet("Гэрээний жагсаалт")
-        .addColumns(columns)
-        .addDataSource(dataSrc)
-        .saveAs("Гэрээний_жагсаалт.xlsx");
-
-      openSuccessOverlay("Excel файл амжилттай татагдлаа");
-    } catch (error) {
-      openErrorOverlay(getErrorMessage(error));
-    }
-  };
-
   // Download residents Excel template
   const handleDownloadResidentsTemplate = async () => {
     try {
@@ -1914,17 +1783,12 @@ export default function Geree() {
       };
       const listResp = await uilchilgee(token).get(`/orshinSuugch`, {
         params: {
-          // fetch a very large page so we get all rows regardless of current
-          // UI pagination. This avoids picking up only the current page's
-          // results when the SWR hook's page size differs.
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
-          // ensure backend returns residents only for the currently selected building
+
           baiguullagiinId: ajiltan?.baiguullagiinId,
-          // include barilgiinId top-level too for backends that check it
+
           barilgiinId: exportTargetBarilgiinId,
-          // include nested query as a JSON string (matches useOrshinSuugch fetcher)
-          query: JSON.stringify(queryObj),
         },
       });
       const orshinSuugchList =
@@ -3818,7 +3682,6 @@ export default function Geree() {
 
                                   if (!matchesFloor) return false;
 
-                                  // Normalize orts comparison (handle number/string, empty string, missing field)
                                   const contractOrts = String(
                                     c.orts || ""
                                   ).trim();
@@ -3862,6 +3725,7 @@ export default function Geree() {
                                           const unitStr = String(t).trim();
                                           const hasActive =
                                             activeToots.has(unitStr);
+
                                           return (
                                             <span
                                               key={String(t)}
@@ -4118,8 +3982,6 @@ export default function Geree() {
           <div>
             <div className="table-surface overflow-visible rounded-2xl w-full">
               <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
-                {/* Avlaga button (admin only) placed top-right outside of table */}
-
                 <div
                   className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
                   id="geree-table"

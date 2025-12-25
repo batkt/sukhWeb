@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 export default function PageSongokh({
   value,
   onChange,
-  options = [20, 50, 100],
+  options = [50, 100, 500, 1000],
   className = "",
 }: {
   value: number;

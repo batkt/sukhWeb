@@ -147,7 +147,6 @@ const fetcherJagsaalt = async ([
         : [];
     }
 
-    // If branch-scoped query returns empty, try org-wide fallback
     if (barilgiinId && (!list || list.length === 0)) {
       const resp2 = await uilchilgee(token).get(url, {
         params: {
@@ -170,7 +169,7 @@ const fetcherJagsaalt = async ([
         : Array.isArray(d2)
         ? d2
         : [];
-      // Client-side enforcement for org
+
       const toStr = (v: any) => (v == null ? "" : String(v));
       const filtered2 = l2.filter(
         (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
@@ -191,22 +190,17 @@ const fetcherJagsaalt = async ([
       return filtered2 as Geree[];
     }
 
-    // Client-side enforcement for org/branch
     const toStr = (v: any) => (v == null ? "" : String(v));
     const filtered = list.filter((it: any) => {
-      // Must match organization
       const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
       if (!orgOk) return false;
 
-      // If no branch is selected, keep it
       if (!barilgiinId) return true;
 
-      // Backend may return various field names or omit branch field entirely
       const itemBid = toStr(
         it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
       );
 
-      // If item has no explicit branch id, don't filter it out since server already scoped
       if (itemBid === "") return true;
 
       return itemBid === toStr(barilgiinId);
@@ -248,7 +242,7 @@ export function useGereeJagsaalt(
 
   const [khuudaslalt, setGereeKhuudaslalt] = useState<Khuudaslalt>({
     khuudasniiDugaar: 1,
-    khuudasniiKhemjee: 100,
+    khuudasniiKhemjee: 500,
     search: "",
   });
 
