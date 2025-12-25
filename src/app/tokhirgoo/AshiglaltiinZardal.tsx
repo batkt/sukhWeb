@@ -873,8 +873,8 @@ export default function AshiglaltiinZardluud() {
                 <div className="overflow-auto max-h-[350px]">
                   <div className="min-w-full inline-block align-middle">
                     <table className="w-full text-sm">
-                      <thead className="top-0 z-10">
-                        <tr className="text-center text-slate-500 border-b">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
+                        <tr className="text-center text-slate-500 border-b bg-[color:var(--surface-bg)]">
                           <th className="py-2 pr-3">Нэр</th>
                           <th className="py-2 pr-3">Төрөл</th>
                           <th className="py-2 pr-3">Тариф (₮)</th>
@@ -959,13 +959,13 @@ export default function AshiglaltiinZardluud() {
                             );
                           })}
                       </tbody>
-                      <tfoot className="bottom-0 border-t">
-                        <tr className="font-semibold">
-                          <td className="py-2 pr-3 text-theme">
-                            <div className="font-medium">Нийт:</div>
+                      <tfoot className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] border-t">
+                        <tr className="font-semibold bg-[color:var(--surface-bg)]">
+                          <td className="py-2 pr-3 text-theme bg-[color:var(--surface-bg)]">
+                            <div className="font-medium">Нийт дүн:</div>
                           </td>
-                          <td></td>
-                          <td className="text-theme text-center">
+                          <td className="bg-[color:var(--surface-bg)]"></td>
+                          <td className="text-theme text-center bg-[color:var(--surface-bg)]">
                             {formatNumber(
                               ashiglaltiinZardluud
                                 .filter((x) => x._id)
@@ -988,7 +988,10 @@ export default function AshiglaltiinZardluud() {
                             )}{" "}
                             ₮
                           </td>
-                          <td colSpan={2}></td>
+                          <td
+                            colSpan={2}
+                            className="bg-[color:var(--surface-bg)]"
+                          ></td>
                         </tr>
                       </tfoot>
                     </table>

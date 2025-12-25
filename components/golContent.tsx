@@ -333,7 +333,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="shrink-0">
                 <ThemedLogo />
               </div>
-              <div id="barilga-songoh" className="w-36 xl:w-56">
+              <div id="barilga-songoh" className="w-auto min-w-[144px] xl:min-w-[224px] [&_span]:!whitespace-normal [&_span]:!overflow-visible [&_span]:!text-clip">
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
                   onChange={handleBuildingChange}
