@@ -14,12 +14,10 @@ export default function RequestScopeSync() {
     // Only auto-select on initial load, not on every change
     // This prevents resetting the building when user has explicitly selected one
     try {
-      const stored = localStorage.getItem("selectedBuildingId");
       // Only auto-select if:
       // 1. We haven't auto-selected before
       // 2. There's no selectedBuildingId in state
-      // 3. There's no stored value in localStorage
-      if (!hasAutoSelectedRef.current && !selectedBuildingId && !stored) {
+      if (!hasAutoSelectedRef.current && !selectedBuildingId) {
         const candidate =
           barilgiinId ||
           (ajiltan?.barilguud && ajiltan.barilguud.length > 0
@@ -32,7 +30,7 @@ export default function RequestScopeSync() {
           setSelectedBuildingId(String(candidate));
           hasAutoSelectedRef.current = true;
         }
-      } else if (stored || selectedBuildingId) {
+      } else if (selectedBuildingId) {
         // Mark as auto-selected if there's already a selection to prevent future auto-selection
         hasAutoSelectedRef.current = true;
       }

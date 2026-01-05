@@ -868,15 +868,13 @@ export default function BarilgiinTokhirgoo() {
     let horooMatch: Horoo | undefined;
     if (effectiveTokhirgoo) {
       const tok = effectiveTokhirgoo as any;
-      if (tok?.duuregNer) {
-        duuregMatch = tatvariinAlbaData.jagsaalt.find(
-          (d) => d.ner === tok.duuregNer
-        );
+      const dName = tok?.duuregNer || (baiguullaga as any)?.duureg || "";
+      const hName = tok?.horoo?.ner || (baiguullaga as any)?.horoo?.ner || "";
+      if (dName) {
+        duuregMatch = tatvariinAlbaData.jagsaalt.find((d) => d.ner === dName);
       }
       if (duuregMatch) {
-        horooMatch = (duuregMatch.ded || []).find(
-          (h) => h.ner === tok?.horoo?.ner
-        );
+        horooMatch = (duuregMatch.ded || []).find((h) => h.ner === hName);
       }
     }
 
@@ -1354,12 +1352,17 @@ export default function BarilgiinTokhirgoo() {
         };
       });
 
-      // Update organization payload but keep org-level tokhirgoo unchanged
-      // (we only want to persist the change to the selected building)
-      // Build org-level tokhirgoo to include contact fields so the
-      // backend will save them against the current organization
+      // Build updated org-level tokhirgoo to include contact fields and location
+      // so the backend will save them against the current organization
       const orgTokhirgoo = {
         ...(baiguullaga?.tokhirgoo || {}),
+        duuregNer: state.selectedDuuregData.ner,
+        districtCode: districtCodeCombined,
+        horoo: {
+          ner: state.selectedHorooData.ner,
+          kod: state.selectedHorooData.kod,
+        },
+        sohNer: finalSohNer,
         utas: sukhDugaar
           ? [sukhDugaar]
           : (baiguullaga as any)?.tokhirgoo?.utas ||
@@ -1391,6 +1394,11 @@ export default function BarilgiinTokhirgoo() {
         // also keep top-level utas/mail in sync
         utas: orgTokhirgoo.utas || [],
         mail: orgTokhirgoo.mail || [],
+        duureg: state.selectedDuuregData.ner,
+        horoo: {
+          ner: state.selectedHorooData.ner,
+          kod: state.selectedHorooData.kod,
+        },
         barilguud: newBarilguud,
       } as any;
 

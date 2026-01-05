@@ -134,10 +134,6 @@ function LayoutContent({ children }: { children: ReactNode }) {
         if (token) {
           destroyCookie(null, "tureestoken", { path: "/" });
         }
-        // Clear any cached user, we don't support offline auto-login
-        try {
-          localStorage.removeItem("ajiltan");
-        } catch {}
         router.replace("/login");
         return;
       }
@@ -177,6 +173,9 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const onEmployeeChanged = (data: any) => {
         try {
           mutate((key: any) => Array.isArray(key) && key[0] === "/ajiltan");
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/tokenoorAjiltanAvya"
+          );
         } catch (_) {}
       };
       s.on("ajiltan.created", onEmployeeChanged);

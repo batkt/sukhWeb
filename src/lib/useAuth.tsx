@@ -8,6 +8,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import useSWR, { mutate } from "swr";
 import toast from "react-hot-toast";
 import { parseCookies, setCookie, destroyCookie } from "nookies";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
@@ -135,26 +136,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           storedToken !== "null"
         ) {
           setTokenState(storedToken);
-
-          // Load ajiltan from localStorage (session continuity), but this
-          // does NOT bypass login as middleware enforces token presence.
-          const storedAjiltan = localStorage.getItem("ajiltan");
-          if (
-            storedAjiltan &&
-            storedAjiltan !== "undefined" &&
-            storedAjiltan !== "null"
-          ) {
-            try {
-              const parsedAjiltan = JSON.parse(storedAjiltan);
-              setAjiltan(parsedAjiltan);
-            } catch (error) {
-              localStorage.removeItem("ajiltan");
-            }
-          }
         } else {
           // Clean up invalid tokens
           destroyCookie(null, "tureestoken", { path: "/" });
-          localStorage.removeItem("ajiltan");
         }
       } catch (error) {
       } finally {
@@ -164,6 +148,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     loadAuthData();
   }, []);
+
+  const { data: fetchedAjiltan, mutate: mutateAjiltan } = useSWR<Ajiltan>(
+    token ? ["/tokenoorAjiltanAvya", token] : null,
+    async ([url, tkn]: [string, string]) => {
+      const resp = await uilchilgee(tkn).post(url);
+      return resp.data;
+    },
+    { revalidateOnFocus: false, revalidateOnReconnect: false }
+  );
+
+  // Sync fetched ajiltan to local state for AuthContext
+  useEffect(() => {
+    if (fetchedAjiltan) {
+      setAjiltan(fetchedAjiltan);
+    }
+  }, [fetchedAjiltan]);
 
   const setToken = (newToken: string | null) => {
     setTokenState(newToken);
@@ -184,8 +184,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const ajiltanMutate = (newAjiltan: Ajiltan) => {
     setAjiltan(newAjiltan);
-    // Store in localStorage for persistence
-    localStorage.setItem("ajiltan", JSON.stringify(newAjiltan));
+    // Trigger SWR revalidation to sync with backend if needed
+    mutateAjiltan(newAjiltan, false);
   };
 
   const auth = useMemo<AuthContextType>(
@@ -303,7 +303,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       garya: () => {
         setTokenState(null);
         setAjiltan(null);
-        localStorage.removeItem("ajiltan");
         destroyCookie(null, "tureestoken", { path: "/" });
         destroyCookie(null, "barilgiinId", { path: "/" });
         window.location.href = "/";
@@ -316,9 +315,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setToken,
       barilgaSoliyo,
       barilgiinId,
-      isLoading,
+      isLoading: isLoading || (!!token && !ajiltan && !fetchedAjiltan),
     }),
-    [token, ajiltan, baiguullaga, barilgiinId, isLoading, barilgaSoliyo]
+    [
+      token,
+      ajiltan,
+      baiguullaga,
+      barilgiinId,
+      isLoading,
+      barilgaSoliyo,
+      fetchedAjiltan,
+    ]
   );
 
   return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
