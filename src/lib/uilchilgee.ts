@@ -16,6 +16,7 @@ export function getApiUrl(): string {
     process.env.GITHUB_REF_NAME === "dev" ||
     process.env.BRANCH === "dev"
   ) {
+    // return "http://103.50.205.80/";
     return "https://amarhome.mn/api/";
     // buynaa
   }
@@ -33,9 +34,10 @@ export function getApiUrl(): string {
     typeof window !== "undefined" &&
     window.location.hostname === "amarhome.mn"
   ) {
+    // return "http://103.50.205.80/";
     return "https://amarhome.mn/api/";
   }
-
+  // return "http://103.50.205.80/";
   return "https://amarhome.mn/api/";
 }
 

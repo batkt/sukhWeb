@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Publicly accessible paths (no auth needed)
-const PUBLIC_PATHS = new Set<string>(["/login", "/signup"]);
+const PUBLIC_PATHS = new Set<string>(["/login", "/signup", "account-delete"]);
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.has(pathname)) return true;
