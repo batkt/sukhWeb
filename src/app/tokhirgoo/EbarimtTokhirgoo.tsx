@@ -684,6 +684,11 @@ export default function EbarimtTokhirgoo() {
                       payload.eBarimtShine = ebShine;
                       if (merchantTin && merchantTin.trim() !== "")
                         payload.merchantTin = merchantTin;
+                      payload.duureg = duuregNer;
+                      payload.horoo = {
+                        ner: horooNer || "",
+                        kod: horooKod || "",
+                      };
                       payload.tokhirgoo = {
                         ...(baiguullaga?.tokhirgoo || {}),
                         merchantTin:

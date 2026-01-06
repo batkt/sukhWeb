@@ -373,10 +373,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           destroyCookie(null, "tureestoken", { path: "/" });
           destroyCookie(null, "barilgiinId", { path: "/" });
 
-          localStorage.removeItem("ajiltan");
-          localStorage.removeItem("baiguulgiinErkhiinJagsaalt");
-          localStorage.removeItem("newtrekhNerTurees");
-
           window.location.href = "/";
         } catch (error) {
           window.location.href = "/";
