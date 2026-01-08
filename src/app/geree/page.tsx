@@ -76,7 +76,7 @@ export default function Geree() {
     "contracts" | "residents" | "employees" | "units"
   >("residents");
 
-  // Initialize from URL tab (if provided) else fall back to localStorage — run once
+  // Initialize from URL tab (if provided) — run once
   useEffect(() => {
     if (didInitRef.current) return;
     const t = searchParams.get("tab");
@@ -87,31 +87,10 @@ export default function Geree() {
       t === "units"
     ) {
       setActiveTab(t as any);
-      try {
-        localStorage.setItem("geree.activeTab", t);
-      } catch (e) {}
-    } else {
-      try {
-        const stored = localStorage.getItem("geree.activeTab");
-        if (
-          stored === "contracts" ||
-          stored === "residents" ||
-          stored === "employees" ||
-          stored === "units"
-        ) {
-          setActiveTab(stored as any);
-        }
-      } catch (e) {}
     }
     didInitRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("geree.activeTab", activeTab);
-    } catch (e) {}
-  }, [activeTab]);
 
   // Separate modals to avoid layout differences breaking sticky footers
   const [showContractModal, setShowContractModal] = useState(false);
@@ -2365,23 +2344,16 @@ export default function Geree() {
       setEditingResident(null);
       setCurrentStep(1);
 
-      // Reset pagination to page 1 and clear search to ensure new user appears
-      // This will trigger SWR to re-fetch automatically since khuudaslalt is part of the cache key
+      // Reset pagination to page 1 to ensure new user appears
       setOrshinSuugchKhuudaslalt((prev: any) => ({
         ...prev,
         khuudasniiDugaar: 1,
-        search: "",
       }));
 
-      // Small delay to allow:
-      // 1. React state update to complete
-      // 2. Backend to index the new user
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Explicitly refresh both services to show updated data in the table
-      // Force revalidation by passing true as second parameter
+      // Immediately refresh both services to show updated data in the table
+      // Use optimistic update pattern for instant UI feedback
       await Promise.all([
-        orshinSuugchJagsaaltMutate(undefined, true),
+        orshinSuugchJagsaaltMutate(),
         gereeJagsaaltMutate(),
       ]);
 

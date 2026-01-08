@@ -78,6 +78,36 @@ function LayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { loading: spinnerLoading } = useSpinner();
   const [authChecked, setAuthChecked] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  // Track navigation state for loading indicator
+  useEffect(() => {
+    setIsNavigating(false);
+  }, [pathname]);
+
+  // Listen for navigation events to show loader
+  useEffect(() => {
+    const handleStart = () => setIsNavigating(true);
+    const handleComplete = () => setIsNavigating(false);
+
+    // Intercept link clicks
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest("a");
+      if (link && link.href && !link.target && !e.ctrlKey && !e.metaKey) {
+        const url = new URL(link.href);
+        if (url.origin === window.location.origin && url.pathname !== pathname) {
+          setIsNavigating(true);
+        }
+      }
+    };
+
+    document.addEventListener("click", handleClick);
+    
+    return () => {
+      document.removeEventListener("click", handleClick);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     // Proactively unregister any existing service workers from older builds
@@ -166,7 +196,21 @@ function LayoutContent({ children }: { children: ReactNode }) {
         }
       };
 
+      // Handle resident creation and updates for real-time sync
+      const onResidentChanged = (data: any) => {
+        try {
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
+          );
+          mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
+        } catch (err) {
+          // If predicate-based mutate is unavailable, swallow the error.
+        }
+      };
+
       s.on("orshinSuugch.deleted", onResidentDeleted);
+      s.on("orshinSuugch.created", onResidentChanged);
+      s.on("orshinSuugch.updated", onResidentChanged);
       s.on("geree.deleted", onResidentDeleted);
 
       // Employees: created/updated/deleted -> revalidate employee lists
@@ -185,6 +229,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
       return () => {
         try {
           s.off("orshinSuugch.deleted", onResidentDeleted);
+          s.off("orshinSuugch.created", onResidentChanged);
+          s.off("orshinSuugch.updated", onResidentChanged);
           s.off("geree.deleted", onResidentDeleted);
           s.off("ajiltan.created", onEmployeeChanged);
           s.off("ajiltan.updated", onEmployeeChanged);
@@ -238,6 +284,31 @@ function LayoutContent({ children }: { children: ReactNode }) {
           {children}
           <SuccessOverlayHost />
           <ErrorOverlayHost />
+          
+          {/* Global loading overlay */}
+          {(spinnerLoading || isNavigating) && (
+            <div
+              className="fixed inset-0 z-[2000] grid place-items-center"
+              style={{
+                background:
+                  "color-mix(in oklch, var(--surface-bg), transparent 10%)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+              }}
+            >
+              <div className="menu-surface p-8 rounded-3xl flex flex-col items-center gap-5">
+                <div className="w-[160px] h-[160px]">
+                  <DotLottieReact
+                    src="https://lottie.host/5386a522-13d7-4766-b11e-78c8c868b2d6/ljDPLtL4kH.lottie"
+                    loop
+                    autoplay
+                    style={{ width: "100%", height: "100%" }}
+                  />
+                </div>
+                <div className="text-sm text-theme">Түр хүлээнэ үү…</div>
+              </div>
+            </div>
+          )}
         </BuildingProvider>
       </SearchProvider>
     </SocketProvider>

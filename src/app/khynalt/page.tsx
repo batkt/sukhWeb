@@ -29,6 +29,7 @@ import {
   ArcElement,
   BarElement,
 } from "chart.js";
+import useSWR from "swr";
 import formatNumber from "../../../tools/function/formatNumber";
 
 ChartJS.register(
@@ -74,10 +75,18 @@ export default function Khynalt() {
 
   useEffect(() => setMounted(true), []);
 
-  // State for building configuration, all residents and all contracts
-  const [buildingConfig, setBuildingConfig] = useState<any>(null);
-  const [allResidents, setAllResidents] = useState<any[]>([]);
-  const [allContracts, setAllContracts] = useState<any[]>([]);
+  const { data: buildingConfig } = useSWR(
+    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId
+      ? ["/baiguullaga/", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([url, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: bId, barilgiinId: barId },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
   const { orshinSuugchGaralt, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
@@ -115,24 +124,6 @@ export default function Khynalt() {
       search: "",
     });
   }, [setOrshinSuugchKhuudaslalt, setGereeKhuudaslalt, setAjiltniiKhuudaslalt]);
-
-  useEffect(() => {
-    const fetchBuildingConfig = async () => {
-      if (!token || !ajiltan?.baiguullagiinId || !effectiveBarilgiinId) return;
-      try {
-        const response = await uilchilgee(token).get(`/baiguullaga/`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            barilgiinId: effectiveBarilgiinId,
-          },
-        });
-        setBuildingConfig(response.data);
-      } catch (error) {
-        console.error("Failed to fetch building config:", error);
-      }
-    };
-    fetchBuildingConfig();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
 
   const residents = useMemo(
     () => orshinSuugchGaralt?.jagsaalt || [],
@@ -192,39 +183,104 @@ export default function Khynalt() {
     return { start, end };
   }, [dateRange, defaultEnd]);
 
-  const [incomeTotals, setIncomeTotals] = useState({ paid: 0, unpaid: 0 });
-  const [incomeByBuilding, setIncomeByBuilding] = useState<
-    Record<string, number>
-  >({});
-  const [residentsPaidCount, setResidentsPaidCount] = useState(0);
-  const [residentsUnpaidCount, setResidentsUnpaidCount] = useState(0);
-  const [incomeSeries, setIncomeSeries] = useState<{
-    labels: string[];
-    paid: number[];
-    unpaid: number[];
-  }>({ labels: [], paid: [], unpaid: [] });
+  const { labels: orderedLabels, buildLabel } = useMemo(() => {
+    const start = rangeStart;
+    const end = rangeEnd;
+    const s = new Date(start);
+    const e = new Date(end);
+    const dayDiff = Math.max(
+      1,
+      Math.ceil((e.getTime() - s.getTime()) / 86400000)
+    );
+    const groupBy: "day" | "month" = dayDiff > 45 ? "month" : "day";
 
-  const [expenseSeries, setExpenseSeries] = useState<{
-    labels: string[];
-    expenses: number[];
-  }>({ labels: [], expenses: [] });
+    const bl = (d: Date) => {
+      if (groupBy === "day") return d.toISOString().slice(0, 10);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    };
+    const labels: string[] = [];
+    if (groupBy === "day") {
+      const it = new Date(s);
+      while (it <= e) {
+        labels.push(bl(it));
+        it.setDate(it.getDate() + 1);
+      }
+    } else {
+      const it = new Date(s.getFullYear(), s.getMonth(), 1);
+      const endMonth = new Date(e.getFullYear(), e.getMonth(), 1);
+      while (it <= endMonth) {
+        labels.push(bl(it));
+        it.setMonth(it.getMonth() + 1);
+      }
+    }
+    return { labels, buildLabel: bl };
+  }, [rangeStart, rangeEnd]);
 
-  const [profitSeries, setProfitSeries] = useState<{
-    labels: string[];
-    profits: number[];
-  }>({ labels: [], profits: [] });
+  const { data: incomeData } = useSWR(
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
+      ? [
+          "/nekhemjlekhiinTuukh",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
+      const startIso = `${start}T00:00:00.000Z`;
+      const endIso = `${end}T23:59:59.999Z`;
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+          query: JSON.stringify({
+            baiguullagiinId: bId,
+            ...(barId ? { barilgiinId: barId } : {}),
+            createdAt: { $gte: startIso, $lte: endIso },
+          }),
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
-  // Overdue 2+ months and cancelled-contract receivables
-  const [overdue2m, setOverdue2m] = useState<{
-    count: number;
-    total: number;
-    items: any[];
-  }>({ count: 0, total: 0, items: [] });
-  const [cancelledReceivables, setCancelledReceivables] = useState<{
-    count: number;
-    total: number;
-    items: any[];
-  }>({ count: 0, total: 0, items: [] });
+  const { data: overdueData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
+          token,
+          effectiveBarilgiinId,
+        ]
+      : null,
+    async ([url, tkn, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: barId ? { barilgiinId: barId } : {},
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const { data: cancelledData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
+          token,
+          effectiveBarilgiinId,
+        ]
+      : null,
+    async ([url, tkn, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: barId ? { barilgiinId: barId } : {},
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
   // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
   const [chartColors, setChartColors] = useState({
@@ -268,275 +324,151 @@ export default function Khynalt() {
     };
   }, []);
 
-  useEffect(() => {
-    const start = rangeStart;
-    const end = rangeEnd;
-    const s = new Date(start);
-    const e = new Date(end);
-    const dayDiff = Math.max(
-      1,
-      Math.ceil((e.getTime() - s.getTime()) / 86400000)
-    );
-    const groupBy: "day" | "month" = dayDiff > 45 ? "month" : "day";
+  const incomeComputed = useMemo(() => {
+    const list: any[] = Array.isArray(incomeData?.jagsaalt)
+      ? incomeData.jagsaalt
+      : Array.isArray(incomeData)
+      ? incomeData
+      : [];
 
-    const buildLabel = (d: Date) => {
-      if (groupBy === "day") return d.toISOString().slice(0, 10);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const residentById = new Map<string, any>();
+    residents.forEach((r: any) => residentById.set(String(r._id || ""), r));
+
+    const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+    const resIndex = new Map<string, string>();
+    const makeResKeysLocal = (r: any): string[] => {
+      const id = String(r?._id || "");
+      const reg = norm(r?.register);
+      const phone = norm(r?.utas);
+      const ovog = norm(r?.ovog);
+      const ner = norm(r?.ner);
+      const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
+      const keys: string[] = [];
+      if (id) keys.push(`id|${id}`);
+      if (reg) keys.push(`reg|${reg}`);
+      if (phone) keys.push(`phone|${phone}`);
+      if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
+      return keys;
     };
-    const orderedLabels: string[] = [];
-    if (groupBy === "day") {
-      const it = new Date(s);
-      while (it <= e) {
-        orderedLabels.push(buildLabel(it));
-        it.setDate(it.getDate() + 1);
+    residents.forEach((r: any) => {
+      const id = String(r?._id || "");
+      if (!id) return;
+      makeResKeysLocal(r).forEach((k) => resIndex.set(k, id));
+    });
+
+    let paid = 0;
+    let unpaid = 0;
+    const byBld: Record<string, number> = {};
+    const seriesMap = new Map<string, { paid: number; unpaid: number }>();
+    const paidResidents = new Set<string>();
+    const unpaidResidents = new Set<string>();
+
+    list.forEach((it) => {
+      const amount =
+        Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      const invoiceKeys: string[] = [];
+      const osIdRaw = String(it?.orshinSuugchId || "");
+      if (osIdRaw) invoiceKeys.push(`id|${osIdRaw}`);
+      const reg = norm(it?.register);
+      if (reg) invoiceKeys.push(`reg|${reg}`);
+      const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
+      const phone = norm(utasVal);
+      if (phone) invoiceKeys.push(`phone|${phone}`);
+      const ovog = norm(it?.ovog);
+      const ner = norm(it?.ner);
+      const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
+      if (ovog || ner || toot) invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
+
+      let osId = "";
+      for (const k of invoiceKeys) {
+        const found = resIndex.get(k);
+        if (found) {
+          osId = found;
+          break;
+        }
       }
-    } else {
-      const it = new Date(s.getFullYear(), s.getMonth(), 1);
-      const endMonth = new Date(e.getFullYear(), e.getMonth(), 1);
-      while (it <= endMonth) {
-        orderedLabels.push(buildLabel(it));
-        it.setMonth(it.getMonth() + 1);
+
+      const isPaid = isPaidLike(it);
+      const isUnpaid = isUnpaidLike(it);
+
+      if (isPaid) {
+        paid += amount;
+        if (osId) paidResidents.add(osId);
+      } else if (isUnpaid) {
+        unpaid += amount;
+        if (osId) unpaidResidents.add(osId);
       }
-    }
 
-    const fetchIncome = async (rangeStart: string, rangeEnd: string) => {
-      if (!token || !ajiltan?.baiguullagiinId)
-        return {
-          paid: 0,
-          unpaid: 0,
-          byBld: {} as Record<string, number>,
-          series: new Map<string, { paid: number; unpaid: number }>(),
-          residentsPaid: 0,
-          residentsUnpaid: 0,
-        };
-      try {
-        // Use full-day ISO ranges to avoid timezone mismatches
-        const startIso = `${rangeStart}T00:00:00.000Z`;
-        const endIso = `${rangeEnd}T23:59:59.999Z`;
-        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
-          params: {
-            baiguullagiinId: ajiltan.baiguullagiinId,
-            // Include branch both top-level and inside nested query for maximum backend compatibility
-            ...(effectiveBarilgiinId
-              ? { barilgiinId: effectiveBarilgiinId }
-              : {}),
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 5000,
-            // Stringify query for backends expecting JSON in params
-            query: JSON.stringify({
-              baiguullagiinId: ajiltan.baiguullagiinId,
-              ...(effectiveBarilgiinId
-                ? { barilgiinId: effectiveBarilgiinId }
-                : {}),
-              // Prefer createdAt range; servers may also filter by issued/paid dates internally
-              createdAt: { $gte: startIso, $lte: endIso },
-            }),
-          },
-        });
+      const barilga =
+        residentById.get(osId)?.barilgiinId ||
+        residentById.get(osId)?.barilga ||
+        it?.barilgiinId ||
+        "Тодорхойгүй";
+      byBld[barilga] = (byBld[barilga] || 0) + amount;
 
-        const list: any[] = Array.isArray(resp.data?.jagsaalt)
-          ? resp.data.jagsaalt
-          : Array.isArray(resp.data)
-          ? resp.data
-          : [];
-
-        const residentById = new Map<string, any>();
-        residents.forEach((r: any) => residentById.set(String(r._id || ""), r));
-        // Build multi-key index to match invoices without explicit orshinSuugchId
-        const norm = (v: any) =>
-          String(v ?? "")
-            .trim()
-            .toLowerCase();
-        const resIndex = new Map<string, string>(); // key -> residentId
-        const makeResKeys = (r: any): string[] => {
-          const id = String(r?._id || "");
-          const reg = norm(r?.register);
-          const phone = norm(r?.utas);
-          const ovog = norm(r?.ovog);
-          const ner = norm(r?.ner);
-          const toot = String(r?.toot ?? r?.medeelel?.toot ?? "").trim();
-          const keys: string[] = [];
-          if (id) keys.push(`id|${id}`);
-          if (reg) keys.push(`reg|${reg}`);
-          if (phone) keys.push(`phone|${phone}`);
-          if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
-          return keys;
-        };
-        residents.forEach((r: any) => {
-          const id = String(r?._id || "");
-          if (!id) return;
-          makeResKeys(r).forEach((k) => resIndex.set(k, id));
-        });
-
-        let paid = 0;
-        let unpaid = 0;
-        const byBld: Record<string, number> = {};
-        const series = new Map<string, { paid: number; unpaid: number }>();
-        const paidResidents = new Set<string>();
-        const unpaidResidents = new Set<string>();
-        list.forEach((it) => {
-          const amount =
-            Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-          const status = getPaymentStatusLabel(it);
-          // Resolve resident id from invoice
-          const invoiceKeys: string[] = [];
-          const osIdRaw = String(it?.orshinSuugchId || "");
-          if (osIdRaw) invoiceKeys.push(`id|${osIdRaw}`);
-          const reg = norm(it?.register);
-          if (reg) invoiceKeys.push(`reg|${reg}`);
-          const utasVal = Array.isArray(it?.utas) ? it.utas[0] : it?.utas;
-          const phone = norm(utasVal);
-          if (phone) invoiceKeys.push(`phone|${phone}`);
-          const ovog = norm(it?.ovog);
-          const ner = norm(it?.ner);
-          const toot = String(it?.medeelel?.toot ?? it?.toot ?? "").trim();
-          if (ovog || ner || toot)
-            invoiceKeys.push(`name|${ovog}|${ner}|${toot}`);
-          let osId = "";
-          for (const k of invoiceKeys) {
-            const found = resIndex.get(k);
-            if (found) {
-              osId = found;
-              break;
-            }
-          }
-
-          const isPaid = isPaidLike(it);
-          const isUnpaid = isUnpaidLike(it);
-
-          if (isPaid) {
-            paid += amount;
-            if (osId) paidResidents.add(osId);
-          } else if (isUnpaid) {
-            unpaid += amount;
-            if (osId) unpaidResidents.add(osId);
-          }
-
-          const barilga =
-            residentById.get(osId)?.barilgiinId ||
-            residentById.get(osId)?.barilga ||
-            it?.barilgiinId ||
-            "Тодорхойгүй";
-          byBld[barilga] = (byBld[barilga] || 0) + amount;
-
-          const created = String(
-            it?.createdAt || it?.ognoo || it?.date || rangeStart
-          );
-          const d = new Date(created);
-          const key = buildLabel(d);
-          const curr = series.get(key) || { paid: 0, unpaid: 0 };
-          if (isPaid) curr.paid += amount;
-          else if (isUnpaid) curr.unpaid += amount;
-          series.set(key, curr);
-        });
-
-        return {
-          paid,
-          unpaid,
-          byBld,
-          series,
-          residentsPaid: paidResidents.size,
-          residentsUnpaid: unpaidResidents.size,
-        };
-      } catch {
-        return {
-          paid: 0,
-          unpaid: 0,
-          byBld: {},
-          series: new Map(),
-          residentsPaid: 0,
-          residentsUnpaid: 0,
-        };
+      const created = String(it?.createdAt || it?.ognoo || it?.date || "");
+      if (created) {
+        const d = new Date(created);
+        const key = buildLabel(d);
+        const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
+        if (isPaid) curr.paid += amount;
+        else if (isUnpaid) curr.unpaid += amount;
+        seriesMap.set(key, curr);
       }
-    };
+    });
 
-    (async () => {
-      const curr = await fetchIncome(start, end);
-      setIncomeTotals({ paid: curr.paid, unpaid: curr.unpaid });
-      setIncomeByBuilding(curr.byBld);
-      setResidentsPaidCount(curr.residentsPaid);
-      setResidentsUnpaidCount(curr.residentsUnpaid);
+    const paidArr: number[] = [];
+    const unpaidArr: number[] = [];
+    orderedLabels.forEach((lb) => {
+      const v = seriesMap.get(lb) || { paid: 0, unpaid: 0 };
+      paidArr.push(v.paid);
+      unpaidArr.push(v.unpaid);
+    });
 
-      const paidArr: number[] = [];
-      const unpaidArr: number[] = [];
-      orderedLabels.forEach((lb) => {
-        const v = curr.series.get(lb) || { paid: 0, unpaid: 0 };
-        paidArr.push(v.paid);
-        unpaidArr.push(v.unpaid);
-      });
-      setIncomeSeries({
-        labels: orderedLabels,
-        paid: paidArr,
-        unpaid: unpaidArr,
-      });
-
-      setExpenseSeries({
-        labels: orderedLabels,
-        expenses: unpaidArr,
-      });
-
-      setProfitSeries({
+    return {
+      incomeTotals: { paid, unpaid },
+      incomeByBuilding: byBld,
+      residentsPaidCount: paidResidents.size,
+      residentsUnpaidCount: unpaidResidents.size,
+      incomeSeries: { labels: orderedLabels, paid: paidArr, unpaid: unpaidArr },
+      expenseSeries: { labels: orderedLabels, expenses: unpaidArr },
+      profitSeries: {
         labels: orderedLabels,
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
-      });
-    })();
-  }, [
-    token,
-    ajiltan?.baiguullagiinId,
-    effectiveBarilgiinId,
-    rangeStart,
-    rangeEnd,
-    residents,
-  ]);
-
-  useEffect(() => {
-    const run = async () => {
-      if (!token || !ajiltan?.baiguullagiinId) return;
-      try {
-        const overdueResp = await uilchilgee(token).get(
-          `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
-          {
-            params: effectiveBarilgiinId
-              ? { barilgiinId: effectiveBarilgiinId }
-              : {},
-          }
-        );
-        if (overdueResp.data?.success) {
-          const data = overdueResp.data;
-          setOverdue2m({
-            count: data.total || 0,
-            total: data.sum || 0,
-            items: data.list || [],
-          });
-        } else {
-          setOverdue2m({ count: 0, total: 0, items: [] });
-        }
-
-        const cancelledResp = await uilchilgee(token).get(
-          `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
-          {
-            params: effectiveBarilgiinId
-              ? { barilgiinId: effectiveBarilgiinId }
-              : {},
-          }
-        );
-        if (cancelledResp.data?.success) {
-          const data = cancelledResp.data;
-          setCancelledReceivables({
-            count: data.total || 0,
-            total: data.sum || 0,
-            items: data.list || [],
-          });
-        } else {
-          setCancelledReceivables({ count: 0, total: 0, items: [] });
-        }
-      } catch (e) {
-        setOverdue2m({ count: 0, total: 0, items: [] });
-        setCancelledReceivables({ count: 0, total: 0, items: [] });
-      }
+      },
     };
-    run();
-  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId]);
+  }, [incomeData, residents, orderedLabels, buildLabel]);
+
+  const {
+    incomeTotals,
+    residentsPaidCount,
+    residentsUnpaidCount,
+    incomeSeries,
+    expenseSeries,
+    profitSeries,
+  } = incomeComputed;
+
+  const overdue2m = useMemo(() => {
+    if (overdueData?.success) {
+      return {
+        count: overdueData.total || 0,
+        total: overdueData.sum || 0,
+        items: overdueData.list || [],
+      };
+    }
+    return { count: 0, total: 0, items: [] };
+  }, [overdueData]);
+
+  const cancelledReceivables = useMemo(() => {
+    if (cancelledData?.success) {
+      return {
+        count: cancelledData.total || 0,
+        total: cancelledData.sum || 0,
+        items: cancelledData.list || [],
+      };
+    }
+    return { count: 0, total: 0, items: [] };
+  }, [cancelledData]);
 
   const incomeLineData: Dataset = useMemo(() => {
     const pretty = incomeSeries.labels.map((lb) => {
@@ -725,7 +657,7 @@ export default function Khynalt() {
     // Get all unique toot values from orshinSuugch
     // Include both the main `toot` field and all toots from the `toots` array
     const allTootsFromOrshinSuugch = new Set<string>();
-    allResidents.forEach((r: any) => {
+    residents.forEach((r: any) => {
       // Add main toot field
       const mainToot = String(r?.toot || "").trim();
       if (mainToot) allTootsFromOrshinSuugch.add(mainToot);
@@ -748,7 +680,7 @@ export default function Khynalt() {
     });
 
     return count;
-  }, [buildingConfig, allResidents, effectiveBarilgiinId]);
+  }, [buildingConfig, residents, effectiveBarilgiinId]);
 
   // Calculate totals from chart data
   const totalIncome = incomeSeries.paid.reduce((sum, val) => sum + val, 0);
@@ -779,9 +711,6 @@ export default function Khynalt() {
       value: filteredTotalResidents,
       color: "from-green-500 to-green-600",
       onClick: () => {
-        try {
-          localStorage.setItem("geree.activeTab", "residents");
-        } catch (e) {}
         router.push("/geree?tab=residents");
       },
       delay: 100,
@@ -792,9 +721,6 @@ export default function Khynalt() {
       subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
       color: "from-blue-500 to-blue-600",
       onClick: () => {
-        try {
-          localStorage.setItem("geree.activeTab", "contracts");
-        } catch (e) {}
         router.push("/geree?tab=contracts");
       },
       delay: 200,
