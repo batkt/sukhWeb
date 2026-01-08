@@ -114,7 +114,7 @@ export default function LoginPage() {
       <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 hidden md:block lg:right-10 z-[15]">
         <div className="w-40 h-40 lg:w-64 lg:h-64 opacity-95">
           <DotLottieReact
-            src="https://lottie.host/e5b55d33-110a-47dd-a1c3-743c28f5733d/v48oNB77F0.lottie"
+            src="https://lottie.host/d17186d3-f164-4808-a9a1-4dd3d95d1f49/0L9eXuFSaO.lottie"
             loop
             autoplay
             style={{ width: "100%", height: "100%" }}
