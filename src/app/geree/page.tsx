@@ -130,7 +130,7 @@ export default function Geree() {
   const [selectAllContracts, setSelectAllContracts] = useState(false);
   const [showAvlagaModal, setShowAvlagaModal] = useState(false);
   const [avlagaDate, setAvlagaDate] = useState<string>(
-    new Date().toISOString()
+    new Date().toISOString(),
   );
   const [avlagaValue, setAvlagaValue] = useState<string>("");
   const [avlagaDescription, setAvlagaDescription] = useState<string>("");
@@ -148,21 +148,21 @@ export default function Geree() {
   const stepCount = stepLabels.length;
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
     ALL_COLUMNS.filter(
-      (col) => col.default && !DEFAULT_HIDDEN.includes(col.key)
-    ).map((col) => col.key)
+      (col) => col.default && !DEFAULT_HIDDEN.includes(col.key),
+    ).map((col) => col.key),
   );
   const toggleColumn = (columnKey: string) => {
     setVisibleColumns((prev) =>
       prev.includes(columnKey)
         ? prev.filter((key) => key !== columnKey)
-        : [...prev, columnKey]
+        : [...prev, columnKey],
     );
   };
   const { searchTerm, setSearchTerm } = useSearch();
   const [filterType, setFilterType] = useState("Бүгд");
   const [filterTuluv, setFilterTuluv] = useState("Бүгд");
   const [editingContract, setEditingContract] = useState<GereeType | null>(
-    null
+    null,
   );
   const [previewTemplate, setPreviewTemplate] = useState<any>(null);
   const residentExcelInputRef = useRef<HTMLInputElement | null>(null);
@@ -173,7 +173,7 @@ export default function Geree() {
   // Stable date formatter to avoid SSR/CSR timezone mismatches
   const dateFmt = useMemo(
     () => new Intl.DateTimeFormat("mn-MN", { timeZone: "UTC" }),
-    []
+    [],
   );
   const formatDateValue = (v: any): string => {
     if (!v) return "-";
@@ -205,7 +205,7 @@ export default function Geree() {
   const effectiveBarilgiinId: string | undefined =
     selectedBuildingId ?? barilgiinId ?? undefined;
   const selectedBarilga = baiguullaga?.barilguud?.find(
-    (b) => b._id === selectedBuildingId
+    (b) => b._id === selectedBuildingId,
   );
   // Floors (davkhar) options derived from building settings.
   const davkharOptions = useMemo(() => {
@@ -337,7 +337,7 @@ export default function Geree() {
           } catch (err) {}
           setOpen((s) => !s);
         },
-      } as any
+      } as any,
     );
 
     return (
@@ -494,8 +494,8 @@ export default function Geree() {
               .flatMap((it) => String(it || "").split(/[\s,;|]+/))
               .map((s) => s.trim())
               .map((s) => s.replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, ""))
-              .filter(Boolean)
-          )
+              .filter(Boolean),
+          ),
         );
 
         return normalized;
@@ -503,7 +503,7 @@ export default function Geree() {
         return [];
       }
     },
-    [tootMap, composeKey]
+    [tootMap, composeKey],
   );
 
   useEffect(() => {
@@ -528,7 +528,7 @@ export default function Geree() {
           (b.tokhirgoo && (b.tokhirgoo as any).davkhariinToonuud) || {};
         const nextMap: Record<string, string[]> = { ...existing };
         nextMap[key] = (nextMap[key] || []).filter(
-          (u) => String(u) !== String(unit)
+          (u) => String(u) !== String(unit),
         );
         return {
           ...b,
@@ -652,7 +652,7 @@ export default function Geree() {
       const promises: Promise<any>[] = [];
       for (const cid of selectedContracts) {
         const contract = (contracts || []).find(
-          (c: any) => String(c._id) === String(cid)
+          (c: any) => String(c._id) === String(cid),
         );
         if (!contract) continue;
         const payload = {
@@ -668,7 +668,7 @@ export default function Geree() {
           },
         };
         promises.push(
-          uilchilgee(token).post("/gereeniiGuilgeeKhadgalya", payload)
+          uilchilgee(token).post("/gereeniiGuilgeeKhadgalya", payload),
         );
       }
       await Promise.all(promises);
@@ -708,7 +708,7 @@ export default function Geree() {
     token || "",
     ajiltan?.baiguullagiinId || "",
     {},
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
   // Employees list
   const {
@@ -720,7 +720,7 @@ export default function Geree() {
     token || "",
     ajiltan?.baiguullagiinId || "",
     effectiveBarilgiinId,
-    {}
+    {},
   );
 
   const {
@@ -732,7 +732,7 @@ export default function Geree() {
     {},
     token || undefined,
     ajiltan?.baiguullagiinId,
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
   const { gereeUusgekh, gereeZasakh, gereeUstgakh } = useGereeCRUD();
   const {
@@ -798,8 +798,8 @@ export default function Geree() {
         const list: any[] = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
-          ? resp.data
-          : [];
+            ? resp.data
+            : [];
         // Build a robust resident index to resolve invoices without explicit orshinSuugchId
         const residents = (orshinSuugchGaralt?.jagsaalt || []) as any[];
         const norm = (v: any) =>
@@ -855,7 +855,7 @@ export default function Geree() {
 
           const label = getPaymentStatusLabel(it);
           const ts = new Date(
-            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
+            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
           ).getTime();
           const cur = byId[osId];
           if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
@@ -892,13 +892,13 @@ export default function Geree() {
 
   // Error states for form validation
   const [contractErrors, setContractErrors] = useState<Record<string, string>>(
-    {}
+    {},
   );
   const [employeeErrors, setEmployeeErrors] = useState<Record<string, string>>(
-    {}
+    {},
   );
   const [residentErrors, setResidentErrors] = useState<Record<string, string>>(
-    {}
+    {},
   );
   const [newEmployee, setNewEmployee] = useState<any>({
     ovog: "",
@@ -1338,7 +1338,7 @@ export default function Geree() {
     return new Set(
       activeContracts
         .map((c: any) => String(c?.orshinSuugchId || "").trim())
-        .filter(Boolean)
+        .filter(Boolean),
     );
   }, [contracts]);
 
@@ -1377,11 +1377,11 @@ export default function Geree() {
   }, [residentsList, activeResidentIds, searchTerm, sortKey, sortOrder]);
   const resTotalPages = Math.max(
     1,
-    Math.ceil(filteredResidents.length / (resPageSize || 1))
+    Math.ceil(filteredResidents.length / (resPageSize || 1)),
   );
   const currentResidents = filteredResidents.slice(
     (resPage - 1) * resPageSize,
-    resPage * resPageSize
+    resPage * resPageSize,
   );
 
   const employeesList = (ajilchdiinGaralt?.jagsaalt || []) as any[];
@@ -1406,27 +1406,27 @@ export default function Geree() {
     return list.sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
-        new Date(a.createdAt || 0).getTime()
+        new Date(a.createdAt || 0).getTime(),
     );
   }, [employeesList, searchTerm]);
   const empTotalPages = Math.max(
     1,
-    Math.ceil(filteredEmployees.length / (empPageSize || 1))
+    Math.ceil(filteredEmployees.length / (empPageSize || 1)),
   );
   const currentEmployees = filteredEmployees.slice(
     (empPage - 1) * empPageSize,
-    empPage * empPageSize
+    empPage * empPageSize,
   );
 
   // Client-side pagination for units (slice floors)
   const floorsList = davkharOptions || [];
   const unitTotalPages = Math.max(
     1,
-    Math.ceil(floorsList.length / (unitPageSize || 1))
+    Math.ceil(floorsList.length / (unitPageSize || 1)),
   );
   const currentFloors = floorsList.slice(
     (unitPage - 1) * unitPageSize,
-    unitPage * unitPageSize
+    unitPage * unitPageSize,
   );
 
   const [newContract, setNewContract] = useState<any>({
@@ -1520,7 +1520,7 @@ export default function Geree() {
   const computeNextGereeDugaar = () => {
     const nums = (contracts || [])
       .map((c: any) =>
-        parseInt(String(c?.gereeniiDugaar || "").replace(/[^0-9]/g, ""), 10)
+        parseInt(String(c?.gereeniiDugaar || "").replace(/[^0-9]/g, ""), 10),
       )
       .filter((n: number) => !isNaN(n));
     const max = nums.length ? Math.max(...nums) : 0;
@@ -1531,7 +1531,7 @@ export default function Geree() {
   const uilchilgeeNiit = (zardluud || []).reduce(
     (sum: number, z: any) =>
       sum + (Number(z?.tariff) || 0) + (Number(z?.suuriKhuraamj) || 0),
-    0
+    0,
   );
 
   // Validation helpers
@@ -1566,14 +1566,14 @@ export default function Geree() {
   const isFormValid = () => {
     // Validate all visible steps
     return Array.from({ length: stepCount }, (_, i) => i + 1).every((s) =>
-      isStepValid(s)
+      isStepValid(s),
     );
   };
 
   const renderCellValue = (contract: any, columnKey: string) => {
     const findResidentById = (id: any) =>
       (orshinSuugchGaralt?.jagsaalt || []).find(
-        (r: any) => String(r?._id || r?.id || "") === String(id || "")
+        (r: any) => String(r?._id || r?.id || "") === String(id || ""),
       );
 
     const getStringValue = (val: any) => {
@@ -1608,7 +1608,7 @@ export default function Geree() {
       case "aimag": {
         const resident = findResidentById(contract.orshinSuugchId);
         return getStringValue(
-          contract.aimag || resident?.aimag || contract.khayag
+          contract.aimag || resident?.aimag || contract.khayag,
         );
       }
       case "duureg": {
@@ -1639,7 +1639,7 @@ export default function Geree() {
           contract.baingiinKhayag ||
             contract.bairniiNer ||
             resident?.khayag ||
-            resident?.soh
+            resident?.soh,
         );
       }
       case "bairniiNer": {
@@ -1648,7 +1648,7 @@ export default function Geree() {
           contract.bairniiNer ||
             contract.bairNer ||
             resident?.bairniiNer ||
-            selectedBarilga?.ner
+            selectedBarilga?.ner,
         );
       }
       case "orts": {
@@ -1725,7 +1725,7 @@ export default function Geree() {
     try {
       const resp = await uilchilgee(token || undefined).get(
         `/orshinSuugchExcelTemplate`,
-        { responseType: "blob" }
+        { responseType: "blob" },
       );
       const blob = new Blob([resp.data], {
         type:
@@ -1802,7 +1802,7 @@ export default function Geree() {
         // building.
         try {
           const refersTo = String(
-            r?.barilgiinId ?? r?.medeelel?.barilgiinId ?? ""
+            r?.barilgiinId ?? r?.medeelel?.barilgiinId ?? "",
           );
           const sel = String(exportTargetBarilgiinId || "");
           if (sel && refersTo !== sel && selectedBarilga) {
@@ -1870,7 +1870,7 @@ export default function Geree() {
         const excelResp = await uilchilgee(token).post(
           `/downloadExcelList`,
           postBody,
-          { responseType: "blob" }
+          { responseType: "blob" },
         );
         const blob = new Blob([excelResp.data]);
         const url = window.URL.createObjectURL(blob);
@@ -1900,7 +1900,7 @@ export default function Geree() {
       }
       if (!ExcelCtor) {
         openErrorOverlay(
-          "Excel үүсгэхэд шаардлагатай 'antd-table-saveas-excel' сан байхгүй байна. Суулгаад дахин оролдоно уу."
+          "Excel үүсгэхэд шаардлагатай 'antd-table-saveas-excel' сан байхгүй байна. Суулгаад дахин оролдоно уу.",
         );
         return;
       }
@@ -1963,7 +1963,7 @@ export default function Geree() {
 
   // Handle residents Excel file import
   const onResidentsExcelFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     // Capture the real input element immediately — React may recycle the synthetic
     // event after an await, which makes `e.currentTarget` null in finally blocks.
@@ -1982,7 +1982,7 @@ export default function Geree() {
       const filename = String(file.name || "").toLowerCase();
       if (!/orshin/.test(filename)) {
         openErrorOverlay(
-          "Зөв Excel загвар (Тоот бүртгэлийн загвар) оруулна уу."
+          "Зөв Excel загвар (Тоот бүртгэлийн загвар) оруулна уу.",
         );
         if (input) input.value = "";
         return;
@@ -2003,7 +2003,7 @@ export default function Geree() {
         form,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       // The backend may return 200 OK even when some rows failed. Inspect
@@ -2014,7 +2014,7 @@ export default function Geree() {
       if (Array.isArray(failed) && failed.length > 0) {
         // Show all backend-provided row errors (no arbitrary slice)
         const detailLines = failed.map(
-          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
         );
         const details = detailLines.join("\n");
         const topMsg =
@@ -2072,7 +2072,7 @@ export default function Geree() {
   };
 
   const onUnitsExcelFileChange = async (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     // Capture the real input element immediately — React may recycle the synthetic
     // event after an await, which makes `e.currentTarget` null in finally blocks.
@@ -2099,7 +2099,7 @@ export default function Geree() {
         form,
         {
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       // The backend may return 200 OK even when some rows failed. Inspect
@@ -2110,7 +2110,7 @@ export default function Geree() {
       if (Array.isArray(failed) && failed.length > 0) {
         // Show all backend-provided row errors (no arbitrary slice)
         const detailLines = failed.map(
-          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
         );
         const details = detailLines.join("\n");
         const topMsg =
@@ -2153,11 +2153,11 @@ export default function Geree() {
                       new Set(
                         arr
                           .flatMap((it: any) =>
-                            String(it || "").split(/[\s,;|]+/)
+                            String(it || "").split(/[\s,;|]+/),
                           )
                           .map((s: string) => s.trim())
-                          .filter(Boolean)
-                      )
+                          .filter(Boolean),
+                      ),
                     );
                     nextMap[String(k)] = normalized;
                   });
@@ -2169,7 +2169,7 @@ export default function Geree() {
                   // ignore per-building normalization errors
                 }
                 return nb;
-              }
+              },
             );
 
             const normalizedOrg = { ...targetOrg, barilguud: updatedBarilguud };
@@ -2225,7 +2225,7 @@ export default function Geree() {
         !isValidName(newResident.ovog))
     ) {
       openErrorOverlay(
-        "Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой). Овог хоосон байж болно."
+        "Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой). Овог хоосон байж болно.",
       );
       return;
     }
@@ -2274,8 +2274,8 @@ export default function Geree() {
         typeof val === "string"
           ? val
           : typeof val?.ner === "string"
-          ? val.ner
-          : "";
+            ? val.ner
+            : "";
       payload.duureg =
         newResident.duureg || deriveStr(selectedBarilga?.tokhirgoo?.duuregNer);
       payload.horoo =
@@ -2317,7 +2317,7 @@ export default function Geree() {
         const resp: any = await createMethod(
           "orshinSuugchBurtgey",
           token || "",
-          payload
+          payload,
         );
         try {
           const respData = resp?.data ?? resp;
@@ -2352,10 +2352,7 @@ export default function Geree() {
 
       // Immediately refresh both services to show updated data in the table
       // Use optimistic update pattern for instant UI feedback
-      await Promise.all([
-        orshinSuugchJagsaaltMutate(),
-        gereeJagsaaltMutate(),
-      ]);
+      await Promise.all([orshinSuugchJagsaaltMutate(), gereeJagsaaltMutate()]);
 
       // Auto-create a basic contract for newly created resident
       if (!wasEdit && createdResidentId) {
@@ -2368,7 +2365,7 @@ export default function Geree() {
 
           const firstPhone = Array.isArray(newResident.utas)
             ? newResident.utas.find(
-                (p: any) => String(p || "").trim() !== ""
+                (p: any) => String(p || "").trim() !== "",
               ) || ""
             : String(newResident.utas || "");
 
@@ -2416,7 +2413,7 @@ export default function Geree() {
             const resp: any = await createMethod(
               "geree",
               token || "",
-              autoContract
+              autoContract,
             );
             // Try to extract created id from common response shapes
             const respData = resp?.data ?? resp;
@@ -2483,7 +2480,7 @@ export default function Geree() {
                   await createMethod(
                     "nekhemjlekhiinTuukh",
                     token || "",
-                    invoicePayload
+                    invoicePayload,
                   );
                   // Revalidate invoice cache so UI picks up the new invoice
                   try {
@@ -2506,7 +2503,7 @@ export default function Geree() {
                             orshinSuugchId: String(createdResidentId),
                           }),
                         },
-                      }
+                      },
                     );
                   } catch (_) {}
                 } catch (_) {}
@@ -2520,12 +2517,12 @@ export default function Geree() {
             openSuccessOverlay("Гэрээ автоматаар үүсгэгдлээ");
           } catch (e) {
             openErrorOverlay(
-              "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэхэд алдаа гарлаа."
+              "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэхэд алдаа гарлаа.",
             );
           }
         } catch (e) {
           openErrorOverlay(
-            "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэх явцад алдаа гарлаа."
+            "Оршин суугч нэмэгдсэн боловч гэрээ үүсгэх явцад алдаа гарлаа.",
           );
         }
       }
@@ -2540,8 +2537,8 @@ export default function Geree() {
       typeof val === "string"
         ? val
         : typeof val?.ner === "string"
-        ? val.ner
-        : "";
+          ? val.ner
+          : "";
     setEditingResident(p);
     setNewResident({
       ovog: p.ovog || "",
@@ -2550,8 +2547,8 @@ export default function Geree() {
       utas: Array.isArray(p.utas)
         ? p.utas.map((u: any) => String(u))
         : p.utas
-        ? [String(p.utas)]
-        : [""],
+          ? [String(p.utas)]
+          : [""],
       mail: p.mail || p.email || "",
       khayag: p.khayag || "",
       aimag: p.aimag || "Улаанбаатар",
@@ -2626,7 +2623,7 @@ export default function Geree() {
       // 1) Find related contracts for this resident from the loaded contracts
       const related = Array.isArray(contracts)
         ? contracts.filter(
-            (c: any) => String(c?.orshinSuugchId || "") === residentId
+            (c: any) => String(c?.orshinSuugchId || "") === residentId,
           )
         : [];
 
@@ -2787,7 +2784,7 @@ export default function Geree() {
     // Friendly format errors
     if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
       openErrorOverlay(
-        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой).",
       );
       return;
     }
@@ -2819,7 +2816,7 @@ export default function Geree() {
     }
     if (!isValidName(newContract.ovog) || !isValidName(newContract.ner)) {
       openErrorOverlay(
-        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой)."
+        "Овог, Нэр талбар зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой).",
       );
       return;
     }
@@ -2860,10 +2857,10 @@ export default function Geree() {
       typeof val === "string"
         ? val
         : typeof val === "number"
-        ? String(val)
-        : typeof val?.ner === "string"
-        ? val.ner
-        : "";
+          ? String(val)
+          : typeof val?.ner === "string"
+            ? val.ner
+            : "";
 
     setNewContract((prev: any) => ({
       ...prev,
@@ -2879,20 +2876,20 @@ export default function Geree() {
       utas: Array.isArray(contract.utas)
         ? contract.utas
         : contract.utas
-        ? String(contract.utas)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [""],
+          ? String(contract.utas)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [""],
       // Prefill SÖH phones too (array-safe)
       suhUtas: Array.isArray(contract.suhUtas)
         ? contract.suhUtas
         : contract.suhUtas
-        ? String(contract.suhUtas)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        : [""],
+          ? String(contract.suhUtas)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [""],
       // Form binds to "mail", not "email"
       mail: contract.mail || contract.email || "",
       // Address / apartment info
@@ -2965,7 +2962,7 @@ export default function Geree() {
 
     try {
       const response = await uilchilgee(token).get(
-        `/gereeniiZagvar/${templateId}`
+        `/gereeniiZagvar/${templateId}`,
       );
       setPreviewTemplate(response.data);
       setShowPreviewModal(true);
@@ -3069,7 +3066,7 @@ export default function Geree() {
       openErrorOverlay(
         typeof serverMsg === "string" && serverMsg
           ? serverMsg
-          : "Загварыг боловсруулахад алдаа гарлаа"
+          : "Загварыг боловсруулахад алдаа гарлаа",
       );
     }
   };
@@ -3336,8 +3333,8 @@ export default function Geree() {
                       typeof val === "string"
                         ? val
                         : typeof val?.ner === "string"
-                        ? val.ner
-                        : "";
+                          ? val.ner
+                          : "";
                     setCurrentStep(1);
                     setEditingContract(null);
                     setEditingResident(null);
@@ -3540,8 +3537,8 @@ export default function Geree() {
                           setVisibleColumns(
                             ALL_COLUMNS.filter(
                               (c) =>
-                                c.default && !DEFAULT_HIDDEN.includes(c.key)
-                            ).map((c) => c.key)
+                                c.default && !DEFAULT_HIDDEN.includes(c.key),
+                            ).map((c) => c.key),
                           )
                         }
                       >
@@ -3564,7 +3561,7 @@ export default function Geree() {
                               setVisibleColumns((prev) =>
                                 prev.includes(col.key)
                                   ? prev.filter((k) => k !== col.key)
-                                  : [...prev, col.key]
+                                  : [...prev, col.key],
                               )
                             }
                             style={{ accentColor: "var(--panel-text)" }}
@@ -3646,7 +3643,7 @@ export default function Geree() {
 
                                   // Normalize floor comparison (handle number/string)
                                   const contractFloor = String(
-                                    c.davkhar || ""
+                                    c.davkhar || "",
                                   ).trim();
                                   const floorStr = String(floor || "").trim();
                                   const matchesFloor =
@@ -3655,10 +3652,10 @@ export default function Geree() {
                                   if (!matchesFloor) return false;
 
                                   const contractOrts = String(
-                                    c.orts || ""
+                                    c.orts || "",
                                   ).trim();
                                   const selectedOrtsStr = String(
-                                    selectedOrts || ""
+                                    selectedOrts || "",
                                   ).trim();
 
                                   const matchesOrts =
@@ -3666,7 +3663,7 @@ export default function Geree() {
                                     contractOrts === selectedOrtsStr;
 
                                   return matchesOrts;
-                                }
+                                },
                               );
                               const activeToots = new Set(
                                 activeContractsForFloor
@@ -3676,7 +3673,7 @@ export default function Geree() {
                                       return null;
                                     return String(toot).trim();
                                   })
-                                  .filter((t): t is string => Boolean(t))
+                                  .filter((t): t is string => Boolean(t)),
                               );
 
                               return (
@@ -3930,7 +3927,7 @@ export default function Geree() {
                           onClick={() => {
                             const newPage = Math.min(
                               unitTotalPages,
-                              unitPage + 1
+                              unitPage + 1,
                             );
                             setUnitPage(newPage);
                           }}
@@ -3972,7 +3969,7 @@ export default function Geree() {
                                 setSelectAllContracts(v);
                                 if (v) {
                                   const ids = currentContracts.map((c: any) =>
-                                    String(c._id)
+                                    String(c._id),
                                   );
                                   setSelectedContracts(ids);
                                 } else {
@@ -3987,7 +3984,7 @@ export default function Geree() {
                         </th>
                         {visibleColumns.map((columnKey) => {
                           const column = ALL_COLUMNS.find(
-                            (col) => col.key === columnKey
+                            (col) => col.key === columnKey,
                           );
                           const isSortable =
                             column?.key === "toot" ||
@@ -4072,7 +4069,7 @@ export default function Geree() {
                                 <input
                                   type="checkbox"
                                   checked={selectedContracts.includes(
-                                    String(contract._id)
+                                    String(contract._id),
                                   )}
                                   onChange={(e) => {
                                     const id = String(contract._id);
@@ -4080,7 +4077,7 @@ export default function Geree() {
                                     setSelectedContracts((prev) => {
                                       if (checked)
                                         return Array.from(
-                                          new Set([...prev, id])
+                                          new Set([...prev, id]),
                                         );
                                       return prev.filter((x) => x !== id);
                                     });
@@ -4088,13 +4085,13 @@ export default function Geree() {
                                     setSelectAllContracts((prev) => {
                                       if (!checked) return false;
                                       const allIds = currentContracts.map(
-                                        (c: any) => String(c._id)
+                                        (c: any) => String(c._id),
                                       );
                                       const newSel = Array.from(
-                                        new Set([...selectedContracts, id])
+                                        new Set([...selectedContracts, id]),
                                       );
                                       return allIds.every((a) =>
-                                        newSel.includes(a)
+                                        newSel.includes(a),
                                       );
                                     });
                                   }}
@@ -4110,9 +4107,9 @@ export default function Geree() {
                                 columnKey === "bairniiNer"
                                   ? "cell-left"
                                   : columnKey === "sariinTurees" ||
-                                    columnKey === "baritsaaniiUldegdel"
-                                  ? "cell-right"
-                                  : "text-center";
+                                      columnKey === "baritsaaniiUldegdel"
+                                    ? "cell-right"
+                                    : "text-center";
                               return (
                                 <td
                                   key={columnKey}
@@ -4135,7 +4132,7 @@ export default function Geree() {
                                 <button
                                   onClick={() =>
                                     handlePreviewContractTemplate(
-                                      String(contract._id)
+                                      String(contract._id),
                                     )
                                   }
                                   className="p-1 rounded-2xl hover-surface transition-colors"
@@ -4205,14 +4202,14 @@ export default function Geree() {
                                         const date = new Date(v as any);
                                         const year = date.getFullYear();
                                         const month = String(
-                                          date.getMonth() + 1
+                                          date.getMonth() + 1,
                                         ).padStart(2, "0");
                                         const day = String(
-                                          date.getDate()
+                                          date.getDate(),
                                         ).padStart(2, "0");
                                         return `${year}-${month}-${day}`;
                                       })()
-                                    : new Date().toISOString()
+                                    : new Date().toISOString(),
                                 )
                               }
                               placeholder="Огноо сонгох"
@@ -4236,7 +4233,7 @@ export default function Geree() {
                                 const digits = raw.replace(/\D/g, "");
                                 const formatted = digits.replace(
                                   /\B(?=(\d{3})+(?!\d))/g,
-                                  ","
+                                  ",",
                                 );
                                 setAvlagaValue(formatted);
                               }}
@@ -4498,10 +4495,10 @@ export default function Geree() {
                                 label === "Төлсөн"
                                   ? "badge-paid"
                                   : label === "Хугацаа хэтэрсэн"
-                                  ? "bg-red-500 text-red-800"
-                                  : label === "Төлөөгүй"
-                                  ? "badge-unpaid"
-                                  : "badge-neutral";
+                                    ? "bg-red-500 text-red-800"
+                                    : label === "Төлөөгүй"
+                                      ? "badge-unpaid"
+                                      : "badge-neutral";
                               return (
                                 <span
                                   className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}
@@ -4800,8 +4797,8 @@ export default function Geree() {
                                   active
                                     ? "bg-sky-700 text-white"
                                     : done
-                                    ? "bg-blue-200 text-slate-800"
-                                    : "bg-gray-200 text-slate-700"
+                                      ? "bg-blue-200 text-slate-800"
+                                      : "bg-gray-200 text-slate-700"
                                 }`}
                                 aria-current={active ? "step" : undefined}
                                 aria-label={`Алхам ${step}: ${label}`}
@@ -4831,8 +4828,8 @@ export default function Geree() {
                                   active
                                     ? "bg-sky-700 text-white"
                                     : done
-                                    ? "bg-blue-200 text-slate-800"
-                                    : "bg-gray-200 text-slate-700"
+                                      ? "bg-blue-200 text-slate-800"
+                                      : "bg-gray-200 text-slate-700"
                                 }`}
                                 aria-current={active ? "step" : undefined}
                                 aria-label={`Алхам ${step}: ${label}`}
@@ -4902,7 +4899,7 @@ export default function Geree() {
                               onChange={(e) => {
                                 const value = e.target.value.replace(
                                   /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                                  ""
+                                  "",
                                 );
                                 setNewContract((prev: any) => ({
                                   ...prev,
@@ -4930,7 +4927,7 @@ export default function Geree() {
                               onChange={(e) => {
                                 const value = e.target.value.replace(
                                   /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                                  ""
+                                  "",
                                 );
                                 setNewContract((prev: any) => ({
                                   ...prev,
@@ -5036,13 +5033,13 @@ export default function Geree() {
                               }
                               options={getTootOptions(
                                 newContract.orts,
-                                newContract.davkhar
+                                newContract.davkhar,
                               ).map((t) => ({ value: t, label: t }))}
                               className="w-full"
                               placeholder={
                                 getTootOptions(
                                   newContract.orts,
-                                  newContract.davkhar
+                                  newContract.davkhar,
                                 ).length === 0
                                   ? "Тоотын тохиргоо хийгээгүй байна"
                                   : "Сонгох..."
@@ -5050,7 +5047,7 @@ export default function Geree() {
                               disabled={
                                 getTootOptions(
                                   newContract.orts,
-                                  newContract.davkhar
+                                  newContract.davkhar,
                                 ).length === 0
                               }
                             />
@@ -5271,7 +5268,7 @@ export default function Geree() {
                       onChange={(e) => {
                         const value = e.target.value.replace(
                           /[^0-9A-Za-z,\-\s]/g,
-                          ""
+                          "",
                         );
                         setAddTootValue(value);
                       }}
@@ -5566,7 +5563,7 @@ export default function Geree() {
                             onChange={(e) => {
                               const value = e.target.value.replace(
                                 /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
-                                ""
+                                "",
                               );
                               setNewResident((prev: any) => ({
                                 ...prev,
@@ -5586,7 +5583,7 @@ export default function Geree() {
                             onChange={(e) => {
                               const value = e.target.value.replace(
                                 /[^a-zA-Za-яА-ЯөүёӨҮЁ-]/g,
-                                ""
+                                "",
                               );
                               setNewResident((prev: any) => ({
                                 ...prev,
@@ -5724,7 +5721,7 @@ export default function Geree() {
                             {(() => {
                               const tootOptions = getTootOptions(
                                 newResident.orts,
-                                newResident.davkhar
+                                newResident.davkhar,
                               );
 
                               // Get active contracts (tuluv="Идэвхтэй") matching current orts and floor
@@ -5736,10 +5733,10 @@ export default function Geree() {
 
                                   // Normalize floor comparison
                                   const contractFloor = String(
-                                    c.davkhar || ""
+                                    c.davkhar || "",
                                   ).trim();
                                   const residentFloor = String(
-                                    newResident.davkhar || ""
+                                    newResident.davkhar || "",
                                   ).trim();
                                   const matchesFloor =
                                     contractFloor === residentFloor;
@@ -5748,10 +5745,10 @@ export default function Geree() {
 
                                   // Normalize orts comparison
                                   const contractOrts = String(
-                                    c.orts || ""
+                                    c.orts || "",
                                   ).trim();
                                   const residentOrts = String(
-                                    newResident.orts || ""
+                                    newResident.orts || "",
                                   ).trim();
 
                                   const matchesOrts =
@@ -5770,7 +5767,7 @@ export default function Geree() {
                                       return null;
                                     return String(toot).trim();
                                   })
-                                  .filter((t): t is string => Boolean(t))
+                                  .filter((t): t is string => Boolean(t)),
                               );
 
                               return (
@@ -5835,7 +5832,7 @@ export default function Geree() {
                                   inputMode="numeric"
                                   pattern="[0-9,]*"
                                   value={String(
-                                    newResident.ekhniiUldegdel || ""
+                                    newResident.ekhniiUldegdel || "",
                                   )}
                                   onChange={(e) => {
                                     const raw = String(e.target.value || "");
@@ -5843,7 +5840,7 @@ export default function Geree() {
                                     const digits = raw.replace(/\D/g, "");
                                     const formatted = digits.replace(
                                       /\B(?=(\d{3})+(?!\d))/g,
-                                      ","
+                                      ",",
                                     );
                                     setNewResident((prev: any) => ({
                                       ...prev,
@@ -5852,7 +5849,6 @@ export default function Geree() {
                                   }}
                                   className="w-full p-3 pr-14 text-slate-900 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent border border-gray-300"
                                   placeholder="0"
-                                  readOnly={!!editingResident}
                                 />
                                 <div className="absolute right-2 top-1/2 -translate-y-1/2  px-3 text-sm text-theme pointer-events-none">
                                   ₮
@@ -5981,7 +5977,7 @@ export default function Geree() {
                           onChange={(e) => {
                             const value = e.target.value.replace(
                               /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                              ""
+                              "",
                             );
                             setNewEmployee((p: any) => ({
                               ...p,
@@ -6002,7 +5998,7 @@ export default function Geree() {
                           onChange={(e) => {
                             const value = e.target.value.replace(
                               /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
-                              ""
+                              "",
                             );
                             setNewEmployee((p: any) => ({
                               ...p,
@@ -6087,11 +6083,11 @@ export default function Geree() {
                                     const date = new Date(v);
                                     const year = date.getFullYear();
                                     const month = String(
-                                      date.getMonth() + 1
+                                      date.getMonth() + 1,
                                     ).padStart(2, "0");
                                     const day = String(date.getDate()).padStart(
                                       2,
-                                      "0"
+                                      "0",
                                     );
                                     return `${year}-${month}-${day}`;
                                   })()
@@ -6488,7 +6484,7 @@ export default function Geree() {
                           if (unitToDelete) {
                             await deleteUnit(
                               unitToDelete.floor,
-                              unitToDelete.unit
+                              unitToDelete.unit,
                             );
                             setShowDeleteUnitModal(false);
                             setUnitToDelete(null);
