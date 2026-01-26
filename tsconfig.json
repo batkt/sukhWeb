@@ -32,6 +32,6 @@
     "src/app/signup",
     "../tools/**/*.ts",
     "../tools/**/*.tsx"
-  ],
+, "components/streamPlayer/R2Wplayer.js"  ],
   "exclude": ["node_modules"]
 }

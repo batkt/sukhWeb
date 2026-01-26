@@ -674,66 +674,279 @@ function ZogsoolBurtgekh(
                 </div>
               </div>
 
-              <div className="border-t pt-2">
-                <MButton
-                  onClick={() => {
-                    const newKhaalga = [...(formData.khaalga || [])];
+              <div className="border-t pt-3 mt-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-theme">
+                    Камерын тохиргоо
+                  </h4>
+                  <MButton
+                    onClick={() => {
+                      const newKhaalga = [...(formData.khaalga || [])];
                     if (!newKhaalga[index].camera) {
                       newKhaalga[index].camera = [];
                     }
-                    newKhaalga[index].camera.push({ cameraIP: "" });
-                    setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
-                  }}
-                  size="xs"
-                  className="btn-minimal mb-2"
-                >
-                  <PlusOutlined /> Камер нэмэх
-                </MButton>
+                    newKhaalga[index].camera.push({
+                      cameraIP: "",
+                      cameraPort: 80,
+                      cameraType: gate.turul === "Орох" ? "entry" : "exit",
+                      cameraName: "",
+                      tokhirgoo: {
+                        USER: "",
+                        PASSWD: "",
+                        ROOT: "",
+                        PORT: "",
+                        dotorKamerEsekh: false,
+                      },
+                    });
+                      setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
+                    }}
+                    size="xs"
+                    className="btn-minimal"
+                  >
+                    <PlusOutlined /> Камер нэмэх
+                  </MButton>
+                </div>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {gate.camera?.map((cam: any, camIndex: number) => (
-                    <div key={camIndex} className="flex gap-2 items-center">
-                      <MTextInput
-                        value={cam.cameraIP}
-                        onChange={(e) => {
-                          const newKhaalga = [...(formData.khaalga || [])];
-                          newKhaalga[index].camera[camIndex].cameraIP =
-                            e.currentTarget.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            khaalga: newKhaalga,
-                          }));
-                        }}
-                        placeholder="Камер IP оруулна уу..."
-                        size="xs"
-                        className="flex-1"
-                      />
-                      <button
-                        onClick={() => {
-                          const newKhaalga = [...(formData.khaalga || [])];
-                          newKhaalga[index].camera = newKhaalga[
-                            index
-                          ].camera.filter(
-                            (_: any, i: number) => i !== camIndex
-                          );
-                          setFormData((prev) => ({
-                            ...prev,
-                            khaalga: newKhaalga,
-                          }));
-                        }}
-                        className="text-red-500 hover:text-red-700"
-                        title="Устгах"
-                      >
-                        <MinusCircleOutlined />
-                      </button>
-                      <button
-                        className="text-gray-500 hover:text-gray-700"
-                        title="Тохиргоо"
-                      >
-                        <SettingOutlined />
-                      </button>
+                    <div
+                      key={camIndex}
+                      className="p-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface)]"
+                    >
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium mb-1 text-theme">
+                            Камерын нэр
+                          </label>
+                          <MTextInput
+                            value={cam.cameraName || ""}
+                            onChange={(e) => {
+                              const newKhaalga = [...(formData.khaalga || [])];
+                              newKhaalga[index].camera[camIndex].cameraName =
+                                e.currentTarget.value;
+                              setFormData((prev) => ({
+                                ...prev,
+                                khaalga: newKhaalga,
+                              }));
+                            }}
+                            placeholder="Камерын нэр"
+                            size="xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-1 text-theme">
+                            Төрөл
+                          </label>
+                          <MSelect
+                            value={cam.cameraType || (gate.turul === "Орох" ? "entry" : "exit")}
+                            onChange={(val) => {
+                              const newKhaalga = [...(formData.khaalga || [])];
+                              newKhaalga[index].camera[camIndex].cameraType =
+                                val || (gate.turul === "Орох" ? "entry" : "exit");
+                              setFormData((prev) => ({
+                                ...prev,
+                                khaalga: newKhaalga,
+                              }));
+                            }}
+                            size="xs"
+                            data={[
+                              { label: "Орох", value: "entry" },
+                              { label: "Гарах", value: "exit" },
+                            ]}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                          <label className="block text-xs font-medium mb-1 text-theme">
+                            IP хаяг <span className="text-red-500">*</span>
+                          </label>
+                          <MTextInput
+                            value={cam.cameraIP || ""}
+                            onChange={(e) => {
+                              const newKhaalga = [...(formData.khaalga || [])];
+                              newKhaalga[index].camera[camIndex].cameraIP =
+                                e.currentTarget.value;
+                              setFormData((prev) => ({
+                                ...prev,
+                                khaalga: newKhaalga,
+                              }));
+                            }}
+                            placeholder="192.168.1.100"
+                            size="xs"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium mb-1 text-theme">
+                            Порт
+                          </label>
+                          <MNumberInput
+                            value={cam.cameraPort || 80}
+                            onChange={(val) => {
+                              const newKhaalga = [...(formData.khaalga || [])];
+                              newKhaalga[index].camera[camIndex].cameraPort =
+                                val || 80;
+                              setFormData((prev) => ({
+                                ...prev,
+                                khaalga: newKhaalga,
+                              }));
+                            }}
+                            placeholder="80"
+                            size="xs"
+                            min={1}
+                            max={65535}
+                          />
+                        </div>
+                      </div>
+                      <div className="border-t pt-2 mt-2">
+                        <label className="block text-xs font-medium mb-2 text-theme">
+                          Камерын тохиргоо
+                        </label>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-theme">
+                              Хэрэглэгчийн нэр (USER)
+                            </label>
+                            <MTextInput
+                              value={cam.tokhirgoo?.USER || ""}
+                              onChange={(e) => {
+                                const newKhaalga = [...(formData.khaalga || [])];
+                                if (!newKhaalga[index].camera[camIndex].tokhirgoo) {
+                                  newKhaalga[index].camera[camIndex].tokhirgoo = {};
+                                }
+                                newKhaalga[index].camera[camIndex].tokhirgoo.USER =
+                                  e.currentTarget.value;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  khaalga: newKhaalga,
+                                }));
+                              }}
+                              placeholder="test"
+                              size="xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-theme">
+                              Нууц үг (PASSWD)
+                            </label>
+                            <MTextInput
+                              type="password"
+                              value={cam.tokhirgoo?.PASSWD || ""}
+                              onChange={(e) => {
+                                const newKhaalga = [...(formData.khaalga || [])];
+                                if (!newKhaalga[index].camera[camIndex].tokhirgoo) {
+                                  newKhaalga[index].camera[camIndex].tokhirgoo = {};
+                                }
+                                newKhaalga[index].camera[camIndex].tokhirgoo.PASSWD =
+                                  e.currentTarget.value;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  khaalga: newKhaalga,
+                                }));
+                              }}
+                              placeholder="••••••••"
+                              size="xs"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-theme">
+                              ROOT
+                            </label>
+                            <MTextInput
+                              value={cam.tokhirgoo?.ROOT || ""}
+                              onChange={(e) => {
+                                const newKhaalga = [...(formData.khaalga || [])];
+                                if (!newKhaalga[index].camera[camIndex].tokhirgoo) {
+                                  newKhaalga[index].camera[camIndex].tokhirgoo = {};
+                                }
+                                newKhaalga[index].camera[camIndex].tokhirgoo.ROOT =
+                                  e.currentTarget.value;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  khaalga: newKhaalga,
+                                }));
+                              }}
+                              placeholder="test"
+                              size="xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-theme">
+                              Порт (PORT)
+                            </label>
+                            <MNumberInput
+                              value={cam.tokhirgoo?.PORT ? Number(cam.tokhirgoo.PORT) : undefined}
+                              onChange={(val) => {
+                                const newKhaalga = [...(formData.khaalga || [])];
+                                if (!newKhaalga[index].camera[camIndex].tokhirgoo) {
+                                  newKhaalga[index].camera[camIndex].tokhirgoo = {};
+                                }
+                                newKhaalga[index].camera[camIndex].tokhirgoo.PORT =
+                                  val ? String(val) : "";
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  khaalga: newKhaalga,
+                                }));
+                              }}
+                              placeholder="89"
+                              size="xs"
+                              min={1}
+                              max={65535}
+                            />
+                          </div>
+                        </div>
+                        <div className="mb-2">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={cam.tokhirgoo?.dotorKamerEsekh || false}
+                              onChange={(e) => {
+                                const newKhaalga = [...(formData.khaalga || [])];
+                                if (!newKhaalga[index].camera[camIndex].tokhirgoo) {
+                                  newKhaalga[index].camera[camIndex].tokhirgoo = {};
+                                }
+                                newKhaalga[index].camera[camIndex].tokhirgoo.dotorKamerEsekh =
+                                  e.target.checked;
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  khaalga: newKhaalga,
+                                }));
+                              }}
+                              className="rounded"
+                            />
+                            <span className="text-xs text-theme">Дотор камер эсэх</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            const newKhaalga = [...(formData.khaalga || [])];
+                            newKhaalga[index].camera = newKhaalga[
+                              index
+                            ].camera.filter(
+                              (_: any, i: number) => i !== camIndex
+                            );
+                            setFormData((prev) => ({
+                              ...prev,
+                              khaalga: newKhaalga,
+                            }));
+                          }}
+                          className="text-red-500 hover:text-red-700 text-xs flex items-center gap-1"
+                          title="Устгах"
+                        >
+                          <MinusCircleOutlined /> Устгах
+                        </button>
+                      </div>
                     </div>
                   ))}
+                  {(!gate.camera || gate.camera.length === 0) && (
+                    <div className="text-xs text-[color:var(--muted-text)] text-center py-2">
+                      Камер нэмэх товчийг дарж камер нэмнэ үү
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -212,32 +212,32 @@ export default function GolContent({ children }: GolContentProps) {
         },
       ],
     },
-    // {
-    //   label: "Зогсоол",
-    //   path: "zogsool",
-    //   submenu: [
-    //     {
-    //       label: "Жагсаалт",
-    //       path: "/jagsaalt",
-    //     },
-    //     {
-    //       label: "Машин бүртгэл",
-    //       path: "/mashinBurtgel",
-    //     },
-    //     {
-    //       label: "Камер касс",
-    //       path: "/camera",
-    //     },
-    //     {
-    //       label: "Камерын хяналт",
-    //       path: "/cameraKhyanalt",
-    //     },
-    //     {
-    //       label: "Оршин суугч",
-    //       path: "/orshinSuugch",
-    //     },
-    //   ],
-    // },
+    {
+      label: "Зогсоол",
+      path: "zogsool",
+      submenu: [
+        {
+          label: "Жагсаалт",
+          path: "/zogsool/jagsaalt",
+        },
+        {
+          label: "Машин бүртгэл",
+          path: "/zogsool/mashinBurtgel",
+        },
+        {
+          label: "Камер касс",
+          path: "/zogsool/camera",
+        },
+        {
+          label: "Камерын хяналт",
+          path: "/zogsool/cameraKhyanalt",
+        },
+        {
+          label: "Оршин суугч",
+          path: "/zogsool/orshinSuugch",
+        },
+      ],
+    },
   ];
 
   const handleLogout = async (e?: React.MouseEvent) => {

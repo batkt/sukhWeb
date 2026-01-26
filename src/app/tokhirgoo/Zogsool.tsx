@@ -1,56 +1,147 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import moment from "moment";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Modal as MModal, Button as MButton } from "@mantine/core";
 import ZogsoolBurtgekh from "./ZogsoolBurtgekh";
 import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
+import useSWR from "swr";
+import uilchilgee from "@/lib/uilchilgee";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+
 interface ZogsoolItem {
-  key: number;
+  _id?: string;
+  key?: number;
   ner: string;
-  ajiltniiNer: string;
-  khaalga: string[];
+  ajiltniiNer?: string;
+  khaalga?: any[];
   too: number;
-  undsenUne: string;
-  ognoo: Date;
+  undsenUne: number | string;
+  ognoo?: Date | string;
+  createdAt?: string;
 }
 
 interface SmsItem {
-  key: number;
-  createdAt: Date;
+  _id?: string;
+  key?: number;
+  createdAt: Date | string;
   dugaar: string[];
   msg: string;
 }
 
-export default function Zogsool() {
+interface ZogsoolProps {
+  ajiltan?: any;
+  baiguullaga?: any;
+  token?: string;
+  setSongogdsonTsonkhniiIndex?: (index: number) => void;
+}
+
+export default function Zogsool({
+  ajiltan,
+  baiguullaga,
+  token: propToken,
+  setSongogdsonTsonkhniiIndex,
+}: ZogsoolProps) {
+  const { token: authToken, barilgiinId, ajiltan: authAjiltan } = useAuth();
+  const { selectedBuildingId, isInitialized } = useBuilding();
+  const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+  // Use prop token if provided, otherwise fall back to auth token
+  const token = propToken || authToken || "";
+  
+  // Use prop ajiltan if provided, otherwise fall back to auth ajiltan
+  const effectiveAjiltan = ajiltan || authAjiltan;
+  const effectiveBaiguullagiinId = effectiveAjiltan?.baiguullagiinId;
+  
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(5);
+  const [pageSize] = useState(10);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZogsoolItem | null>(null);
-  const { token, barilgiinId } = useAuth();
   const zogsoolRef = useRef<any>(null);
 
-  const [zogsoolData, setZogsoolData] = useState<ZogsoolItem[]>(
-    Array.from({ length: 20 }).map((_, i) => ({
-      key: i,
-      ner: `Зогсоол ${i + 1}`,
-      ajiltniiNer: i % 2 === 0 ? "Дотор" : "Гадна",
-      khaalga: Array.from({ length: (i % 3) + 1 }, (_, idx) => `Х${idx + 1}`),
-      too: (i + 1) * 2,
-      undsenUne: `${(i + 1) * 1000}₮`,
-      ognoo: new Date(),
-    }))
+  // Allow API call if we have token and baiguullagiinId
+  // Building context initialization can be slow, but we have the data we need from ajiltan
+  const shouldFetch = !!token && !!effectiveBaiguullagiinId;
+
+  const { data: zogsoolDataResponse, mutate: mutateZogsool } = useSWR(
+    shouldFetch
+      ? [
+          "/parking",
+          token,
+          effectiveBaiguullagiinId,
+          effectiveBarilgiinId,
+          page,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, p]): Promise<any> => {
+      // API endpoint: /api/parking (matches https://amarhome.mn/api/parking)
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: p,
+          khuudasniiKhemjee: pageSize,
+        },
+      });
+      
+      const data = resp.data;
+      
+      // Normalize response to consistent format
+      // Handle both direct array and wrapped responses
+      if (Array.isArray(data)) {
+        return {
+          jagsaalt: data,
+          niitMur: data.length,
+          niitKhuudas: Math.ceil(data.length / pageSize),
+        };
+      }
+      
+      // If it's an object, return as-is (might have jagsaalt, list, etc.)
+      return data;
+    },
+    { revalidateOnFocus: false }
   );
 
-  const [smsData, setSmsData] = useState<SmsItem[]>(
-    Array.from({ length: 12 }).map((_, i) => ({
-      key: i,
-      createdAt: new Date(),
-      dugaar: [`99900${i + 1}`],
-      msg: `СМС загвар ${i + 1}`,
-    }))
+  // Handle multiple response formats (similar to other hooks)
+  const zogsoolData: ZogsoolItem[] = useMemo(() => {
+    const data = zogsoolDataResponse;
+    if (!data) return [];
+    
+    // Debug: log the response structure (remove in production if needed)
+    if (process.env.NODE_ENV === "development") {
+      console.log("Parking API Response:", data);
+    }
+    
+    // Try different response formats
+    if (Array.isArray(data?.jagsaalt)) return data.jagsaalt;
+    if (Array.isArray(data?.list)) return data.list;
+    if (Array.isArray(data?.rows)) return data.rows;
+    if (Array.isArray(data?.data?.jagsaalt)) return data.data.jagsaalt;
+    if (Array.isArray(data?.data)) return data.data;
+    if (Array.isArray(data)) return data;
+    
+    return [];
+  }, [zogsoolDataResponse]);
+
+  const { data: smsDataResponse } = useSWR(
+    shouldFetch
+      ? ["/parking/sms", token, effectiveBaiguullagiinId, effectiveBarilgiinId]
+      : null,
+    async ([url, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
   );
+
+  const smsData: SmsItem[] = smsDataResponse?.jagsaalt || [];
 
   const addZogsool = () => {
     setEditingItem(null);
@@ -62,13 +153,28 @@ export default function Zogsool() {
     setIsModalOpen(true);
   };
 
-  const deleteZogsool = (key: number) => {
-    setZogsoolData((prev) => prev.filter((item) => item.key !== key));
+  const deleteZogsool = async (id: string) => {
+    if (!confirm("Устгахдаа итгэлтэй байна уу?")) return;
+    
+    try {
+      // API endpoint: DELETE /api/parking/:id (matches https://amarhome.mn/api/parking/:id)
+      await uilchilgee(token).delete(`/parking/${id}`);
+      openSuccessOverlay("Амжилттай устгалаа");
+      mutateZogsool();
+    } catch (error: any) {
+      openErrorOverlay(error?.message || "Алдаа гарлаа");
+    }
   };
 
-  const paginatedZogsool = zogsoolData.slice(
-    (page - 1) * pageSize,
-    page * pageSize
+  const refreshZogsool = () => {
+    mutateZogsool();
+  };
+
+  const totalPages = Math.ceil(
+    (zogsoolDataResponse?.niitMur || 
+     zogsoolDataResponse?.niitKhuudas || 
+     zogsoolDataResponse?.total || 
+     zogsoolData?.length || 0) / pageSize
   );
 
   return (
@@ -107,56 +213,80 @@ export default function Zogsool() {
             </tr>
           </thead>
           <tbody>
-            {paginatedZogsool.map((record, idx) => (
-              <tr key={record.key}>
-                <td className="py-3 px-4">{(page - 1) * pageSize + idx + 1}</td>
-                <td className="py-3 px-4">{record.ner}</td>
-                <td className="py-3 px-4">{record.ajiltniiNer}</td>
-                <td className="py-3 px-4">{record.khaalga.length}</td>
-                <td className="py-3 px-4">{record.too}</td>
-                <td className="py-3 px-4">{record.undsenUne}</td>
-                <td className="py-3 px-4">
-                  {moment(record.ognoo).format("YYYY-MM-DD, HH:mm")}
-                </td>
-                <td className="py-3 px-4 flex space-x-2">
-                  <button
-                    onClick={() => editZogsool(record)}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    <EditOutlined />
-                  </button>
-                  <button
-                    onClick={() => deleteZogsool(record.key)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <DeleteOutlined />
-                  </button>
+            {zogsoolData.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="py-8 text-center text-[color:var(--muted-text)]">
+                  Зогсоолын мэдээлэл олдсонгүй
                 </td>
               </tr>
-            ))}
+            ) : (
+              zogsoolData.map((record, idx) => (
+                <tr key={record._id || record.key || idx}>
+                  <td className="py-3 px-4">{(page - 1) * pageSize + idx + 1}</td>
+                  <td className="py-3 px-4">{record.ner}</td>
+                  <td className="py-3 px-4">{record.ajiltniiNer || "-"}</td>
+                  <td className="py-3 px-4">
+                    {record.khaalga?.length || 0}
+                  </td>
+                  <td className="py-3 px-4">{record.too}</td>
+                  <td className="py-3 px-4">
+                    {typeof record.undsenUne === "number"
+                      ? `${record.undsenUne}₮`
+                      : record.undsenUne}
+                  </td>
+                  <td className="py-3 px-4">
+                    {record.ognoo || record.createdAt
+                      ? moment(record.ognoo || record.createdAt).format(
+                          "YYYY-MM-DD, HH:mm"
+                        )
+                      : "-"}
+                  </td>
+                  <td className="py-3 px-4 flex space-x-2">
+                    <button
+                      onClick={() => editZogsool(record)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Засах"
+                    >
+                      <EditOutlined />
+                    </button>
+                    {record._id && (
+                      <button
+                        onClick={() => deleteZogsool(record._id!)}
+                        className="text-red-600 hover:text-red-800"
+                        title="Устгах"
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      <div className="flex justify-end items-center mt-4 gap-2">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage((p) => p - 1)}
-          className="px-3 py-1 rounded border disabled:opacity-50"
-        >
-          Өмнөх
-        </button>
-        <span>
-          {page} / {Math.ceil(zogsoolData.length / pageSize)}
-        </span>
-        <button
-          disabled={page * pageSize >= zogsoolData.length}
-          onClick={() => setPage((p) => p + 1)}
-          className="px-3 py-1 rounded border disabled:opacity-50"
-        >
-          Дараах
-        </button>
-      </div>
+      {totalPages > 1 && (
+        <div className="flex justify-end items-center mt-4 gap-2">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Өмнөх
+          </button>
+          <span>
+            {page} / {totalPages}
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            className="px-3 py-1 rounded border disabled:opacity-50"
+          >
+            Дараах
+          </button>
+        </div>
+      )}
 
       <div className="mt-10 mb-5 flex justify-between items-center">
         <h2 className="text-md font-medium">СМС тохиргоо</h2>
@@ -207,12 +337,13 @@ export default function Zogsool() {
           ref={zogsoolRef}
           data={editingItem}
           jagsaalt={zogsoolData}
-          barilgiinId={barilgiinId || undefined}
+          barilgiinId={effectiveBarilgiinId || barilgiinId || undefined}
           token={token || ""}
-          refresh={() => {
-            console.log("Refreshing zogsool list...");
+          refresh={refreshZogsool}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingItem(null);
           }}
-          onClose={() => setIsModalOpen(false)}
         />
         <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
           <MButton

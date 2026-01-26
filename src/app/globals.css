@@ -1,3 +1,30 @@
+/* Video Performance Optimizations */
+.r2w-player-container {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.r2w-player-container video {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  perspective: 1000px;
+  /* Hardware acceleration */
+  -webkit-transform: translateZ(0);
+  -moz-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  -o-transform: translateZ(0);
+  /* Smooth rendering */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  /* Reduce repaints */
+  contain: layout style paint;
+  /* Optimize compositing */
+  isolation: isolate;
+}
+
 /* iOS 26 Glassy Minimal Button - works across all themes */
 /* From Uiverse.io by MuhammadHasann */
 .toggle-cont {

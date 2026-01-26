@@ -162,7 +162,6 @@ function Tokhirgoo() {
           icon: <Settings className="w-5 h-5" />,
           text: "Зогсоол",
           tsonkh: Zogsool,
-          comingSoon: true,
         },
         // {
         //   icon: <Settings className="w-5 h-5" />,
