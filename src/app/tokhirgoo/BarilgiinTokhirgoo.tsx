@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { aldaaBarigch } from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
+import createMethod from "../../../tools/function/createMethod";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
@@ -146,7 +147,7 @@ const EditBuildingModal: React.FC<{
                 value={editOrtsCount}
                 onChange={(e) => {
                   setEditOrtsCount(
-                    e.target.value === "" ? "" : Number(e.target.value)
+                    e.target.value === "" ? "" : Number(e.target.value),
                   );
                   setHasUserEdited(true);
                 }}
@@ -165,7 +166,7 @@ const EditBuildingModal: React.FC<{
                 value={editDavkharCount}
                 onChange={(e) => {
                   setEditDavkharCount(
-                    e.target.value === "" ? "" : Number(e.target.value)
+                    e.target.value === "" ? "" : Number(e.target.value),
                   );
                   setHasUserEdited(true);
                 }}
@@ -198,7 +199,7 @@ const EditBuildingModal: React.FC<{
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 
@@ -290,7 +291,7 @@ const NewBuildingModal: React.FC<{
                 value={ortsCount}
                 onChange={(e) =>
                   setOrtsCount(
-                    e.target.value === "" ? "" : Number(e.target.value)
+                    e.target.value === "" ? "" : Number(e.target.value),
                   )
                 }
                 onKeyDown={(e) => e.stopPropagation()}
@@ -308,7 +309,7 @@ const NewBuildingModal: React.FC<{
                 value={davkharCount}
                 onChange={(e) =>
                   setDavkharCount(
-                    e.target.value === "" ? "" : Number(e.target.value)
+                    e.target.value === "" ? "" : Number(e.target.value),
                   )
                 }
                 onKeyDown={(e) => e.stopPropagation()}
@@ -336,7 +337,7 @@ const NewBuildingModal: React.FC<{
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 
@@ -605,7 +606,7 @@ export default function BarilgiinTokhirgoo() {
               (b: any) =>
                 (String(b.baiguullagiinId) === String(baiguullaga._id) ||
                   !b.baiguullagiinId) &&
-                isRealBuilding(b)
+                isRealBuilding(b),
             );
             if (preferred) return preferred._id;
 
@@ -613,7 +614,7 @@ export default function BarilgiinTokhirgoo() {
             const anyForOrg = baiguullaga.barilguud.find(
               (b: any) =>
                 !b?.baiguullagiinId ||
-                String(b.baiguullagiinId) === String(baiguullaga._id)
+                String(b.baiguullagiinId) === String(baiguullaga._id),
             );
             return anyForOrg?._id ?? null;
           })()
@@ -623,7 +624,7 @@ export default function BarilgiinTokhirgoo() {
 
   const barilga = useMemo(() => {
     return baiguullaga?.barilguud?.find(
-      (b: any) => String(b._id) === String(activeBuildingId)
+      (b: any) => String(b._id) === String(activeBuildingId),
     );
   }, [baiguullaga?.barilguud, activeBuildingId]);
 
@@ -633,16 +634,16 @@ export default function BarilgiinTokhirgoo() {
     return baiguullaga!.barilguud!.filter(
       (b: any) =>
         !b?.baiguullagiinId ||
-        String(b.baiguullagiinId) === String(baiguullaga?._id)
+        String(b.baiguullagiinId) === String(baiguullaga?._id),
     );
-  }, [baiguullaga?.barilguud, baiguullaga?._id]);
+  }, [baiguullaga]);
 
   useEffect(() => {
     const list = Array.isArray(baiguullaga?.barilguud)
       ? baiguullaga!.barilguud!.filter(
           (b: any) =>
             !b?.baiguullagiinId ||
-            String(b.baiguullagiinId) === String(baiguullaga!._id)
+            String(b.baiguullagiinId) === String(baiguullaga!._id),
         )
       : [];
 
@@ -768,7 +769,7 @@ export default function BarilgiinTokhirgoo() {
               ner: horoo,
               kod: horoo,
             })) || [],
-        }))
+        })),
       ),
     });
 
@@ -856,12 +857,12 @@ export default function BarilgiinTokhirgoo() {
     const derivedSohNer = selectedBarilga?.tokhirgoo?.sohNer
       ? String(selectedBarilga.tokhirgoo.sohNer)
       : firstBuilding?.tokhirgoo?.sohNer
-      ? String(firstBuilding.tokhirgoo.sohNer)
-      : (baiguullaga?.tokhirgoo as any)?.sohNer
-      ? String((baiguullaga!.tokhirgoo as any).sohNer)
-      : baiguullaga?.ner
-      ? String(baiguullaga.ner)
-      : "";
+        ? String(firstBuilding.tokhirgoo.sohNer)
+        : (baiguullaga?.tokhirgoo as any)?.sohNer
+          ? String((baiguullaga!.tokhirgoo as any).sohNer)
+          : baiguullaga?.ner
+            ? String(baiguullaga.ner)
+            : "";
 
     // Find duureg and horoo matches from hardcoded data
     let duuregMatch: Duureg | undefined;
@@ -1065,7 +1066,7 @@ export default function BarilgiinTokhirgoo() {
     if (!isEditBuildingModalOpen || !editedBuildingId) return;
     if (hasUserEdited) return; // Don't reset if user has started editing
     const building = baiguullaga?.barilguud?.find(
-      (b: any) => String(b._id) === String(editedBuildingId)
+      (b: any) => String(b._id) === String(editedBuildingId),
     );
     if (building) {
       setEditBarilgaNer(building.ner || "");
@@ -1088,7 +1089,7 @@ export default function BarilgiinTokhirgoo() {
     if (!token) return openErrorOverlay("Нэвтрэх шаардлагатай");
     if (!baiguullaga?._id) return openErrorOverlay("Байгууллага олдсонгүй");
     const building = baiguullaga?.barilguud?.find(
-      (b: any) => String(b._id) === String(id)
+      (b: any) => String(b._id) === String(id),
     );
     setBuildingToDelete({ id: String(id), ner: building?.ner || "" });
     setDeleteModalOpen(true);
@@ -1114,7 +1115,7 @@ export default function BarilgiinTokhirgoo() {
 
     try {
       const updatedBarilguud = (baiguullaga?.barilguud || []).filter(
-        (b: any) => String(b._id) !== String(id)
+        (b: any) => String(b._id) !== String(id),
       );
       const payload = {
         ...(baiguullaga as any),
@@ -1134,7 +1135,7 @@ export default function BarilgiinTokhirgoo() {
         const first = (updatedBarilguud || []).find(
           (b: any) =>
             !b?.baiguullagiinId ||
-            String(b.baiguullagiinId) === String(baiguullaga._id)
+            String(b.baiguullagiinId) === String(baiguullaga._id),
         );
         setSelectedBuildingId(first?._id ? String(first._id) : null);
       }
@@ -1181,26 +1182,38 @@ export default function BarilgiinTokhirgoo() {
         },
       };
 
-      const updatedBarilguud = [...(baiguullaga?.barilguud || []), newBuilding];
+      // Preserve existing buildings with their _id and add the new building
+      const existingBuildings = (baiguullaga?.barilguud || []).map(
+        (b: any) => ({
+          ...b,
+          _id: b._id, // Ensure _id is preserved
+        }),
+      );
+      const updatedBarilguud = [...existingBuildings, newBuilding];
 
       const payload = {
-        ...(baiguullaga as any),
         _id: baiguullaga._id,
-        baiguullagiinId: String(baiguullaga._id),
         barilguud: updatedBarilguud,
-      } as any;
+      };
 
-      const res = await updateMethod("baiguullaga", token, payload);
+      // Use POST to add new building
+      const res = await createMethod(
+        `baiguullaga/${baiguullaga._id}`,
+        token,
+        payload,
+      );
 
-      if (res?.data) {
-        await baiguullagaMutate(res.data, false);
-        // set the selected building to the newly created one if backend returned an id
+      // Response has data nested under 'result' property
+      const serverData = res?.data?.result || res?.data;
+      if (serverData) {
+        await baiguullagaMutate(serverData, false);
+      
         try {
-          const server = res.data as any;
-          const created = (server.barilguud || []).find(
+          // Find the newly created building by name (baiguullagiinId may not be stored in building object)
+          const existingIds = new Set(existingBuildings.map((b: any) => String(b._id)));
+          const created = (serverData.barilguud || []).find(
             (b: any) =>
-              b.ner === name &&
-              String(b.baiguullagiinId) === String(baiguullaga._id)
+              b.ner === name && !existingIds.has(String(b._id)),
           );
           if (created && created._id)
             setSelectedBuildingId(String(created._id));
@@ -1414,21 +1427,21 @@ export default function BarilgiinTokhirgoo() {
           const serverUtas = Array.isArray(serverTok?.utas)
             ? serverTok.utas
             : Array.isArray(server?.utas)
-            ? server.utas
-            : serverTok?.utas
-            ? [serverTok.utas]
-            : server?.utas
-            ? [server.utas]
-            : [];
+              ? server.utas
+              : serverTok?.utas
+                ? [serverTok.utas]
+                : server?.utas
+                  ? [server.utas]
+                  : [];
           const serverMail = Array.isArray(serverTok?.mail)
             ? serverTok.mail
             : Array.isArray(server?.mail)
-            ? server.mail
-            : serverTok?.mail
-            ? [serverTok.mail]
-            : server?.mail
-            ? [server.mail]
-            : [];
+              ? server.mail
+              : serverTok?.mail
+                ? [serverTok.mail]
+                : server?.mail
+                  ? [server.mail]
+                  : [];
           setSukhDugaar(String(serverUtas[0] || ""));
           setEmail(String(serverMail[0] || ""));
           // update displayed SÖH name if server provided one
@@ -1439,7 +1452,7 @@ export default function BarilgiinTokhirgoo() {
             sukhDugaar: String(serverUtas[0] || ""),
             email: String(serverMail[0] || ""),
             sohNer: String(
-              serverTok?.sohNer || server.ner || prev.sohNer || ""
+              serverTok?.sohNer || server.ner || prev.sohNer || "",
             ),
           }));
         } catch (e) {
@@ -1474,7 +1487,7 @@ export default function BarilgiinTokhirgoo() {
   };
 
   const selectedDistrict = tatvariinAlbaData?.jagsaalt.find(
-    (d) => d._id === state.selectedDuureg
+    (d) => d._id === state.selectedDuureg,
   );
 
   // Derived dirty flag for UI (disable Save when no changes)
@@ -1651,7 +1664,7 @@ export default function BarilgiinTokhirgoo() {
                 districts[city].map((district) => ({
                   value: district,
                   label: district,
-                }))
+                })),
               )}
               placeholder="Сонгоно уу"
               className="w-full"

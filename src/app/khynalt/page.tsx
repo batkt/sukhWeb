@@ -39,7 +39,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 type Dataset = {
@@ -56,7 +56,7 @@ type Dataset = {
 
 export default function Khynalt() {
   const { token, ajiltan, barilgiinId, baiguullaga } = useAuth();
-  const { selectedBuildingId } = useBuilding();
+  const { selectedBuildingId, isInitialized } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -75,8 +75,11 @@ export default function Khynalt() {
 
   useEffect(() => setMounted(true), []);
 
+  // Wait for building context to be initialized before fetching
+  const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
+
   const { data: buildingConfig } = useSWR(
-    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId
+    shouldFetch && effectiveBarilgiinId
       ? ["/baiguullaga/", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]
       : null,
     async ([url, tkn, bId, barId]): Promise<any> => {
@@ -85,26 +88,26 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { orshinSuugchGaralt, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
-      token || "",
-      ajiltan?.baiguullagiinId || "",
+      shouldFetch ? token || "" : "",
+      shouldFetch ? ajiltan?.baiguullagiinId || "" : "",
       {},
-      effectiveBarilgiinId
+      effectiveBarilgiinId,
     );
   const { gereeGaralt, setGereeKhuudaslalt } = useGereeJagsaalt(
     {},
-    token || undefined,
-    ajiltan?.baiguullagiinId,
-    effectiveBarilgiinId
+    shouldFetch ? token || undefined : undefined,
+    shouldFetch ? ajiltan?.baiguullagiinId : undefined,
+    effectiveBarilgiinId,
   );
   const { ajilchdiinGaralt, setAjiltniiKhuudaslalt } = useAjiltniiJagsaalt(
-    token || "",
-    ajiltan?.baiguullagiinId || "",
-    effectiveBarilgiinId
+    shouldFetch ? token || "" : "",
+    shouldFetch ? ajiltan?.baiguullagiinId || "" : "",
+    effectiveBarilgiinId,
   );
 
   useEffect(() => {
@@ -127,12 +130,12 @@ export default function Khynalt() {
 
   const residents = useMemo(
     () => orshinSuugchGaralt?.jagsaalt || [],
-    [orshinSuugchGaralt]
+    [orshinSuugchGaralt],
   );
   const contracts = useMemo(() => gereeGaralt?.jagsaalt || [], [gereeGaralt]);
   const employees = useMemo(
     () => ajilchdiinGaralt?.jagsaalt || [],
-    [ajilchdiinGaralt]
+    [ajilchdiinGaralt],
   );
 
   const totalResidents =
@@ -164,7 +167,7 @@ export default function Khynalt() {
     return {
       activeContracts: active,
       expiringSoonPercent: Math.round(
-        (expiringSoon / Math.max(1, contracts.length)) * 100
+        (expiringSoon / Math.max(1, contracts.length)) * 100,
       ),
     };
   }, [contracts]);
@@ -190,7 +193,7 @@ export default function Khynalt() {
     const e = new Date(end);
     const dayDiff = Math.max(
       1,
-      Math.ceil((e.getTime() - s.getTime()) / 86400000)
+      Math.ceil((e.getTime() - s.getTime()) / 86400000),
     );
     const groupBy: "day" | "month" = dayDiff > 45 ? "month" : "day";
 
@@ -245,7 +248,7 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: overdueData } = useSWR(
@@ -262,7 +265,7 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: cancelledData } = useSWR(
@@ -279,7 +282,7 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
@@ -328,13 +331,16 @@ export default function Khynalt() {
     const list: any[] = Array.isArray(incomeData?.jagsaalt)
       ? incomeData.jagsaalt
       : Array.isArray(incomeData)
-      ? incomeData
-      : [];
+        ? incomeData
+        : [];
 
     const residentById = new Map<string, any>();
     residents.forEach((r: any) => residentById.set(String(r._id || ""), r));
 
-    const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+    const norm = (v: any) =>
+      String(v ?? "")
+        .trim()
+        .toLowerCase();
     const resIndex = new Map<string, string>();
     const makeResKeysLocal = (r: any): string[] => {
       const id = String(r?._id || "");
@@ -528,7 +534,7 @@ export default function Khynalt() {
   });
   const filteredContracts = contracts.filter((c: any) => {
     const timeMatch = _inRange(
-      c?.createdAt || c?.ognoo || c?.date || c?.duusakhOgnoo
+      c?.createdAt || c?.ognoo || c?.date || c?.duusakhOgnoo,
     );
     const buildingField = c?.barilgiinId ?? c?.barilga;
     const buildingMatch =
@@ -545,7 +551,7 @@ export default function Khynalt() {
     if (!want) return true; // if no building selected, show all
     // direct fields
     const direct = toStr(
-      e?.barilgiinId ?? e?.barilga ?? e?.barilgaId ?? e?.branchId
+      e?.barilgiinId ?? e?.barilga ?? e?.barilgaId ?? e?.branchId,
     );
     if (direct && direct === want) return true;
     // arrays (assignments)
@@ -615,7 +621,7 @@ export default function Khynalt() {
       if (end && end >= now && end <= in30Days) expiringSoon += 1;
     });
     return Math.round(
-      (expiringSoon / Math.max(1, filteredContracts.length)) * 100
+      (expiringSoon / Math.max(1, filteredContracts.length)) * 100,
     );
   })();
 
@@ -686,14 +692,14 @@ export default function Khynalt() {
   const totalIncome = incomeSeries.paid.reduce((sum, val) => sum + val, 0);
   const totalExpenses = expenseSeries.expenses.reduce(
     (sum, val) => sum + val,
-    0
+    0,
   );
   const totalProfit = profitSeries.profits.reduce((sum, val) => sum + val, 0);
   const totalTransactions =
     incomeSeries.paid.length > 0
       ? incomeSeries.paid.reduce(
           (sum, val, i) => sum + val + (incomeSeries.unpaid[i] || 0),
-          0
+          0,
         )
       : 0;
 

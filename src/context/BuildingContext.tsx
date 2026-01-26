@@ -6,10 +6,11 @@ import { useAuth } from "@/lib/useAuth";
 interface BuildingContextType {
   selectedBuildingId: string | null;
   setSelectedBuildingId: (id: string | null) => void;
+  isInitialized: boolean;
 }
 
 const BuildingContext = createContext<BuildingContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const BuildingProvider = ({
@@ -17,44 +18,69 @@ export const BuildingProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
-  const { token, ajiltan, baiguullaga, ajiltanMutate } = useAuth();
+  const { token, ajiltan, baiguullaga, ajiltanMutate, barilgiinId } = useAuth();
   const hasInitializedRef = useRef(false);
-  
+
   // Initialize from localStorage on mount
   const [selectedBuildingId, setSelectedBuildingIdState] = useState<
     string | null
   >(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Sync with localStorage on mount and when ajiltan/baiguullaga loads
   // IMPORTANT: This effect should only run once on mount, not when selectedBuildingId changes
   useEffect(() => {
     // Only initialize once
     if (hasInitializedRef.current) return;
-    
-    // Priority 1: ajiltan's defaultBarilga (from real-time API)
+
+    // Priority 1: barilgiinId from cookies (already set during login)
+    if (barilgiinId) {
+      setSelectedBuildingIdState(barilgiinId);
+      hasInitializedRef.current = true;
+      setIsInitialized(true);
+      return;
+    }
+
+    // Priority 2: ajiltan's defaultBarilga (from real-time API)
     if (ajiltan?.defaultBarilga) {
       setSelectedBuildingIdState(ajiltan.defaultBarilga);
       hasInitializedRef.current = true;
+      setIsInitialized(true);
       return;
     }
-    
-    // Priority 2: first building in organization list
+
+    // Priority 3: first building in organization list
     if (baiguullaga?.barilguud && baiguullaga.barilguud.length > 0) {
       const firstBuilding = baiguullaga.barilguud[0];
       const bid = String(firstBuilding?._id || "");
       if (bid) {
         setSelectedBuildingIdState(bid);
         hasInitializedRef.current = true;
+        setIsInitialized(true);
+        return;
       }
     }
-  }, [ajiltan?.defaultBarilga, baiguullaga?.barilguud]);
+
+    // Fallback: If we have ajiltan loaded (auth complete) but no buildings,
+    // still mark as initialized so pages don't wait forever
+    if (ajiltan && baiguullaga) {
+      hasInitializedRef.current = true;
+      setIsInitialized(true);
+    }
+  }, [
+    ajiltan,
+    ajiltan?.defaultBarilga,
+    baiguullaga,
+    baiguullaga?.barilguud,
+    barilgiinId,
+  ]);
 
   const setSelectedBuildingId = (id: string | null) => {
     if (id === selectedBuildingId) return;
-    
+
     setSelectedBuildingIdState(id);
     hasInitializedRef.current = true;
-    
+
     if (id) {
       // Update in-memory ajiltan so UI stays in sync.
       // The user requested real-time API sync without localStorage.
@@ -72,7 +98,7 @@ export const BuildingProvider = ({
 
   return (
     <BuildingContext.Provider
-      value={{ selectedBuildingId, setSelectedBuildingId }}
+      value={{ selectedBuildingId, setSelectedBuildingId, isInitialized }}
     >
       {children}
     </BuildingContext.Provider>

@@ -265,7 +265,7 @@ const InvoiceModal = ({
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
     const invSum = invRows.reduce(
       (s: number, r: any) => s + (Number(r?.tariff) > 0 ? Number(r.tariff) : 0),
-      0
+      0,
     );
     return invSum > 0;
   }, [invRows]);
@@ -286,8 +286,8 @@ const InvoiceModal = ({
         const list = Array.isArray(data?.jagsaalt)
           ? data.jagsaalt
           : Array.isArray(data)
-          ? data
-          : [];
+            ? data
+            : [];
         // Filter by resident to get the correct invoice
         // Match by ovog, ner, and utas (phone number)
         const residentInvoices = list.filter((item: any) => {
@@ -325,13 +325,13 @@ const InvoiceModal = ({
         const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
           ? latest.medeelel.zardluud
           : Array.isArray(latest?.zardluud)
-          ? latest.zardluud
-          : [];
+            ? latest.zardluud
+            : [];
         const guilgeenuudRows = Array.isArray(latest?.medeelel?.guilgeenuud)
           ? latest.medeelel.guilgeenuud
           : Array.isArray(latest?.guilgeenuud)
-          ? latest.guilgeenuud
-          : [];
+            ? latest.guilgeenuud
+            : [];
         const rows = [...zardluudRows, ...guilgeenuudRows];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
@@ -353,7 +353,7 @@ const InvoiceModal = ({
           ner:
             z.turul === "avlaga"
               ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
-                  z.ognoo
+                  z.ognoo,
                 )}`
               : z.ner || z.name || "",
           tariff: Number(z?.tariff) || 0,
@@ -364,7 +364,7 @@ const InvoiceModal = ({
         });
         setInvRows(rows.map(norm));
         const t = Number(
-          latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0
+          latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
         );
         setInvTotal(Number.isFinite(t) ? t : null);
 
@@ -376,7 +376,7 @@ const InvoiceModal = ({
               params: {
                 barilgiinId: selectedBuildingId || barilgiinId || null,
               },
-            }
+            },
           );
           if (cronResp.data?.success && Array.isArray(cronResp.data?.data)) {
             setCronData(cronResp.data.data[0] || null);
@@ -480,7 +480,7 @@ const InvoiceModal = ({
                 .toLowerCase() === "лифт" ||
               String(r.turul || "")
                 .trim()
-                .toLowerCase() === "лифт"
+                .toLowerCase() === "лифт",
           )
         : [];
       const pickAmount = (obj: any) => {
@@ -552,7 +552,7 @@ const InvoiceModal = ({
       .map((z) => (z as any)?.dun)
       .filter(
         (v) =>
-          v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v))
+          v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v)),
       )
       .map((v) => Number(v));
 
@@ -632,7 +632,7 @@ const InvoiceModal = ({
                     contractData?.ognoo ||
                       nekhemjlekhData?.ognoo ||
                       latestInvoice?.ognoo ||
-                      ""
+                      "",
                   ) || "-"}
                 </p>
               </div>
@@ -672,12 +672,12 @@ const InvoiceModal = ({
                     <span className="font-medium">Имэйл:</span>{" "}
                     {(() => {
                       const mailFromTokhirgoo = Array.isArray(
-                        (baiguullaga as any)?.tokhirgoo?.mail
+                        (baiguullaga as any)?.tokhirgoo?.mail,
                       )
                         ? (baiguullaga as any).tokhirgoo.mail[0]
                         : undefined;
                       const mailFromOrg = Array.isArray(
-                        (baiguullaga as any)?.mail
+                        (baiguullaga as any)?.mail,
                       )
                         ? (baiguullaga as any).mail[0]
                         : undefined;
@@ -691,12 +691,12 @@ const InvoiceModal = ({
                     <span className="font-medium">Утас:</span>{" "}
                     {(() => {
                       const utasFromTokhirgoo = Array.isArray(
-                        (baiguullaga as any)?.tokhirgoo?.utas
+                        (baiguullaga as any)?.tokhirgoo?.utas,
                       )
                         ? (baiguullaga as any).tokhirgoo.utas[0]
                         : undefined;
                       const utasFromOrg = Array.isArray(
-                        (baiguullaga as any)?.utas
+                        (baiguullaga as any)?.utas,
                       )
                         ? (baiguullaga as any).utas[0]
                         : undefined;
@@ -720,7 +720,7 @@ const InvoiceModal = ({
                       contractData?.ognoo ||
                         nekhemjlekhData?.ognoo ||
                         latestInvoice?.ognoo ||
-                        currentDate
+                        currentDate,
                     )}
                   </p>
 
@@ -764,7 +764,7 @@ const InvoiceModal = ({
                   </p>
                 </div>
               </div>
-              {/* Initial balance / note (if provided on invoice medeelel) */}
+
               <div className="mt-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -774,11 +774,11 @@ const InvoiceModal = ({
                     <span className="font-medium">
                       {contractData?.medeelel?.ekhniiUldegdel != null
                         ? formatCurrency(
-                            Number(contractData.medeelel.ekhniiUldegdel)
+                            Number(contractData.medeelel.ekhniiUldegdel),
                           )
                         : contractData?.ekhniiUldegdel != null
-                        ? formatCurrency(Number(contractData.ekhniiUldegdel))
-                        : "-"}
+                          ? formatCurrency(Number(contractData.ekhniiUldegdel))
+                          : "-"}
                     </span>
                   </div>
                 </div>
@@ -862,9 +862,9 @@ const InvoiceModal = ({
                           paymentStatusLabel === "Төлсөн"
                             ? "badge-paid"
                             : paymentStatusLabel === "Төлөөгүй" ||
-                              paymentStatusLabel === "Хугацаа хэтэрсэн"
-                            ? "badge-unpaid"
-                            : "badge-unknown"
+                                paymentStatusLabel === "Хугацаа хэтэрсэн"
+                              ? "badge-unpaid"
+                              : "badge-unknown"
                         }`}
                       >
                         {paymentStatusLabel}
@@ -919,7 +919,7 @@ export default function InvoicingZardluud() {
   const [selectedDavkhar, setSelectedDavkhar] = useState("");
   // Default to the currently selected building ID from context
   const [selectedBarilga, setSelectedBarilga] = useState<string>(() =>
-    String(selectedBuildingId || barilgiinId || "")
+    String(selectedBuildingId || barilgiinId || ""),
   );
   const [selectedTurul, setSelectedTurul] = useState("");
   const [selectedTuluv, setSelectedTuluv] = useState("");
@@ -954,7 +954,7 @@ export default function InvoicingZardluud() {
     if (baiguullaga && baiguullaga.barilguud) {
       const effectiveBuildingId = selectedBuildingId || barilgiinId;
       const building = baiguullaga.barilguud.find(
-        (b: any) => b._id === effectiveBuildingId
+        (b: any) => b._id === effectiveBuildingId,
       );
       if (
         building &&
@@ -1034,8 +1034,8 @@ export default function InvoicingZardluud() {
         const list = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
-          ? resp.data
-          : [];
+            ? resp.data
+            : [];
         setNekhemjlekhList(list);
       } catch (error) {
         openErrorOverlay(getErrorMessage(error));
@@ -1061,7 +1061,7 @@ export default function InvoicingZardluud() {
       // Get existing or create new resident entry
       const existing = residentMap.get(key);
       const invoiceDate = new Date(
-        invoice?.createdAt || invoice?.ognoo || 0
+        invoice?.createdAt || invoice?.ognoo || 0,
       ).getTime();
 
       if (
@@ -1108,10 +1108,10 @@ export default function InvoicingZardluud() {
       }`;
       const label = getPaymentStatusLabel(invoice);
       const ts = new Date(
-        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
       ).getTime();
       const dateStr = new Date(
-        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0
+        invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
       )
         .toISOString()
         .split("T")[0];
@@ -1155,14 +1155,14 @@ export default function InvoicingZardluud() {
     const orgItems = items.filter(
       (r: any) =>
         String(r?.baiguullagiinId || "") ===
-        String(ajiltan?.baiguullagiinId || "")
+        String(ajiltan?.baiguullagiinId || ""),
     );
     let branchItems = orgItems;
     if (effectiveBarilgiinId) {
       branchItems = orgItems.filter(
         (r: any) =>
           r?.barilgiinId == null ||
-          String(r.barilgiinId) === String(effectiveBarilgiinId)
+          String(r.barilgiinId) === String(effectiveBarilgiinId),
       );
       // If branch filter yields nothing, fall back to org-only
       if (branchItems.length === 0) {
@@ -1191,7 +1191,7 @@ export default function InvoicingZardluud() {
       items = items.filter((r: any) => r.davkhar === selectedDavkhar);
     if (selectedBarilga)
       items = items.filter(
-        (r: any) => String(r.barilgiinId || "") === String(selectedBarilga)
+        (r: any) => String(r.barilgiinId || "") === String(selectedBarilga),
       );
     if (selectedTurul)
       items = items.filter((r: any) => r.turul === selectedTurul);
@@ -1248,7 +1248,7 @@ export default function InvoicingZardluud() {
         const defaultId = selectedBuildingId || barilgiinId;
         if (defaultId) {
           const buildingExists = buildings.some(
-            (b) => b._id === String(defaultId)
+            (b) => b._id === String(defaultId),
           );
           if (buildingExists) {
             setSelectedBarilga(String(defaultId));
@@ -1286,7 +1286,7 @@ export default function InvoicingZardluud() {
 
   const handleSelectExpense = (id: string) => {
     setSelectedExpenses((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -1318,8 +1318,8 @@ export default function InvoicingZardluud() {
       let list = Array.isArray(data?.jagsaalt)
         ? data.jagsaalt
         : Array.isArray(data)
-        ? data
-        : [];
+          ? data
+          : [];
 
       // Filter by resident to show only their invoices
       const residentInvoices = list.filter((item: any) => {
@@ -1366,20 +1366,20 @@ export default function InvoicingZardluud() {
         const toStr = (v: any) => (v == null ? "" : String(v));
         const branchMatches = barilgiinId
           ? list.filter(
-              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId)
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
             )
           : [];
         const pickLatest = (arr: any[]) =>
           [...arr].sort(
             (a, b) =>
               new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
-              new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+              new Date(a?.updatedAt || a?.createdAt || 0).getTime(),
           )[0];
         let chosen =
           branchMatches.length > 0 ? pickLatest(branchMatches) : null;
         if (!chosen) {
           const orgDefaults = list.filter(
-            (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
+            (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === "",
           );
           chosen =
             orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
@@ -1458,7 +1458,7 @@ export default function InvoicingZardluud() {
                 // This would need actual invoice data, for now using placeholder
                 return sum + (r?.totalAmount || 0);
               },
-              0
+              0,
             );
 
             const stats = [
@@ -1491,8 +1491,8 @@ export default function InvoicingZardluud() {
                   {stat.title === "Нийт дүн"
                     ? stat.value
                     : typeof stat.value === "number"
-                    ? stat.value
-                    : String(stat.value)}
+                      ? stat.value
+                      : String(stat.value)}
                 </div>
                 <div className="text-sm text-gray-600 font-medium leading-tight">
                   {stat.title}
@@ -1751,9 +1751,9 @@ export default function InvoicingZardluud() {
                               label === "Төлсөн"
                                 ? "badge-paid"
                                 : label === "Төлөөгүй" ||
-                                  label === "Хугацаа хэтэрсэн"
-                                ? "badge-unpaid"
-                                : "badge-neutral";
+                                    label === "Хугацаа хэтэрсэн"
+                                  ? "badge-unpaid"
+                                  : "badge-neutral";
                             return (
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}
@@ -1879,41 +1879,40 @@ export default function InvoicingZardluud() {
                               item.invoiceNo ??
                               "-";
                             const zardluudRows = Array.isArray(
-                              item.medeelel?.zardluud
+                              item.medeelel?.zardluud,
                             )
                               ? item.medeelel.zardluud
                               : Array.isArray(item.zardluud)
-                              ? item.zardluud
-                              : [];
+                                ? item.zardluud
+                                : [];
                             const guilgeenuudRows = Array.isArray(
-                              item.medeelel?.guilgeenuud
+                              item.medeelel?.guilgeenuud,
                             )
                               ? item.medeelel.guilgeenuud
                               : Array.isArray(item.guilgeenuud)
-                              ? item.guilgeenuud
-                              : [];
+                                ? item.guilgeenuud
+                                : [];
                             const rows = [...zardluudRows, ...guilgeenuudRows];
 
-                            // Calculate total from expense items for accuracy
-                            const total =
-                              rows.reduce((sum: number, z: any) => {
-                                const n = (v: any) => {
-                                  const num = Number(v);
-                                  return Number.isNaN(num) ? null : num;
-                                };
-                                const dun = n(z?.dun);
-                                if (dun !== null && dun > 0) return sum + dun;
-                                const td = n(z?.tulukhDun);
-                                if (td !== null && td > 0) return sum + td;
-                                const tariff = n(z?.tariff);
-                                return sum + (tariff ?? 0);
-                              }, 0) ||
-                              Number(
-                                item.niitTulbur ??
-                                  item.niitDun ??
-                                  item.total ??
-                                  0
+                            const total = (() => {
+                              const ekhniiUldegdel = Number(
+                                item?.medeelel?.ekhniiUldegdel ??
+                                  item?.ekhniiUldegdel ??
+                                  0,
                               );
+
+                              const tariffSum = rows.reduce(
+                                (sum: number, z: any) => {
+                                  const tariff = Number(z?.tariff);
+                                  return (
+                                    sum + (Number.isNaN(tariff) ? 0 : tariff)
+                                  );
+                                },
+                                0,
+                              );
+
+                              return ekhniiUldegdel + tariffSum;
+                            })();
 
                             return (
                               <div
@@ -1931,7 +1930,7 @@ export default function InvoicingZardluud() {
                                       <span className="font-medium">
                                         {dateStr
                                           ? new Date(
-                                              dateStr
+                                              dateStr,
                                             ).toLocaleDateString("mn-MN")
                                           : "-"}
                                       </span>
@@ -1972,14 +1971,14 @@ export default function InvoicingZardluud() {
                                         {item?.medeelel?.ekhniiUldegdel != null
                                           ? formatCurrency(
                                               Number(
-                                                item.medeelel.ekhniiUldegdel
-                                              )
+                                                item.medeelel.ekhniiUldegdel,
+                                              ),
                                             )
                                           : item?.ekhniiUldegdel != null
-                                          ? formatCurrency(
-                                              Number(item.ekhniiUldegdel)
-                                            )
-                                          : "-"}
+                                            ? formatCurrency(
+                                                Number(item.ekhniiUldegdel),
+                                              )
+                                            : "-"}
                                       </span>
                                     </div>
                                     <div>
@@ -2053,7 +2052,7 @@ export default function InvoicingZardluud() {
                           disabled={historyIndex >= historyItems.length - 1}
                           onClick={() =>
                             setHistoryIndex((i) =>
-                              Math.min(historyItems.length - 1, i + 1)
+                              Math.min(historyItems.length - 1, i + 1),
                             )
                           }
                           icon={<ChevronRight className="w-4 h-4" />}

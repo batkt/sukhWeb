@@ -21,6 +21,7 @@ import {
   Plus,
   ChevronUp,
   ChevronDown,
+  Banknote,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -135,6 +136,14 @@ export default function Geree() {
   const [avlagaValue, setAvlagaValue] = useState<string>("");
   const [avlagaDescription, setAvlagaDescription] = useState<string>("");
   const [isSavingAvlaga, setIsSavingAvlaga] = useState(false);
+  // Payment modal state for marking invoices as paid
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentResident, setPaymentResident] = useState<any | null>(null);
+  const [paymentIncludeEkhniiUldegdel, setPaymentIncludeEkhniiUldegdel] =
+    useState(false);
+  const [paymentTailbar, setPaymentTailbar] = useState("");
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const paymentRef = useRef<HTMLDivElement | null>(null);
   // Container refs for modal panels to scope Enter key primary lookup
   const contractRef = useRef<HTMLDivElement | null>(null);
   const residentRef = useRef<HTMLDivElement | null>(null);
@@ -957,6 +966,11 @@ export default function Geree() {
     isOpen: showTemplatesModal,
     onClose: () => setShowTemplatesModal(false),
     container: templatesRef.current,
+  });
+  useModalHotkeys({
+    isOpen: showPaymentModal,
+    onClose: () => setShowPaymentModal(false),
+    container: paymentRef.current,
   });
 
   useEffect(() => {
@@ -2590,6 +2604,57 @@ export default function Geree() {
     setShowResidentModal(true);
   };
 
+  // Handle opening payment modal for a resident
+  const handleOpenPaymentModal = (resident: any) => {
+    setPaymentResident(resident);
+    setPaymentIncludeEkhniiUldegdel(false);
+    setPaymentTailbar("");
+    setShowPaymentModal(true);
+  };
+
+  // Handle marking invoices as paid
+  const handleMarkAsPaid = async () => {
+    if (!token || !paymentResident) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    const residentId = paymentResident._id || paymentResident.id;
+    if (!residentId) {
+      openErrorOverlay("Оршин суугчийн ID олдсонгүй");
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      const response = await uilchilgee(token).post(
+        "/nekhemjlekhiinTuukh/markInvoicesAsPaid",
+        {
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          orshinSuugchId: residentId,
+          markEkhniiUldegdel: paymentIncludeEkhniiUldegdel,
+          tailbar: paymentTailbar || undefined,
+        },
+      );
+
+      if (response.data?.success) {
+        openSuccessOverlay(
+          `${response.data.updatedCount || 0} нэхэмжлэх амжилттай төлөгдлөө`,
+        );
+        setShowPaymentModal(false);
+        setPaymentResident(null);
+        // Refresh the payment status
+        await orshinSuugchJagsaaltMutate();
+      } else {
+        openErrorOverlay(response.data?.error || "Гүйлгээ хийхэд алдаа гарлаа");
+      }
+    } catch (err) {
+      openErrorOverlay(getErrorMessage(err));
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
   const handleDeleteResident = async (p: any) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -3286,18 +3351,6 @@ export default function Geree() {
                   Гэрээ байгуулах
                 </span>
               </button> */}
-              <button
-                id="geree-templates-btn"
-                onClick={() => setShowList2Modal(true)}
-                className="btn-minimal"
-                aria-label="Гэрээний загварууд"
-                title="Гэрээний загварууд"
-              >
-                <LayoutTemplate className="w-5 h-5" />
-                <span className="hidden sm:inline text-xs ml-1">
-                  Загвар үүсгэх
-                </span>
-              </button>
               {ajiltan?.erkh === "Admin" && (
                 <button
                   id="geree-avlaga-btn"
@@ -3312,6 +3365,19 @@ export default function Geree() {
                   Авлага
                 </button>
               )}
+              <button
+                id="geree-templates-btn"
+                onClick={() => setShowList2Modal(true)}
+                className="btn-minimal"
+                aria-label="Гэрээний загварууд"
+                title="Гэрээний загварууд"
+              >
+                <LayoutTemplate className="w-5 h-5" />
+                <span className="hidden sm:inline text-xs ml-1">
+                  Загвар үүсгэх
+                </span>
+              </button>
+
               {/* <button
                 id="geree-download-template-btn"
                 onClick={() => setShowTemplatesModal(true)}
@@ -4510,6 +4576,15 @@ export default function Geree() {
                           </td>
                           <td className="p-1 whitespace-nowrap">
                             <div className="flex gap-2 justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPaymentModal(p)}
+                                className="p-1 rounded-2xl action-view hover-surface transition-colors"
+                                title="Гүйлгээ хийх"
+                                id="resident-payment-btn"
+                              >
+                                <Banknote className="w-6 h-6 text-green-600" />
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleEditResident(p)}
@@ -6376,6 +6451,149 @@ export default function Geree() {
                         data-modal-primary
                       >
                         Устгах
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </ModalPortal>
+          </AnimatePresence>
+        )}
+
+        {showPaymentModal && (
+          <AnimatePresence>
+            <ModalPortal>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              >
+                <div
+                  className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                  onClick={() => setShowPaymentModal(false)}
+                />
+                <motion.div
+                  ref={paymentRef}
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative modal-surface w-[280px] min-h-[320px] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+                >
+                  <div className="relative px-5 pt-5 pb-4">
+                    <div className="absolute top-3 right-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentModal(false)}
+                        className="p-1.5 rounded-full hover:bg-slate-100 transition-colors"
+                      >
+                        <X className="w-4 h-4 text-slate-400" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <h3 className="text-base font-semibold text-slate-800">
+                          Гүйлгээ хийх
+                        </h3>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-4">
+                    <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-3 border border-slate-200/60">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-slate-700 truncate">
+                            {paymentResident?.ovog || ""}{" "}
+                            {paymentResident?.ner || ""}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Тоот: {paymentResident?.toot || "-"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                
+                  <div className="flex-1 px-5 space-y-4">
+                    
+                    <div className="flex items-center justify-between py-3 px-3  rounded-full border  border-slate-200/50">
+                      <span className="text-sm text-slate-700 font-medium">
+                        Эхний үлдэгдэл оруулах
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={paymentIncludeEkhniiUldegdel}
+                          onChange={(e) =>
+                            setPaymentIncludeEkhniiUldegdel(e.target.checked)
+                          }
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-slate-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:shadow-sm after:border-slate-200 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+ 
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-slate-600">
+                        Тайлбар
+                      </label>
+                      <textarea
+                        value={paymentTailbar}
+                        onChange={(e) => setPaymentTailbar(e.target.value)}
+                        placeholder="Нэмэлт тайлбар оруулах..."
+                        rows={3}
+                        className="rounded-2xl w-full px-3 py-2.5 border border-slate-200  text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400/50 focus:border-emerald-400 transition-all resize-none bg-white/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-4 mt-auto border-t border-slate-200/60  ">
+                    <div className="flex justify-end gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setShowPaymentModal(false)}
+                        className="px-4 py-2 text-sm font-medium bg-red-500 hover:bg-red-600 text-slate-200 hover:text-slate-800 rounded-full transition-colors disabled:opacity-50"
+                        disabled={isProcessingPayment}
+                      >
+                        Цуцлах
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleMarkAsPaid}
+                        disabled={isProcessingPayment}
+                        className="px-5 py-2 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                        data-modal-primary
+                      >
+                        {isProcessingPayment ? (
+                          <span className="flex items-center gap-2">
+                            <svg
+                              className="animate-spin h-4 w-4"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                              />
+                            </svg>
+                            Боловсруулж байна...
+                          </span>
+                        ) : (
+                          "Хадгалах"
+                        )}
                       </button>
                     </div>
                   </div>
