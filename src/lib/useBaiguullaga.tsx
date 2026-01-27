@@ -9,7 +9,11 @@ const fetcher = async (
   baiguullagiinId: string
 ): Promise<Baiguullaga> => {
   try {
-    const response = await uilchilgee(token).get(`${url}/${baiguullagiinId}`);
+    const response = await uilchilgee(token).get(`${url}/${baiguullagiinId}`, {
+      headers: {
+        "X-Org-Only": "1"
+      }
+    });
     return response.data;
   } catch (error) {
     aldaaBarigch(error as AxiosError<{ aldaa?: string }>);
