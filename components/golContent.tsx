@@ -218,23 +218,23 @@ export default function GolContent({ children }: GolContentProps) {
       submenu: [
         {
           label: "Жагсаалт",
-          path: "/zogsool/jagsaalt",
+          path: "/jagsaalt",
         },
         {
           label: "Машин бүртгэл",
-          path: "/zogsool/mashinBurtgel",
+          path: "/mashinBurtgel",
         },
         {
           label: "Камер касс",
-          path: "/zogsool/camera",
+          path: "/camera",
         },
         {
           label: "Камерын хяналт",
-          path: "/zogsool/cameraKhyanalt",
+          path: "/cameraKhyanalt",
         },
         {
           label: "Оршин суугч",
-          path: "/zogsool/orshinSuugch",
+          path: "/orshinSuugch",
         },
       ],
     },

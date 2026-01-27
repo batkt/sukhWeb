@@ -3,7 +3,16 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
-import { Search, Calendar, DollarSign, Video, VideoOff, Maximize2, Minimize2, X } from "lucide-react";
+import {
+  Search,
+  Calendar,
+  DollarSign,
+  Video,
+  VideoOff,
+  Maximize2,
+  Minimize2,
+  X,
+} from "lucide-react";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
 import useSWR from "swr";
@@ -43,7 +52,13 @@ export default function Camera() {
   const shouldFetch = !!token && !!ajiltan?.baiguullagiinId;
 
   // Socket.IO for real-time parking entries
-  const { parkingEntries, isConnected: isSocketConnected, connectionError: socketError, clearEntries: clearParkingEntries, isLoadingInitial } = useParkingSocket({
+  const {
+    parkingEntries,
+    isConnected: isSocketConnected,
+    connectionError: socketError,
+    clearEntries: clearParkingEntries,
+    isLoadingInitial,
+  } = useParkingSocket({
     baiguullagiinId: ajiltan?.baiguullagiinId,
     barilgiinId: effectiveBarilgiinId,
     token: token || undefined,
@@ -68,7 +83,7 @@ export default function Camera() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   // Extract cameras from parking configuration
@@ -76,9 +91,9 @@ export default function Camera() {
     const parkingList = Array.isArray(parkingConfigData?.jagsaalt)
       ? parkingConfigData.jagsaalt
       : Array.isArray(parkingConfigData)
-      ? parkingConfigData
-      : [];
-    
+        ? parkingConfigData
+        : [];
+
     const allCameras: Array<{
       cameraIP: string;
       cameraPort: number; // RTSP port
@@ -106,20 +121,24 @@ export default function Camera() {
               if (cam?.cameraIP) {
                 // For RTSP, use tokhirgoo.PORT if available, otherwise default to 554 (RTSP standard port)
                 // For HTTP fallback, use cameraPort or 80
-                const rtspPort = cam.tokhirgoo?.PORT 
-                  ? Number(cam.tokhirgoo.PORT) 
+                const rtspPort = cam.tokhirgoo?.PORT
+                  ? Number(cam.tokhirgoo.PORT)
                   : 554; // RTSP default port
                 const httpPort = cam.cameraPort || 80;
-                
+
                 // Extract username and password from tokhirgoo object
-                const username = cam.tokhirgoo?.USER || cam.cameraUsername || "";
-                const password = cam.tokhirgoo?.PASSWD || cam.cameraPassword || "";
-                
+                const username =
+                  cam.tokhirgoo?.USER || cam.cameraUsername || "";
+                const password =
+                  cam.tokhirgoo?.PASSWD || cam.cameraPassword || "";
+
                 allCameras.push({
                   cameraIP: cam.cameraIP,
                   cameraPort: rtspPort, // Use RTSP port for streaming
                   httpPort: httpPort, // Keep HTTP port for fallback
-                  cameraType: cam.cameraType || (gate.turul === "Орох" ? "entry" : "exit"),
+                  cameraType:
+                    cam.cameraType ||
+                    (gate.turul === "Орох" ? "entry" : "exit"),
                   cameraName: cam.cameraName || cam.cameraIP,
                   gateName: gate.ner,
                   cameraUsername: username,
@@ -140,11 +159,11 @@ export default function Camera() {
   // Separate entry and exit cameras
   const entryCameras = useMemo(
     () => cameras.filter((cam) => cam.cameraType === "entry"),
-    [cameras]
+    [cameras],
   );
   const exitCameras = useMemo(
     () => cameras.filter((cam) => cam.cameraType === "exit"),
-    [cameras]
+    [cameras],
   );
 
   // Fetch Uilchluulegch list
@@ -175,19 +194,19 @@ export default function Camera() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const transactions: Uilchluulegch[] = useMemo(() => {
     const data = transactionsData;
     if (!data) return [];
-    
+
     // Handle different response formats
     if (Array.isArray(data?.jagsaalt)) return data.jagsaalt;
     if (Array.isArray(data?.list)) return data.list;
     if (Array.isArray(data?.data)) return data.data;
     if (Array.isArray(data)) return data;
-    
+
     return [];
   }, [transactionsData]);
 
@@ -195,19 +214,25 @@ export default function Camera() {
     const total = transactions.reduce((sum, t) => sum + (t.niitDun || 0), 0);
     // Paid: tuluv !== 0 (exited/paid), Unpaid: tuluv === 0 (active/unpaid)
     const paid = transactions
-      .filter((t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined)
+      .filter(
+        (t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined,
+      )
       .reduce((sum, t) => sum + (t.niitDun || 0), 0);
     const unpaid = transactions
       .filter((t) => t.tuukh?.[0]?.tuluv === 0)
       .reduce((sum, t) => sum + (t.niitDun || 0), 0);
     const count = transactions.length;
-    const paidCount = transactions.filter((t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined).length;
+    const paidCount = transactions.filter(
+      (t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined,
+    ).length;
 
     return { total, paid, unpaid, count, paidCount };
   }, [transactions]);
 
   const totalPages = Math.ceil(
-    (transactionsData?.niitMur || transactionsData?.count || transactions.length) / pageSize
+    (transactionsData?.niitMur ||
+      transactionsData?.count ||
+      transactions.length) / pageSize,
   );
 
   function formatCurrency(n: number) {
@@ -226,7 +251,7 @@ export default function Camera() {
               </h1>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className="relative flex-1 md:w-64">
+              {/* <div className="relative flex-1 md:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
                 <input
                   type="text"
@@ -238,8 +263,8 @@ export default function Camera() {
                   }}
                   className="w-full pl-10 pr-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]"
                 />
-              </div>
-              <div className="min-w-[200px]">
+              </div> */}
+              <div className="min-w-[100px]">
                 <DatePickerInput
                   type="range"
                   value={dateRange}
@@ -280,12 +305,14 @@ export default function Camera() {
                   className="flex items-center justify-between p-2 rounded bg-[color:var(--surface)] border border-[color:var(--surface-border)]"
                 >
                   <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${entry.tuukh?.[0]?.tuluv === 0 ? 'bg-green-500' : 'bg-gray-400'} animate-pulse`}></div>
+                    <div
+                      className={`w-2 h-2 rounded-full ${entry.tuukh?.[0]?.tuluv === 0 ? "bg-green-500" : "bg-gray-400"} animate-pulse`}
+                    ></div>
                     <span className="text-xs font-medium text-[color:var(--panel-text)]">
                       {entry.mashiniiDugaar}
                     </span>
                     <span className="text-xs text-[color:var(--muted-text)]">
-                      {entry.tuukh?.[0]?.orsonKhaalga || 'N/A'}
+                      {entry.tuukh?.[0]?.orsonKhaalga || "N/A"}
                     </span>
                     {entry.niitDun !== undefined && entry.niitDun > 0 && (
                       <span className="text-xs font-semibold text-green-600">
@@ -294,7 +321,9 @@ export default function Camera() {
                     )}
                   </div>
                   <span className="text-xs text-[color:var(--muted-text)]">
-                    {entry.createdAt ? moment(entry.createdAt).format("HH:mm:ss") : '-'}
+                    {entry.createdAt
+                      ? moment(entry.createdAt).format("HH:mm:ss")
+                      : "-"}
                   </span>
                 </div>
               ))}
@@ -341,7 +370,14 @@ export default function Camera() {
                           {camera.gateName} - {camera.cameraName}
                         </p>
                       )}
-                      <div className="relative w-full bg-black rounded-lg overflow-hidden border-2 border-green-500/30 group-hover/cam:border-green-500 transition-all duration-200" style={{ aspectRatio: "16/9", transform: "translateZ(0)", willChange: "transform" }}>
+                      <div
+                        className="relative w-full bg-black rounded-lg overflow-hidden border-2 border-green-500/30 group-hover/cam:border-green-500 transition-all duration-200"
+                        style={{
+                          aspectRatio: "16/9",
+                          transform: "translateZ(0)",
+                          willChange: "transform",
+                        }}
+                      >
                         <CameraStream
                           ip={camera.cameraIP}
                           port={camera.cameraPort}
@@ -392,7 +428,14 @@ export default function Camera() {
                           {camera.gateName} - {camera.cameraName}
                         </p>
                       )}
-                      <div className="relative w-full bg-black rounded-lg overflow-hidden border-2 border-red-500/30 group-hover/cam:border-red-500 transition-all duration-200" style={{ aspectRatio: "16/9", transform: "translateZ(0)", willChange: "transform" }}>
+                      <div
+                        className="relative w-full bg-black rounded-lg overflow-hidden border-2 border-red-500/30 group-hover/cam:border-red-500 transition-all duration-200"
+                        style={{
+                          aspectRatio: "16/9",
+                          transform: "translateZ(0)",
+                          willChange: "transform",
+                        }}
+                      >
                         <CameraStream
                           ip={camera.cameraIP}
                           port={camera.cameraPort}
@@ -433,9 +476,9 @@ export default function Camera() {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[color:var(--panel-text)]">
                     Хугацаа/мин
                   </th>
-                   <th className="px-3 py-2 text-left text-xs font-semibold text-[color:var(--panel-text)]">
-                     Камер
-                   </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-[color:var(--panel-text)]">
+                    Камер
+                  </th>
                   <th className="px-3 py-2 text-left text-xs font-semibold text-[color:var(--panel-text)]">
                     Хөнгөлөлт
                   </th>
@@ -468,20 +511,37 @@ export default function Camera() {
                   </tr>
                 ) : (
                   transactions.map((transaction, idx) => {
-                    const orsonTsag = transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
-                    const garsanTsag = transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
-                    const durationMinutes = orsonTsag && garsanTsag
-                      ? Math.round(moment(garsanTsag).diff(moment(orsonTsag), 'minutes', true))
-                      : orsonTsag
-                      ? Math.round(moment().diff(moment(orsonTsag), 'minutes', true))
-                      : null;
-                    
+                    const orsonTsag =
+                      transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+                    const garsanTsag =
+                      transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag;
+                    const durationMinutes =
+                      orsonTsag && garsanTsag
+                        ? Math.round(
+                            moment(garsanTsag).diff(
+                              moment(orsonTsag),
+                              "minutes",
+                              true,
+                            ),
+                          )
+                        : orsonTsag
+                          ? Math.round(
+                              moment().diff(moment(orsonTsag), "minutes", true),
+                            )
+                          : null;
+
                     // Calculate payment amount from tulbur array
-                    const tulburAmount = transaction.tuukh?.[0]?.tulbur?.reduce((sum: number, t: any) => sum + (t.tulbur || 0), 0) || 0;
-                    
+                    const tulburAmount =
+                      transaction.tuukh?.[0]?.tulbur?.reduce(
+                        (sum: number, t: any) => sum + (t.tulbur || 0),
+                        0,
+                      ) || 0;
+
                     // Status: tuluv === 0 means active/unpaid, tuluv !== 0 means exited/paid
-                    const isPaid = transaction.tuukh?.[0]?.tuluv !== 0 && transaction.tuukh?.[0]?.tuluv !== undefined;
-                    
+                    const isPaid =
+                      transaction.tuukh?.[0]?.tuluv !== 0 &&
+                      transaction.tuukh?.[0]?.tuluv !== undefined;
+
                     return (
                       <tr
                         key={transaction._id || idx}
@@ -514,10 +574,14 @@ export default function Camera() {
                           {"-"}
                         </td>
                         <td className="px-3 py-2 text-xs font-semibold text-[color:var(--panel-text)]">
-                          {transaction.niitDun ? formatCurrency(transaction.niitDun) : "0.00 ₮"}
+                          {transaction.niitDun
+                            ? formatCurrency(transaction.niitDun)
+                            : "0.00 ₮"}
                         </td>
                         <td className="px-3 py-2 text-xs font-semibold text-[color:var(--panel-text)]">
-                          {tulburAmount > 0 ? formatCurrency(tulburAmount) : "-"}
+                          {tulburAmount > 0
+                            ? formatCurrency(tulburAmount)
+                            : "-"}
                         </td>
                         <td className="px-3 py-2 text-xs text-[color:var(--panel-text)]">
                           {/* И-Баримт - invoice number, if available */}
@@ -527,8 +591,8 @@ export default function Camera() {
                           <span
                             className={`px-2 py-1 text-xs font-medium ${
                               isPaid
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 rounded-2xl"
+                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded-2xl"
                             }`}
                           >
                             {isPaid ? "Төлсөн" : "Төлөөгүй"}
@@ -568,8 +632,7 @@ export default function Camera() {
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-4">
+        {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-4">
           <div className="neu-panel rounded-lg p-3">
             <div className="flex items-center justify-between">
               <div>
@@ -625,7 +688,7 @@ export default function Camera() {
               <Calendar className="w-5 h-5 text-blue-500" />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -709,15 +772,15 @@ function CameraStream({
 
     const handleKeyPress = (e: KeyboardEvent) => {
       // Press 'F' to toggle fullscreen (when not in input/textarea)
-      if (e.key === 'f' || e.key === 'F') {
+      if (e.key === "f" || e.key === "F") {
         const target = e.target as HTMLElement;
-        if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA') {
+        if (target.tagName !== "INPUT" && target.tagName !== "TEXTAREA") {
           e.preventDefault();
           toggleFullscreen();
         }
       }
       // Press 'Escape' to exit fullscreen
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         const isCurrentlyFullscreen = !!(
           document.fullscreenElement ||
           (document as any).webkitFullscreenElement ||
@@ -736,8 +799,14 @@ function CameraStream({
 
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
-      document.removeEventListener("msfullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "msfullscreenchange",
+        handleFullscreenChange,
+      );
       document.removeEventListener("keydown", handleKeyPress);
     };
   }, []);
@@ -749,11 +818,17 @@ function CameraStream({
           <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
           <div className="relative p-6 rounded-3xl bg-gray-900/80 backdrop-blur-sm border border-red-500/30">
             <VideoOff className="w-16 h-16 mb-4 mx-auto opacity-75 animate-pulse" />
-            <p className="text-base font-semibold mb-2 text-center">Камер холбогдохгүй байна</p>
-            <p className="text-xs opacity-60 text-center mb-3 font-mono">{ip}:{port}</p>
+            <p className="text-base font-semibold mb-2 text-center">
+              Камер холбогдохгүй байна
+            </p>
+            <p className="text-xs opacity-60 text-center mb-3 font-mono">
+              {ip}:{port}
+            </p>
             {connectionState && (
               <div className="px-3 py-1.5 rounded-lg bg-red-500/20 border border-red-500/30">
-                <p className="text-xs opacity-80 text-center">Төлөв: {connectionState}</p>
+                <p className="text-xs opacity-80 text-center">
+                  Төлөв: {connectionState}
+                </p>
               </div>
             )}
           </div>
@@ -763,18 +838,22 @@ function CameraStream({
   }
 
   return (
-    <div 
+    <div
       ref={streamContainerRef}
       className="absolute inset-0 w-full h-full group/stream"
-      style={isFullscreen ? { 
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        backgroundColor: '#000'
-      } : {}}
+      style={
+        isFullscreen
+          ? {
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+              backgroundColor: "#000",
+            }
+          : {}
+      }
     >
       <R2WPlayerComponent
         Camer={ip}
@@ -790,15 +869,19 @@ function CameraStream({
           height: "100%",
         }}
       />
-      
+
       {/* Fullscreen Button */}
       <button
         onClick={toggleFullscreen}
         className={`absolute top-2 right-2 z-20 p-1.5 rounded bg-black/60 hover:bg-black/80 text-white transition-all duration-200 ${
-          isFullscreen ? 'opacity-100' : 'opacity-0 group-hover/stream:opacity-100'
+          isFullscreen
+            ? "opacity-100"
+            : "opacity-0 group-hover/stream:opacity-100"
         } focus:opacity-100`}
         aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-        title={isFullscreen ? "Бүтэн дэлгэцнээс гарах (ESC)" : "Бүтэн дэлгэц (F)"}
+        title={
+          isFullscreen ? "Бүтэн дэлгэцнээс гарах (ESC)" : "Бүтэн дэлгэц (F)"
+        }
       >
         {isFullscreen ? (
           <Minimize2 className="w-4 h-4" />
@@ -811,18 +894,24 @@ function CameraStream({
       {!isFullscreen && (
         <div className="absolute top-2 left-2 z-20 px-2 py-1 rounded bg-black/60 text-white text-xs font-medium opacity-0 group-hover/stream:opacity-100 transition-opacity duration-200">
           {gateName && <span className="hidden sm:inline">{gateName} - </span>}
-          <span className="font-mono">{ip}:{port}</span>
+          <span className="font-mono">
+            {ip}:{port}
+          </span>
         </div>
       )}
-      
+
       {/* Fullscreen overlay info */}
       {isFullscreen && (
         <div className="absolute top-3 left-3 z-30 px-3 py-2 rounded-lg bg-black/70 text-white">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${cameraType === 'entry' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></div>
+            <div
+              className={`w-2 h-2 rounded-full ${cameraType === "entry" ? "bg-green-500" : "bg-red-500"} animate-pulse`}
+            ></div>
             <div>
               <p className="font-semibold text-xs">{gateName || name}</p>
-              <p className="text-xs opacity-75 font-mono">{ip}:{port}</p>
+              <p className="text-xs opacity-75 font-mono">
+                {ip}:{port}
+              </p>
             </div>
           </div>
         </div>
