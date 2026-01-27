@@ -34,6 +34,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
+import { useRouter } from "next/navigation";
 
 const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
@@ -907,6 +908,7 @@ const InvoiceModal = ({
 };
 
 export default function InvoicingZardluud() {
+  const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
@@ -1523,17 +1525,33 @@ export default function InvoicingZardluud() {
                     "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",
                 }}
               />
-              <TusgaiZagvar
-                value={selectedTurul}
-                onChange={setSelectedTurul}
-                options={[
-                  { value: "", label: "Гэрээний төрөл" },
-                  ...turulList.map((t) => ({ value: t, label: t })),
-                ]}
-                placeholder="Гэрээний төрөл"
-                className="h-[40px] w-[180px]"
-                tone="theme"
-              />
+              <div className="flex items-center gap-2">
+                <TusgaiZagvar
+                  value={selectedTurul}
+                  onChange={setSelectedTurul}
+                  options={[
+                    { value: "", label: "Гэрээний төрөл" },
+                    ...turulList.map((t) => ({ value: t, label: t })),
+                  ]}
+                  placeholder="Гэрээний төрөл"
+                  className="h-[40px] w-[180px]"
+                  tone="theme"
+                />
+                <motion.button
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (selectedTurul) params.set("turul", selectedTurul);
+                    router.push(`/tulbur?${params.toString()}`);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={!selectedTurul}
+                  title="Төлбөр хуудас руу шилжих"
+                >
+                  →
+                </motion.button>
+              </div>
               <TusgaiZagvar
                 value={selectedTuluv}
                 onChange={setSelectedTuluv}
@@ -1547,14 +1565,30 @@ export default function InvoicingZardluud() {
                 className="h-[40px] w-[140px]"
                 tone="theme"
               />
-              <TusgaiZagvar
-                value={selectedDavkhar}
-                onChange={setSelectedDavkhar}
-                options={[...davkharList.map((d) => ({ value: d, label: d }))]}
-                placeholder="Давхар"
-                className="h-[40px] w-[120px]"
-                tone="theme"
-              />
+              <div className="flex items-center gap-2">
+                <TusgaiZagvar
+                  value={selectedDavkhar}
+                  onChange={setSelectedDavkhar}
+                  options={[...davkharList.map((d) => ({ value: d, label: d }))]}
+                  placeholder="Давхар"
+                  className="h-[40px] w-[120px]"
+                  tone="theme"
+                />
+                <motion.button
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    if (selectedDavkhar) params.set("davkhar", selectedDavkhar);
+                    router.push(`/tulbur?${params.toString()}`);
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={!selectedDavkhar}
+                  title="Төлбөр хуудас руу шилжих"
+                >
+                  →
+                </motion.button>
+              </div>
               <TusgaiZagvar
                 value={selectedBarilga}
                 onChange={(v: string) => {
@@ -1769,25 +1803,18 @@ export default function InvoicingZardluud() {
                             style={{ minWidth: 90 }}
                           >
                             <motion.button
-                              onClick={() => handleViewInvoice(resident)}
-                              className="p-3 sm:p-2 rounded-xl hover:shadow-md transition-colors"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              title="Нэхэмжлэл харах"
-                              style={{ minWidth: 44, minHeight: 44 }}
+                              onClick={() => {
+                                const params = new URLSearchParams();
+                                if (resident.turul) params.set("turul", resident.turul);
+                                if (resident.davkhar) params.set("davkhar", resident.davkhar);
+                                router.push(`/tulbur?${params.toString()}`);
+                              }}
+                              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium"
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              title="Төлбөр хуудас руу шилжих"
                             >
-                              <Eye className="w-6 h-6 sm:w-4 sm:h-4 text-blue-600" />
-                            </motion.button>
-
-                            <motion.button
-                              onClick={() => handleOpenHistory(resident)}
-                              className="p-3 sm:p-2 rounded-xl hover:shadow-md transition-colors"
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              title="Түүх"
-                              style={{ minWidth: 44, minHeight: 44 }}
-                            >
-                              <History className="w-6 h-6 sm:w-4 sm:h-4 text-purple-600" />
+                              →
                             </motion.button>
                           </div>
                         </td>

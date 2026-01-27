@@ -402,7 +402,7 @@ export default function TulburPage() {
               </>
             )}
           </div>
-          <div className="flex items-center justify-end gap-2 flex-wrap">
+          <div className="flex items-center justify-end gap-3">
             <div ref={zaaltButtonRef} className="relative">
               {isZaaltDropdownOpen && (
                 <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">

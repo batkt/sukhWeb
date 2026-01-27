@@ -93,8 +93,8 @@ export default function Khynalt() {
 
   const { orshinSuugchGaralt, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
-      shouldFetch ? token || "" : "",
-      shouldFetch ? ajiltan?.baiguullagiinId || "" : "",
+      token || "",
+      ajiltan?.baiguullagiinId || "",
       {},
       effectiveBarilgiinId,
     );
@@ -571,9 +571,10 @@ export default function Khynalt() {
     return false;
   });
 
-  const filteredTotalResidents = filteredResidents.length - 1;
-  const filteredTotalContracts = filteredContracts.length;
-  const filteredTotalEmployees = filteredEmployees.length;
+  // Use API totals (niitMur) for exact count from server, same approach for all
+  const filteredTotalResidents = totalResidents;
+  const filteredTotalContracts = totalContracts;
+  const filteredTotalEmployees = totalEmployees;
   // Building count should always reflect total organization buildings, not the selected filter
   const buildingCount = useMemo(() => {
     const raw = (baiguullaga as any)?.barilguud;
