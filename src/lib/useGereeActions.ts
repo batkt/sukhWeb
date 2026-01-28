@@ -68,6 +68,10 @@ export function useGereeActions(
         ? newResident.utas.find((p: any) => String(p || "").trim() !== "") || ""
         : String(newResident.utas || "");
 
+      // Find the selected building from baiguullaga
+      const selectedBuildingId = selectedBuildingIdForActions || barilgiinId;
+      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => b._id === selectedBuildingId);
+
       const payload: any = {
         ner: newResident.ner,
         ovog: newResident.ovog,
@@ -83,6 +87,22 @@ export function useGereeActions(
         baiguullagiinNer: baiguullaga?.ner,
         erkh: "OrshinSuugch",
         taniltsuulgaKharakhEsekh: true,
+        // Building & Apartment Information
+        toot: newResident.toot || "",
+        davkhar: newResident.davkhar || "",
+        orts: newResident.orts || "1", // Default to "1" if not provided
+        barilgiinId: selectedBarilga?._id || selectedBuildingId || "",
+        bairniiNer: selectedBarilga?.ner || "",
+        // Financial Information
+        ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
+        tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || "",
+        // Additional
+        tailbar: newResident.tailbar || "",
+        // Address (if available from selectedBarilga)
+        duureg: newResident.duureg || selectedBarilga?.duureg || "",
+        horoo: newResident.horoo || selectedBarilga?.horoo || "",
+        soh: selectedBarilga?.tokhirgoo?.sohNer || "",
+        sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
       };
 
       if (editingResident?._id) {

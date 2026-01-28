@@ -460,14 +460,14 @@ export default function EbarimtTokhirgoo() {
   const t = (s: string) => s;
 
   return (
-    <div id="ebarimt-panel" className="neu-panel">
-      <div className="p-4 h-full">
+    <div id="ebarimt-panel" className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 shadow-lg dark:shadow-indigo-900/20 rounded-2xl border border-indigo-200/50 dark:border-indigo-600/50">
+      <div className="p-6 h-full">
         {isLoading ? (
-          <div className="p-8 text-center text-theme/70">
+          <div className="p-8 text-center text-theme dark:text-white font-medium">
             {t("Ачааллаж байна…")}
           </div>
         ) : (
-          <div className="space-y-4 overflow-visible">
+          <div className="space-y-6 overflow-visible">
             {/* Merchant TIN and district/horoo are only editable when И-Баримт ашиглах эсэх is enabled */}
             {ebAshiglakh && (
               <div className="space-y-4">
@@ -483,7 +483,7 @@ export default function EbarimtTokhirgoo() {
                     value={merchantTin}
                     onChange={(e) => setMerchantTin(e.target.value.trim())}
                     placeholder="Татварын бүртгэлийн дугаар"
-                    className="w-full rounded-2xl border px-4 py-2 text-theme bg-white focus:outline-none focus:ring-2 focus:ring-black/10"
+                    className="w-full rounded-xl border border-indigo-200 dark:border-indigo-600 px-4 py-2.5 text-theme dark:text-white bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-400 transition-all duration-200"
                     disabled={isLoading}
                   />
                 </div>

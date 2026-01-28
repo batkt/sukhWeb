@@ -35,12 +35,12 @@ const FloatingInput = ({
       value={value}
       onChange={onChange}
       placeholder=" "
-      className="peer w-full rounded-xl border border-white bg-transparent px-4 pt-5 pb-2 text-theme focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition"
+      className="peer w-full rounded-xl border border-teal-200 dark:border-teal-600 bg-white/50 dark:bg-gray-800/50 px-4 pt-5 pb-2 text-theme dark:text-white focus:border-teal-500 dark:focus:border-teal-400 focus:ring-2 focus:ring-teal-500/20 dark:focus:ring-teal-400/20 focus:outline-none transition-all duration-200"
     />
     <label
-      className="absolute left-4 top-2 text-slate-500 text-sm transition-all pointer-events-none
-      peer-placeholder-shown:top-5 peer-placeholder-shown:text-slate-400 peer-placeholder-shown:text-base
-      peer-focus:top-2 peer-focus:text-slate-700 peer-focus:text-sm"
+      className="absolute left-4 top-2 text-gray-600 dark:text-gray-400 text-sm transition-all pointer-events-none
+      peer-placeholder-shown:top-5 peer-placeholder-shown:text-gray-500 dark:peer-placeholder-shown:text-gray-500 peer-placeholder-shown:text-base
+      peer-focus:top-2 peer-focus:text-teal-600 dark:peer-focus:text-teal-400 peer-focus:text-sm"
     >
       {label}
     </label>
@@ -78,9 +78,9 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
 
   return (
     <div className="col-span-12 lg:col-span-6 xl:col-span-4">
-      <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
-        <div className="px-6 py-4">
-          <h2 className="text-lg font-semibold border-b border-b-gray-300 text-slate-800 pb-2">
+      <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 shadow-lg dark:shadow-teal-900/20 hover:shadow-xl dark:hover:shadow-teal-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-teal-200/50 dark:border-teal-600/50">
+        <div className="px-6 py-4 border-b border-teal-200/50 dark:border-teal-600/50 bg-gradient-to-r from-teal-100/50 to-cyan-100/50 dark:from-teal-800/20 dark:to-cyan-800/20">
+          <h2 className="text-lg font-bold text-theme dark:text-white">
             {t("Нэхэмжлэл и-мэйлээр илгээх")}
           </h2>
         </div>
@@ -138,9 +138,13 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
             />
 
             <div className="flex justify-end mt-4">
-              <Button type="primary" htmlType="submit" className="rounded-xl">
+              <button 
+                type="submit"
+                className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 dark:from-teal-600 dark:to-cyan-600 dark:hover:from-teal-700 dark:hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                style={{ borderRadius: '0.75rem' }}
+              >
                 {t("Хадгалах")}
-              </Button>
+              </button>
             </div>
           </Form>
         </div>
