@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/useAuth";
+import updateMethod from "../../tools/function/updateMethod";
 
 interface BuildingContextType {
   selectedBuildingId: string | null;
@@ -82,16 +83,32 @@ export const BuildingProvider = ({
     hasInitializedRef.current = true;
 
     if (id) {
-      // Update in-memory ajiltan so UI stays in sync.
-      // The user requested real-time API sync without localStorage.
+      // Update in-memory ajiltan so UI stays in sync immediately
       if (ajiltan && ajiltan.defaultBarilga !== id) {
-        ajiltanMutate({ ...ajiltan, defaultBarilga: id });
+        const updatedAjiltan = { ...ajiltan, defaultBarilga: id };
+        ajiltanMutate(updatedAjiltan);
+        
+        // Persist to backend so it survives page navigation (fire and forget)
+        updateMethod("ajiltan", token, {
+          _id: ajiltan._id,
+          defaultBarilga: id,
+        }).catch((error) => {
+          console.error("Failed to persist building selection:", error);
+        });
       }
     } else {
       if (ajiltan && ajiltan.defaultBarilga) {
         const updatedAjiltan = { ...ajiltan } as any;
         delete updatedAjiltan.defaultBarilga;
         ajiltanMutate(updatedAjiltan);
+        
+        // Persist to backend (fire and forget)
+        updateMethod("ajiltan", token, {
+          _id: ajiltan._id,
+          defaultBarilga: null,
+        }).catch((error) => {
+          console.error("Failed to clear building selection:", error);
+        });
       }
     }
   };
