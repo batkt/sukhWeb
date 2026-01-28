@@ -391,9 +391,9 @@ export default function Ebarimt() {
                   clearable
                   placeholder="Огноо сонгох"
                   classNames={{
+                    root: "!h-full !w-full",
                     input:
                       "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
-                    wrapper: "!h-full !w-full",
                   }}
                 />
               </div>
