@@ -1,0 +1,513 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  NumberInput as MNumberInput,
+  Button as MButton,
+  TextInput as MTextInput,
+} from "@mantine/core";
+import { useAuth } from "@/lib/useAuth";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { fetchWithDomainFallback } from "@/lib/uilchilgee";
+import { useBuilding } from "@/context/BuildingContext";
+import { useSpinner } from "@/context/SpinnerContext";
+import { Trash2 } from "lucide-react";
+import uilchilgee from "@/lib/uilchilgee";
+import deleteMethod from "../../../tools/function/deleteMethod";
+
+export default function NemeltTokhirgoo() {
+  const { token, ajiltan, barilgiinId } = useAuth();
+  const { selectedBuildingId } = useBuilding();
+  const { showSpinner, hideSpinner } = useSpinner();
+
+  // Invoice states
+  const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
+  const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
+  const [invoiceScheduleId, setInvoiceScheduleId] = useState<string | null>(
+    null
+  );
+
+  // Lift states
+  const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
+  const [liftFloors, setLiftFloors] = useState<string[]>([]);
+  const [liftBulkInput, setLiftBulkInput] = useState<string>("");
+  const [liftShalgayaId, setLiftShalgayaId] = useState<string | null>(null);
+
+  // Invoice functions
+  const fetchInvoiceSchedule = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+      const url = effectiveBarilgiinId
+        ? `/nekhemjlekhCron/${ajiltan.baiguullagiinId}?barilgiinId=${effectiveBarilgiinId}`
+        : `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`;
+
+      const response = await fetchWithDomainFallback(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+
+        if (
+          result.success &&
+          result.data &&
+          Array.isArray(result.data) &&
+          result.data.length > 0
+        ) {
+          const latestSchedule = result.data[result.data.length - 1];
+
+          if (latestSchedule.nekhemjlekhUusgekhOgnoo !== undefined) {
+            setInvoiceDay(latestSchedule.nekhemjlekhUusgekhOgnoo);
+            setInvoiceActive(latestSchedule.idevkhitei ?? true);
+            setInvoiceScheduleId(latestSchedule._id);
+            return;
+          }
+        }
+      }
+
+      setInvoiceDay(null);
+      setInvoiceActive(true);
+      setInvoiceScheduleId(null);
+    } catch (error) {
+      setInvoiceDay(null);
+      setInvoiceActive(true);
+      setInvoiceScheduleId(null);
+    }
+  };
+
+  const saveInvoiceSchedule = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+    if (!invoiceDay || invoiceDay < 1 || invoiceDay > 31) {
+      openErrorOverlay("Огноог 1-31 хооронд сонгоно уу");
+      return;
+    }
+
+    showSpinner();
+    try {
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
+
+      const res = await fetchWithDomainFallback(`/nekhemjlekhCron`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          nekhemjlekhUusgekhOgnoo: invoiceDay,
+          idevkhitei: invoiceActive,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const result = await res.json();
+      const data = result.data || result;
+
+      if (data._id) {
+        setInvoiceScheduleId(data._id);
+      }
+
+      openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
+      await fetchInvoiceSchedule();
+    } catch (e) {
+      openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  // Lift functions
+  const fetchLiftFloors = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+    try {
+      const resp = await uilchilgee(token).get(`/liftShalgaya`, {
+        params: {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 100,
+        },
+      });
+      const data = resp.data;
+      const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
+
+      const toStr = (v: any) => (v == null ? "" : String(v));
+      const branchMatches = list.filter(
+        (x: any) =>
+          toStr(x?.barilgiinId) === toStr(selectedBuildingId || barilgiinId)
+      );
+      const pickLatest = (arr: any[]) =>
+        [...arr].sort(
+          (a, b) =>
+            new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
+            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+        )[0];
+
+      let chosen = branchMatches.length > 0 ? pickLatest(branchMatches) : null;
+      if (!chosen) {
+        const orgDefaults = list.filter(
+          (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
+        );
+        chosen =
+          orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
+      }
+
+      const floors = Array.isArray(chosen?.choloolugdokhDavkhar)
+        ? chosen.choloolugdokhDavkhar
+            .map((f: any) => String(f).trim())
+            .filter(Boolean)
+        : [];
+
+      if (!floors || floors.length === 0) {
+        setLiftBulkInput("");
+        setLiftEnabled(false);
+        setLiftFloors([]);
+        return;
+      }
+
+      const sortedFloors = toUniqueSorted(floors);
+      setLiftBulkInput(sortedFloors.join(","));
+      setLiftFloors(sortedFloors);
+      setLiftShalgayaId(chosen?._id ?? null);
+      setLiftEnabled(true);
+    } catch (error) {
+      setLiftBulkInput("");
+      setLiftEnabled(false);
+      setLiftFloors([]);
+      setLiftShalgayaId(null);
+    }
+  };
+
+  const saveLiftSettings = async (
+    floorsOrMax: string[] | number | null,
+    skipFetch = false
+  ) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    showSpinner();
+
+    try {
+      let floors: string[] = [];
+      if (Array.isArray(floorsOrMax)) {
+        floors = toUniqueSorted(floorsOrMax);
+      } else if (typeof floorsOrMax === "number" && floorsOrMax > 0) {
+        floors = Array.from({ length: floorsOrMax }, (_, i) => String(i + 1));
+      } else {
+        floors = [];
+      }
+
+      const payload: any = {
+        choloolugdokhDavkhar: floors,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
+      };
+
+      await uilchilgee(token).post(`/liftShalgaya`, payload);
+
+      if (floors.length > 0) {
+        openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
+      } else {
+        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
+      }
+
+      if (!skipFetch) {
+        await fetchLiftFloors();
+      }
+    } catch (error) {
+      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
+    } finally {
+      hideSpinner();
+    }
+  };
+
+  useEffect(() => {
+    if (token && ajiltan?.baiguullagiinId) {
+      fetchLiftFloors();
+      fetchInvoiceSchedule();
+    }
+  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  const toUniqueSorted = (values: (string | number)[]) => {
+    const nums = values
+      .map((v) => Number(String(v).trim()))
+      .filter((n) => Number.isFinite(n) && n > 0) as number[];
+    const uniq = Array.from(new Set(nums));
+    uniq.sort((a, b) => a - b);
+    return uniq.map((n) => String(n));
+  };
+
+  const expandRangeToken = (token: string): number[] => {
+    const t = token.trim().replace(/\s+/g, "");
+    if (!t) return [];
+    const m = t.match(/^(\d+)-(\d+)$/);
+    if (m) {
+      const start = Number(m[1]);
+      const end = Number(m[2]);
+      if (Number.isFinite(start) && Number.isFinite(end)) {
+        const a = Math.min(start, end);
+        const b = Math.max(start, end);
+        const out: number[] = [];
+        for (let i = a; i <= b; i++) out.push(i);
+        return out;
+      }
+    }
+    const n = Number(t);
+    return Number.isFinite(n) ? [n] : [];
+  };
+
+  const parseBulk = (text: string): string[] => {
+    const tokens = text
+      .split(/[,;\n\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const expanded = tokens.flatMap(expandRangeToken);
+    return toUniqueSorted(expanded);
+  };
+
+  const handleSaveFloors = async () => {
+    let merged: string[] = [];
+    if (liftBulkInput && liftBulkInput.trim() !== "") {
+      const parsed = parseBulk(liftBulkInput);
+      merged = toUniqueSorted(parsed);
+    } else {
+      merged = liftFloors || [];
+    }
+
+    setLiftFloors(merged);
+    setLiftBulkInput(merged.length > 0 ? merged.join(",") : "");
+
+    if (merged.length > 0) {
+      await saveLiftSettings(merged);
+    } else {
+      try {
+        if (liftShalgayaId && token) {
+          await deleteMethod("liftShalgaya", token, liftShalgayaId);
+          setLiftShalgayaId(null);
+        } else {
+          await saveLiftSettings(null);
+        }
+      } catch (e) {
+        await saveLiftSettings(null);
+      }
+    }
+  };
+
+  const handleDeleteAllFloors = async () => {
+    const originalLiftShalgayaId = liftShalgayaId;
+    setLiftFloors([]);
+    setLiftBulkInput("");
+    setLiftEnabled(false);
+    setLiftShalgayaId(null);
+    try {
+      if (originalLiftShalgayaId && token) {
+        await deleteMethod("liftShalgaya", token, originalLiftShalgayaId);
+      }
+      await saveLiftSettings(null, true);
+      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+    } catch (e) {
+      try {
+        await saveLiftSettings(null, true);
+      } catch (e2) {
+        // ignore
+      }
+      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
+    }
+  };
+
+  return (
+    <div
+      id="nemelt-panel"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
+    >
+      <div
+        className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar"
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-6">
+          {/* Invoice box */}
+          <div id="nemelt-invoice-box" className="flex-1">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-theme">Нэхэмжлэх илгээх</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Сар бүрийн илгээх тохиргоо
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-theme">
+                    {invoiceActive ? "Идэвхитэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={invoiceActive}
+                      onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                      className="sr-only peer"
+                      aria-label="Нэхэмжлэх идэвхжүүлэх"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                  </label>
+                </div>
+              </div>
+              {invoiceActive && (
+                <div
+                  id="nemelt-invoice-settings"
+                  className="p-5 bg-gradient-to-br from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10"
+                >
+                  <div className="flex items-end gap-4">
+                    <div className="flex-1">
+                      <label className="text-sm font-semibold text-theme mb-2 block">
+                        Илгээх өдөр (сар бүр)
+                      </label>
+                      <MNumberInput
+                        min={1}
+                        max={31}
+                        placeholder="1-31"
+                        value={invoiceDay ?? undefined}
+                        onChange={(v) => setInvoiceDay((v as number) ?? null)}
+                        className="w-full"
+                        size="md"
+                      />
+                    </div>
+                    <button
+                      id="nemelt-invoice-save"
+                      onClick={saveInvoiceSchedule}
+                      className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 dark:from-purple-600 dark:to-pink-700 dark:hover:from-purple-700 dark:hover:to-pink-800 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+                      style={{ borderRadius: '0.75rem' }}
+                    >
+                      Хадгалах
+                    </button>
+                  </div>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-2">
+                    Сар бүрийн хэдний өдөр нэхэмжлэх илгээх
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Lift box */}
+          <div id="nemelt-lift-settings" className="flex-1">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-theme">Лифт хөнгөлөлт</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      {liftFloors.length} давхар тохируулсан
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium text-theme">
+                    {liftEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                  </span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={liftEnabled}
+                      onChange={(event) => {
+                        const enabled = event.currentTarget.checked;
+                        setLiftEnabled(enabled);
+                        if (!enabled) {
+                          saveLiftSettings(null);
+                        }
+                      }}
+                      className="sr-only peer"
+                      aria-label="Лифт идэвхжүүлэх"
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                  </label>
+                </div>
+              </div>
+
+              {liftEnabled && (
+                <div className="p-5 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 space-y-4">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold text-theme flex items-center gap-2">
+                      <span className="text-lg">🔢</span>
+                      Давхар тохиргоо
+                    </label>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      Жишээ: 1 эсвэл 1-3 эсвэл 1,2,3
+                    </p>
+
+                    <div className="flex items-center gap-3">
+                      <MTextInput
+                        placeholder="1-3,5,7 эсвэл 1,2,3"
+                        value={liftBulkInput}
+                        onChange={(e) =>
+                          setLiftBulkInput(e.currentTarget.value)
+                        }
+                        className="flex-1"
+                        size="md"
+                      />
+
+                      <button
+                        id="nemelt-lift-save"
+                        onClick={handleSaveFloors}
+                        className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 dark:from-amber-600 dark:to-orange-700 dark:hover:from-amber-700 dark:hover:to-orange-800 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        Хадгалах
+                      </button>
+
+                      <button
+                        onClick={handleDeleteAllFloors}
+                        className="p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors"
+                        style={{ borderRadius: '0.75rem' }}
+                        title="Бүгдийг устгах"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-[color:var(--surface-border)]">
+                    <p className="text-sm font-semibold text-theme mb-3">Тохируулсан давхарууд:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {liftFloors && liftFloors.length > 0 ? (
+                        liftFloors.map((f) => (
+                          <div
+                            key={f}
+                            className="inline-flex items-center px-4 py-2 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 shadow-sm"
+                          >
+                            <span className="text-theme font-semibold">{f}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="w-full text-center py-6">
+                          <p className="text-sm text-[color:var(--muted-text)]">
+                            Давхар тохируулаагүй байна
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

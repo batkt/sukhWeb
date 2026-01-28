@@ -3,7 +3,7 @@
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 // import KhungulultPage from "../khungulult/page";
@@ -26,6 +26,7 @@ import {
   Eye,
   History,
   Columns,
+  Banknote,
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
@@ -44,6 +45,7 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import TransactionModal, { type TransactionData } from "../modals/TransactionModal";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -821,6 +823,9 @@ export default function DansniiKhuulga() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const columnModalRef = useRef<HTMLDivElement | null>(null);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
+  const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
 
   const columnDefs = useMemo(
     () => [
@@ -872,7 +877,7 @@ export default function DansniiKhuulga() {
         align: "center",
         minWidth: 140,
       },
-      { key: "action", label: "Үйлдэл", align: "center", minWidth: 90 },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 130 },
     ],
     []
   );
@@ -1221,6 +1226,38 @@ export default function DansniiKhuulga() {
   }, [isZaaltDropdownOpen]);
 
   // Excel Import handler
+  const handleTransactionSubmit = async (data: TransactionData) => {
+    try {
+      setIsProcessingTransaction(true);
+
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      // Call API to create transaction
+      const response = await uilchilgee(token).post("/guilgee", {
+        ...data,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        barilgiinId: effectiveBarilgiinId,
+        createdBy: ajiltan._id,
+        createdAt: new Date().toISOString(),
+      });
+
+      if (response.data.success || response.status === 200) {
+        message.success("Гүйлгээ амжилттай үүсгэгдлээ");
+        setIsTransactionModalOpen(false);
+        setSelectedTransactionResident(null);
+        // Refresh data
+        mutate(["/guilgeeniinTuukh", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]);
+      }
+    } catch (error: any) {
+      openErrorOverlay(getErrorMessage(error));
+    } finally {
+      setIsProcessingTransaction(false);
+    }
+  };
+
   const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -1959,6 +1996,27 @@ export default function DansniiKhuulga() {
                                       >
                                         <History className="w-4 h-4 text-green-500" />
                                       </button>
+                                      <button
+                                        onClick={() => {
+                                          // Create resident-like object from transaction data
+                                          const residentData = resident || {
+                                            _id: it?.orshinSuugchId,
+                                            ovog: it?.ovog,
+                                            ner: ner,
+                                            toot: toot,
+                                            utas: utas,
+                                            gereeniiDugaar: dugaar,
+                                            gereeniiId: it?.gereeniiId || ct?._id,
+                                            ...it,
+                                          };
+                                          setSelectedTransactionResident(residentData);
+                                          setIsTransactionModalOpen(true);
+                                        }}
+                                        className="p-1.5 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"
+                                        title="Гүйлгээ хийх"
+                                      >
+                                        <Banknote className="w-4 h-4 text-[color:var(--theme)] group-hover:opacity-80 transition-opacity" />
+                                      </button>
                                     </div>
                                   </td>
                                 );
@@ -2452,6 +2510,18 @@ export default function DansniiKhuulga() {
       )}
 
       {/* Per-resident history modal removed */}
+
+      {/* Transaction Modal */}
+      <TransactionModal
+        show={isTransactionModalOpen}
+        onClose={() => {
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+        }}
+        resident={selectedTransactionResident}
+        onSubmit={handleTransactionSubmit}
+        isProcessing={isProcessingTransaction}
+      />
     </div>
   );
 }

@@ -91,13 +91,6 @@ export default function AshiglaltiinZardluud() {
     barilgiinId: selectedBuildingId || barilgiinId,
   });
 
-  const [liftEnabled, setLiftEnabled] = useState<boolean>(false);
-  const [liftMaxFloor, setLiftMaxFloor] = useState<number | null>(null);
-  const [liftFloors, setLiftFloors] = useState<string[]>([]);
-  const [liftBulkInput, setLiftBulkInput] = useState<string>("");
-  const [liftShalgayaId, setLiftShalgayaId] = useState<string | null>(null);
-  const [liftDeleteAllOpen, setLiftDeleteAllOpen] = useState<boolean>(false);
-  const [liftFloorsBackup, setLiftFloorsBackup] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
@@ -105,11 +98,6 @@ export default function AshiglaltiinZardluud() {
     {}
   );
 
-  const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
-  const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
-  const [invoiceScheduleId, setInvoiceScheduleId] = useState<string | null>(
-    null
-  );
 
   const [formData, setFormData] = useState<ZardalFormData>({
     ner: "",
@@ -147,350 +135,7 @@ export default function AshiglaltiinZardluud() {
   const [filterText, setFilterText] = useState<string>("");
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<ZardalItem | null>(null);
-  const [confirmDeleteFloorOpen, setConfirmDeleteFloorOpen] = useState(false);
-  const [floorToDeleteConfirm, setFloorToDeleteConfirm] = useState<
-    string | null
-  >(null);
   const [turul, setTurul] = useState("");
-  const fetchInvoiceSchedule = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
-
-    try {
-      // Use selectedBuildingId from context, fallback to barilgiinId from auth
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
-      const url = effectiveBarilgiinId
-        ? `/nekhemjlekhCron/${ajiltan.baiguullagiinId}?barilgiinId=${effectiveBarilgiinId}`
-        : `/nekhemjlekhCron/${ajiltan.baiguullagiinId}`;
-
-      const response = await fetchWithDomainFallback(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-
-        if (
-          result.success &&
-          result.data &&
-          Array.isArray(result.data) &&
-          result.data.length > 0
-        ) {
-          const latestSchedule = result.data[result.data.length - 1];
-
-          if (latestSchedule.nekhemjlekhUusgekhOgnoo !== undefined) {
-            setInvoiceDay(latestSchedule.nekhemjlekhUusgekhOgnoo);
-            setInvoiceActive(latestSchedule.idevkhitei ?? true);
-            setInvoiceScheduleId(latestSchedule._id);
-            return;
-          }
-        }
-      }
-
-      // If no data found, reset to defaults
-      setInvoiceDay(null);
-      setInvoiceActive(true);
-      setInvoiceScheduleId(null);
-    } catch (error) {
-      // Reset to defaults on error
-      setInvoiceDay(null);
-      setInvoiceActive(true);
-      setInvoiceScheduleId(null);
-    }
-  };
-
-  const saveInvoiceSchedule = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-    if (!invoiceDay || invoiceDay < 1 || invoiceDay > 31) {
-      openErrorOverlay("Огноог 1-31 хооронд сонгоно уу");
-      return;
-    }
-
-    showSpinner();
-    try {
-      // Use selectedBuildingId from context, fallback to barilgiinId from auth
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId || null;
-
-      const res = await fetchWithDomainFallback(`/nekhemjlekhCron`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          baiguullagiinId: ajiltan?.baiguullagiinId,
-          barilgiinId: effectiveBarilgiinId,
-          nekhemjlekhUusgekhOgnoo: invoiceDay,
-          idevkhitei: invoiceActive,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const result = await res.json();
-      const data = result.data || result;
-
-      // Update state with the saved data
-      if (data._id) {
-        setInvoiceScheduleId(data._id);
-      }
-
-      openSuccessOverlay("Нэхэмжлэх илгээх тохиргоог хадгаллаа");
-
-      // Refresh the data from backend
-      await fetchInvoiceSchedule();
-    } catch (e) {
-      openErrorOverlay("Нэхэмжлэх тохиргоо илгээхэд алдаа гарлаа");
-    } finally {
-      hideSpinner();
-    }
-  };
-
-  const fetchLiftFloors = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
-    try {
-      // Use canonical liftShalgaya endpoint so all pages read the same source
-      const resp = await uilchilgee(token).get(`/liftShalgaya`, {
-        params: {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: selectedBuildingId || barilgiinId || null,
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 100,
-        },
-      });
-      const data = resp.data;
-      const list = Array.isArray(data?.jagsaalt) ? data.jagsaalt : [];
-
-      // Prefer branch-specific entries, fallback to org defaults (no barilgiinId)
-      const toStr = (v: any) => (v == null ? "" : String(v));
-      const branchMatches = list.filter(
-        (x: any) =>
-          toStr(x?.barilgiinId) === toStr(selectedBuildingId || barilgiinId)
-      );
-      const pickLatest = (arr: any[]) =>
-        [...arr].sort(
-          (a, b) =>
-            new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
-            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
-        )[0];
-
-      let chosen = branchMatches.length > 0 ? pickLatest(branchMatches) : null;
-      if (!chosen) {
-        const orgDefaults = list.filter(
-          (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
-        );
-        chosen =
-          orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
-      }
-
-      const floors = Array.isArray(chosen?.choloolugdokhDavkhar)
-        ? chosen.choloolugdokhDavkhar
-            .map((f: any) => String(f).trim())
-            .filter(Boolean)
-        : [];
-
-      if (!floors || floors.length === 0) {
-        setLiftMaxFloor(null);
-        setLiftBulkInput("");
-        setLiftEnabled(false);
-        setLiftFloors([]);
-        setLiftFloorsBackup([]);
-        return;
-      }
-
-      const maxFloor = Math.max(...floors.map((f: any) => Number(f) || 0));
-      const sortedFloors = toUniqueSorted(floors);
-      setLiftMaxFloor(maxFloor);
-      setLiftBulkInput(sortedFloors.join(","));
-      setLiftFloors(sortedFloors);
-      setLiftFloorsBackup([...sortedFloors]); // Backup the original floors
-      setLiftShalgayaId(chosen?._id ?? null);
-      setLiftEnabled(true);
-    } catch (error) {
-      setLiftMaxFloor(null);
-      setLiftBulkInput("");
-      setLiftEnabled(false);
-      setLiftFloors([]);
-      setLiftFloorsBackup([]);
-      setLiftShalgayaId(null);
-    }
-  };
-
-  const saveLiftSettings = async (
-    floorsOrMax: string[] | number | null,
-    skipFetch = false
-  ) => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-
-    showSpinner();
-
-    try {
-      let floors: string[] = [];
-      if (Array.isArray(floorsOrMax)) {
-        floors = toUniqueSorted(floorsOrMax);
-      } else if (typeof floorsOrMax === "number" && floorsOrMax > 0) {
-        floors = Array.from({ length: floorsOrMax }, (_, i) => String(i + 1));
-      } else {
-        floors = [];
-      }
-
-      // Persist to canonical liftShalgaya collection so other pages (invoicing)
-      // that read /liftShalgaya see the same source of truth.
-      const payload: any = {
-        choloolugdokhDavkhar: floors,
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: selectedBuildingId || barilgiinId || undefined,
-      };
-
-      const postResp = await uilchilgee(token).post(`/liftShalgaya`, payload);
-
-      if (floors.length > 0) {
-        openSuccessOverlay(`Лифт ${floors.join(",")} давхарт тохируулагдлаа`);
-        setLiftFloorsBackup([...floors]); // Update backup when saved
-      } else {
-        openSuccessOverlay("Лифт хөнгөлөлтийг идэвхгүй болголоо");
-        setLiftFloorsBackup([]); // Clear backup when disabled
-      }
-
-      // Refresh canonical source (skip if explicitly requested to prevent restoring old data)
-      if (!skipFetch) {
-        await fetchLiftFloors();
-      }
-    } catch (error) {
-      openErrorOverlay("Лифт тохиргоо хадгалах үед алдаа гарлаа");
-    } finally {
-      hideSpinner();
-    }
-  };
-
-  useEffect(() => {
-    if (token && ajiltan?.baiguullagiinId) {
-      fetchLiftFloors();
-      fetchInvoiceSchedule();
-    }
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
-
-  const toUniqueSorted = (values: (string | number)[]) => {
-    const nums = values
-      .map((v) => Number(String(v).trim()))
-      .filter((n) => Number.isFinite(n) && n > 0) as number[];
-    const uniq = Array.from(new Set(nums));
-    uniq.sort((a, b) => a - b);
-    return uniq.map((n) => String(n));
-  };
-
-  const expandRangeToken = (token: string): number[] => {
-    const t = token.trim().replace(/\s+/g, "");
-    if (!t) return [];
-    const m = t.match(/^(\d+)-(\d+)$/);
-    if (m) {
-      const start = Number(m[1]);
-      const end = Number(m[2]);
-      if (Number.isFinite(start) && Number.isFinite(end)) {
-        const a = Math.min(start, end);
-        const b = Math.max(start, end);
-        const out: number[] = [];
-        for (let i = a; i <= b; i++) out.push(i);
-        return out;
-      }
-    }
-    const n = Number(t);
-    return Number.isFinite(n) ? [n] : [];
-  };
-
-  const parseBulk = (text: string): string[] => {
-    const tokens = text
-      .split(/[,;\n\s]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const expanded = tokens.flatMap(expandRangeToken);
-    return toUniqueSorted(expanded);
-  };
-
-  const handleDeleteFloor = (floor: string) => {
-    const remaining = liftFloors.filter((f) => f !== floor);
-    setLiftFloors(remaining);
-    // persist immediately for selected building
-    (async () => {
-      try {
-        await saveLiftSettings(remaining);
-      } catch (e) {
-        // on error, refetch to restore
-        await fetchLiftFloors();
-      }
-    })();
-  };
-
-  const handleDeleteAllFloors = async () => {
-    // Clear all inputted lifts, save, and turn off liftEnabled
-    const originalLiftShalgayaId = liftShalgayaId;
-    setLiftFloors([]);
-    setLiftBulkInput("");
-    setLiftEnabled(false);
-    setLiftFloorsBackup([]);
-    setLiftShalgayaId(null);
-    try {
-      if (originalLiftShalgayaId && token) {
-        await deleteMethod("liftShalgaya", token, originalLiftShalgayaId);
-      }
-      // Always save null to ensure server has empty floors, skip fetch to prevent restoring old data
-      await saveLiftSettings(null, true);
-      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
-    } catch (e) {
-      // fallback
-      try {
-        await saveLiftSettings(null, true);
-      } catch (e2) {
-        // ignore
-      }
-      openSuccessOverlay("Бүх лифт давхар устгагдлаа");
-    }
-  };
-
-  const handleSaveFloors = async () => {
-    // Use the input as the source of truth, not merge with existing floors
-    // parse bulk input like "1-3,5,7" or "1,2,3"
-    let merged: string[] = [];
-    if (liftBulkInput && liftBulkInput.trim() !== "") {
-      const parsed = parseBulk(liftBulkInput);
-      merged = toUniqueSorted(parsed);
-    } else {
-      // Safety: if input is accidentally cleared, preserve existing floors
-      // User must use the delete button to remove all floors
-      merged = liftFloors || [];
-    }
-
-    // update UI first
-    setLiftFloors(merged);
-    setLiftBulkInput(merged.length > 0 ? merged.join(",") : "");
-    setLiftFloorsBackup([...merged]); // Update backup when saved
-
-    if (merged.length > 0) {
-      await saveLiftSettings(merged);
-    } else {
-      try {
-        if (liftShalgayaId && token) {
-          await deleteMethod("liftShalgaya", token, liftShalgayaId);
-          setLiftShalgayaId(null);
-        } else {
-          await saveLiftSettings(null);
-        }
-      } catch (e) {
-        await saveLiftSettings(null);
-      }
-    }
-  };
-
   const openAddModal = (isUilchilgee = false) => {
     setEditingItem(null);
     setIsUilchilgeeModal(isUilchilgee);
@@ -639,25 +284,8 @@ export default function AshiglaltiinZardluud() {
         popover: {
           title: "Ашиглалтын зардал",
           description:
-            "Зардлын жагсаалт болон лифт/нэхэмжлэхийн тохиргоонууд энд байна.",
+            "Зардлын жагсаалт энд байна.",
           side: "bottom",
-        },
-      },
-      {
-        element: "#zardal-invoice-settings",
-        popover: {
-          title: "Нэхэмжлэх илгээх",
-          description: "Нэхэмжлэх илгээх өдрийг тохируулж, идэвхжүүлэх/хаах.",
-          side: "right",
-        },
-      },
-      {
-        element: "#zardal-lift-settings",
-        popover: {
-          title: "Лифт тохиргоо",
-          description:
-            "Лифт хөнгөлөлтийн давхаруудыг оруулах болон хадгалах хэсэг.",
-          side: "right",
         },
       },
       {
@@ -693,195 +321,61 @@ export default function AshiglaltiinZardluud() {
         id="zardal-panel"
         className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar"
       >
-        <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-3">
-          {/* Invoice box */}
-          <div id="zardal-invoice-box" className="box flex-1">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4 sm:p-5">
-              <div className="font-medium text-theme flex-1">
-                Нэхэмжлэх илгээх
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={invoiceActive}
-                    onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
-                    aria-label="Нэхэмжлэх идэвхжүүлэх"
-                  />
-                  <span className="slider" />
-                </label>
-              </div>
-            </div>
-            {invoiceActive && (
-              <div
-                id="zardal-invoice-settings"
-                className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-4 sm:px-5 pb-4 sm:pb-5"
-              >
-                <div className="w-full sm:w-auto">
-                  <label className="block text-sm font-medium text-theme mb-1">
-                    Өдөр (сар бүр)
-                  </label>
-                  <MNumberInput
-                    min={1}
-                    max={31}
-                    placeholder="Нэхэмжлэх өдөр"
-                    value={invoiceDay ?? undefined}
-                    onChange={(v) => setInvoiceDay((v as number) ?? null)}
-                    className="w-full sm:w-40"
-                  />
-                </div>
-                <MButton
-                  id="zardal-invoice-save"
-                  className="btn-minimal btn-save w-full sm:w-auto sm:mt-6"
-                  onClick={saveInvoiceSchedule}
-                >
-                  Хадгалах
-                </MButton>
-              </div>
-            )}
-          </div>
-
-          {/* Lift box */}
-          <div id="zardal-lift-settings" className="box flex-1">
-            <div className="flex flex-col gap-3 p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-                <div className="text-theme font-medium mb-1">
-                  Лифт хөнгөлөлт
-                </div>
-                <div className="flex items-center gap-2">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={liftEnabled}
-                      onChange={(event) => {
-                        const enabled = event.currentTarget.checked;
-                        setLiftEnabled(enabled);
-                        if (!enabled) {
-                          saveLiftSettings(null);
-                        }
-                      }}
-                      aria-label="Лифт идэвхжүүлэх"
-                    />
-                    <span className="slider" />
-                  </label>
-                </div>
-              </div>
-
-              {liftEnabled && (
-                <>
-                  <div className="flex flex-col gap-1">
-                    <label className="block text-xs text-theme">
-                      Давхар (жишээ: 1 эсвэл 1-3 эсвэл 1,2,3)
-                    </label>
-
-                    <div className="flex items-center gap-2">
-                      <MTextInput
-                        placeholder="1-3,5,7 эсвэл 1,2,3"
-                        value={liftBulkInput}
-                        onChange={(e) =>
-                          setLiftBulkInput(e.currentTarget.value)
-                        }
-                        className="w-40"
-                      />
-
-                      <MButton
-                        id="zardal-lift-save"
-                        className="btn-minimal btn-save"
-                        onClick={handleSaveFloors}
-                      >
-                        Хадгалах
-                      </MButton>
-
-                      <MButton
-                        className="btn-minimal"
-                        color="red"
-                        onClick={handleDeleteAllFloors}
-                        title="Бүгдийг устгах"
-                      >
-                        <Trash2 color="red" />
-                      </MButton>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {liftFloors && liftFloors.length > 0 ? (
-                      liftFloors.map((f) => (
-                        <div
-                          key={f}
-                          className="inline-flex items-center gap-2 bg-[color:var(--panel)] px-3 py-1.5 rounded-2xl border border-gray-200 shadow-sm"
-                        >
-                          <span className="text-theme text-sm">{f}</span>
-                          <button
-                            className="w-6 h-6 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full"
-                            onClick={() => {
-                              setFloorToDeleteConfirm(f);
-                              setConfirmDeleteFloorOpen(true);
-                            }}
-                            aria-label={`Давхарыг устгах ${f}`}
-                            title="Устгах"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-sm text-slate-500">
-                        Хадгалагдсан давхаргүй
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="flex-1">
-            <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="text-theme font-medium flex-1">
-                Тогтмол зардлууд
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-theme">Тогтмол зардлууд</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      {ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length} зардал
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  id="zardal-add-btn"
+                  type="button"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  style={{ borderRadius: '0.75rem' }}
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      turul: "Тогтмол",
+                    });
+                    openAddModal(false);
+                  }}
+                >
+                  <span>Нэмэх</span>
+                </button>
               </div>
 
-              <button
-                id="zardal-add-btn"
-                type="button"
-                className="cssbuttons-io-button"
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    turul: "Тогтмол",
-                  });
-                  openAddModal(false);
-                }}
-              >
-                +
-              </button>
-            </div>
-
-            {isLoadingAshiglaltiin ? (
-              <div className="flex justify-center items-center p-10">
-                <Loader />
-              </div>
-            ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
-                .length === 0 ? (
-              <div className="p-8 text-center text-theme">
-                Тогтмол зардал байхгүй байна
-              </div>
-            ) : (
-              <div id="zardal-list" className="px-4 sm:px-5 pb-4 flex flex-col">
-                <div className="overflow-auto max-h-[350px]">
-                  <div className="min-w-full inline-block align-middle">
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
-                        <tr className="text-center text-slate-500 border-b bg-[color:var(--surface-bg)]">
-                          <th className="py-2 pr-3">Нэр</th>
-                          <th className="py-2 pr-3">Төрөл</th>
-                          <th className="py-2 pr-3">Тариф (₮)</th>
-                          <th className="py-2 pr-3">Тайлбар</th>
-                          <th className="py-2">Үйлдэл</th>
-                        </tr>
-                      </thead>
+              {isLoadingAshiglaltiin ? (
+                <div className="flex justify-center items-center p-10">
+                  <Loader />
+                </div>
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
+                  .length === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-theme font-medium">Тогтмол зардал байхгүй байна</p>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
+                </div>
+              ) : (
+                <div id="zardal-list" className="flex flex-col">
+                  <div className="overflow-auto max-h-[350px] custom-scrollbar">
+                    <div className="min-w-full inline-block align-middle">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
+                          <tr className="text-left text-[color:var(--muted-text)] text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                            <th className="py-3 px-4">Нэр</th>
+                            <th className="py-3 px-4 text-center">Төрөл</th>
+                            <th className="py-3 px-4 text-center">Тариф</th>
+                            <th className="py-3 px-4">Тайлбар</th>
+                            <th className="py-3 px-4 text-center">Үйлдэл</th>
+                          </tr>
+                        </thead>
                       <tbody>
                         {ashiglaltiinZardluud
                           .filter((x) => x._id)
@@ -903,69 +397,67 @@ export default function AshiglaltiinZardluud() {
                             return (
                               <tr
                                 key={mur._id}
-                                className="border-b last:border-b-0 text-left"
+                                className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
-                                <td className="py-2 pr-3 text-theme">
-                                  <div className="font-medium">{mur.ner}</div>
+                                <td className="py-3 px-4 text-theme">
+                                  <div className="font-semibold">{mur.ner}</div>
                                 </td>
 
-                                <td className="py-2 pr-3 text-theme">
-                                  {mur.turul}
+                                <td className="py-3 px-4 text-center">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                    {mur.turul}
+                                  </span>
                                 </td>
 
-                                <td className="py-2 pr-3">
-                                  <MTextInput
-                                    className="w-36 mx-auto"
-                                    value={formatNumber(currentValue, 2)}
-                                    readOnly
-                                    styles={{
-                                      input: {
-                                        textAlign: "right",
-                                      },
-                                    }}
-                                    rightSection={
-                                      <span className="text-slate-500 pr-1">
-                                        ₮
+                                <td className="py-3 px-4">
+                                  <div className="flex flex-col items-center gap-1">
+                                    <div className="font-semibold text-theme text-base">
+                                      {formatNumber(currentValue, 0)} ₮
+                                    </div>
+                                    {changed && (
+                                      <span className="text-xs text-amber-600 font-medium">
+                                        Өөрчлөгдсөн
                                       </span>
-                                    }
-                                  />
-
-                                  {changed && (
-                                    <span className="text-xs text-amber-600 ml-2">
-                                      Өөрчлөгдсөн
-                                    </span>
-                                  )}
+                                    )}
+                                  </div>
                                 </td>
-                                <td className="py-2 pr-3 text-theme">
-                                  {mur.tailbar}
+                                <td className="py-3 px-4 text-theme text-sm max-w-xs truncate">
+                                  {mur.tailbar || <span className="text-[color:var(--muted-text)]">-</span>}
                                 </td>
-                                <td className="py-2">
+                                <td className="py-3 px-4">
                                   <div className="flex items-center justify-center gap-2">
-                                    <Edit
-                                      className="text-sm text-blue-500 cursor-pointer"
+                                    <button
                                       onClick={() => openEditModal(mur, false)}
-                                    />
-                                    <Trash2
-                                      className="text-sm text-red-500 cursor-pointer"
-                                      color="red"
+                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+                                      style={{ borderRadius: '0.5rem' }}
+                                      title="Засах"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
                                       onClick={() => {
                                         setItemToDelete(mur);
                                         setDeleteModalOpen(true);
                                       }}
-                                    />
+                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+                                      style={{ borderRadius: '0.5rem' }}
+                                      title="Устгах"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
                                   </div>
                                 </td>
                               </tr>
                             );
                           })}
                       </tbody>
-                      <tfoot className="sticky bottom-0 z-10 bg-[color:var(--surface-bg)] border-t">
-                        <tr className="font-semibold bg-[color:var(--surface-bg)]">
-                          <td className="py-2 pr-3 text-theme bg-[color:var(--surface-bg)]">
-                            <div className="font-medium">Нийт дүн:</div>
+                      <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
+                        <tr className="font-bold">
+                          <td colSpan={2} className="py-3 px-4 text-theme">
+                            <div className="font-bold text-base">Нийт дүн:</div>
                           </td>
-                          <td className="bg-[color:var(--surface-bg)]"></td>
-                          <td className="text-theme text-center bg-[color:var(--surface-bg)]">
+                          <td className="py-3 px-4 text-center">
+                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
                             {formatNumber(
                               ashiglaltiinZardluud
                                 .filter((x) => x._id)
@@ -985,20 +477,187 @@ export default function AshiglaltiinZardluud() {
                                       : displayValue;
                                   return sum + currentValue;
                                 }, 0)
-                            )}{" "}
-                            ₮
+                            )} ₮
+                            </div>
                           </td>
-                          <td
-                            colSpan={2}
-                            className="bg-[color:var(--surface-bg)]"
-                          ></td>
+                          <td colSpan={2}></td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
                 </div>
               </div>
-            )}
+              )}
+            </div>
+          </div>
+
+          {/* Variable expenses section */}
+          <div className="flex-1">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg font-bold text-theme">Хувьсах зардлууд</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      {ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length} зардал
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  id="zardal-add-variable-btn"
+                  type="button"
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  style={{ borderRadius: '0.75rem' }}
+                  onClick={() => {
+                    setFormData({
+                      ...formData,
+                      turul: "Дурын",
+                    });
+                    openAddModal(false);
+                  }}
+                >
+                  <span>Нэмэх</span>
+                </button>
+              </div>
+
+              {isLoadingAshiglaltiin ? (
+                <div className="flex justify-center items-center p-10">
+                  <Loader />
+                </div>
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын")
+                  .length === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-theme font-medium">Хувьсах зардал байхгүй байна</p>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <div className="overflow-auto max-h-[350px] custom-scrollbar">
+                    <div className="min-w-full inline-block align-middle">
+                      <table className="w-full text-sm">
+                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
+                          <tr className="text-left text-[color:var(--muted-text)] text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                            <th className="py-3 px-4">Нэр</th>
+                            <th className="py-3 px-4 text-center">Төрөл</th>
+                            <th className="py-3 px-4 text-center">Тариф</th>
+                            <th className="py-3 px-4">Тайлбар</th>
+                            <th className="py-3 px-4 text-center">Үйлдэл</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ashiglaltiinZardluud
+                            .filter((x) => x._id)
+                            .filter((x) => x.turul === "Дурын")
+                            .filter((x) =>
+                              filterText.trim() === ""
+                                ? true
+                                : String(x.ner || "")
+                                    .toLowerCase()
+                                    .includes(filterText.toLowerCase())
+                            )
+                            .map((mur) => {
+                              const displayValue = mur.tariff;
+                              const currentValue =
+                                editedTariffs[mur._id!] !== undefined
+                                  ? editedTariffs[mur._id!]
+                                  : displayValue;
+                              const changed = currentValue !== displayValue;
+                              return (
+                                <tr
+                                  key={mur._id}
+                                  className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
+                                >
+                                  <td className="py-3 px-4 text-theme">
+                                    <div className="font-semibold">{mur.ner}</div>
+                                  </td>
+
+                                  <td className="py-3 px-4 text-center">
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                                      {mur.turul}
+                                    </span>
+                                  </td>
+
+                                  <td className="py-3 px-4">
+                                    <div className="flex flex-col items-center gap-1">
+                                      <div className="font-semibold text-theme text-base">
+                                        {formatNumber(currentValue, 0)} ₮
+                                      </div>
+                                      {changed && (
+                                        <span className="text-xs text-amber-600 font-medium">
+                                          Өөрчлөгдсөн
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4 text-theme text-sm max-w-xs truncate">
+                                    {mur.tailbar || <span className="text-[color:var(--muted-text)]">-</span>}
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center justify-center gap-2">
+                                      <button
+                                        onClick={() => openEditModal(mur, false)}
+                                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
+                                        style={{ borderRadius: '0.5rem' }}
+                                        title="Засах"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setItemToDelete(mur);
+                                          setDeleteModalOpen(true);
+                                        }}
+                                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
+                                        style={{ borderRadius: '0.5rem' }}
+                                        title="Устгах"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                        <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
+                          <tr className="font-bold">
+                            <td colSpan={2} className="py-3 px-4 text-theme">
+                              <div className="font-bold text-base">Нийт дүн:</div>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatNumber(
+                                ashiglaltiinZardluud
+                                  .filter((x) => x._id)
+                                  .filter((x) => x.turul === "Дурын")
+                                  .filter((x) =>
+                                    filterText.trim() === ""
+                                      ? true
+                                      : String(x.ner || "")
+                                          .toLowerCase()
+                                          .includes(filterText.toLowerCase())
+                                  )
+                                  .reduce((sum, item) => {
+                                    const displayValue = item.tariff;
+                                    const currentValue =
+                                      editedTariffs[item._id!] !== undefined
+                                        ? editedTariffs[item._id!]
+                                        : displayValue;
+                                    return sum + currentValue;
+                                  }, 0)
+                              )} ₮
+                              </div>
+                            </td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1026,6 +685,7 @@ export default function AshiglaltiinZardluud() {
               <MButton
                 onClick={() => setDeleteModalOpen(false)}
                 className="btn-minimal"
+                radius="xl"
               >
                 Болих
               </MButton>
@@ -1033,6 +693,7 @@ export default function AshiglaltiinZardluud() {
                 color="red"
                 onClick={handleDeleteConfirm}
                 className="btn-minimal btn-cancel"
+                radius="xl"
               >
                 Устгах
               </MButton>
@@ -1040,107 +701,6 @@ export default function AshiglaltiinZardluud() {
           </div>
         </MModal>
 
-        <MModal
-          title="Бүгдийг устгах уу?"
-          opened={liftDeleteAllOpen}
-          onClose={() => setLiftDeleteAllOpen(false)}
-          classNames={{
-            content: "modal-surface modal-responsive",
-            header:
-              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-            title: "text-theme font-semibold",
-            close:
-              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-          }}
-          overlayProps={{ opacity: 0.5, blur: 6 }}
-          centered
-          size="sm"
-        >
-          <div className="space-y-4 mt-4">
-            <p className="text-theme">
-              Та бүх давхарыг устгах гэдэгт итгэлтэй байна уу?
-            </p>
-            <div className="flex justify-end gap-2">
-              <MButton
-                onClick={() => setLiftDeleteAllOpen(false)}
-                className="btn-minimal"
-              >
-                Болих
-              </MButton>
-              <MButton
-                color="red"
-                onClick={async () => {
-                  setLiftDeleteAllOpen(false);
-                  try {
-                    if (liftShalgayaId && token) {
-                      await deleteMethod("liftShalgaya", token, liftShalgayaId);
-                    } else {
-                      await saveLiftSettings(null);
-                    }
-                  } catch (e) {
-                    // fallback
-                    await saveLiftSettings(null);
-                  }
-                  await fetchLiftFloors();
-                }}
-                className="btn-minimal btn-cancel"
-              >
-                Устгах
-              </MButton>
-            </div>
-          </div>
-        </MModal>
-
-        {/* Small confirmation modal for deleting a single floor */}
-        <MModal
-          title="Давхарыг устгах уу?"
-          opened={confirmDeleteFloorOpen}
-          onClose={() => {
-            setConfirmDeleteFloorOpen(false);
-            setFloorToDeleteConfirm(null);
-          }}
-          classNames={{
-            content: "modal-surface modal-responsive max-w-sm",
-            header:
-              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-            title: "text-theme font-semibold",
-            close:
-              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-          }}
-          overlayProps={{ opacity: 0.6, blur: 6 }}
-          centered
-          size="xs"
-        >
-          <div className="space-y-4 mt-2">
-            <p className="text-theme">
-              Та "{floorToDeleteConfirm}" давхарыг устгахдаа итгэлтэй байна уу?
-              Энэ үйлдэл буцаагдахгүй.
-            </p>
-            <div className="flex justify-end gap-2">
-              <MButton
-                onClick={() => {
-                  setConfirmDeleteFloorOpen(false);
-                  setFloorToDeleteConfirm(null);
-                }}
-                className="btn-minimal"
-              >
-                Үгүй
-              </MButton>
-              <MButton
-                color="red"
-                onClick={async () => {
-                  const f = floorToDeleteConfirm;
-                  setConfirmDeleteFloorOpen(false);
-                  setFloorToDeleteConfirm(null);
-                  if (f) await handleDeleteFloor(f);
-                }}
-                className="btn-minimal btn-cancel"
-              >
-                Тийм
-              </MButton>
-            </div>
-          </div>
-        </MModal>
 
         <MModal
           title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
@@ -1275,6 +835,7 @@ export default function AshiglaltiinZardluud() {
               <MButton
                 onClick={() => setIsModalOpen(false)}
                 className="btn-minimal btn-cancel"
+                radius="xl"
               >
                 Болих
               </MButton>
@@ -1282,6 +843,7 @@ export default function AshiglaltiinZardluud() {
                 className="btn-minimal btn-save h-11"
                 onClick={handleSave}
                 data-modal-primary
+                radius="xl"
               >
                 Хадгалах
               </MButton>

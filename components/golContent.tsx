@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Search as SearchIcon, X, LogOut } from "lucide-react";
+import { Settings, Search as SearchIcon, X, LogOut, Type } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/useAuth";
@@ -255,6 +255,64 @@ export default function GolContent({ children }: GolContentProps) {
       router.replace("/login");
     }
   };
+
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'font-size'>('general');
+  
+  // Font size options with more granular control
+  const fontSizeOptions = [
+    { value: 0, label: 'Хамгийн жижиг', size: '10px' },
+    { value: 1, label: 'Маш жижиг', size: '11px' },
+    { value: 2, label: 'Жижиг-', size: '12px' },
+    { value: 3, label: 'Жижиг', size: '13px' },
+    { value: 4, label: 'Жижиг+', size: '14px' },
+    { value: 5, label: 'Дунд-', size: '15px' },
+    { value: 6, label: 'Дунд', size: '16px' },
+    { value: 7, label: 'Дунд+', size: '17px' },
+    { value: 8, label: 'Том-', size: '18px' },
+    { value: 9, label: 'Том', size: '19px' },
+    { value: 10, label: 'Том+', size: '20px' },
+    { value: 11, label: 'Маш том-', size: '21px' },
+    { value: 12, label: 'Маш том', size: '22px' },
+    { value: 13, label: 'Маш том+', size: '24px' },
+    { value: 14, label: 'Хамгийн том', size: '26px' },
+  ];
+
+  const [fontSizeIndex, setFontSizeIndex] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('fontSizeIndex');
+      return saved ? parseInt(saved) : 6; // Default to 'Дунд' (16px)
+    }
+    return 6;
+  });
+
+  const handleKhemjee = () => {
+    setActiveTab('font-size');
+    setShowSettingsModal(true);
+    setShowLogout(false);
+  };
+
+  const handleOpenSettings = () => {
+    setActiveTab('general');
+    setShowSettingsModal(true);
+    setShowLogout(false);
+  };
+
+  const handleFontSizeChange = (index: number) => {
+    setFontSizeIndex(index);
+    const size = fontSizeOptions[index].size;
+    localStorage.setItem('fontSizeIndex', index.toString());
+    document.documentElement.style.fontSize = size;
+  };
+
+  useEffect(() => {
+    if (mounted && typeof window !== 'undefined') {
+      const savedIndex = localStorage.getItem('fontSizeIndex');
+      const index = savedIndex ? parseInt(savedIndex) : 6;
+      setFontSizeIndex(index);
+      document.documentElement.style.fontSize = fontSizeOptions[index].size;
+    }
+  }, [mounted]);
 
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
   const isLoggedIn = !!token;
@@ -520,6 +578,20 @@ export default function GolContent({ children }: GolContentProps) {
                             <span>Тохиргоо</span>
                           </button>
                         </li>
+                        <li>
+                          <button
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleKhemjee();
+                            }}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          >
+                            <Type className="w-4 h-4 opacity-80" />
+                            <span>Хэмжээ</span>
+                          </button>
+                        </li>
                       </ul>
                       <div className="border border-b-gray-400"></div>
                       <ul>
@@ -594,10 +666,20 @@ export default function GolContent({ children }: GolContentProps) {
                       </li>
                       <li>
                         <button
-                          onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          onClick={handleKhemjee}
+                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
                         >
-                          Гарах
+                          <Type className="w-4 h-4 opacity-80" />
+                          <span>Хэмжээ</span>
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                        >
+                          <LogOut className="w-4 h-4 opacity-80" />
+                          <span>Гарах</span>
                         </button>
                       </li>
                     </ul>
@@ -722,6 +804,211 @@ export default function GolContent({ children }: GolContentProps) {
                 >
                   <X className="w-4 sm:w-5 h-4 sm:h-5" />
                 </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Unified Settings Modal */}
+      {showSettingsModal && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[1300] flex items-center justify-center p-4 animate-fadeIn">
+            <div
+              className="absolute inset-0 backdrop-blur-sm transition-all duration-300 bg-black/50 dark:bg-black/80"
+              onClick={() => setShowSettingsModal(false)}
+            />
+            <div className="relative bg-[color:var(--surface-bg)] rounded-3xl w-full max-w-2xl overflow-hidden border border-[color:var(--surface-border)] dark:border-[color:var(--panel)] transform transition-all duration-300 scale-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--surface-bg)] dark:via-[color:var(--panel)] dark:to-[color:var(--surface-bg)]">
+                <h3 className="text-2xl font-bold text-theme">Тохиргоо</h3>
+                <button
+                  onClick={() => setShowSettingsModal(false)}
+                  className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-[color:var(--panel)] rounded-xl transition-all duration-200 hover:rotate-90 group"
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  <X className="w-6 h-6 text-theme group-hover:scale-110 transition-transform" />
+                </button>
+              </div>
+
+              {/* Tabs */}
+              <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)]">
+                <button
+                  onClick={() => setActiveTab('general')}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
+                    activeTab === 'general'
+                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
+                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
+                  }`}
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    <span>Ерөнхий</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('font-size')}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
+                    activeTab === 'font-size'
+                      ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
+                      : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
+                  }`}
+                  style={{ borderRadius: '0.75rem' }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    <span>Үсгийн хэмжээ</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-6 min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar bg-gradient-to-b from-transparent to-[color:var(--surface-hover)]/20 dark:to-[color:var(--panel)]/30">
+                {/* General Settings Tab */}
+                {activeTab === 'general' && (
+                  <div className="space-y-6 animate-fadeIn">
+                    <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
+                      <h4 className="text-lg font-bold text-theme mb-4 flex items-center gap-2">
+                        <div className="p-2 bg-[color:var(--theme)]/10 dark:bg-[color:var(--theme)]/20 rounded-lg">
+                          <Settings className="w-5 h-5 text-[color:var(--theme)]" />
+                        </div>
+                        <span>Ерөнхий тохиргоо</span>
+                      </h4>
+                      <p className="text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] mb-6 text-sm leading-relaxed">
+                        Системийн бүх тохиргоог харах бол дэлгэрэнгүй тохиргоо хэсэгт очино уу.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setShowSettingsModal(false);
+                          router.push("/tokhirgoo");
+                        }}
+                        className="px-6 py-3 bg-[color:var(--theme)] hover:opacity-90 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 group"
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
+                        <span>Дэлгэрэнгүй тохиргоо</span>
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-200/50 dark:border-blue-600/50 hover:shadow-lg dark:hover:shadow-blue-500/10 transition-all duration-200 hover:scale-105">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
+                          <h5 className="font-semibold text-theme">Хэрэглэгч</h5>
+                        </div>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] font-medium">{userName}</p>
+                      </div>
+                      <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-200/50 dark:border-purple-600/50 hover:shadow-lg dark:hover:shadow-purple-500/10 transition-all duration-200 hover:scale-105">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse"></div>
+                          <h5 className="font-semibold text-theme">Байгууллага</h5>
+                        </div>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] font-medium">{baiguullaga?.ner || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Font Size Tab */}
+                {activeTab === 'font-size' && (
+                  <div className="space-y-6 animate-fadeIn">
+                    {/* Preview Text */}
+                    <div className="p-8 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30 rounded-2xl text-center border-2 border-emerald-200/50 dark:border-emerald-600/50 shadow-lg dark:shadow-emerald-500/10 relative overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/10 dark:to-transparent"></div>
+                      <div className="relative z-10">
+                        <p className="text-theme dark:text-[color:var(--panel-text)] font-medium mb-3 opacity-70 text-sm flex items-center justify-center gap-2">
+                          <Type className="w-4 h-4" />
+                          Жишээ текст
+                        </p>
+                        <p 
+                          className="text-theme dark:text-[color:var(--panel-text)] font-bold transition-all duration-300 drop-shadow-sm"
+                          style={{ fontSize: fontSizeOptions[fontSizeIndex].size }}
+                        >
+                          Энэ бол жишээ текст юм
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Slider */}
+                    <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-base text-theme dark:text-white font-bold flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-[color:var(--theme)] animate-pulse"></div>
+                          {fontSizeOptions[fontSizeIndex].label}
+                        </span>
+                        <span className="text-sm text-theme dark:text-white font-mono font-bold bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-hover)] px-3 py-1.5 rounded-lg border border-[color:var(--surface-border)] shadow-sm">
+                          {fontSizeOptions[fontSizeIndex].size}
+                        </span>
+                      </div>
+                      
+                      <div className="relative">
+                        <input
+                          type="range"
+                          min="0"
+                          max={fontSizeOptions.length - 1}
+                          value={fontSizeIndex}
+                          onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
+                          className="w-full h-3 rounded-full appearance-none cursor-pointer slider-thumb bg-gray-300 dark:bg-gray-600"
+                          style={{
+                            background: `linear-gradient(to right, var(--theme) 0%, var(--theme) ${(fontSizeIndex / (fontSizeOptions.length - 1)) * 100}%, rgba(156, 163, 175, 0.5) ${(fontSizeIndex / (fontSizeOptions.length - 1)) * 100}%, rgba(156, 163, 175, 0.5) 100%)`
+                          }}
+                        />
+                        
+                        {/* Tick marks */}
+                        <div className="flex justify-between mt-3 px-1">
+                          {fontSizeOptions.map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`w-0.5 h-2 rounded-full transition-all duration-200 ${
+                                idx === fontSizeIndex 
+                                  ? 'bg-[color:var(--theme)] h-4 shadow-lg shadow-[color:var(--theme)]/30' 
+                                  : 'bg-gray-400 dark:bg-gray-500'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick preset buttons */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => handleFontSizeChange(2)}
+                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                          fontSizeIndex === 2
+                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                            : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-theme dark:text-[color:var(--panel-text)] border-blue-200/50 dark:border-blue-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                        }`}
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        Жижиг
+                      </button>
+                      <button
+                        onClick={() => handleFontSizeChange(6)}
+                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                          fontSizeIndex === 6
+                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                            : 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-theme dark:text-[color:var(--panel-text)] border-green-200/50 dark:border-green-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                        }`}
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        Дунд
+                      </button>
+                      <button
+                        onClick={() => handleFontSizeChange(10)}
+                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                          fontSizeIndex === 10
+                            ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
+                            : 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 text-theme dark:text-[color:var(--panel-text)] border-orange-200/50 dark:border-orange-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
+                        }`}
+                        style={{ borderRadius: '0.75rem' }}
+                      >
+                        Том
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -3886,3 +3886,162 @@ body .mantine-Month-weekday {
   opacity: 0.3 !important;
   cursor: not-allowed !important;
 }
+
+/* ========================================
+   FONT SIZE SYSTEM - Global Typography Scale
+   ======================================== */
+
+/* Font size is now set dynamically via JavaScript on :root element */
+/* Default fallback */
+:root {
+  font-size: 16px;
+}
+
+/* Smooth transitions for all interactive elements */
+button, a, input, textarea, select {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Enhanced hover effects with smooth transitions */
+button:hover, a:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s ease-in-out;
+}
+
+button:active, a:active {
+  transform: translateY(0);
+  transition: all 0.1s ease-in-out;
+}
+
+/* ========================================
+   CUSTOM SLIDER STYLES
+   ======================================== */
+
+/* Range slider thumb */
+.slider-thumb::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--theme);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
+  border: 3px solid white;
+}
+
+.slider-thumb::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.slider-thumb::-webkit-slider-thumb:active {
+  transform: scale(1.05);
+}
+
+.slider-thumb::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--theme);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease-in-out;
+  border: 3px solid white;
+}
+
+.slider-thumb::-moz-range-thumb:hover {
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.slider-thumb::-moz-range-thumb:active {
+  transform: scale(1.05);
+}
+
+/* Track styling */
+.slider-thumb::-webkit-slider-runnable-track {
+  height: 12px;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+  background: transparent;
+}
+
+.slider-thumb::-moz-range-track {
+  height: 12px;
+  border-radius: 9999px;
+  transition: all 0.2s ease-in-out;
+  background: transparent;
+}
+
+/* Dark mode track enhancement */
+[data-mode="dark"] .slider-thumb {
+  filter: brightness(1.2);
+}
+
+/* Focus state */
+.slider-thumb:focus {
+  outline: none;
+}
+
+.slider-thumb:focus::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px rgba(var(--theme-rgb, 59, 130, 246), 0.2);
+}
+
+.slider-thumb:focus::-moz-range-thumb {
+  box-shadow: 0 0 0 4px rgba(var(--theme-rgb, 59, 130, 246), 0.2);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-scaleIn {
+  animation: scaleIn 0.2s ease-out;
+}
+
+/* Scale utilities for hover effects */
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}

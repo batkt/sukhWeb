@@ -18,6 +18,7 @@ const Zogsool = lazy(() => import("./Zogsool"));
 const UstgasanTuukh = lazy(() => import("./UstsanTuukh"));
 const ZassanTuukh = lazy(() => import("./ZassanTuukh"));
 const BarilgiinTokhirgoo = lazy(() => import("./BarilgiinTokhirgoo"));
+const NemeltTokhirgoo = lazy(() => import("./NemeltTokhirgoo"));
 
 // Error boundary for chunk loading errors
 class ChunkErrorBoundary extends Component<
@@ -137,7 +138,11 @@ function Tokhirgoo() {
           text: "Барилгын тохиргоо",
           tsonkh: BarilgiinTokhirgoo,
         },
-
+        {
+          icon: <Settings className="w-5 h-5" />,
+          text: "Нэмэлт тохиргоо",
+          tsonkh: NemeltTokhirgoo,
+        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "И-Баримт",

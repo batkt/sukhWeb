@@ -109,93 +109,7 @@ export default function DansniiKhuulga() {
     [dansList]
   );
 
-  const exceleerTatya = async () => {
-    try {
-      if (!token || !ajiltan?.baiguullagiinId) {
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
-        return;
-      }
-      if (!selectedDansId) {
-        message.warning("Эхлээд данс сонгоно уу");
-        return;
-      }
-      // Resolve selected account number (dugaar)
-      const chosen = (() => {
-        const byId = (dansList || []).find(
-          (d: any) => String(d._id) === String(selectedDansId)
-        );
-        if (byId?.dugaar) return String(byId.dugaar);
-        const byDugaar = (dansList || []).find(
-          (d: any) => String(d.dugaar) === String(selectedDansId)
-        );
-        if (byDugaar?.dugaar) return String(byDugaar.dugaar);
-        return String(selectedDansId);
-      })();
-
-      const [s, e] = ekhlekhOgnoo || [];
-      const filters: Record<string, any> = {};
-      if (s) filters.ekhlekhOgnoo = s;
-      if (e) filters.duusakhOgnoo = e;
-      if (chosen) filters.dansniiDugaar = chosen;
-
-      const body = {
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: selectedBuildingId || barilgiinId || null,
-        filters,
-        historical: false,
-        fileName: undefined as string | undefined,
-      };
-
-      const path = "/bankniiGuilgeeExcelDownload";
-      const hide = message.loading({
-        content: "Excel бэлдэж байна…",
-        duration: 0,
-      });
-      let resp: any;
-      try {
-        resp = await uilchilgee(token).post(path, body, {
-          responseType: "blob" as any,
-        });
-      } catch (err: any) {
-        if (err?.response?.status === 404 && typeof window !== "undefined") {
-          resp = await uilchilgee(token).post(
-            `${window.location.origin}${path}`,
-            body,
-            { responseType: "blob" as any, baseURL: undefined as any }
-          );
-        } else {
-          throw err;
-        }
-      }
-      hide();
-
-      const blob = new Blob([resp.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const cd = (resp.headers?.["content-disposition"] ||
-        resp.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "bank_guilgee.xlsx";
-      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
-        filename = decodeURIComponent(
-          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
-        );
-      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
-        filename = cd.match(/filename="?([^";]+)"?/i)![1];
-      }
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      message.success("Excel татагдлаа");
-    } catch (e) {
-      console.error(e);
-      message.error("Excel татахад алдаа гарлаа");
-    }
-  };
+ 
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -216,79 +130,7 @@ export default function DansniiKhuulga() {
     }
   }, [isZaaltDropdownOpen]);
 
-  // Excel Import handler
-  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-      ".xlsx",
-      ".xls",
-    ];
-    const isValidType =
-      validTypes.includes(file.type) ||
-      file.name.endsWith(".xlsx") ||
-      file.name.endsWith(".xls");
-
-    if (!isValidType) {
-      message.error("Зөвхөн Excel файл (.xlsx, .xls) оруулна уу");
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      return;
-    }
-
-    try {
-      if (!token || !ajiltan?.baiguullagiinId) {
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
-        return;
-      }
-
-      const form = new FormData();
-      form.append("excelFile", file);
-      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
-      if (selectedBuildingId || barilgiinId) {
-        form.append("barilgiinId", selectedBuildingId || barilgiinId || "");
-      }
-
-      const endpoint = "/bankniiGuilgeeExcelImport";
-
-      message.loading({
-        content: "Excel импорт хийж байна…",
-        key: "import",
-        duration: 0,
-      });
-
-      const resp: any = await uilchilgee(token).post(endpoint, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      message.destroy("import");
-
-      const data = resp?.data;
-      const failed = data?.result?.failed;
-      if (Array.isArray(failed) && failed.length > 0) {
-        const detailLines = failed.map(
-          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
-        );
-        const details = detailLines.join("\n");
-        const topMsg =
-          data?.message || "Импортын явцад зарим мөр алдаатай байна";
-        openErrorOverlay(`${topMsg}\n${details}`);
-      } else {
-        message.success("Excel импорт амжилттай");
-        // Refresh the page data by reloading
-        window.location.reload();
-      }
-    } catch (err: any) {
-      message.destroy("import");
-      const errorMsg = getErrorMessage(err);
-      openErrorOverlay(errorMsg);
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
+ 
 
   const t = (text: string) => text;
 
@@ -336,13 +178,6 @@ export default function DansniiKhuulga() {
         popover: {
           title: "И-баримт",
           description: "Энд дарж И-баримтын цонх нээнэ.",
-        },
-      },
-      {
-        element: "#dans-excel-btn",
-        popover: {
-          title: "Excel татах",
-          description: "Жагсаалтыг Excel файл хэлбэрээр татна.",
         },
       },
       {
@@ -647,49 +482,7 @@ export default function DansniiKhuulga() {
                   />
                 </motion.button>
 
-                {isZaaltDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
-                    <button
-                      onClick={() => {
-                        fileInputRef.current?.click();
-                        setIsZaaltDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>Excel импорт</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        exceleerTatya();
-                        setIsZaaltDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
-                    >
-                      <Download className="w-4 h-4" />
-                      <span>Заалт татах</span>
-                    </button>
-                  </div>
-                )}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                onChange={handleExcelImport}
-                className="hidden"
-              />
-              <motion.div
-                id="guilgee-excel-btn"
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <IconTextButton
-                  onClick={exceleerTatya}
-                  icon={<Download className="w-5 h-5" />}
-                  label={t("Excel татах")}
-                />
-              </motion.div>
               <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
