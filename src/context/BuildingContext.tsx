@@ -22,10 +22,20 @@ export const BuildingProvider = ({
   const { token, ajiltan, baiguullaga, ajiltanMutate, barilgiinId } = useAuth();
   const hasInitializedRef = useRef(false);
 
-  // Initialize from localStorage on mount
+  // Initialize from localStorage immediately to prevent flickering
   const [selectedBuildingId, setSelectedBuildingIdState] = useState<
     string | null
-  >(null);
+  >(() => {
+    // Read from localStorage on initial render
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("selectedBuildingId");
+      if (saved && saved !== "null" && saved !== "undefined") {
+        console.log("🚀 Initial state from localStorage:", saved);
+        return saved;
+      }
+    }
+    return null;
+  });
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Sync with localStorage on mount and when ajiltan/baiguullaga loads
@@ -36,7 +46,15 @@ export const BuildingProvider = ({
 
     console.log("🔄 BuildingContext: Initializing building selection...");
 
-    // Priority 1: localStorage (user's last selection - persists across pages)
+    // Priority 1: If we already have a value (from localStorage in useState initializer), use it
+    if (selectedBuildingId) {
+      console.log("✅ Already have building from initial state:", selectedBuildingId);
+      hasInitializedRef.current = true;
+      setIsInitialized(true);
+      return;
+    }
+
+    // Priority 2: localStorage (user's last selection - persists across pages)
     const savedBuildingId = localStorage.getItem("selectedBuildingId");
     console.log("📦 localStorage value:", savedBuildingId);
     if (savedBuildingId && savedBuildingId !== "null" && savedBuildingId !== "undefined") {
@@ -47,28 +65,34 @@ export const BuildingProvider = ({
       return;
     }
 
-    // Priority 2: ajiltan's defaultBarilga (from real-time API)
+    // Priority 3: ajiltan's defaultBarilga (from real-time API)
     if (ajiltan?.defaultBarilga) {
+      console.log("✅ Using ajiltan defaultBarilga:", ajiltan.defaultBarilga);
       setSelectedBuildingIdState(ajiltan.defaultBarilga);
+      localStorage.setItem("selectedBuildingId", ajiltan.defaultBarilga);
       hasInitializedRef.current = true;
       setIsInitialized(true);
       return;
     }
 
-    // Priority 3: barilgiinId from cookies (already set during login)
+    // Priority 4: barilgiinId from cookies (already set during login)
     if (barilgiinId) {
+      console.log("✅ Using barilgiinId from cookies:", barilgiinId);
       setSelectedBuildingIdState(barilgiinId);
+      localStorage.setItem("selectedBuildingId", barilgiinId);
       hasInitializedRef.current = true;
       setIsInitialized(true);
       return;
     }
 
-    // Priority 4: first building in organization list
+    // Priority 5: first building in organization list
     if (baiguullaga?.barilguud && baiguullaga.barilguud.length > 0) {
       const firstBuilding = baiguullaga.barilguud[0];
       const bid = String(firstBuilding?._id || "");
       if (bid) {
+        console.log("✅ Using first building from list:", bid);
         setSelectedBuildingIdState(bid);
+        localStorage.setItem("selectedBuildingId", bid);
         hasInitializedRef.current = true;
         setIsInitialized(true);
         return;
@@ -78,6 +102,7 @@ export const BuildingProvider = ({
     // Fallback: If we have ajiltan loaded (auth complete) but no buildings,
     // still mark as initialized so pages don't wait forever
     if (ajiltan && baiguullaga) {
+      console.log("⚠️ No buildings available, marking as initialized");
       hasInitializedRef.current = true;
       setIsInitialized(true);
     }
@@ -87,6 +112,7 @@ export const BuildingProvider = ({
     baiguullaga,
     baiguullaga?.barilguud,
     barilgiinId,
+    selectedBuildingId,
   ]);
 
   const setSelectedBuildingId = (id: string | null) => {
