@@ -321,9 +321,13 @@ export default function Geree() {
         onSubmit={actions.handleCreateOrUpdateEmployee}
       />
 
+      {/* Авлага / төлбөрийн модал – reuse PaymentModal */}
       <PaymentModal
-        show={state.showPaymentModal}
-        onClose={() => state.setShowPaymentModal(false)}
+        show={state.showPaymentModal || state.showAvlagaModal}
+        onClose={() => {
+          state.setShowPaymentModal(false);
+          state.setShowAvlagaModal(false);
+        }}
         paymentResident={state.paymentResident}
         paymentIncludeEkhniiUldegdel={state.paymentIncludeEkhniiUldegdel}
         setPaymentIncludeEkhniiUldegdel={state.setPaymentIncludeEkhniiUldegdel}

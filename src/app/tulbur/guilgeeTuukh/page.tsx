@@ -826,6 +826,13 @@ export default function DansniiKhuulga() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
+  // Map gereeId -> total paid amount (Төлсөн дүн)
+  const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<
+    Record<string, number>
+  >({});
+  const [paidSummaryRequested, setPaidSummaryRequested] = useState<
+    Record<string, boolean>
+  >({});
 
   const columnDefs = useMemo(
     () => [
@@ -870,6 +877,8 @@ export default function DansniiKhuulga() {
         minWidth: 140,
       },
       { key: "tulbur", label: "Төлбөр", align: "right", minWidth: 110 },
+      { key: "paid", label: "Төлсөн дүн", align: "right", minWidth: 110 },
+      { key: "uldegdel", label: "Үлдэгдэл", align: "right", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
       {
         key: "lastLog",
@@ -1103,6 +1112,55 @@ export default function DansniiKhuulga() {
     }, 0);
   }, [filteredItems]);
 
+  // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
+  useEffect(() => {
+    if (!token || !ajiltan?.baiguullagiinId) return;
+
+    const pendingIds = new Set<string>();
+    filteredItems.forEach((it: any) => {
+      const gid =
+        (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?.gereeId && String(it.gereeId)) ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+          ));
+      if (!gid) return;
+      if (paidSummaryByGereeId[gid] !== undefined) return;
+      if (paidSummaryRequested[gid]) return;
+      pendingIds.add(gid);
+    });
+
+    if (pendingIds.size === 0) return;
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+
+    pendingIds.forEach((gid) => {
+      setPaidSummaryRequested((prev) => ({ ...prev, [gid]: true }));
+      uilchilgee(token)
+        .post("/tulsunSummary", {
+          baiguullagiinId,
+          gereeniiId: gid,
+        })
+        .then((resp) => {
+          const total =
+            Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) ||
+            0;
+          setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
+        })
+        .catch(() => {
+          // ignore errors per-geree; table will just show 0 until fixed
+        });
+    });
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    filteredItems,
+    paidSummaryByGereeId,
+    paidSummaryRequested,
+    contractsByNumber,
+  ]);
+
   // Count cancelled gerees with unpaid invoices/zardal
   const cancelledGereesWithUnpaid = useMemo(() => {
     const cancelledGereeIds = new Set<string>();
@@ -1315,11 +1373,18 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Call API to create transaction
-      const response = await uilchilgee(token).post("/guilgee", {
-        ...data,
+      // Backend expects `dun` (payment amount) and identifiers to locate contracts
+      const response = await uilchilgee(token).post("/markInvoicesAsPaid", {
         baiguullagiinId: ajiltan.baiguullagiinId,
         barilgiinId: effectiveBarilgiinId,
+        // Payment amount
+        dun: data.amount,
+        // Link to resident/contract if available
+        orshinSuugchId: data.residentId,
+        gereeniiId: data.gereeniiId,
+        // Basic metadata
+        tailbar: `${data.type || "payment"} - ${data.date}`,
+        markEkhniiUldegdel: false,
         createdBy: ajiltan._id,
         createdAt: new Date().toISOString(),
       });
@@ -2026,6 +2091,51 @@ export default function DansniiKhuulga() {
                                     {formatNumber(total)} ₮
                                   </td>
                                 );
+                              case "paid": {
+                                const gid =
+                                  (it?.gereeniiId && String(it.gereeniiId)) ||
+                                  (ct?._id && String(ct._id)) ||
+                                  "";
+                                const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                return (
+                                  <td key={col.key} className={cellClass} style={style}>
+                                    {formatNumber(paid)} ₮
+                                  </td>
+                                );
+                              }
+                              case "uldegdel": {
+                                // Prefer contract-level globalUldegdel from geree,
+                                // then fall back to row-level uldegdel, then heuristics.
+                                const contractUldegdelRaw =
+                                  ct?.globalUldegdel ?? ct?.uldegdel;
+                                const rowUldegdelRaw = it?.uldegdel;
+
+                                const toNum = (v: any): number | null => {
+                                  if (v === undefined || v === null || v === "") return null;
+                                  const n = Number(v);
+                                  return Number.isFinite(n) ? n : null;
+                                };
+
+                                let remaining =
+                                  toNum(contractUldegdelRaw) ??
+                                  toNum(rowUldegdelRaw) ??
+                                  null;
+
+                                if (remaining === null) {
+                                  if (isPaid) {
+                                    remaining = 0;
+                                  } else {
+                                    // Fallback: assume full amount is still outstanding
+                                    remaining = total;
+                                  }
+                                }
+
+                                return (
+                                  <td key={col.key} className={cellClass} style={style}>
+                                    {formatNumber(remaining)} ₮
+                                  </td>
+                                );
+                              }
                               case "tuluv":
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>

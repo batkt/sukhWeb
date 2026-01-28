@@ -18,6 +18,7 @@ export interface TransactionData {
   date: string;
   amount: number;
   residentId?: string;
+  gereeniiId?: string;
 }
 
 export default function TransactionModal({
@@ -46,6 +47,7 @@ export default function TransactionModal({
       date: transactionDate,
       amount: parseFloat(amount) || 0,
       residentId: resident?._id,
+      gereeniiId: resident?.gereeniiId,
     };
 
     await onSubmit(data);
