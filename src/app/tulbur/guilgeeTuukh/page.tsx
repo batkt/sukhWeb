@@ -816,6 +816,8 @@ export default function DansniiKhuulga() {
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
   >("all");
+  const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
+  const [selectedDavkharFilter, setSelectedDavkharFilter] = useState<string>("");
   const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
   const khungulultRef = useRef<HTMLDivElement | null>(null);
   const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
@@ -1052,7 +1054,7 @@ export default function DansniiKhuulga() {
     });
   }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
 
-  // Filter by paid/unpaid
+  // Filter by paid/unpaid + Орц + Давхар
   const filteredItems = useMemo(() => {
     // Get cancelled geree IDs for filtering
     const cancelledGereeIds = new Set<string>();
@@ -1097,13 +1099,59 @@ export default function DansniiKhuulga() {
         return isUnpaid && (hasZardal || hasGuilgee || amount > 0);
       }
 
+      // Additional filters: Орц and Давхар
+      if (selectedOrtsFilter || selectedDavkharFilter) {
+        const toStr = (v: any) => (v == null ? "" : String(v).trim());
+
+        const cId = toStr(
+          it?.gereeniiId ??
+            it?.gereeId ??
+            it?.kholbosonGereeniiId
+        );
+        const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+        const c = cId ? (contractsById as any)[cId] : undefined;
+        const r = rId ? (residentsById as any)[rId] : undefined;
+
+        const orts = toStr(
+          c?.orts ??
+            c?.ortsDugaar ??
+            c?.ortsNer ??
+            r?.orts ??
+            r?.ortsDugaar ??
+            r?.ortsNer ??
+            r?.block ??
+            it?.orts ??
+            it?.ortsDugaar ??
+            it?.ortsNer
+        );
+        const davkhar = toStr(
+          r?.davkhar ?? c?.davkhar ?? it?.davkhar
+        );
+
+        if (selectedOrtsFilter) {
+          if (!orts || orts !== toStr(selectedOrtsFilter)) return false;
+        }
+        if (selectedDavkharFilter) {
+          if (!davkhar || davkhar !== toStr(selectedDavkharFilter)) return false;
+        }
+      }
+
       if (searchTerm) {
         if (!matchesSearch(it, searchTerm)) return false;
       }
 
       return true;
     });
-  }, [buildingHistoryItems, tuluvFilter, searchTerm, gereeGaralt?.jagsaalt]);
+  }, [
+    buildingHistoryItems,
+    tuluvFilter,
+    searchTerm,
+    gereeGaralt?.jagsaalt,
+    contractsById,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+  ]);
 
   const totalSum = useMemo(() => {
     return filteredItems.reduce((s: number, it: any) => {
@@ -1752,21 +1800,56 @@ export default function DansniiKhuulga() {
                   }}
                 />
               </div>
-              <div id="guilgee-status-filter">
-                <TusgaiZagvar
-                  value={tuluvFilter}
-                  onChange={(v: string) =>
-                    setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
-                  }
-                  options={[
-                    { value: "all", label: "Бүгд" },
-                    { value: "paid", label: "Төлсөн" },
-                    { value: "overdue", label: "Цуцласан авлага" },
-                    { value: "unpaid", label: "Төлөөгүй" },
-                  ]}
-                  placeholder="Төлөв"
-                  className="h-[40px] w-[160px]"
-                />
+              <div className="flex flex-wrap gap-3">
+                <div id="guilgee-status-filter">
+                  <TusgaiZagvar
+                    value={tuluvFilter}
+                    onChange={(v: string) =>
+                      setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
+                    }
+                    options={[
+                      { value: "all", label: "Бүгд" },
+                      { value: "paid", label: "Төлсөн" },
+                      { value: "overdue", label: "Цуцласан авлага" },
+                      { value: "unpaid", label: "Төлөөгүй" },
+                    ]}
+                    placeholder="Төлөв"
+                    className="h-[40px] w-[140px]"
+                  />
+                </div>
+
+                {/* Орц filter */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-theme whitespace-nowrap">
+                    Орц:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="text"
+                      value={selectedOrtsFilter}
+                      onChange={(e) => setSelectedOrtsFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-xs focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+
+                {/* Давхар filter */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-xs text-theme whitespace-nowrap">
+                    Давхар:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="number"
+                      min={1}
+                      value={selectedDavkharFilter}
+                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-xs focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
