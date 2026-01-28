@@ -34,9 +34,14 @@ export const BuildingProvider = ({
     // Only initialize once
     if (hasInitializedRef.current) return;
 
-    // Priority 1: barilgiinId from cookies (already set during login)
-    if (barilgiinId) {
-      setSelectedBuildingIdState(barilgiinId);
+    console.log("🔄 BuildingContext: Initializing building selection...");
+
+    // Priority 1: localStorage (user's last selection - persists across pages)
+    const savedBuildingId = localStorage.getItem("selectedBuildingId");
+    console.log("📦 localStorage value:", savedBuildingId);
+    if (savedBuildingId && savedBuildingId !== "null" && savedBuildingId !== "undefined") {
+      console.log("✅ Using localStorage building:", savedBuildingId);
+      setSelectedBuildingIdState(savedBuildingId);
       hasInitializedRef.current = true;
       setIsInitialized(true);
       return;
@@ -50,7 +55,15 @@ export const BuildingProvider = ({
       return;
     }
 
-    // Priority 3: first building in organization list
+    // Priority 3: barilgiinId from cookies (already set during login)
+    if (barilgiinId) {
+      setSelectedBuildingIdState(barilgiinId);
+      hasInitializedRef.current = true;
+      setIsInitialized(true);
+      return;
+    }
+
+    // Priority 4: first building in organization list
     if (baiguullaga?.barilguud && baiguullaga.barilguud.length > 0) {
       const firstBuilding = baiguullaga.barilguud[0];
       const bid = String(firstBuilding?._id || "");
@@ -79,8 +92,18 @@ export const BuildingProvider = ({
   const setSelectedBuildingId = (id: string | null) => {
     if (id === selectedBuildingId) return;
 
+    console.log("🏢 BuildingContext: Setting building to:", id);
     setSelectedBuildingIdState(id);
     hasInitializedRef.current = true;
+
+    // Save to localStorage immediately for instant persistence across pages
+    if (id) {
+      localStorage.setItem("selectedBuildingId", id);
+      console.log("💾 Saved to localStorage:", id);
+    } else {
+      localStorage.removeItem("selectedBuildingId");
+      console.log("🗑️ Removed from localStorage");
+    }
 
     if (id) {
       // Update in-memory ajiltan so UI stays in sync immediately
@@ -89,12 +112,17 @@ export const BuildingProvider = ({
         ajiltanMutate(updatedAjiltan);
         
         // Persist to backend so it survives page navigation (fire and forget)
+        console.log("📡 Persisting to backend...");
         updateMethod("ajiltan", token, {
           _id: ajiltan._id,
           defaultBarilga: id,
-        }).catch((error) => {
-          console.error("Failed to persist building selection:", error);
-        });
+        })
+          .then(() => {
+            console.log("✅ Successfully persisted to backend");
+          })
+          .catch((error) => {
+            console.error("❌ Failed to persist building selection:", error);
+          });
       }
     } else {
       if (ajiltan && ajiltan.defaultBarilga) {
@@ -107,7 +135,7 @@ export const BuildingProvider = ({
           _id: ajiltan._id,
           defaultBarilga: null,
         }).catch((error) => {
-          console.error("Failed to clear building selection:", error);
+          console.error("❌ Failed to clear building selection:", error);
         });
       }
     }
