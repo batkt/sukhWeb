@@ -35,24 +35,24 @@ export default function EmployeesSection({
 
   return (
     <div className="table-surface overflow-hidden rounded-2xl w-full">
-      <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
+      <div className="rounded-3xl p-6 neu-table allow-overflow">
         <div
           className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
           id="employees-table"
         >
-          <table className="table-ui text-xs min-w-full">
+          <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
             <thead className="z-10 bg-white dark:bg-gray-800">
               <tr>
-                <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                   №
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Нэр
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Холбоо барих
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Албан тушаал
                 </th>
                 <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
@@ -73,18 +73,18 @@ export default function EmployeesSection({
                     key={p._id || idx}
                     className="transition-colors border-b last:border-b-0"
                   >
-                    <td className="p-1 text-center text-theme">
+                    <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                       {(empPage - 1) * empPageSize + idx + 1}
                     </td>
-                    <td className="p-1 text-theme whitespace-nowrap cell-left">
+                    <td className="p-1 text-theme whitespace-nowrap cell-left border-r border-[color:var(--surface-border)]">
                       {typeof p.ner === "object"
                         ? `${p.ner?.ner || ""} ${p.ner?.kod || ""}`.trim() || "-"
                         : p.ner || "-"}
                     </td>
-                    <td className="p-1 text-center">
+                    <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
                       <div className="text-xs text-theme">{p.utas}</div>
                     </td>
-                    <td className="p-1 text-center">{p.albanTushaal || "-"}</td>
+                    <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.albanTushaal || "-"}</td>
                     <td className="p-1 whitespace-nowrap">
                       <div className="flex gap-2 justify-center">
                         <button

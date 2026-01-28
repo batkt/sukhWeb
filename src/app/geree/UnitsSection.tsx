@@ -22,6 +22,7 @@ interface UnitsSectionProps {
   setUnitPageSize: (size: number) => void;
   isSavingUnits: boolean;
   composeKey: (orts: string, floor: string) => string;
+  unitStatusFilter: "all" | "occupied" | "free";
   onAddUnit: (floor: string) => void;
   onDeleteUnit: (floor: string, unit: string) => void;
   onDeleteFloor: (floor: string) => void;
@@ -44,6 +45,7 @@ export default function UnitsSection({
   setUnitPageSize,
   isSavingUnits,
   composeKey,
+  unitStatusFilter,
   onAddUnit,
   onDeleteUnit,
   onDeleteFloor,
@@ -76,21 +78,21 @@ export default function UnitsSection({
         {selectedOrts && (
           <div>
             <div className="table-surface overflow-hidden rounded-2xl w-full">
-              <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
+              <div className="rounded-3xl p-6 neu-table allow-overflow">
                 <div
                   className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
                   id="units-table"
                 >
-                  <table className="table-ui text-xs min-w-full">
+                  <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
-                        <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                        <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                           №
                         </th>
-                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                           Давхар
                         </th>
-                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                           Тоотууд
                         </th>
                         <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
@@ -117,9 +119,13 @@ export default function UnitsSection({
                             const orshinSuugchId = c.orshinSuugchId;
                             let contractFloor = String(c.davkhar || "").trim();
                             let contractOrts = String(c.orts || "").trim();
-                            
-                            if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
-                              const resident = residentsById[String(orshinSuugchId)];
+
+                            if (
+                              orshinSuugchId &&
+                              residentsById[String(orshinSuugchId)]
+                            ) {
+                              const resident =
+                                residentsById[String(orshinSuugchId)];
                               if (resident.davkhar != null) {
                                 contractFloor = String(resident.davkhar).trim();
                               }
@@ -137,7 +143,10 @@ export default function UnitsSection({
                               selectedOrts || "",
                             ).trim();
 
+                            // When Орц = "Бүгд" (empty value), ignore orts entirely.
+                            // Otherwise, only match contracts with the selected orts
                             const matchesOrts =
+                              !selectedOrtsStr ||
                               contractOrts === "" ||
                               contractOrts === selectedOrtsStr;
 
@@ -153,70 +162,78 @@ export default function UnitsSection({
                               return String(toot).trim();
                             })
                             .filter((t): t is string => Boolean(t)),
-                        );
+                          );
+
+                        const filteredUnits = (units as any[]).filter((t: any) => {
+                          const unitStr = String(t).trim();
+                          const hasActive = activeToots.has(unitStr);
+
+                          if (unitStatusFilter === "occupied") return hasActive;
+                          if (unitStatusFilter === "free") return !hasActive;
+                          return true;
+                        });
+
+                        // If no units match the current filters, skip rendering this floor
+                        if (filteredUnits.length === 0) {
+                          return null;
+                        }
 
                         return (
                           <tr
                             key={floor}
                             className="transition-colors border-b last:border-b-0"
                           >
-                            <td className="p-1 text-center text-theme">
+                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                               {(unitPage - 1) * unitPageSize + idx + 1}
                             </td>
-                            <td className="p-1 text-center text-theme">
+                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                               {floor}-р давхар
                             </td>
-                            <td className="p-1 text-center text-theme">
-                              {units.length > 0 ? (
-                                <div className="flex flex-wrap gap-2 justify-center">
-                                  {units.map((t: any) => {
-                                    const unitStr = String(t).trim();
-                                    const hasActive = activeToots.has(unitStr);
+                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
+                              <div className="flex flex-wrap gap-2 justify-center">
+                                {filteredUnits.map((t: any) => {
+                                  const unitStr = String(t).trim();
+                                  const hasActive = activeToots.has(unitStr);
 
-                                    return (
+                                  return (
+                                    <span
+                                      key={String(t)}
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${
+                                        hasActive
+                                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                                          : "border-gray-300"
+                                      }`}
+                                    >
                                       <span
-                                        key={String(t)}
-                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${
+                                        className={
                                           hasActive
-                                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                                            : "border-gray-300"
-                                        }`}
+                                            ? "text-green-600 font-semibold"
+                                            : "text-theme"
+                                        }
                                       >
-                                        <span
-                                          className={
-                                            hasActive
-                                              ? "text-green-600 font-semibold"
-                                              : "text-theme"
-                                          }
-                                        >
-                                          {String(t)}
-                                        </span>
-                                        {hasActive && (
-                                          <span
-                                            className="text-green-600 text-[10px] font-semibold"
-                                            title="Идэвхтэй"
-                                          >
-                                            ●
-                                          </span>
-                                        )}
-                                        <button
-                                          className="ml-1 text-red-500 hover:text-red-600"
-                                          aria-label="Устгах"
-                                          onClick={() =>
-                                            onDeleteUnit(floor, String(t))
-                                          }
-                                        >
-                                          ×
-                                        </button>
+                                        {String(t)}
                                       </span>
-                                    );
-                                  })}
-                                </div>
-                              ) : (
-                                <div className="text-xs text-slate-500">
-                                  Бүртгэлгүй
-                                </div>
-                              )}
+                                      {hasActive && (
+                                        <span
+                                          className="text-green-600 text-[10px] font-semibold"
+                                          title="Идэвхтэй"
+                                        >
+                                          ●
+                                        </span>
+                                      )}
+                                      <button
+                                        className="ml-1 text-red-500 hover:text-red-600"
+                                        aria-label="Устгах"
+                                        onClick={() =>
+                                          onDeleteUnit(floor, String(t))
+                                        }
+                                      >
+                                        ×
+                                      </button>
+                                    </span>
+                                  );
+                                })}
+                              </div>
                             </td>
                             <td className="p-1 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center gap-2">

@@ -663,7 +663,7 @@ const InvoiceModal = ({
                 </div>
               </div>
 
-              <div className="mt-3">
+              {/* <div className="mt-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-slate-500">
@@ -680,7 +680,7 @@ const InvoiceModal = ({
                     </span>
                   </div>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
@@ -1045,12 +1045,48 @@ export default function DansniiKhuulga() {
 
   // Filter by paid/unpaid
   const filteredItems = useMemo(() => {
+    // Get cancelled geree IDs for filtering
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+    
+    const cancelledGerees = allGerees.filter((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim();
+      return status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" || 
+             status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan";
+    });
+    
+    cancelledGerees.forEach((g: any) => {
+      if (g?._id) cancelledGereeIds.add(String(g._id));
+      if (g?.gereeniiDugaar) cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+    });
+    
     return buildingHistoryItems.filter((it: any) => {
       const paid = isPaidLike(it);
       if (tuluvFilter === "paid") return paid;
       if (tuluvFilter === "unpaid")
         return isUnpaidLike(it) && !isOverdueLike(it);
-      if (tuluvFilter === "overdue") return isOverdueLike(it);
+      if (tuluvFilter === "overdue") {
+        // Filter for cancelled receivables: items linked to cancelled gerees with unpaid invoices/zardal
+        const itGereeId = String(it?.gereeniiId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const isLinkedToCancelledGeree = cancelledGereeIds.has(itGereeId) || 
+                                         cancelledGereeDugaars.has(itGereeDugaar);
+        
+        if (!isLinkedToCancelledGeree) return false;
+        
+        // Check if invoice has unpaid amount
+        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+        const isUnpaid = !isPaidLike(it) && amount > 0;
+        
+        // Check if invoice has zardal (expenses) that need to be paid
+        const hasZardal = Array.isArray(it?.medeelel?.zardluud) && 
+                         it.medeelel.zardluud.length > 0;
+        const hasGuilgee = Array.isArray(it?.medeelel?.guilgeenuud) && 
+                          it.medeelel.guilgeenuud.length > 0;
+        
+        return isUnpaid && (hasZardal || hasGuilgee || amount > 0);
+      }
 
       if (searchTerm) {
         if (!matchesSearch(it, searchTerm)) return false;
@@ -1058,7 +1094,7 @@ export default function DansniiKhuulga() {
 
       return true;
     });
-  }, [buildingHistoryItems, tuluvFilter, searchTerm]);
+  }, [buildingHistoryItems, tuluvFilter, searchTerm, gereeGaralt?.jagsaalt]);
 
   const totalSum = useMemo(() => {
     return filteredItems.reduce((s: number, it: any) => {
@@ -1067,12 +1103,56 @@ export default function DansniiKhuulga() {
     }, 0);
   }, [filteredItems]);
 
+  // Count cancelled gerees with unpaid invoices/zardal
+  const cancelledGereesWithUnpaid = useMemo(() => {
+    const cancelledGereeIds = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+    
+    // Find cancelled gerees
+    const cancelledGerees = allGerees.filter((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim();
+      return status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" || 
+             status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan";
+    });
+    
+    // For each cancelled geree, check if it has unpaid invoices/zardal
+    cancelledGerees.forEach((geree: any) => {
+      const gereeId = String(geree?._id || "");
+      const gereeDugaar = String(geree?.gereeniiDugaar || "");
+      
+      // Check if there are unpaid invoices linked to this geree
+      const hasUnpaidInvoice = buildingHistoryItems.some((it: any) => {
+        const itGereeId = String(it?.gereeniiId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const matchesGeree = (gereeId && itGereeId === gereeId) || 
+                             (gereeDugaar && itGereeDugaar === gereeDugaar);
+        
+        if (!matchesGeree) return false;
+        
+        // Check if invoice has unpaid amount
+        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+        const isUnpaid = !isPaidLike(it) && amount > 0;
+        
+        // Check if invoice has zardal (expenses) that need to be paid
+        const hasZardal = Array.isArray(it?.medeelel?.zardluud) && 
+                         it.medeelel.zardluud.length > 0;
+        const hasGuilgee = Array.isArray(it?.medeelel?.guilgeenuud) && 
+                          it.medeelel.guilgeenuud.length > 0;
+        
+        return isUnpaid && (hasZardal || hasGuilgee || amount > 0);
+      });
+      
+      if (hasUnpaidInvoice && gereeId) {
+        cancelledGereeIds.add(gereeId);
+      }
+    });
+    
+    return cancelledGereeIds.size;
+  }, [gereeGaralt?.jagsaalt, buildingHistoryItems]);
+
   const stats = useMemo(() => {
     const totalCount = filteredItems.length;
     const paidCount = filteredItems.filter((it: any) => isPaidLike(it)).length;
-    const overdueCount = filteredItems.filter((it: any) =>
-      isOverdueLike(it)
-    ).length;
     const unpaidCount = filteredItems.filter(
       (it: any) => isUnpaidLike(it) && !isOverdueLike(it)
     ).length;
@@ -1080,10 +1160,10 @@ export default function DansniiKhuulga() {
     return [
       { title: "Нийт гүйлгээ", value: totalCount },
       { title: "Төлсөн", value: paidCount },
-      { title: "Хугацаа хэтэрсэн", value: overdueCount },
       { title: "Төлөөгүй", value: unpaidCount },
+      { title: "Цуцласан авлага", value: cancelledGereesWithUnpaid },
     ];
-  }, [filteredItems]);
+  }, [filteredItems, cancelledGereesWithUnpaid]);
 
   const zaaltOruulakh = async () => {
     try {
@@ -1541,29 +1621,49 @@ export default function DansniiKhuulga() {
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <motion.div
-              key={idx}
-              className="relative group rounded-2xl neu-panel"
-              whileHover={{ scale: 1.04 }}
-              transition={{ duration: 0.25 }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 rounded-2xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
-              <div className="relative rounded-2xl p-5 backdrop-blur-xl hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-theme leading-tight">
-                  {stat.title}
+          {stats.map((stat, idx) => {
+            // Map stat titles to filter values
+            const getFilterValue = (title: string): "all" | "paid" | "unpaid" | "overdue" | null => {
+              if (title === "Нийт гүйлгээ") return "all";
+              if (title === "Төлсөн") return "paid";
+              if (title === "Төлөөгүй") return "unpaid";
+              if (title === "Цуцласан авлага") return "overdue";
+              return null;
+            };
+
+            const filterValue = getFilterValue(stat.title);
+            const isActive = filterValue && tuluvFilter === filterValue;
+
+            return (
+              <div
+                key={idx}
+                onClick={() => {
+                  if (filterValue) {
+                    setTuluvFilter(filterValue);
+                  }
+                }}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
+                  isActive
+                    ? "ring-2 ring-blue-500 shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
+              >
+                <div className="relative rounded-2xl p-5 overflow-hidden">
+                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-xs text-theme leading-tight">
+                    {stat.title}
+                  </div>
                 </div>
               </div>
-            </motion.div>
-          ))}
+            );
+          })}
         </div>
         <div className="rounded-2xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div id="dans-date">
+              <div id="dans-date" className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
                 <DatePickerInput
                   type="range"
                   locale="mn"
@@ -1582,7 +1682,8 @@ export default function DansniiKhuulga() {
                   placeholder="Огноо сонгох"
                   classNames={{
                     input:
-                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[220px]",
+                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
+                    wrapper: "!h-full !w-full",
                   }}
                 />
               </div>
@@ -1595,7 +1696,7 @@ export default function DansniiKhuulga() {
                   options={[
                     { value: "all", label: "Бүгд" },
                     { value: "paid", label: "Төлсөн" },
-                    { value: "overdue", label: "Хугацаа хэтэрсэн" },
+                    { value: "overdue", label: "Цуцласан авлага" },
                     { value: "unpaid", label: "Төлөөгүй" },
                   ]}
                   placeholder="Төлөв"
@@ -1675,13 +1776,6 @@ export default function DansniiKhuulga() {
                   label={t("Excel татах")}
                 />
               </motion.div>
-              <motion.div whileHover={{ scale: 1.03 }} transition={{ duration: 0.3 }}>
-                <IconTextButton
-                  onClick={() => setIsColumnModalOpen(true)}
-                  icon={<Columns className="w-5 h-5" />}
-                  label="Багана"
-                />
-              </motion.div>
               {/* <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
@@ -1702,10 +1796,10 @@ export default function DansniiKhuulga() {
               className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
               id="guilgee-table"
             >
-              <table className="table-ui text-sm min-w-full">
+              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <thead>
                   <tr>
-                    {visibleColumns.map((col) => {
+                    {visibleColumns.map((col, colIdx) => {
                       const alignClass =
                         col.align === "right"
                           ? "text-right"
@@ -1715,10 +1809,11 @@ export default function DansniiKhuulga() {
                       const stickyClass = col.sticky
                         ? "sticky z-20 bg-[color:var(--surface-bg)]"
                         : "z-10";
+                      const isLastCol = colIdx === visibleColumns.length - 1;
                       return (
                         <th
                           key={col.key}
-                          className={`p-1 text-xs font-semibold text-theme whitespace-nowrap ${alignClass} ${stickyClass}`}
+                          className={`p-1 text-xs font-semibold text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                           style={{
                             ...(col.sticky
                               ? { left: stickyOffsets[col.key] }
@@ -1803,8 +1898,8 @@ export default function DansniiKhuulga() {
                             .map((v) => (v ? String(v).trim() : ""))
                             .filter(Boolean)
                             .join(" ") || "-";
-                      // Get toot - use old simple logic
-                      const toot = String(resident?.toot || it?.toot || "-");
+                      // Get toot - prioritize contract (geree) data
+                      const toot = String(ct?.toot || resident?.toot || it?.toot || "-");
                       
                       // Get utas - can be string or array
                       // Priority: resident.utas (array or string) > it.utas (array or string)
@@ -1833,8 +1928,12 @@ export default function DansniiKhuulga() {
                         }
                         return "-";
                       })();
+                      // Get orts - prioritize contract (geree) data
                       const orts = String(
-                        resident?.orts ??
+                        ct?.orts ??
+                          ct?.ortsDugaar ??
+                          ct?.ortsNer ??
+                          resident?.orts ??
                           resident?.ortsDugaar ??
                           resident?.ortsNer ??
                           resident?.block ??
@@ -1859,7 +1958,7 @@ export default function DansniiKhuulga() {
                           key={it?._id || `${idx}`}
                           className="transition-colors border-b last:border-b-0"
                         >
-                          {visibleColumns.map((col) => {
+                          {visibleColumns.map((col, colIdx) => {
                             const alignClass =
                               col.align === "right"
                                 ? "text-right"
@@ -1869,7 +1968,8 @@ export default function DansniiKhuulga() {
                             const stickyClass = col.sticky
                               ? "sticky z-10 bg-[color:var(--surface-bg)]"
                               : "";
-                            const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass}`;
+                            const isLastCol = colIdx === visibleColumns.length - 1;
+                            const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`;
                             const style = {
                               ...(col.sticky
                                 ? { left: stickyOffsets[col.key] }
@@ -2033,10 +2133,10 @@ export default function DansniiKhuulga() {
             </div>
             <div className="border-t dark:border-gray-800 border-gray-100">
               {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
-              <table className="text-sm min-w-full">
+              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <tbody>
                   <tr>
-                  {visibleColumns.map((col) => {
+                  {visibleColumns.map((col, colIdx) => {
                     const alignClass =
                       col.align === "right"
                         ? "text-right"
@@ -2044,12 +2144,13 @@ export default function DansniiKhuulga() {
                           ? "text-center"
                           : "text-left";
                     const isPaymentCol = col.key === "tulbur";
+                    const isLastCol = colIdx === visibleColumns.length - 1;
                     return (
                       <td
                         key={col.key}
                         className={`p-1 text-theme whitespace-nowrap ${alignClass} ${
                           isPaymentCol ? "font-bold" : ""
-                        }`}
+                        } ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                         style={{ minWidth: col.minWidth }}
                       >
                         {isPaymentCol

@@ -1,5 +1,5 @@
 import React from "react";
-import { Banknote, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import { getPaymentStatusLabel } from "@/lib/utils";
 
@@ -19,7 +19,6 @@ interface ResidentsSectionProps {
     string,
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >;
-  onOpenPaymentModal: (resident: any) => void;
   onEditResident: (resident: any) => void;
   onRequestDeleteResident: (resident: any) => void;
   setResPageSize: (size: number) => void;
@@ -37,7 +36,6 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   sortOrder,
   toggleSortFor,
   tuluvByResidentId,
-  onOpenPaymentModal,
   onEditResident,
   onRequestDeleteResident,
   setResPageSize,
@@ -51,20 +49,20 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
         <div className="table-surface overflow-hidden rounded-2xl w-full">
           <div className="rounded-3xl p-6 neu-table allow-overflow">
             <div
-              className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full "
+              className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
               id="resident-table"
             >
-              <table className="table-ui text-xs min-w-full">
+              <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
                 <thead className="z-10 bg-white dark:bg-gray-800">
                   <tr>
-                    <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                    <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                       №
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Нэр
                     </th>
 
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("orts")}
@@ -90,7 +88,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("davkhar")}
@@ -116,7 +114,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("toot")}
@@ -142,10 +140,10 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Холбоо барих
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Төлөв
                     </th>
                     <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
@@ -166,10 +164,10 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         key={p._id || idx}
                         className="transition-colors border-b last:border-b-0"
                       >
-                        <td className="p-1 text-center text-theme">
+                        <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                           {(resPage - 1) * resPageSize + idx + 1}
                         </td>
-                        <td className="p-1 text-theme whitespace-nowrap cell-left">
+                        <td className="p-1 text-theme whitespace-nowrap cell-left border-r border-[color:var(--surface-border)]">
                           {typeof p.ner === "object"
                             ? `${p.ner?.ner || ""} ${
                                 p.ner?.kod || ""
@@ -177,13 +175,13 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                             : p.ner || "-"}
                         </td>
 
-                        <td className="p-1 text-center">{p.orts || "-"}</td>
-                        <td className="p-1 text-center">{p.davkhar || "-"}</td>
-                        <td className="p-1 text-center">{p.toot || "-"}</td>
-                        <td className="p-1 text-center">
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.orts || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.davkhar || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.toot || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
                           <div className="text-xs text-theme">{p.utas}</div>
                         </td>
-                        <td className="p-1 text-center">
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
                           {(() => {
                             const id = String(p?._id || "");
                             const label =
@@ -209,15 +207,6 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </td>
                         <td className="p-1 whitespace-nowrap">
                           <div className="flex gap-2 justify-center">
-                            <button
-                              type="button"
-                              onClick={() => onOpenPaymentModal(p)}
-                              className="p-1 rounded-2xl action-view hover-surface transition-colors"
-                              title="Гүйлгээ хийх"
-                              id="resident-payment-btn"
-                            >
-                              <Banknote className="w-6 h-6 text-green-600" />
-                            </button>
                             <button
                               type="button"
                               onClick={() => onEditResident(p)}

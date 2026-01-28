@@ -765,25 +765,6 @@ const InvoiceModal = ({
                   </p>
                 </div>
               </div>
-
-              <div className="mt-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-500">
-                      Өмнөх сарын үлдэгдэл:
-                    </span>{" "}
-                    <span className="font-medium">
-                      {contractData?.medeelel?.ekhniiUldegdel != null
-                        ? formatCurrency(
-                            Number(contractData.medeelel.ekhniiUldegdel),
-                          )
-                        : contractData?.ekhniiUldegdel != null
-                          ? formatCurrency(Number(contractData.ekhniiUldegdel))
-                          : "-"}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="border border-gray-100 rounded-xl overflow-hidden print-break">

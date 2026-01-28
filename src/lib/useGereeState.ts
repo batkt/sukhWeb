@@ -60,7 +60,17 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [unitPage, setUnitPage] = useState(1);
   const [unitPageSize, setUnitPageSize] = useState(50);
 
-  const [selectedOrts, setSelectedOrts] = useState<string>("");
+  // Default Орц for units tab is "1" (no "Бүгд" option in select)
+  const [selectedOrts, setSelectedOrts] = useState<string>("1");
+  const [selectedDawkhar, setSelectedDawkhar] = useState<string>("");
+  const [selectedOrtsForContracts, setSelectedOrtsForContracts] =
+    useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "cancelled"
+  >("all");
+  const [unitStatusFilter, setUnitStatusFilter] = useState<
+    "all" | "occupied" | "free"
+  >("all");
   const [isSavingUnits, setIsSavingUnits] = useState(false);
   const [isUploadingResidents, setIsUploadingResidents] = useState(false);
   const [isUploadingUnits, setIsUploadingUnits] = useState(false);
@@ -106,8 +116,6 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     toot: "",
     davkhar: "",
     tsahilgaaniiZaalt: "",
-    nevtrekhNer: "",
-    nuutsUg: "",
     turul: "Үндсэн",
     tailbar: "",
     ekhniiUldegdel: 0,
@@ -232,6 +240,14 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setUnitPageSize,
     selectedOrts,
     setSelectedOrts,
+    selectedDawkhar,
+    setSelectedDawkhar,
+    selectedOrtsForContracts,
+    setSelectedOrtsForContracts,
+    statusFilter,
+    setStatusFilter,
+    unitStatusFilter,
+    setUnitStatusFilter,
     isSavingUnits,
     setIsSavingUnits,
     isUploadingResidents,

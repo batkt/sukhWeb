@@ -62,7 +62,10 @@ export default function Geree() {
     state.sortOrder,
     searchTerm,
     state.unitPage,
-    state.unitPageSize
+    state.unitPageSize,
+    state.selectedDawkhar,
+    state.selectedOrtsForContracts,
+    state.statusFilter
   );
   const actions = useGereeActions(
     token,
@@ -132,6 +135,15 @@ export default function Geree() {
         ortsOptions={data.ortsOptions}
         selectedOrts={state.selectedOrts}
         setSelectedOrts={state.setSelectedOrts}
+        davkharOptions={data.davkharOptions}
+        selectedDawkhar={state.selectedDawkhar}
+        setSelectedDawkhar={state.setSelectedDawkhar}
+        selectedOrtsForContracts={state.selectedOrtsForContracts}
+        setSelectedOrtsForContracts={state.setSelectedOrtsForContracts}
+        statusFilter={state.statusFilter}
+        setStatusFilter={state.setStatusFilter}
+        unitStatusFilter={state.unitStatusFilter}
+        setUnitStatusFilter={state.setUnitStatusFilter}
         ajiltan={ajiltan}
         selectedContracts={state.selectedContracts}
         showColumnSelector={state.showColumnSelector}
@@ -166,6 +178,7 @@ export default function Geree() {
           selectAllContracts={state.selectAllContracts}
           setSelectAllContracts={state.setSelectAllContracts}
           currentContracts={data.currentContracts}
+          totalContracts={data.totalContracts}
           startIndex={data.startIndex}
           visibleColumns={state.visibleColumns}
           renderCellValue={data.renderCellValue}
@@ -190,7 +203,6 @@ export default function Geree() {
           sortOrder={state.sortOrder}
           toggleSortFor={actions.toggleSortFor}
           tuluvByResidentId={data.tuluvByResidentId}
-          onOpenPaymentModal={actions.handleOpenPaymentModal}
           onEditResident={(resident) => {
             actions.handleEditResident(
               resident,
@@ -242,6 +254,7 @@ export default function Geree() {
           unitTotalPages={data.unitTotalPages}
           setUnitPage={state.setUnitPage}
           setUnitPageSize={state.setUnitPageSize}
+          unitStatusFilter={state.unitStatusFilter}
           isSavingUnits={state.isSavingUnits}
           composeKey={data.composeKey}
           onAddUnit={(floor) => {

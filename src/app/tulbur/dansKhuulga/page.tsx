@@ -1,13 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
-import { createPortal } from "react-dom";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
-import { motion } from "framer-motion";
-import EbarimtPage from "../ebarimt/page";
-import ZardalPage from "../zardal/page";
 import { useAuth } from "@/lib/useAuth";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
@@ -15,15 +11,12 @@ import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "@/lib/uilchilgee";
-import { message } from "antd";
 import IconTextButton from "@/components/ui/IconTextButton";
-import { Download, Upload, ChevronDown, FileSpreadsheet } from "lucide-react";
+import { Download } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
-import { useModalHotkeys } from "@/lib/useModalHotkeys";
-// Using Mantine DatePickerInput with type="range" instead of Antd RangePicker
 import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 
@@ -55,14 +48,8 @@ export default function DansniiKhuulga() {
     undefined
   );
   const [filteredData, setFilteredData] = useState<TableItem[]>([]);
-  const [isEbarimtOpen, setIsEbarimtOpen] = useState(false);
-  const [isZardalOpen, setIsZardalOpen] = useState(false);
   const { token, ajiltan, barilgiinId } = useAuth();
-  const ebarimtRef = useRef<HTMLDivElement | null>(null);
   const { selectedBuildingId } = useBuilding();
-  const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
-  const zaaltButtonRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Load selectedDansId from URL on mount
   useEffect(() => {
@@ -83,11 +70,6 @@ export default function DansniiKhuulga() {
     router.replace(`?${params.toString()}`, { scroll: false });
   }, [selectedDansId, searchParams, router]);
 
-  useModalHotkeys({
-    isOpen: isEbarimtOpen,
-    onClose: () => setIsEbarimtOpen(false),
-    container: ebarimtRef.current,
-  });
 
   // Include only defined filters to avoid sending { baiguullagiinId: undefined }
   const orgQuery = useMemo(() => {
@@ -111,50 +93,11 @@ export default function DansniiKhuulga() {
 
  
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        zaaltButtonRef.current &&
-        !zaaltButtonRef.current.contains(event.target as Node)
-      ) {
-        setIsZaaltDropdownOpen(false);
-      }
-    };
-
-    if (isZaaltDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isZaaltDropdownOpen]);
-
- 
-
   const t = (text: string) => text;
 
   // Bank transfers (банкны гүйлгээ) fetched from /bankniiGuilgee
   const [bankRows, setBankRows] = useState<any[]>([]);
   const [isLoadingBankRows, setIsLoadingBankRows] = useState(false);
-
-  // Modal Portal Helper
-  const ModalPortal = ({ children }: { children: React.ReactNode }) => {
-    const [mounted, setMounted] = useState(false);
-    useEffect(() => {
-      setMounted(true);
-      return () => setMounted(false);
-    }, []);
-    return mounted ? createPortal(children as any, document.body) : null;
-  };
-
-  useEffect(() => {
-    const open = isEbarimtOpen || isZardalOpen;
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isEbarimtOpen, isZardalOpen]);
 
   // Register guided tour for /tulbur/dansKhuulga
   const tourSteps = useMemo<DriverStep[]>(
@@ -171,13 +114,6 @@ export default function DansniiKhuulga() {
         popover: {
           title: "Данс сонгох",
           description: "Данс сонгоход тухайн дансны гүйлгээ харагдана.",
-        },
-      },
-      {
-        element: "#ebarimt-btn",
-        popover: {
-          title: "И-баримт",
-          description: "Энд дарж И-баримтын цонх нээнэ.",
         },
       },
       {
@@ -403,35 +339,26 @@ export default function DansniiKhuulga() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => (
-            <motion.div
+            <div
               key={idx}
-              className="relative group rounded-2xl neu-panel"
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.3 }}
+              className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/50 to-purple-500/50 rounded-2xl opacity-0 group-hover:opacity-30 blur-md transition-all duration-300" />
-              <div className="relative rounded-2xl p-5 backdrop-blur-xl  hover:shadow-2xl transition-all duration-300 overflow-hidden">
-                <motion.div
-                  className="absolute inset-0 pointer-events-none bg-gradient-to-r from-white/20 via-white/0 to-white/20 opacity-0"
-                  initial={{ opacity: 0, x: -100 }}
-                  whileHover={{ opacity: 1, x: 100 }}
-                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                />
-                <div className="text-3xl font-bold mb-1  bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+              <div className="relative rounded-2xl p-5 overflow-hidden">
+                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                   {stat.value}
                 </div>
                 <div className="text-xs text-theme leading-tight">
                   {stat.title}
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
 
         <div className="rounded-2xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div id="dans-date">
+              <div id="dans-date" className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
                 <DatePickerInput
                   type="range"
                   locale="mn"
@@ -450,7 +377,8 @@ export default function DansniiKhuulga() {
                   placeholder="Огноо сонгох"
                   classNames={{
                     input:
-                      "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[220px]",
+                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
+                    wrapper: "!h-full !w-full",
                   }}
                 />
               </div>
@@ -460,52 +388,9 @@ export default function DansniiKhuulga() {
                   onChange={(v) => setSelectedDansId(v || undefined)}
                   options={dansOptions}
                   placeholder={t("Данс")}
-                  className="h-[40px] !w-[150px]"
+                  className="h-[40px] w-[160px]"
                 />
               </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <div ref={zaaltButtonRef} className="relative">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
-                  onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
-                  className="btn-minimal inline-flex items-center gap-2"
-                  id="zaalt-btn"
-                >
-                  <FileSpreadsheet className="w-5 h-5" />
-                  <span className="text-xs">Заалт</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
-                      isZaaltDropdownOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </motion.button>
-
-              </div>
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <button
-                  id="ebarimt-btn"
-                  onClick={() => setIsEbarimtOpen(true)}
-                  className="btn-minimal"
-                >
-                  И-баримт
-                </button>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                {/* <button
-                  onClick={() => setIsZardalOpen(true)}
-                  className="btn-minimal"
-                >
-                  Зардал
-                </button> */}
-              </motion.div>
             </div>
           </div>
         </div>
@@ -516,20 +401,20 @@ export default function DansniiKhuulga() {
               className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
               id="dans-table"
             >
-              <table className="table-ui text-sm min-w-full">
+              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <thead>
                   <tr className="text-theme">
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
                       №
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
                       Огноо
                     </th>
 
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
                       Гүйлгээний утга
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
                       Гүйлгээний дүн
                     </th>
                     <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
@@ -544,17 +429,17 @@ export default function DansniiKhuulga() {
                         key={item.id}
                         className="transition-colors border-b last:border-b-0"
                       >
-                        <td className="p-1 text-center whitespace-nowrap">
+                        <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                           {(page - 1) * rowsPerPage + index + 1}
                         </td>
-                        <td className="p-1 text-center whitespace-nowrap">
+                        <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                           {item.date}
                         </td>
 
-                        <td className="p-1 truncate text-center">
+                        <td className="p-1 truncate text-center border-r border-[color:var(--surface-border)]">
                           {item.action}
                         </td>
-                        <td className="p-1 !text-right whitespace-nowrap">
+                        <td className="p-1 !text-right whitespace-nowrap border-r border-[color:var(--surface-border)]">
                           {formatNumber(item.total ?? 0, 0)} ₮
                         </td>
                         <td className="p-1 text-center whitespace-nowrap">
@@ -591,18 +476,17 @@ export default function DansniiKhuulga() {
             </div>
             <div className="border-t dark:border-gray-800 border-gray-100">
               {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
-              <table className="text-sm min-w-full">
+              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <tbody>
                   <tr>
-                    <td className="p-1 text-center text-theme whitespace-nowrap w-12"></td>
+                    <td className="p-1 text-center text-theme whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
 
-                    <td className="p-1 text-theme"></td>
-                    <td className="p-1 !text-right font-bold text-theme whitespace-nowrap">
+                    <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
+                    <td className="p-1 !text-right font-bold text-theme whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Нийт дүн: {formatNumber(totalSum, 0)} ₮
                     </td>
-                    <td className="p-1 text-theme"></td>
+                    <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
 
-                    <td className="p-1 text-theme"></td>
                     <td className="p-1 text-theme"></td>
                   </tr>
                 </tbody>
@@ -646,91 +530,6 @@ export default function DansniiKhuulga() {
           </div>
         </div>
 
-        {isEbarimtOpen && (
-          <ModalPortal>
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/60 backdrop-blur-md z-[2100]"
-                onClick={() => setIsEbarimtOpen(false)}
-              />
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 50 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.9, opacity: 0, y: 50 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] rounded-3xl shadow-2xl overflow-hidden pointer-events-auto modal-surface"
-                onClick={(e) => e.stopPropagation()}
-                ref={ebarimtRef}
-                role="dialog"
-                aria-modal="true"
-              >
-                <button
-                  onClick={() => setIsEbarimtOpen(false)}
-                  className="absolute top-2 right-4 hover:bg-gray-100 rounded-2xl transition-colors z-[2300]"
-                  aria-label="Хаах"
-                  title="Хаах"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-slate-700"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-                <div className="w-full h-full overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
-                  {/* Ensure the embedded page can scroll within the modal instead of bubbling to body */}
-                  <EbarimtPage />
-                </div>
-              </motion.div>
-            </>
-          </ModalPortal>
-        )}
-
-        {isZardalOpen && (
-          <ModalPortal>
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2100]"
-                onClick={() => setIsZardalOpen(false)}
-              />
-              <motion.div
-                initial={{ scale: 0.98, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.98, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[2200] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] max-h-[90vh] rounded-3xl overflow-auto shadow-2xl modal-surface modal-responsive"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
-                  <div className="font-semibold">Зардал</div>
-                  <button
-                    onClick={() => setIsZardalOpen(false)}
-                    className="btn-minimal btn-cancel"
-                  >
-                    Хаах
-                  </button>
-                </div>
-                <div className="p-2 overflow-auto max-h-[calc(90vh-48px)]">
-                  <ZardalPage />
-                </div>
-              </motion.div>
-            </>
-          </ModalPortal>
-        )}
       </div>
     </div>
   );

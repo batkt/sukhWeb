@@ -606,8 +606,24 @@ export default function Khynalt() {
     in30Days.setDate(now.getDate() + 30);
     let active = 0;
     filteredContracts.forEach((g: any) => {
+      // Check if contract is cancelled
+      const status = String(g?.tuluv || g?.status || "").trim();
+      const isCancelled = status === "Цуцалсан" || 
+                         status.toLowerCase() === "цуцалсан" || 
+                         status === "tsutlsasan" || 
+                         status.toLowerCase() === "tsutlsasan" ||
+                         status === "Идэвхгүй" ||
+                         status.toLowerCase() === "идэвхгүй";
+      
+      // Skip cancelled contracts
+      if (isCancelled) return;
+      
+      // Check if contract is expired
       const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
-      if (!end || end >= now) active += 1;
+      const isExpired = end ? end < now : false;
+      
+      // Count only active contracts (not cancelled and not expired)
+      if (!isExpired) active += 1;
     });
     return active;
   })();
@@ -636,6 +652,19 @@ export default function Khynalt() {
       const isExpired = end ? end < now : false;
       return isCancelled || isExpired;
     }).length;
+  }, [filteredContracts]);
+
+  // Calculate cancelled gerees
+  const cancelledGerees = useMemo(() => {
+    return filteredContracts.filter((c: any) => {
+      const status = String(c?.tuluv || c?.status || "").trim();
+      return status === "Цуцалсан" || 
+             status.toLowerCase() === "цуцалсан" || 
+             status === "tsutlsasan" || 
+             status.toLowerCase() === "tsutlsasan" ||
+             status === "Идэвхгүй" ||
+             status.toLowerCase() === "идэвхгүй";
+    });
   }, [filteredContracts]);
 
   // Count unique "toot" values from baiguullaga that are not signed in orshinSuugch
@@ -723,9 +752,8 @@ export default function Khynalt() {
       delay: 100,
     },
     {
-      title: "Гэрээ",
-      value: filteredTotalContracts,
-      subtitle: `Идэвхтэй: ${filteredActiveContracts}`,
+      title: "Идэвхтэй гэрээ",
+      value: filteredActiveContracts,
       color: "from-blue-500 to-blue-600",
       onClick: () => {
         router.push("/geree?tab=contracts");
@@ -756,12 +784,20 @@ export default function Khynalt() {
       onClick: () => router.push("/tulbur"),
       delay: 500,
     },
+    {
+      title: "Цуцлагдсан гэрээ",
+      value: cancelledGerees.length,
+      subtitle: "Нийт цуцлагдсан",
+      color: "from-orange-500 to-orange-600",
+      onClick: () => router.push("/geree?tab=contracts"),
+      delay: 600,
+    },
   ];
 
   return (
     <div className="h-full overflow-hidden custom-scrollbar">
-      <div className="min-h-full p-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700">
+      <div className="min-h-full pl-4 pt-4 pb-4 pr-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4">
           <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
@@ -789,12 +825,12 @@ export default function Khynalt() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
           {kpiCards.map((card, index) => (
             <div
               key={index}
               onClick={card.onClick}
-              className={`neu-panel rounded-2xl p-4 transition-opacity duration-500 cursor-pointer ${
+              className={`neu-panel rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${
                 mounted
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 translate-y-4"
@@ -997,7 +1033,7 @@ export default function Khynalt() {
           className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${
             mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
           }`}
-          style={{ transitionDelay: "900ms" }}
+          style={{ transitionDelay: "1000ms" }}
         >
           <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">
             Тайлангийн дүгнэлт

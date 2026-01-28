@@ -7,6 +7,7 @@ type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
 interface ContractsTableProps {
   ajiltan: any;
   currentContracts: any[];
+  totalContracts: number;
   visibleColumns: string[];
   selectAllContracts: boolean;
   setSelectAllContracts: (value: boolean) => void;
@@ -25,6 +26,7 @@ interface ContractsTableProps {
 export const ContractsTable: React.FC<ContractsTableProps> = ({
   ajiltan,
   currentContracts,
+  totalContracts,
   visibleColumns,
   selectAllContracts,
   setSelectAllContracts,
@@ -41,9 +43,13 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
 }) => {
   const handleToggleSelectAll = (checked: boolean) => {
     setSelectAllContracts(checked);
-    if (!checked) return;
-    const ids = currentContracts.map((c: any) => String(c._id));
-    setSelectedContracts(ids);
+    if (checked) {
+      const ids = currentContracts.map((c: any) => String(c._id));
+      setSelectedContracts(ids);
+    } else {
+      // Clear all selections
+      setSelectedContracts([]);
+    }
   };
 
   const handleToggleRow = (contract: any, checked: boolean) => {
@@ -56,18 +62,35 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
     });
   };
 
+  const handleRowClick = (contract: any, e: React.MouseEvent<HTMLTableRowElement>) => {
+    // Don't toggle if clicking on action buttons, checkbox, or sort buttons
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') ||
+      target.closest('input[type="checkbox"]') ||
+      target.closest('th button')
+    ) {
+      return;
+    }
+    
+    // Toggle the checkbox state
+    const id = String(contract._id);
+    const isSelected = selectedContracts.includes(id);
+    handleToggleRow(contract, !isSelected);
+  };
+
   return (
-    <div className="table-surface overflow-visible rounded-2xl w-full">
-      <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow relative">
+    <div className="table-surface overflow-hidden rounded-2xl w-full">
+      <div className="rounded-3xl p-6 neu-table allow-overflow">
         <div
-          className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
+          className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
           id="geree-table"
         >
-          <table className="table-ui text-xs min-w-full">
+          <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
             <thead className="z-10 bg-white dark:bg-gray-800">
               <tr>
                 {ajiltan?.erkh === "Admin" && (
-                  <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                  <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                     <input
                       id="geree-select-all"
                       type="checkbox"
@@ -76,16 +99,17 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     />
                   </th>
                 )}
-                <th className="p-3 text-xs font-semibold text-theme text-center w-12 bg-inherit">
+                <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                   №
                 </th>
-                {visibleColumns.map((columnKey) => {
+                {visibleColumns.map((columnKey, colIdx) => {
                   const column = ALL_COLUMNS.find((col) => col.key === columnKey);
                   const isSortable =
                     column?.key === "toot" ||
                     column?.key === "orts" ||
                     column?.key === "davkhar" ||
                     column?.key === "ognoo";
+                  const isLastCol = colIdx === visibleColumns.length - 1;
 
                   if (isSortable) {
                     const keyMap: Record<string, SortKey> = {
@@ -98,7 +122,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     return (
                       <th
                         key={columnKey}
-                        className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
+                        className={`p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                       >
                         <button
                           type="button"
@@ -131,7 +155,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                   return (
                     <th
                       key={columnKey}
-                      className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit"
+                      className={`p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                     >
                       {column?.label}
                     </th>
@@ -153,13 +177,18 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                   </td>
                 </tr>
               ) : (
-                currentContracts.map((contract: any, idx: number) => (
+                currentContracts.map((contract: any, idx: number) => {
+                  const isSelected = selectedContracts.includes(String(contract._id));
+                  return (
                   <tr
                     key={contract._id || idx}
-                    className="transition-colors border-b last:border-b-0"
+                    onClick={(e) => ajiltan?.erkh === "Admin" && handleRowClick(contract, e)}
+                    className={`transition-colors border-b last:border-b-0 ${
+                      ajiltan?.erkh === "Admin" ? "cursor-pointer hover:bg-[color:var(--surface-hover)]" : ""
+                    } ${isSelected ? "bg-[color:var(--surface-hover)]/50" : ""}`}
                   >
                     {ajiltan?.erkh === "Admin" && (
-                      <td className="p-1 text-center text-theme w-12">
+                      <td className="p-1 text-center text-theme w-12 border-r border-[color:var(--surface-border)]">
                         <input
                           type="checkbox"
                           checked={selectedContracts.includes(String(contract._id))}
@@ -169,10 +198,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                         />
                       </td>
                     )}
-                    <td className="p-1 text-center text-theme">
+                    <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                       {startIndex + idx + 1}
                     </td>
-                    {visibleColumns.map((columnKey) => {
+                    {visibleColumns.map((columnKey, colIdx) => {
                       const alignClass =
                         columnKey === "ner" || columnKey === "bairniiNer"
                           ? "cell-left"
@@ -180,10 +209,11 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                             columnKey === "baritsaaniiUldegdel"
                           ? "cell-right"
                           : "text-center";
+                      const isLastCol = colIdx === visibleColumns.length - 1;
                       return (
                         <td
                           key={columnKey}
-                          className={`p-1 text-theme whitespace-nowrap ${alignClass}`}
+                          className={`p-1 text-theme whitespace-nowrap ${alignClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                         >
                           {renderCellValue(contract, columnKey)}
                         </td>
@@ -219,7 +249,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

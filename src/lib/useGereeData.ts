@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, useEffect } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
@@ -23,7 +23,10 @@ export function useGereeData(
   sortOrder: "asc" | "desc",
   searchTerm: string,
   unitPage: number,
-  unitPageSize: number
+  unitPageSize: number,
+  selectedDawkhar?: string,
+  selectedOrtsForContracts?: string,
+  statusFilter?: "all" | "active" | "cancelled"
 ) {
   const effectiveBarilgiinId = selectedBuildingId ?? barilgiinId ?? undefined;
   const selectedBarilga = baiguullaga?.barilguud?.find(
@@ -277,7 +280,7 @@ export function useGereeData(
     run();
   }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, residentsList]);
 
-  const renderCellValue = useCallback((contract: any, columnKey: string) => {
+  const renderCellValue = useCallback((contract: any, columnKey: string): React.ReactNode => {
     if (!contract) return "-";
 
     // Helper to extract string value from object or primitive
@@ -374,13 +377,51 @@ export function useGereeData(
         }
         return getStringValue(contract.utas) || "-";
       
-      case "tuluv":
-        return contract.tuluv || "Идэвхтэй";
+      case "tuluv": {
+        const status = String(contract.tuluv || contract.status || "Идэвхтэй").trim();
+        const isCancelled = status === "Цуцалсан" || 
+                           status.toLowerCase() === "цуцалсан" || 
+                           status === "tsutlsasan" || 
+                           status.toLowerCase() === "tsutlsasan" ||
+                           status === "Идэвхгүй" ||
+                           status.toLowerCase() === "идэвхгүй";
+        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
+        
+        const statusClass = isCancelled 
+          ? "badge-unpaid bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+          : isActive
+          ? "badge-paid bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+          : "badge-neutral";
+        
+        return React.createElement(
+          "span",
+          { className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}` },
+          status || "Идэвхтэй"
+        );
+      }
       
-      case "ognoo":
-        if (contract.ognoo || contract.createdAt) {
+      case "ognoo": {
+        const status = String(contract.tuluv || contract.status || "Идэвхтэй").trim();
+        const isCancelled = status === "Цуцалсан" || 
+                           status.toLowerCase() === "цуцалсан" || 
+                           status === "tsutlsasan" || 
+                           status.toLowerCase() === "tsutlsasan" ||
+                           status === "Идэвхгүй" ||
+                           status.toLowerCase() === "идэвхгүй";
+        
+        // Try to get cancelled date from various possible field names
+        const cancelledDate = contract.cancelledAt || 
+                             contract.tsutlsasanOgnoo || 
+                             contract.tsutlsanOgnoo ||
+                             contract.duusakhOgnoo ||
+                             contract.updatedAt; // Fallback to updatedAt if cancelled
+        
+        const createdDate = contract.ognoo || contract.createdAt;
+        
+        const formatDate = (dateValue: any): string => {
+          if (!dateValue) return "";
           try {
-            const date = new Date(contract.ognoo || contract.createdAt);
+            const date = new Date(dateValue);
             if (!isNaN(date.getTime())) {
               return date.toLocaleDateString("mn-MN", {
                 year: "numeric",
@@ -389,11 +430,44 @@ export function useGereeData(
               });
             }
           } catch (e) {
-            // Fall through to return raw value
+            // Fall through
           }
-          return getStringValue(contract.ognoo || contract.createdAt) || "-";
+          return getStringValue(dateValue);
+        };
+        
+        const formattedCreated = formatDate(createdDate);
+        const formattedCancelled = isCancelled ? formatDate(cancelledDate) : "";
+        
+        // Apply color based on status with !important to override table styles
+        const dateClass = isCancelled 
+          ? "!text-red-600 dark:!text-red-400 font-medium"
+          : "!text-green-600 dark:!text-green-400 font-medium";
+        
+        if (isCancelled) {
+          // Show only cancelled date for cancelled contracts
+          if (formattedCancelled) {
+            return React.createElement(
+              "span",
+              { className: dateClass, style: { color: '#dc2626' } },
+              formattedCancelled
+            );
+          } else {
+            // If cancelled date not available, show "-"
+            return React.createElement(
+              "span",
+              { className: dateClass, style: { color: '#dc2626' } },
+              "-"
+            );
+          }
+        } else {
+          // Show created date for active contracts
+          return React.createElement(
+            "span",
+            { className: dateClass, style: { color: '#16a34a' } },
+            formattedCreated || "-"
+          );
         }
-        return "-";
+      }
       
       default: {
         const value = contract[columnKey];
@@ -483,6 +557,65 @@ export function useGereeData(
   const filteredContracts = useMemo(() => {
     let filtered = [...contracts];
 
+    // Apply orts filter
+    if (selectedOrtsForContracts && selectedOrtsForContracts.trim() !== "") {
+      const filterOrts = String(selectedOrtsForContracts).trim();
+      filtered = filtered.filter((c: any) => {
+        const orshinSuugchId = c.orshinSuugchId;
+        let contractOrts = String(c?.orts || "").trim();
+        
+        // Get orts from linked resident if available
+        if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
+          const resident = residentsById[String(orshinSuugchId)];
+          if (resident.orts != null) {
+            contractOrts = String(resident.orts).trim();
+          }
+        }
+        
+        return contractOrts === filterOrts;
+      });
+    }
+
+    // Apply dawkhar filter
+    if (selectedDawkhar && selectedDawkhar.trim() !== "") {
+      const filterDawkhar = String(selectedDawkhar).trim();
+      filtered = filtered.filter((c: any) => {
+        const orshinSuugchId = c.orshinSuugchId;
+        let contractDawkhar = String(c?.davkhar || "").trim();
+        
+        // Get davkhar from linked resident if available
+        if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
+          const resident = residentsById[String(orshinSuugchId)];
+          if (resident.davkhar != null) {
+            contractDawkhar = String(resident.davkhar).trim();
+          }
+        }
+        
+        return contractDawkhar === filterDawkhar;
+      });
+    }
+
+    // Apply status filter (active/cancelled)
+    if (statusFilter && statusFilter !== "all") {
+      filtered = filtered.filter((c: any) => {
+        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+        const isCancelled = status === "Цуцалсан" ||
+                           status.toLowerCase() === "цуцалсан" ||
+                           status === "tsutlsasan" ||
+                           status.toLowerCase() === "tsutlsasan" ||
+                           status === "Идэвхгүй" ||
+                           status.toLowerCase() === "идэвхгүй";
+        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
+        
+        if (statusFilter === "active") {
+          return isActive;
+        } else if (statusFilter === "cancelled") {
+          return isCancelled;
+        }
+        return true;
+      });
+    }
+
     // Apply search filter if searchTerm exists
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
@@ -559,7 +692,7 @@ export function useGereeData(
     });
 
     return filtered;
-  }, [contracts, searchTerm, sortKey, sortOrder, residentsById]);
+  }, [contracts, searchTerm, sortKey, sortOrder, residentsById, selectedDawkhar, selectedOrtsForContracts, statusFilter]);
 
   // Paginate contracts
   const contractStartIndex = (currentPage - 1) * rowsPerPage;
@@ -603,10 +736,15 @@ export function useGereeData(
   const empStartIndex = (empPage - 1) * empPageSize;
   const currentEmployees = filteredEmployees.slice(empStartIndex, empStartIndex + empPageSize);
 
-  // Compute floors list from davkharOptions
+  // Compute floors list from davkharOptions and selectedDawkhar filter
   const floorsList = useMemo(() => {
-    return [...davkharOptions];
-  }, [davkharOptions]);
+    let list = [...davkharOptions];
+    const sel = String(selectedDawkhar || "").trim();
+    if (sel) {
+      list = list.filter((d) => String(d) === sel);
+    }
+    return list;
+  }, [davkharOptions, selectedDawkhar]);
 
   // Paginate floors
   const unitTotalPages = Math.max(1, Math.ceil(floorsList.length / unitPageSize));
@@ -639,6 +777,7 @@ export function useGereeData(
     isValidatingAjiltan,
     // Computed data
     currentContracts,
+    totalContracts: filteredContracts.length,
     startIndex: contractStartIndex,
     currentResidents,
     resTotalPages,

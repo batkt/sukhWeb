@@ -57,11 +57,6 @@ export function useGereeActions(
       openErrorOverlay(explainPhoneRule());
       return;
     }
-    
-    if (!editingResident && (!newResident.nuutsUg || String(newResident.nuutsUg).length < 4)) {
-      openErrorOverlay("Нууц үг хамгийн багадаа 4 тэмдэгт байх ёстой.");
-      return;
-    }
 
     try {
       const firstPhone = Array.isArray(newResident.utas)
@@ -80,8 +75,6 @@ export function useGereeActions(
         email: newResident.mail,
         mail: newResident.mail,
         khayag: newResident.khayag,
-        nevtrekhNer: newResident.nevtrekhNer || firstPhone,
-        nuutsUg: newResident.nuutsUg,
         turul: newResident.turul,
         baiguullagiinId: ajiltan?.baiguullagiinId,
         baiguullagiinNer: baiguullaga?.ner,
@@ -106,12 +99,8 @@ export function useGereeActions(
       };
 
       if (editingResident?._id) {
-        const updatePayload: any = { ...payload };
-        if (!newResident.nuutsUg) {
-          delete updatePayload.nuutsUg;
-        }
         await updateMethod("orshinSuugch", token || "", {
-          ...updatePayload,
+          ...payload,
           _id: editingResident._id,
         });
       } else {
@@ -173,8 +162,6 @@ export function useGereeActions(
       toot: p.toot || "",
       davkhar: p.davkhar || "",
       tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
-      nevtrekhNer: p.nevtrekhNer || (p.utas ? String(p.utas) : "") || "",
-      nuutsUg: "",
       turul: p.turul || "Үндсэн",
       tailbar: p?.tailbar || "",
     });
@@ -378,8 +365,6 @@ export function useGereeActions(
       toot: "",
       davkhar: "",
       tsahilgaaniiZaalt: "",
-      nevtrekhNer: "",
-      nuutsUg: "",
       turul: "Үндсэн",
       tailbar: "",
       ekhniiUldegdel: 0,

@@ -482,41 +482,6 @@ export default function ResidentModal({
                       />
                     </div>
                   </div>
-
-                  {/* Username and Password - One row */}
-                  <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                    {/* Username */}
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Хэрэглэгчийн нэр
-                      </label>
-                      <input
-                        type="text"
-                        value={newResident.nevtrekhNer || ""}
-                        onChange={(e) => {
-                          setNewResident((p: any) => ({ ...p, nevtrekhNer: e.target.value }));
-                        }}
-                        className="modern-input w-full"
-                        placeholder="Хэрэглэгчийн нэр..."
-                      />
-                    </div>
-
-                    {/* Password */}
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Нууц үг
-                      </label>
-                      <input
-                        type="password"
-                        value={newResident.nuutsUg || ""}
-                        onChange={(e) => {
-                          setNewResident((p: any) => ({ ...p, nuutsUg: e.target.value }));
-                        }}
-                        className="modern-input w-full"
-                        placeholder="Нууц үг..."
-                      />
-                    </div>
-                  </div>
                 </div>
               </div>
 
