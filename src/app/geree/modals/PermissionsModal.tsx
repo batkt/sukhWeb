@@ -65,8 +65,8 @@ export default function PermissionsModal({
     
     const path = "/" + permissionId.replace(/\./g, "/");
     
-    let module = permissionsData.moduluud.find((m: any) => m.zam === path);
-    if (module) return module;
+    let mod = permissionsData.moduluud.find((m: any) => m.zam === path);
+    if (mod) return mod;
 
     return null;
   };
