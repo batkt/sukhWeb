@@ -15,6 +15,7 @@ import {
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { ALL_COLUMNS } from "./columns";
+import { hasPermission } from "@/lib/permissionUtils";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units";
@@ -101,6 +102,20 @@ export default function GereeHeader({
   const [isMobileExcelOpen, setIsMobileExcelOpen] = useState(false);
   const desktopExcelRef = useRef<HTMLDivElement>(null);
   const mobileExcelRef = useRef<HTMLDivElement>(null);
+
+  // Debugging
+  useEffect(() => {
+    if (ajiltan) {
+      console.log("👤 GereeHeader received ajiltan:", ajiltan);
+      console.log("🛡️ Admin Check:", ajiltan.erkh === "Admin" || ajiltan.erkh === "admin");
+      console.log("🔑 Permissions:", ajiltan.tsonkhniiErkhuud);
+    }
+  }, [ajiltan]);
+
+  const showResidents = hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch");
+  const showContracts = hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
+  const showUnits = hasPermission(ajiltan, "/geree/tootBurtgel") || hasPermission(ajiltan, "geree.tootBurtgel");
+  const showEmployees = hasPermission(ajiltan, "/geree/ajiltan") || hasPermission(ajiltan, "geree.ajiltan");
 
   useEffect(() => {
     const handleClickOutsideDesktop = (event: MouseEvent) => {
@@ -349,6 +364,7 @@ export default function GereeHeader({
 
         <div className="mt-3 flex items-center justify-between gap-4 w-full">
           <div className="flex justify-between items-center gap-2 w-full max-w-xl tabbar">
+            {showResidents && (
             <button
               id="tab-residents"
               onClick={() => setActiveTab("residents")}
@@ -360,6 +376,8 @@ export default function GereeHeader({
             >
               Оршин суугч
             </button>
+            )}
+            {showContracts && (
             <button
               id="tab-contracts"
               onClick={() => setActiveTab("contracts")}
@@ -371,6 +389,8 @@ export default function GereeHeader({
             >
               Гэрээ
             </button>
+            )}
+            {showUnits && (
             <button
               id="tab-units"
               onClick={() => setActiveTab("units")}
@@ -382,6 +402,8 @@ export default function GereeHeader({
             >
               Тоот бүртгэл
             </button>
+            )}
+            {showEmployees && (
             <button
               id="tab-employees"
               onClick={() => setActiveTab("employees")}
@@ -393,6 +415,7 @@ export default function GereeHeader({
             >
               Ажилтан
             </button>
+            )}
           </div>
 
           {(activeTab === "contracts" || activeTab === "units") && (

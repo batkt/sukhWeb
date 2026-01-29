@@ -1,13 +1,25 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import GereeLayout from "../GereeLayout";
 import UnitsSection from "../UnitsSection";
 import GereeModals from "../GereeModals";
 import { useGereeContext } from "../GereeContext";
+import { hasPermission } from "@/lib/permissionUtils";
 
 export default function TootBurtgelPage() {
-  const { state, data, actions } = useGereeContext();
+  const router = useRouter();
+  const { state, data, actions, ajiltan } = useGereeContext();
+
+  useEffect(() => {
+    if (ajiltan) {
+      const allowed = hasPermission(ajiltan, "/geree/tootBurtgel") || hasPermission(ajiltan, "geree.tootBurtgel");
+      if (!allowed) {
+        router.push("/geree");
+      }
+    }
+  }, [ajiltan, router]);
 
   return (
     <>

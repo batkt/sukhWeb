@@ -1,12 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import GereeLayout from "../GereeLayout";
 import EmployeesSection from "../EmployeesSection";
 import { useGereeContext } from "../GereeContext";
+import { hasPermission } from "@/lib/permissionUtils";
 
 export default function AjiltanPage() {
-  const { state, data, actions } = useGereeContext();
+  const router = useRouter();
+  const { state, data, actions, ajiltan } = useGereeContext();
+
+  useEffect(() => {
+    if (ajiltan) {
+      const allowed = hasPermission(ajiltan, "/geree/ajiltan") || hasPermission(ajiltan, "geree.ajiltan");
+      if (!allowed) {
+        router.push("/geree");
+      }
+    }
+  }, [ajiltan, router]);
 
   return (
     <GereeLayout activeTab="employees">
