@@ -66,8 +66,29 @@ export function useGereeActions(
         : String(newResident.utas || "");
 
       // Find the selected building from baiguullaga
-      const selectedBuildingId = selectedBuildingIdForActions || barilgiinId;
-      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => b._id === selectedBuildingId);
+      const effectiveBid = selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
+      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => String(b._id) === String(effectiveBid));
+
+      // Unit validation: Ensure the toot exists in the building configuration
+      const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud;
+      if (davkhariinToonuud && typeof davkhariinToonuud === 'object') {
+        const o = String(newResident.orts || "").trim();
+        const f = String(newResident.davkhar || "").trim();
+        const key = composeKey ? composeKey(o, f) : f;
+        
+        const validUnits = Array.isArray(davkhariinToonuud[key]) 
+          ? davkhariinToonuud[key] 
+          : (Array.isArray(davkhariinToonuud[f]) ? davkhariinToonuud[f] : []);
+
+        if (validUnits.length > 0) {
+          const inputToot = String(newResident.toot || "").trim();
+          const exists = validUnits.some((u: any) => String(u).trim() === inputToot);
+          if (!exists) {
+            openErrorOverlay(`"${inputToot}" тоот тухайн давхарт бүртгэлгүй байна. Тоот бүртгэлээс шалгана уу.`);
+            return false;
+          }
+        }
+      }
 
       const payload: any = {
         ner: newResident.ner,
@@ -86,7 +107,7 @@ export function useGereeActions(
         toot: newResident.toot || "",
         davkhar: newResident.davkhar || "",
         orts: newResident.orts || "1", // Default to "1" if not provided
-        barilgiinId: selectedBarilga?._id || selectedBuildingId || "",
+        barilgiinId: selectedBarilga?._id || effectiveBid || "",
         bairniiNer: selectedBarilga?.ner || "",
         // Financial Information
         ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
@@ -116,7 +137,7 @@ export function useGereeActions(
       openErrorOverlay(getErrorMessage(err));
       return false;
     }
-  }, [token, ajiltan, baiguullaga]);
+  }, [token, ajiltan, baiguullaga, selectedBuildingIdForActions, barilgiinId, selectedBuildingId, composeKey]);
 
   const handleDeleteResident = useCallback(async (p: any) => {
     if (!token) {
@@ -203,9 +224,15 @@ export function useGereeActions(
         return;
       }
 
+      const getUnitsAsArray = (val: any): string[] => {
+        if (Array.isArray(val)) return val.map(String);
+        if (typeof val === "string") return val.split(/[\s,;|]+/).filter(Boolean);
+        return [];
+      };
+
       const key = composeKeyFn(selectedOrts || "", floor);
-      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, string[]>;
-      const currentUnits = Array.isArray(existing[key]) ? [...existing[key]] : [];
+      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>;
+      const currentUnits = getUnitsAsArray(existing[key]);
       
       // Add new units, avoiding duplicates
       const newUnits = Array.from(new Set([...currentUnits, ...values.map(String)]));
@@ -264,9 +291,15 @@ export function useGereeActions(
         return;
       }
 
+      const getUnitsAsArray = (val: any): string[] => {
+        if (Array.isArray(val)) return val.map(String);
+        if (typeof val === "string") return val.split(/[\s,;|]+/).filter(Boolean);
+        return [];
+      };
+
       const key = composeKeyFn(selectedOrts || "", floor);
-      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, string[]>;
-      const currentUnits = Array.isArray(existing[key]) ? [...existing[key]] : [];
+      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>;
+      const currentUnits = getUnitsAsArray(existing[key]);
       const unitStr = String(unit).trim();
       const updatedUnits = currentUnits.filter((u: string) => String(u).trim() !== unitStr);
 

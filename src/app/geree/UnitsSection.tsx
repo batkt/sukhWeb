@@ -108,7 +108,14 @@ export default function UnitsSection({
                               .davkhariinToonuud) ||
                           {};
                         const key = composeKey(selectedOrts, floor);
-                        const units = existing[key] || [];
+                        let units = existing[key] || [];
+                        if (!Array.isArray(units) && typeof units === "string") {
+                          units = (units as string)
+                            .split(/[\s,;|]+/)
+                            .filter(Boolean);
+                        } else if (!Array.isArray(units)) {
+                          units = [];
+                        }
 
                         const activeContractsForFloor = contracts.filter(
                           (c: any) => {
@@ -190,57 +197,63 @@ export default function UnitsSection({
                             <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                               {floor}-р давхар
                             </td>
-                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
-                              <div className="flex flex-wrap gap-2 justify-center">
-                                {filteredUnits.length > 0 ? (
-                                  filteredUnits.map((t: any) => {
+                            <td className="p-1 px-2 text-center text-theme border-r border-[color:var(--surface-border)] bg-slate-50/20 dark:bg-slate-900/5">
+                              {filteredUnits.length > 0 ? (
+                                <div 
+                                  className="grid gap-1.5 py-1"
+                                  style={{ 
+                                    gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))",
+                                    justifyItems: "center"
+                                  }}
+                                >
+                                  {filteredUnits.map((t: any) => {
                                     const unitStr = String(t).trim();
                                     const hasActive = activeToots.has(unitStr);
 
                                     return (
-                                      <span
+                                      <div
                                         key={String(t)}
-                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border ${
+                                        className={`group relative flex items-center justify-center w-[44px] h-[26px] rounded-lg border transition-all duration-150 ${
                                           hasActive
-                                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                                            : "border-gray-300"
+                                            ? "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-600"
+                                            : "border-slate-300 bg-white dark:bg-gray-800 dark:border-slate-600 hover:border-blue-400 shadow-sm"
                                         }`}
                                       >
                                         <span
-                                          className={
+                                          className={`text-[12px] font-bold ${
                                             hasActive
-                                              ? "text-green-600 font-normal"
-                                              : "text-theme"
-                                          }
+                                              ? "text-green-700 dark:text-green-400"
+                                              : "text-slate-900 dark:text-slate-100"
+                                          }`}
                                         >
                                           {String(t)}
                                         </span>
+
+                                        {/* Status Glow (Corner) */}
                                         {hasActive && (
-                                          <span
-                                            className="text-green-600 text-[10px] font-normal"
-                                            title="Идэвхтэй"
-                                          >
-                                            ●
-                                          </span>
+                                          <div className="absolute top-0.5 left-0.5 w-1 h-1 rounded-full bg-green-600 animate-pulse" />
                                         )}
+
+                                        {/* Compact Delete Button */}
                                         <button
-                                          className="ml-1 text-red-500 hover:text-red-600"
-                                          aria-label="Устгах"
-                                          onClick={() =>
-                                            onDeleteUnit(floor, String(t))
-                                          }
+                                          className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center rounded-full bg-slate-800 text-white opacity-0 group-hover:opacity-100 transition-all shadow-md hover:bg-red-600 z-20 scale-90 group-hover:scale-100"
+                                          aria-label={`Устгах ${unitStr}`}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteUnit(floor, String(t));
+                                          }}
                                         >
-                                          ×
+                                          <span className="text-[10px] leading-none mb-0.5">×</span>
                                         </button>
-                                      </span>
+                                      </div>
                                     );
-                                  })
-                                ) : (
-                                  <span className="text-xs text-[color:var(--muted-text)] italic">
-                                    Тоот бүртгэгдээгүй
-                                  </span>
-                                )}
-                              </div>
+                                  })}
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 dark:text-slate-500 italic uppercase tracking-wider">
+                                  Хоосон
+                                </span>
+                              )}
                             </td>
                             <td className="p-1 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center gap-2">
