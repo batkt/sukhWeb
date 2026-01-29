@@ -455,7 +455,7 @@ export default function GereeHeader({
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Төлөв:
                     </label>
-                    <div className="w-26">
+                    <div className="w-38">
                       <TusgaiZagvar
                         value={statusFilter}
                         onChange={(val) =>
@@ -521,7 +521,7 @@ export default function GereeHeader({
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Төлөв:
                     </label>
-                    <div className="w-26">
+                    <div className="w-36">
                       <TusgaiZagvar
                         value={unitStatusFilter}
                         onChange={(val) =>

@@ -174,7 +174,8 @@ export default function UnitsSection({
                         });
 
                         // If no units match the current filters, skip rendering this floor
-                        if (filteredUnits.length === 0) {
+                        // But always show the row if no filters are applied (so user can add units)
+                        if (unitStatusFilter !== "all" && filteredUnits.length === 0) {
                           return null;
                         }
 
@@ -191,48 +192,54 @@ export default function UnitsSection({
                             </td>
                             <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                               <div className="flex flex-wrap gap-2 justify-center">
-                                {filteredUnits.map((t: any) => {
-                                  const unitStr = String(t).trim();
-                                  const hasActive = activeToots.has(unitStr);
+                                {filteredUnits.length > 0 ? (
+                                  filteredUnits.map((t: any) => {
+                                    const unitStr = String(t).trim();
+                                    const hasActive = activeToots.has(unitStr);
 
-                                  return (
-                                    <span
-                                      key={String(t)}
-                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border ${
-                                        hasActive
-                                          ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                                          : "border-gray-300"
-                                      }`}
-                                    >
+                                    return (
                                       <span
-                                        className={
+                                        key={String(t)}
+                                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border ${
                                           hasActive
-                                            ? "text-green-600 font-normal"
-                                            : "text-theme"
-                                        }
+                                            ? "border-green-500 bg-green-50 dark:bg-green-900/20"
+                                            : "border-gray-300"
+                                        }`}
                                       >
-                                        {String(t)}
-                                      </span>
-                                      {hasActive && (
                                         <span
-                                          className="text-green-600 text-[10px] font-normal"
-                                          title="Идэвхтэй"
+                                          className={
+                                            hasActive
+                                              ? "text-green-600 font-normal"
+                                              : "text-theme"
+                                          }
                                         >
-                                          ●
+                                          {String(t)}
                                         </span>
-                                      )}
-                                      <button
-                                        className="ml-1 text-red-500 hover:text-red-600"
-                                        aria-label="Устгах"
-                                        onClick={() =>
-                                          onDeleteUnit(floor, String(t))
-                                        }
-                                      >
-                                        ×
-                                      </button>
-                                    </span>
-                                  );
-                                })}
+                                        {hasActive && (
+                                          <span
+                                            className="text-green-600 text-[10px] font-normal"
+                                            title="Идэвхтэй"
+                                          >
+                                            ●
+                                          </span>
+                                        )}
+                                        <button
+                                          className="ml-1 text-red-500 hover:text-red-600"
+                                          aria-label="Устгах"
+                                          onClick={() =>
+                                            onDeleteUnit(floor, String(t))
+                                          }
+                                        >
+                                          ×
+                                        </button>
+                                      </span>
+                                    );
+                                  })
+                                ) : (
+                                  <span className="text-xs text-[color:var(--muted-text)] italic">
+                                    Тоот бүртгэгдээгүй
+                                  </span>
+                                )}
                               </div>
                             </td>
                             <td className="p-1 whitespace-nowrap text-center">
@@ -245,9 +252,20 @@ export default function UnitsSection({
                                   <Plus className="w-5 h-5 text-blue-500" />
                                 </button>
                                 <button
-                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
-                                  title="Давхрын тоотуудыг устгах"
-                                  onClick={() => onDeleteFloor(floor)}
+                                  className={`p-2 rounded-2xl action-delete hover-surface transition-colors ${
+                                    units.length === 0
+                                      ? "opacity-20 cursor-not-allowed grayscale"
+                                      : ""
+                                  }`}
+                                  title={
+                                    units.length === 0
+                                      ? "Устгах тоот байхгүй"
+                                      : "Давхрын тоотуудыг устгах"
+                                  }
+                                  onClick={() =>
+                                    units.length > 0 && onDeleteFloor(floor)
+                                  }
+                                  disabled={units.length === 0}
                                 >
                                   <Trash2 className="w-5 h-5" />
                                 </button>

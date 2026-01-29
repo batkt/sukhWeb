@@ -64,7 +64,9 @@ export function useAshiglaltiinZardluud(overrides?: {
       ? [`/baiguullaga/${currentOrg}`, token, currentBarilga]
       : null,
     async ([url, token, barilgaId]) => {
-      const response = await uilchilgee(token).get(url);
+      const response = await uilchilgee(token).get(url, {
+        headers: { "X-Org-Only": "1" },
+      });
       const org = response.data;
       const barilga = org.barilguud?.find((b: any) => b._id === barilgaId);
       if (!barilga) return [] as ZardalItem[];
@@ -83,7 +85,9 @@ export function useAshiglaltiinZardluud(overrides?: {
   ) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
+      headers: { "X-Org-Only": "1" },
+    });
     const org = orgResp.data;
     const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
     if (!barilga) throw new Error("Building not found");
@@ -124,7 +128,12 @@ export function useAshiglaltiinZardluud(overrides?: {
 
     barilga.tokhirgoo.ashiglaltiinZardluud.push(newItem);
 
-    await updateMethod("baiguullaga", token, org);
+    const payload = {
+      ...org,
+      barilguud: org.barilguud,
+    };
+
+    await updateMethod("baiguullaga", token, payload);
     mutate();
   };
 
@@ -134,7 +143,9 @@ export function useAshiglaltiinZardluud(overrides?: {
   ) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
+      headers: { "X-Org-Only": "1" },
+    });
     const org = orgResp.data;
     const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
     if (!barilga) throw new Error("Building not found");
@@ -158,14 +169,21 @@ export function useAshiglaltiinZardluud(overrides?: {
           : undefined),
     };
 
-    await updateMethod("baiguullaga", token, org);
+    const payload = {
+      ...org,
+      barilguud: org.barilguud,
+    };
+
+    await updateMethod("baiguullaga", token, payload);
     mutate();
   };
 
   const deleteZardal = async (id: string) => {
     if (!token || !currentOrg || !currentBarilga) return;
 
-    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`);
+    const orgResp = await uilchilgee(token).get(`/baiguullaga/${currentOrg}`, {
+      headers: { "X-Org-Only": "1" },
+    });
     const org = orgResp.data;
     const barilga = org.barilguud?.find((b: any) => b._id === currentBarilga);
     if (!barilga) throw new Error("Building not found");
@@ -177,7 +195,12 @@ export function useAshiglaltiinZardluud(overrides?: {
         (item: any) => item._id !== id
       );
 
-    await updateMethod("baiguullaga", token, org);
+    const payload = {
+      ...org,
+      barilguud: org.barilguud,
+    };
+
+    await updateMethod("baiguullaga", token, payload);
     mutate();
   };
 

@@ -28,9 +28,11 @@ export function useGereeData(
   selectedOrtsForContracts?: string,
   statusFilter?: "all" | "active" | "cancelled"
 ) {
-  const effectiveBarilgiinId = selectedBuildingId ?? barilgiinId ?? undefined;
+  // Stick strictly to selectedBuildingId from context to prevent data leakage from cookie-based barilgiinId
+  const effectiveBarilgiinId = selectedBuildingId || undefined;
+  
   const selectedBarilga = baiguullaga?.barilguud?.find(
-    (b: any) => b._id === selectedBuildingId
+    (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId)
   );
 
   const {
@@ -278,7 +280,7 @@ export function useGereeData(
       }
     };
     run();
-  }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId, residentsList]);
+  }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, residentsList]);
 
   const renderCellValue = useCallback((contract: any, columnKey: string): React.ReactNode => {
     if (!contract) return "-";

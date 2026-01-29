@@ -256,7 +256,8 @@ const uilchilgee = (token?: string): AxiosInstance => {
           }
         }
         // Allow callers to opt-out of auto-injecting barilgiinId via header
-        const orgOnly = (config.headers as any)?.["X-Org-Only"] === "1";
+        const headers = config.headers as any;
+        const orgOnly = headers?.["X-Org-Only"] === "1" || headers?.["x-org-only"] === "1" || (headers?.get && headers.get("X-Org-Only") === "1");
         if (!orgOnly) {
           if (globalBarilgiinId && p.barilgiinId == null) {
             p.barilgiinId = globalBarilgiinId;

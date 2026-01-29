@@ -13,7 +13,7 @@ import {
   Save,
   Home,
 } from "lucide-react";
-import { aldaaBarigch } from "@/lib/uilchilgee";
+import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
 import createMethod from "../../../tools/function/createMethod";
 import { useAuth } from "@/lib/useAuth";
@@ -997,6 +997,18 @@ export default function BarilgiinTokhirgoo() {
     }
   }, [baiguullaga, barilga, selectedBuildingId]);
 
+  // Helper to fetch the latest organization data without building filters
+  // This is used before every map/filter update of the barilguud array
+  // to prevent accidental deletion of buildings that may be missing from
+  // the current component state due to building-level filtering.
+  const fetchFreshOrg = async () => {
+    if (!token || !baiguullaga?._id) return null;
+    const res = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
+      headers: { "X-Org-Only": "1" },
+    });
+    return res.data;
+  };
+
   const handleSaveEditBuilding = async () => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -1025,8 +1037,15 @@ export default function BarilgiinTokhirgoo() {
         return;
       }
 
+      // Use fresh unfiltered organization data before mapping
+      const freshOrg = await fetchFreshOrg();
+      if (!freshOrg) {
+        openErrorOverlay("Байгууллагын мэдээлэл шинэчлэхэд алдаа гарлаа");
+        return;
+      }
+
       // Update existing building
-      let updatedBarilguud: any[] = [...(baiguullaga?.barilguud || [])];
+      let updatedBarilguud: any[] = [...(freshOrg.barilguud || [])];
       updatedBarilguud = updatedBarilguud.map((b: any) => {
         if (String(b._id) !== String(editedBuildingId)) return b;
         const tokhirgoo = {
@@ -1038,9 +1057,7 @@ export default function BarilgiinTokhirgoo() {
       });
 
       const payload = {
-        ...(baiguullaga as any),
-        _id: baiguullaga._id,
-        baiguullagiinId: String(baiguullaga._id),
+        ...freshOrg,
         barilguud: updatedBarilguud,
       };
 
@@ -1114,15 +1131,19 @@ export default function BarilgiinTokhirgoo() {
     }
 
     try {
-      const updatedBarilguud = (baiguullaga?.barilguud || []).filter(
+      const freshOrg = await fetchFreshOrg();
+      if (!freshOrg) {
+        openErrorOverlay("Байгууллагын мэдээлэл шинэчлэхэд алдаа гарлаа");
+        return;
+      }
+
+      const updatedBarilguud = (freshOrg.barilguud || []).filter(
         (b: any) => String(b._id) !== String(id),
       );
       const payload = {
-        ...(baiguullaga as any),
-        _id: baiguullaga._id,
-        baiguullagiinId: String(baiguullaga._id),
+        ...freshOrg,
         barilguud: updatedBarilguud,
-      } as any;
+      };
 
       const res = await updateMethod("baiguullaga", token, payload);
       if (res?.data) await baiguullagaMutate(res.data, false);
@@ -1172,6 +1193,13 @@ export default function BarilgiinTokhirgoo() {
 
     setIsSaving(true);
     try {
+      const freshOrg = await fetchFreshOrg();
+      if (!freshOrg) {
+        openErrorOverlay("Байгууллагын мэдээлэл шинэчлэхэд алдаа гарлаа");
+        setIsSaving(false);
+        return;
+      }
+
       const newBuilding: any = {
         // backend will assign _id; keep minimal required fields
         ner: name,
@@ -1182,17 +1210,17 @@ export default function BarilgiinTokhirgoo() {
         },
       };
 
-      // Preserve existing buildings with their _id and add the new building
-      const existingBuildings = (baiguullaga?.barilguud || []).map(
+      // Preserve existing buildings from freshOrg and add the new building
+      const existingBuildings = (freshOrg.barilguud || []).map(
         (b: any) => ({
           ...b,
-          _id: b._id, // Ensure _id is preserved
+          _id: b._id,
         }),
       );
       const updatedBarilguud = [...existingBuildings, newBuilding];
 
       const payload = {
-        _id: baiguullaga._id,
+        ...freshOrg,
         barilguud: updatedBarilguud,
       };
 
@@ -1316,6 +1344,12 @@ export default function BarilgiinTokhirgoo() {
     setIsSaving(true);
 
     try {
+      const freshOrg = await fetchFreshOrg();
+      if (!freshOrg) {
+        openErrorOverlay("Байгууллагын мэдээлэл шинэчлэхэд алдаа гарлаа");
+        setIsSaving(false);
+        return;
+      }
       const duuregKod = state.selectedDuuregData.kod || "";
       const horooKod = state.selectedHorooData.kod || "";
       const districtCodeCombined = `${duuregKod}${horooKod}`;
@@ -1349,7 +1383,7 @@ export default function BarilgiinTokhirgoo() {
       // Update only the selected building's tokhirgoo (do NOT overwrite other buildings)
       const targetBuildingId =
         activeBuildingId || selectedBuildingId || barilgiinId;
-      const newBarilguud = (baiguullaga?.barilguud || []).map((b: any) => {
+      const newBarilguud = (freshOrg.barilguud || []).map((b: any) => {
         if (!targetBuildingId || String(b._id) !== String(targetBuildingId))
           return b;
         return {
@@ -1389,19 +1423,17 @@ export default function BarilgiinTokhirgoo() {
       } as any;
 
       const payload = {
-        ...(baiguullaga || {}),
-        _id: baiguullaga!._id,
-        baiguullagiinId: String(baiguullaga!._id),
+        ...freshOrg,
         eBarimtAutomataarIlgeekh:
-          typeof baiguullaga?.eBarimtAutomataarIlgeekh === "boolean"
-            ? baiguullaga?.eBarimtAutomataarIlgeekh
+          typeof freshOrg?.eBarimtAutomataarIlgeekh === "boolean"
+            ? freshOrg.eBarimtAutomataarIlgeekh
             : false,
         nuatTulukhEsekh:
-          typeof baiguullaga?.nuatTulukhEsekh === "boolean"
-            ? baiguullaga?.nuatTulukhEsekh
+          typeof freshOrg?.nuatTulukhEsekh === "boolean"
+            ? freshOrg.nuatTulukhEsekh
             : false,
-        eBarimtAshiglakhEsekh: baiguullaga?.eBarimtAshiglakhEsekh ?? true,
-        eBarimtShine: baiguullaga?.eBarimtShine ?? false,
+        eBarimtAshiglakhEsekh: freshOrg?.eBarimtAshiglakhEsekh ?? true,
+        eBarimtShine: freshOrg?.eBarimtShine ?? false,
         // write updated org-level tokhirgoo (including utas/mail)
         tokhirgoo: orgTokhirgoo,
         // also keep top-level utas/mail in sync

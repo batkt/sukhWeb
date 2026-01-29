@@ -147,48 +147,7 @@ const fetcherJagsaalt = async ([
         : [];
     }
 
-    if (barilgiinId && (!list || list.length === 0)) {
-      const resp2 = await uilchilgee(token).get(url, {
-        params: {
-          ...paramsBase,
-          barilgiinId: undefined,
-          query: JSON.stringify({ ...queryObj, barilgiinId: undefined }),
-        },
-      });
-      const d2 = resp2.data;
-      const l2 = Array.isArray(d2?.jagsaalt)
-        ? d2.jagsaalt
-        : Array.isArray(d2?.list)
-        ? d2.list
-        : Array.isArray(d2?.rows)
-        ? d2.rows
-        : Array.isArray(d2?.data?.jagsaalt)
-        ? d2.data.jagsaalt
-        : Array.isArray(d2?.data)
-        ? d2.data
-        : Array.isArray(d2)
-        ? d2
-        : [];
 
-      const toStr = (v: any) => (v == null ? "" : String(v));
-      const filtered2 = l2.filter(
-        (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
-      );
-      if (Array.isArray(d2?.jagsaalt)) {
-        const serverTotal2 = Number((d2 as any)?.niitMur);
-        const pageSizeNum2 = Number((d2 as any)?.khuudasniiKhemjee);
-        return {
-          ...d2,
-          jagsaalt: filtered2,
-          niitMur: isNaN(serverTotal2) ? filtered2.length : serverTotal2,
-          niitKhuudas:
-            !isNaN(serverTotal2) && pageSizeNum2
-              ? Math.max(1, Math.ceil(serverTotal2 / pageSizeNum2))
-              : (d2 as any)?.niitKhuudas ?? 1,
-        } as GereeResponse;
-      }
-      return filtered2 as Geree[];
-    }
 
     const toStr = (v: any) => (v == null ? "" : String(v));
     const filtered = list.filter((it: any) => {

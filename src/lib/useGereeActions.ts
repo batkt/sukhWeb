@@ -38,7 +38,8 @@ export function useGereeActions(
   setPreviewTemplate?: (template: any) => void,
   setShowInvoicePreviewModal?: (show: boolean) => void,
   setInvoicePreviewData?: (data: any) => void,
-  onLoadingChange?: (loading: boolean) => void
+  onLoadingChange?: (loading: boolean) => void,
+  contracts?: any[]
 ) {
   const handleCreateResident = useCallback(async (e: React.FormEvent, newResident: any, editingResident: any) => {
     e.preventDefault();
@@ -191,8 +192,10 @@ export function useGereeActions(
     setIsSavingUnits?.(true);
     try {
 
-      // Fetch latest baiguullaga
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`);
+      // Fetch latest baiguullaga without building filters
+      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
+        headers: { "X-Org-Only": "1" },
+      });
       const org = orgResp.data;
       const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
       if (!barilga) {
@@ -223,7 +226,6 @@ export function useGereeActions(
 
       const payload = {
         ...org,
-        _id: org._id,
         barilguud: updatedBarilguud,
       };
 
@@ -252,7 +254,9 @@ export function useGereeActions(
     setIsSavingUnits?.(true);
     try {
 
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`);
+      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
+        headers: { "X-Org-Only": "1" },
+      });
       const org = orgResp.data;
       const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
       if (!barilga) {
@@ -265,6 +269,39 @@ export function useGereeActions(
       const currentUnits = Array.isArray(existing[key]) ? [...existing[key]] : [];
       const unitStr = String(unit).trim();
       const updatedUnits = currentUnits.filter((u: string) => String(u).trim() !== unitStr);
+
+      if (currentUnits.length === updatedUnits.length) {
+        openErrorOverlay("Тоот олдсонгүй");
+        return;
+      }
+
+      // Check if there are active contracts for this unit
+      if (contracts && Array.isArray(contracts)) {
+        const hasActiveContract = contracts.some((c: any) => {
+          const isCancelled = String(c.tuluv || c.status || "").toLowerCase().includes("цуцалсан") || 
+                             String(c.tuluv || c.status || "").toLowerCase().includes("идэвхгүй") ||
+                             String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
+          const isActive = !isCancelled;
+          
+          if (!isActive) return false;
+
+          const cFloor = String(c.davkhar || "").trim();
+          const cToot = String(c.toot || "").trim();
+          const cOrts = String(c.orts || "").trim();
+          const selOrts = String(selectedOrts || "").trim();
+
+          const floorMatch = cFloor === String(floor).trim();
+          const tootMatch = cToot === unitStr;
+          const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
+
+          return floorMatch && tootMatch && ortsMatch;
+        });
+
+        if (hasActiveContract) {
+          openErrorOverlay("Энэ тоот дээр идэвхтэй гэрээ байна. Устгах боломжгүй.");
+          return;
+        }
+      }
 
       const updatedBarilguud = org.barilguud.map((b: any) => {
         if (String(b._id) !== String(effectiveBarilgiinId)) return b;
@@ -282,7 +319,6 @@ export function useGereeActions(
 
       const payload = {
         ...org,
-        _id: org._id,
         barilguud: updatedBarilguud,
       };
 
@@ -294,7 +330,7 @@ export function useGereeActions(
     } finally {
       setIsSavingUnits?.(false);
     }
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn]);
+  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn, contracts]);
 
   const deleteFloor = useCallback(async (floor: string) => {
     if (!token || !baiguullaga?._id) {
@@ -311,7 +347,9 @@ export function useGereeActions(
     setIsSavingUnits?.(true);
     try {
 
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`);
+      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
+        headers: { "X-Org-Only": "1" },
+      });
       const org = orgResp.data;
       const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
       if (!barilga) {
@@ -321,6 +359,43 @@ export function useGereeActions(
 
       const key = composeKeyFn(selectedOrts || "", floor);
       const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, string[]>;
+      
+      if (!existing[key] || (Array.isArray(existing[key]) && existing[key].length === 0)) {
+        openErrorOverlay("Давхар олдсонгүй эсвэл хэдийнэ устгагдсан байна");
+        return;
+      }
+
+      // Check if there are any active contracts on this floor
+      if (contracts && Array.isArray(contracts)) {
+        const floorUnits = Array.isArray(existing[key]) ? existing[key] : [];
+        const hasActiveContract = contracts.some((c: any) => {
+          const isCancelled = String(c.tuluv || c.status || "").toLowerCase().includes("цуцалсан") || 
+                             String(c.tuluv || c.status || "").toLowerCase().includes("идэвхгүй") ||
+                             String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
+          const isActive = !isCancelled;
+
+          if (!isActive) return false;
+
+          const cFloor = String(c.davkhar || "").trim();
+          const cOrts = String(c.orts || "").trim();
+          const selOrts = String(selectedOrts || "").trim();
+
+          const floorMatch = cFloor === String(floor).trim();
+          const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
+
+          if (floorMatch && ortsMatch) {
+             const cToot = String(c.toot || "").trim();
+             return floorUnits.some(u => String(u).trim() === cToot);
+          }
+          return false;
+        });
+
+        if (hasActiveContract) {
+          openErrorOverlay("Энэ давхарт идэвхтэй гэрээтэй тоот байна. Устгах боломжгүй.");
+          return;
+        }
+      }
+
       const updated = { ...existing };
       delete updated[key];
 
@@ -337,7 +412,6 @@ export function useGereeActions(
 
       const payload = {
         ...org,
-        _id: org._id,
         barilguud: updatedBarilguud,
       };
 
@@ -349,7 +423,7 @@ export function useGereeActions(
     } finally {
       setIsSavingUnits?.(false);
     }
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn]);
+  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn, contracts]);
 
   const handleShowResidentModal = useCallback(() => {
     setEditingResident?.(null);
