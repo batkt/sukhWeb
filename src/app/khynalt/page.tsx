@@ -12,6 +12,7 @@ import {
   isUnpaidLike,
   isOverdueLike,
 } from "@/lib/utils";
+import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
@@ -733,14 +734,19 @@ export default function Khynalt() {
         )
       : 0;
 
-  const kpiCards = [
+  // Check permissions for cards
+  const showContracts = ajiltan && (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
+  const showResidents = ajiltan && (hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch"));
+  const showTulbur = ajiltan && (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
+
+  const kpiCardsRaw = [
     {
       title: "Барилга",
       value: buildingCount,
       subtitle: "Нийт барилга",
       color: "from-indigo-500 to-indigo-600",
-
       delay: 0,
+      show: true,
     },
     {
       title: "Оршин суугч",
@@ -750,6 +756,7 @@ export default function Khynalt() {
         router.push("/geree?tab=residents");
       },
       delay: 100,
+      show: showResidents,
     },
     {
       title: "Идэвхтэй гэрээ",
@@ -759,15 +766,8 @@ export default function Khynalt() {
         router.push("/geree?tab=contracts");
       },
       delay: 200,
+      show: showContracts,
     },
-    // {
-    //   title: "Идэвхгүй тоот",
-    //   value: tootWithoutActiveGereeCount,
-    //   subtitle: "Идэвхтэй гэрээгүй тоотны тоо",
-    //   color: "from-yellow-500 to-yellow-600",
-    //   delay: 300,
-    // },
-
     {
       title: "Орлого",
       value: formatCurrency(incomeTotals.paid),
@@ -775,6 +775,7 @@ export default function Khynalt() {
       color: "from-purple-500 to-purple-600",
       onClick: () => router.push("/tulbur"),
       delay: 400,
+      show: showTulbur,
     },
     {
       title: "Төлбөр дутуу",
@@ -783,6 +784,7 @@ export default function Khynalt() {
       color: "from-red-500 to-red-600",
       onClick: () => router.push("/tulbur"),
       delay: 500,
+      show: showTulbur,
     },
     {
       title: "Цуцлагдсан гэрээ",
@@ -791,8 +793,11 @@ export default function Khynalt() {
       color: "from-orange-500 to-orange-600",
       onClick: () => router.push("/geree?tab=contracts"),
       delay: 600,
+      show: showContracts,
     },
   ];
+
+  const kpiCards = kpiCardsRaw.filter(c => c.show !== false);
 
   return (
     <div className="h-full overflow-hidden custom-scrollbar">

@@ -1,11 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
+import { useRouter } from "next/navigation";
+import { hasPermission } from "@/lib/permissionUtils";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -32,7 +34,16 @@ type TableItem = {
 };
 
 export default function Ebarimt() {
+  const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
+  
+  useEffect(() => {
+    if (ajiltan) {
+      if (!hasPermission(ajiltan, "/tulbur/ebarimt")) {
+        router.push("/tulbur");
+      }
+    }
+  }, [ajiltan, router]);
   const { baiguullaga } = useBaiguullaga(
     token || null,
     ajiltan?.baiguullagiinId || null

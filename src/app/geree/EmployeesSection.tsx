@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Edit, Trash2, Shield } from "lucide-react";
+import { Edit, Trash2, Shield, Lock } from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 interface EmployeesSectionProps {
@@ -16,6 +16,7 @@ interface EmployeesSectionProps {
   onEdit: (employee: any) => void;
   onDelete: (employee: any) => void;
   onManagePermissions: (employee: any) => void;
+  onCredentialsUpdate: (employee: any) => void;
 }
 
 export default function EmployeesSection({
@@ -30,6 +31,7 @@ export default function EmployeesSection({
   onEdit,
   onDelete,
   onManagePermissions,
+  onCredentialsUpdate,
 }: EmployeesSectionProps) {
   if (isValidatingAjiltan) {
     return <div className="text-center py-8 text-subtle">Уншиж байна...</div>;
@@ -100,6 +102,14 @@ export default function EmployeesSection({
                           id="employees-permissions-btn"
                         >
                           <Shield className="w-4 h-4 text-blue-500" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onCredentialsUpdate(p)}
+                          className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                          title="Нэвтрэх эрх солих"
+                        >
+                          <Lock className="w-4 h-4 text-orange-500" />
                         </button>
                         <button
                           type="button"

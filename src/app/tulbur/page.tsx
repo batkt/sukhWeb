@@ -5,7 +5,22 @@ import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import TulburLayout from "./TulburLayout";
 import GuilgeeTuukhPage from "./guilgeeTuukh/page";
 
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/useAuth";
+import { hasPermission } from "@/lib/permissionUtils";
+
 export default function TulburPage() {
+  const router = useRouter();
+  const { ajiltan } = useAuth();
+  
+  React.useEffect(() => {
+    if (ajiltan) {
+      if (!hasPermission(ajiltan, "/tulbur")) {
+        router.push("/"); // or /khynalt
+      }
+    }
+  }, [ajiltan, router]);
+
   const gereeTourSteps: DriverStep[] = useMemo(() => {
     return [
       {

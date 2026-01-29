@@ -38,12 +38,14 @@ export default function AjiltanPage() {
         }}
         onManagePermissions={(employee) => {
           console.log("🛡️ Shield button clicked for employee:", employee);
-          // Call the exposed function from GereeModals
           if (typeof window !== 'undefined' && (window as any).__openPermissionsModal) {
-            console.log("✅ Calling __openPermissionsModal");
             (window as any).__openPermissionsModal(employee);
-          } else {
-            console.error("❌ __openPermissionsModal not found on window");
+          }
+        }}
+        onCredentialsUpdate={(employee) => {
+          console.log("🔐 Lock button clicked for employee:", employee);
+          if (typeof window !== 'undefined' && (window as any).__openCredentialsModal) {
+            (window as any).__openCredentialsModal(employee);
           }
         }}
       />

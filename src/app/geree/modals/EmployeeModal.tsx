@@ -193,34 +193,38 @@ export default function EmployeeModal({
                   />
                   <input type="hidden" name="ajildOrsonOgnoo" value={newEmployee.ajildOrsonOgnoo || ""} />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Нэвтрэх нэр
-                  </label>
-                  <input
-                    type="text"
-                    name="nevtrekhNer"
-                    value={newEmployee.nevtrekhNer}
-                    onChange={(e) =>
-                      setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
-                    }
-                    className="w-full p-3 rounded-2xl border border-gray-400"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Нууц үг
-                  </label>
-                  <input
-                    type="password"
-                    name="nuutsUg"
-                    value={newEmployee.nuutsUg}
-                    onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
-                    className="w-full p-3 rounded-2xl border border-gray-400"
-                    required
-                  />
-                </div>
+                {!editingEmployee && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Нэвтрэх нэр
+                      </label>
+                      <input
+                        type="text"
+                        name="nevtrekhNer"
+                        value={newEmployee.nevtrekhNer}
+                        onChange={(e) =>
+                          setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
+                        }
+                        className="w-full p-3 rounded-2xl border border-gray-400"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Нууц үг
+                      </label>
+                      <input
+                        type="password"
+                        name="nuutsUg"
+                        value={newEmployee.nuutsUg}
+                        onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
+                        className="w-full p-3 rounded-2xl border border-gray-400"
+                        required
+                      />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex justify-end gap-2">
                 <button

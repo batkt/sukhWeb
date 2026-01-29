@@ -38,10 +38,22 @@ type TableItem = {
 
 type DateRangeValue = [string | null, string | null] | undefined;
 
+import { hasPermission } from "@/lib/permissionUtils";
+
 export default function DansniiKhuulga() {
   const { searchTerm } = useSearch();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { token, ajiltan, barilgiinId } = useAuth();
+  
+  useEffect(() => {
+    if (ajiltan) {
+      if (!hasPermission(ajiltan, "/tulbur/dansKhuulga")) {
+        router.push("/tulbur");
+      }
+    }
+  }, [ajiltan, router]);
+
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
@@ -49,7 +61,7 @@ export default function DansniiKhuulga() {
     undefined
   );
   const [filteredData, setFilteredData] = useState<TableItem[]>([]);
-  const { token, ajiltan, barilgiinId } = useAuth();
+
   const { selectedBuildingId } = useBuilding();
 
   // Load selectedDansId from URL on mount

@@ -764,13 +764,18 @@ export function useGereeActions(
       const isEditing = formElements._id?.value;
       
       if (isEditing) {
-        // Update existing employee
+        // Update existing employee (Pattern matching orshinSuugch logic)
         const id = formElements._id.value;
-        // Strip _id from the payload to avoid immutable field error
-        const { _id, ...cleanPayload } = payload;
         
+        // Prepare payload with _id for updateMethod (which will extract it for URL and strip it from body)
+        const updatePayload = { ...payload, _id: id };
+        
+        // Remove username/password for edit mode as requested
+        delete updatePayload.nevtrekhNer;
+        delete updatePayload.nuutsUg;
+
         console.log("✏️ [CREATE/UPDATE EMPLOYEE] Updating employee:", id);
-        await uilchilgee(token).put(`/ajiltan/${id}`, cleanPayload);
+        await updateMethod("ajiltan", token, updatePayload);
         
         console.log("✅ [CREATE/UPDATE EMPLOYEE] Employee updated successfully");
         openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");

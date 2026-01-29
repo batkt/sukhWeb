@@ -14,6 +14,7 @@ import PreviewModal from "./modals/PreviewModal";
 import InvoicePreviewModal from "./modals/InvoicePreviewModal";
 import AddUnitModal from "./modals/AddUnitModal";
 import PermissionsModal from "./modals/PermissionsModal";
+import CredentialsModal from "./modals/CredentialsModal"; // Import missing modal
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -27,7 +28,11 @@ export default function GereeModals() {
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [permissionsEmployee, setPermissionsEmployee] = useState<any>(null);
 
-  // Expose the permissions modal handler via a ref or context
+  // Credentials Modal State
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [credentialsEmployee, setCredentialsEmployee] = useState<any>(null);
+
+  // Expose the permissions and credentials modal handler via a ref or context
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).__openPermissionsModal = (employee: any) => {
@@ -35,11 +40,19 @@ export default function GereeModals() {
         setPermissionsEmployee(employee);
         setShowPermissionsModal(true);
       };
-      console.log("✅ __openPermissionsModal function registered");
+      
+      (window as any).__openCredentialsModal = (employee: any) => {
+        console.log("🔐 Opening credentials modal for employee:", employee);
+        setCredentialsEmployee(employee);
+        setShowCredentialsModal(true);
+      };
+      
+      console.log("✅ Global modal functions registered");
     }
     return () => {
       if (typeof window !== 'undefined') {
         delete (window as any).__openPermissionsModal;
+        delete (window as any).__openCredentialsModal;
       }
     };
   }, []);
@@ -267,6 +280,35 @@ export default function GereeModals() {
         employee={permissionsEmployee}
         onSave={handleSavePermissions}
         permissionsData={permissionsData}
+      />
+
+      {/* Credentials Modal */}
+      <CredentialsModal
+        show={showCredentialsModal}
+        onClose={() => setShowCredentialsModal(false)}
+        employee={credentialsEmployee}
+        onSave={async (id, nevtrekhNer, nuutsUg) => {
+           if (!token) return;
+           try {
+              // Only send critical fields
+              // Use direct axios for full control or updateMethod
+              await uilchilgee(token).put(`/ajiltan/${id}`, {
+                  _id: id,
+                  nevtrekhNer,
+                  nuutsUg
+              });
+              
+              openSuccessOverlay("Нэвтрэх эрх шинэчлэгдлээ");
+              setShowCredentialsModal(false);
+              
+              // Refresh lists
+              await data.ajiltniiJagsaaltMutate();
+              
+           } catch (err: any) {
+              const msg = err?.response?.data?.aldaa || "Алдаа гарлаа";
+              openErrorOverlay(msg);
+           }
+        }}
       />
     </>
   );

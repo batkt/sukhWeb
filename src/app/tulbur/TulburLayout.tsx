@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
+import { useAuth } from "@/lib/useAuth";
+import { hasPermission } from "@/lib/permissionUtils";
+
 interface TulburLayoutProps {
   children: React.ReactNode;
   activeTab: "guilgee" | "dansKhuulga" | "ebarimt";
@@ -12,6 +15,11 @@ interface TulburLayoutProps {
 
 export default function TulburLayout({ children, activeTab }: TulburLayoutProps) {
   const router = useRouter();
+  const { ajiltan } = useAuth();
+
+  const showGuilgee = hasPermission(ajiltan, "/tulbur");
+  const showDans = hasPermission(ajiltan, "/tulbur/dansKhuulga");
+  const showEbarimt = hasPermission(ajiltan, "/tulbur/ebarimt");
 
   const handleTabChange = (tab: "guilgee" | "dansKhuulga" | "ebarimt") => {
     const routes = {
@@ -63,6 +71,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             )}
           </div>
           <div className="grid grid-cols-3 flex-wrap items-center gap-2 tabbar">
+            {showGuilgee && (
             <button
               id="tab-guilgee"
               onClick={() => handleTabChange("guilgee")}
@@ -74,6 +83,8 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             >
               Төлбөр тооцоо
             </button>
+            )}
+            {showDans && (
             <button
               id="tab-dansKhuulga"
               onClick={() => handleTabChange("dansKhuulga")}
@@ -85,6 +96,8 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             >
               Дансны хуулга
             </button>
+            )}
+            {showEbarimt && (
             <button
               id="tab-ebarimt"
               onClick={() => handleTabChange("ebarimt")}
@@ -96,6 +109,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             >
               И-баримт
             </button>
+            )}
           </div>
         </div>
 
