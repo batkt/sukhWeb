@@ -54,12 +54,7 @@ export default function GereeModals() {
     }
 
     try {
-      console.log("🔐 Saving permissions for employee:", permissionsEmployee._id);
-      console.log("📋 Permissions:", permissions);
-      console.log("🔢 Erkhuud Diff:", erkhuud);
-      
       // First, update the employee's permissions
-      console.log("1️⃣ Updating employee permissions (ajiltandErkhUgyu)...");
       await uilchilgee(token).post(`/ajiltandErkhUgyu/${permissionsEmployee._id}`, {
         tsonkhniiErkhuud: permissions,
         erkhuud: erkhuud,

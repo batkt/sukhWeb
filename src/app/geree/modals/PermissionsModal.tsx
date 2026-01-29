@@ -60,23 +60,14 @@ export default function PermissionsModal({
     }
   }, [employee]);
 
-  // Helper to find module info from permissionsData
   const getModuleInfo = (permissionId: string) => {
     if (!permissionsData?.moduluud) return null;
     
-    // Try to map permission ID to path
-    // e.g. "geree" -> "/geree"
-    // "tulbur.ebarimt" -> "/tulbur/ebarimt"
-    
-    // Simple mapping: /id or /id/subid
     const path = "/" + permissionId.replace(/\./g, "/");
     
-    // Check exact match first
     let module = permissionsData.moduluud.find((m: any) => m.zam === path);
     if (module) return module;
 
-    // Special cases mapping if needed
-    // For now assuming the paths match the logic
     return null;
   };
 
@@ -238,22 +229,6 @@ export default function PermissionsModal({
      const diff = (isSelected ? 1 : 0) - (wasSelected ? 1 : 0);
      const virtualOdoogiin = info.odoogiin + diff;
      
-     // Disabled if Full AND Not Selected (Prevent Toggle ON)
-     // If already selected, we can always toggle OFF.
-     // If not selected, we can only toggle ON if virtual usage < limit.
-     // But wait, if I am NOT selected, my diff is currently (0 - was).
-     // If I toggle ON, my diff becomes (1 - was).
-     // The 'isFull' check above uses CURRENT state.
-     
-     // Correct logic: 
-     // Can I toggle? 
-     // If isSelected (ON -> OFF): Always allowed to free up resource.
-     // If !isSelected (OFF -> ON): Allowed only if (virtualOdoogiin + 1) <= bolomjit?
-     // No, virtualOdoogiin IS the current usage.
-     // if !isSelected, does virtualOdoogiin account for me? No (diff=0 or -1).
-     // So if I join, usage becomes virtualOdoogiin + 1.
-     // So we must check if (virtualOdoogiin + 1) > bolomjit.
-     
      if (!isSelected) {
         return (virtualOdoogiin + 1) > info.bolomjit;
      }
@@ -278,7 +253,6 @@ export default function PermissionsModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Calculate erkhuud (diffs)
       const erkhuud: { zam: string; too: number }[] = [];
       const allPaths = new Set([...initialPermissions, ...selectedPermissions]);
       
@@ -286,8 +260,6 @@ export default function PermissionsModal({
         const wasSelected = initialPermissions.includes(permissionId);
         const isSelected = selectedPermissions.includes(permissionId);
         
-        // Map permission ID to real path (zam)
-        // We can reuse getModuleInfo logic or just standardize
         const info = getModuleInfo(permissionId);
         const zam = info ? info.zam : "/" + permissionId.replace(/\./g, "/");
 
@@ -298,7 +270,6 @@ export default function PermissionsModal({
         }
       });
 
-      // Map IDs (frontend) to Paths (backend) for the save payload
       const payloadPermissions = selectedPermissions.map(id => {
          const info = getModuleInfo(id);
          return info ? info.zam : "/" + id.replace(/\./g, "/");
