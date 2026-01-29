@@ -11,7 +11,7 @@ interface PermissionsModalProps {
   show: boolean;
   onClose: () => void;
   employee: any;
-  onSave: (permissions: string[]) => Promise<void>;
+  onSave: (permissions: string[], erkhuud: any[]) => Promise<void>;
   permissionsData?: any;
 }
 
@@ -25,23 +25,28 @@ export default function PermissionsModal({
   // ... existing refs and state ...
   const modalRef = React.useRef<HTMLDivElement | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [initialPermissions, setInitialPermissions] = useState<string[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
-  // ... existing hotkeys ...
   useModalHotkeys({
     isOpen: show,
     onClose,
     container: modalRef.current,
   });
 
-  // ... existing useEffect ...
   useEffect(() => {
     if (employee?.tsonkhniiErkhuud) {
-      setSelectedPermissions(employee.tsonkhniiErkhuud);
+      const mappedIds = employee.tsonkhniiErkhuud.map((p: string) => 
+        p.startsWith('/') ? p.substring(1).replace(/\//g, '.') : p
+      );
+      
+      setSelectedPermissions(mappedIds);
+      setInitialPermissions(mappedIds || []);
+      
       // Auto-expand sections that have selected permissions
       const expanded = new Set<string>();
-      employee.tsonkhniiErkhuud.forEach((perm: string) => {
+      mappedIds.forEach((perm: string) => {
         const parts = perm.split('.');
         if (parts.length > 1) {
           expanded.add(parts[0]);
@@ -50,6 +55,7 @@ export default function PermissionsModal({
       setExpandedSections(expanded);
     } else {
       setSelectedPermissions([]);
+      setInitialPermissions([]);
       setExpandedSections(new Set());
     }
   }, [employee]);
@@ -192,18 +198,29 @@ export default function PermissionsModal({
     const info = getModuleInfo(permissionId);
     if (!info) return null;
 
-    const isFull = info.odoogiin >= info.bolomjit;
+    const wasSelected = initialPermissions.includes(permissionId);
+    const isSelected = selectedPermissions.includes(permissionId);
+    
+    // Dynamic calculation: 
+    // If I select it now but wasn't before: +1
+    // If I deselect it now but was before: -1
+    // Odoogiin (Server) includes me if I was selected.
+    
+    const diff = (isSelected ? 1 : 0) - (wasSelected ? 1 : 0);
+    const virtualOdoogiin = info.odoogiin + diff;
+    const remaining = Math.max(0, info.bolomjit - virtualOdoogiin);
+    const isFull = remaining === 0;
     
     return (
       <div className="ml-auto pointer-events-none">
         <input 
           type="text" 
-          value={`${info.odoogiin}/${info.bolomjit}`}
+          value={remaining}
           readOnly
-          className={`w-12 text-[10px] text-center px-1 py-0.5 rounded border ${
+          className={`w-8 text-[10px] text-center px-1 py-0.5 rounded border ${
             isFull 
               ? "bg-red-50 border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400" 
-              : "bg-gray-50 border-gray-200 text-gray-600 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400"
+              : "bg-green-50 border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400"
           } focus:outline-none`} 
         />
       </div>
@@ -214,8 +231,34 @@ export default function PermissionsModal({
      if (!permissionsData) return false;
      const info = getModuleInfo(permissionId);
      if (!info) return false;
-     // Disabled if Full AND Not Selected
-     return info.odoogiin >= info.bolomjit && !isPermissionSelected(permissionId);
+
+     const wasSelected = initialPermissions.includes(permissionId);
+     const isSelected = selectedPermissions.includes(permissionId);
+     
+     const diff = (isSelected ? 1 : 0) - (wasSelected ? 1 : 0);
+     const virtualOdoogiin = info.odoogiin + diff;
+     
+     // Disabled if Full AND Not Selected (Prevent Toggle ON)
+     // If already selected, we can always toggle OFF.
+     // If not selected, we can only toggle ON if virtual usage < limit.
+     // But wait, if I am NOT selected, my diff is currently (0 - was).
+     // If I toggle ON, my diff becomes (1 - was).
+     // The 'isFull' check above uses CURRENT state.
+     
+     // Correct logic: 
+     // Can I toggle? 
+     // If isSelected (ON -> OFF): Always allowed to free up resource.
+     // If !isSelected (OFF -> ON): Allowed only if (virtualOdoogiin + 1) <= bolomjit?
+     // No, virtualOdoogiin IS the current usage.
+     // if !isSelected, does virtualOdoogiin account for me? No (diff=0 or -1).
+     // So if I join, usage becomes virtualOdoogiin + 1.
+     // So we must check if (virtualOdoogiin + 1) > bolomjit.
+     
+     if (!isSelected) {
+        return (virtualOdoogiin + 1) > info.bolomjit;
+     }
+
+     return false; // Can always deselect
   };
  
   // ... Rest of render logic but inject isDisabled and renderLimitBadge ...
@@ -235,7 +278,33 @@ export default function PermissionsModal({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSave(selectedPermissions);
+      // Calculate erkhuud (diffs)
+      const erkhuud: { zam: string; too: number }[] = [];
+      const allPaths = new Set([...initialPermissions, ...selectedPermissions]);
+      
+      allPaths.forEach((permissionId) => {
+        const wasSelected = initialPermissions.includes(permissionId);
+        const isSelected = selectedPermissions.includes(permissionId);
+        
+        // Map permission ID to real path (zam)
+        // We can reuse getModuleInfo logic or just standardize
+        const info = getModuleInfo(permissionId);
+        const zam = info ? info.zam : "/" + permissionId.replace(/\./g, "/");
+
+        if (isSelected && !wasSelected) {
+          erkhuud.push({ zam: zam, too: 1 });
+        } else if (!isSelected && wasSelected) {
+          erkhuud.push({ zam: zam, too: -1 });
+        }
+      });
+
+      // Map IDs (frontend) to Paths (backend) for the save payload
+      const payloadPermissions = selectedPermissions.map(id => {
+         const info = getModuleInfo(id);
+         return info ? info.zam : "/" + id.replace(/\./g, "/");
+      });
+
+      await onSave(payloadPermissions, erkhuud);
       onClose();
     } catch (error) {
       console.error("Failed to save permissions:", error);

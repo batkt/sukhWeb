@@ -21,7 +21,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 export default function GereeModals() {
   const router = useRouter();
   const { token, baiguullaga } = useAuth();
-  const { state, data, actions, ajiltan, permissionsData } = useGereeContext();
+  const { state, data, actions, ajiltan, permissionsData, reloadPermissions } = useGereeContext();
 
   // Permissions Modal State
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
@@ -44,7 +44,10 @@ export default function GereeModals() {
     };
   }, []);
 
-  const handleSavePermissions = async (permissions: string[]) => {
+  const handleSavePermissions = async (
+    permissions: string[], 
+    erkhuud: { zam: string; too: number }[] = []
+  ) => {
     if (!token || !permissionsEmployee?._id) {
       openErrorOverlay("Мэдээлэл дутуу байна");
       return;
@@ -53,16 +56,19 @@ export default function GereeModals() {
     try {
       console.log("🔐 Saving permissions for employee:", permissionsEmployee._id);
       console.log("📋 Permissions:", permissions);
+      console.log("🔢 Erkhuud Diff:", erkhuud);
       
       // First, update the employee's permissions
-      console.log("1️⃣ Updating permissions directly to ZevTabs...");
-      
-      const safePermissions = Array.isArray(permissions) ? permissions : [];
-
-      await uilchilgee(token).get(`https://admin.zevtabs.mn/api/tsonkhniiMedeelel/${permissionsEmployee._id}`, {
-        tsonkhniiErkhuud: safePermissions,
+      console.log("1️⃣ Updating employee permissions (ajiltandErkhUgyu)...");
+      await uilchilgee(token).post(`/ajiltandErkhUgyu/${permissionsEmployee._id}`, {
+        tsonkhniiErkhuud: permissions,
+        erkhuud: erkhuud,
+        barilguud: permissionsEmployee.barilguud, // Preserve existing buildings
       });
-      console.log("✅ ZevTabs update success");
+      console.log("✅ Employee permissions updated via Tsonkhnii Medeelel");
+      
+      // Reload limits
+      reloadPermissions();
 
       // Then call the /erkhiinMedeelelAvya endpoint to refresh permissions
       // Note: This is now handled on page load in GereeContext, but we might want to refresh here too?

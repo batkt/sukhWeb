@@ -20,6 +20,7 @@ interface GereeContextType {
   ajiltan: any;
   DEFAULT_HIDDEN: string[];
   permissionsData: any;
+  reloadPermissions: () => void;
 }
 
 const GereeContext = createContext<GereeContextType | null>(null);
@@ -36,18 +37,19 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const didInitRef = useRef(false);
   const DEFAULT_HIDDEN = ["aimag"];
-  const [permissionsData, setPermissionsData] = React.useState<any>(null);
-
+  
   const { searchTerm } = useSearch();
   const { selectedBuildingId } = useBuilding();
   const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } = useAuth();
   const { showSpinner, hideSpinner } = useSpinner();
   const socketCtx = useSocket();
+  const [permissionsData, setPermissionsData] = React.useState<any>(null);
 
-  // Load permissions on mount
-  React.useEffect(() => {
+  // ...
+
+  const reloadPermissions = React.useCallback(() => {
     if (token) {
-      console.log("🔄 Loading initial permissions (/erkhiinMedeelelAvya)...");
+      console.log("🔄 Reloading permissions (/erkhiinMedeelelAvya)...");
       uilchilgee(token)
         .post("/erkhiinMedeelelAvya")
         .then((res) => {
@@ -59,6 +61,11 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
         });
     }
   }, [token]);
+
+  // Load permissions on mount
+  React.useEffect(() => {
+    reloadPermissions();
+  }, [reloadPermissions]);
 
   // Custom hooks for state management
   const state = useGereeState({ get: () => null } as any, didInitRef);
@@ -147,6 +154,7 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
     ajiltan,
     DEFAULT_HIDDEN,
     permissionsData,
+    reloadPermissions,
   };
 
   return (
