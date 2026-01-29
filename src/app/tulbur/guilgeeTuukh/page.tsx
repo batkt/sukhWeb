@@ -824,7 +824,7 @@ export default function DansniiKhuulga() {
   const zaaltButtonRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
-  const columnModalRef = useRef<HTMLDivElement | null>(null);
+  const columnDropdownRef = useRef<HTMLDivElement | null>(null);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
@@ -1411,6 +1411,27 @@ export default function DansniiKhuulga() {
     }
   }, [isZaaltDropdownOpen]);
 
+  // Handle column dropdown click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        columnDropdownRef.current &&
+        !columnDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsColumnModalOpen(false);
+      }
+    };
+
+    if (isColumnModalOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside as any);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside as any);
+      };
+    }
+  }, [isColumnModalOpen]);
+
   // Excel Import handler
   const handleTransactionSubmit = async (data: TransactionData) => {
     try {
@@ -1650,22 +1671,17 @@ export default function DansniiKhuulga() {
   // Handle modal body overflow
   useEffect(() => {
     document.body.style.overflow =
-      isModalOpen || isHistoryOpen || isColumnModalOpen ? "hidden" : "";
+      isModalOpen || isHistoryOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [isModalOpen, isHistoryOpen, isColumnModalOpen]);
+  }, [isModalOpen, isHistoryOpen]);
 
   // Modal keyboard shortcuts for history modal
   useModalHotkeys({
     isOpen: isHistoryOpen,
     onClose: () => setIsHistoryOpen(false),
     container: historyRef.current,
-  });
-  useModalHotkeys({
-    isOpen: isColumnModalOpen,
-    onClose: () => setIsColumnModalOpen(false),
-    container: columnModalRef.current,
   });
 
   // Register guided tour for /tulbur/guilgeeTuukh
@@ -1924,6 +1940,67 @@ export default function DansniiKhuulga() {
                   label={t("Excel татах")}
                 />
               </motion.div>
+              <div className="relative" ref={columnDropdownRef}>
+                <motion.div
+                  id="guilgee-columns-btn"
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
+                    icon={<Columns className="w-5 h-5" />}
+                    label="Багана"
+                  />
+                </motion.div>
+                <AnimatePresence>
+                  {isColumnModalOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-full right-0 mt-2 w-64 menu-surface p-4 rounded-xl shadow-xl z-50 border border-[color:var(--surface-border)]"
+                    >
+                      <h4 className="text-sm font-semibold mb-3 text-theme">
+                        Багана сонгох
+                      </h4>
+                      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        {columnDefs.map((col) => {
+                          const isChecked = columnVisibility[col.key] !== false;
+                          return (
+                            <label
+                              key={col.key}
+                              className="flex items-center gap-2.5 text-xs text-muted-foreground cursor-pointer hover:text-theme transition-colors"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() =>
+                                  setColumnVisibility((prev) => {
+                                    const currentlyVisible = Object.values(prev).filter(
+                                      (v) => v !== false
+                                    ).length;
+                                    if (isChecked && currentlyVisible <= 1)
+                                      return prev;
+                                    return {
+                                      ...prev,
+                                      [col.key]: !isChecked,
+                                    };
+                                  })
+                                }
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className={isChecked ? "text-theme" : ""}>
+                                {col.label}
+                              </span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
               {/* <motion.div
                 whileHover={{ scale: 1.03 }}
                 transition={{ duration: 0.3 }}
@@ -2431,93 +2508,7 @@ export default function DansniiKhuulga() {
         </ModalPortal>
       )}
 
-      {/* Column selection modal */}
-      {isColumnModalOpen && (
-        <ModalPortal>
-          <AnimatePresence>
-            <>
-              <motion.div
-                key="col-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-9998"
-                onClick={() => setIsColumnModalOpen(false)}
-              />
-              <motion.div
-                key="col-modal"
-                initial={{ scale: 0.97, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.97, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-9999 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-[520px] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-                ref={columnModalRef}
-                role="dialog"
-                aria-modal="true"
-              >
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold">Багана сонгох</h3>
-                    <p className="text-xs text-theme/70">
-                      Жагсаалтад харагдах баганыг сонгоно.
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setIsColumnModalOpen(false)}
-                    className="p-2 rounded-2xl hover:menu-surface/80"
-                    data-modal-primary
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {columnDefs.map((col) => {
-                    const isChecked = columnVisibility[col.key] !== false;
-                    return (
-                      <label
-                        key={col.key}
-                        className="flex items-center gap-3 text-sm text-theme"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() =>
-                            setColumnVisibility((prev) => {
-                              const currentlyVisible = Object.values(prev).filter(
-                                (v) => v !== false
-                              ).length;
-                              if (isChecked && currentlyVisible <= 1) return prev;
-                              return {
-                                ...prev,
-                                [col.key]: !isChecked,
-                              };
-                            })
-                          }
-                          className="h-4 w-4 accent-blue-500"
-                        />
-                        <span>{col.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            </>
-          </AnimatePresence>
-        </ModalPortal>
-      )}
+
 
       {/* Invoice Modal */}
       {isModalOpen && selectedResident && (
@@ -2591,210 +2582,168 @@ export default function DansniiKhuulga() {
                   </button>
                 </div>
 
-                <div className="relative p-6 overflow-y-auto overflow-x-auto max-h-[calc(90vh-64px)] overscroll-contain custom-scrollbar">
+                <div className="relative p-6 overflow-y-auto overflow-x-hidden max-h-[calc(90vh-64px)] custom-scrollbar">
                   {historyLoading ? (
-                    <div className="py-16 text-center">Ачааллаж байна…</div>
+                    <div className="py-16 text-center text-slate-500">
+                      Ачааллаж байна…
+                    </div>
                   ) : historyItems.length === 0 ? (
-                    <div className="py-16 text-center">
-                      Түүхийн мэдээлэл олдсонгүй
+                    <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
+                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
+                        <History className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <div className="text-slate-500">
+                        Түүхийн мэдээлэл олдсонгүй
+                      </div>
                     </div>
                   ) : (
-                    <>
-                      <div className="relative h-[360px]">
-                        {historyItems
-                          .slice(historyIndex, historyIndex + 4)
-                          .map((item, i) => {
-                            const depth = i;
-                            const translate = depth * 16;
-                            const scale = 1 - depth * 0.05;
-                            const z = 50 - depth;
+                    <div className="flex flex-col gap-4">
+                      {historyItems.map((item, i) => {
+                        const dateStr =
+                          item.ognoo ||
+                          item.nekhemjlekhiinOgnoo ||
+                          item.createdAt;
+                        const zardluudRows = Array.isArray(
+                          item.medeelel?.zardluud
+                        )
+                          ? item.medeelel.zardluud
+                          : Array.isArray(item.zardluud)
+                          ? item.zardluud
+                          : [];
+                        const guilgeenuudRows = Array.isArray(
+                          item.medeelel?.guilgeenuud
+                        )
+                          ? item.medeelel.guilgeenuud
+                          : Array.isArray(item.guilgeenuud)
+                          ? item.guilgeenuud
+                          : [];
+                        const rows = [...zardluudRows, ...guilgeenuudRows];
 
-                            const dateStr =
-                              item.ognoo ||
-                              item.nekhemjlekhiinOgnoo ||
-                              item.createdAt;
-                            const zardluudRows = Array.isArray(
-                              item.medeelel?.zardluud,
-                            )
-                              ? item.medeelel.zardluud
-                              : Array.isArray(item.zardluud)
-                                ? item.zardluud
-                                : [];
-                            const guilgeenuudRows = Array.isArray(
-                              item.medeelel?.guilgeenuud,
-                            )
-                              ? item.medeelel.guilgeenuud
-                              : Array.isArray(item.guilgeenuud)
-                                ? item.guilgeenuud
-                                : [];
-                            const rows = [...zardluudRows, ...guilgeenuudRows];
+                        const total = (() => {
+                          const ekhniiUldegdel = Number(
+                            item?.medeelel?.ekhniiUldegdel ??
+                              item?.ekhniiUldegdel ??
+                              0
+                          );
 
-                            const total = (() => {
-                              const ekhniiUldegdel = Number(
-                                item?.medeelel?.ekhniiUldegdel ??
-                                  item?.ekhniiUldegdel ??
-                                  0,
-                              );
+                          const tariffSum = rows.reduce(
+                            (sum: number, z: any) => {
+                              const tariff = Number(z?.tariff);
+                              return sum + (Number.isNaN(tariff) ? 0 : tariff);
+                            },
+                            0
+                          );
 
-                              const tariffSum = rows.reduce(
-                                (sum: number, z: any) => {
-                                  const tariff = Number(z?.tariff);
-                                  return (
-                                    sum + (Number.isNaN(tariff) ? 0 : tariff)
-                                  );
-                                },
-                                0,
-                              );
+                          return ekhniiUldegdel + tariffSum;
+                        })();
 
-                              return ekhniiUldegdel + tariffSum;
-                            })();
+                        const isPaid = total === 0 || item.tuluv === "paid"; // simplified check
 
-                            return (
-                              <div
-                                key={item._id || `${item.sar}-${i}`}
-                                className="absolute inset-x-0 mx-auto w-[92%] menu-surface border rounded-2xl shadow-lg p-5 transition-transform"
-                                style={{
-                                  transform: `translateY(${translate}px) scale(${scale})`,
-                                  zIndex: z,
-                                }}
-                              >
-                                <div className="flex items-start justify-between gap-4">
-                                  <div>
-                                    <div className="text-sm">
-                                      Огноо:{" "}
-                                      <span className="font-medium">
-                                        {dateStr
-                                          ? new Date(
-                                              dateStr,
-                                            ).toLocaleDateString("mn-MN")
-                                          : "-"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-xs">Нийт дүн</div>
-                                    <div className="text-xl font-bold">
-                                      {formatCurrency(total)}
-                                    </div>
-                                    <div className="mt-1">
-                                      <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
-                                          total === 0
-                                            ? "badge-paid"
-                                            : "badge-unpaid"
-                                        }`}
-                                      >
-                                        {total === 0
-                                          ? "Төлөгдсөн"
-                                          : "Төлөгдөөгүй"}
-                                      </span>
-                                    </div>
-                                  </div>
+                        return (
+                          <div
+                            key={item._id || `${item.sar}-${i}`}
+                            className="w-full menu-surface border border-[color:var(--surface-border)] rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5"
+                          >
+                            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--surface-border)] pb-3 mb-3">
+                              <div>
+                                <div className="text-xs text-theme/70 mb-0.5">
+                                  Огноо
                                 </div>
-
-                                {(item?.medeelel?.ekhniiUldegdel != null ||
-                                  item?.ekhniiUldegdel != null ||
-                                  item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                  item?.ekhniiUldegdelUsgeer) && (
-                                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Эхний үлдэгдэл:
-                                      </span>{" "}
-                                      <span className="font-medium">
-                                        {item?.medeelel?.ekhniiUldegdel != null
-                                          ? formatCurrency(
-                                              Number(
-                                                item.medeelel.ekhniiUldegdel,
-                                              ),
-                                            )
-                                          : item?.ekhniiUldegdel != null
-                                            ? formatCurrency(
-                                                Number(item.ekhniiUldegdel),
-                                              )
-                                            : "-"}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Тайлбар:
-                                      </span>{" "}
-                                      <span className="font-medium">
-                                        {item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                          item?.ekhniiUldegdelUsgeer ||
-                                          "-"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {rows.length > 0 && (
-                                  <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                                    {rows.map((z: any, zi: number) => {
-                                      const amount = (() => {
-                                        const n = (v: any) => {
-                                          const num = Number(v);
-                                          return Number.isNaN(num) ? null : num;
-                                        };
-                                        const dun = n(z?.dun);
-                                        if (dun !== null && dun > 0) return dun;
-                                        const td = n(z?.tulukhDun);
-                                        if (td !== null && td > 0) return td;
-
-                                        const tariff = n(z?.tariff);
-                                        return tariff ?? 0;
-                                      })();
-
-                                      return (
-                                        <div
-                                          key={zi}
-                                          className="flex items-center justify-between"
-                                        >
-                                          <span className="truncate">
-                                            {z.ner || z.name}
-                                          </span>
-                                          <span className="font-medium">
-                                            {formatNumber(amount)} ₮
-                                          </span>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                )}
+                                <div className="font-semibold text-theme">
+                                  {dateStr
+                                    ? new Date(dateStr).toLocaleDateString(
+                                        "mn-MN",
+                                        {
+                                          year: "numeric",
+                                          month: "long",
+                                          day: "numeric",
+                                        }
+                                      )
+                                    : "-"}
+                                </div>
                               </div>
-                            );
-                          })}
-                      </div>
+                              <div className="text-right">
+                                <div className="text-xs text-theme/70 mb-0.5">
+                                  Нийт дүн
+                                </div>
+                                <div className="flex items-center gap-2 justify-end">
+                                  <span className="text-lg font-bold text-theme">
+                                    {formatCurrency(total)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
 
-                      <div className="mt-4 flex items-center justify-between">
-                        <IconTextButton
-                          variant="minimal"
-                          disabled={historyIndex <= 0}
-                          onClick={() =>
-                            setHistoryIndex((i) => Math.max(0, i - 1))
-                          }
-                          icon={<ChevronLeft className="w-4 h-4" />}
-                          label="Өмнөх"
-                          showLabelFrom="sm"
-                        />
-                        <div className="text-sm">
-                          {Math.min(historyIndex + 1, historyItems.length)} /{" "}
-                          {historyItems.length}
-                        </div>
-                        <IconTextButton
-                          variant="minimal"
-                          disabled={historyIndex >= historyItems.length - 1}
-                          onClick={() =>
-                            setHistoryIndex((i) =>
-                              Math.min(historyItems.length - 1, i + 1),
-                            )
-                          }
-                          icon={<ChevronRight className="w-4 h-4" />}
-                          label="Дараах"
-                          showLabelFrom="sm"
-                        />
-                      </div>
-                    </>
+                            <div className="space-y-3">
+                              {(item?.medeelel?.ekhniiUldegdel != null ||
+                                item?.ekhniiUldegdel != null ||
+                                item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                item?.ekhniiUldegdelUsgeer) && (
+                                <div className="bg-[color:var(--surface-bg)] rounded-xl p-3 text-sm border border-[color:var(--surface-border)]">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="text-theme/70">
+                                      Эхний үлдэгдэл:
+                                    </span>
+                                    <span className="font-medium text-theme">
+                                      {item?.medeelel?.ekhniiUldegdel != null
+                                        ? formatCurrency(
+                                            Number(item.medeelel.ekhniiUldegdel)
+                                          )
+                                        : item?.ekhniiUldegdel != null
+                                        ? formatCurrency(
+                                            Number(item.ekhniiUldegdel)
+                                          )
+                                        : "-"}
+                                    </span>
+                                  </div>
+                                  {(item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                    item?.ekhniiUldegdelUsgeer) && (
+                                    <div className="text-xs text-theme/60 italic">
+                                      {item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                        item?.ekhniiUldegdelUsgeer}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {rows.length > 0 && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+                                  {rows.map((z: any, zi: number) => {
+                                    const amount = (() => {
+                                      const n = (v: any) => {
+                                        const num = Number(v);
+                                        return Number.isNaN(num) ? null : num;
+                                      };
+                                      const dun = n(z?.dun);
+                                      if (dun !== null && dun > 0) return dun;
+                                      const td = n(z?.tulukhDun);
+                                      if (td !== null && td > 0) return td;
+
+                                      const tariff = n(z?.tariff);
+                                      return tariff ?? 0;
+                                    })();
+
+                                    return (
+                                      <div
+                                        key={zi}
+                                        className="flex items-center justify-between border-b border-dashed border-[color:var(--surface-border)] last:border-0 py-1"
+                                      >
+                                        <span className="truncate text-theme/80 pr-2">
+                                          {z.ner || z.name}
+                                        </span>
+                                        <span className="font-medium text-theme whitespace-nowrap">
+                                          {formatNumber(amount)} ₮
+                                        </span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </motion.div>

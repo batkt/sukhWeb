@@ -94,7 +94,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const link = target.closest("a");
-      if (link && link.href && !link.target && !e.ctrlKey && !e.metaKey) {
+      if (link && link.href && !link.target && !link.hasAttribute("download") && !e.ctrlKey && !e.metaKey) {
         const url = new URL(link.href);
         if (url.origin === window.location.origin && url.pathname !== pathname) {
           setIsNavigating(true);

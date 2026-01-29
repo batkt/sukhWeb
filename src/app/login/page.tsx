@@ -57,8 +57,8 @@ export default function LoginPage() {
         router.push("/khynalt");
         return;
       }
-
-      openErrorOverlay("Нууц үг буруу байна.");
+      
+      // Error handling is done inside newterya() with specific toasts
     } catch (error: any) {
       openErrorOverlay("Нэвтрэхэд алдаа гарлаа");
     } finally {

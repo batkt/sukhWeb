@@ -37,7 +37,8 @@ export function useGereeActions(
   setShowPreviewModal?: (show: boolean) => void,
   setPreviewTemplate?: (template: any) => void,
   setShowInvoicePreviewModal?: (show: boolean) => void,
-  setInvoicePreviewData?: (data: any) => void
+  setInvoicePreviewData?: (data: any) => void,
+  onLoadingChange?: (loading: boolean) => void
 ) {
   const handleCreateResident = useCallback(async (e: React.FormEvent, newResident: any, editingResident: any) => {
     e.preventDefault();
@@ -394,6 +395,7 @@ export function useGereeActions(
       return;
     }
 
+    onLoadingChange?.(true);
     try {
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
       const body = {
@@ -428,8 +430,10 @@ export function useGereeActions(
       openSuccessOverlay("Excel файл татагдлаа");
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
+    } finally {
+      onLoadingChange?.(false);
     }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId]);
+  }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
 
   const handleDownloadResidentsTemplate = useCallback(async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
@@ -437,6 +441,7 @@ export function useGereeActions(
       return;
     }
 
+    onLoadingChange?.(true);
     try {
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
       const resp = await uilchilgee(token).get("/orshinSuugchExcelTemplate", {
@@ -461,8 +466,10 @@ export function useGereeActions(
       openSuccessOverlay("Загвар татагдлаа");
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
+    } finally {
+      onLoadingChange?.(false);
     }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId]);
+  }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
 
   const handleResidentsExcelImportClick = useCallback(() => {
     residentExcelInputRef?.current?.click();
@@ -520,6 +527,7 @@ export function useGereeActions(
       return;
     }
 
+    onLoadingChange?.(true);
     try {
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
       const resp = await uilchilgee(token).get("/tootBurtgelExcelTemplate", {
@@ -544,8 +552,10 @@ export function useGereeActions(
       openSuccessOverlay("Загвар татагдлаа");
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
+    } finally {
+      onLoadingChange?.(false);
     }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId]);
+  }, [token, ajiltan, selectedBuildingId, barilgiinId, onLoadingChange]);
 
   const handleUnitsExcelImportClick = useCallback(() => {
     unitExcelInputRef?.current?.click();
@@ -684,14 +694,165 @@ export function useGereeActions(
       openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
     }
   }, [token, baiguullaga]);
+
+  const handleCreateOrUpdateEmployee = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    console.log("🚀 [CREATE/UPDATE EMPLOYEE] Starting...");
+    
+    if (!token || !ajiltan?.baiguullagiinId) {
+      console.error("❌ [CREATE/UPDATE EMPLOYEE] Missing token or baiguullagiinId");
+      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+      return;
+    }
+
+    // We need to get newEmployee from the component state
+    // Since we can't access it directly here, we'll need to pass it through the form
+    // For now, let's create a workaround by getting the data from the event target
+    const form = e.target as HTMLFormElement;
+    const formElements = form.elements as any;
+    
+    const employeeData: any = {
+      ovog: formElements.ovog?.value || "",
+      ner: formElements.ner?.value || "",
+      utas: formElements.utas?.value || "",
+      email: formElements.email?.value || "",
+      albanTushaal: formElements.albanTushaal?.value || "",
+      ajildOrsonOgnoo: formElements.ajildOrsonOgnoo?.value || "",
+      nevtrekhNer: formElements.nevtrekhNer?.value || "",
+      nuutsUg: formElements.nuutsUg?.value || "",
+    };
+
+    console.log("📝 [CREATE/UPDATE EMPLOYEE] Form data:", employeeData);
+
+    try {
+      // Get the effective building ID with fallback logic
+      let effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      
+      // If no building is selected, try to get the first available building from baiguullaga
+      if (!effectiveBarilgiinId && baiguullaga?.barilguud?.length > 0) {
+        effectiveBarilgiinId = baiguullaga.barilguud[0]._id;
+        console.log("⚠️ [CREATE/UPDATE EMPLOYEE] No building selected, using first available:", effectiveBarilgiinId);
+      }
+      
+      console.log("🏢 [CREATE/UPDATE EMPLOYEE] Building ID:", effectiveBarilgiinId);
+      console.log("🏢 [CREATE/UPDATE EMPLOYEE] selectedBuildingId:", selectedBuildingId);
+      console.log("🏢 [CREATE/UPDATE EMPLOYEE] barilgiinId:", barilgiinId);
+      console.log("🏢 [CREATE/UPDATE EMPLOYEE] Available buildings:", baiguullaga?.barilguud?.map((b: any) => ({ id: b._id, name: b.ner })));
+      
+      // Validate that we have a building ID
+      if (!effectiveBarilgiinId) {
+        console.error("❌ [CREATE/UPDATE EMPLOYEE] No building ID available!");
+        openErrorOverlay("Барилга сонгоно уу эсвэл байгууллагад барилга нэмнэ үү");
+        return;
+      }
+      
+      // IMPORTANT: Backend model expects 'barilguud' as an array, not 'barilgiinId'
+      const payload = {
+        ...employeeData,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        baiguullagiinNer: baiguullaga?.ner || "",
+        // Send barilguud as array (backend model expects this)
+        // Ensure we always have at least one building
+        barilguud: [effectiveBarilgiinId],
+        erkh: "Ajiltan",
+      };
+
+      console.log("📦 [CREATE/UPDATE EMPLOYEE] Payload:", JSON.stringify(payload, null, 2));
+
+      // Check if we're editing (form has _id hidden input)
+      const isEditing = formElements._id?.value;
+      
+      if (isEditing) {
+        // Update existing employee
+        const id = formElements._id.value;
+        // Strip _id from the payload to avoid immutable field error
+        const { _id, ...cleanPayload } = payload;
+        
+        console.log("✏️ [CREATE/UPDATE EMPLOYEE] Updating employee:", id);
+        await uilchilgee(token).put(`/ajiltan/${id}`, cleanPayload);
+        
+        console.log("✅ [CREATE/UPDATE EMPLOYEE] Employee updated successfully");
+        openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");
+      } else {
+        // Create new employee
+        console.log("➕ [CREATE/UPDATE EMPLOYEE] Creating new employee");
+        const response = await createMethod("ajiltan", token, payload);
+        console.log("✅ [CREATE/UPDATE EMPLOYEE] Employee created successfully:", response);
+        openSuccessOverlay("Ажилтан нэмэгдлээ");
+      }
+      
+      setShowEmployeeModal?.(false);
+      setEditingEmployee?.(null);
+      setNewEmployee?.({
+        ovog: "",
+        ner: "",
+        register: "",
+        utas: "",
+        email: "",
+        albanTushaal: "",
+        ajildOrsonOgnoo: "",
+        nevtrekhNer: "",
+        nuutsUg: "",
+      });
+    } catch (err) {
+      console.error("❌ [CREATE/UPDATE EMPLOYEE] Error:", err);
+      console.error("❌ [CREATE/UPDATE EMPLOYEE] Error details:", {
+        message: getErrorMessage(err),
+        response: (err as any)?.response?.data,
+        status: (err as any)?.response?.status,
+      });
+      openErrorOverlay(getErrorMessage(err));
+    }
+  }, [token, ajiltan, baiguullaga, selectedBuildingId, barilgiinId, setShowEmployeeModal, setEditingEmployee, setNewEmployee]);
+
+  const handleEditEmployee = useCallback((employee: any) => {
+    setEditingEmployee?.(employee);
+    setNewEmployee?.({
+      _id: employee._id,
+      ovog: employee.ovog || "",
+      ner: employee.ner || "",
+      register: employee.register || "",
+      utas: employee.utas || "",
+      email: employee.email || "",
+      albanTushaal: employee.albanTushaal || "",
+      ajildOrsonOgnoo: employee.ajildOrsonOgnoo || "",
+      nevtrekhNer: employee.nevtrekhNer || "",
+      nuutsUg: "", // Don't pre-fill password
+      erkh: employee.erkh || "Ajiltan",
+    });
+    setShowEmployeeModal?.(true);
+  }, [setEditingEmployee, setNewEmployee, setShowEmployeeModal]);
+
+  const handleDeleteEmployee = useCallback(async (employee: any) => {
+    if (!token) {
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
+    }
+
+    if (!employee?._id) {
+      openErrorOverlay("Ажилтны ID олдсонгүй");
+      return;
+    }
+
+    try {
+      await deleteMethod("ajiltan", token, employee._id);
+      openSuccessOverlay("Ажилтан устгагдлаа");
+      return true;
+    } catch (err) {
+      openErrorOverlay(getErrorMessage(err));
+      return false;
+    }
+  }, [token]);
+  
   
   return {
     handleCreateResident,
     handleDeleteResident,
     handleEditResident,
-    handleCreateOrUpdateEmployee: () => {},
-    handleDeleteEmployee: async (_employee: any) => {},
-    handleEditEmployee: (_employee: any) => {},
+    handleCreateOrUpdateEmployee,
+    handleDeleteEmployee,
+    handleEditEmployee,
     handleEdit: (_contract: any) => {},
     handleUpdateContract: async (_e: React.FormEvent) => {},
     handleCreateContract: async (_e: React.FormEvent) => {},

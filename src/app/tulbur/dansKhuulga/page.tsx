@@ -19,6 +19,7 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
+import TulburLayout from "../TulburLayout";
 
 type TableItem = {
   id: string | number;
@@ -67,8 +68,8 @@ export default function DansniiKhuulga() {
     } else {
       params.delete("dans");
     }
-    router.replace(`?${params.toString()}`, { scroll: false });
-  }, [selectedDansId, searchParams, router]);
+    router.replace(`/tulbur/dansKhuulga?${params.toString()}`, { scroll: false });
+  }, [selectedDansId, router]);
 
 
   // Include only defined filters to avoid sending { baiguullagiinId: undefined }
@@ -316,9 +317,10 @@ export default function DansniiKhuulga() {
   );
 
   return (
-    <div className="min-h-screen">
-      <div className="flex items-center gap-3 mb-4">
-        {/* <motion.h1
+    <TulburLayout activeTab="dansKhuulga">
+      <div className="min-h-screen">
+        <div className="flex items-center gap-3 mb-4">
+          {/* <motion.h1
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -326,7 +328,7 @@ export default function DansniiKhuulga() {
         >
           Дансны хуулга
         </motion.h1> */}
-        {/* <div style={{ width: 100, height: 100 }} className="flex items-center">
+          {/* <div style={{ width: 100, height: 100 }} className="flex items-center">
           <DotLottieReact
             src="https://lottie.host/2fd97978-2462-4da6-ae45-e16cff8aa0e2/WS8rp6nk36.lottie"
             loop
@@ -334,203 +336,204 @@ export default function DansniiKhuulga() {
             style={{ width: "%", height: "100%" }}
           />
         </div> */}
-      </div>
-
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <div
-              key={idx}
-              className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
-            >
-              <div className="relative rounded-2xl p-5 overflow-hidden">
-                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-theme leading-tight">
-                  {stat.title}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
 
-        <div className="rounded-2xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div id="dans-date" className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
-                <DatePickerInput
-                  type="range"
-                  locale="mn"
-                  value={ekhlekhOgnoo}
-                  onChange={setEkhlekhOgnoo}
-                  size="sm"
-                  radius="md"
-                  variant="filled"
-                  dropdownType="popover"
-                  popoverProps={{
-                    position: "bottom-start",
-                    withinPortal: true,
-                    width: 320,
-                  }}
-                  clearable
-                  placeholder="Огноо сонгох"
-                  classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
-                  }}
-                />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, idx) => (
+              <div
+                key={idx}
+                className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
+              >
+                <div className="relative rounded-2xl p-5 overflow-hidden">
+                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-xs text-theme leading-tight">
+                    {stat.title}
+                  </div>
+                </div>
               </div>
-              <div id="dans-account">
-                <TusgaiZagvar
-                  value={selectedDansId || ""}
-                  onChange={(v) => setSelectedDansId(v || undefined)}
-                  options={dansOptions}
-                  placeholder={t("Данс")}
-                  className="h-[40px] w-[160px]"
-                />
+            ))}
+          </div>
+
+          <div className="rounded-2xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div id="dans-date" className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
+                  <DatePickerInput
+                    type="range"
+                    locale="mn"
+                    value={ekhlekhOgnoo}
+                    onChange={setEkhlekhOgnoo}
+                    size="sm"
+                    radius="md"
+                    variant="filled"
+                    dropdownType="popover"
+                    popoverProps={{
+                      position: "bottom-start",
+                      withinPortal: true,
+                      width: 320,
+                    }}
+                    clearable
+                    placeholder="Огноо сонгох"
+                    classNames={{
+                      root: "!h-full !w-full",
+                      input:
+                        "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
+                    }}
+                  />
+                </div>
+                <div id="dans-account">
+                  <TusgaiZagvar
+                    value={selectedDansId || ""}
+                    onChange={(v) => setSelectedDansId(v || undefined)}
+                    options={dansOptions}
+                    placeholder={t("Данс")}
+                    className="h-[40px] w-[160px]"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="table-surface overflow-hidden rounded-2xl w-full">
-          <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-            <div
-              className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
-              id="dans-table"
-            >
-              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
-                <thead>
-                  <tr className="text-theme">
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
-                      №
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
-                      Огноо
-                    </th>
+          <div className="table-surface overflow-hidden rounded-2xl w-full">
+            <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
+              <div
+                className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
+                id="dans-table"
+              >
+                <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
+                  <thead>
+                    <tr className="text-theme">
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                        №
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                        Огноо
+                      </th>
 
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
-                      Гүйлгээний утга
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
-                      Гүйлгээний дүн
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
-                      Шилжүүлсэн данс
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.length > 0 ? (
-                    paginated.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className="transition-colors border-b last:border-b-0"
-                      >
-                        <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                          {(page - 1) * rowsPerPage + index + 1}
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                          {item.date}
-                        </td>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                        Гүйлгээний утга
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                        Гүйлгээний дүн
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                        Шилжүүлсэн данс
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.length > 0 ? (
+                      paginated.map((item, index) => (
+                        <tr
+                          key={item.id}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                            {(page - 1) * rowsPerPage + index + 1}
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                            {item.date}
+                          </td>
 
-                        <td className="p-1 truncate text-center border-r border-[color:var(--surface-border)]">
-                          {item.action}
-                        </td>
-                        <td className="p-1 !text-right whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                          {formatNumber(item.total ?? 0, 0)} ₮
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap">
-                          {item.account || "-"}
+                          <td className="p-1 truncate text-center border-r border-[color:var(--surface-border)]">
+                            {item.action}
+                          </td>
+                          <td className="p-1 !text-right whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                            {formatNumber(item.total ?? 0, 0)} ₮
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap">
+                            {item.account || "-"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center">
+                          <div className="flex flex-col items-center justify-center space-y-3">
+                            <svg
+                              className="w-16 h-16 text-slate-300"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={1.5}
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            <div className="text-slate-500 font-medium">
+                              Хайсан мэдээлэл алга байна
+                            </div>
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              <div className="border-t dark:border-gray-800 border-gray-100">
+                {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
+                <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
+                  <tbody>
                     <tr>
-                      <td colSpan={6} className="p-8 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <svg
-                            className="w-16 h-16 text-slate-300"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div className="text-slate-500 font-medium">
-                            Хайсан мэдээлэл алга байна
-                          </div>
-                        </div>
+                      <td className="p-1 text-center text-theme whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
+
+                      <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
+                      <td className="p-1 !text-right font-bold text-theme whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                        Нийт дүн: {formatNumber(totalSum, 0)} ₮
                       </td>
+                      <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
+
+                      <td className="p-1 text-theme"></td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div className="border-t dark:border-gray-800 border-gray-100">
-              {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
-              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
-                <tbody>
-                  <tr>
-                    <td className="p-1 text-center text-theme whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
 
-                    <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
-                    <td className="p-1 !text-right font-bold text-theme whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                      Нийт дүн: {formatNumber(totalSum, 0)} ₮
-                    </td>
-                    <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+              <div className="text-theme/70">Нийт: {filteredData.length}</div>
 
-                    <td className="p-1 text-theme"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+              <div className="flex items-center gap-3">
+                <span id="dans-page-size">
+                  <PageSongokh
+                    value={rowsPerPage}
+                    onChange={(v) => {
+                      setRowsPerPage(v);
+                      setPage(1);
+                    }}
+                    className="text-xs px-2 py-1"
+                  />
+                </span>
 
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
-            <div className="text-theme/70">Нийт: {filteredData.length}</div>
-
-            <div className="flex items-center gap-3">
-              <span id="dans-page-size">
-                <PageSongokh
-                  value={rowsPerPage}
-                  onChange={(v) => {
-                    setRowsPerPage(v);
-                    setPage(1);
-                  }}
-                  className="text-xs px-2 py-1"
-                />
-              </span>
-
-              <div id="dans-pagination" className="flex items-center gap-1">
-                <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-                  disabled={page <= 1}
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                >
-                  Өмнөх
-                </button>
-                <div className="text-theme/70 px-1">{page}</div>
-                <button
-                  className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
-                  disabled={page * rowsPerPage >= filteredData.length}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Дараах
-                </button>
+                <div id="dans-pagination" className="flex items-center gap-1">
+                  <button
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    disabled={page <= 1}
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                  >
+                    Өмнөх
+                  </button>
+                  <div className="text-theme/70 px-1">{page}</div>
+                  <button
+                    className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                    disabled={page * rowsPerPage >= filteredData.length}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Дараах
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
+        </div>
       </div>
-    </div>
+    </TulburLayout>
   );
 }

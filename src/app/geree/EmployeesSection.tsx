@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Shield } from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 interface EmployeesSectionProps {
@@ -15,6 +15,7 @@ interface EmployeesSectionProps {
   setEmpPageSize: (size: number) => void;
   onEdit: (employee: any) => void;
   onDelete: (employee: any) => void;
+  onManagePermissions: (employee: any) => void;
 }
 
 export default function EmployeesSection({
@@ -28,6 +29,7 @@ export default function EmployeesSection({
   setEmpPageSize,
   onEdit,
   onDelete,
+  onManagePermissions,
 }: EmployeesSectionProps) {
   if (isValidatingAjiltan) {
     return <div className="text-center py-8 text-subtle">Уншиж байна...</div>;
@@ -87,6 +89,18 @@ export default function EmployeesSection({
                     <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.albanTushaal || "-"}</td>
                     <td className="p-1 whitespace-nowrap">
                       <div className="flex gap-2 justify-center">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            console.log("🔵 Shield button CLICKED!", p);
+                            onManagePermissions(p);
+                          }}
+                          className="p-1 rounded-2xl action-primary hover-surface transition-colors"
+                          title="Эрх тохируулах"
+                          id="employees-permissions-btn"
+                        >
+                          <Shield className="w-4 h-4 text-blue-500" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => onEdit(p)}

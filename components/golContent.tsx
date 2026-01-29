@@ -86,7 +86,8 @@ export default function GolContent({ children }: GolContentProps) {
     [selectedBuildingId, setSelectedBuildingId]
   );
 
-  const avatarRef = useRef<HTMLDivElement>(null);
+  const desktopAvatarRef = useRef<HTMLDivElement>(null);
+  const mobileAvatarRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
 
@@ -159,10 +160,11 @@ export default function GolContent({ children }: GolContentProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        avatarRef.current &&
-        !avatarRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const insideDesktop = desktopAvatarRef.current?.contains(target);
+      const insideMobile = mobileAvatarRef.current?.contains(target);
+
+      if (!insideDesktop && !insideMobile) {
         setShowLogout(false);
       }
     };
@@ -543,7 +545,7 @@ export default function GolContent({ children }: GolContentProps) {
               <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
               {isLoggedIn && (
-                <div className="relative z-[150]" ref={avatarRef}>
+                <div className="relative z-[150]" ref={desktopAvatarRef}>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -558,7 +560,7 @@ export default function GolContent({ children }: GolContentProps) {
 
                   {showLogout && (
                     <div
-                      className="absolute left-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
                       onMouseLeave={() => setShowLogout(false)}
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -635,7 +637,7 @@ export default function GolContent({ children }: GolContentProps) {
             <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
             {isLoggedIn && (
-              <div className="relative z-[150]" ref={avatarRef}>
+              <div className="relative z-[150]" ref={mobileAvatarRef}>
                 <div
                   onClick={(e) => {
                     e.stopPropagation();

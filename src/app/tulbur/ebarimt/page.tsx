@@ -12,6 +12,7 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import { Download } from "lucide-react";
 import IconTextButton from "@/components/ui/IconTextButton";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
+import TulburLayout from "../TulburLayout";
 
 type TableItem = {
   id?: string | number;
@@ -344,199 +345,201 @@ export default function Ebarimt() {
   }, [displayedData]);
 
   return (
-    <div className="min-h-screen">
-      <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
-            <div
-              key={idx}
-              className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
-            >
-              <div className="relative rounded-2xl p-5 overflow-hidden">
-                <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
-                  {stat.value}
-                </div>
-                <div className="text-xs text-theme leading-tight">
-                  {stat.title}
+    <TulburLayout activeTab="ebarimt">
+      <div className="min-h-screen">
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, idx) => (
+              <div
+                key={idx}
+                className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
+              >
+                <div className="relative rounded-2xl p-5 overflow-hidden">
+                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                    {stat.value}
+                  </div>
+                  <div className="text-xs text-theme leading-tight">
+                    {stat.title}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Filters Section */}
-        <div className="rounded-2xl">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
-                <DatePickerInput
-                  type="range"
-                  locale="mn"
-                  value={ekhlekhOgnoo ?? undefined}
-                  onChange={(v) =>
-                    setEkhlekhOgnoo(
-                      (v || [null, null]) as [Date | null, Date | null]
-                    )
-                  }
-                  size="sm"
-                  radius="md"
-                  variant="filled"
-                  dropdownType="popover"
-                  popoverProps={{
-                    position: "bottom-start",
-                    withinPortal: true,
-                    width: 320,
-                  }}
-                  clearable
-                  placeholder="Огноо сонгох"
-                  classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
-                  }}
+          {/* Filters Section */}
+          <div className="rounded-2xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <div className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
+                  <DatePickerInput
+                    type="range"
+                    locale="mn"
+                    value={ekhlekhOgnoo ?? undefined}
+                    onChange={(v) =>
+                      setEkhlekhOgnoo(
+                        (v || [null, null]) as [Date | null, Date | null]
+                      )
+                    }
+                    size="sm"
+                    radius="md"
+                    variant="filled"
+                    dropdownType="popover"
+                    popoverProps={{
+                      position: "bottom-start",
+                      withinPortal: true,
+                      width: 320,
+                    }}
+                    clearable
+                    placeholder="Огноо сонгох"
+                    classNames={{
+                      root: "!h-full !w-full",
+                      input:
+                        "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none",
+                    }}
+                  />
+                </div>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Баримт/Нэр/ДДТД хайх"
+                  className="rounded-2xl border px-4 py-2 text-theme neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[40px] w-[160px]"
                 />
               </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Баримт/Нэр/ДДТД хайх"
-                className="rounded-2xl border px-4 py-2 text-theme neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[40px] w-[160px]"
-              />
-            </div>
-            <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
-              <IconTextButton
-                id="ebarimt-excel-btn"
-                onClick={exceleerTatya}
-                icon={<Download className="w-4 h-4" />}
-                label="Excel татах"
-              />
-              <button
-                onClick={ebarimtIlgeeye}
-                className="btn-minimal px-4 py-2 rounded-xl"
-              >
-                {loading ? <Spin size="small" /> : "Татварт илгээх"}
-              </button>
+              <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
+                <IconTextButton
+                  id="ebarimt-excel-btn"
+                  onClick={exceleerTatya}
+                  icon={<Download className="w-4 h-4" />}
+                  label="Excel татах"
+                />
+                <button
+                  onClick={ebarimtIlgeeye}
+                  className="btn-minimal px-4 py-2 rounded-xl"
+                >
+                  {loading ? <Spin size="small" /> : "Татварт илгээх"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Table */}
-        <div className="table-surface overflow-hidden rounded-2xl w-full">
-          <div className="rounded-3xl p-6 neu-table allow-overflow">
-            <div
-              className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
-              id="ebarimt-table"
-            >
-              <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
-                <thead className="z-10 bg-white dark:bg-gray-800">
-                  <tr>
-                    <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
-                      №
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                      Огноо
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                      Гэрээний дугаар
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                      Төрөл
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                      ДДТД
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                      Дүн
-                    </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
-                      Үйлчилгээ
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
+          {/* Table */}
+          <div className="table-surface overflow-hidden rounded-2xl w-full">
+            <div className="rounded-3xl p-6 neu-table allow-overflow">
+              <div
+                className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+                id="ebarimt-table"
+              >
+                <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
+                  <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-subtle">
-                        <Spin size="small" /> Уншиж байна...
-                      </td>
+                      <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                        №
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        Огноо
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        Гэрээний дугаар
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        Төрөл
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        ДДТД
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        Дүн
+                      </th>
+                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                        Үйлчилгээ
+                      </th>
                     </tr>
-                  ) : displayedData.length > 0 ? (
-                    displayedData.map((item, index) => (
-                      <tr
-                        key={String(item.id)}
-                        className="transition-colors border-b last:border-b-0"
-                      >
-                        <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
-                          {index + 1}
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                          {item.date}
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                          {item.gereeniiDugaar || "-"}
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              item.type === "B2C_RECEIPT"
-                                ? "bg-green-500 text-green-800"
-                                : item.type === "B2B_RECEIPT"
-                                ? "bg-blue-500 text-blue-800"
-                                : "bg-gray-500 text-gray-800"
-                            }`}
-                          >
-                            {item.type === "B2C_RECEIPT"
-                              ? "Иргэн"
-                              : item.type === "B2B_RECEIPT"
-                              ? "ААН"
-                              : item.type || "-"}
-                          </span>
-                        </td>
-                        <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
-                          {item.ddtd || item.receiptId || "-"}
-                        </td>
-                        <td className="p-1 text-right whitespace-nowrap font-semibold text-theme border-r border-[color:var(--surface-border)]">
-                          {formatNumber(item.total ?? 0, 0)} ₮
-                        </td>
-                        <td className="p-1 text-center text-theme whitespace-nowrap">
-                          {item.service}
+                  </thead>
+                  <tbody>
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-subtle">
+                          <Spin size="small" /> Уншиж байна...
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="p-8 text-center text-subtle">
-                        Хайсан мэдээлэл алга байна
-                      </td>
-                    </tr>
+                    ) : displayedData.length > 0 ? (
+                      displayedData.map((item, index) => (
+                        <tr
+                          key={String(item.id)}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
+                            {index + 1}
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                            {item.date}
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                            {item.gereeniiDugaar || "-"}
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.type === "B2C_RECEIPT"
+                                  ? "bg-green-500 text-green-800"
+                                  : item.type === "B2B_RECEIPT"
+                                  ? "bg-blue-500 text-blue-800"
+                                  : "bg-gray-500 text-gray-800"
+                              }`}
+                            >
+                              {item.type === "B2C_RECEIPT"
+                                ? "Иргэн"
+                                : item.type === "B2B_RECEIPT"
+                                ? "ААН"
+                                : item.type || "-"}
+                            </span>
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
+                            {item.ddtd || item.receiptId || "-"}
+                          </td>
+                          <td className="p-1 text-right whitespace-nowrap font-semibold text-theme border-r border-[color:var(--surface-border)]">
+                            {formatNumber(item.total ?? 0, 0)} ₮
+                          </td>
+                          <td className="p-1 text-center text-theme whitespace-nowrap">
+                            {item.service}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-subtle">
+                          Хайсан мэдээлэл алга байна
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                  {displayedData.length > 0 && (
+                    <tfoot className="bg-white dark:bg-gray-800 border-t">
+                      <tr>
+                        <td className="p-1 text-center">&nbsp;</td>
+                        <td className="p-1 text-center">&nbsp;</td>
+                        <td className="p-1 text-center">&nbsp;</td>
+                        <td className="p-1 text-center">&nbsp;</td>
+                        <td className="p-1 text-center">&nbsp;</td>
+                        <td className="p-1 text-right font-bold text-theme">
+                          {formatNumber(
+                            displayedData.reduce((s, r) => s + (r.total || 0), 0),
+                            0
+                          )}{" "}
+                          ₮
+                        </td>
+                        <td className="p-1 text-center">&nbsp;</td>
+                      </tr>
+                    </tfoot>
                   )}
-                </tbody>
-                {displayedData.length > 0 && (
-                  <tfoot className="bg-white dark:bg-gray-800 border-t">
-                    <tr>
-                      <td className="p-1 text-center">&nbsp;</td>
-                      <td className="p-1 text-center">&nbsp;</td>
-                      <td className="p-1 text-center">&nbsp;</td>
-                      <td className="p-1 text-center">&nbsp;</td>
-                      <td className="p-1 text-center">&nbsp;</td>
-                      <td className="p-1 text-right font-bold text-theme">
-                        {formatNumber(
-                          displayedData.reduce((s, r) => s + (r.total || 0), 0),
-                          0
-                        )}{" "}
-                        ₮
-                      </td>
-                      <td className="p-1 text-center">&nbsp;</td>
-                    </tr>
-                  </tfoot>
-                )}
-              </table>
+                </table>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </TulburLayout>
   );
 }

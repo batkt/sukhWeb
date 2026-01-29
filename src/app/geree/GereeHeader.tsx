@@ -97,26 +97,46 @@ export default function GereeHeader({
   unitExcelInputRef,
   onUnitsExcelFileChange,
 }: GereeHeaderProps) {
-  const [isExcelDropdownOpen, setIsExcelDropdownOpen] = useState(false);
-  const excelDropdownRef = useRef<HTMLDivElement>(null);
+  const [isDesktopExcelOpen, setIsDesktopExcelOpen] = useState(false);
+  const [isMobileExcelOpen, setIsMobileExcelOpen] = useState(false);
+  const desktopExcelRef = useRef<HTMLDivElement>(null);
+  const mobileExcelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutsideDesktop = (event: MouseEvent) => {
       if (
-        excelDropdownRef.current &&
-        !excelDropdownRef.current.contains(event.target as Node)
+        desktopExcelRef.current &&
+        !desktopExcelRef.current.contains(event.target as Node)
       ) {
-        setIsExcelDropdownOpen(false);
+        setIsDesktopExcelOpen(false);
       }
     };
 
-    if (isExcelDropdownOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+    if (isDesktopExcelOpen) {
+      document.addEventListener("mousedown", handleClickOutsideDesktop);
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutsideDesktop);
       };
     }
-  }, [isExcelDropdownOpen]);
+  }, [isDesktopExcelOpen]);
+
+  useEffect(() => {
+    const handleClickOutsideMobile = (event: MouseEvent) => {
+      if (
+        mobileExcelRef.current &&
+        !mobileExcelRef.current.contains(event.target as Node)
+      ) {
+        setIsMobileExcelOpen(false);
+      }
+    };
+
+    if (isMobileExcelOpen) {
+      document.addEventListener("mousedown", handleClickOutsideMobile);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutsideMobile);
+      };
+    }
+  }, [isMobileExcelOpen]);
   return (
     <div className="w-full">
         <div className="flex items-start justify-between p-4 gap-4 mb-4 w-full">
@@ -219,9 +239,9 @@ export default function GereeHeader({
                         Оршин суугч
                       </span>
                     </button>
-                    <div ref={excelDropdownRef} className="relative">
+                    <div ref={desktopExcelRef} className="relative">
                       <button
-                        onClick={() => setIsExcelDropdownOpen(!isExcelDropdownOpen)}
+                        onClick={() => setIsDesktopExcelOpen(!isDesktopExcelOpen)}
                         className="btn-minimal inline-flex items-center gap-2"
                         id="resident-excel-btn-top"
                         aria-label="Excel"
@@ -231,16 +251,16 @@ export default function GereeHeader({
                         <span className="hidden sm:inline text-xs">Excel</span>
                         <ChevronDown
                           className={`w-4 h-4 transition-transform ${
-                            isExcelDropdownOpen ? "rotate-180" : ""
+                            isDesktopExcelOpen ? "rotate-180" : ""
                           }`}
                         />
                       </button>
-                      {isExcelDropdownOpen && (
+                      {isDesktopExcelOpen && (
                         <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                           <button
                             onClick={() => {
                               onExportResidentsExcel();
-                              setIsExcelDropdownOpen(false);
+                              setIsDesktopExcelOpen(false);
                             }}
                             className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
                             id="resident-download-list-btn-top"
@@ -251,7 +271,7 @@ export default function GereeHeader({
                           <button
                             onClick={() => {
                               onDownloadResidentsTemplate();
-                              setIsExcelDropdownOpen(false);
+                              setIsDesktopExcelOpen(false);
                             }}
                             className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                             id="resident-download-template-btn-top"
@@ -262,7 +282,7 @@ export default function GereeHeader({
                           <button
                             onClick={() => {
                               onResidentsExcelImportClick();
-                              setIsExcelDropdownOpen(false);
+                              setIsDesktopExcelOpen(false);
                             }}
                             className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                             id="resident-upload-template-btn-top"
@@ -352,17 +372,6 @@ export default function GereeHeader({
               Гэрээ
             </button>
             <button
-              id="tab-employees"
-              onClick={() => setActiveTab("employees")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
-                activeTab === "employees"
-                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                  : "hover:scale-105"
-              }`}
-            >
-              Ажилтан
-            </button>
-            <button
               id="tab-units"
               onClick={() => setActiveTab("units")}
               className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
@@ -372,6 +381,17 @@ export default function GereeHeader({
               }`}
             >
               Тоот бүртгэл
+            </button>
+            <button
+              id="tab-employees"
+              onClick={() => setActiveTab("employees")}
+              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+                activeTab === "employees"
+                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
+                  : "hover:scale-105"
+              }`}
+            >
+              Ажилтан
             </button>
           </div>
 
@@ -657,9 +677,9 @@ export default function GereeHeader({
                   Оршин суугч
                 </span>
               </button>
-              <div ref={excelDropdownRef} className="relative">
+              <div ref={mobileExcelRef} className="relative">
                 <button
-                  onClick={() => setIsExcelDropdownOpen(!isExcelDropdownOpen)}
+                  onClick={() => setIsMobileExcelOpen(!isMobileExcelOpen)}
                   className="btn-minimal inline-flex items-center gap-2"
                   id="resident-excel-btn"
                   aria-label="Excel"
@@ -669,16 +689,16 @@ export default function GereeHeader({
                   <span className="hidden sm:inline text-xs">Excel</span>
                   <ChevronDown
                     className={`w-4 h-4 transition-transform ${
-                      isExcelDropdownOpen ? "rotate-180" : ""
+                      isMobileExcelOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
-                {isExcelDropdownOpen && (
+                {isMobileExcelOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
                     <button
                       onClick={() => {
                         onExportResidentsExcel();
-                        setIsExcelDropdownOpen(false);
+                        setIsMobileExcelOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
                       id="resident-download-list-btn"
@@ -689,7 +709,7 @@ export default function GereeHeader({
                     <button
                       onClick={() => {
                         onDownloadResidentsTemplate();
-                        setIsExcelDropdownOpen(false);
+                        setIsMobileExcelOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                       id="resident-download-template-btn"
@@ -700,7 +720,7 @@ export default function GereeHeader({
                     <button
                       onClick={() => {
                         onResidentsExcelImportClick();
-                        setIsExcelDropdownOpen(false);
+                        setIsMobileExcelOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                       id="resident-upload-template-btn"
@@ -713,13 +733,7 @@ export default function GereeHeader({
                 )}
               </div>
             </div>
-            <input
-              ref={residentExcelInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={onResidentsExcelFileChange}
-              className="hidden"
-            />
+
           </>
         )}
         {activeTab === "employees" && (
@@ -763,16 +777,27 @@ export default function GereeHeader({
                 Загвар оруулах
               </span>
             </button>
-            <input
-              ref={unitExcelInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={onUnitsExcelFileChange}
-              className="hidden"
-            />
+
           </>
         )}
       </div>
+
+      
+      {/* Hidden inputs for excel operations - always rendered */}
+      <input
+        ref={residentExcelInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        onChange={onResidentsExcelFileChange}
+        className="hidden"
+      />
+      <input
+        ref={unitExcelInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        onChange={onUnitsExcelFileChange}
+        className="hidden"
+      />
     </div>
   );
 }

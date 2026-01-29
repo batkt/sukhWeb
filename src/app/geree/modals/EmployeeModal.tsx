@@ -79,6 +79,9 @@ export default function EmployeeModal({
               </button>
             </div>
             <form onSubmit={onSubmit} className="p-6 space-y-4">
+              {editingEmployee && (
+                <input type="hidden" name="_id" value={newEmployee._id || editingEmployee._id} />
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -86,6 +89,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="text"
+                    name="ovog"
                     value={newEmployee.ovog}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
@@ -101,6 +105,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="text"
+                    name="ner"
                     value={newEmployee.ner}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
@@ -116,6 +121,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="tel"
+                    name="utas"
                     value={newEmployee.utas}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
@@ -133,6 +139,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="email"
+                    name="email"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee((p: any) => ({ ...p, email: e.target.value }))}
                     className="w-full p-3 rounded-2xl border border-gray-400"
@@ -144,6 +151,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="text"
+                    name="albanTushaal"
                     value={newEmployee.albanTushaal}
                     onChange={(e) =>
                       setNewEmployee((p: any) => ({ ...p, albanTushaal: e.target.value }))
@@ -183,6 +191,7 @@ export default function EmployeeModal({
                         "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
                     }}
                   />
+                  <input type="hidden" name="ajildOrsonOgnoo" value={newEmployee.ajildOrsonOgnoo || ""} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -190,6 +199,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="text"
+                    name="nevtrekhNer"
                     value={newEmployee.nevtrekhNer}
                     onChange={(e) =>
                       setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
@@ -204,6 +214,7 @@ export default function EmployeeModal({
                   </label>
                   <input
                     type="password"
+                    name="nuutsUg"
                     value={newEmployee.nuutsUg}
                     onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
                     className="w-full p-3 rounded-2xl border border-gray-400"
