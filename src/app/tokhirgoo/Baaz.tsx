@@ -57,7 +57,7 @@ function Baaz({ token }: BaazProps) {
         <div className="col-span-12 lg:col-span-5 xl:col-span-4">
           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 shadow-lg dark:shadow-blue-900/20 hover:shadow-xl dark:hover:shadow-blue-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-blue-200/50 dark:border-blue-600/50">
             <div className="px-6 py-4 border-b border-blue-200/50 dark:border-blue-600/50 bg-gradient-to-r from-blue-100/50 to-indigo-100/50 dark:from-blue-800/20 dark:to-indigo-800/20">
-              <h2 className="text-lg font-bold text-theme dark:text-white flex items-center gap-2">
+              <h2 className="text-lg  text-theme dark:text-white flex items-center gap-2">
                 <div className="p-2 bg-blue-500/10 dark:bg-blue-400/20 rounded-lg">
                   <Download className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
@@ -89,7 +89,7 @@ function Baaz({ token }: BaazProps) {
         <div className="col-span-12 lg:col-span-7 xl:col-span-8">
           <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 shadow-lg dark:shadow-purple-900/20 hover:shadow-xl dark:hover:shadow-purple-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-purple-200/50 dark:border-purple-600/50">
             <div className="px-6 py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 border-b border-purple-200/50 dark:border-purple-600/50 bg-gradient-to-r from-purple-100/50 to-pink-100/50 dark:from-purple-800/20 dark:to-pink-800/20">
-              <h2 className="text-lg font-bold text-theme dark:text-white">
+              <h2 className="text-lg  text-theme dark:text-white">
                 {t("Татсан түүх")}
               </h2>
               <DatePickerInput

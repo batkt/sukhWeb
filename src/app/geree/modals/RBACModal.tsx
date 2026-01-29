@@ -94,7 +94,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                   <Shield className="w-5 h-5 text-blue-500" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-theme">Эрхийн тохиргоо</h2>
+                  <h2 className="text-xl  text-theme">Эрхийн тохиргоо</h2>
                   <p className="text-sm text-theme/60">
                     {employee.ner || "Ажилтан"} - {employee.albanTushaal || ""}
                   </p>
@@ -177,7 +177,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
               {/* Permission Count */}
               <div className="mt-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300 text-center">
-                  <span className="font-bold">{selectedPermissions.length}</span> / {MENU_ITEMS.length} цэс сонгогдсон
+                  <span className="">{selectedPermissions.length}</span> / {MENU_ITEMS.length} цэс сонгогдсон
                 </p>
               </div>
             </div>

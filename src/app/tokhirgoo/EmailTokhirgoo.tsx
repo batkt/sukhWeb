@@ -80,7 +80,7 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
     <div className="col-span-12 lg:col-span-6 xl:col-span-4">
       <div className="bg-gradient-to-br from-teal-50 to-cyan-50 dark:from-teal-900/30 dark:to-cyan-900/30 shadow-lg dark:shadow-teal-900/20 hover:shadow-xl dark:hover:shadow-teal-900/30 transition-all duration-300 rounded-2xl overflow-hidden border border-teal-200/50 dark:border-teal-600/50">
         <div className="px-6 py-4 border-b border-teal-200/50 dark:border-teal-600/50 bg-gradient-to-r from-teal-100/50 to-cyan-100/50 dark:from-teal-800/20 dark:to-cyan-800/20">
-          <h2 className="text-lg font-bold text-theme dark:text-white">
+          <h2 className="text-lg  text-theme dark:text-white">
             {t("Нэхэмжлэл и-мэйлээр илгээх")}
           </h2>
         </div>

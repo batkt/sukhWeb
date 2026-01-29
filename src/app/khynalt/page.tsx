@@ -803,7 +803,7 @@ export default function Khynalt() {
     <div className="h-full overflow-hidden custom-scrollbar">
       <div className="min-h-full pl-4 pt-4 pb-4 pr-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4">
-          <h1 className="text-2xl font-bold text-[color:var(--panel-text)] leading-tight">
+          <h1 className="text-2xl  text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
 
@@ -850,7 +850,7 @@ export default function Khynalt() {
                   <h3 className="text-sm font-semibold text-[color:var(--panel-text)] mb-2">
                     {card.title}
                   </h3>
-                  <p className="text-2xl font-bold text-[color:var(--panel-text)] mb-1">
+                  <p className="text-2xl  text-[color:var(--panel-text)] mb-1">
                     {card.value}
                   </p>
                 </div>
@@ -1045,7 +1045,7 @@ export default function Khynalt() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {formatCurrency(totalIncome)}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1053,7 +1053,7 @@ export default function Khynalt() {
               </p>
             </div>
             {/* <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {formatCurrency(totalExpenses)}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1061,13 +1061,13 @@ export default function Khynalt() {
               </p>
             </div> */}
             {/* <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {formatCurrency(totalProfit)}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">Ашиг</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {totalTransactions}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1075,7 +1075,7 @@ export default function Khynalt() {
               </p>
             </div> */}
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {residentsUnpaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1083,7 +1083,7 @@ export default function Khynalt() {
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {residentsPaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1091,7 +1091,7 @@ export default function Khynalt() {
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {filteredTotalResidents}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1113,7 +1113,7 @@ export default function Khynalt() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {residentsUnpaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1121,7 +1121,7 @@ export default function Khynalt() {
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {residentsPaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
@@ -1129,7 +1129,7 @@ export default function Khynalt() {
               </p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-[color:var(--theme)]">
+              <p className="text-2xl  text-[color:var(--theme)]">
                 {filteredTotalResidents}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">

@@ -328,7 +328,7 @@ export default function AshiglaltiinZardluud() {
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-theme">Тогтмол зардлууд</h3>
+                    <h3 className="text-lg  text-theme">Тогтмол зардлууд</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       {ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length} зардал
                     </p>
@@ -452,12 +452,12 @@ export default function AshiglaltiinZardluud() {
                           })}
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
-                        <tr className="font-bold">
+                        <tr className="">
                           <td colSpan={2} className="py-3 px-4 text-theme">
-                            <div className="font-bold text-base">Нийт дүн:</div>
+                            <div className=" text-base">Нийт дүн:</div>
                           </td>
                           <td className="py-3 px-4 text-center">
-                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                            <div className="text-lg  text-blue-600 dark:text-blue-400">
                             {formatNumber(
                               ashiglaltiinZardluud
                                 .filter((x) => x._id)
@@ -497,7 +497,7 @@ export default function AshiglaltiinZardluud() {
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-theme">Хувьсах зардлууд</h3>
+                    <h3 className="text-lg  text-theme">Хувьсах зардлууд</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       {ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length} зардал
                     </p>
@@ -621,12 +621,12 @@ export default function AshiglaltiinZardluud() {
                             })}
                         </tbody>
                         <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
-                          <tr className="font-bold">
+                          <tr className="">
                             <td colSpan={2} className="py-3 px-4 text-theme">
-                              <div className="font-bold text-base">Нийт дүн:</div>
+                              <div className=" text-base">Нийт дүн:</div>
                             </td>
                             <td className="py-3 px-4 text-center">
-                              <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                              <div className="text-lg  text-emerald-600 dark:text-emerald-400">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)

@@ -52,7 +52,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
               key={activeTab}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-3xl font-bold text-theme bg-clip-text text-transparent drop-shadow-sm"
+              className="text-3xl  text-theme bg-clip-text text-transparent drop-shadow-sm"
             >
               {tabTitle}
             </motion.h1>

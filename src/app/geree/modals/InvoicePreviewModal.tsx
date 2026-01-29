@@ -57,7 +57,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
               </h3>
               <div className="flex items-center gap-4">
                 <div className="text-right mr-4">
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  <p className="text-lg  text-blue-600 dark:text-blue-400">
                     {getMonthName(preview.ognoo)}
                   </p>
                 </div>
@@ -180,7 +180,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="h-px bg-slate-300 dark:bg-slate-600"></div>
                     <div className="flex justify-between items-center">
                       <span className="text-base font-semibold text-slate-800 dark:text-slate-200">Нийт төлбөр:</span>
-                      <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      <span className="text-2xl  text-blue-600 dark:text-blue-400">
                         {formatNumber((preview.niitTulbur || 0) - (preview.ekhniiUldegdel || 0))} ₮
                       </span>
                     </div>

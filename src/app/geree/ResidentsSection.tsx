@@ -52,17 +52,17 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
               id="resident-table"
             >
-              <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
+              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <thead className="z-10 bg-white dark:bg-gray-800">
                   <tr>
-                    <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                       №
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-left pl-2 whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Нэр
                     </th>
 
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("orts")}
@@ -88,7 +88,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("davkhar")}
@@ -114,7 +114,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       <button
                         type="button"
                         onClick={() => toggleSortFor("toot")}
@@ -140,13 +140,13 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         </span>
                       </button>
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Холбоо барих
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                       Төлөв
                     </th>
-                    <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap">
                       Үйлдэл
                     </th>
                   </tr>
@@ -179,7 +179,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                         <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.davkhar || "-"}</td>
                         <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.toot || "-"}</td>
                         <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
-                          <div className="text-xs text-theme">{p.utas}</div>
+                          <div className="text-sm text-theme">{p.utas}</div>
                         </td>
                         <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
                           {(() => {
@@ -198,7 +198,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                                     : "badge-neutral";
                             return (
                               <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}
+                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-sm font-normal ${cls}`}
                               >
                                 {label}
                               </span>
@@ -210,20 +210,20 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                             <button
                               type="button"
                               onClick={() => onEditResident(p)}
-                              className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                              className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                               title="Засах"
                               id="resident-edit-btn"
                             >
-                              <Edit className="w-4 h-4" />
+                              <Edit className="w-5 h-5" />
                             </button>
                             <button
                               type="button"
                               onClick={() => onRequestDeleteResident(p)}
-                              className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                              className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                               title="Устгах"
                               id="resident-delete-btn"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-5 h-5" />
                             </button>
                           </div>
                         </td>
@@ -235,7 +235,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
             </div>
           </div>
           <div className="flex items-center justify-between px-2 py-1 text-md">
-            <div className="font-bold text-theme/70">
+            <div className="text-theme/70">
               Нийт: {filteredResidents.length}
             </div>
             <div className="flex items-center gap-3">
@@ -245,7 +245,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                   setResPageSize(v);
                   setResPage(1);
                 }}
-                className="text-xs px-2"
+                className="text-sm px-2"
               />
 
               <div
@@ -253,7 +253,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                 className="flex items-center gap-1"
               >
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
                   disabled={resPage <= 1}
                   onClick={() => {
                     const newPage = Math.max(1, resPage - 1);
@@ -264,7 +264,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                 </button>
                 <div className="text-theme/70 px-1">{resPage}</div>
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
                   disabled={resPage >= resTotalPages}
                   onClick={() => {
                     const newPage = Math.min(resTotalPages, resPage + 1);

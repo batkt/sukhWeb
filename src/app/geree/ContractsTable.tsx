@@ -86,11 +86,11 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
           id="geree-table"
         >
-          <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
+          <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
             <thead className="z-10 bg-white dark:bg-gray-800">
               <tr>
                 {ajiltan?.erkh === "Admin" && (
-                  <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                  <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                     <input
                       id="geree-select-all"
                       type="checkbox"
@@ -99,7 +99,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     />
                   </th>
                 )}
-                <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                   №
                 </th>
                 {visibleColumns.map((columnKey, colIdx) => {
@@ -119,15 +119,25 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                       davkhar: "davkhar",
                     };
                     const targetKey = keyMap[column?.key || "ognoo"];
+                    
+                    const alignClass = 
+                        columnKey === "ner" || columnKey === "bairniiNer" ? "text-left pl-2" :
+                        columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel" ? "text-right pr-2" : 
+                        "text-center";
+
                     return (
                       <th
                         key={columnKey}
-                        className={`p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
+                        className={`p-1 text-sm font-normal text-theme ${alignClass} whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                       >
                         <button
                           type="button"
                           onClick={() => toggleSortFor(targetKey)}
-                          className="w-full inline-flex items-center justify-center gap-2"
+                          className={`w-full inline-flex items-center gap-2 ${
+                            alignClass.includes("left") ? "justify-start" : 
+                            alignClass.includes("right") ? "justify-end" : 
+                            "justify-center"
+                          }`}
                           title={`Эрэмбэлэх: ${column?.label}`}
                         >
                           <span>{column?.label}</span>
@@ -152,16 +162,21 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     );
                   }
 
+                  const alignClass = 
+                      columnKey === "ner" || columnKey === "bairniiNer" ? "text-left pl-2" :
+                      columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel" ? "text-right pr-2" : 
+                      "text-center";
+
                   return (
                     <th
                       key={columnKey}
-                      className={`p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
+                      className={`p-1 text-sm font-normal text-theme ${alignClass} whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                     >
                       {column?.label}
                     </th>
                   );
                 })}
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                <th className="p-1 text-sm font-semibold text-theme text-center whitespace-nowrap bg-inherit">
                   Үйлдэл
                 </th>
               </tr>
@@ -223,28 +238,28 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                       <div className="flex gap-2 justify-center">
                         <button
                           onClick={() => handleEdit(contract)}
-                          className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                          className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                           title="Засах"
                           id="geree-edit-btn"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() =>
                             handlePreviewContractTemplate(String(contract._id))
                           }
-                          className="p-1 rounded-2xl hover-surface transition-colors"
+                          className="p-2 rounded-2xl hover-surface transition-colors"
                           title="Гэрээний загвар харах"
                           id="geree-eye-btn"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handlePreviewInvoice(contract)}
-                          className="p-1 rounded-2xl hover-surface transition-colors"
+                          className="p-2 rounded-2xl hover-surface transition-colors"
                           title="Нэхэмжлэх харах"
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-5 h-5" />
                         </button>
                       </div>
                     </td>

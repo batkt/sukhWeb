@@ -455,7 +455,7 @@ export default function Page() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl  mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         {"Анкетын асуулга бэлтгэх"}
       </motion.h1>

@@ -550,7 +550,7 @@ const TulburTootsoo: React.FC = () => {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl  mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         Хөнгөлөлт
       </motion.h1>

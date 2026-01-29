@@ -553,7 +553,7 @@ export default function GolContent({ children }: GolContentProps) {
                       setShowLogout(!showLogout);
                     }}
                     id="tokhirgoo"
-                    className="w-9 h-9 xl:w-10 xl:h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm xl:text-base font-bold shadow-md hover:scale-105 transition-transform"
+                    className="w-9 h-9 xl:w-10 xl:h-10 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm xl:text-base shadow-md hover:scale-105 transition-transform"
                   >
                     {userName.charAt(0).toUpperCase()}
                   </button>
@@ -644,7 +644,7 @@ export default function GolContent({ children }: GolContentProps) {
                     setShowLogout(!showLogout);
                   }}
                   id="tokhirgoo"
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm font-bold shadow-md hover:scale-105 transition-transform"
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm  shadow-md hover:scale-105 transition-transform"
                 >
                   {userName.charAt(0).toUpperCase()}
                 </div>
@@ -823,7 +823,7 @@ export default function GolContent({ children }: GolContentProps) {
             <div className="relative bg-[color:var(--surface-bg)] rounded-3xl w-full max-w-2xl overflow-hidden border border-[color:var(--surface-border)] dark:border-[color:var(--panel)] transform transition-all duration-300 scale-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
               {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--surface-bg)] dark:via-[color:var(--panel)] dark:to-[color:var(--surface-bg)]">
-                <h3 className="text-2xl font-bold text-theme">Тохиргоо</h3>
+                <h3 className="text-2xl  text-theme">Тохиргоо</h3>
                 <button
                   onClick={() => setShowSettingsModal(false)}
                   className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-[color:var(--panel)] rounded-xl transition-all duration-200 hover:rotate-90 group"
@@ -871,7 +871,7 @@ export default function GolContent({ children }: GolContentProps) {
                 {activeTab === 'general' && (
                   <div className="space-y-6 animate-fadeIn">
                     <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
-                      <h4 className="text-lg font-bold text-theme mb-4 flex items-center gap-2">
+                      <h4 className="text-lg  text-theme mb-4 flex items-center gap-2">
                         <div className="p-2 bg-[color:var(--theme)]/10 dark:bg-[color:var(--theme)]/20 rounded-lg">
                           <Settings className="w-5 h-5 text-[color:var(--theme)]" />
                         </div>
@@ -924,7 +924,7 @@ export default function GolContent({ children }: GolContentProps) {
                           Жишээ текст
                         </p>
                         <p 
-                          className="text-theme dark:text-[color:var(--panel-text)] font-bold transition-all duration-300 drop-shadow-sm"
+                          className="text-theme dark:text-[color:var(--panel-text)]  transition-all duration-300 drop-shadow-sm"
                           style={{ fontSize: fontSizeOptions[fontSizeIndex].size }}
                         >
                           Энэ бол жишээ текст юм
@@ -935,11 +935,11 @@ export default function GolContent({ children }: GolContentProps) {
                     {/* Slider */}
                     <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-base text-theme dark:text-white font-bold flex items-center gap-2">
+                        <span className="text-base text-theme dark:text-white  flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-[color:var(--theme)] animate-pulse"></div>
                           {fontSizeOptions[fontSizeIndex].label}
                         </span>
-                        <span className="text-sm text-theme dark:text-white font-mono font-bold bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-hover)] px-3 py-1.5 rounded-lg border border-[color:var(--surface-border)] shadow-sm">
+                        <span className="text-sm text-theme dark:text-white font-mono  bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-hover)] px-3 py-1.5 rounded-lg border border-[color:var(--surface-border)] shadow-sm">
                           {fontSizeOptions[fontSizeIndex].size}
                         </span>
                       </div>

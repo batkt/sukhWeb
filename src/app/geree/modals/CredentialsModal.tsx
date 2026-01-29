@@ -66,7 +66,7 @@ export default function CredentialsModal({
             className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-0 flex flex-col w-full max-w-md overflow-hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-xl  text-slate-900 dark:text-white">
                 Нэвтрэх эрх солих
               </h2>
               <button
@@ -89,7 +89,7 @@ export default function CredentialsModal({
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <p className="text-sm text-gray-500 mb-2 px-1">
-                <b>{employee?.ovog} {employee?.ner}</b> - ажилтны нэвтрэх нэр, нууц үгийг шинэчлэх.
+                <b>{employee?.ovog}. {employee?.ner}</b> - ажилтны нэвтрэх нэр, нууц үгийг шинэчлэх.
               </p>
 
               <div className="space-y-2">
@@ -131,7 +131,7 @@ export default function CredentialsModal({
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-8 py-2.5 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
+                  className="px-8 py-2.5 text-sm  text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
                 >
                   {isSaving ? "Хадгалж байна..." : "Хадгалах"}
                 </button>

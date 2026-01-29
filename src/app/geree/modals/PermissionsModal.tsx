@@ -319,7 +319,7 @@ export default function PermissionsModal({
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400 shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-sm sm:text-base font-bold text-theme truncate">
+                  <h2 className="text-sm sm:text-base  text-theme truncate">
                     Эрх тохируулах
                   </h2>
                   <p className="text-[10px] sm:text-xs text-subtle truncate">

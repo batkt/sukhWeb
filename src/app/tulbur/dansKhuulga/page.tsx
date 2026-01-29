@@ -336,7 +336,7 @@ export default function DansniiKhuulga() {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, ease: "easeOut" }}
-          className="text-3xl font-bold text-theme"
+          className="text-3xl  text-theme"
         >
           Дансны хуулга
         </motion.h1> */}
@@ -358,7 +358,7 @@ export default function DansniiKhuulga() {
                 className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                  <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                     {stat.value}
                   </div>
                   <div className="text-xs text-theme leading-tight">
@@ -383,7 +383,7 @@ export default function DansniiKhuulga() {
                     variant="filled"
                     dropdownType="popover"
                     popoverProps={{
-                      position: "bottom-start",
+                      position: "bottom",
                       withinPortal: true,
                       width: 320,
                     }}
@@ -418,20 +418,20 @@ export default function DansniiKhuulga() {
                 <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                   <thead>
                     <tr className="text-theme">
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
                         №
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap w-24 border-r border-[color:var(--surface-border)]">
                         Огноо
                       </th>
 
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-sm font-normal text-theme text-left pl-2 whitespace-nowrap border-r border-[color:var(--surface-border)]">
                         Гүйлгээний утга
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-sm font-normal text-theme text-right pr-2 whitespace-nowrap w-32 border-r border-[color:var(--surface-border)]">
                         Гүйлгээний дүн
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                      <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap">
                         Шилжүүлсэн данс
                       </th>
                     </tr>
@@ -450,10 +450,10 @@ export default function DansniiKhuulga() {
                             {item.date}
                           </td>
 
-                          <td className="p-1 truncate text-center border-r border-[color:var(--surface-border)]">
+                          <td className="p-1 truncate text-left pl-2 border-r border-[color:var(--surface-border)]" title={item.action}>
                             {item.action}
                           </td>
-                          <td className="p-1 !text-right whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                          <td className="p-1 !text-right pr-2 whitespace-nowrap border-r border-[color:var(--surface-border)]">
                             {formatNumber(item.total ?? 0, 0)} ₮
                           </td>
                           <td className="p-1 text-center whitespace-nowrap">
@@ -463,7 +463,7 @@ export default function DansniiKhuulga() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center">
+                        <td colSpan={5} className="p-8 text-center">
                           <div className="flex flex-col items-center justify-center space-y-3">
                             <svg
                               className="w-16 h-16 text-slate-300"
@@ -496,7 +496,7 @@ export default function DansniiKhuulga() {
                       <td className="p-1 text-center text-theme whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
 
                       <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
-                      <td className="p-1 !text-right font-bold text-theme whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                      <td className="p-1 !text-right font-normal text-theme whitespace-nowrap border-r border-[color:var(--surface-border)] pr-2">
                         Нийт дүн: {formatNumber(totalSum, 0)} ₮
                       </td>
                       <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
@@ -508,7 +508,7 @@ export default function DansniiKhuulga() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-xs">
+            <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 py-1 gap-3 text-sm">
               <div className="text-theme/70">Нийт: {filteredData.length}</div>
 
               <div className="flex items-center gap-3">
@@ -519,13 +519,13 @@ export default function DansniiKhuulga() {
                       setRowsPerPage(v);
                       setPage(1);
                     }}
-                    className="text-xs px-2 py-1"
+                    className="text-sm px-2 py-1"
                   />
                 </span>
 
                 <div id="dans-pagination" className="flex items-center gap-1">
                   <button
-                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
                     disabled={page <= 1}
                     onClick={() => setPage(Math.max(1, page - 1))}
                   >
@@ -533,7 +533,7 @@ export default function DansniiKhuulga() {
                   </button>
                   <div className="text-theme/70 px-1">{page}</div>
                   <button
-                    className="btn-minimal btn-minimal-sm px-2 py-1 text-xs"
+                    className="btn-minimal btn-minimal-sm px-2 py-1 text-sm"
                     disabled={page * rowsPerPage >= filteredData.length}
                     onClick={() => setPage(page + 1)}
                   >

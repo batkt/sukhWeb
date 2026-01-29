@@ -51,7 +51,7 @@ export default function SignUpPage() {
         <div className="bg-card/40 backdrop-blur-2xl rounded-[2rem] border border-border/50 shadow-2xl p-8 hover:scale-105 transition-all duration-500">
           <div className="flex justify-center mb-8 relative">
             <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-2xl ring-4 ring-primary/20 transition-all">
-              <span className="text-primary-foreground font-bold text-3xl">
+              <span className="text-primary-foreground  text-3xl">
                 AC
               </span>
             </div>
@@ -59,7 +59,7 @@ export default function SignUpPage() {
           </div>
 
           <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+            <h1 className="text-4xl  mb-3 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Бүртгүүлэх
             </h1>
             <p className="text-muted-foreground text-base">

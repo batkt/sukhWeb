@@ -52,7 +52,7 @@ export default function EmployeeModal({
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-2xl font-bold text-slate-900">
+              <h2 className="text-2xl  text-slate-900">
                 {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
               </h2>
               <button

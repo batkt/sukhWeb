@@ -246,7 +246,7 @@ export default function Camera() {
         <div className="mb-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-[color:var(--panel-text)]">
+              <h1 className="text-xl md:text-2xl  text-[color:var(--panel-text)]">
                 Камер касс
               </h1>
             </div>
@@ -639,7 +639,7 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Нийт орлого
                 </p>
-                <p className="text-lg font-bold text-[color:var(--panel-text)]">
+                <p className="text-lg  text-[color:var(--panel-text)]">
                   {formatCurrency(stats.total)}
                 </p>
               </div>
@@ -652,7 +652,7 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Төлсөн
                 </p>
-                <p className="text-lg font-bold text-green-600">
+                <p className="text-lg  text-green-600">
                   {formatCurrency(stats.paid)}
                 </p>
               </div>
@@ -665,7 +665,7 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Төлөөгүй
                 </p>
-                <p className="text-lg font-bold text-red-600">
+                <p className="text-lg  text-red-600">
                   {formatCurrency(stats.unpaid)}
                 </p>
               </div>
@@ -678,7 +678,7 @@ export default function Camera() {
                 <p className="text-xs text-[color:var(--muted-text)] mb-1">
                   Нийт тоо
                 </p>
-                <p className="text-lg font-bold text-[color:var(--panel-text)]">
+                <p className="text-lg  text-[color:var(--panel-text)]">
                   {stats.count}
                 </p>
                 <p className="text-xs text-[color:var(--muted-text)] mt-0.5">

@@ -367,7 +367,7 @@ export default function Ebarimt() {
                 className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                  <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                     {stat.value}
                   </div>
                   <div className="text-xs text-theme leading-tight">
@@ -397,7 +397,7 @@ export default function Ebarimt() {
                     variant="filled"
                     dropdownType="popover"
                     popoverProps={{
-                      position: "bottom-start",
+                      position: "bottom",
                       withinPortal: true,
                       width: 320,
                     }}
@@ -534,7 +534,7 @@ export default function Ebarimt() {
                         <td className="p-1 text-center">&nbsp;</td>
                         <td className="p-1 text-center">&nbsp;</td>
                         <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-right font-bold text-theme">
+                        <td className="p-1 text-right  text-theme">
                           {formatNumber(
                             displayedData.reduce((s, r) => s + (r.total || 0), 0),
                             0

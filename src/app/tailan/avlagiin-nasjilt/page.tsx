@@ -182,7 +182,7 @@ export default function AvlagiinNasjiltPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Авлагийн насжилт</h1>
+      <h1 className="text-2xl  mb-6">Авлагийн насжилт</h1>
 
       <div className="space-y-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
@@ -249,13 +249,13 @@ export default function AvlagiinNasjiltPage() {
       {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт авлага</h3>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl  text-red-600">
             {formatNumber(totalAvlaga)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт хувь</h3>
-          <p className="text-2xl font-bold text-blue-600">
+          <p className="text-2xl  text-blue-600">
             {formatNumber(totalKhuvi)}%
           </p>
         </div>
@@ -429,13 +429,13 @@ export default function AvlagiinNasjiltPage() {
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
 
-                  <td className="p-3 text-right text-theme whitespace-nowrap font-bold">
+                  <td className="p-3 text-right text-theme whitespace-nowrap ">
                     Нийт: {formatNumber(totalAvlaga)} ₮
                   </td>
-                  <td className="p-3 text-right text-theme whitespace-nowrap font-bold text-red-600"></td>
+                  <td className="p-3 text-right text-theme whitespace-nowrap  text-red-600"></td>
 
-                  <td className="p-3 text-right text-theme whitespace-nowrap font-bold"></td>
-                  <td className="p-3 text-right text-theme whitespace-nowrap font-bold">
+                  <td className="p-3 text-right text-theme whitespace-nowrap "></td>
+                  <td className="p-3 text-right text-theme whitespace-nowrap ">
                     {formatNumber(totalKhuvi)}%
                   </td>
                 </tr>

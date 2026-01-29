@@ -44,22 +44,22 @@ export default function EmployeesSection({
           className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
           id="employees-table"
         >
-          <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
+          <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
             <thead className="z-10 bg-white dark:bg-gray-800">
               <tr>
-                <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                   №
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                <th className="p-1 text-sm font-normal text-theme text-left pl-2 whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Нэр
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Холбоо барих
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                   Албан тушаал
                 </th>
-                <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap">
                   Үйлдэл
                 </th>
               </tr>
@@ -86,7 +86,7 @@ export default function EmployeesSection({
                         : p.ner || "-"}
                     </td>
                     <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
-                      <div className="text-xs text-theme">{p.utas}</div>
+                      <div className="text-sm text-theme">{p.utas}</div>
                     </td>
                     <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.albanTushaal || "-"}</td>
                     <td className="p-1 whitespace-nowrap">
@@ -97,37 +97,37 @@ export default function EmployeesSection({
                             console.log("🔵 Shield button CLICKED!", p);
                             onManagePermissions(p);
                           }}
-                          className="p-1 rounded-2xl action-primary hover-surface transition-colors"
+                          className="p-2 rounded-2xl action-primary hover-surface transition-colors"
                           title="Эрх тохируулах"
                           id="employees-permissions-btn"
                         >
-                          <Shield className="w-4 h-4 text-blue-500" />
+                          <Shield className="w-5 h-5 text-blue-500" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onCredentialsUpdate(p)}
-                          className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                          className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                           title="Нэвтрэх эрх солих"
                         >
-                          <Lock className="w-4 h-4 text-orange-500" />
+                          <Lock className="w-5 h-5 text-orange-500" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onEdit(p)}
-                          className="p-1 rounded-2xl action-edit hover-surface transition-colors"
+                          className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                           title="Засах"
                           id="employees-edit-btn"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-5 h-5" />
                         </button>
                         <button
                           type="button"
                           onClick={() => onDelete(p)}
-                          className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                          className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                           title="Устгах"
                           id="employees-delete-btn"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </td>
@@ -139,7 +139,7 @@ export default function EmployeesSection({
         </div>
       </div>
       <div className="flex items-center justify-between px-2 py-1 text-md">
-        <div className="font-bold text-theme/70">
+        <div className="text-theme/70">
           Нийт: {filteredEmployees.length}
         </div>
         <div className="flex items-center gap-3">
@@ -149,11 +149,11 @@ export default function EmployeesSection({
               setEmpPageSize(v);
               setEmpPage(1);
             }}
-            className="text-xs px-2 py-1"
+            className="text-sm px-2 py-1"
           />
           <div id="employee-pagination" className="flex items-center gap-1">
             <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
               disabled={empPage <= 1}
               onClick={() => {
                 const newPage = Math.max(1, empPage - 1);
@@ -164,7 +164,7 @@ export default function EmployeesSection({
             </button>
             <div className="text-theme/70 px-1">{empPage}</div>
             <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
               disabled={empPage >= empTotalPages}
               onClick={() => {
                 const newPage = Math.min(empTotalPages, empPage + 1);

@@ -137,7 +137,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Нэхэмжлэхийн түүх</h1>
+      <h1 className="text-2xl  mb-6">Нэхэмжлэхийн түүх</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
@@ -291,7 +291,7 @@ export default function NekhemjlekhiinTuukhPage() {
       {/* Summary Card
       <div className="neu-panel p-4 rounded-xl mb-6">
         <h3 className="font-semibold mb-2">Нийт төлбөр</h3>
-        <p className="text-2xl font-bold text-blue-600">
+        <p className="text-2xl  text-blue-600">
           {formatNumber(totalTulbur)} ₮
         </p>
       </div> */}
@@ -423,7 +423,7 @@ export default function NekhemjlekhiinTuukhPage() {
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  <td className="p-3 text-center text-theme whitespace-nowrap font-bold">
+                  <td className="p-3 text-center text-theme whitespace-nowrap ">
                     Нийт: {formatNumber(totalTulbur)} ₮
                   </td>
 

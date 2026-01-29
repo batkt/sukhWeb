@@ -181,7 +181,7 @@ export default function SanalKhuselt() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl  mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         {t("Шаардлага")}
       </motion.h1>
@@ -224,7 +224,7 @@ export default function SanalKhuselt() {
                       : "bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-lg"
                   }`}
                 >
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-lg shadow-md">
                     {mur.ner[0]}
                   </div>
 
@@ -305,7 +305,7 @@ export default function SanalKhuselt() {
                   >
                     📋
                   </motion.div>
-                  <div className="font-bold text-2xl text-slate-700 mb-3">
+                  <div className=" text-2xl text-slate-700 mb-3">
                     {t("Та санал хүсэлт харах харилцагчаа сонгоно уу")}
                   </div>
                 </div>

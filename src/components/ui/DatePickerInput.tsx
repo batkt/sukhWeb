@@ -113,12 +113,13 @@ export function DatePickerInput(
       const estWidth = type === "range" ? 680 : 360; // two-month vs single
       const maxW = Math.min(window.innerWidth - 16, 720);
       const width = Math.min(Math.max(estWidth, 340), maxW);
-      const left = Math.min(
-        Math.max(8, rect.left),
+      const left = rect.left + rect.width / 2 - width / 2;
+      const safeLeft = Math.min(
+        Math.max(8, left),
         Math.max(8, window.innerWidth - width - 8)
       );
       const top = Math.min(rect.bottom + 8, window.innerHeight - 8);
-      setDropdownPos({ top, left, width });
+      setDropdownPos({ top, left: safeLeft, width });
     };
     update();
     window.addEventListener("resize", update);
@@ -218,7 +219,7 @@ export function DatePickerInput(
             (className ? ` ${className}` : "")
         }
       >
-        <span className={displayText ? "text-theme" : "text-subtle"}>
+        <span className={(displayText ? "text-theme" : "text-subtle") + " flex-1 text-center"}>
           {displayText || placeholder}
         </span>
 

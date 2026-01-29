@@ -96,7 +96,7 @@ export default function OrshinSuugch() {
     <div className="h-full overflow-hidden custom-scrollbar">
       <div className="min-h-full p-4">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-[color:var(--panel-text)]">
+          <h1 className="text-2xl  text-[color:var(--panel-text)]">
             Оршин суугчийн зогсоол
           </h1>
           <div className="relative flex-1 md:w-64">
@@ -158,7 +158,7 @@ export default function OrshinSuugch() {
                       <p className="text-sm text-[color:var(--muted-text)] mb-1">
                         Нийт төлбөр
                       </p>
-                      <p className="text-xl font-bold text-[color:var(--panel-text)]">
+                      <p className="text-xl  text-[color:var(--panel-text)]">
                         {resident.niitTulbur.toLocaleString()} ₮
                       </p>
                     </div>

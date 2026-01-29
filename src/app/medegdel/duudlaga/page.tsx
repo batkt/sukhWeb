@@ -266,11 +266,11 @@ export default function TaskManagementSystem() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="relative">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white font-bold text-lg shadow-md">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 text-white  text-lg shadow-md">
                     {group.khariltsagchiinNer?.charAt(0)}
                   </div>
                   {hasMultiple && (
-                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold shadow-sm">
+                    <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white text-[10px]  shadow-sm">
                       {group.duudlagaCount}
                     </div>
                   )}
@@ -345,7 +345,7 @@ export default function TaskManagementSystem() {
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
-        className="text-3xl font-bold mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
+        className="text-3xl  mb-6 text-theme  bg-clip-text text-transparent drop-shadow-sm"
       >
         Дуудлага
       </motion.h1>
@@ -375,7 +375,7 @@ export default function TaskManagementSystem() {
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: idx * 0.1, type: "spring" }}
-                    className="text-3xl font-bold text-slate-900 mb-1 bg-transparent"
+                    className="text-3xl  text-slate-900 mb-1 bg-transparent"
                   >
                     {mur.too}
                   </motion.div>
@@ -452,7 +452,7 @@ export default function TaskManagementSystem() {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-2xl bg-transparent backdrop-blur-xl p-6 border border-gray-200 shadow-xl"
               >
-                <div className="font-bold text-2xl text-slate-900 mb-2">
+                <div className=" text-2xl text-slate-900 mb-2">
                   {duudlaga.khariltsagchiinNer}
                 </div>
                 <div className="flex gap-4 text-slate-900">
@@ -595,7 +595,7 @@ export default function TaskManagementSystem() {
                 >
                   👋
                 </motion.div>
-                <div className="font-bold text-3xl text-slate-700 mb-3">
+                <div className=" text-3xl text-slate-700 mb-3">
                   Өдрийн мэнд
                 </div>
                 <div className="text-lg text-slate-500 max-w-md">

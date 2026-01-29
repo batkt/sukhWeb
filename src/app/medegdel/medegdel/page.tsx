@@ -206,7 +206,7 @@ export default function KhyanaltFrontend() {
       <motion.h1
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm"
+        className="text-xl sm:text-2xl  mb-4 sm:mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm"
       >
         Мэдэгдэл
       </motion.h1>
@@ -323,7 +323,7 @@ export default function KhyanaltFrontend() {
                         readOnly
                         className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded cursor-pointer pointer-events-none"
                       />
-                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-md">
+                      <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-base sm:text-lg shadow-md">
                         {mur.ner?.[0] || "?"}
                       </div>
 
@@ -365,7 +365,7 @@ export default function KhyanaltFrontend() {
                         key={mur._id}
                         className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/20 border border-white/30"
                       >
-                        <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white font-bold text-xs">
+                        <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-linear-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white  text-xs">
                           {mur.ner?.[0] || "?"}
                         </div>
                         <span className="text-xs text-slate-700 font-medium">

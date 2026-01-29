@@ -142,7 +142,7 @@ export default function LoginPage() {
                 }}
               />
             </div>
-            <h1 className="text-3xl font-bold text-theme">Нэвтрэх</h1>
+            <h1 className="text-3xl  text-theme">Нэвтрэх</h1>
             <p className="text-sm text-[color:var(--muted-text)]">
               Амар СӨХ тавтай морилно уу
             </p>

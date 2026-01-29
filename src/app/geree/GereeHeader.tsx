@@ -162,7 +162,7 @@ export default function GereeHeader({
                   initial={{ opacity: 0, y: -16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, ease: "easeOut" }}
-                  className="text-3xl font-bold text-theme"
+                  className="text-3xl  text-theme"
                 >
                   Гэрээ
                 </motion.h1>
@@ -182,18 +182,6 @@ export default function GereeHeader({
                   <>
                     {ajiltan?.erkh === "Admin" && (
                       <>
-                        <button
-                          id="geree-avlaga-btn"
-                          onClick={onShowAvlagaModal}
-                          className={`btn-minimal ${
-                            selectedContracts.length === 0
-                              ? "opacity-60 pointer-events-none"
-                              : ""
-                          }`}
-                          title="Авлага"
-                        >
-                          Авлага
-                        </button>
                         <button
                           id="geree-send-invoice-btn"
                           onClick={onSendInvoices}
@@ -368,7 +356,7 @@ export default function GereeHeader({
             <button
               id="tab-residents"
               onClick={() => setActiveTab("residents")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
                 activeTab === "residents"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -381,7 +369,7 @@ export default function GereeHeader({
             <button
               id="tab-contracts"
               onClick={() => setActiveTab("contracts")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
                 activeTab === "contracts"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -394,7 +382,7 @@ export default function GereeHeader({
             <button
               id="tab-units"
               onClick={() => setActiveTab("units")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
                 activeTab === "units"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -407,7 +395,7 @@ export default function GereeHeader({
             <button
               id="tab-employees"
               onClick={() => setActiveTab("employees")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
                 activeTab === "employees"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -424,7 +412,7 @@ export default function GereeHeader({
                 <>
                   {ortsOptions.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <label className="text-xs text-theme whitespace-nowrap">
+                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                         Орц:
                       </label>
                       <div className="w-26">
@@ -435,7 +423,7 @@ export default function GereeHeader({
                             { value: "", label: "Бүгд" },
                             ...ortsOptions.map((o) => ({ value: o, label: o })),
                           ]}
-                          className="w-full z-50 text-xs"
+                          className="w-full z-50 text-sm"
                           placeholder="Сонгох..."
                         />
                       </div>
@@ -443,7 +431,7 @@ export default function GereeHeader({
                   )}
                   {davkharOptions.length > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <label className="text-xs text-theme whitespace-nowrap">
+                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                         Давхар:
                       </label>
                       <div className="w-26">
@@ -457,14 +445,14 @@ export default function GereeHeader({
                               label: d,
                             })),
                           ]}
-                          className="w-full z-50 text-xs"
+                          className="w-full z-50 text-sm"
                           placeholder="Сонгох..."
                         />
                       </div>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Төлөв:
                     </label>
                     <div className="w-26">
@@ -480,7 +468,7 @@ export default function GereeHeader({
                           { value: "active", label: "Идэвхтэй" },
                           { value: "cancelled", label: "Цуцлагдсан" },
                         ]}
-                        className="w-full z-50 text-xs"
+                        className="w-full z-50 text-sm"
                         placeholder="Сонгох..."
                       />
                     </div>
@@ -492,7 +480,7 @@ export default function GereeHeader({
                 <>
                   {/* Орц */}
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Орц:
                     </label>
                     <div className="w-26">
@@ -503,7 +491,7 @@ export default function GereeHeader({
                           value: o,
                           label: o,
                         }))}
-                        className="w-full z-50 text-xs rounded-2xl"
+                        className="w-full z-50 text-sm rounded-2xl"
                         placeholder="1"
                       />
                     </div>
@@ -511,7 +499,7 @@ export default function GereeHeader({
 
                   {/* Давхар: styled dropdown, no Бүгд */}
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Давхар:
                     </label>
                     <div className="w-26">
@@ -522,7 +510,7 @@ export default function GereeHeader({
                           value: String(d),
                           label: String(d),
                         }))}
-                        className="w-full z-50 text-xs rounded-2xl"
+                        className="w-full z-50 text-sm rounded-2xl"
                         placeholder="1"
                       />
                     </div>
@@ -530,7 +518,7 @@ export default function GereeHeader({
 
                   {/* Төлөв: only occupied / free, same card-like style */}
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Төлөв:
                     </label>
                     <div className="w-26">
@@ -545,7 +533,7 @@ export default function GereeHeader({
                           { value: "occupied", label: "Идэвхтэй" },
                           { value: "free", label: "Идэвхгүй" },
                         ]}
-                        className="w-full z-50 text-xs rounded-2xl"
+                        className="w-full z-50 text-sm rounded-2xl"
                         placeholder="Төлөв"
                       />
                     </div>
@@ -563,7 +551,7 @@ export default function GereeHeader({
               <>
                 {ortsOptions.length > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Орц:
                     </label>
                     <div className="w-24">
@@ -574,7 +562,7 @@ export default function GereeHeader({
                           { value: "", label: "Бүгд" },
                           ...ortsOptions.map((o) => ({ value: o, label: o })),
                         ]}
-                        className="w-full z-50 text-xs"
+                        className="w-full z-50 text-sm"
                         placeholder="Сонгох..."
                       />
                     </div>
@@ -582,7 +570,7 @@ export default function GereeHeader({
                 )}
                 {davkharOptions.length > 0 && (
                   <div className="flex items-center gap-1.5">
-                    <label className="text-xs text-theme whitespace-nowrap">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Давхар:
                     </label>
                     <div className="w-24">
@@ -593,14 +581,14 @@ export default function GereeHeader({
                           { value: "", label: "Бүгд" },
                           ...davkharOptions.map((d) => ({ value: d, label: d })),
                         ]}
-                        className="w-full z-50 text-xs"
+                        className="w-full z-50 text-sm"
                         placeholder="Сонгох..."
                       />
                     </div>
                   </div>
                 )}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
+                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Төлөв:
                   </label>
                   <div className="w-24">
@@ -614,7 +602,7 @@ export default function GereeHeader({
                         { value: "active", label: "Идэвхтэй" },
                         { value: "cancelled", label: "Цуцлагдсан" },
                       ]}
-                      className="w-full z-50 text-xs"
+                      className="w-full z-50 text-sm"
                       placeholder="Сонгох..."
                     />
                   </div>
@@ -625,7 +613,7 @@ export default function GereeHeader({
             {activeTab === "units" && (
               <>
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
+                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Орц:
                   </label>
                   <div className="w-24">
@@ -636,28 +624,26 @@ export default function GereeHeader({
                         value: o,
                         label: o,
                       }))}
-                      className="w-full z-50 text-xs"
+                      className="w-full z-50 text-sm"
                       placeholder="1"
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
-                    Давхар:
-                  </label>
+                  Давхар:
                   <div className="w-24">
                     <input
                       type="number"
                       min={1}
                       value={selectedDawkhar}
                       onChange={(e) => setSelectedDawkhar(e.target.value)}
-                      className="w-full px-2 py-1 rounded-xl border border-[color:var(--surface-border)] bg-transparent text-xs"
+                      className="w-full px-2 py-1 rounded-xl border border-[color:var(--surface-border)] bg-transparent text-sm"
                       placeholder=""
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
+                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Төлөв:
                   </label>
                   <div className="w-24">
@@ -672,7 +658,7 @@ export default function GereeHeader({
                         { value: "occupied", label: "Идэвхтэй" },
                         { value: "free", label: "Идэвхгүй" },
                       ]}
-                      className="w-full z-50 text-xs"
+                      className="w-full z-50 text-sm"
                       placeholder="Төлөв"
                     />
                   </div>

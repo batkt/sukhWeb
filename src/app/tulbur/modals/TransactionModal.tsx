@@ -19,6 +19,7 @@ export interface TransactionData {
   amount: number;
   residentId?: string;
   gereeniiId?: string;
+  tailbar?: string;
 }
 
 export default function TransactionModal({
@@ -34,6 +35,7 @@ export default function TransactionModal({
     new Date().toISOString().split("T")[0]
   );
   const [amount, setAmount] = useState("0");
+  const [tailbar, setTailbar] = useState("");
 
   useModalHotkeys({
     isOpen: show,
@@ -48,6 +50,7 @@ export default function TransactionModal({
       amount: parseFloat(amount) || 0,
       residentId: resident?._id,
       gereeniiId: resident?.gereeniiId,
+      tailbar,
     };
 
     await onSubmit(data);
@@ -156,6 +159,21 @@ export default function TransactionModal({
                 disabled={isProcessing}
                 placeholder="0"
                 className="w-full px-2.5 py-1.5 border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-transparent transition-all text-xs"
+              />
+            </div>
+
+            {/* Tailbar Input */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium text-[color:var(--panel-text)]">
+                Тайлбар
+              </label>
+              <textarea
+                value={tailbar}
+                onChange={(e) => setTailbar(e.target.value)}
+                disabled={isProcessing}
+                placeholder="Тайлбар оруулах..."
+                rows={2}
+                className="w-full px-2.5 py-1.5 border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-transparent transition-all text-xs resize-none"
               />
             </div>
 

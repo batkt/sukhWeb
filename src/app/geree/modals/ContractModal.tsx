@@ -66,7 +66,7 @@ export default function ContractModal({
             className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[70vh] max-h-[70vh] rounded-2xl shadow-2xl p-0 flex flex-col"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-2xl font-bold text-slate-900">
+              <h2 className="text-2xl  text-slate-900">
                 {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
               </h2>
               <button

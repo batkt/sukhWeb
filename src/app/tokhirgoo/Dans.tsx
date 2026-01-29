@@ -232,7 +232,7 @@ function Dans() {
     return (
       <div className={`bg-gradient-to-br ${colors} shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-5 mb-6 border`}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-theme dark:text-white">{title}</h2>
+          <h2 className="text-lg  text-theme dark:text-white">{title}</h2>
           <button
             onClick={() => openAdd(bankKey)}
             className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-700 dark:hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"

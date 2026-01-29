@@ -617,7 +617,7 @@ const InvoiceModal = ({
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
             <div className="flex items-center gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-xl  text-slate-800">
                   Үйлчилгээний нэхэмжлэх
                 </h2>
                 <p className="text-sm text-slate-500">
@@ -665,7 +665,7 @@ const InvoiceModal = ({
           <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
             <div className="grid grid-cols-2 gap-6 print-break">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">
+                <h3 className="text-xl  text-slate-800 mb-3">
                   {baiguullaga?.ner}
                 </h3>
                 <div className="space-y-2 text-sm text-slate-600">
@@ -855,7 +855,7 @@ const InvoiceModal = ({
                   )}
                   <span className="text-sm text-slate-500">
                     Нийт дүн:{" "}
-                    <span className="font-bold text-slate-900">
+                    <span className=" text-slate-900">
                       {formatNumber(totalSum)} ₮
                     </span>
                   </span>
@@ -1410,7 +1410,7 @@ export default function InvoicingZardluud() {
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-3xl font-bold mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm hidden"
+        className="text-3xl  mb-6 text-theme bg-clip-text text-transparent drop-shadow-sm hidden"
       >
         Зардлын нэхэмжлэл
       </motion.h1>
@@ -1470,7 +1470,7 @@ export default function InvoicingZardluud() {
                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
 
-                <div className="text-4xl font-bold mb-2 text-theme">
+                <div className="text-4xl  mb-2 text-theme">
                   {stat.title === "Нийт дүн"
                     ? stat.value
                     : typeof stat.value === "number"
@@ -1618,25 +1618,25 @@ export default function InvoicingZardluud() {
               <table className="table-ui text-sm min-w-full">
                 <thead className="bg-white/95 backdrop-blur-sm top-0 z-10 border-b border-gray-200 shadow-sm">
                   <tr>
-                    <th className="p-4 text-xs font-bold text-theme text-center w-12 rounded-tl-2xl bg-white/95">
+                    <th className="p-4 text-xs  text-theme text-center w-12 rounded-tl-2xl bg-white/95">
                       №
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
                       Оршин суугч
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
                       Тоот
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
                       Хаяг
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
                       Утас
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
                       Төлөв
                     </th>
-                    <th className="py-4 px-6 text-center text-sm font-bold text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
+                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
                       Үйлдэл
                     </th>
                   </tr>
@@ -1946,7 +1946,7 @@ export default function InvoicingZardluud() {
                                   </div>
                                   <div className="text-right">
                                     <div className="text-xs">Нийт дүн</div>
-                                    <div className="text-xl font-bold">
+                                    <div className="text-xl ">
                                       {formatCurrency(total)}
                                     </div>
                                     <div className="mt-1">

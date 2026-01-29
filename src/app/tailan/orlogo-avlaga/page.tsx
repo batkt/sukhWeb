@@ -133,7 +133,7 @@ export default function OrlogoAvlagaPage() {
   return (
     <div className="p-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold">Орлого авлага</h1>
+        <h1 className="text-2xl ">Орлого авлага</h1>
         <div className="w-full md:w-[320px]">
           <DatePickerInput
             type="range"
@@ -162,20 +162,20 @@ export default function OrlogoAvlagaPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт орлого</h3>
-          <p className="text-2xl font-bold text-green-600">
+          <p className="text-2xl  text-green-600">
             {formatNumber(totalOrlogo)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт зарлага</h3>
-          <p className="text-2xl font-bold text-red-600">
+          <p className="text-2xl  text-red-600">
             {formatNumber(totalZarlaga)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Үлдэгдэл</h3>
           <p
-            className={`text-2xl font-bold ${
+            className={`text-2xl  ${
               totalUldegdel >= 0 ? "text-green-600" : "text-red-600"
             }`}
           >

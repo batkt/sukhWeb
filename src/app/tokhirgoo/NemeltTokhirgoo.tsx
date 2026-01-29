@@ -345,7 +345,7 @@ export default function NemeltTokhirgoo() {
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-theme">Нэхэмжлэх илгээх</h3>
+                    <h3 className="text-lg  text-theme">Нэхэмжлэх илгээх</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       Сар бүрийн илгээх тохиргоо
                     </p>
@@ -410,7 +410,7 @@ export default function NemeltTokhirgoo() {
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-theme">Лифт хөнгөлөлт</h3>
+                    <h3 className="text-lg  text-theme">Лифт хөнгөлөлт</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       {liftFloors.length} давхар тохируулсан
                     </p>

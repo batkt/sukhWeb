@@ -122,7 +122,7 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
                 .theme-print-preview .preview-content span[data-tag-type]:before,
                 .theme-print-preview .preview-section span[data-tag-type]:before {
                   content: attr(data-tag-type) ": " !important;
-                  font-weight: bold !important;
+              
                   color: var(--theme-color) !important;
                 }
                 .theme-print-preview .header-left {

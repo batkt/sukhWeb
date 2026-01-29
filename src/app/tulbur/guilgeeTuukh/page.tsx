@@ -523,7 +523,7 @@ const InvoiceModal = ({
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
             <div className="flex items-center gap-4">
               <div>
-                <h2 className="text-xl font-bold text-slate-800">
+                <h2 className="text-xl  text-slate-800">
                   Үйлчилгээний нэхэмжлэх
                 </h2>
                 <p className="text-sm text-slate-500">
@@ -571,7 +571,7 @@ const InvoiceModal = ({
           <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
             <div className="grid grid-cols-2 gap-6 print-break">
               <div>
-                <h3 className="text-xl font-bold text-slate-800 mb-3">
+                <h3 className="text-xl  text-slate-800 mb-3">
                   {baiguullaga?.ner}
                 </h3>
                 <div className="space-y-2 text-sm text-slate-600">
@@ -771,7 +771,7 @@ const InvoiceModal = ({
                   )}
                   <span className="text-sm text-slate-500">
                     Нийт дүн:{" "}
-                    <span className="font-bold text-slate-900">
+                    <span className=" text-slate-900">
                       {formatNumber(totalSum)} ₮
                     </span>
                   </span>
@@ -1452,7 +1452,7 @@ export default function DansniiKhuulga() {
         orshinSuugchId: data.residentId,
         gereeniiId: data.gereeniiId,
         // Basic metadata
-        tailbar: `${data.type || "payment"} - ${data.date}`,
+        tailbar: data.tailbar || `${data.type || "payment"} - ${data.date}`,
         markEkhniiUldegdel: false,
         createdBy: ajiltan._id,
         createdAt: new Date().toISOString(),
@@ -1734,7 +1734,7 @@ export default function DansniiKhuulga() {
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold text-theme bg-clip-text text-transparent drop-shadow-sm"
+          className="text-3xl  text-theme bg-clip-text text-transparent drop-shadow-sm"
         >
           Гүйлгээний түүх
         </motion.h1>
@@ -1778,7 +1778,7 @@ export default function DansniiKhuulga() {
                 }`}
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl font-bold mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                  <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                     {stat.value}
                   </div>
                   <div className="text-xs text-theme leading-tight">
@@ -1803,7 +1803,7 @@ export default function DansniiKhuulga() {
                   variant="filled"
                   dropdownType="popover"
                   popoverProps={{
-                    position: "bottom-start",
+                    position: "bottom",
                     withinPortal: true,
                     width: 320,
                   }}
@@ -1836,7 +1836,7 @@ export default function DansniiKhuulga() {
 
                 {/* Орц filter */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
+                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Орц:
                   </label>
                   <div className="w-[100px]">
@@ -1844,7 +1844,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedOrtsFilter}
                       onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-xs focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -1852,7 +1852,7 @@ export default function DansniiKhuulga() {
 
                 {/* Давхар filter */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-xs text-theme whitespace-nowrap">
+                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Давхар:
                   </label>
                   <div className="w-[100px]">
@@ -1861,7 +1861,7 @@ export default function DansniiKhuulga() {
                       min={1}
                       value={selectedDavkharFilter}
                       onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-xs focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -2026,11 +2026,11 @@ export default function DansniiKhuulga() {
                   <tr>
                     {visibleColumns.map((col, colIdx) => {
                       const alignClass =
-                        col.align === "right"
-                          ? "text-right"
-                          : col.align === "center"
-                            ? "text-center"
-                            : "text-left";
+                        col.key === "ner"
+                          ? "text-left pl-2"
+                          : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel"
+                            ? "text-right pr-2"
+                            : "text-center";
                       const stickyClass = col.sticky
                         ? "sticky z-20 bg-[color:var(--surface-bg)]"
                         : "z-10";
@@ -2038,7 +2038,7 @@ export default function DansniiKhuulga() {
                       return (
                         <th
                           key={col.key}
-                          className={`p-1 text-xs font-semibold text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
+                          className={`p-1 text-sm font-normal text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                           style={{
                             ...(col.sticky
                               ? { left: stickyOffsets[col.key] }
@@ -2185,11 +2185,11 @@ export default function DansniiKhuulga() {
                         >
                           {visibleColumns.map((col, colIdx) => {
                             const alignClass =
-                              col.align === "right"
-                                ? "text-right"
-                                : col.align === "center"
-                                  ? "text-center"
-                                  : "text-left";
+                              col.key === "ner"
+                                ? "text-left pl-2"
+                                : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel"
+                                  ? "text-right pr-2"
+                                  : "text-center";
                             const stickyClass = col.sticky
                               ? "sticky z-10 bg-[color:var(--surface-bg)]"
                               : "";
@@ -2302,7 +2302,7 @@ export default function DansniiKhuulga() {
                                     <div className="flex items-center justify-center gap-2">
                                       <span
                                         className={
-                                          "px-2 py-0.5 rounded-full text-xs font-medium " +
+                                          "px-2 py-0.5 rounded-full text-sm font-medium " +
                                           (isPaid
                                             ? "badge-paid"
                                             : tuluvLabel === "Төлөөгүй" ||
@@ -2341,10 +2341,10 @@ export default function DansniiKhuulga() {
                                           setSelectedResident(residentData);
                                           setIsModalOpen(true);
                                         }}
-                                        className="p-1.5 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
+                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
                                         title="Нэхэмжлэх харах"
                                       >
-                                        <Eye className="w-4 h-4 text-blue-500" />
+                                        <Eye className="w-5 h-5 text-blue-500" />
                                       </button>
                                       <button
                                         onClick={() => {
@@ -2361,10 +2361,10 @@ export default function DansniiKhuulga() {
                                           setHistoryResident(residentData);
                                           setIsHistoryOpen(true);
                                         }}
-                                        className="p-1.5 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
+                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
                                         title="Түүх харах"
                                       >
-                                        <History className="w-4 h-4 text-green-500" />
+                                        <History className="w-5 h-5 text-green-500" />
                                       </button>
                                       <button
                                         onClick={() => {
@@ -2382,10 +2382,10 @@ export default function DansniiKhuulga() {
                                           setSelectedTransactionResident(residentData);
                                           setIsTransactionModalOpen(true);
                                         }}
-                                        className="p-1.5 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"
+                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"
                                         title="Гүйлгээ хийх"
                                       >
-                                        <Banknote className="w-4 h-4 text-[color:var(--theme)] group-hover:opacity-80 transition-opacity" />
+                                        <Banknote className="w-5 h-5 text-[color:var(--theme)] group-hover:opacity-80 transition-opacity" />
                                       </button>
                                     </div>
                                   </td>
@@ -2419,7 +2419,7 @@ export default function DansniiKhuulga() {
                       <td
                         key={col.key}
                         className={`p-1 text-theme whitespace-nowrap ${alignClass} ${
-                          isPaymentCol ? "font-bold" : ""
+                          isPaymentCol ? "font-normal" : ""
                         } ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                         style={{ minWidth: col.minWidth }}
                       >
@@ -2445,7 +2445,7 @@ export default function DansniiKhuulga() {
                     setRowsPerPage(v);
                     setPage(1);
                   }}
-                  className="text-xs px-2 py-1"
+                  className="text-sm px-2 py-1"
                 />
               </span>
 
@@ -2667,7 +2667,7 @@ export default function DansniiKhuulga() {
                                   Нийт дүн
                                 </div>
                                 <div className="flex items-center gap-2 justify-end">
-                                  <span className="text-lg font-bold text-theme">
+                                  <span className="text-lg  text-theme">
                                     {formatCurrency(total)}
                                   </span>
                                 </div>

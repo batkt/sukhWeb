@@ -83,19 +83,19 @@ export default function UnitsSection({
                   className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
                   id="units-table"
                 >
-                  <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
+                  <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                     <thead className="z-10 bg-white dark:bg-gray-800">
                       <tr>
-                        <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                        <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                           №
                         </th>
-                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                           Давхар
                         </th>
-                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                           Тоотууд
                         </th>
-                        <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                        <th className="p-1 text-sm font-normal text-theme text-center whitespace-nowrap bg-inherit">
                           Үйлдэл
                         </th>
                       </tr>
@@ -198,7 +198,7 @@ export default function UnitsSection({
                                   return (
                                     <span
                                       key={String(t)}
-                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs border ${
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-sm border ${
                                         hasActive
                                           ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                                           : "border-gray-300"
@@ -207,7 +207,7 @@ export default function UnitsSection({
                                       <span
                                         className={
                                           hasActive
-                                            ? "text-green-600 font-semibold"
+                                            ? "text-green-600 font-normal"
                                             : "text-theme"
                                         }
                                       >
@@ -215,7 +215,7 @@ export default function UnitsSection({
                                       </span>
                                       {hasActive && (
                                         <span
-                                          className="text-green-600 text-[10px] font-semibold"
+                                          className="text-green-600 text-[10px] font-normal"
                                           title="Идэвхтэй"
                                         >
                                           ●
@@ -238,18 +238,18 @@ export default function UnitsSection({
                             <td className="p-1 whitespace-nowrap text-center">
                               <div className="flex items-center justify-center gap-2">
                                 <button
-                                  className="p-1 rounded-2xl hover-surface transition-colors"
+                                  className="p-2 rounded-2xl hover-surface transition-colors"
                                   title="Шинэ тоот нэмэх"
                                   onClick={() => onAddUnit(floor)}
                                 >
-                                  <Plus className="w-4 h-4 text-blue-500" />
+                                  <Plus className="w-5 h-5 text-blue-500" />
                                 </button>
                                 <button
-                                  className="p-1 rounded-2xl action-delete hover-surface transition-colors"
+                                  className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                                   title="Давхрын тоотуудыг устгах"
                                   onClick={() => onDeleteFloor(floor)}
                                 >
-                                  <Trash2 className="w-4 h-4" />
+                                  <Trash2 className="w-5 h-5" />
                                 </button>
                               </div>
                             </td>
@@ -270,11 +270,11 @@ export default function UnitsSection({
                     setUnitPageSize(v);
                     setUnitPage(1);
                   }}
-                  className="text-xs px-2"
+                  className="text-sm px-2"
                 />
                 <div id="units-pagination" className="flex items-center gap-1">
                   <button
-                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
                     disabled={unitPage <= 1}
                     onClick={() => {
                       const newPage = Math.max(1, unitPage - 1);
@@ -285,7 +285,7 @@ export default function UnitsSection({
                   </button>
                   <div className="text-theme/70 px-1">{unitPage}</div>
                   <button
-                    className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                    className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
                     disabled={unitPage >= unitTotalPages}
                     onClick={() => {
                       const newPage = Math.min(unitTotalPages, unitPage + 1);

@@ -225,7 +225,7 @@ export default function SanalKhuselt() {
         className={`flex items-center justify-between shrink-0 ${showDetail ? 'hidden md:flex' : 'flex'}`}
       >
         <div>
-          <h1 className="text-2xl font-bold text-theme">{t("Санал хүсэлт")}</h1>
+          <h1 className="text-2xl  text-theme">{t("Санал хүсэлт")}</h1>
           <p className="text-theme/60 text-sm mt-1">
             {t("Ирсэн санал, гомдлуудыг шийдвэрлэх")}
           </p>
@@ -314,7 +314,7 @@ export default function SanalKhuselt() {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium uppercase tracking-wide border ${status.bg} ${status.color} ${status.border} bg-opacity-50`}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-medium tracking-wide border ${status.bg} ${status.color} ${status.border} bg-opacity-50`}
                       >
                         {status.label}
                       </div>
@@ -360,20 +360,20 @@ export default function SanalKhuselt() {
                      >
                         <ArrowLeft className="w-6 h-6 text-theme" />
                      </button>
-                     <span className="font-bold text-lg text-theme">{t("Санал хүсэлт")}</span>
+                     <span className=" text-lg text-theme">{t("Санал хүсэлт")}</span>
                   </div>
 
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-2 md:pt-0">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="px-2 py-1 rounded-lg bg-[color:var(--surface-hover)] text-[10px] font-bold uppercase tracking-wider text-theme/70 border border-[color:var(--surface-border)]">
+                      <span className="px-2 py-1 rounded-lg bg-[color:var(--surface-hover)] text-[10px]  tracking-wider text-theme/70 border border-[color:var(--surface-border)]">
                         {selectedMedegdel.turul}
                       </span>
                       <span className="text-xs text-theme/50">
                         {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
                       </span>
                     </div>
-                    <h2 className="text-xl md:text-2xl font-bold text-theme leading-tight">
+                    <h2 className="text-xl md:text-2xl  text-theme leading-tight">
                       {selectedMedegdel.title}
                     </h2>
                   </div>
@@ -450,7 +450,7 @@ export default function SanalKhuselt() {
 
                 {/* Message Body */}
                 <div>
-                    <h3 className="text-sm font-bold text-theme/80 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <h3 className="text-sm  text-theme/80 tracking-wide mb-3 flex items-center gap-2">
                         <MessageSquare className="w-4 h-4" />
                         {t("Агуулга")}
                     </h3>
@@ -462,7 +462,7 @@ export default function SanalKhuselt() {
                 {/* Reply Section */}
                 {selectedMedegdel.tailbar && (
                      <div>
-                        <h3 className="text-sm font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-3 flex items-center gap-2">
+                        <h3 className="text-sm  text-blue-600 dark:text-blue-400  tracking-wide mb-3 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                             {t("Хариу тайлбар")}
                         </h3>
