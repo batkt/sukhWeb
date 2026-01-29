@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Search as SearchIcon, X, LogOut, Type } from "lucide-react";
+import { Settings, Search as SearchIcon, X, LogOut, Type, Menu } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/lib/useAuth";
@@ -50,6 +50,7 @@ export default function GolContent({ children }: GolContentProps) {
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const [isMobile, setIsMobile] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -139,24 +140,29 @@ export default function GolContent({ children }: GolContentProps) {
   }, []);
 
   useEffect(() => {
-    if (mobileSearchOpen) {
+    if (mobileSearchOpen || mobileMenuOpen) {
       document.body.style.overflow = "hidden";
-      setTimeout(() => mobileSearchInputRef.current?.focus(), 50);
+      if (mobileSearchOpen) {
+        setTimeout(() => mobileSearchInputRef.current?.focus(), 50);
+      }
     } else {
       document.body.style.overflow = "";
     }
     return () => {
       document.body.style.overflow = "";
     };
-  }, [mobileSearchOpen]);
+  }, [mobileSearchOpen, mobileMenuOpen]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && mobileSearchOpen) setMobileSearchOpen(false);
+      if (e.key === "Escape") {
+        if (mobileSearchOpen) setMobileSearchOpen(false);
+        if (mobileMenuOpen) setMobileMenuOpen(false);
+      }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [mobileSearchOpen]);
+  }, [mobileSearchOpen, mobileMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -367,7 +373,7 @@ export default function GolContent({ children }: GolContentProps) {
           {/* Top row on mobile: Logo + Building Selector */}
           <div className="flex lg:hidden items-center justify-between gap-2 mb-2">
             <div className="shrink-0">
-              <ThemedLogo />
+              <ThemedLogo size={32} padding={4} radius={8} />
             </div>
             <div
               id="barilga-songoh-mobile"
@@ -619,159 +625,216 @@ export default function GolContent({ children }: GolContentProps) {
             </div>
           </div>
 
-          <div className="flex lg:hidden items-center justify-end gap-1.5 sm:gap-2">
+          {/* Mobile Actions Row */}
+          <div className="flex lg:hidden items-center justify-between gap-1.5 sm:gap-2">
+            {/* Hamburger Menu Button */}
             <button
               type="button"
-              aria-label="Open search"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setMobileSearchOpen(true);
-              }}
+              aria-label="Open menu"
+              onClick={() => setMobileMenuOpen(true)}
               className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
             >
-              <SearchIcon className="w-4 h-4 pointer-events-none" />
+              <Menu className="w-4 h-4 pointer-events-none" />
             </button>
 
-            <UnguSongokh />
-            <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                type="button"
+                aria-label="Open search"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMobileSearchOpen(true);
+                }}
+                className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+              >
+                <SearchIcon className="w-4 h-4 pointer-events-none" />
+              </button>
 
-            {isLoggedIn && (
-              <div className="relative z-[150]" ref={mobileAvatarRef}>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLogout(!showLogout);
-                  }}
-                  id="tokhirgoo"
-                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm  shadow-md hover:scale-105 transition-transform"
-                >
-                  {userName.charAt(0).toUpperCase()}
-                </div>
+              <UnguSongokh />
+              <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
-                {showLogout && (
-                  <div className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
-                    <ul className="py-2">
-                      <li>
-                        <button
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setShowLogout(false);
-                            router.push("/tokhirgoo");
-                          }}
-                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
-                        >
-                          <Settings className="w-4 h-4 opacity-80" />
-                          <span>Тохиргоо</span>
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          onClick={handleKhemjee}
-                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
-                        >
-                          <Type className="w-4 h-4 opacity-80" />
-                          <span>Хэмжээ</span>
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
-                        >
-                          <LogOut className="w-4 h-4 opacity-80" />
-                          <span>Гарах</span>
-                        </button>
-                      </li>
-                    </ul>
+              {isLoggedIn && (
+                <div className="relative z-[150]" ref={mobileAvatarRef}>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowLogout(!showLogout);
+                    }}
+                    id="tokhirgoo"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm  shadow-md hover:scale-105 transition-transform"
+                  >
+                    {userName.charAt(0).toUpperCase()}
                   </div>
-                )}
-              </div>
-            )}
+
+                  {showLogout && (
+                    <div className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
+                      <ul className="py-2">
+                        <li>
+                          <button
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setShowLogout(false);
+                              router.push("/tokhirgoo");
+                            }}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          >
+                            <Settings className="w-4 h-4 opacity-80" />
+                            <span>Тохиргоо</span>
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            onClick={handleKhemjee}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          >
+                            <Type className="w-4 h-4 opacity-80" />
+                            <span>Хэмжээ</span>
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                          >
+                            <LogOut className="w-4 h-4 opacity-80" />
+                            <span>Гарах</span>
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>
 
-      <div className="lg:hidden w-full bg-[color:var(--surface-bg)] sticky top-[100px] sm:top-[120px] z-[9]">
-        <div className="px-2 sm:px-3 pb-2">
-          <div className="flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap custom-scrollbar pb-1">
-            {menuItems.map((item, i) => {
-              const isParentActive = pathname.startsWith(`/${item.path}`);
-              return (
+      {/* Mobile Menu Drawer */}
+      {mobileMenuOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[1100] lg:hidden">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+
+            {/* Drawer */}
+            <div className="absolute left-0 top-0 bottom-0 w-[280px] sm:w-[320px] bg-[color:var(--surface-bg)] shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto">
+              {/* Drawer Header */}
+              <div className="sticky top-0 z-10 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ThemedLogo size={32} />
+                  <span className="text-lg font-bold text-theme">Цэс</span>
+                </div>
                 <button
-                  key={i}
-                  type="button"
-                  onClick={() => {
-                    if (item.comingSoon) return;
-                    item.submenu
-                      ? setOpenSubmenuIndex((prev) => (prev === i ? null : i))
-                      : router.push(`/${item.path}`);
-                  }}
-                  className={`menu-pro-font px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 text-[color:var(--panel-text)] shrink-0 relative overflow-visible ${
-                    item.comingSoon ? "cursor-not-allowed opacity-60" : ""
-                  } ${
-                    isParentActive
-                      ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
-                      : "hover:menu-surface"
-                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-xl hover:bg-[color:var(--surface-hover)] transition-colors"
+                  aria-label="Close menu"
                 >
-                  {item.label}
-                  {item.comingSoon && (
-                    <div
-                      className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
-                      style={{ transform: "translate(20%, -20%)" }}
-                    >
-                      <div
-                        className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
-                        style={{ transform: "rotate(45deg)" }}
-                      >
-                        Тун удахгүй
-                      </div>
-                    </div>
-                  )}
+                  <X className="w-5 h-5 text-theme" />
                 </button>
-              );
-            })}
-          </div>
-          {openSubmenuIndex !== null &&
-            menuItems[openSubmenuIndex]?.submenu && (
-              <div className="mt-2 w-full rounded-2xl shadow-lg menu-surface z-[950] relative">
-                <ul className="py-2">
-                  {menuItems[openSubmenuIndex].submenu!.map((sub, j) => {
-                    const subPath = `/${menuItems[openSubmenuIndex]!.path}/${
-                      sub.path
-                    }`;
-                    const isSubActive = pathname.startsWith(subPath);
-                    return (
-                      <li key={j}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setOpenSubmenuIndex(null);
-                            router.push(subPath);
-                          }}
-                          className={`menu-pro-font w-full text-left block px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
-                            isSubActive
-                              ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
-                              : "hover:translate-x-0.5 hover:menu-surface/80"
-                          }`}
-                        >
-                          {sub.label}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
               </div>
-            )}
-        </div>
-      </div>
+
+              {/* Menu Items */}
+              <nav className="p-4 space-y-2">
+                {menuItems.map((item, i) => {
+                  const isParentActive = pathname.startsWith(`/${item.path}`);
+                  const hasSubmenu = item.submenu && item.submenu.length > 0;
+                  const isOpen = openSubmenuIndex === i;
+
+                  return (
+                    <div key={i} className="space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (item.comingSoon) return;
+                          if (hasSubmenu) {
+                            setOpenSubmenuIndex(isOpen ? null : i);
+                          } else {
+                            router.push(`/${item.path}`);
+                            setMobileMenuOpen(false);
+                          }
+                        }}
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                          item.comingSoon
+                            ? "cursor-not-allowed opacity-60 text-theme"
+                            : ""
+                        } ${
+                          isParentActive
+                            ? "bg-[color:var(--theme)] text-white shadow-lg"
+                            : "text-theme hover:bg-[color:var(--surface-hover)]"
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        {hasSubmenu && (
+                          <svg
+                            className={`w-4 h-4 transition-transform duration-200 ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Submenu */}
+                      {hasSubmenu && isOpen && (
+                        <div className="pl-4 space-y-1 animate-fadeIn">
+                          {item.submenu!.map((sub, j) => {
+                            const subPath = `/${item.path}${sub.path}`;
+                            const isSubActive = pathname.startsWith(subPath);
+                            return (
+                              <button
+                                key={j}
+                                type="button"
+                                onClick={() => {
+                                  router.push(subPath);
+                                  setMobileMenuOpen(false);
+                                  setOpenSubmenuIndex(null);
+                                }}
+                                className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
+                                  isSubActive
+                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)] font-semibold border-l-2 border-[color:var(--theme)]"
+                                    : "text-theme hover:bg-[color:var(--surface-hover)] hover:translate-x-1"
+                                }`}
+                              >
+                                {sub.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </nav>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       <main className="flex-1 relative">
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
-            <div className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain">
+            <div 
+              className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain"
+              style={{ 
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y'
+              }}
+            >
               {children}
             </div>
           </div>

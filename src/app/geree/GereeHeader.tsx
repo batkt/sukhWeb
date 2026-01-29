@@ -346,17 +346,18 @@ export default function GereeHeader({
                 )}
               </div>
             </div>
-        <p className="text-sm mt-1 text-subtle">
+        <p className="text-sm mt-1 text-subtle hidden md:block">
           Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
         </p>
 
-        <div className="mt-3 flex items-center justify-between gap-4 w-full">
-          <div className="flex justify-between items-center gap-2 w-full max-w-xl tabbar">
+        {/* Tabs - Responsive Grid Layout */}
+        <div className="mt-3 w-full">
+          <div className="grid grid-cols-2 md:flex md:flex-row gap-2 tabbar">
             {showResidents && (
             <button
               id="tab-residents"
               onClick={() => setActiveTab("residents")}
-              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
+              className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${
                 activeTab === "residents"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -369,7 +370,7 @@ export default function GereeHeader({
             <button
               id="tab-contracts"
               onClick={() => setActiveTab("contracts")}
-              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
+              className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${
                 activeTab === "contracts"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -382,7 +383,7 @@ export default function GereeHeader({
             <button
               id="tab-units"
               onClick={() => setActiveTab("units")}
-              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
+              className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${
                 activeTab === "units"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -395,7 +396,7 @@ export default function GereeHeader({
             <button
               id="tab-employees"
               onClick={() => setActiveTab("employees")}
-              className={`neu-btn px-5 py-2 text-sm font-normal rounded-2xl ${
+              className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${
                 activeTab === "employees"
                   ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                   : "hover:scale-105"
@@ -405,97 +406,99 @@ export default function GereeHeader({
             </button>
             )}
           </div>
+        </div>
 
-          {(activeTab === "contracts" || activeTab === "units") && (
-            <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-              {activeTab === "contracts" && (
-                <>
-                  {ortsOptions.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                        Орц:
-                      </label>
-                      <div className="w-26">
-                        <TusgaiZagvar
-                          value={selectedOrtsForContracts}
-                          onChange={(val) => setSelectedOrtsForContracts(val)}
-                          options={[
-                            { value: "", label: "Бүгд" },
-                            ...ortsOptions.map((o) => ({ value: o, label: o })),
-                          ]}
-                          className="w-full z-50 text-sm"
-                          placeholder="Сонгох..."
-                        />
-                      </div>
-                    </div>
-                  )}
-                  {davkharOptions.length > 0 && (
-                    <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                        Давхар:
-                      </label>
-                      <div className="w-26">
-                        <TusgaiZagvar
-                          value={selectedDawkhar}
-                          onChange={(val) => setSelectedDawkhar(val)}
-                          options={[
-                            { value: "", label: "Бүгд" },
-                            ...davkharOptions.map((d) => ({
-                              value: d,
-                              label: d,
-                            })),
-                          ]}
-                          className="w-full z-50 text-sm"
-                          placeholder="Сонгох..."
-                        />
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Төлөв:
-                    </label>
-                    <div className="w-38">
-                      <TusgaiZagvar
-                        value={statusFilter}
-                        onChange={(val) =>
-                          setStatusFilter(
-                            val as "all" | "active" | "cancelled"
-                          )
-                        }
-                        options={[
-                          { value: "all", label: "Бүгд" },
-                          { value: "active", label: "Идэвхтэй" },
-                          { value: "cancelled", label: "Цуцлагдсан" },
-                        ]}
-                        className="w-full z-50 text-sm"
-                        placeholder="Сонгох..."
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "units" && (
-                <>
-                  {/* Орц */}
+        {/* Filters - Desktop only */}
+        {(activeTab === "contracts" || activeTab === "units") && (
+          <div className="hidden md:flex items-center gap-2 flex-wrap mt-3">
+            {activeTab === "contracts" && (
+              <>
+                {ortsOptions.length > 0 && (
                   <div className="flex items-center gap-1.5">
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Орц:
                     </label>
                     <div className="w-26">
                       <TusgaiZagvar
-                        value={selectedOrts}
-                        onChange={(val) => setSelectedOrts(val)}
-                        options={ortsOptions.map((o) => ({
-                          value: o,
-                          label: o,
-                        }))}
-                        className="w-full z-50 text-sm rounded-2xl"
-                        placeholder="1"
+                        value={selectedOrtsForContracts}
+                        onChange={(val) => setSelectedOrtsForContracts(val)}
+                        options={[
+                          { value: "", label: "Бүгд" },
+                          ...ortsOptions.map((o) => ({ value: o, label: o })),
+                        ]}
+                        className="w-full z-50 text-sm"
+                        placeholder="Сонгох..."
                       />
                     </div>
                   </div>
+                )}
+                {davkharOptions.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                      Давхар:
+                    </label>
+                    <div className="w-26">
+                      <TusgaiZagvar
+                        value={selectedDawkhar}
+                        onChange={(val) => setSelectedDawkhar(val)}
+                        options={[
+                          { value: "", label: "Бүгд" },
+                          ...davkharOptions.map((d) => ({
+                            value: d,
+                            label: d,
+                          })),
+                        ]}
+                        className="w-full z-50 text-sm"
+                        placeholder="Сонгох..."
+                      />
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                    Төлөв:
+                  </label>
+                  <div className="w-38">
+                    <TusgaiZagvar
+                      value={statusFilter}
+                      onChange={(val) =>
+                        setStatusFilter(
+                          val as "all" | "active" | "cancelled"
+                        )
+                      }
+                      options={[
+                        { value: "all", label: "Бүгд" },
+                        { value: "active", label: "Идэвхтэй" },
+                        { value: "cancelled", label: "Цуцлагдсан" },
+                      ]}
+                      className="w-full z-50 text-sm"
+                      placeholder="Сонгох..."
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === "units" && (
+              <>
+                {/* Орц */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                    Орц:
+                  </label>
+                  <div className="w-26">
+                    <TusgaiZagvar
+                      value={selectedOrts}
+                      onChange={(val) => setSelectedOrts(val)}
+                      options={ortsOptions.map((o) => ({
+                        value: o,
+                        label: o,
+                      }))}
+                      className="w-full z-50 text-sm rounded-2xl"
+                      placeholder="1"
+                    />
+                  </div>
+                </div>
 
                   {/* Давхар: styled dropdown, no Бүгд */}
                   <div className="flex items-center gap-1.5">
@@ -544,131 +547,121 @@ export default function GereeHeader({
           )}
         </div>
 
-        {/* Mobile: filters on their own row, still right-aligned */}
+        {/* Mobile: filters in grid layout */}
         {(activeTab === "contracts" || activeTab === "units") && (
-          <div className="mt-2 flex md:hidden items-center justify-end gap-2 flex-wrap">
+          <div className="mt-3 md:hidden grid grid-cols-2 gap-2">
             {activeTab === "contracts" && (
               <>
                 {ortsOptions.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-theme/60 font-normal">
                       Орц:
                     </label>
-                    <div className="w-24">
-                      <TusgaiZagvar
-                        value={selectedOrtsForContracts}
-                        onChange={(val) => setSelectedOrtsForContracts(val)}
-                        options={[
-                          { value: "", label: "Бүгд" },
-                          ...ortsOptions.map((o) => ({ value: o, label: o })),
-                        ]}
-                        className="w-full z-50 text-sm"
-                        placeholder="Сонгох..."
-                      />
-                    </div>
-                  </div>
-                )}
-                {davkharOptions.length > 0 && (
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Давхар:
-                    </label>
-                    <div className="w-24">
-                      <TusgaiZagvar
-                        value={selectedDawkhar}
-                        onChange={(val) => setSelectedDawkhar(val)}
-                        options={[
-                          { value: "", label: "Бүгд" },
-                          ...davkharOptions.map((d) => ({ value: d, label: d })),
-                        ]}
-                        className="w-full z-50 text-sm"
-                        placeholder="Сонгох..."
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                    Төлөв:
-                  </label>
-                  <div className="w-24">
                     <TusgaiZagvar
-                      value={statusFilter}
-                      onChange={(val) =>
-                        setStatusFilter(val as "all" | "active" | "cancelled")
-                      }
+                      value={selectedOrtsForContracts}
+                      onChange={(val) => setSelectedOrtsForContracts(val)}
                       options={[
-                        { value: "all", label: "Бүгд" },
-                        { value: "active", label: "Идэвхтэй" },
-                        { value: "cancelled", label: "Цуцлагдсан" },
+                        { value: "", label: "Бүгд" },
+                        ...ortsOptions.map((o) => ({ value: o, label: o })),
                       ]}
-                      className="w-full z-50 text-sm"
+                      className="w-full z-50 text-xs"
                       placeholder="Сонгох..."
                     />
                   </div>
+                )}
+                {davkharOptions.length > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-theme/60 font-normal">
+                      Давхар:
+                    </label>
+                    <TusgaiZagvar
+                      value={selectedDawkhar}
+                      onChange={(val) => setSelectedDawkhar(val)}
+                      options={[
+                        { value: "", label: "Бүгд" },
+                        ...davkharOptions.map((d) => ({ value: d, label: d })),
+                      ]}
+                      className="w-full z-50 text-xs"
+                      placeholder="Сонгох..."
+                    />
+                  </div>
+                )}
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-xs text-theme/60 font-normal">
+                    Төлөв:
+                  </label>
+                  <TusgaiZagvar
+                    value={statusFilter}
+                    onChange={(val) =>
+                      setStatusFilter(val as "all" | "active" | "cancelled")
+                    }
+                    options={[
+                      { value: "all", label: "Бүгд" },
+                      { value: "active", label: "Идэвхтэй" },
+                      { value: "cancelled", label: "Цуцлагдсан" },
+                    ]}
+                    className="w-full z-50 text-xs"
+                    placeholder="Сонгох..."
+                  />
                 </div>
               </>
             )}
 
             {activeTab === "units" && (
               <>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-theme/60 font-normal">
                     Орц:
                   </label>
-                  <div className="w-24">
-                    <TusgaiZagvar
-                      value={selectedOrts}
-                      onChange={(val) => setSelectedOrts(val)}
-                      options={ortsOptions.map((o) => ({
-                        value: o,
-                        label: o,
-                      }))}
-                      className="w-full z-50 text-sm"
-                      placeholder="1"
-                    />
-                  </div>
+                  <TusgaiZagvar
+                    value={selectedOrts}
+                    onChange={(val) => setSelectedOrts(val)}
+                    options={ortsOptions.map((o) => ({
+                      value: o,
+                      label: o,
+                    }))}
+                    className="w-full z-50 text-xs"
+                    placeholder="1"
+                  />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  Давхар:
-                  <div className="w-24">
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedDawkhar}
-                      onChange={(e) => setSelectedDawkhar(e.target.value)}
-                      className="w-full px-2 py-1 rounded-xl border border-[color:var(--surface-border)] bg-transparent text-sm"
-                      placeholder=""
-                    />
-                  </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-theme/60 font-normal">
+                    Давхар:
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={selectedDawkhar}
+                    onChange={(e) => setSelectedDawkhar(e.target.value)}
+                    className="w-full px-2 py-1.5 rounded-xl border border-[color:var(--surface-border)] bg-transparent text-xs"
+                    placeholder=""
+                  />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                <div className="flex flex-col gap-1 col-span-2">
+                  <label className="text-xs text-theme/60 font-normal">
                     Төлөв:
                   </label>
-                  <div className="w-24">
-                    <TusgaiZagvar
-                      value={unitStatusFilter}
-                      onChange={(val) =>
-                        setUnitStatusFilter(
-                          (val as "all" | "occupied" | "free") || "all",
-                        )
-                      }
-                      options={[
-                        { value: "occupied", label: "Идэвхтэй" },
-                        { value: "free", label: "Идэвхгүй" },
-                      ]}
-                      className="w-full z-50 text-sm"
-                      placeholder="Төлөв"
-                    />
-                  </div>
+                  <TusgaiZagvar
+                    value={unitStatusFilter}
+                    onChange={(val) =>
+                      setUnitStatusFilter(
+                        (val as "all" | "occupied" | "free") || "all",
+                      )
+                    }
+                    options={[
+                      { value: "occupied", label: "Идэвхтэй" },
+                      { value: "free", label: "Идэвхгүй" },
+                    ]}
+                    className="w-full z-50 text-xs"
+                    placeholder="Төлөв"
+                  />
                 </div>
               </>
             )}
           </div>
         )}
         </div>
-      </div>
+
       {/* Mobile / small screens: keep actions below as before */}
       <div className="flex gap-2 flex-wrap px-4 md:hidden">
         {activeTab === "residents" && (

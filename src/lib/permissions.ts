@@ -69,30 +69,8 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
       { id: "zogsool.orshinSuugch", label: "Оршин суугч", description: "Оршин суугчийн мэдээлэл" },
     ],
   },
-  {
-    id: "tokhirgoo",
-    label: "Тохиргоо",
-    description: "Системийн тохиргоо харах, засах эрх",
-    children: [
-      { id: "tokhirgoo.barilga", label: "Барилгийн тохиргоо", description: "Барилгийн тохиргоо" },
-      { id: "tokhirgoo.ashiglaltiinZardal", label: "Ашиглалтын зардал", description: "Ашиглалтын зардал" },
-      { id: "tokhirgoo.baaz", label: "Бааз", description: "Бааз тохиргоо" },
-      { id: "tokhirgoo.dans", label: "Данс", description: "Данс тохиргоо" },
-      { id: "tokhirgoo.ebarimt", label: "Э-баримт", description: "Э-баримт тохиргоо" },
-      { id: "tokhirgoo.email", label: "И-мэйл", description: "И-мэйл тохиргоо" },
-      { id: "tokhirgoo.medegdel", label: "Мэдэгдэл", description: "Мэдэгдэл тохиргоо" },
-      { id: "tokhirgoo.nemelt", label: "Нэмэлт", description: "Нэмэлт тохиргоо" },
-      { id: "tokhirgoo.tuslamj", label: "Тусламж", description: "Тусламж тохиргоо" },
-      { id: "tokhirgoo.utas", label: "Утас", description: "Утасны тохиргоо" },
-      { id: "tokhirgoo.zogsool", label: "Зогсоол", description: "Зогсоолын тохиргоо" },
-      { id: "tokhirgoo.zogsoolBurtgekh", label: "Зогсоол бүртгэх", description: "Зогсоол бүртгэх" },
-      { id: "tokhirgoo.app", label: "Апп", description: "Апп тохиргоо" },
-      { id: "tokhirgoo.nevtreltiinTuukh", label: "Нэвтрэлтийн түүх", description: "Нэвтрэлтийн түүх" },
-      { id: "tokhirgoo.zassanTuukh", label: "Зассан түүх", description: "Зассан түүх" },
-      { id: "tokhirgoo.ustsanTuukh", label: "Устсан түүх", description: "Устсан түүх" },
-    ],
-  },
 ];
+
 
 // Helper function to get all permission IDs (flat list)
 export function getAllPermissionIds(): string[] {

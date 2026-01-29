@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/useAuth";
-import GereeLayout from "./GereeLayout";
 import ContractsTable from "./ContractsTable";
 import { useGereeContext } from "./GereeContext";
 import { useTourSteps } from "@/lib/useTourSteps";
@@ -19,25 +18,23 @@ export default function GereePage() {
   useRegisterTourSteps("/geree", gereeTourSteps);
 
   return (
-    <GereeLayout activeTab="contracts">
-      <ContractsTable
-        ajiltan={ajiltan}
-        selectedContracts={state.selectedContracts}
-        setSelectedContracts={state.setSelectedContracts}
-        selectAllContracts={state.selectAllContracts}
-        setSelectAllContracts={state.setSelectAllContracts}
-        currentContracts={data.currentContracts}
-        totalContracts={data.totalContracts}
-        startIndex={data.startIndex}
-        visibleColumns={state.visibleColumns}
-        renderCellValue={data.renderCellValue}
-        toggleSortFor={actions.toggleSortFor}
-        sortKey={state.sortKey}
-        sortOrder={state.sortOrder}
-        handleEdit={actions.handleEdit}
-        handlePreviewContractTemplate={actions.handlePreviewContractTemplate}
-        handlePreviewInvoice={actions.handlePreviewInvoice}
-      />
-    </GereeLayout>
+    <ContractsTable
+      ajiltan={ajiltan}
+      selectedContracts={state.selectedContracts}
+      setSelectedContracts={state.setSelectedContracts}
+      selectAllContracts={state.selectAllContracts}
+      setSelectAllContracts={state.setSelectAllContracts}
+      currentContracts={data.currentContracts}
+      totalContracts={data.totalContracts}
+      startIndex={data.startIndex}
+      visibleColumns={state.visibleColumns}
+      renderCellValue={data.renderCellValue}
+      toggleSortFor={actions.toggleSortFor}
+      sortKey={state.sortKey}
+      sortOrder={state.sortOrder}
+      handleEdit={actions.handleEdit}
+      handlePreviewContractTemplate={actions.handlePreviewContractTemplate}
+      handlePreviewInvoice={actions.handlePreviewInvoice}
+    />
   );
 }
