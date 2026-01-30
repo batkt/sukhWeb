@@ -1525,9 +1525,25 @@ export default function DansniiKhuulga() {
           message.success("Төлөлт амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
-          // Refresh the history data - use filter to match any key containing nekhemjlekhiinTuukh
+
+          // Instant UI Update: Clear local caches for this contract so they refetch immediately
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            requestedGereeIdsRef.current.delete(gid);
+            setPaidSummaryByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          // Global Revalidation: Refresh history, contracts, and residents
           mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/nekhemjlekhiinTuukh" ||
+                key[0] === "/geree" ||
+                key[0] === "/orshinSuugch"),
             undefined,
             { revalidate: true }
           );
@@ -1554,9 +1570,25 @@ export default function DansniiKhuulga() {
           message.success("Гүйлгээ амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
-          // Refresh the history data - use filter to match any key containing nekhemjlekhiinTuukh
+
+          // Instant UI Update: Clear local caches for this contract so they refetch immediately
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            requestedGereeIdsRef.current.delete(gid);
+            setPaidSummaryByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
+
+          // Global Revalidation: Refresh history, contracts, and residents
           mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/nekhemjlekhiinTuukh" ||
+                key[0] === "/geree" ||
+                key[0] === "/orshinSuugch"),
             undefined,
             { revalidate: true }
           );
