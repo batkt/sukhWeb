@@ -911,8 +911,9 @@ export default function DansniiKhuulga() {
         minWidth: 140,
       },
       { key: "tulbur", label: "Төлбөр", align: "center", minWidth: 110 },
-      { key: "paid", label: "Төлсөн дүн", align: "center", minWidth: 110 },
+
       { key: "uldegdel", label: "Үлдэгдэл", align: "center", minWidth: 110 },
+      { key: "paid", label: "Гүйцэтгэл", align: "center", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
       {
         key: "lastLog",
@@ -1533,9 +1534,9 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Only mark as paid when transaction type is "busad" (Төлөлт)
+      // Only mark as paid when transaction type is "tulult" (Төлөлт)
       // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
-      if (data.type === "busad") {
+      if (data.type === "tulult") {
         // Payment: mark invoices as paid
         const response = await uilchilgee(token).post("/markInvoicesAsPaid", {
           baiguullagiinId: ajiltan.baiguullagiinId,
@@ -2458,7 +2459,7 @@ export default function DansniiKhuulga() {
                                 const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>
-                                    {formatNumber(paid)} ₮
+                                    {formatNumber(paid, 2)} ₮
                                   </td>
                                 );
                               }
@@ -2471,10 +2472,16 @@ export default function DansniiKhuulga() {
                                   "";
                                 const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                                 const remaining = total - paid;
+                                // Green for negative (overpayment/credit), red for positive (debt)
+                                const colorClass = remaining < 0
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : remaining > 0
 
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>
-                                    {formatNumber(remaining)} ₮
+                                    <span className={(remaining < 0 ? "!text-emerald-600 dark:!text-emerald-400" : remaining > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme") + " font-medium"}>
+                                      {formatNumber(remaining, 2)} ₮
+                                    </span>
                                   </td>
                                 );
                               }
@@ -2604,14 +2611,14 @@ export default function DansniiKhuulga() {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           return sum + Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
                         }, 0);
-                        content = <span className="text-theme">{formatNumber(total, 0)} ₮</span>;
+                        content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "paid") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
                           const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + paid;
                         }, 0);
-                        content = <span className="text-emerald-600 dark:text-emerald-400">{formatNumber(total, 0)} ₮</span>;
+                        content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "uldegdel") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           const tulbur = Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
@@ -2619,13 +2626,13 @@ export default function DansniiKhuulga() {
                           const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + (tulbur - tulsun);
                         }, 0);
-                        content = <span className={total >= 0 ? "text-rose-500" : "text-emerald-600"}>{formatNumber(total, 0)} ₮</span>;
+                        content = <span className={total < 0 ? "!text-emerald-600 dark:!text-emerald-400" : total > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>{formatNumber(total, 2)} ₮</span>;
                       }
 
                       return (
                         <td
                           key={col.key}
-                          className={`p-1.5 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
+                          className={`p-1.5 whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                           style={{
                             ...(col.sticky ? { left: stickyOffsets[col.key] } : {}),
                             minWidth: col.minWidth
@@ -2740,6 +2747,16 @@ export default function DansniiKhuulga() {
         token={token}
         baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
         barilgiinId={selectedBuildingId || barilgiinId || null}
+        onRefresh={() => {
+          // Clear cache and revalidate all relevant data
+          mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
+          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulsunAvlaga", undefined, { revalidate: true });
+          mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
+
+          // Clear payment summary state to force re-fetch
+          setPaidSummaryByGereeId({});
+          requestedGereeIdsRef.current.clear();
+        }}
       />
 
 

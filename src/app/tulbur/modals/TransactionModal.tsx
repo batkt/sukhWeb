@@ -14,7 +14,7 @@ interface TransactionModalProps {
 }
 
 export interface TransactionData {
-  type: "voucher" | "avlaga" | "turgul" | "ashiglalt" | "busad";
+  type: "voucher" | "avlaga" | "turgul" | "ashiglalt" | "tulult";
   date: string;
   amount: number;
   residentId?: string;
@@ -125,7 +125,7 @@ export default function TransactionModal({
                 {[
                   { value: "avlaga", label: "Авлага" },
                   { value: "ashiglalt", label: "Ашиглалт" },
-                  { value: "busad", label: "Бусад" },
+                  { value: "tulult", label: "Төлөлт" },
                 ].map((option) => (
                   <button
                     key={option.value}

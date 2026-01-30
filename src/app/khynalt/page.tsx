@@ -223,13 +223,13 @@ export default function Khynalt() {
   const { data: incomeData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-          "/nekhemjlekhiinTuukh",
-          token,
-          ajiltan.baiguullagiinId,
-          effectiveBarilgiinId,
-          rangeStart,
-          rangeEnd,
-        ]
+        "/nekhemjlekhiinTuukh",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const startIso = `${start}T00:00:00.000Z`;
@@ -255,10 +255,10 @@ export default function Khynalt() {
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-          `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
-          token,
-          effectiveBarilgiinId,
-        ]
+        `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
+        token,
+        effectiveBarilgiinId,
+      ]
       : null,
     async ([url, tkn, barId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -272,10 +272,10 @@ export default function Khynalt() {
   const { data: cancelledData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-          `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
-          token,
-          effectiveBarilgiinId,
-        ]
+        `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
+        token,
+        effectiveBarilgiinId,
+      ]
       : null,
     async ([url, tkn, barId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -284,6 +284,30 @@ export default function Khynalt() {
       return resp.data;
     },
     { revalidateOnFocus: false },
+  );
+
+  // Fetch building-wide payment summary for the selected period
+  const { data: buildingPaymentSummary } = useSWR(
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
+      ? [
+        "/tulsunSummary",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
+      : null,
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post(url, {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
   );
 
   // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
@@ -373,6 +397,20 @@ export default function Khynalt() {
     list.forEach((it) => {
       const amount =
         Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+
+
+      let tulsunInvoice = 0;
+      if (Array.isArray(it.paymentHistory)) {
+        tulsunInvoice = it.paymentHistory.reduce((s: number, p: any) => s + (Number(p.dun) || 0), 0);
+      } else if (isPaidLike(it)) {
+        tulsunInvoice = amount;
+      }
+
+
+      const uldegdelInvoice = it.uldegdel != null
+        ? Number(it.uldegdel)
+        : (isPaidLike(it) ? 0 : amount - tulsunInvoice);
+
       const invoiceKeys: string[] = [];
       const osIdRaw = String(it?.orshinSuugchId || "");
       if (osIdRaw) invoiceKeys.push(`id|${osIdRaw}`);
@@ -395,16 +433,16 @@ export default function Khynalt() {
         }
       }
 
-      const isPaid = isPaidLike(it);
-      const isUnpaid = isUnpaidLike(it);
 
-      if (isPaid) {
-        paid += amount;
+      if (tulsunInvoice > 0) {
         if (osId) paidResidents.add(osId);
-      } else if (isUnpaid) {
-        unpaid += amount;
+      }
+      if (uldegdelInvoice > 0) {
         if (osId) unpaidResidents.add(osId);
       }
+
+      paid += tulsunInvoice;
+      unpaid += Math.max(0, uldegdelInvoice);
 
       const barilga =
         residentById.get(osId)?.barilgiinId ||
@@ -418,11 +456,17 @@ export default function Khynalt() {
         const d = new Date(created);
         const key = buildLabel(d);
         const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
-        if (isPaid) curr.paid += amount;
-        else if (isUnpaid) curr.unpaid += amount;
+        curr.paid += tulsunInvoice;
+        curr.unpaid += uldegdelInvoice;
         seriesMap.set(key, curr);
       }
     });
+
+
+    const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
+
+    const totalInvoiceAmount = list.reduce((s, it) => s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0), 0);
+    const finalUnpaid = totalInvoiceAmount - finalPaid;
 
     const paidArr: number[] = [];
     const unpaidArr: number[] = [];
@@ -433,7 +477,7 @@ export default function Khynalt() {
     });
 
     return {
-      incomeTotals: { paid, unpaid },
+      incomeTotals: { paid: finalPaid, unpaid: finalUnpaid },
       incomeByBuilding: byBld,
       residentsPaidCount: paidResidents.size,
       residentsUnpaidCount: unpaidResidents.size,
@@ -609,20 +653,20 @@ export default function Khynalt() {
     filteredContracts.forEach((g: any) => {
       // Check if contract is cancelled
       const status = String(g?.tuluv || g?.status || "").trim();
-      const isCancelled = status === "Цуцалсан" || 
-                         status.toLowerCase() === "цуцалсан" || 
-                         status === "tsutlsasan" || 
-                         status.toLowerCase() === "tsutlsasan" ||
-                         status === "Идэвхгүй" ||
-                         status.toLowerCase() === "идэвхгүй";
-      
+      const isCancelled = status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
+
       // Skip cancelled contracts
       if (isCancelled) return;
-      
+
       // Check if contract is expired
       const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
       const isExpired = end ? end < now : false;
-      
+
       // Count only active contracts (not cancelled and not expired)
       if (!isExpired) active += 1;
     });
@@ -659,12 +703,12 @@ export default function Khynalt() {
   const cancelledGerees = useMemo(() => {
     return filteredContracts.filter((c: any) => {
       const status = String(c?.tuluv || c?.status || "").trim();
-      return status === "Цуцалсан" || 
-             status.toLowerCase() === "цуцалсан" || 
-             status === "tsutlsasan" || 
-             status.toLowerCase() === "tsutlsasan" ||
-             status === "Идэвхгүй" ||
-             status.toLowerCase() === "идэвхгүй";
+      return status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan" ||
+        status === "Идэвхгүй" ||
+        status.toLowerCase() === "идэвхгүй";
     });
   }, [filteredContracts]);
 
@@ -729,9 +773,9 @@ export default function Khynalt() {
   const totalTransactions =
     incomeSeries.paid.length > 0
       ? incomeSeries.paid.reduce(
-          (sum, val, i) => sum + val + (incomeSeries.unpaid[i] || 0),
-          0,
-        )
+        (sum, val, i) => sum + val + (incomeSeries.unpaid[i] || 0),
+        0,
+      )
       : 0;
 
   // Check permissions for cards
@@ -808,9 +852,8 @@ export default function Khynalt() {
           </h1>
 
           <div
-            className={`transition-all duration-700 ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
+            className={`transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
           >
             <div
               className="neu-panel rounded-2xl border border-white/10 shadow-lg"
@@ -835,11 +878,10 @@ export default function Khynalt() {
             <div
               key={index}
               onClick={card.onClick}
-              className={`neu-panel rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${
-                mounted
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
-              }`}
+              className={`neu-panel rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+                }`}
               style={{
                 transitionDelay: `${card.delay}ms`,
                 willChange: "opacity, box-shadow",
@@ -864,9 +906,8 @@ export default function Khynalt() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
+            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
             style={{
               transitionDelay: "600ms",
               willChange: "opacity, box-shadow",
@@ -910,9 +951,8 @@ export default function Khynalt() {
 
           {/* Overdue receivables 2+ months */}
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
+            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
             style={{
               transitionDelay: "700ms",
               willChange: "opacity, box-shadow",
@@ -971,9 +1011,8 @@ export default function Khynalt() {
 
           {/* Cancelled contract receivables */}
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
+            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              }`}
             style={{
               transitionDelay: "800ms",
               willChange: "opacity, box-shadow",
@@ -1035,9 +1074,8 @@ export default function Khynalt() {
 
         {/* Summary from Tailan */}
         <div
-          className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
+          className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
           style={{ transitionDelay: "1000ms" }}
         >
           <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">

@@ -14,6 +14,7 @@ interface HistoryModalProps {
   token: string | null;
   baiguullagiinId: string | null;
   barilgiinId?: string | null;
+  onRefresh?: () => void;
 }
 
 interface LedgerEntry {
@@ -28,6 +29,7 @@ interface LedgerEntry {
   tailbar?: string;
   burtgesenOgnoo?: string;
   _id?: string;
+  sourceCollection?: "nekhemjlekhiinTuukh" | "gereeniiTulsunAvlaga" | "gereeniiTulukhAvlaga";
 }
 
 export default function HistoryModal({
@@ -37,11 +39,14 @@ export default function HistoryModal({
   token,
   baiguullagiinId,
   barilgiinId,
+  onRefresh,
 }: HistoryModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LedgerEntry[]>([]);
   const [dateRange, setDateRange] = useState<[string | null, string | null] | undefined>([null, null]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string; type: string }>({ show: false, id: "", type: "" });
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   useModalHotkeys({
     isOpen: show,
@@ -54,20 +59,41 @@ export default function HistoryModal({
 
     setLoading(true);
     try {
-      const resp = await uilchilgee(token).get("/nekhemjlekhiinTuukh", {
-        params: {
-          baiguullagiinId,
-          barilgiinId: barilgiinId || null,
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 2000,
-        },
-      });
+      const commonParams = {
+        baiguullagiinId: baiguullagiinId || undefined,
+        barilgiinId: barilgiinId || null,
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 5000,
+      };
 
-      const rawList = Array.isArray(resp.data?.jagsaalt)
-        ? resp.data.jagsaalt
-        : Array.isArray(resp.data)
-          ? resp.data
-          : [];
+      // Fetch all necessary data concurrently
+      const [historyResp, paymentResp, receivableResp] = await Promise.all([
+        uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
+          params: {
+            ...commonParams,
+            query: {
+              baiguullagiinId: baiguullagiinId || undefined,
+            },
+            _t: Date.now(),
+          },
+        }),
+        uilchilgee(token || undefined).get("/gereeniiTulsunAvlaga", {
+          params: {
+            ...commonParams,
+            _t: Date.now(),
+          },
+        }),
+        uilchilgee(token || undefined).get("/gereeniiTulukhAvlaga", {
+          params: {
+            ...commonParams,
+            _t: Date.now(),
+          },
+        })
+      ]);
+
+      const rawList = Array.isArray(historyResp.data?.jagsaalt) ? historyResp.data.jagsaalt : [];
+      const paymentRecords = Array.isArray(paymentResp.data?.jagsaalt) ? paymentResp.data.jagsaalt : [];
+      const receivableRecords = Array.isArray(receivableResp.data?.jagsaalt) ? receivableResp.data.jagsaalt : [];
 
       // Extract all possible identifiers from the contract/resident object
       const contractId = String(contract?._id || "").trim();
@@ -140,7 +166,36 @@ export default function HistoryModal({
         return false;
       });
 
-      console.log("📊 Filter result:", { totalItems: rawList.length, matchedItems: contractItems.length });
+      // Filter payment records for this contract
+      const matchedPayments = paymentRecords.filter((rec: any) => {
+        const recGereeId = String(rec?.gereeniiId || "").trim();
+        const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
+        const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
+
+        if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
+        if (residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
+        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
+        return false;
+      });
+
+      // Filter receivable records for this contract
+      const matchedReceivables = receivableRecords.filter((rec: any) => {
+        const recGereeId = String(rec?.gereeniiId || "").trim();
+        const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
+        const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
+
+        if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
+        if (residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
+        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
+        return false;
+      });
+
+      console.log("📊 Filter result:", {
+        totalInvoices: rawList.length,
+        matchedInvoices: contractItems.length,
+        matchedPayments: matchedPayments.length,
+        matchedReceivables: matchedReceivables.length
+      });
 
       // Log first item for debugging
       if (contractItems.length > 0) {
@@ -187,7 +242,8 @@ export default function HistoryModal({
                 ajiltan,
                 khelber: "Нэхэмжлэх",
                 tailbar: z.ner,
-                burtgesenOgnoo: item.createdAt || "-"
+                burtgesenOgnoo: item.createdAt || "-",
+                sourceCollection: "nekhemjlekhiinTuukh"
               });
             }
           }
@@ -213,7 +269,8 @@ export default function HistoryModal({
               ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
               khelber: "Авлага",
               tailbar: g.tailbar || "Гараар нэмсэн авлага",
-              burtgesenOgnoo: g.createdAt || item.createdAt || "-"
+              burtgesenOgnoo: g.createdAt || item.createdAt || "-",
+              sourceCollection: "nekhemjlekhiinTuukh"
             });
           }
           if (paid > 0) {
@@ -228,16 +285,145 @@ export default function HistoryModal({
               ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
               khelber: g.khelber || "Төлбөр",
               tailbar: g.tailbar || "-",
-              burtgesenOgnoo: g.createdAt || item.createdAt || "-"
+              burtgesenOgnoo: g.createdAt || item.createdAt || "-",
+              sourceCollection: "nekhemjlekhiinTuukh"
             });
           }
         });
+        // 3. Process Standalone Transactions (Top-level item is the transaction)
+        // If item has 'turul' and isn't just a container for zardluud/guilgeenuud
+        // The user payload showed: turul: "ashiglalt", dun: 200, tulukhDun: 200, tailbar: "a"
+        // Process standalone transaction types - these are direct transaction records
+        if (item.turul && (item.turul === "ashiglalt" || item.turul === "avlaga" || item.turul === "tulult" || item.turul === "voucher" || item.turul === "turgul")) {
+          const type = item.turul;
+          const amt = Number(item.tulukhDun || item.dun || 0);
+          const tulsunAmt = Number(item.tulsunDun || 0);
 
-        // 3. Check for main Invoice Payments (if not covered by guilgeenuud)
-        // detailed guilgeenuud is preferred, but simple 'tulsunDun' on invoice object exists too.
-        // To avoid double counting, we rely on guilgeenuud if present.
-        // Fallback: if tulsunDun > 0 at invoice level AND no detailed payments found?
-        // (Simplified: assuming reliable detailed history is better, but let's stick to flattened items)
+          if (type === "tulult") {
+            // Payment type - uses tulsunDun or tulukhDun
+            const paymentAmt = tulsunAmt > 0 ? tulsunAmt : Math.abs(amt);
+            if (paymentAmt > 0) {
+              flatLedger.push({
+                _id: item._id,
+                ognoo: itemDate,
+                ner: "Төлөлт",
+                tulukhDun: 0,
+                tulsunDun: paymentAmt,
+                uldegdel: 0,
+                isSystem: false,
+                ajiltan,
+                khelber: "Төлбөр",
+                tailbar: item.tailbar || "-",
+                burtgesenOgnoo: item.createdAt || "-",
+                sourceCollection: "nekhemjlekhiinTuukh"
+              });
+            }
+          } else if (type === "ashiglalt") {
+            // Ashiglalt type - like payment, reduces balance
+            const paymentAmt = tulsunAmt > 0 ? tulsunAmt : Math.abs(amt);
+            if (paymentAmt > 0) {
+              flatLedger.push({
+                _id: item._id,
+                ognoo: itemDate,
+                ner: "Ашиглалт",
+                tulukhDun: 0,
+                tulsunDun: paymentAmt,
+                uldegdel: 0,
+                isSystem: false,
+                ajiltan,
+                khelber: "Төлбөр",
+                tailbar: item.tailbar || "Ашиглалт",
+                burtgesenOgnoo: item.createdAt || "-",
+                sourceCollection: "nekhemjlekhiinTuukh"
+              });
+            }
+          } else {
+            // avlaga, turgul, voucher - adds to balance
+            if (amt > 0) {
+              let name = "Гүйлгээ";
+              if (type === "avlaga") name = "Авлага";
+              if (type === "turgul") name = "Торгууль";
+              if (type === "voucher") name = "Voucher";
+
+              const desc = item.tailbar || name;
+
+              flatLedger.push({
+                _id: item._id,
+                ognoo: itemDate,
+                ner: name,
+                tulukhDun: amt,
+                tulsunDun: 0,
+                uldegdel: 0,
+                isSystem: false,
+                ajiltan,
+                khelber: "Авлага",
+                tailbar: desc,
+                burtgesenOgnoo: item.createdAt || "-",
+                sourceCollection: "nekhemjlekhiinTuukh"
+              });
+            }
+          }
+        }
+      });
+
+      // Process receivable records from gereeniiTulukhAvlaga
+      matchedReceivables.forEach((rec: any) => {
+        const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
+        const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
+        const amt = Number(rec.tulukhDun || rec.undsenDun || 0);
+
+        if (amt > 0) {
+          flatLedger.push({
+            _id: rec._id,
+            ognoo: recDate,
+            ner: rec.zardliinNer || "Авлага",
+            tulukhDun: amt,
+            tulsunDun: 0,
+            uldegdel: 0,
+            isSystem: false,
+            ajiltan,
+            khelber: "Авлага",
+            tailbar: rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага",
+            burtgesenOgnoo: rec.createdAt || "-",
+            sourceCollection: "gereeniiTulukhAvlaga"
+          });
+        }
+      });
+
+      // Process payment records from gereeniiTulsunAvlaga
+      matchedPayments.forEach((payment: any) => {
+        const paymentDate = payment.ognoo || payment.createdAt || new Date().toISOString();
+        const ajiltan = payment.guilgeeKhiisenAjiltniiNer || "Admin";
+        const tulsunDun = Number(payment.tulsunDun || 0);
+        const turul = payment.turul || "tulbur";
+
+        // Determine the name based on type
+        let name = "Төлөлт";
+        let khelber = "Төлбөр";
+        if (turul === "ashiglalt" || turul === "Ашиглалт") {
+          name = "Ашиглалт";
+          khelber = "Төлбөр";
+        } else if (turul === "tulult" || turul === "Төлөлт" || turul === "tulbur") {
+          name = "Төлөлт";
+          khelber = "Төлбөр";
+        }
+
+        if (tulsunDun > 0) {
+          flatLedger.push({
+            _id: payment._id,
+            ognoo: paymentDate,
+            ner: name,
+            tulukhDun: 0,
+            tulsunDun: tulsunDun,
+            uldegdel: 0,
+            isSystem: false,
+            ajiltan,
+            khelber,
+            tailbar: payment.tailbar || payment.zardliinNer || name,
+            burtgesenOgnoo: payment.createdAt || "-",
+            sourceCollection: "gereeniiTulsunAvlaga"
+          });
+        }
       });
 
       // Sort Chronologically: Oldest -> Newest
@@ -245,10 +431,10 @@ export default function HistoryModal({
 
       // Calculate Running Balance
       let runningBalance = contractItems[0]?.ekhniiUldegdel ? Number(contractItems[0].ekhniiUldegdel) : 0; // Or 0 if not reliable
-      // If we want accurate history, we might need a trusted starting balance. 
+      // If we want accurate history, we might need a trusted starting balance.
       // For now, start from 0 or assume the list covers relevant history.
       // If the API returns a 'paginated' list, the running balance might be off unless we have a 'startBalance' for the page.
-      // Let's assume 'contract.uldegdel' is the FINAL balance. We can calculate backwards? 
+      // Let's assume 'contract.uldegdel' is the FINAL balance. We can calculate backwards?
       // Or just forward if we have full history.
       // Given the request "2026.01.30 hog 8347 ... uldegdel 9347", forward calculation is standard.
 
@@ -269,6 +455,57 @@ export default function HistoryModal({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteClick = (id: string, type: string) => {
+    setDeleteConfirm({ show: true, id, type });
+  };
+
+  const handleDeleteConfirm = async () => {
+    const { id } = deleteConfirm;
+    const entry = data.find(e => e._id === id);
+    const source = entry?.sourceCollection || "nekhemjlekhiinTuukh";
+
+    setDeleteConfirm({ show: false, id: "", type: "" });
+
+    try {
+      const endpoint = source === "gereeniiTulsunAvlaga"
+        ? "/gereeniiTulsunAvlaga"
+        : source === "gereeniiTulukhAvlaga"
+          ? "/gereeniiTulukhAvlaga"
+          : "/nekhemjlekhiinTuukh";
+
+      const response = await uilchilgee(token || undefined).delete(`${endpoint}/${id}`, {
+        params: {
+          baiguullagiinId: baiguullagiinId || undefined,
+        }
+      });
+
+      if (response.data.success || response.status === 200 || response.status === 204) {
+        // Show success message
+        setDeleteSuccess(true);
+        setTimeout(() => setDeleteSuccess(false), 2000);
+
+        // Refresh local data
+        fetchData();
+
+        // Notify parent to refresh (essential for updating totals/balances)
+        // @ts-ignore
+        if (onRefresh) {
+          // @ts-ignore
+          onRefresh();
+        }
+      } else {
+        alert("Устгаж чадсангүй");
+      }
+    } catch (error) {
+      console.error("Delete failed:", error);
+      alert("Алдаа гарлаа: " + (error as any).message);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ show: false, id: "", type: "" });
   };
 
   useEffect(() => {
@@ -297,7 +534,7 @@ export default function HistoryModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-2 sm:p-4">
+      <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-2 sm:p-4 overflow-y-auto custom-scrollbar">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -311,7 +548,7 @@ export default function HistoryModal({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1200px] min-h-[70vh] max-h-[95vh] sm:max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
+          className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Section */}
@@ -389,6 +626,7 @@ export default function HistoryModal({
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
                   <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase w-10">Үйлдэл</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -420,13 +658,13 @@ export default function HistoryModal({
                           {row.ajiltan}
                         </td>
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {row.tulukhDun > 0 ? formatNumber(row.tulukhDun) : "-"}
+                          {row.tulukhDun > 0 ? formatNumber(row.tulukhDun, 2) : "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right whitespace-nowrap">
-                          {row.tulsunDun > 0 ? formatNumber(row.tulsunDun) : "-"}
+                        <td className="py-2 px-2 text-right whitespace-nowrap text-slate-700 dark:text-slate-200">
+                          {row.tulsunDun > 0 ? formatNumber(row.tulsunDun, 2) : "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs font-bold text-rose-500 dark:text-rose-400 text-right whitespace-nowrap">
-                          {formatNumber(row.uldegdel)}
+                        <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
+                          {formatNumber(row.uldegdel, 2)}
                         </td>
                         <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
                           {row.khelber || "-"}
@@ -435,7 +673,26 @@ export default function HistoryModal({
                           {row.tailbar || "-"}
                         </td>
                         <td className="py-2 px-2 text-xs text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
-                          {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-" ? row.burtgesenOgnoo.split("T")[0].replace(/-/g, ".") : "-"}
+                          {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
+                            ? new Date(row.burtgesenOgnoo).toLocaleString("mn-MN", { hour12: false })
+                            : "-"}
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-")) {
+                                handleDeleteClick(row._id, row.ner || row.khelber || "");
+                              }
+                            }}
+                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
+                            title={row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "Устгах" : "Устгах боломжгүй"}
+                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-")}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 !text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -443,13 +700,13 @@ export default function HistoryModal({
                     <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
                       <td colSpan={2} className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right">Нийт</td>
                       <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulukhDun, 0))}
+                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulukhDun, 0), 2)}
                       </td>
-                      <td className="py-2 px-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 text-right whitespace-nowrap">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulsunDun, 0))}
+                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
+                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulsunDun, 0), 2)}
                       </td>
-                      <td className="py-2 px-2 text-xs font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
-                        {filteredData.length > 0 ? formatNumber(filteredData[0].uldegdel) : "-"}
+                      <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${filteredData.length > 0 && filteredData[0].uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : filteredData.length > 0 && filteredData[0].uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
+                        {filteredData.length > 0 ? formatNumber(filteredData[0].uldegdel, 2) : "-"}
                       </td>
                       <td colSpan={3}></td>
                     </tr>
@@ -474,6 +731,81 @@ export default function HistoryModal({
               Хэвлэх
             </button>
           </div>
+
+          {/* Delete Confirmation Modal */}
+          <AnimatePresence>
+            {deleteConfirm.show && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[100000] flex items-center justify-center bg-black/50 rounded-2xl sm:rounded-3xl"
+                onClick={handleDeleteCancel}
+              >
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="text-center">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 !text-red-500 dark:!text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Устгах уу?</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                      Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={handleDeleteCancel}
+                        className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        Болих
+                      </button>
+                      <button
+                        onClick={handleDeleteConfirm}
+                        className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium text-white transition-colors"
+                      >
+                        Устгах
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Success Overlay */}
+          <AnimatePresence>
+            {deleteSuccess && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-[100001] flex items-center justify-center bg-black/30 rounded-2xl sm:rounded-3xl"
+              >
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.8, opacity: 0 }}
+                  className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl"
+                >
+                  <div className="text-center">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-lg font-bold text-slate-800 dark:text-white">Амжилттай устгалаа!</p>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       </div >
     </AnimatePresence >
