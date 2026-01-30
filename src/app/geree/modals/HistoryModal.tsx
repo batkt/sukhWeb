@@ -29,6 +29,7 @@ interface LedgerEntry {
   tailbar?: string;
   burtgesenOgnoo?: string;
   _id?: string;
+  parentInvoiceId?: string;
   sourceCollection?: "nekhemjlekhiinTuukh" | "gereeniiTulsunAvlaga" | "gereeniiTulukhAvlaga";
 }
 
@@ -233,6 +234,7 @@ export default function HistoryModal({
             if (amt > 0) {
               flatLedger.push({
                 _id: z._id || `z-${Math.random()}`,
+                parentInvoiceId: item._id,
                 ognoo: itemDate,
                 ner: z.ner,
                 tulukhDun: amt,
@@ -260,6 +262,7 @@ export default function HistoryModal({
           if (amt > 0) {
             flatLedger.push({
               _id: g._id || `g-charge-${Math.random()}`,
+              parentInvoiceId: item._id,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
               ner: "Авлага",
               tulukhDun: amt,
@@ -469,17 +472,28 @@ export default function HistoryModal({
     setDeleteConfirm({ show: false, id: "", type: "" });
 
     try {
+      let response;
       const endpoint = source === "gereeniiTulsunAvlaga"
         ? "/gereeniiTulsunAvlaga"
         : source === "gereeniiTulukhAvlaga"
           ? "/gereeniiTulukhAvlaga"
           : "/nekhemjlekhiinTuukh";
 
-      const response = await uilchilgee(token || undefined).delete(`${endpoint}/${id}`, {
-        params: {
+      // If it's a sub-item (zardal or guilgee) in an invoice
+      if (entry?.parentInvoiceId && source === "nekhemjlekhiinTuukh") {
+        response = await uilchilgee(token || undefined).post(`${endpoint}/deleteZardal`, {
+          invoiceId: entry.parentInvoiceId,
+          zardalId: id,
           baiguullagiinId: baiguullagiinId || undefined,
-        }
-      });
+        });
+      } else {
+        // Otherwise use standard delete for full documents
+        response = await uilchilgee(token || undefined).delete(`${endpoint}/${id}`, {
+          params: {
+            baiguullagiinId: baiguullagiinId || undefined,
+          }
+        });
+      }
 
       if (response.data.success || response.status === 200 || response.status === 204) {
         // Show success message
