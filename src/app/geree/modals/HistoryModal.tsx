@@ -27,6 +27,8 @@ interface LedgerEntry {
   khelber: string;
   tailbar: string;
   burtgesenOgnoo: string;
+  isSystem: boolean;
+  ashiglaltText: string;
   _id?: string;
 }
 
@@ -66,8 +68,8 @@ export default function HistoryModal({
       const rawList = Array.isArray(resp.data?.jagsaalt)
         ? resp.data.jagsaalt
         : Array.isArray(resp.data)
-        ? resp.data
-        : [];
+          ? resp.data
+          : [];
 
       // Extract all possible identifiers from the contract/resident object
       const contractId = String(contract?._id || "").trim();
@@ -141,7 +143,7 @@ export default function HistoryModal({
       });
 
       console.log("📊 Filter result:", { totalItems: rawList.length, matchedItems: contractItems.length });
-      
+
       // Log first item for debugging
       if (contractItems.length > 0) {
         console.log("📋 Sample item structure:", JSON.stringify(contractItems[0], null, 2));
@@ -150,38 +152,54 @@ export default function HistoryModal({
       const ledger: LedgerEntry[] = contractItems.map((item: any) => {
         // Try multiple field locations for payment amounts
         // Check medeelel.zardluud for expense items
-        const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud : 
-                         Array.isArray(item?.zardluud) ? item.zardluud : [];
+        const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud :
+          Array.isArray(item?.zardluud) ? item.zardluud : [];
         const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud) ? item.medeelel.guilgeenuud :
-                           Array.isArray(item?.guilgeenuud) ? item.guilgeenuud : [];
-        
+          Array.isArray(item?.guilgeenuud) ? item.guilgeenuud : [];
+
         // Calculate total from zardluud/guilgeenuud if main amount is 0
         let calculatedTotal = 0;
         [...zardluud, ...guilgeenuud].forEach((z: any) => {
           calculatedTotal += Number(z?.tariff ?? z?.dun ?? z?.tulukhDun ?? 0);
         });
-        
+
         // Add ekhniiUldegdel if present
         const ekhniiUldegdel = Number(item?.medeelel?.ekhniiUldegdel ?? item?.ekhniiUldegdel ?? 0);
-        
+
         // Get the total amount from multiple possible sources
-        const niitTulbur = Number(item?.niitTulbur ?? item?.tulbur ?? item?.niitDun ?? item?.total ?? 0) || 
-                          (calculatedTotal + ekhniiUldegdel);
-        
+        const niitTulbur = Number(item?.niitTulbur ?? item?.tulbur ?? item?.niitDun ?? item?.total ?? 0) ||
+          (calculatedTotal + ekhniiUldegdel);
+
         // Calculate tulsunDun from guilgeenuud if available
         let calculatedTulsun = 0;
         guilgeenuud.forEach((g: any) => {
           calculatedTulsun += Number(g?.tulsunDun ?? 0);
         });
-        
+
         const isPaid = item.tuluv === "Төлсөн" || item.tuluv === "paid";
         const tulsun = isPaid ? niitTulbur : (Number(item?.tulsunDun ?? item?.medeelel?.tulsunDun ?? 0) || calculatedTulsun);
-        
+
         // Calculate uldegdel (balance) = tulukhDun - tulsunDun
         // If item.uldegdel is 0, calculate it ourselves
         const itemUldegdel = Number(item?.uldegdel ?? item?.medeelel?.uldegdel ?? 0);
         const uldegdel = itemUldegdel !== 0 ? itemUldegdel : (niitTulbur - tulsun);
-        
+
+        // Determine if it's a system action or manual
+        //uusgegsenEsekh can be "automataar", "cron", "garan"
+        const source = item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
+        const isSystem = source === "automataar" || source === "cron" || !item.maililgeesenAjiltniiId;
+
+        // Calculate ashiglalt (maintenance) zardal
+        // Sum of all zardluud that are NOT electricity (zaalt: true)
+        let ashiglaltSum = 0;
+        const ashiglaltNames: string[] = [];
+        zardluud.forEach((z: any) => {
+          if (z.zaalt !== true) {
+            ashiglaltSum += Number(z.dun ?? z.tariff ?? 0);
+            if (z.ner) ashiglaltNames.push(z.ner);
+          }
+        });
+
         return {
           _id: item._id,
           ognoo: item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || "-",
@@ -193,7 +211,9 @@ export default function HistoryModal({
           uldegdel: uldegdel,
           khelber: item.khelber || item.tuluv || "-",
           tailbar: item.tailbar || item.medeelel?.tailbar || "-",
-          burtgesenOgnoo: item.createdAt || item.ognoo || "-",
+          burtgesenOgnoo: item.createdAt || item.medeelel?.uusgegsenOgnoo || item.ognoo || "-",
+          isSystem: isSystem,
+          ashiglaltText: ashiglaltNames.join(", "),
         };
       });
 
@@ -278,7 +298,7 @@ export default function HistoryModal({
                 { label: "Нэр", value: contract?.ner || "-" },
                 { label: "Утас", value: Array.isArray(contract?.utas) ? contract.utas[0] : contract?.utas || "-" },
               ].map((item, idx) => (
-                <div key={idx} className="bg-slate-50 dark:bg-slate-800/40 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div key={idx} className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{item.label}</span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate block">{item.value}</span>
                 </div>
@@ -303,7 +323,7 @@ export default function HistoryModal({
                 />
               </div>
               {(dateRange?.[0] || dateRange?.[1]) && (
-                <button 
+                <button
                   onClick={() => setDateRange([null, null])}
                   className="text-[10px] font-bold text-rose-500 hover:underline"
                 >
@@ -318,42 +338,53 @@ export default function HistoryModal({
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase">Огноо</th>
-                  <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлөх</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлсөн</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөв</th>
-                  <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Огноо</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Систем</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөх</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлсөн</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Зардлууд</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={7} className="py-3 px-2">
+                      <td colSpan={8} className="py-3 px-2">
                         <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
                       </td>
                     </tr>
                   ))
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center">
+                    <td colSpan={8} className="py-12 text-center">
                       <span className="text-slate-400 text-xs">Мэдээлэл олдсонгүй</span>
                     </td>
                   </tr>
                 ) : (
                   <>
                     {filteredData.map((row, idx) => (
-                      <tr 
-                        key={row._id || idx} 
+                      <tr
+                        key={row._id || idx}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                       >
-                        <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell">
+                        <td className="py-2 px-2 text-xs font-medium whitespace-nowrap text-center">
+                          {row.isSystem ? (
+                            <span className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 text-[10px] font-bold uppercase">Авто</span>
+                          ) : (
+                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase">Гараар</span>
+                          )}
+                        </td>
+                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                           {row.ajiltan}
+                        </td>
+                        <td className="py-2 px-2 text-xs text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                          {row.burtgesenOgnoo === "-" ? "-" : row.burtgesenOgnoo.split("T")[0].replace(/-/g, ".")}
                         </td>
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {formatNumber(row.tulukhDun)}
@@ -364,24 +395,18 @@ export default function HistoryModal({
                         <td className="py-2 px-2 text-xs font-bold text-rose-500 dark:text-rose-400 text-right whitespace-nowrap hidden sm:table-cell">
                           {formatNumber(row.uldegdel)}
                         </td>
-                        <td className="py-2 px-2 text-center">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
-                            row.khelber === "Төлсөн" || row.khelber === "paid" 
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400" 
-                              : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-                          }`}>
-                            {row.khelber}
-                          </span>
-                        </td>
-                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell max-w-[150px] truncate" title={row.tailbar}>
-                          {row.tailbar !== "-" ? row.tailbar : ""}
+
+                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell max-w-[200px] truncate" title={row.ashiglaltText}>
+                          {row.ashiglaltText}
                         </td>
                       </tr>
                     ))}
                     {/* Total Row */}
                     <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
                       <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200">Нийт</td>
+                      <td className="py-2 px-2"></td>
                       <td className="py-2 px-2 hidden sm:table-cell"></td>
+                      <td className="py-2 px-2 hidden lg:table-cell"></td>
                       <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                         {formatNumber(filteredData.reduce((sum, row) => sum + row.tulukhDun, 0))}
                       </td>
@@ -391,7 +416,6 @@ export default function HistoryModal({
                       <td className="py-2 px-2 text-xs font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap hidden sm:table-cell">
                         {formatNumber(filteredData.reduce((sum, row) => sum + row.uldegdel, 0))}
                       </td>
-                      <td className="py-2 px-2"></td>
                       <td className="py-2 px-2 hidden md:table-cell"></td>
                     </tr>
                   </>
@@ -404,13 +428,13 @@ export default function HistoryModal({
           <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="h-8 px-4 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="h-8 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
             >
               Хаах
             </button>
             <button
               onClick={handlePrint}
-              className="h-8 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white transition-all"
+              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white transition-all"
             >
               Хэвлэх
             </button>

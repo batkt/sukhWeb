@@ -900,12 +900,13 @@ export default function DansniiKhuulga() {
   );
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
-  >(() =>
-    columnDefs.reduce((acc, col) => {
-      acc[col.key] = true;
+  >(() => {
+    const hiddenByDefault = ["orts", "davkhar", "tulbur", "tuluv", "lastLog"];
+    return columnDefs.reduce((acc, col) => {
+      acc[col.key] = !hiddenByDefault.includes(col.key);
       return acc;
-    }, {} as Record<string, boolean>)
-  );
+    }, {} as Record<string, boolean>);
+  });
   const visibleColumns = useMemo(
     () => columnDefs.filter((col) => columnVisibility[col.key] !== false),
     [columnDefs, columnVisibility]
@@ -2587,7 +2588,7 @@ export default function DansniiKhuulga() {
                       let content: React.ReactNode = "";
 
                       if (col.key === "gereeniiDugaar") {
-                        content = <span className="font-bold text-theme">Нийт</span>;
+                   
                       } else if (col.key === "tulbur") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           return sum + Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
