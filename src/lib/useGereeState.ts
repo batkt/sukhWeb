@@ -120,7 +120,7 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     tsahilgaaniiZaalt: "",
     turul: "Үндсэн",
     tailbar: "",
-    ekhniiUldegdel: 0,
+    ekhniiUldegdel: undefined,
   });
 
   const [newEmployee, setNewEmployee] = useState<any>({

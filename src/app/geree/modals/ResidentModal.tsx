@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
-
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 interface ResidentModalProps {
   show: boolean;
   onClose: () => void;
@@ -36,6 +36,44 @@ export default function ResidentModal({
   onSubmit,
 }: ResidentModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
+  const [errors, setErrors] = React.useState<string[]>([]);
+
+  // Clear errors when modal opens/closes
+  React.useEffect(() => {
+    if (show) setErrors([]);
+  }, [show]);
+
+  const validate = () => {
+    const newErrors: string[] = [];
+    if (!newResident.ner?.trim()) newErrors.push("ner");
+    if (!newResident.utas || (Array.isArray(newResident.utas) && !newResident.utas[0]?.trim())) newErrors.push("utas");
+    if (!newResident.orts?.trim()) newErrors.push("orts");
+    if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
+    if (!newResident.toot?.trim()) newErrors.push("toot");
+
+    setErrors(newErrors);
+
+    if (newErrors.length > 0) {
+      const fieldNames: Record<string, string> = {
+        ner: "Нэр",
+        utas: "Утас",
+        orts: "Орц",
+        davkhar: "Давхар",
+        toot: "Тоот"
+      };
+      const missingFields = newErrors.map(e => fieldNames[e]).join(", ");
+      openErrorOverlay(`Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`);
+      return false;
+    }
+    return true;
+  };
+
+  const handleLocalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit(e);
+    }
+  };
   
   // Get sohNer from selectedBarilga or baiguullaga (must be before early return)
   const sohNer = React.useMemo(() => {
@@ -57,6 +95,29 @@ export default function ResidentModal({
     container: residentRef.current,
   });
 
+  // Local state for formatted inputs
+  const [uldegdelInput, setUldegdelInput] = React.useState("");
+  const [zaaltInput, setZaaltInput] = React.useState("");
+
+  const formatWithCommas = (val: any) => {
+    if (val === undefined || val === null || val === "" || val === 0) return "";
+    const num = typeof val === "string" ? parseFloat(val.replace(/,/g, "")) : val;
+    if (isNaN(num)) return "";
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const parseToNumber = (str: string) => {
+    return parseFloat(str.replace(/,/g, "")) || 0;
+  };
+
+  // Sync local state when modal opens or editingResident changes
+  React.useEffect(() => {
+    if (show) {
+      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel));
+      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt));
+    }
+  }, [show, editingResident]);
+
   if (!show) return null;
 
   return (
@@ -73,6 +134,9 @@ export default function ResidentModal({
           transition: all 0.2s ease !important;
           background: #ffffff !important;
           color: #111827 !important;
+        }
+        .modern-input.pr-extra {
+          padding-right: 32px !important;
         }
         .modern-textarea {
           line-height: 32px !important;
@@ -114,6 +178,17 @@ export default function ResidentModal({
         [data-mode="dark"] .modern-textarea:focus {
           border-color: #60a5fa !important;
           box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
+        }
+
+        /* ERROR STATE */
+        .input-error {
+          border-color: #ef4444 !important;
+          background-color: #fef2f2 !important;
+        }
+        html[data-mode="dark"] .input-error,
+        [data-mode="dark"] .input-error {
+          border-color: #f87171 !important;
+          background-color: rgba(239, 68, 68, 0.1) !important;
         }
         
         /* INPUTS AND TEXTAREAS - DISABLED */
@@ -267,7 +342,7 @@ export default function ResidentModal({
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <form onSubmit={handleLocalSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {/* Төрөл */}
@@ -319,7 +394,7 @@ export default function ResidentModal({
                         const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                         setNewResident((p: any) => ({ ...p, ner: value }));
                       }}
-                      className="modern-input w-full"
+                      className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
                     />
                   </div>
 
@@ -335,7 +410,7 @@ export default function ResidentModal({
                         const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
                         setNewResident((p: any) => ({ ...p, utas: [value] }));
                       }}
-                      className="modern-input w-full"
+                      className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
                       placeholder="12345678"
                       maxLength={8}
                     />
@@ -362,7 +437,7 @@ export default function ResidentModal({
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Орц
                       </label>
-                      <div className="tusgai-wrapper w-full flex items-center">
+                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("orts") ? "input-error" : ""}`}>
                         <TusgaiZagvar
                           value={newResident.orts || ""}
                           onChange={(val: string) => {
@@ -380,7 +455,7 @@ export default function ResidentModal({
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Давхар
                       </label>
-                      <div className="tusgai-wrapper w-full flex items-center">
+                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("davkhar") ? "input-error" : ""}`}>
                         <TusgaiZagvar
                           value={newResident.davkhar || ""}
                           onChange={(val: string) => {
@@ -398,7 +473,7 @@ export default function ResidentModal({
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Тоот
                       </label>
-                      <div className={`tusgai-wrapper w-full flex items-center ${(!newResident.orts || !newResident.davkhar) ? 'disabled' : ''}`}>
+                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("toot") ? "input-error" : "" } ${(!newResident.orts || !newResident.davkhar) ? 'disabled' : ''}`}>
                         <TusgaiZagvar
                           value={newResident.toot || ""}
                           onChange={(val: string) => {
@@ -406,7 +481,7 @@ export default function ResidentModal({
                           }}
                           options={getTootOptions(newResident.orts || "", newResident.davkhar || "").length > 0 
                             ? getTootOptions(newResident.orts || "", newResident.davkhar || "").map((t) => ({ value: t, label: t }))
-                            : [{ value: "", label: "Тоотын тохирго" }]}
+                            : [{ value: "", label: "Тоотын сонгох" }]}
                           className="w-full h-full"
                           placeholder="Сонгох..."
                           disabled={!newResident.orts || !newResident.davkhar}
@@ -436,14 +511,25 @@ export default function ResidentModal({
                     </label>
                     <div className="relative">
                       <input
-                        type="number"
-                        value={newResident.ekhniiUldegdel || 0}
+                        type="text"
+                        value={uldegdelInput}
                         onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          setNewResident((p: any) => ({ ...p, ekhniiUldegdel: value }));
+                          const val = e.target.value;
+                          if (/^[0-9.,]*$/.test(val)) {
+                            setUldegdelInput(val);
+                            // Also update parent state with raw number for submission
+                            const num = parseFloat(val.replace(/,/g, ""));
+                            setNewResident((p: any) => ({ ...p, ekhniiUldegdel: isNaN(num) ? undefined : num }));
+                          }
                         }}
-                        className="modern-input w-full pr-7"
-                        step="0.01"
+                        onFocus={() => {
+                          setUldegdelInput(uldegdelInput.replace(/,/g, ""));
+                        }}
+                        onBlur={() => {
+                          setUldegdelInput(formatWithCommas(uldegdelInput));
+                        }}
+                        className="modern-input w-full pr-extra text-right font-medium"
+                        placeholder="0.00"
                       />
                       <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none">₮</span>
                     </div>
@@ -466,19 +552,30 @@ export default function ResidentModal({
                       />
                     </div>
 
-                    {/* Цахилгааны заалт */}
+                    {/* Цахилгаан кВт */}
                     <div>
                       <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Цахилгааны заалт
+                        Цахилгаан кВт
                       </label>
                       <input
                         type="text"
-                        value={newResident.tsahilgaaniiZaalt || ""}
+                        value={zaaltInput}
                         onChange={(e) => {
-                          setNewResident((p: any) => ({ ...p, tsahilgaaniiZaalt: e.target.value }));
+                          const val = e.target.value;
+                          if (/^[0-9.,]*$/.test(val)) {
+                            setZaaltInput(val);
+                            // Keep string in state as it might be used as string key
+                            setNewResident((p: any) => ({ ...p, tsahilgaaniiZaalt: val.replace(/,/g, "") }));
+                          }
                         }}
-                        className="modern-input w-full"
-                        placeholder="Заалт оруулах..."
+                        onFocus={() => {
+                          setZaaltInput(zaaltInput.replace(/,/g, ""));
+                        }}
+                        onBlur={() => {
+                          setZaaltInput(formatWithCommas(zaaltInput));
+                        }}
+                        className="modern-input w-full text-right font-medium"
+                        placeholder="0.00"
                       />
                     </div>
                   </div>
