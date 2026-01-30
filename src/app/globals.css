@@ -347,8 +347,8 @@
   --color-button: var(--button);
   --color-border: var(--border);
   --color-primary: var(--primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-inter);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -436,9 +436,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: inherit;
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -507,9 +509,11 @@
   /* Glass defaults */
   --glass-tint: rgba(255, 255, 255, 0.14);
   --glass-tint-2: rgba(255, 255, 255, 0.06);
-  --glass-border: rgba(255, 255, 255, 0.45);
-  --glass-highlight: rgba(255, 255, 255, 0.6);
   --glass-shadow: rgba(8, 18, 24, 0.16);
+  --surface-bg: #ffffff;
+  --surface-border: rgba(15, 23, 42, 0.08);
+  --surface-hover: rgba(15, 23, 42, 0.04);
+  --theme: #0ea5e9;
   --panel-text: #0f172a;
   --table-hover-bg: color-mix(in oklch, #027725, transparent 90%);
 }
@@ -576,9 +580,8 @@
     ),
     linear-gradient(135deg, #f8f9fa 0%, #e6e9ed 100%);
   --surface-bg: #ffffff;
-  --glass-tint: rgba(255, 255, 255, 0.18);
-  --glass-tint-2: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.5);
+  --surface-border: rgba(15, 23, 42, 0.1);
+  --surface-hover: rgba(15, 23, 42, 0.05);
   --panel-text: #0f172a;
   --table-hover-bg: color-mix(in oklch, #94a3b8, transparent 90%);
 }
@@ -645,11 +648,9 @@
     ),
     linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
 
-  --glass-tint: rgba(17, 25, 40, 0.45);
-  --glass-tint-2: rgba(17, 25, 40, 0.25);
-  --glass-border: rgba(255, 255, 255, 0.18);
-  --glass-highlight: rgba(255, 255, 255, 0.25);
-  --glass-shadow: rgba(0, 0, 0, 0.28);
+  --surface-bg: #1a202c;
+  --surface-border: rgba(255, 255, 255, 0.12);
+  --surface-hover: rgba(255, 255, 255, 0.06);
   --panel-text: #e5e7eb;
   --table-hover-bg: color-mix(in oklch, #4a5568, transparent 90%);
 }
@@ -1077,6 +1078,7 @@ html[data-mode="dark"]:not([data-theme]),
     linear-gradient(135deg, #0b1220 0%, #0f1730 45%, #111a35 100%);
   --surface-bg: #0f1424; /* dark navy to match the base */
   --surface-border: rgba(219, 234, 254, 0.18);
+  --surface-hover: rgba(219, 234, 254, 0.08);
   --panel-text: #e6efff; /* soft ice for readability */
   /* Glass tokens tuned for indigo/navy background */
   --glass-tint: rgba(9, 14, 28, 0.5);

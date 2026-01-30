@@ -75,10 +75,10 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-guilgee"
               onClick={() => handleTabChange("guilgee")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
                 activeTab === "guilgee"
-                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                  : "hover:scale-105"
+                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
+                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
             >
               Төлбөр тооцоо
@@ -88,10 +88,10 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-dansKhuulga"
               onClick={() => handleTabChange("dansKhuulga")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
                 activeTab === "dansKhuulga"
-                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                  : "hover:scale-105"
+                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
+                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
             >
               Дансны хуулга
@@ -101,10 +101,10 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-ebarimt"
               onClick={() => handleTabChange("ebarimt")}
-              className={`neu-btn px-5 py-2 text-sm font-semibold rounded-2xl ${
+              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
                 activeTab === "ebarimt"
-                  ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                  : "hover:scale-105"
+                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
+                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
             >
               И-баримт

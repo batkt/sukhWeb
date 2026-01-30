@@ -30,11 +30,11 @@ export default function TransactionModal({
   isProcessing = false,
 }: TransactionModalProps) {
   const modalRef = React.useRef<HTMLDivElement>(null);
-  const [transactionType, setTransactionType] = useState<TransactionData["type"]>("voucher");
+  const [transactionType, setTransactionType] = useState<TransactionData["type"]>("avlaga");
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [amount, setAmount] = useState("0");
+  const [amount, setAmount] = useState("0.00");
   const [tailbar, setTailbar] = useState("");
 
   useModalHotkeys({
@@ -47,7 +47,7 @@ export default function TransactionModal({
     const data: TransactionData = {
       type: transactionType,
       date: transactionDate,
-      amount: parseFloat(amount) || 0,
+      amount: parseFloat(amount.replace(/,/g, "")) || 0,
       residentId: resident?._id,
       gereeniiId: resident?.gereeniiId,
       tailbar,
@@ -71,135 +71,146 @@ export default function TransactionModal({
 
         <motion.div
           ref={modalRef}
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="relative modal-surface rounded-xl shadow-2xl w-[640px] overflow-hidden"
+          initial={{ scale: 0.95, opacity: 0, y: 10 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: 10 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="relative modal-surface rounded-2xl shadow-2xl w-[500px] overflow-hidden border border-[color:var(--surface-border)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="relative px-4 py-3 border-b border-[color:var(--surface-border)]">
+          <div className="relative px-6 py-4 flex items-center justify-between border-b border-[color:var(--surface-border)]/50 bg-[color:var(--surface-bg)]">
+            <h2 className="text-lg font-semibold text-[color:var(--panel-text)] tracking-tight">
+              Гүйлгээ хийх
+            </h2>
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-2.5 right-2.5 p-1 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
+              className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               disabled={isProcessing}
             >
-              <X className="w-4 h-4 text-[color:var(--muted-text)]" />
+              <X className="w-5 h-5" />
             </button>
-            <h2 className="text-base font-semibold text-[color:var(--panel-text)]">
-              Гүйлгээ хийх
-            </h2>
           </div>
 
           {/* Body */}
-          <div className="px-4 py-3 space-y-3 bg-[color:var(--surface-bg)]">
-            {/* Transaction Type Radio Buttons */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[color:var(--panel-text)]">
+          <div className="px-6 py-5 space-y-5 bg-[color:var(--surface-bg)]">
+            
+            {/* Resident Info Card */}
+            {resident && (
+              <div className="bg-[color:var(--surface-hover)]/50 rounded-xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] font-semibold text-sm">
+                  {resident?.toot || "?"}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-[color:var(--panel-text)]">
+                    {resident?.ovog || ""} {resident?.ner}
+                  </p>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Оршин суугч
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Type Segmented Control */}
+            <div>
+              <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
                 Гүйлгээний төрөл
               </label>
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-[color:var(--surface-hover)] rounded-lg">
                 {[
+                  { value: "busad", label: "Төлөлт" },
                   { value: "avlaga", label: "Авлага" },
                   { value: "ashiglalt", label: "Ашиглалт" },
-                  { value: "busad", label: "Төлөлт" },
                 ].map((option) => (
-                  <label
+                  <button
                     key={option.value}
-                    className="flex items-center gap-1 cursor-pointer"
-                  >
-                    <input
-                      type="radio"
-                      name="transactionType"
-                      value={option.value}
-                      checked={transactionType === option.value}
-                      onChange={(e) =>
-                        setTransactionType(e.target.value as TransactionData["type"])
+                    type="button"
+                    onClick={() => setTransactionType(option.value as TransactionData["type"])}
+                    disabled={isProcessing}
+                    className={`
+                      relative py-1.5 px-3 text-sm font-semibold rounded-md transition-all duration-200
+                      ${transactionType === option.value 
+                        ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]" 
+                        : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
-                      disabled={isProcessing}
-                      className="w-3 h-3 text-[color:var(--theme)] border-[color:var(--surface-border)] focus:ring-1 focus:ring-[color:var(--theme)]"
-                    />
-                    <span className="text-xs text-[color:var(--panel-text)]">
-                      {option.label}
-                    </span>
-                  </label>
+                    `}
+                  >
+                    {option.label}
+                  </button>
                 ))}
               </div>
             </div>
 
-            {/* Conditional Label based on transaction type */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[color:var(--panel-text)]">
-                {transactionType === "avlaga"
-                  ? "Авлага тооцоо хийх" 
-                  : transactionType === "ashiglalt"
-                  ? "Ашиглалт тооцоо хийх"
-                  : "Тооцоо хийх огноо"}
-              </label>
-              <input
-                type="date"
-                value={transactionDate}
-                onChange={(e) => setTransactionDate(e.target.value)}
-                disabled={isProcessing}
-                className="w-full px-2.5 py-1.5 border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-transparent transition-all text-xs"
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Date Input */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                  Огноо
+                </label>
+                <input
+                  type="date"
+                  value={transactionDate}
+                  onChange={(e) => setTransactionDate(e.target.value)}
+                  disabled={isProcessing}
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-medium"
+                />
+              </div>
 
-            {/* Amount Input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[color:var(--panel-text)]">
-                Дүн
-              </label>
-              <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={isProcessing}
-                placeholder="0"
-                className="w-full px-2.5 py-1.5 border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-transparent transition-all text-xs"
-              />
+              {/* Amount Input */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                  Дүн ₮
+                </label>
+                <input
+                  type="text"
+                  value={amount}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9.,]*$/.test(val)) {
+                        setAmount(val);
+                    }
+                  }}
+                  onFocus={() => {
+                      setAmount(amount.replace(/,/g, ""));
+                  }}
+                  onBlur={() => {
+                    const val = parseFloat(amount.replace(/,/g, ""));
+                    if (!isNaN(val)) {
+                      setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                    }
+                  }}
+                  disabled={isProcessing}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-bold text-right tracking-wide"
+                />
+              </div>
             </div>
 
             {/* Tailbar Input */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[color:var(--panel-text)]">
+              <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
                 Тайлбар
               </label>
               <textarea
                 value={tailbar}
                 onChange={(e) => setTailbar(e.target.value)}
                 disabled={isProcessing}
-                placeholder="Тайлбар оруулах..."
-                rows={2}
-                className="w-full px-2.5 py-1.5 border border-[color:var(--surface-border)] bg-white dark:bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-md focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-transparent transition-all text-xs resize-none"
+                placeholder="Гүйлгээний утга..."
+                rows={3}
+                className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
               />
             </div>
-
-            {/* Resident Info if available */}
-            {resident && (
-              <div className="bg-[color:var(--surface-hover)] rounded-md p-2 border border-[color:var(--surface-border)]">
-                <p className="text-xs text-[color:var(--panel-text)]">
-                  <span className="font-medium">Оршин суугч:</span>{" "}
-                  {resident?.ovog || ""} {resident?.ner || ""}
-                </p>
-                {resident?.toot && (
-                  <p className="text-xs text-[color:var(--panel-text)] mt-0.5">
-                    <span className="font-medium">Тоот:</span> {resident.toot}
-                  </p>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 bg-[color:var(--surface-hover)] border-t border-[color:var(--surface-border)] flex justify-end gap-2">
+          <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="px-4 py-1.5 text-xs font-medium text-[color:var(--panel-text)] bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-md hover:bg-[color:var(--surface-hover)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-sm font-medium text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-xl transition-colors disabled:opacity-50"
             >
               Хаах
             </button>
@@ -207,8 +218,7 @@ export default function TransactionModal({
               type="button"
               onClick={handleSubmit}
               disabled={isProcessing}
-              className="px-4 py-1.5 text-xs font-medium text-white bg-[color:var(--theme)] hover:opacity-90 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-              data-modal-primary
+              className="px-6 py-2.5 text-sm font-bold text-white bg-[color:var(--theme)] hover:opacity-90 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
@@ -226,12 +236,12 @@ export default function TransactionModal({
                       className="opacity-75"
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
+                      />
                   </svg>
-                  Хадгалж байна...
+                  <span>Уншиж байна...</span>
                 </span>
               ) : (
-                "Хадгалах"
+                "Гүйлгээ бүртгэх"
               )}
             </button>
           </div>

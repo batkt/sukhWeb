@@ -4,6 +4,12 @@ import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
 import Script from "next/script";
 import LocatorWarningSuppress from "./locator-setup";
+import { Inter } from "next/font/google";
+
+const inter = Inter({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Амар Сөх",
@@ -35,7 +41,7 @@ var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('da
         </Script>
       </head>
       <body
-        className="min-h-screen bg-card text-foreground font-sans"
+        className={`${inter.variable} ${inter.className} min-h-screen bg-card text-foreground font-sans`}
         suppressHydrationWarning
       >
         {process.env.NODE_ENV === "development" && <LocatorWarningSuppress />}

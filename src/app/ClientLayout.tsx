@@ -1,7 +1,8 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { MantineProvider } from "@mantine/core";
+import { MantineProvider, createTheme } from "@mantine/core";
+import { ConfigProvider } from "antd";
 import "@mantine/core/styles.css";
 // Removed Mantine dates styles; using custom DatePicker component
 import dayjs from "dayjs";
@@ -60,16 +61,28 @@ function isTokenValid(token: string): boolean {
   return true;
 }
 
+const theme = createTheme({
+  fontFamily: "var(--font-inter), sans-serif",
+});
+
 export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
-    <MantineProvider>
-      <SpinnerProvider>
-        <TourProvider>
-          <TourHost />
-          <LayoutContent>{children}</LayoutContent>
-        </TourProvider>
-      </SpinnerProvider>
-    </MantineProvider>
+    <ConfigProvider
+      theme={{
+        token: {
+          fontFamily: "var(--font-inter), sans-serif",
+        },
+      }}
+    >
+      <MantineProvider theme={theme}>
+        <SpinnerProvider>
+          <TourProvider>
+            <TourHost />
+            <LayoutContent>{children}</LayoutContent>
+          </TourProvider>
+        </SpinnerProvider>
+      </MantineProvider>
+    </ConfigProvider>
   );
 }
 

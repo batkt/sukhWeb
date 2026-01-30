@@ -6,7 +6,7 @@ import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/useAuth";
-import uilchilgee from "@/lib/uilchilgee";
+import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import {
   CheckCircle,
   Clock,
@@ -36,6 +36,7 @@ interface MedegdelItem {
   repliedAt?: string;
   repliedBy?: string;
   tailbar?: string;
+  zurag?: string;
 }
 
 export default function SanalKhuselt() {
@@ -70,7 +71,7 @@ export default function SanalKhuselt() {
         params: {
           baiguullagiinId,
           barilgiinId: ajiltan?.barilgiinId,
-          tukhainBaaziinKholbolt: "amarSukh",
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
         },
       });
 
@@ -166,7 +167,7 @@ export default function SanalKhuselt() {
         `/medegdel/${pendingStatusChange.id}`,
         {
           baiguullagiinId: ajiltan?.baiguullagiinId,
-          tukhainBaaziinKholbolt: "amarSukh",
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
           barilgiinId: ajiltan?.barilgiinId,
           orshinSuugchId: currentItem.orshinSuugchId,
           title: currentItem.title,
@@ -458,6 +459,23 @@ export default function SanalKhuselt() {
                         {selectedMedegdel.message}
                     </div>
                 </div>
+
+                {/* Image Section */}
+                {selectedMedegdel.zurag && (
+                  <div>
+                    <h3 className="text-sm text-theme/80 tracking-wide mb-3 flex items-center gap-2">
+                       <MessageSquare className="w-4 h-4" />
+                       {t("Зураг")}
+                    </h3>
+                    <div className="rounded-2xl overflow-hidden border border-[color:var(--surface-border)]">
+                      <img 
+                        src={`${getApiUrl().replace(/\/api\/$/, '')}/${selectedMedegdel.zurag.replace(/^public\//, '')}`} 
+                        alt="Medegdel" 
+                        className="w-full h-auto object-contain max-h-[500px] bg-black/5"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Reply Section */}
                 {selectedMedegdel.tailbar && (

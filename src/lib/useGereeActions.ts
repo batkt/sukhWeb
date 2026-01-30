@@ -686,7 +686,7 @@ export function useGereeActions(
       openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
       return;
     }
-
+    
     setIsUploadingUnits?.(true);
     try {
       const effectiveBarilgiinId = selectedBuildingId || barilgiinId;

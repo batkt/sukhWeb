@@ -47,6 +47,12 @@ export default function GereeModals() {
         setShowCredentialsModal(true);
       };
       
+      (window as any).__openHistoryModal = (contract: any) => {
+        console.log("📜 Opening history modal for contract:", contract);
+        state.setHistoryContract(contract);
+        state.setShowHistoryModal(true);
+      };
+      
       console.log("✅ Global modal functions registered");
     }
     return () => {

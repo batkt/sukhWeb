@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { Modal as MModal, Button as MButton } from "@mantine/core";
+import { Modal } from "antd";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 
@@ -126,14 +127,23 @@ export default function MashinBurtgel() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!token || !confirm("Устгахдаа итгэлтэй байна уу?")) return;
+    if (!token) return;
 
-    try {
-      await uilchilgee(token).delete(`/zogsool/mashinBurtgel/${id}`);
-      mutate();
-    } catch (error) {
-      console.error("Error deleting vehicle:", error);
-    }
+    Modal.confirm({
+      title: "Устгах",
+      content: "Устгахдаа итгэлтэй байна уу?",
+      okText: "Тийм",
+      okType: "danger",
+      cancelText: "Үгүй",
+      onOk: async () => {
+        try {
+          await uilchilgee(token).delete(`/zogsool/mashinBurtgel/${id}`);
+          mutate();
+        } catch (error) {
+          console.error("Error deleting vehicle:", error);
+        }
+      },
+    });
   };
 
   return (

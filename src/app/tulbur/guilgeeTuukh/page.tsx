@@ -3,7 +3,7 @@
 import React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
-import useSWR, { mutate } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 // import KhungulultPage from "../khungulult/page";
@@ -46,6 +46,7 @@ import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TransactionModal, { type TransactionData } from "../modals/TransactionModal";
+import HistoryModal from "../../geree/modals/HistoryModal";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -179,11 +180,13 @@ const InvoiceModal = ({
   });
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
-  const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud({
+  const ashiglaltParams = useMemo(() => ({
     token,
     baiguullagiinId,
     barilgiinId: selectedBuildingId || barilgiinId || null,
-  });
+  }), [token, baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud(ashiglaltParams);
 
   const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
   const currentDate = new Date().toLocaleDateString("mn-MN");
@@ -805,12 +808,16 @@ const InvoiceModal = ({
 };
 
 export default function DansniiKhuulga() {
+  const { mutate } = useSWRConfig();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(20);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+
+  // Memoize empty objects to prevent infinite SWR re-validation loops
+  const emptyQuery = useMemo(() => ({}), []);
 
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [tuluvFilter, setTuluvFilter] = useState<
@@ -835,6 +842,8 @@ export default function DansniiKhuulga() {
   const [paidSummaryRequested, setPaidSummaryRequested] = useState<
     Record<string, boolean>
   >({});
+  // Use a ref to track what's currently being requested across renders without causing loops
+  const requestedGereeIdsRef = useRef<Set<string>>(new Set());
 
   const columnDefs = useMemo(
     () => [
@@ -982,7 +991,7 @@ export default function DansniiKhuulga() {
   }, [historyData, ekhlekhOgnoo]);
 
   const { gereeGaralt } = useGereeJagsaalt(
-    {},
+    emptyQuery,
     token || undefined,
     ajiltan?.baiguullagiinId,
     effectiveBarilgiinId
@@ -990,7 +999,7 @@ export default function DansniiKhuulga() {
   const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
-    {},
+    emptyQuery,
     effectiveBarilgiinId
   );
 
@@ -1160,12 +1169,68 @@ export default function DansniiKhuulga() {
     }, 0);
   }, [filteredItems]);
 
-  // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
-  useEffect(() => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
-
-    const pendingIds = new Set<string>();
+  // Deduplicate by resident (orshinSuugchId or ner+utas combination)
+  const deduplicatedResidents = useMemo(() => {
+    const map = new Map<string, any>();
+    
     filteredItems.forEach((it: any) => {
+      // Create a unique key for each resident
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      const ner = String(it?.ner || "").trim().toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      
+      // Use residentId if available, otherwise use ner+utas+toot as key
+      const key = residentId || `${ner}|${utas}|${toot}`;
+      
+      if (!key || key === "||") return; // Skip if no valid identifier
+      
+      if (!map.has(key)) {
+        // First occurrence - store as base record
+        map.set(key, {
+          ...it,
+          _historyCount: 1,
+          _totalTulbur: Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0,
+          _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
+        });
+      } else {
+        // Aggregate values
+        const existing = map.get(key);
+        existing._historyCount += 1;
+        existing._totalTulbur += Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+        existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
+      }
+    });
+    
+    return Array.from(map.values());
+  }, [filteredItems]);
+
+  const totalPages = Math.max(1, Math.ceil(deduplicatedResidents.length / rowsPerPage));
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const paginated = useMemo(() => {
+    return deduplicatedResidents.slice(
+      (page - 1) * rowsPerPage,
+      page * rowsPerPage
+    );
+  }, [deduplicatedResidents, page, rowsPerPage]);
+
+  // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
+  // CRITICAL FIX: Only fetch for the CURRENTLY VISIBLE (paginated) items.
+  // This prevents firing 20,000 requests at once and stops the infinite loop.
+  useEffect(() => {
+    if (!token || !ajiltan?.baiguullagiinId || paginated.length === 0) return;
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+
+    paginated.forEach((it: any) => {
       const gid =
         (it?.gereeniiId && String(it.gereeniiId)) ||
         (it?.gereeId && String(it.gereeId)) ||
@@ -1173,18 +1238,17 @@ export default function DansniiKhuulga() {
           String(
             (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
           ));
+          
       if (!gid) return;
-      if (paidSummaryByGereeId[gid] !== undefined) return;
-      if (paidSummaryRequested[gid]) return;
-      pendingIds.add(gid);
-    });
+      
+      // If we already have the data or are currently fetching it, skip
+      if (paidSummaryByGereeId[gid] !== undefined || requestedGereeIdsRef.current.has(gid)) {
+        return;
+      }
 
-    if (pendingIds.size === 0) return;
+      // Mark as requested IMMEDIATELY to prevent concurrent duplicate requests
+      requestedGereeIdsRef.current.add(gid);
 
-    const baiguullagiinId = ajiltan.baiguullagiinId;
-
-    pendingIds.forEach((gid) => {
-      setPaidSummaryRequested((prev) => ({ ...prev, [gid]: true }));
       uilchilgee(token)
         .post("/tulsunSummary", {
           baiguullagiinId,
@@ -1197,16 +1261,16 @@ export default function DansniiKhuulga() {
           setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
         })
         .catch(() => {
-          // ignore errors per-geree; table will just show 0 until fixed
+          // On error, let it be eligible for retry if the user re-pages or refreshes
+          requestedGereeIdsRef.current.delete(gid);
         });
     });
   }, [
     token,
     ajiltan?.baiguullagiinId,
-    filteredItems,
-    paidSummaryByGereeId,
-    paidSummaryRequested,
+    paginated, // Dependency on current page items ensures we only fetch what the user sees
     contractsByNumber,
+    // CRITICAL: paidSummaryByGereeId MUST NOT be here as it's updated inside this effect
   ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
@@ -1257,6 +1321,7 @@ export default function DansniiKhuulga() {
   }, [gereeGaralt?.jagsaalt, buildingHistoryItems]);
 
   const stats = useMemo(() => {
+    const residentCount = deduplicatedResidents.length;
     const totalCount = filteredItems.length;
     const paidCount = filteredItems.filter((it: any) => isPaidLike(it)).length;
     const unpaidCount = filteredItems.filter(
@@ -1264,12 +1329,12 @@ export default function DansniiKhuulga() {
     ).length;
 
     return [
+      { title: "Оршин суугч", value: residentCount },
       { title: "Нийт гүйлгээ", value: totalCount },
       { title: "Төлсөн", value: paidCount },
       { title: "Төлөөгүй", value: unpaidCount },
-      { title: "Цуцласан авлага", value: cancelledGereesWithUnpaid },
     ];
-  }, [filteredItems, cancelledGereesWithUnpaid]);
+  }, [filteredItems, deduplicatedResidents, cancelledGereesWithUnpaid]);
 
   const zaaltOruulakh = async () => {
     try {
@@ -1442,28 +1507,62 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Backend expects `dun` (payment amount) and identifiers to locate contracts
-      const response = await uilchilgee(token).post("/markInvoicesAsPaid", {
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: effectiveBarilgiinId,
-        // Payment amount
-        dun: data.amount,
-        // Link to resident/contract if available
-        orshinSuugchId: data.residentId,
-        gereeniiId: data.gereeniiId,
-        // Basic metadata
-        tailbar: data.tailbar || `${data.type || "payment"} - ${data.date}`,
-        markEkhniiUldegdel: false,
-        createdBy: ajiltan._id,
-        createdAt: new Date().toISOString(),
-      });
+      // Only mark as paid when transaction type is "busad" (Төлөлт)
+      // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
+      if (data.type === "busad") {
+        // Payment: mark invoices as paid
+        const response = await uilchilgee(token).post("/markInvoicesAsPaid", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          dun: data.amount,
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: data.tailbar || `Төлөлт - ${data.date}`,
+          markEkhniiUldegdel: false,
+          createdBy: ajiltan._id,
+          createdAt: new Date().toISOString(),
+        });
 
-      if (response.data.success || response.status === 200) {
-        message.success("Гүйлгээ амжилттай үүсгэгдлээ");
-        setIsTransactionModalOpen(false);
-        setSelectedTransactionResident(null);
-        // Refresh data
-        mutate(["/guilgeeniinTuukh", token, ajiltan.baiguullagiinId, effectiveBarilgiinId]);
+        if (response.data.success || response.status === 200) {
+          message.success("Төлөлт амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+          // Refresh the history data - use filter to match any key containing nekhemjlekhiinTuukh
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true }
+          );
+        }
+      } else {
+        // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
+        const response = await uilchilgee(token).post("/gereeniiGuilgeeKhadgalya", {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          turul: data.type,
+          tulukhDun: data.amount,
+          dun: data.amount,
+          orshinSuugchId: data.residentId,
+          gereeniiId: data.gereeniiId,
+          tailbar: data.tailbar || `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`,
+          ognoo: data.date,
+          createdBy: ajiltan._id,
+          createdAt: new Date().toISOString(),
+        });
+
+        if (response.data.success || response.status === 200 || response.status === 201) {
+          message.success("Гүйлгээ амжилттай бүртгэгдлээ");
+          setIsTransactionModalOpen(false);
+          setSelectedTransactionResident(null);
+          // Refresh the history data - use filter to match any key containing nekhemjlekhiinTuukh
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true }
+          );
+        }
       }
     } catch (error: any) {
       openErrorOverlay(getErrorMessage(error));
@@ -1551,14 +1650,6 @@ export default function DansniiKhuulga() {
 
   const t = (text: string) => text;
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
-  useEffect(() => {
-    if (page > totalPages) setPage(totalPages);
-  }, [page, totalPages]);
-  const paginated = filteredItems.slice(
-    (page - 1) * rowsPerPage,
-    page * rowsPerPage
-  );
 
   useEffect(() => {
     const open = isKhungulultOpen;
@@ -1589,7 +1680,7 @@ export default function DansniiKhuulga() {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: selectedBuildingId || barilgiinId || null,
           khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 500,
+          khuudasniiKhemjee: 2000,
         },
       });
       const data = resp.data;
@@ -1598,23 +1689,73 @@ export default function DansniiKhuulga() {
         : Array.isArray(data)
           ? data
           : [];
+      
+      // Extract identifiers from the resident object
+      const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
+      const residentGereeId = String(resident?.gereeniiId || "").trim();
+      const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+      const residentToot = String(resident?.toot || "").trim();
+      const residentNer = String(resident?.ner || "").trim().toLowerCase();
+      const residentOvog = String(resident?.ovog || "").trim().toLowerCase();
+      const residentUtas = Array.isArray(resident?.utas) 
+        ? String(resident.utas[0] || "").trim() 
+        : String(resident?.utas || "").trim();
+      
+      // Filter using multiple matching strategies
       const residentInvoices = list.filter((item: any) => {
-        const ovogMatch =
-          !resident?.ovog ||
-          !item?.ovog ||
-          String(item.ovog).trim() === String(resident.ovog).trim();
-        const nerMatch =
-          !resident?.ner ||
-          !item?.ner ||
-          String(item.ner).trim() === String(resident.ner).trim();
-        const utasMatch =
-          !resident?.utas?.[0] ||
-          !item?.utas?.[0] ||
-          String(item.utas?.[0] || "").trim() ===
-            String(resident.utas?.[0] || "").trim();
-        return ovogMatch && nerMatch && utasMatch;
+        // Strategy 1: Match by orshinSuugchId
+        if (residentId && String(item?.orshinSuugchId || "").trim() === residentId) {
+          return true;
+        }
+        
+        // Strategy 2: Match by gereeniiId
+        if (residentGereeId && String(item?.gereeniiId || "").trim() === residentGereeId) {
+          return true;
+        }
+        
+        // Strategy 3: Match by gereeniiDugaar
+        if (residentGereeDugaar && String(item?.gereeniiDugaar || "").trim() === residentGereeDugaar) {
+          return true;
+        }
+        
+        // Strategy 4: Match by toot + ner (if both exist)
+        if (residentToot && residentNer) {
+          const itemToot = String(item?.toot || item?.medeelel?.toot || "").trim();
+          const itemNer = String(item?.ner || "").trim().toLowerCase();
+          if (itemToot === residentToot && itemNer === residentNer) {
+            return true;
+          }
+        }
+        
+        // Strategy 5: Match by phone number
+        if (residentUtas && residentUtas.length >= 8) {
+          const itemUtas = Array.isArray(item?.utas) 
+            ? String(item.utas[0] || "").trim() 
+            : String(item?.utas || "").trim();
+          if (itemUtas === residentUtas) {
+            return true;
+          }
+        }
+        
+        // Strategy 6: Match by ovog + ner combination
+        if (residentOvog && residentNer) {
+          const itemOvog = String(item?.ovog || "").trim().toLowerCase();
+          const itemNer = String(item?.ner || "").trim().toLowerCase();
+          if (itemOvog === residentOvog && itemNer === residentNer) {
+            return true;
+          }
+        }
+        
+        return false;
       });
-      setHistoryItems(residentInvoices.length > 0 ? residentInvoices : list);
+      
+      console.log("📜 History filter result:", { 
+        resident: { id: residentId, gereeId: residentGereeId, gereeDugaar: residentGereeDugaar, toot: residentToot, ner: residentNer },
+        totalItems: list.length, 
+        matchedItems: residentInvoices.length 
+      });
+      
+      setHistoryItems(residentInvoices);
     } catch (e) {
       openErrorOverlay(getErrorMessage(e));
       setHistoryItems([]);
@@ -1622,6 +1763,7 @@ export default function DansniiKhuulga() {
       setHistoryLoading(false);
     }
   };
+
 
   // Fetch lift floors
   useEffect(() => {
@@ -2062,7 +2204,7 @@ export default function DansniiKhuulga() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
                       </td>
                     </tr>
-                  ) : filteredItems.length === 0 ? (
+                  ) : deduplicatedResidents.length === 0 ? (
                     <tr>
                       <td colSpan={visibleColumnCount} className="p-8 text-center">
                         <div className="flex flex-col items-center justify-center space-y-3">
@@ -2401,31 +2543,51 @@ export default function DansniiKhuulga() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t dark:border-gray-800 border-gray-100">
-              {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
+            <div className="border-t dark:border-gray-800 border-gray-100 bg-slate-50/80 dark:bg-slate-800/30">
+              {/* Total row aligned with main table columns */}
               <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
                 <tbody>
-                  <tr>
+                  <tr className="font-bold">
                   {visibleColumns.map((col, colIdx) => {
                     const alignClass =
                       col.align === "right"
-                        ? "text-right"
+                        ? "text-right pr-2"
                         : col.align === "center"
                           ? "text-center"
-                          : "text-left";
-                    const isPaymentCol = col.key === "tulbur";
+                          : "text-left pl-2";
                     const isLastCol = colIdx === visibleColumns.length - 1;
+                    
+                    // Calculate totals based on column key
+                    let content: React.ReactNode = "";
+                    
+                    if (col.key === "dugaar") {
+                      content = <span className="font-bold text-theme">Нийт</span>;
+                    } else if (col.key === "tulbur") {
+                      const total = deduplicatedResidents.reduce((sum: number, it: any) => {
+                        return sum + Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                      }, 0);
+                      content = <span className="text-theme">{formatNumber(total, 0)} ₮</span>;
+                    } else if (col.key === "paid") {
+                      const total = deduplicatedResidents.reduce((sum: number, it: any) => {
+                        return sum + Number(it?._totalTulsun ?? it?.tulsunDun ?? 0);
+                      }, 0);
+                      content = <span className="text-emerald-600 dark:text-emerald-400">{formatNumber(total, 0)} ₮</span>;
+                    } else if (col.key === "uldegdel") {
+                      const total = deduplicatedResidents.reduce((sum: number, it: any) => {
+                        const tulbur = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                        const tulsun = Number(it?._totalTulsun ?? it?.tulsunDun ?? 0);
+                        return sum + (tulbur - tulsun);
+                      }, 0);
+                      content = <span className={total >= 0 ? "text-rose-500" : "text-emerald-600"}>{formatNumber(total, 0)} ₮</span>;
+                    }
+                    
                     return (
                       <td
                         key={col.key}
-                        className={`p-1 text-theme whitespace-nowrap ${alignClass} ${
-                          isPaymentCol ? "font-normal" : ""
-                        } ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
+                        className={`p-1.5 text-theme whitespace-nowrap ${alignClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                         style={{ minWidth: col.minWidth }}
                       >
-                        {isPaymentCol
-                          ? `Нийт дүн: ${formatNumber(totalSum, 0)} ₮`
-                          : ""}
+                        {content}
                       </td>
                     );
                   })}
@@ -2526,231 +2688,16 @@ export default function DansniiKhuulga() {
         />
       )}
 
-      {/* History Modal */}
-      {isHistoryOpen && (
-        <ModalPortal>
-          <AnimatePresence>
-            <>
-              <motion.div
-                key="hist-backdrop"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
-                onClick={() => setIsHistoryOpen(false)}
-              />
-              <motion.div
-                key="hist-modal"
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.95, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
-                ref={historyRef}
-                role="dialog"
-                aria-modal="true"
-              >
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
-                  <div>
-                    <h3 className="text-xl font-semibold">Түүх</h3>
-                    {historyResident && (
-                      <p className="text-sm">
-                        {historyResident.ovog} {historyResident.ner} —{" "}
-                        {historyItems.length} Нийт
-                      </p>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => setIsHistoryOpen(false)}
-                    className="p-2 rounded-2xl hover:menu-surface/80"
-                    data-modal-primary
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6 text-slate-700"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
+      {/* History Modal - Using Premium HistoryModal Component */}
+      <HistoryModal
+        show={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        contract={historyResident}
+        token={token}
+        baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
+        barilgiinId={selectedBuildingId || barilgiinId || null}
+      />
 
-                <div className="relative p-6 overflow-y-auto overflow-x-hidden max-h-[calc(90vh-64px)] custom-scrollbar">
-                  {historyLoading ? (
-                    <div className="py-16 text-center text-slate-500">
-                      Ачааллаж байна…
-                    </div>
-                  ) : historyItems.length === 0 ? (
-                    <div className="py-16 text-center flex flex-col items-center justify-center gap-3">
-                      <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
-                        <History className="w-8 h-8 text-slate-300" />
-                      </div>
-                      <div className="text-slate-500">
-                        Түүхийн мэдээлэл олдсонгүй
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {historyItems.map((item, i) => {
-                        const dateStr =
-                          item.ognoo ||
-                          item.nekhemjlekhiinOgnoo ||
-                          item.createdAt;
-                        const zardluudRows = Array.isArray(
-                          item.medeelel?.zardluud
-                        )
-                          ? item.medeelel.zardluud
-                          : Array.isArray(item.zardluud)
-                          ? item.zardluud
-                          : [];
-                        const guilgeenuudRows = Array.isArray(
-                          item.medeelel?.guilgeenuud
-                        )
-                          ? item.medeelel.guilgeenuud
-                          : Array.isArray(item.guilgeenuud)
-                          ? item.guilgeenuud
-                          : [];
-                        const rows = [...zardluudRows, ...guilgeenuudRows];
-
-                        const total = (() => {
-                          const ekhniiUldegdel = Number(
-                            item?.medeelel?.ekhniiUldegdel ??
-                              item?.ekhniiUldegdel ??
-                              0
-                          );
-
-                          const tariffSum = rows.reduce(
-                            (sum: number, z: any) => {
-                              const tariff = Number(z?.tariff);
-                              return sum + (Number.isNaN(tariff) ? 0 : tariff);
-                            },
-                            0
-                          );
-
-                          return ekhniiUldegdel + tariffSum;
-                        })();
-
-                        const isPaid = total === 0 || item.tuluv === "paid"; // simplified check
-
-                        return (
-                          <div
-                            key={item._id || `${item.sar}-${i}`}
-                            className="w-full menu-surface border border-[color:var(--surface-border)] rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5"
-                          >
-                            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--surface-border)] pb-3 mb-3">
-                              <div>
-                                <div className="text-xs text-theme/70 mb-0.5">
-                                  Огноо
-                                </div>
-                                <div className="font-semibold text-theme">
-                                  {dateStr
-                                    ? new Date(dateStr).toLocaleDateString(
-                                        "mn-MN",
-                                        {
-                                          year: "numeric",
-                                          month: "long",
-                                          day: "numeric",
-                                        }
-                                      )
-                                    : "-"}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs text-theme/70 mb-0.5">
-                                  Нийт дүн
-                                </div>
-                                <div className="flex items-center gap-2 justify-end">
-                                  <span className="text-lg  text-theme">
-                                    {formatCurrency(total)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-3">
-                              {(item?.medeelel?.ekhniiUldegdel != null ||
-                                item?.ekhniiUldegdel != null ||
-                                item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                item?.ekhniiUldegdelUsgeer) && (
-                                <div className="bg-[color:var(--surface-bg)] rounded-xl p-3 text-sm border border-[color:var(--surface-border)]">
-                                  <div className="flex justify-between items-center mb-1">
-                                    <span className="text-theme/70">
-                                      Эхний үлдэгдэл:
-                                    </span>
-                                    <span className="font-medium text-theme">
-                                      {item?.medeelel?.ekhniiUldegdel != null
-                                        ? formatCurrency(
-                                            Number(item.medeelel.ekhniiUldegdel)
-                                          )
-                                        : item?.ekhniiUldegdel != null
-                                        ? formatCurrency(
-                                            Number(item.ekhniiUldegdel)
-                                          )
-                                        : "-"}
-                                    </span>
-                                  </div>
-                                  {(item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                    item?.ekhniiUldegdelUsgeer) && (
-                                    <div className="text-xs text-theme/60 italic">
-                                      {item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                        item?.ekhniiUldegdelUsgeer}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {rows.length > 0 && (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-                                  {rows.map((z: any, zi: number) => {
-                                    const amount = (() => {
-                                      const n = (v: any) => {
-                                        const num = Number(v);
-                                        return Number.isNaN(num) ? null : num;
-                                      };
-                                      const dun = n(z?.dun);
-                                      if (dun !== null && dun > 0) return dun;
-                                      const td = n(z?.tulukhDun);
-                                      if (td !== null && td > 0) return td;
-
-                                      const tariff = n(z?.tariff);
-                                      return tariff ?? 0;
-                                    })();
-
-                                    return (
-                                      <div
-                                        key={zi}
-                                        className="flex items-center justify-between border-b border-dashed border-[color:var(--surface-border)] last:border-0 py-1"
-                                      >
-                                        <span className="truncate text-theme/80 pr-2">
-                                          {z.ner || z.name}
-                                        </span>
-                                        <span className="font-medium text-theme whitespace-nowrap">
-                                          {formatNumber(amount)} ₮
-                                        </span>
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </>
-          </AnimatePresence>
-        </ModalPortal>
-      )}
 
       {/* Per-resident history modal removed */}
 

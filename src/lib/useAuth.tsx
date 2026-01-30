@@ -30,6 +30,7 @@ export interface Ajiltan {
   }>;
   tsonkhniiErkhuud?: any[];
   defaultBarilga?: string;
+  tukhainBaaziinKholbolt?: string;
 }
 
 interface LoginResponse {

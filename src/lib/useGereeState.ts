@@ -12,6 +12,8 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const [showTemplatesModal, setShowTemplatesModal] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [showInvoicePreviewModal, setShowInvoicePreviewModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyContract, setHistoryContract] = useState<any | null>(null);
   const [showAddTootModal, setShowAddTootModal] = useState(false);
   const [showDeleteResidentModal, setShowDeleteResidentModal] = useState(false);
   const [showDeleteEmployeeModal, setShowDeleteEmployeeModal] = useState(false);
@@ -164,6 +166,10 @@ export function useGereeState(searchParams: any, didInitRef: any) {
     setShowPreviewModal,
     showInvoicePreviewModal,
     setShowInvoicePreviewModal,
+    showHistoryModal,
+    setShowHistoryModal,
+    historyContract,
+    setHistoryContract,
     showAddTootModal,
     setShowAddTootModal,
     showDeleteResidentModal,

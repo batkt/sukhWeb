@@ -200,6 +200,12 @@ export default function NemeltTokhirgoo() {
       return;
     }
 
+    const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+    if (!effectiveBarilgiinId) {
+      openErrorOverlay("Барилга сонгоогүй байна");
+      return;
+    }
+
     showSpinner();
 
     try {
@@ -215,7 +221,7 @@ export default function NemeltTokhirgoo() {
       const payload: any = {
         choloolugdokhDavkhar: floors,
         baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: selectedBuildingId || barilgiinId || undefined,
+        barilgiinId: effectiveBarilgiinId,
       };
 
       await uilchilgee(token).post(`/liftShalgaya`, payload);
