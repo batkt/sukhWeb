@@ -51,33 +51,32 @@ if (typeof window !== "undefined") {
   (window as any).__API_URL__ = getApiUrl();
 }
 
+// Socket connection instance for singleton behavior
+let socketInstance: Socket | null = null;
+
 // Socket connection
 // In production, socket.io goes through nginx proxy at /socket.io
-// In development, use the full URL
 export const socket = (): Socket => {
-  if (typeof window !== "undefined" && window.location.protocol === "https:") {
-    // Production: use relative path through nginx proxy
-    return io({
-      path: "/socket.io",
-      transports: ["websocket"],
-      secure: true,
-    });
-  } else if (
-    typeof window !== "undefined" &&
-    window.location.hostname === "amarhome.mn"
-  ) {
-    // Production domain: use full URL
-    return io("https://amarhome.mn", {
-      path: "/socket.io",
-      transports: ["websocket"],
-      secure: true,
-    });
-  } else {
-    // Development: use full URL
-    return io(getApiUrl(), {
-      transports: ["websocket"],
-    });
-  }
+  if (socketInstance) return socketInstance;
+
+  const apiUrl = getApiUrl();
+  // Strip /api/ suffix if present to avoid joining it as a namespace
+  const socketBase = apiUrl.endsWith("/api/") ? apiUrl.slice(0, -5) : apiUrl;
+
+  // Manual override from documentation if needed: "https://turees.zevtabs.mn" 
+  // or use the current API host
+  const endpoint = socketBase.includes("localhost") ? socketBase : "https://amarhome.mn";
+
+  socketInstance = io(endpoint, {
+    path: "/socket.io",
+    transports: ["websocket", "polling"],
+    secure: true,
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+  });
+
+  return socketInstance;
 };
 
 // Helper to call the nekhemjlekhCron service using both domain and IP fallbacks.

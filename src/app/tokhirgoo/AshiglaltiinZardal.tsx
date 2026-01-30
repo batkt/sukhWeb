@@ -22,7 +22,7 @@ import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Activity, Layers, CreditCard, ChevronRight, Settings } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 
@@ -91,7 +91,7 @@ export default function AshiglaltiinZardluud() {
     barilgiinId: selectedBuildingId || barilgiinId,
   });
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [view, setView] = useState<"list" | "form">("list");
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
   const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
@@ -161,7 +161,7 @@ export default function AshiglaltiinZardluud() {
     setTariff150kvInput("");
     setTariff150to300kvInput("");
     setTariff300pluskvInput("");
-    setIsModalOpen(true);
+    setView("form");
   };
 
   const openEditModal = (item: ZardalItem, isUilchilgee = false) => {
@@ -200,7 +200,7 @@ export default function AshiglaltiinZardluud() {
     setTariff300pluskvInput(
       item.tariff300pluskv ? formatNumber(item.tariff300pluskv, 2) : ""
     );
-    setIsModalOpen(true);
+    setView("form");
   };
 
   const handleSave = async () => {
@@ -226,7 +226,7 @@ export default function AshiglaltiinZardluud() {
         await addZardal(payload);
         openSuccessOverlay("Амжилттай нэмлээ");
       }
-      setIsModalOpen(false);
+      setView("list");
       await refreshZardluud();
     } catch (e) {
       openErrorOverlay("Алдаа гарлаа. Дахин оролдоно уу");
@@ -312,17 +312,163 @@ export default function AshiglaltiinZardluud() {
   // so they show up when the page is visited at `/tokhirgoo`.
   useRegisterTourSteps("/tokhirgoo", zardalTourSteps);
 
+  if (view === "form") {
+    return (
+      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto overflow-auto max-h-[calc(100vh-220px)] custom-scrollbar pr-2 pb-10">
+        <div className="flex items-center justify-between bg-white/40 dark:bg-black/20 p-4 rounded-3xl border border-[color:var(--surface-border)] backdrop-blur-md">
+           <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setView("list")}
+                className="p-2.5 bg-white dark:bg-gray-900 border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] rounded-xl transition-all shadow-sm hover:scale-105"
+              >
+                <ChevronRight className="w-4 h-4 rotate-180 text-theme" />
+              </button>
+              <div>
+                <h2 className="text-lg font-black text-[color:var(--panel-text)] uppercase tracking-tight leading-none">
+                  {editingItem ? "Зардал засах" : "Шинэ зардал нэмэх"}
+                </h2>
+                <p className="text-[10px] font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">
+                  {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"} зардал
+                </p>
+              </div>
+           </div>
+           <div className="flex items-center gap-2">
+              <MButton
+                onClick={() => setView("list")}
+                variant="subtle"
+                size="sm"
+                className="px-6 h-10 text-slate-500 font-bold hover:bg-slate-100/50 rounded-xl"
+              >
+                Буцах
+              </MButton>
+              <MButton
+                size="sm"
+                className="btn-save shadow-lg shadow-blue-500/20 rounded-xl px-10 h-10 font-black uppercase tracking-widest text-[10px]"
+                onClick={handleSave}
+              >
+                Хадгалах
+              </MButton>
+           </div>
+        </div>
+
+        <div className="bg-white/60 dark:bg-black/20 p-6 rounded-3xl border border-[color:var(--surface-border)] shadow-xl space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                  Зардлын нэр
+                </label>
+                <MTextInput
+                  value={formData.ner}
+                  onChange={(e) => {
+                    const newName = e.currentTarget.value;
+                    const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
+                    setFormData({
+                      ...formData,
+                      ner: newName,
+                      zaalt: isCakhilgaan ? true : formData.zaalt,
+                      tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
+                    });
+                  }}
+                  placeholder="Жишээ: Цэвэр ус..."
+                  classNames={{ input: "rounded-xl h-11 font-bold text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
+                  leftSection={<Activity className="w-4 h-4 text-theme opacity-50" />}
+                />
+              </div>
+
+              {!formData.ner.toLowerCase().includes("цахилгаан") && (
+                <div className="space-y-1.5">
+                  <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                    Зардлын төрөл
+                  </label>
+                  <MSelect
+                    value={formData.zardliinTurul ?? undefined}
+                    onChange={(value) => setFormData({ ...formData, zardliinTurul: value as string })}
+                    data={[
+                      { label: "Энгийн / Default", value: "Энгийн" },
+                      { label: "Лифт / Elevator", value: "Лифт" },
+                    ]}
+                    placeholder="Сонгох..."
+                    searchable={false}
+                    classNames={{ input: "rounded-xl h-11 font-bold text-base" }}
+                    leftSection={<Layers className="w-4 h-4 text-theme opacity-50" />}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                  {formData.ner.toLowerCase().includes("цахилгаан") ? "Суурь хураамж (₮)" : "Тарифын дүн (₮)"}
+                </label>
+                <MTextInput
+                  value={tariffInputValue}
+                  onChange={(e) => {
+                    const raw = e.currentTarget.value;
+                    const cleanValue = raw.replace(/[^0-9.]/g, "");
+                    const n = Number(cleanValue);
+                    setTariffInputValue(cleanValue);
+                    setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
+                  }}
+                  onBlur={() => {
+                    if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
+                    else setTariffInputValue("");
+                  }}
+                  onFocus={() => {
+                    if (formData.tariff) setTariffInputValue(formData.tariff.toString());
+                  }}
+                  placeholder="0.00"
+                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
+                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                Тайлбар / Тэмдэглэл
+              </label>
+              <MTextarea
+                value={formData.tailbar}
+                onChange={(e) => setFormData({ ...formData, tailbar: e.currentTarget.value })}
+                placeholder="Нэмэлт тайлбар оруулах..."
+                minRows={3}
+                classNames={{ input: "rounded-2xl shadow-sm p-4 text-sm" }}
+              />
+            </div>
+            
+            <div className="pt-4 border-t border-[color:var(--surface-border)] flex items-center justify-between opacity-50">
+                <div className="flex items-center gap-2">
+                   <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                      <Settings className="w-3 h-3 text-slate-400" />
+                   </div>
+                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Автоматаар хадгалагдана</span>
+                </div>
+            </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       id="barilgiin-panel"
-      className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12"
     >
       <div
         id="zardal-panel"
-        className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar"
+        className="animate-in fade-in duration-700 space-y-6 overflow-auto max-h-[calc(100vh-220px)] custom-scrollbar pr-2"
       >
+        <div className="flex items-center gap-3 mb-1">
+           <div className="p-3 rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+              <CreditCard className="w-6 h-6" />
+           </div>
+           <div>
+              <h1 className="text-2xl font-black text-[color:var(--panel-text)] uppercase tracking-tighter">Ашиглалтын зардал</h1>
+              <p className="text-[10px] font-bold text-[color:var(--muted-text)] opacity-70">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
+           </div>
+        </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
           <div className="flex-1">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
@@ -702,154 +848,6 @@ export default function AshiglaltiinZardluud() {
         </MModal>
 
 
-        <MModal
-          title={editingItem ? "Зардал засах" : "Зардал нэмэх"}
-          opened={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          classNames={{
-            content: "modal-surface modal-responsive",
-            header:
-              "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-            title: "text-theme font-semibold",
-            close:
-              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
-          }}
-          overlayProps={{ opacity: 0.5, blur: 6 }}
-          centered
-        >
-          <div className="space-y-4 mt-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Зардлын нэр
-              </label>
-              <MTextInput
-                value={formData.ner}
-                onChange={(e) => {
-                  const newName = e.currentTarget.value;
-                  const isCakhilgaan = newName
-                    .toLowerCase()
-                    .includes("цахилгаан");
-                  setFormData({
-                    ...formData,
-                    ner: newName,
-                    zaalt: isCakhilgaan ? true : formData.zaalt,
-                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
-                  });
-                }}
-                placeholder="Зардлын нэр оруулах"
-                className="text-sm text-theme"
-              />
-            </div>
-
-            {/* <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Төрөл
-              </label>
-              <MSelect
-                value={formData.turul}
-                onChange={(value) =>
-                  setFormData({ ...formData, turul: value ?? "" })
-                }
-                className="w-full text-theme"
-                data={expenseTypes.map((type) => ({
-                  label: type,
-                  value: type,
-                }))}
-                placeholder="Сонгох"
-                searchable
-              />
-            </div> */}
-
-            {!formData.ner.toLowerCase().includes("цахилгаан") && (
-              <div>
-                <label className="block text-sm font-medium mb-1 text-theme">
-                  Зардлын төрөл
-                </label>
-                <MSelect
-                  value={formData.zardliinTurul ?? undefined}
-                  onChange={(value) =>
-                    setFormData({ ...formData, zardliinTurul: value as string })
-                  }
-                  className="w-full text-theme"
-                  data={[
-                    { label: "Энгийн", value: "Энгийн" },
-                    { label: "Лифт", value: "Лифт" },
-                  ]}
-                  placeholder="Сонгох (Энгийн)"
-                  searchable={false}
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                {formData.ner.toLowerCase().includes("цахилгаан")
-                  ? "Суурь хураамж (₮)"
-                  : "Тариф (₮)"}
-              </label>
-              <MTextInput
-                value={tariffInputValue}
-                onChange={(e) => {
-                  const raw = e.currentTarget.value;
-                  const cleanValue = raw.replace(/[^0-9.]/g, "");
-                  const n = Number(cleanValue);
-
-                  setTariffInputValue(cleanValue);
-                  setFormData({
-                    ...formData,
-                    tariff: Number.isFinite(n) ? n : 0,
-                  });
-                }}
-                onBlur={() => {
-                  if (formData.tariff) {
-                    setTariffInputValue(formatNumber(formData.tariff, 2));
-                  } else {
-                    setTariffInputValue("");
-                  }
-                }}
-                onFocus={() => {
-                  if (formData.tariff) {
-                    setTariffInputValue(formData.tariff.toString());
-                  }
-                }}
-                placeholder="0"
-                className="text-theme"
-                rightSection={<span className="text-slate-500 pr-1">₮</span>}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Тайлбар
-              </label>
-              <MTextarea
-                value={formData.tailbar}
-                onChange={(e) =>
-                  setFormData({ ...formData, tailbar: e.currentTarget.value })
-                }
-                placeholder="Тайлбар оруулах"
-                className="text-theme"
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <MButton
-                onClick={() => setIsModalOpen(false)}
-                className="btn-minimal btn-cancel"
-                radius="xl"
-              >
-                Болих
-              </MButton>
-              <MButton
-                className="btn-minimal btn-save h-11"
-                onClick={handleSave}
-                data-modal-primary
-                radius="xl"
-              >
-                Хадгалах
-              </MButton>
-            </div>
-          </div>
-        </MModal>
       </div>
     </div>
   );
