@@ -225,8 +225,13 @@ export function useGereeActions(
       }
 
       const getUnitsAsArray = (val: any): string[] => {
-        if (Array.isArray(val)) return val.map(String);
-        if (typeof val === "string") return val.split(/[\s,;|]+/).filter(Boolean);
+        if (Array.isArray(val)) {
+          return val.flatMap((v) =>
+            String(v).split(/[\s,;|]+/).filter(Boolean)
+          );
+        }
+        if (typeof val === "string")
+          return val.split(/[\s,;|]+/).filter(Boolean);
         return [];
       };
 
@@ -292,8 +297,13 @@ export function useGereeActions(
       }
 
       const getUnitsAsArray = (val: any): string[] => {
-        if (Array.isArray(val)) return val.map(String);
-        if (typeof val === "string") return val.split(/[\s,;|]+/).filter(Boolean);
+        if (Array.isArray(val)) {
+          return val.flatMap((v) =>
+            String(v).split(/[\s,;|]+/).filter(Boolean)
+          );
+        }
+        if (typeof val === "string")
+          return val.split(/[\s,;|]+/).filter(Boolean);
         return [];
       };
 

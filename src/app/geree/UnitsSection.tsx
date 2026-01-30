@@ -108,13 +108,14 @@ export default function UnitsSection({
                               .davkhariinToonuud) ||
                           {};
                         const key = composeKey(selectedOrts, floor);
-                        let units = existing[key] || [];
-                        if (!Array.isArray(units) && typeof units === "string") {
-                          units = (units as string)
-                            .split(/[\s,;|]+/)
-                            .filter(Boolean);
-                        } else if (!Array.isArray(units)) {
-                          units = [];
+                        let units: string[] = [];
+                        const val = existing[key];
+                        if (Array.isArray(val)) {
+                          units = val.flatMap((v) =>
+                            String(v).split(/[\s,;|]+/).filter(Boolean)
+                          );
+                        } else if (typeof val === "string") {
+                          units = val.split(/[\s,;|]+/).filter(Boolean);
                         }
 
                         const activeContractsForFloor = contracts.filter(
