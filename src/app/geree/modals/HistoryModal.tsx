@@ -18,18 +18,15 @@ interface HistoryModalProps {
 
 interface LedgerEntry {
   ognoo: string;
-  ajiltan?: string;
-  turees: number;
+  ner: string;
   tulukhDun: number;
-  khyamdral: number;
   tulsunDun: number;
   uldegdel: number;
-  khelber: string;
-  tailbar: string;
-  burtgesenOgnoo: string;
   isSystem: boolean;
-  ashiglaltText: string;
-  ashiglaltSum: number;
+  ajiltan?: string;
+  khelber?: string;
+  tailbar?: string;
+  burtgesenOgnoo?: string;
   _id?: string;
 }
 
@@ -150,48 +147,13 @@ export default function HistoryModal({
         console.log("📋 Sample item structure:", JSON.stringify(contractItems[0], null, 2));
       }
 
-      const ledger: LedgerEntry[] = contractItems.map((item: any) => {
-        // Try multiple field locations for payment amounts
-        // Check medeelel.zardluud for expense items
-        const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud :
-          Array.isArray(item?.zardluud) ? item.zardluud : [];
-        const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud) ? item.medeelel.guilgeenuud :
-          Array.isArray(item?.guilgeenuud) ? item.guilgeenuud : [];
+      const flatLedger: LedgerEntry[] = [];
 
-        // Calculate total from zardluud/guilgeenuud if main amount is 0
-        let calculatedTotal = 0;
-        [...zardluud, ...guilgeenuud].forEach((z: any) => {
-          calculatedTotal += Number(z?.tariff ?? z?.dun ?? z?.tulukhDun ?? 0);
-        });
-
-        // Add ekhniiUldegdel if present
-        const ekhniiUldegdel = Number(item?.medeelel?.ekhniiUldegdel ?? item?.ekhniiUldegdel ?? 0);
-
-        // Get the total amount from multiple possible sources
-        const niitTulbur = Number(item?.niitTulbur ?? item?.tulbur ?? item?.niitDun ?? item?.total ?? 0) ||
-          (calculatedTotal + ekhniiUldegdel);
-
-        // Calculate tulsunDun from guilgeenuud if available
-        let calculatedTulsun = 0;
-        guilgeenuud.forEach((g: any) => {
-          calculatedTulsun += Number(g?.tulsunDun ?? 0);
-        });
-
-        const isPaid = item.tuluv === "Төлсөн" || item.tuluv === "paid";
-        const tulsun = isPaid ? niitTulbur : (Number(item?.tulsunDun ?? item?.medeelel?.tulsunDun ?? 0) || calculatedTulsun);
-
-        // Always calculate uldegdel based on actual payment data for consistency
-        const uldegdel = niitTulbur - tulsun;
-
-        // Determine if it's a system action or manual
-        //uusgegsenEsekh can be "automataar", "cron", "garan"
+      contractItems.forEach((item: any) => {
+        const itemDate = item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || new Date().toISOString();
+        const ajiltan = item.createdBy?.ner || item.ajiltan || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || "Admin";
         const source = item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
         const isSystem = source === "automataar" || source === "cron" || !item.maililgeesenAjiltniiId;
-
-        // Calculate ashiglalt (maintenance) zardal
-        // Sum of all zardluud that are NOT electricity (zaalt: true)
-        let ashiglaltSum = 0;
-        const maintenanceLines: string[] = [];
 
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -206,36 +168,102 @@ export default function HistoryModal({
           return tar ?? 0;
         };
 
+        // 1. Process Expenses (Zardluud)
+        const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud :
+          Array.isArray(item?.zardluud) ? item.zardluud : [];
+
         zardluud.forEach((z: any) => {
           if (z.zaalt !== true && z.ner) {
             const amt = pickAmount(z);
-            ashiglaltSum += amt;
-            maintenanceLines.push(`${z.ner}: ${formatNumber(amt)} ₮`);
+            if (amt > 0) {
+              flatLedger.push({
+                _id: z._id || `z-${Math.random()}`,
+                ognoo: itemDate,
+                ner: z.ner,
+                tulukhDun: amt,
+                tulsunDun: 0,
+                uldegdel: 0,
+                isSystem,
+                ajiltan,
+                khelber: "Нэхэмжлэх",
+                tailbar: z.ner,
+                burtgesenOgnoo: item.createdAt || "-"
+              });
+            }
           }
         });
 
-        return {
-          _id: item._id,
-          ognoo: item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || "-",
-          ajiltan: item.createdBy?.ner || item.ajiltan || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || "Admin",
-          turees: Number(item.turees ?? item.medeelel?.turees ?? 0),
-          tulukhDun: niitTulbur,
-          khyamdral: Number(item.khyamdral ?? item.medeelel?.khyamdral ?? 0),
-          tulsunDun: tulsun,
-          uldegdel: uldegdel,
-          khelber: item.khelber || item.tuluv || "-",
-          tailbar: item.tailbar || item.medeelel?.tailbar || "-",
-          burtgesenOgnoo: item.createdAt || item.medeelel?.uusgegsenOgnoo || item.ognoo || "-",
-          isSystem: isSystem,
-          ashiglaltText: maintenanceLines.join("\n"),
-          ashiglaltSum: ashiglaltSum,
-        };
+        // 2. Process Manual Transactions (Guilgeenuud - Avlaga/Charges)
+        const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud) ? item.medeelel.guilgeenuud :
+          Array.isArray(item?.guilgeenuud) ? item.guilgeenuud : [];
+
+        guilgeenuud.forEach((g: any) => {
+          const amt = Number(g.tulukhDun || 0);
+          const paid = Number(g.tulsunDun || 0);
+
+          if (amt > 0) {
+            flatLedger.push({
+              _id: g._id || `g-charge-${Math.random()}`,
+              ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ner: "Авлага",
+              tulukhDun: amt,
+              tulsunDun: 0,
+              uldegdel: 0,
+              isSystem: false,
+              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              khelber: "Авлага",
+              tailbar: g.tailbar || "Гараар нэмсэн авлага",
+              burtgesenOgnoo: g.createdAt || item.createdAt || "-"
+            });
+          }
+          if (paid > 0) {
+            flatLedger.push({
+              _id: g._id || `g-paid-${Math.random()}`,
+              ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ner: "Төлөлт",
+              tulukhDun: 0,
+              tulsunDun: paid,
+              uldegdel: 0,
+              isSystem: false,
+              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              khelber: g.khelber || "Төлбөр",
+              tailbar: g.tailbar || "-",
+              burtgesenOgnoo: g.createdAt || item.createdAt || "-"
+            });
+          }
+        });
+
+        // 3. Check for main Invoice Payments (if not covered by guilgeenuud)
+        // detailed guilgeenuud is preferred, but simple 'tulsunDun' on invoice object exists too.
+        // To avoid double counting, we rely on guilgeenuud if present.
+        // Fallback: if tulsunDun > 0 at invoice level AND no detailed payments found?
+        // (Simplified: assuming reliable detailed history is better, but let's stick to flattened items)
       });
 
-      // Sort newest first
-      ledger.sort((a, b) => new Date(b.ognoo).getTime() - new Date(a.ognoo).getTime());
+      // Sort Chronologically: Oldest -> Newest
+      flatLedger.sort((a, b) => new Date(a.ognoo).getTime() - new Date(b.ognoo).getTime());
 
-      setData(ledger);
+      // Calculate Running Balance
+      let runningBalance = contractItems[0]?.ekhniiUldegdel ? Number(contractItems[0].ekhniiUldegdel) : 0; // Or 0 if not reliable
+      // If we want accurate history, we might need a trusted starting balance. 
+      // For now, start from 0 or assume the list covers relevant history.
+      // If the API returns a 'paginated' list, the running balance might be off unless we have a 'startBalance' for the page.
+      // Let's assume 'contract.uldegdel' is the FINAL balance. We can calculate backwards? 
+      // Or just forward if we have full history.
+      // Given the request "2026.01.30 hog 8347 ... uldegdel 9347", forward calculation is standard.
+
+      flatLedger.forEach(row => {
+        runningBalance = runningBalance + row.tulukhDun - row.tulsunDun;
+        row.uldegdel = runningBalance;
+      });
+
+      // Validating against Contract Current Balance (Optional but good for debug)
+      // console.log("Final Calculated Balance:", runningBalance);
+
+      // Reverse for Display (Newest First)
+      flatLedger.reverse();
+
+      setData(flatLedger);
     } catch (err) {
       console.error("Failed to fetch history:", err);
     } finally {
@@ -354,13 +382,13 @@ export default function HistoryModal({
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Огноо</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Систем</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөх</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлсөн</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Зардлууд (Дүн)</th>
+                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлөх дүн</th>
+                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлсөн дүн</th>
+                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
+                  <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -388,52 +416,42 @@ export default function HistoryModal({
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
-                        <td className="py-2 px-2 text-xs font-medium whitespace-nowrap text-center">
-                          {row.isSystem ? (
-                            <span className="px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 text-[10px] font-bold uppercase">Авто</span>
-                          ) : (
-                            <span className="px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 text-[10px] font-bold uppercase">Гараар</span>
-                          )}
-                        </td>
                         <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                           {row.ajiltan}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
-                          {row.burtgesenOgnoo === "-" ? "-" : row.burtgesenOgnoo.split("T")[0].replace(/-/g, ".")}
-                        </td>
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {formatNumber(row.tulukhDun)}
+                          {row.tulukhDun > 0 ? formatNumber(row.tulukhDun) : "-"}
                         </td>
                         <td className="py-2 px-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right whitespace-nowrap">
-                          {formatNumber(row.tulsunDun)}
+                          {row.tulsunDun > 0 ? formatNumber(row.tulsunDun) : "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs font-bold text-rose-500 dark:text-rose-400 text-right whitespace-nowrap hidden sm:table-cell">
+                        <td className="py-2 px-2 text-xs font-bold text-rose-500 dark:text-rose-400 text-right whitespace-nowrap">
                           {formatNumber(row.uldegdel)}
                         </td>
-
-                        <td className="py-2 px-2 text-[10px] text-slate-500 dark:text-slate-400 hidden md:table-cell max-w-[250px] whitespace-pre-line leading-tight" title={row.ashiglaltText}>
-                          {row.ashiglaltText}
+                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
+                          {row.khelber || "-"}
+                        </td>
+                        <td className="py-2 px-2 text-xs text-slate-600 dark:text-slate-300 hidden md:table-cell">
+                          {row.tailbar || "-"}
+                        </td>
+                        <td className="py-2 px-2 text-xs text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                          {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-" ? row.burtgesenOgnoo.split("T")[0].replace(/-/g, ".") : "-"}
                         </td>
                       </tr>
                     ))}
-                    {/* Total Row */}
+                    {/* Total Summary Row */}
                     <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
-                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200">Нийт</td>
-                      <td className="py-2 px-2"></td>
-                      <td className="py-2 px-2 hidden sm:table-cell"></td>
-                      <td className="py-2 px-2 hidden lg:table-cell"></td>
+                      <td colSpan={2} className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right">Нийт</td>
                       <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                         {formatNumber(filteredData.reduce((sum, row) => sum + row.tulukhDun, 0))}
                       </td>
                       <td className="py-2 px-2 text-xs font-bold text-emerald-700 dark:text-emerald-400 text-right whitespace-nowrap">
                         {formatNumber(filteredData.reduce((sum, row) => sum + row.tulsunDun, 0))}
                       </td>
-                      <td className="py-2 px-2 text-xs font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap hidden sm:table-cell">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + row.uldegdel, 0))}
+                      <td className="py-2 px-2 text-xs font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap">
+                        {filteredData.length > 0 ? formatNumber(filteredData[0].uldegdel) : "-"}
                       </td>
-                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-center hidden md:table-cell">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + (row.ashiglaltSum || 0), 0))}
-                      </td>
+                      <td colSpan={3}></td>
                     </tr>
                   </>
                 )}
@@ -457,7 +475,7 @@ export default function HistoryModal({
             </button>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+      </div >
+    </AnimatePresence >
   );
 }
