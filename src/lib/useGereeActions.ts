@@ -67,7 +67,7 @@ export function useGereeActions(
 
       // Find the selected building from baiguullaga
       const effectiveBid = selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
-      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => String(b._id) === String(effectiveBid));
+      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBid));
 
       // Unit validation: Ensure the toot exists in the building configuration
       const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud;
@@ -76,13 +76,30 @@ export function useGereeActions(
         const f = String(newResident.davkhar || "").trim();
         const key = composeKey ? composeKey(o, f) : f;
         
-        const validUnits = Array.isArray(davkhariinToonuud[key]) 
-          ? davkhariinToonuud[key] 
-          : (Array.isArray(davkhariinToonuud[f]) ? davkhariinToonuud[f] : []);
+        // Use the same splitting logic as the data layer
+        const getUnitsAsArray = (val: any): string[] => {
+          if (Array.isArray(val)) {
+            return val.flatMap((v) =>
+              String(v).split(/[\s,;|]+/).filter(Boolean)
+            );
+          }
+          if (typeof val === "string")
+            return val.split(/[\s,;|]+/).filter(Boolean);
+          return [];
+        };
+
+        const validUnits = [
+          ...getUnitsAsArray(davkhariinToonuud[key]),
+          ...getUnitsAsArray(davkhariinToonuud[f])
+        ];
 
         if (validUnits.length > 0) {
           const inputToot = String(newResident.toot || "").trim();
-          const exists = validUnits.some((u: any) => String(u).trim() === inputToot);
+          // Normalize comparison to handle special characters consistently with getTootOptions
+          const normalize = (s: string) => String(s || "").replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, "");
+          const normInput = normalize(inputToot);
+          
+          const exists = validUnits.some((u: any) => normalize(String(u)).trim() === normInput);
           if (!exists) {
             openErrorOverlay(`"${inputToot}" тоот тухайн давхарт бүртгэлгүй байна. Тоот бүртгэлээс шалгана уу.`);
             return false;
@@ -218,7 +235,7 @@ export function useGereeActions(
         headers: { "X-Org-Only": "1" },
       });
       const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
+      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
       if (!barilga) {
         openErrorOverlay("Барилга олдсонгүй");
         return;
@@ -243,7 +260,7 @@ export function useGereeActions(
       const newUnits = Array.from(new Set([...currentUnits, ...values.map(String)]));
 
       const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id) !== String(effectiveBarilgiinId)) return b;
+        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
         return {
           ...b,
           tokhirgoo: {
@@ -290,7 +307,7 @@ export function useGereeActions(
         headers: { "X-Org-Only": "1" },
       });
       const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
+      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
       if (!barilga) {
         openErrorOverlay("Барилга олдсонгүй");
         return;
@@ -347,7 +364,7 @@ export function useGereeActions(
       }
 
       const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id) !== String(effectiveBarilgiinId)) return b;
+        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
         return {
           ...b,
           tokhirgoo: {
@@ -394,7 +411,7 @@ export function useGereeActions(
         headers: { "X-Org-Only": "1" },
       });
       const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
+      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
       if (!barilga) {
         openErrorOverlay("Барилга олдсонгүй");
         return;
@@ -443,7 +460,7 @@ export function useGereeActions(
       delete updated[key];
 
       const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id) !== String(effectiveBarilgiinId)) return b;
+        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
         return {
           ...b,
           tokhirgoo: {

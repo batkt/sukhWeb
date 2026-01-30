@@ -35,6 +35,10 @@ export default function GereePage() {
       handleEdit={actions.handleEdit}
       handlePreviewContractTemplate={actions.handlePreviewContractTemplate}
       handlePreviewInvoice={actions.handlePreviewInvoice}
+      currentPage={state.currentPage}
+      rowsPerPage={state.rowsPerPage}
+      setCurrentPage={state.setCurrentPage}
+      setRowsPerPage={state.setRowsPerPage}
     />
   );
 }

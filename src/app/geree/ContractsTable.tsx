@@ -1,6 +1,7 @@
 import React from "react";
 import { ChevronDown, ChevronUp, Edit, Eye, FileText } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
+import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
 
@@ -21,6 +22,10 @@ interface ContractsTableProps {
   handleEdit: (contract: any) => void;
   handlePreviewContractTemplate: (id: string) => void;
   handlePreviewInvoice: (contract: any) => void;
+  currentPage: number;
+  rowsPerPage: number;
+  setCurrentPage: (page: number) => void;
+  setRowsPerPage: (size: number) => void;
 }
 
 export const ContractsTable: React.FC<ContractsTableProps> = ({
@@ -40,7 +45,12 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   handleEdit,
   handlePreviewContractTemplate,
   handlePreviewInvoice,
+  currentPage,
+  rowsPerPage,
+  setCurrentPage,
+  setRowsPerPage,
 }) => {
+  const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
   const handleToggleSelectAll = (checked: boolean) => {
     setSelectAllContracts(checked);
     if (checked) {
@@ -269,6 +279,48 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+      <div className="flex items-center justify-between px-2 py-1 text-md">
+        <div className="text-theme/70">
+          Нийт: {totalContracts}
+        </div>
+        <div className="flex items-center gap-3">
+          <PageSongokh
+            value={rowsPerPage}
+            onChange={(v) => {
+              setRowsPerPage(v);
+              setCurrentPage(1);
+            }}
+            className="text-sm px-2"
+          />
+
+          <div
+            id="geree-pagination"
+            className="flex items-center gap-1"
+          >
+            <button
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+              disabled={currentPage <= 1}
+              onClick={() => {
+                const newPage = Math.max(1, currentPage - 1);
+                setCurrentPage(newPage);
+              }}
+            >
+              Өмнөх
+            </button>
+            <div className="text-theme/70 px-1">{currentPage}</div>
+            <button
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+              disabled={currentPage >= totalPages}
+              onClick={() => {
+                const newPage = Math.min(totalPages, currentPage + 1);
+                setCurrentPage(newPage);
+              }}
+            >
+              Дараах
+            </button>
+          </div>
         </div>
       </div>
     </div>
