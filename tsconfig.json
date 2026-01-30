@@ -34,4 +34,5 @@
     "../tools/**/*.tsx"
 , "components/streamPlayer/R2Wplayer.js", "src/lib/useGereeState.tss"  ],
   "exclude": ["node_modules"]
+
 }

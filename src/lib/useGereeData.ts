@@ -132,12 +132,19 @@ export function useGereeData(
     try {
       const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
       const map = (tokhirgoo as any)?.davkhariinToonuud;
-      if (map && typeof map === "object" && !Array.isArray(map)) {
-        Object.entries(map).forEach(([floor, arr]) => {
-          const list = Array.isArray(arr) ? arr : [];
-          out[String(floor)] = list.map((x: any) => String(x));
-        });
-      }
+        if (map && typeof map === "object" && !Array.isArray(map)) {
+          Object.entries(map).forEach(([floor, val]) => {
+            let units: string[] = [];
+            if (Array.isArray(val)) {
+              units = val.flatMap((v) =>
+                String(v).split(/[\s,;|]+/).filter(Boolean)
+              );
+            } else if (typeof val === "string") {
+              units = val.split(/[\s,;|]+/).filter(Boolean);
+            }
+            out[String(floor)] = units;
+          });
+        }
       const tok = (tokhirgoo as any)?.davkhar;
       if (Array.isArray(tok)) {
         tok.forEach((it: any) => {
