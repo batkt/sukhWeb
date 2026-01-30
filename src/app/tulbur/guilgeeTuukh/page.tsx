@@ -225,7 +225,7 @@ const InvoiceModal = ({
             baiguullagiinId,
             barilgiinId: selectedBuildingId || barilgiinId || null,
             khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 100,
+            khuudasniiKhemjee: 2000,
           },
         });
         const data = resp.data;
@@ -234,15 +234,29 @@ const InvoiceModal = ({
           : Array.isArray(data)
             ? data
             : [];
+        const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
+        const residentGereeId = String(resident?.gereeniiId || "").trim();
+        const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+
         const residentInvoices = list.filter((item: any) => {
+          const itemGid = String(item?.gereeniiId || item?.gereeId || "").trim();
+          const itemRid = String(item?.orshinSuugchId || "").trim();
+          const itemDugaar = String(item?.gereeniiDugaar || "").trim();
+
+          // Strategy 1: Match by IDs
+          if (residentGereeId && itemGid === residentGereeId) return true;
+          if (residentId && itemRid === residentId) return true;
+          if (residentGereeDugaar && itemDugaar === residentGereeDugaar) return true;
+
+          // Strategy 2: Match by name/ovog/utas (fallback)
           const ovogMatch =
             !resident?.ovog ||
             !item?.ovog ||
-            String(item.ovog).trim() === String(resident.ovog).trim();
+            String(item.ovog).trim().toLowerCase() === String(resident.ovog).trim().toLowerCase();
           const nerMatch =
             !resident?.ner ||
             !item?.ner ||
-            String(item.ner).trim() === String(resident.ner).trim();
+            String(item.ner).trim().toLowerCase() === String(resident.ner).trim().toLowerCase();
           const utasMatch =
             !resident?.utas?.[0] ||
             !item?.utas?.[0] ||
@@ -250,9 +264,7 @@ const InvoiceModal = ({
             String(resident.utas?.[0] || "").trim();
           return ovogMatch && nerMatch && utasMatch;
         });
-        const latest = [
-          ...(residentInvoices.length > 0 ? residentInvoices : list),
-        ].sort((a: any, b: any) => {
+        const sortedInvoices = [...residentInvoices].sort((a: any, b: any) => {
           const aOgnoo = a?.ognoo ? new Date(a.ognoo).getTime() : 0;
           const bOgnoo = b?.ognoo ? new Date(b.ognoo).getTime() : 0;
           if (aOgnoo !== bOgnoo) {
@@ -261,20 +273,32 @@ const InvoiceModal = ({
           const aCreated = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
           const bCreated = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
           return bCreated - aCreated;
-        })[0];
+        });
+
+        const latest = sortedInvoices[0];
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
-        const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
-          ? latest.medeelel.zardluud
-          : Array.isArray(latest?.zardluud)
-            ? latest.zardluud
-            : [];
-        const guilgeenuudRows = Array.isArray(latest?.medeelel?.guilgeenuud)
-          ? latest.medeelel.guilgeenuud
-          : Array.isArray(latest?.guilgeenuud)
-            ? latest.guilgeenuud
-            : [];
-        const rows = [...zardluudRows, ...guilgeenuudRows];
+        // Aggregate ALL zardluud and guilgeenuud from the entire history of this resident
+        // to match "HistoryModal" style display within the invoice view.
+        const allZardluud: any[] = [];
+        const allGuilgeenuud: any[] = [];
+
+        residentInvoices.forEach((inv: any) => {
+          const z = Array.isArray(inv?.medeelel?.zardluud)
+            ? inv.medeelel.zardluud
+            : Array.isArray(inv?.zardluud)
+              ? inv.zardluud
+              : [];
+          const g = Array.isArray(inv?.medeelel?.guilgeenuud)
+            ? inv.medeelel.guilgeenuud
+            : Array.isArray(inv?.guilgeenuud)
+              ? inv.guilgeenuud
+              : [];
+          allZardluud.push(...z);
+          allGuilgeenuud.push(...g);
+        });
+
+        const rows = [...allZardluud, ...allGuilgeenuud];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -390,11 +414,11 @@ const InvoiceModal = ({
   }, [contractData]);
 
   const invoiceRows = React.useMemo(() => {
-    if (guilgeeRows.length > 0) {
-      return guilgeeRows;
-    }
     if (invRows.length > 0) {
       return invRows;
+    }
+    if (guilgeeRows.length > 0) {
+      return guilgeeRows;
     }
     if (backendRows && backendRows.length > 0) {
       const raw =
@@ -496,6 +520,11 @@ const InvoiceModal = ({
   ]);
 
   const totalSum = React.useMemo(() => {
+    if (invRows.length > 0) {
+      return invoiceRows
+        .filter((item: any) => !item?.discount)
+        .reduce((sum: number, item: any) => sum + Number(item?.dun ?? 0), 0);
+    }
     if (nekhemjlekhData?.niitTulbur != null) {
       return Number(nekhemjlekhData.niitTulbur);
     }
@@ -504,7 +533,7 @@ const InvoiceModal = ({
       .filter((item: any) => !item?.discount)
       .reduce((sum: any, item: any) => sum + Number(item?.dun ?? 0), 0);
     return rowSum;
-  }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
+  }, [invoiceRows, invTotal, invValid, nekhemjlekhData, invRows]);
 
   if (!isOpen) return null;
 
@@ -1174,6 +1203,8 @@ export default function DansniiKhuulga() {
     filteredItems.forEach((it: any) => {
       // Create a unique key for each resident
       const residentId = String(it?.orshinSuugchId || "").trim();
+      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
       const ner = String(it?.ner || "").trim().toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
@@ -1183,8 +1214,8 @@ export default function DansniiKhuulga() {
       })();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
 
-      // Use residentId if available, otherwise use ner+utas+toot as key
-      const key = residentId || `${ner}|${utas}|${toot}`;
+      // Priority grouping: GereeId > ResidentId > GereeDugaar > Name+Utas
+      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return; // Skip if no valid identifier
 
@@ -2275,7 +2306,7 @@ export default function DansniiKhuulga() {
                         it?.gereeniiDugaar || ct?.gereeniiDugaar || "-"
                       );
                       const total = Number(
-                        it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0
+                        it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0
                       );
                       // const khayag =
                       //   resident && resident.bairNer
@@ -2435,31 +2466,14 @@ export default function DansniiKhuulga() {
                                 );
                               }
                               case "uldegdel": {
-                                // Prefer contract-level globalUldegdel from geree,
-                                // then fall back to row-level uldegdel, then heuristics.
-                                const contractUldegdelRaw =
-                                  ct?.globalUldegdel ?? ct?.uldegdel;
-                                const rowUldegdelRaw = it?.uldegdel;
-
-                                const toNum = (v: any): number | null => {
-                                  if (v === undefined || v === null || v === "") return null;
-                                  const n = Number(v);
-                                  return Number.isFinite(n) ? n : null;
-                                };
-
-                                let remaining =
-                                  toNum(contractUldegdelRaw) ??
-                                  toNum(rowUldegdelRaw) ??
-                                  null;
-
-                                if (remaining === null) {
-                                  if (isPaid) {
-                                    remaining = 0;
-                                  } else {
-                                    // Fallback: assume full amount is still outstanding
-                                    remaining = total;
-                                  }
-                                }
+                                // Prefer the calculated balance (Total - Paid Summary) for consistency with footer/modal
+                                // matching "nekhemjlekh uldegdel" logic.
+                                const gid =
+                                  (it?.gereeniiId && String(it.gereeniiId)) ||
+                                  (ct?._id && String(ct._id)) ||
+                                  "";
+                                const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                const remaining = total - paid;
 
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>
@@ -2588,10 +2602,10 @@ export default function DansniiKhuulga() {
                       let content: React.ReactNode = "";
 
                       if (col.key === "gereeniiDugaar") {
-                   
+
                       } else if (col.key === "tulbur") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          return sum + Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                          return sum + Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
                         }, 0);
                         content = <span className="text-theme">{formatNumber(total, 0)} ₮</span>;
                       } else if (col.key === "paid") {
@@ -2603,7 +2617,7 @@ export default function DansniiKhuulga() {
                         content = <span className="text-emerald-600 dark:text-emerald-400">{formatNumber(total, 0)} ₮</span>;
                       } else if (col.key === "uldegdel") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const tulbur = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                          const tulbur = Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
                           const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
                           const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + (tulbur - tulsun);

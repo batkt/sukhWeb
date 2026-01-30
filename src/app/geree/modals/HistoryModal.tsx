@@ -29,6 +29,7 @@ interface LedgerEntry {
   burtgesenOgnoo: string;
   isSystem: boolean;
   ashiglaltText: string;
+  ashiglaltSum: number;
   _id?: string;
 }
 
@@ -179,10 +180,8 @@ export default function HistoryModal({
         const isPaid = item.tuluv === "Төлсөн" || item.tuluv === "paid";
         const tulsun = isPaid ? niitTulbur : (Number(item?.tulsunDun ?? item?.medeelel?.tulsunDun ?? 0) || calculatedTulsun);
 
-        // Calculate uldegdel (balance) = tulukhDun - tulsunDun
-        // If item.uldegdel is 0, calculate it ourselves
-        const itemUldegdel = Number(item?.uldegdel ?? item?.medeelel?.uldegdel ?? 0);
-        const uldegdel = itemUldegdel !== 0 ? itemUldegdel : (niitTulbur - tulsun);
+        // Always calculate uldegdel based on actual payment data for consistency
+        const uldegdel = niitTulbur - tulsun;
 
         // Determine if it's a system action or manual
         //uusgegsenEsekh can be "automataar", "cron", "garan"
@@ -192,11 +191,26 @@ export default function HistoryModal({
         // Calculate ashiglalt (maintenance) zardal
         // Sum of all zardluud that are NOT electricity (zaalt: true)
         let ashiglaltSum = 0;
-        const ashiglaltNames: string[] = [];
+        const maintenanceLines: string[] = [];
+
+        const pickAmount = (obj: any) => {
+          const n = (v: any) => {
+            const num = Number(v);
+            return Number.isFinite(num) ? num : null;
+          };
+          const dun = n(obj?.dun);
+          if (dun !== null && dun > 0) return dun;
+          const td = n(obj?.tulukhDun);
+          if (td !== null && td > 0) return td;
+          const tar = n(obj?.tariff);
+          return tar ?? 0;
+        };
+
         zardluud.forEach((z: any) => {
-          if (z.zaalt !== true) {
-            ashiglaltSum += Number(z.dun ?? z.tariff ?? 0);
-            if (z.ner) ashiglaltNames.push(z.ner);
+          if (z.zaalt !== true && z.ner) {
+            const amt = pickAmount(z);
+            ashiglaltSum += amt;
+            maintenanceLines.push(`${z.ner}: ${formatNumber(amt)} ₮`);
           }
         });
 
@@ -213,7 +227,8 @@ export default function HistoryModal({
           tailbar: item.tailbar || item.medeelel?.tailbar || "-",
           burtgesenOgnoo: item.createdAt || item.medeelel?.uusgegsenOgnoo || item.ognoo || "-",
           isSystem: isSystem,
-          ashiglaltText: ashiglaltNames.join(", "),
+          ashiglaltText: maintenanceLines.join("\n"),
+          ashiglaltSum: ashiglaltSum,
         };
       });
 
@@ -343,9 +358,9 @@ export default function HistoryModal({
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөх</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлсөн</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Зардлууд</th>
+                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлсөн</th>
+                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Зардлууд (Дүн)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -396,7 +411,7 @@ export default function HistoryModal({
                           {formatNumber(row.uldegdel)}
                         </td>
 
-                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell max-w-[200px] truncate" title={row.ashiglaltText}>
+                        <td className="py-2 px-2 text-[10px] text-slate-500 dark:text-slate-400 hidden md:table-cell max-w-[250px] whitespace-pre-line leading-tight" title={row.ashiglaltText}>
                           {row.ashiglaltText}
                         </td>
                       </tr>
@@ -416,7 +431,9 @@ export default function HistoryModal({
                       <td className="py-2 px-2 text-xs font-bold text-rose-600 dark:text-rose-400 text-right whitespace-nowrap hidden sm:table-cell">
                         {formatNumber(filteredData.reduce((sum, row) => sum + row.uldegdel, 0))}
                       </td>
-                      <td className="py-2 px-2 hidden md:table-cell"></td>
+                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-center hidden md:table-cell">
+                        {formatNumber(filteredData.reduce((sum, row) => sum + (row.ashiglaltSum || 0), 0))}
+                      </td>
                     </tr>
                   </>
                 )}
