@@ -326,7 +326,7 @@ const InvoiceModal = ({
           dun: pickAmount(z),
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
-          tailbar: invoiceTailbar,
+          tailbar: z.tailbar || invoiceTailbar,
         });
         setInvRows(rows.map(norm));
         const t = Number(
@@ -723,7 +723,7 @@ const InvoiceModal = ({
                       Зардал
                     </th>
                     <th className="py-2 px-3 text-right text-slate-600">
-                      Тариф
+                      Дүн
                     </th>
                     <th className="py-2 px-3 text-right text-slate-600">
                       Тайлбар
@@ -747,10 +747,7 @@ const InvoiceModal = ({
                           : ""
                           }`}
                       >
-                        {row.tariff == null
-                          ? "-"
-                          : formatNumber(Number(row.tariff))}
-                        ₮
+                        {formatNumber(Number(row.dun ?? 0))} ₮
                       </td>
                       <td
                         className={`py-2 px-3 text-right ${row.discount
