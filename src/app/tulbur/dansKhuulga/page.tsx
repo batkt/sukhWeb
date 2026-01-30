@@ -45,7 +45,7 @@ export default function DansniiKhuulga() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
-  
+
   useEffect(() => {
     if (ajiltan) {
       if (!hasPermission(ajiltan, "/tulbur/dansKhuulga")) {
@@ -104,7 +104,7 @@ export default function DansniiKhuulga() {
     [dansList]
   );
 
- 
+
 
   const t = (text: string) => text;
 
@@ -164,8 +164,8 @@ export default function DansniiKhuulga() {
         const list = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
-          ? resp.data
-          : [];
+            ? resp.data
+            : [];
         setBankRows(list);
       } catch (e) {
         openErrorOverlay(getErrorMessage(e));
@@ -212,8 +212,8 @@ export default function DansniiKhuulga() {
       const contractIds = Array.isArray(r.kholbosonGereeniiId)
         ? r.kholbosonGereeniiId
         : r.kholbosonGereeniiId
-        ? [String(r.kholbosonGereeniiId)]
-        : [];
+          ? [String(r.kholbosonGereeniiId)]
+          : [];
       // bank API uses `dansniiDugaar` or `accNum`/`dugaar` depending on source
       const account = String(
         r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || ""
@@ -486,24 +486,19 @@ export default function DansniiKhuulga() {
                       </tr>
                     )}
                   </tbody>
-                </table>
-              </div>
-              <div className="border-t dark:border-gray-800 border-gray-100">
-                {/* Render a single-row table footer so the total aligns under the "Төлбөр" (payment) column */}
-                <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
-                  <tbody>
-                    <tr>
-                      <td className="p-1 text-center text-theme whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
-
-                      <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
-                      <td className="p-1 !text-right font-normal text-theme whitespace-nowrap border-r border-[color:var(--surface-border)] pr-2">
-                        Нийт дүн: {formatNumber(totalSum, 0)} ₮
+                  <tfoot className="sticky bottom-0 z-30 bg-slate-50 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
+                    <tr className="text-theme font-bold">
+                      <td className="p-1 text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
+                      <td className="p-1 text-center whitespace-nowrap w-24 border-r border-[color:var(--surface-border)]"></td>
+                      <td className="p-1 text-right pr-2 border-r border-[color:var(--surface-border)]">
+                        Нийт дүн:
                       </td>
-                      <td className="p-1 text-theme border-r border-[color:var(--surface-border)]"></td>
-
-                      <td className="p-1 text-theme"></td>
+                      <td className="p-1 text-right pr-2 border-r border-[color:var(--surface-border)] whitespace-nowrap w-32">
+                        {formatNumber(totalSum, 0)} ₮
+                      </td>
+                      <td className="p-1"></td>
                     </tr>
-                  </tbody>
+                  </tfoot>
                 </table>
               </div>
             </div>

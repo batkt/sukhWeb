@@ -20,6 +20,7 @@ export interface TransactionData {
   residentId?: string;
   gereeniiId?: string;
   tailbar?: string;
+  ekhniiUldegdel: boolean;
 }
 
 export default function TransactionModal({
@@ -36,6 +37,7 @@ export default function TransactionModal({
   );
   const [amount, setAmount] = useState("0.00");
   const [tailbar, setTailbar] = useState("");
+  const [ekhniiUldegdel, setEkhniiUldegdel] = useState(false);
 
   useModalHotkeys({
     isOpen: show,
@@ -51,6 +53,7 @@ export default function TransactionModal({
       residentId: resident?._id,
       gereeniiId: resident?.gereeniiId,
       tailbar,
+      ekhniiUldegdel,
     };
 
     await onSubmit(data);
@@ -95,7 +98,7 @@ export default function TransactionModal({
 
           {/* Body */}
           <div className="px-6 py-5 space-y-5 bg-[color:var(--surface-bg)]">
-            
+
             {/* Resident Info Card */}
             {resident && (
               <div className="bg-[color:var(--surface-hover)]/50 rounded-xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
@@ -118,11 +121,11 @@ export default function TransactionModal({
               <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
                 Гүйлгээний төрөл
               </label>
-              <div className="grid grid-cols-3 gap-1 p-1 bg-[color:var(--surface-hover)] rounded-lg">
+              <div className="grid grid-cols-3 gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
                 {[
-                  { value: "busad", label: "Төлөлт" },
                   { value: "avlaga", label: "Авлага" },
                   { value: "ashiglalt", label: "Ашиглалт" },
+                  { value: "busad", label: "Бусад" },
                 ].map((option) => (
                   <button
                     key={option.value}
@@ -131,8 +134,8 @@ export default function TransactionModal({
                     disabled={isProcessing}
                     className={`
                       relative py-1.5 px-3 text-sm font-semibold rounded-md transition-all duration-200
-                      ${transactionType === option.value 
-                        ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]" 
+                      ${transactionType === option.value
+                        ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]"
                         : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
                     `}
@@ -142,6 +145,29 @@ export default function TransactionModal({
                 ))}
               </div>
             </div>
+
+            {/* Initial Balance Checkbox - only for avlaga type */}
+            {transactionType === "avlaga" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10"
+              >
+                <input
+                  type="checkbox"
+                  id="ekhniiUldegdel"
+                  checked={ekhniiUldegdel}
+                  onChange={(e) => setEkhniiUldegdel(e.target.checked)}
+                  className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                />
+                <label
+                  htmlFor="ekhniiUldegdel"
+                  className="text-xs font-medium text-rose-700 cursor-pointer select-none"
+                >
+                  Эхний үлдэгдэл эсэх
+                </label>
+              </motion.div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               {/* Date Input */}
@@ -154,7 +180,7 @@ export default function TransactionModal({
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
                   disabled={isProcessing}
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-medium"
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-medium"
                 />
               </div>
 
@@ -169,11 +195,11 @@ export default function TransactionModal({
                   onChange={(e) => {
                     const val = e.target.value;
                     if (/^[0-9.,]*$/.test(val)) {
-                        setAmount(val);
+                      setAmount(val);
                     }
                   }}
                   onFocus={() => {
-                      setAmount(amount.replace(/,/g, ""));
+                    setAmount(amount.replace(/,/g, ""));
                   }}
                   onBlur={() => {
                     const val = parseFloat(amount.replace(/,/g, ""));
@@ -183,7 +209,7 @@ export default function TransactionModal({
                   }}
                   disabled={isProcessing}
                   placeholder="0.00"
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-bold text-right tracking-wide"
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-bold text-right tracking-wide"
                 />
               </div>
             </div>
@@ -199,7 +225,7 @@ export default function TransactionModal({
                 disabled={isProcessing}
                 placeholder="Гүйлгээний утга..."
                 rows={3}
-                className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
+                className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
               />
             </div>
           </div>
@@ -210,7 +236,7 @@ export default function TransactionModal({
               type="button"
               onClick={onClose}
               disabled={isProcessing}
-              className="px-5 py-2.5 text-sm font-medium text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-xl transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 text-sm font-medium text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors disabled:opacity-50"
             >
               Хаах
             </button>
@@ -218,7 +244,7 @@ export default function TransactionModal({
               type="button"
               onClick={handleSubmit}
               disabled={isProcessing}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-[color:var(--theme)] hover:opacity-90 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
+              className="px-6 py-2.5 text-sm font-bold text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
@@ -236,12 +262,12 @@ export default function TransactionModal({
                       className="opacity-75"
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
+                    />
                   </svg>
                   <span>Уншиж байна...</span>
                 </span>
               ) : (
-                "Гүйлгээ бүртгэх"
+                "Хадгалах"
               )}
             </button>
           </div>
