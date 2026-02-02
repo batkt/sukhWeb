@@ -67,8 +67,10 @@ export default function HistoryModal({
         khuudasniiKhemjee: 5000,
       };
 
+      const contractIdToFetch = contract?._id || contract?.gereeniiId;
+
       // Fetch all necessary data concurrently
-      const [historyResp, paymentResp, receivableResp] = await Promise.all([
+      const [historyResp, paymentResp, receivableResp, contractResp] = await Promise.all([
         uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
           params: {
             ...commonParams,
@@ -89,12 +91,20 @@ export default function HistoryModal({
             ...commonParams,
             _t: Date.now(),
           },
-        })
+        }),
+        // Fetch fresh contract data to get the authoritative balance
+        contractIdToFetch ? uilchilgee(token || undefined).get(`/geree/${contractIdToFetch}`, {
+          params: { _t: Date.now() }
+        }).catch(err => { console.warn("Failed to fetch fresh contract:", err); return { data: null }; })
+          : Promise.resolve({ data: null })
       ]);
 
       const rawList = Array.isArray(historyResp.data?.jagsaalt) ? historyResp.data.jagsaalt : [];
       const paymentRecords = Array.isArray(paymentResp.data?.jagsaalt) ? paymentResp.data.jagsaalt : [];
       const receivableRecords = Array.isArray(receivableResp.data?.jagsaalt) ? receivableResp.data.jagsaalt : [];
+      const freshContract = contractResp?.data;
+
+      console.log(`🔍 [HistoryModal] Fetched: ${rawList.length} invoices, ${paymentRecords.length} payments, ${receivableRecords.length} receivables. Fresh Contract Balance: ${freshContract?.uldegdel}`);
 
       // Extract all possible identifiers from the contract/resident object
       const contractId = String(contract?._id || "").trim();
@@ -434,7 +444,12 @@ export default function HistoryModal({
         } else if (turul === "tulult" || turul === "Төлөлт" || turul === "tulbur") {
           name = "Төлөлт";
           khelber = "Төлбөр";
+        } else if (turul === "prepayment" || turul === "Урьдчилсан төлбөр" || turul === "invoice_payment") {
+          name = "Төлөлт";
+          khelber = "Төлбөр";
         }
+
+        console.log(`💰 [HistoryModal] Processing payment: ${payment._id}, turul: ${turul}, amount: ${tulsunDun}, name: ${name}`);
 
         if (tulsunDun > 0) {
           flatLedger.push({
@@ -470,19 +485,32 @@ export default function HistoryModal({
         return createA - createB;
       });
 
-      // Calculate Running Balance
-      let runningBalance = contractItems[0]?.ekhniiUldegdel ? Number(contractItems[0].ekhniiUldegdel) : 0; // Or 0 if not reliable
-      // If we want accurate history, we might need a trusted starting balance.
-      // For now, start from 0 or assume the list covers relevant history.
-      // If the API returns a 'paginated' list, the running balance might be off unless we have a 'startBalance' for the page.
-      // Let's assume 'contract.uldegdel' is the FINAL balance. We can calculate backwards?
-      // Or just forward if we have full history.
-      // Given the request "2026.01.30 hog 8347 ... uldegdel 9347", forward calculation is standard.
+      // Calculate Running Balance BACKWARDS from the current contract balance
+      // This ensures the final history item matches the table's "uldegdel" exactly.
+      // Use fresh fetched balance if available, otherwise fallback to prop
+      let runningBalance = freshContract?.uldegdel !== undefined
+        ? Number(freshContract.uldegdel)
+        : (contract?.uldegdel ? Number(contract.uldegdel) : 0);
 
-      flatLedger.forEach(row => {
-        runningBalance = runningBalance + row.tulukhDun - row.tulsunDun;
+      console.log(`💰 [HistoryModal] Backward Calc Start (Current Balance): ${runningBalance}`);
+
+      // Iterate from newest to oldest
+      for (let i = flatLedger.length - 1; i >= 0; i--) {
+        const row = flatLedger[i];
+
+        // The row's displayed balance should be the balance AFTER this transaction
         row.uldegdel = runningBalance;
-      });
+
+        // Calculate the balance BEFORE this transaction for the next iteration (going backwards)
+        // Logic: Previous + Charge - Pay = Current
+        // Therefore: Previous = Current - Charge + Pay
+        const charge = Number(row.tulukhDun || 0);
+        const pay = Number(row.tulsunDun || 0);
+
+        runningBalance = runningBalance - charge + pay;
+      }
+
+      console.log(`💰 [HistoryModal] Backward Calc End (Initial Balance): ${runningBalance}`);
 
       // Validating against Contract Current Balance (Optional but good for debug)
       // console.log("Final Calculated Balance:", runningBalance);

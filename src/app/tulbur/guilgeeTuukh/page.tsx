@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
-import { message } from "antd";
+import { message, Tooltip } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -27,6 +27,7 @@ import {
   History,
   Columns,
   Banknote,
+  Send,
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
@@ -831,6 +832,8 @@ const InvoiceModal = ({
   );
 };
 
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+
 export default function DansniiKhuulga() {
   const { mutate } = useSWRConfig();
   const [page, setPage] = useState(1);
@@ -870,8 +873,20 @@ export default function DansniiKhuulga() {
   // Use a ref to track what's currently being requested across renders without causing loops
   const requestedGereeIdsRef = useRef<Set<string>>(new Set());
 
+  // Selection state for "Send Invoice"
+  const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
+  const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+
   const columnDefs = useMemo(
     () => [
+      {
+        key: "checkbox",
+        label: "",
+        align: "center",
+        sticky: true,
+        width: 40,
+        minWidth: 40,
+      },
       {
         key: "index",
         label: "№",
@@ -913,7 +928,6 @@ export default function DansniiKhuulga() {
         minWidth: 140,
       },
       { key: "tulbur", label: "Төлбөр", align: "center", minWidth: 110 },
-
       { key: "uldegdel", label: "Үлдэгдэл", align: "center", minWidth: 110 },
       { key: "paid", label: "Гүйцэтгэл", align: "center", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
@@ -1694,6 +1708,115 @@ export default function DansniiKhuulga() {
     }
   };
 
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      // Select all visible items that have a valid gereeniiId
+      const allIds = paginated
+        .map((it: any) => {
+          const gid =
+            (it?.gereeniiId && String(it.gereeniiId)) ||
+            (it?.gereeId && String(it.gereeId)) ||
+            (it?.gereeniiDugaar &&
+              String(
+                (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+              ));
+          return gid;
+        })
+        .filter((id) => id && id.length > 5); // Filter out invalid IDs
+
+      // Use Set to ensure uniqueness when adding to existing selection if needed, 
+      // but "Select All" usually implies "replace selection with all current page" or "add all current page"
+      // Let's implement "Add current page to selection" to match Gmail-style behavior if we want multi-page,
+      // but Geree logic was "Select all currentContracts". 
+      // Let's assume user wants to select everything on current page.
+
+      setSelectedGereeIds((prev) => Array.from(new Set([...prev, ...allIds])));
+    } else {
+      // Deselect all items on current page
+      const pageIds = new Set(paginated.map((it: any) => {
+        const gid =
+          (it?.gereeniiId && String(it.gereeniiId)) ||
+          (it?.gereeId && String(it.gereeId)) ||
+          (it?.gereeniiDugaar &&
+            String(
+              (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+            ));
+        return gid;
+      }).filter(id => id));
+
+      setSelectedGereeIds((prev) => prev.filter(id => !pageIds.has(id)));
+    }
+  };
+
+  const handleToggleRow = (gereeId: string, checked: boolean) => {
+    if (!gereeId) return;
+    setSelectedGereeIds((prev) => {
+      if (checked) {
+        return [...prev, gereeId];
+      }
+      return prev.filter((id) => id !== gereeId);
+    });
+  };
+
+  // Manual send invoice handler
+  const handleSendInvoices = async () => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+      return;
+    }
+
+    if (selectedGereeIds.length === 0) {
+      openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
+      return;
+    }
+
+    setIsSendingInvoices(true);
+    try {
+      // Get current month and year as default
+      const now = new Date();
+
+      const body = {
+        gereeIds: selectedGereeIds,
+        baiguullagiinId: ajiltan.baiguullagiinId,
+        override: false,
+        targetMonth: now.getMonth() + 1,
+        targetYear: now.getFullYear(),
+      };
+
+      const response = await uilchilgee(token).post("/manualSend", body);
+
+      if (response.data?.success) {
+        const message = response.data.message || `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
+        openSuccessOverlay(message);
+        setSelectedGereeIds([]); // Clear selection on success
+
+        // If there are errors, show them
+        if (response.data.data?.errors > 0 && response.data.data?.errorsList?.length > 0) {
+          const errorMessages = response.data.data.errorsList
+            .map((err: any) => `${err.gereeniiDugaar || 'Гэрээ'}: ${err.error}`)
+            .join('\n');
+          openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
+        }
+
+        // Refresh data
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/nekhemjlekhiinTuukh" ||
+              key[0] === "/geree" ||
+              key[0] === "/orshinSuugch"),
+          undefined,
+          { revalidate: true }
+        );
+      }
+    } catch (error: any) {
+      const msg = getErrorMessage(error);
+      openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
+    } finally {
+      setIsSendingInvoices(false);
+    }
+  };
+
   const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2133,22 +2256,25 @@ export default function DansniiKhuulga() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div ref={zaaltButtonRef} className="relative">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  transition={{ duration: 0.3 }}
-                  onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
-                  className="btn-minimal inline-flex items-center gap-2"
-                  id="zaalt-btn"
-                >
-                  <FileSpreadsheet className="w-5 h-5" />
-                  <span className="text-xs">Заалт</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition-transform ${isZaaltDropdownOpen ? "rotate-180" : ""
-                      }`}
-                  />
-                </motion.button>
+                <Tooltip title="Заалт">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                    onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
+                    className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
+                    id="zaalt-btn"
+                  >
+                    <FileSpreadsheet className="w-5 h-5" />
+                    <span className="hidden">Заалт</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${isZaaltDropdownOpen ? "rotate-180" : ""
+                        }`}
+                    />
+                  </motion.button>
+                </Tooltip>
+
 
                 {isZaaltDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
@@ -2185,16 +2311,19 @@ export default function DansniiKhuulga() {
                   </div>
                 )}
               </div>
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <IconTextButton
-                  onClick={() => setIsInitialBalanceModalOpen(true)}
-                  icon={<Upload className="w-5 h-5" />}
-                  label="Эхний үлдэгдэл"
-                />
-              </motion.div>
+              <Tooltip title="Эхний үлдэгдэл">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={() => setIsInitialBalanceModalOpen(true)}
+                    icon={<Upload className="w-5 h-5" />}
+                    label="Эхний үлдэгдэл"
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                  />
+                </motion.div>
+              </Tooltip>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -2202,29 +2331,51 @@ export default function DansniiKhuulga() {
                 onChange={handleExcelImport}
                 className="hidden"
               />
-              <motion.div
-                id="guilgee-excel-btn"
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <IconTextButton
-                  onClick={exceleerTatya}
-                  icon={<Download className="w-5 h-5" />}
-                  label={t("Excel татах")}
-                />
-              </motion.div>
-              <div className="relative" ref={columnDropdownRef}>
+              <Tooltip title={t("Excel татах")}>
                 <motion.div
-                  id="guilgee-columns-btn"
+                  id="guilgee-excel-btn"
                   whileHover={{ scale: 1.03 }}
                   transition={{ duration: 0.3 }}
                 >
                   <IconTextButton
-                    onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
-                    icon={<Columns className="w-5 h-5" />}
-                    label="Багана"
+                    onClick={exceleerTatya}
+                    icon={<Download className="w-5 h-5" />}
+                    label={t("Excel татах")}
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
                   />
                 </motion.div>
+              </Tooltip>
+              <div className="relative flex items-center gap-2" ref={columnDropdownRef}>
+                <Tooltip title="Багана">
+                  <motion.div
+                    id="guilgee-columns-btn"
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <IconTextButton
+                      onClick={() => setIsColumnModalOpen(!isColumnModalOpen)}
+                      icon={<Columns className="w-5 h-5" />}
+                      label="Багана"
+                      className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden"
+                    />
+                  </motion.div>
+                </Tooltip>
+
+                {ajiltan?.erkh === "Admin" && (
+                  <motion.div
+                    whileHover={{ scale: 1.03 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <IconTextButton
+                      onClick={handleSendInvoices}
+                      icon={isSendingInvoices ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
+                      label="Нэхэмжлэх илгээх"
+                      showLabelFrom="xl"
+                      disabled={isSendingInvoices || selectedGereeIds.length === 0}
+                      className={selectedGereeIds.length > 0 ? "bg-theme text-white border-transparent hover:bg-theme/90" : ""}
+                    />
+                  </motion.div>
+                )}
                 <AnimatePresence>
                   {isColumnModalOpen && (
                     <motion.div
@@ -2319,7 +2470,30 @@ export default function DansniiKhuulga() {
                             minWidth: col.minWidth,
                           }}
                         >
-                          {col.label}
+                          {col.key === "checkbox" ? (
+                            <div className="flex justify-center items-center h-full">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                onChange={(e) => handleToggleSelectAll(e.target.checked)}
+                                checked={
+                                  paginated.length > 0 &&
+                                  paginated.every((it: any) => {
+                                    const gid =
+                                      (it?.gereeniiId && String(it.gereeniiId)) ||
+                                      (it?.gereeId && String(it.gereeId)) ||
+                                      (it?.gereeniiDugaar &&
+                                        String(
+                                          (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+                                        ));
+                                    return gid && selectedGereeIds.includes(gid);
+                                  })
+                                }
+                              />
+                            </div>
+                          ) : (
+                            col.label
+                          )}
                         </th>
                       );
                     })}
@@ -2476,6 +2650,35 @@ export default function DansniiKhuulga() {
                             } as React.CSSProperties;
 
                             switch (col.key) {
+                              case "checkbox": {
+                                const gid =
+                                  (it?.gereeniiId && String(it.gereeniiId)) ||
+                                  (it?.gereeId && String(it.gereeId)) ||
+                                  (it?.gereeniiDugaar &&
+                                    String(
+                                      (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+                                    ));
+
+                                return (
+                                  <td key={col.key} className={cellClass} style={style}>
+                                    <div
+                                      className="flex justify-center items-center h-full"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {gid ? (
+                                        <input
+                                          type="checkbox"
+                                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                          checked={selectedGereeIds.includes(gid)}
+                                          onChange={(e) => handleToggleRow(gid, e.target.checked)}
+                                        />
+                                      ) : (
+                                        <span className="text-gray-300">-</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                );
+                              }
                               case "index":
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>
