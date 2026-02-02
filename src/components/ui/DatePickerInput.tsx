@@ -92,6 +92,8 @@ export function DatePickerInput(
     value,
     onChange,
     onClick: rootOnClick,
+    leftSection,
+    rightSection,
   } = props as any;
 
   const [open, setOpen] = useState(false);
@@ -219,6 +221,7 @@ export function DatePickerInput(
             (className ? ` ${className}` : "")
         }
       >
+        {leftSection && <div>{leftSection}</div>}
         <span className={(displayText ? "text-theme" : "text-subtle") + " flex-1 text-center"}>
           {displayText || placeholder}
         </span>
@@ -236,6 +239,7 @@ export function DatePickerInput(
             ×
           </span>
         )}
+        {rightSection && <div>{rightSection}</div>}
       </button>
 
       {open &&

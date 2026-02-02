@@ -23,7 +23,9 @@ import {
   Info,
   MoreHorizontal,
   ChevronDown,
-  Plus
+  Plus,
+  Filter,
+  ArrowUpDown
 } from "lucide-react";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
@@ -61,9 +63,17 @@ const RealTimeDuration = ({ orsonTsag, garsanTsag }: { orsonTsag?: string; garsa
   const minutes = diff.minutes();
   const seconds = diff.seconds();
 
+  if (!garsanTsag) {
+     return (
+        <span className="text-[11px] font-medium font-mono text-slate-800">
+           {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} : {String(seconds).padStart(2, "0")}
+        </span>
+     );
+  }
+
   return (
-    <span className="font-mono">
-      {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} : {String(seconds).padStart(2, "0")}
+    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-800">
+      {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
     </span>
   );
 };
@@ -77,7 +87,7 @@ const RealTimeClock = () => {
   return (
     <div className="text-right hidden md:block">
       <p className="text-sm font-black text-slate-800 dark:text-gray-200">{time.format("YYYY-MM-DD")}</p>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{time.format("HH:mm:ss")}</p>
+      <p className="text-[10px]  text-slate-400 uppercase tracking-widest">{time.format("HH:mm:ss")}</p>
     </div>
   );
 };
@@ -96,8 +106,11 @@ export default function Camera() {
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const pageSize = 20;
-
+  const pageSize = 100;
+  const [durationFilter, setDurationFilter] = useState("latest_out");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [ebarimtResult, setEbarimtResult] = useState<any>(null);
 
   const toISODate = (d: Date) => d.toISOString().slice(0, 10);
   const today = useMemo(() => new Date(), []);
@@ -254,15 +267,95 @@ export default function Camera() {
   // Helper to fetch list via REST (as a fallback or for filters)
   const fetchList = async () => {
     if (!rangeStart || !rangeEnd || !token) return;
+    
+    // archive.md logic: Handle Archive collections based on date range
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    
+    const startObj = new Date(rangeStart);
+    const endObj = new Date(rangeEnd);
+    const startYear = startObj.getFullYear();
+    const startMonth = startObj.getMonth() + 1;
+    const endYear = endObj.getFullYear();
+    const endMonth = endObj.getMonth() + 1;
+
+    let archiveName = undefined;
+    
+    // Spans multiple months?
+    if (startYear !== endYear || startMonth !== endMonth) {
+      archiveName = "multi-month";
+    } else if (startYear !== currentYear || startMonth !== currentMonth) {
+      // Past month
+      archiveName = `Uilchluulegch${startYear}${String(startMonth).padStart(2, "0")}`;
+    }
+
+    const query: any = {
+      baiguullagiinId: ajiltan?.baiguullagiinId,
+      barilgiinId: effectiveBarilgiinId || undefined,
+    };
+
+    if (searchTerm) {
+      query.mashiniiDugaar = { $regex: searchTerm, $options: "i" };
+    }
+
+    if (typeFilter !== 'all') {
+      query.turul = 'Үйлчлүүлэгч';
+    }
+
+    if (statusFilter === 'active') {
+      query["tuukh.tuluv"] = { $in: [0, -2] };
+      query["tuukh.garsanKhaalga"] = { $exists: false };
+    } else if (statusFilter === 'paid') {
+      query["tuukh.tuluv"] = { $in: [1, 2] };
+    } else if (statusFilter === 'unpaid') {
+      query["tuukh.tuluv"] = { $in: [0, -4] };
+      query.niitDun = { $gt: 0 };
+    } else if (statusFilter === 'free') {
+      query.niitDun = 0;
+      query["tuukh.tuluv"] = { $nin: [0, -2] };
+    }
+
+    // The mandatory $or structure for date filtering as requested
+    const exitCameraIP = activeExitIP || (exitCameras[0]?.cameraIP);
+    
+    query.$or = [
+      {
+        ...(exitCameraIP ? { "tuukh.0.garsanKhaalga": exitCameraIP } : {}),
+        "tuukh.tsagiinTuukh.garsanTsag": {
+          $gte: `${rangeStart} 00:00:00`,
+          $lte: `${rangeEnd} 23:59:59`
+        }
+      },
+      {
+        "tuukh.0.garsanKhaalga": { $exists: false },
+        createdAt: {
+          $gte: `${rangeStart} 00:00:00`,
+          $lte: `${rangeEnd} 23:59:59`
+        }
+      }
+    ];
+
+    const sortObj = durationFilter === 'longest' 
+      ? { "tuukh.0.niitKhugatsaa": -1 }
+      : (durationFilter === 'latest_in' 
+          ? { 
+              "tuukh.tsagiinTuukh.garsanTsag": 1,
+              niitDun: 1,
+              "tuukh.tuluv": 1,
+              "tuukh.tsagiinTuukh.orsonTsag": -1,
+              zurchil: 1,
+            } 
+          : { "tuukh.0.tsagiinTuukh.0.garsanTsag": -1 });
+
     try {
       const resp = await uilchilgee(token).get("/zogsoolUilchluulegch", {
         params: {
-          baiguullagiinId: ajiltan?.baiguullagiinId,
           khuudasniiDugaar: page,
           khuudasniiKhemjee: pageSize,
-          search: searchTerm,
-          startDate: rangeStart,
-          endDate: rangeEnd,
+          query: JSON.stringify(query),
+          order: JSON.stringify(sortObj),
+          archiveName: archiveName,
         },
       });
       setListData(resp.data);
@@ -273,29 +366,17 @@ export default function Camera() {
     }
   };
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, rangeStart, rangeEnd, typeFilter, durationFilter, statusFilter]);
+
   // Initial fetch and fetch on changes
   useEffect(() => {
     fetchList();
-  }, [page, searchTerm, rangeStart, rangeEnd, token]);
+  }, [page, searchTerm, rangeStart, rangeEnd, token, typeFilter, durationFilter, statusFilter, activeExitIP]);
 
-  // mutation helper
-  const mutateTransactions = fetchList;
-
-  function zurchilteiMashinMsgilgeekh(mashiniiDugaar: string) {
-    let yavuulakhData = {
-      baiguullagiinId: baiguullaga?._id,
-      barilgiinId: effectiveBarilgiinId,
-      mashiniiDugaar: mashiniiDugaar,
-    };
-    uilchilgee(token || undefined)
-      .post("/zurchilteiMashinMsgilgeekh", yavuulakhData)
-      .then((res) => {
-        if (res.status === 200) toast.success("Амжилттай илгээгдлээ");
-      })
-      .catch(aldaaBarigch);
-  }
-
-  function khaalgaNeey(ip: string) {
+  const khaalgaNeey = useCallback((ip: string) => {
     if (!ip) return;
     // Call local .NET service directly as requested
     axios.get(`http://localhost:5000/api/neeye/${ip}`)
@@ -308,7 +389,7 @@ export default function Camera() {
             .catch(aldaaBarigch);
         }
       });
-  }
+  }, [token]);
 
   async function handleManualExit(transaction: Uilchluulegch, type: 'pay' | 'free') {
     if (type === 'pay') {
@@ -366,7 +447,6 @@ export default function Camera() {
     return () => cleanup.forEach((fn) => fn());
   }, [baiguullaga?._id, exitCameras]);
 
-  // Main socket logic (zogsool.md lines 973-1107)
   useEffect(() => {
     if (!baiguullaga?._id || !cameras.length) return;
     if (!socketRef.current) {
@@ -456,11 +536,6 @@ export default function Camera() {
     const handleGarahTulsun = (data: any) => {
       if (!data || !data?.mashiniiDugaar || !data?.baiguullagiinId || data?.baiguullagiinId !== baiguullaga?._id)
         return;
-      if (data?._id) handleGeneralUpdate(data);
-      let dugaar = data?.mashiniiDugaar?.replace("???", "");
-      if (!!dugaar) {
-        uilchilgee(token || undefined).get(`/sambar/${data?.cameraIP}/${dugaar}/${moment().format("HH:mm:ss")}`).catch(() => {});
-      }
       khaalgaNeey(data.cameraIP);
     };
 
@@ -471,8 +546,8 @@ export default function Camera() {
     });
 
     exitCameras.forEach((cam) => {
-      const e1 = `zogsoolGarah${baiguullaga._id}${cam.cameraIP}`;
-      const e2 = `zogsoolGarahTulsun${baiguullaga._id}${cam.cameraIP}`;
+      const e1 = `zogsoolGarakh${baiguullaga?._id}${cam.cameraIP}`;
+      const e2 = `zogsoolGarahTulsun${baiguullaga?._id}${cam.cameraIP}`;
 
       s.on(e1, handleGarah);
       s.on(e2, handleGarahTulsun);
@@ -487,6 +562,8 @@ export default function Camera() {
   }, [baiguullaga?._id, camerasHash, token]);
 
   const isSocketConnected = isConnected;
+
+
 
 
 
@@ -513,10 +590,42 @@ export default function Camera() {
 
     let merged = Array.from(transactionMap.values());
 
+    // Filter Type
+    if (typeFilter !== 'all') {
+      merged = merged.filter(t => {
+         const type = t.tuukh?.[0]?.turul || "Үйлчлүүлэгч"; 
+         return type === 'Үйлчлүүлэгч';
+      });
+    }
+
+    // Filter Status
+    if (statusFilter !== 'all') {
+      merged = merged.filter(t => {
+        const tuluv = t.tuukh?.[0]?.tuluv;
+        if (statusFilter === 'active') return tuluv === 0 || tuluv === -2;
+        if (statusFilter === 'paid') return tuluv === 1 || tuluv === 2;
+        if (statusFilter === 'unpaid') return (tuluv === 0 || tuluv === -4) && (t.niitDun || 0) > 0;
+        if (statusFilter === 'free') return (t.niitDun || 0) === 0 && (tuluv !== 0 && tuluv !== -2);
+        return true;
+      });
+    }
+
+    // Sort
     merged.sort((a, b) => {
-      const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-      const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-      return tB - tA;
+      const getInTime = (t: Uilchluulegch) => t.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag ? new Date(t.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag).getTime() : (t.createdAt ? new Date(t.createdAt).getTime() : 0);
+      const getOutTime = (t: Uilchluulegch) => t.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag ? new Date(t.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag).getTime() : 0;
+      
+      if (durationFilter === 'longest') {
+         const durA = getOutTime(a) ? (getOutTime(a) - getInTime(a)) : (Date.now() - getInTime(a));
+         const durB = getOutTime(b) ? (getOutTime(b) - getInTime(b)) : (Date.now() - getInTime(b));
+         return durB - durA;
+      } else if (durationFilter === 'latest_in') {
+         return getInTime(b) - getInTime(a);
+      } else {
+         const timeA = getOutTime(a) || getInTime(a);
+         const timeB = getOutTime(b) || getInTime(b);
+         return timeB - timeA;
+      }
     });
 
     if (page === 1) {
@@ -524,21 +633,21 @@ export default function Camera() {
     }
 
     return merged;
-  }, [listData, liveUpdates, page]);
+  }, [listData, liveUpdates, page, durationFilter, typeFilter, statusFilter]);
 
   const stats = useMemo(() => {
     const total = transactions.reduce((sum: number, t: Uilchluulegch) => sum + (t.niitDun || 0), 0);
     const paid = transactions
       .filter(
-        (t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined,
+        (t) => t.tuukh?.[0]?.tuluv === 1 || t.tuukh?.[0]?.tuluv === 2,
       )
       .reduce((sum: number, t: Uilchluulegch) => sum + (t.niitDun || 0), 0);
     const unpaid = transactions
-      .filter((t) => t.tuukh?.[0]?.tuluv === 0)
+      .filter((t) => (t.tuukh?.[0]?.tuluv === 0 || t.tuukh?.[0]?.tuluv === -4) && (t.niitDun || 0) > 0)
       .reduce((sum: number, t: Uilchluulegch) => sum + (t.niitDun || 0), 0);
     const count = transactions.length;
     const paidCount = transactions.filter(
-      (t) => t.tuukh?.[0]?.tuluv !== 0 && t.tuukh?.[0]?.tuluv !== undefined,
+      (t) => t.tuukh?.[0]?.tuluv === 1 || t.tuukh?.[0]?.tuluv === 2,
     ).length;
 
     return { total, paid, unpaid, count, paidCount };
@@ -548,6 +657,52 @@ export default function Camera() {
     (listData?.niitMur ||
       transactions.length) / pageSize,
   );
+
+  // Keyboard Shortcuts (shortcut.md / zogsool.md)
+  useEffect(() => {
+    const handleShortcuts = (e: KeyboardEvent) => {
+      // Don't trigger if typing in input
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      switch (e.key) {
+        case "F1":
+          e.preventDefault();
+          if (entryCameras[0]) khaalgaNeey(entryCameras[0].cameraIP);
+          break;
+        case "F2":
+          e.preventDefault();
+          if (exitCameras[0]) khaalgaNeey(exitCameras[0].cameraIP);
+          break;
+        case "F4":
+          e.preventDefault();
+          if (transactions[0] && (transactions[0].niitDun || 0) > 0) {
+            setSelectedTransaction(transactions[0]);
+          }
+          break;
+        case "F7":
+          e.preventDefault();
+          if (transactions[0]) {
+            handleManualExit(transactions[0], "free");
+          }
+          break;
+        case "F8":
+        case "+":
+          e.preventDefault();
+          setActiveEntryIP(entryCameras[0]?.cameraIP || "");
+          setIsRegModalOpen(true);
+          break;
+        case "-":
+          e.preventDefault();
+          setActiveEntryIP(exitCameras[0]?.cameraIP || ""); // Using registration for exit if needed
+          setIsRegModalOpen(true);
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcuts);
+    return () => window.removeEventListener("keydown", handleShortcuts);
+  }, [entryCameras, exitCameras, transactions, khaalgaNeey, handleManualExit]);
 
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
@@ -571,7 +726,7 @@ export default function Camera() {
                  <h1 className="text-2xl font-black text-[color:var(--panel-text)] tracking-tighter uppercase">Хяналтын самбар</h1>
               </div>
               <div className="flex items-center gap-3">
-                <p className="text-[10px] font-bold text-[color:var(--muted-text)] uppercase tracking-widest opacity-60">КАМЕР БОЛОН ГҮЙЛГЭЭНИЙ ХЯНАЛТ</p>
+                <p className="text-[10px]  text-[color:var(--muted-text)] uppercase tracking-widest opacity-60">КАМЕР БОЛОН ГҮЙЛГЭЭНИЙ ХЯНАЛТ</p>
                 <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tighter ${isSocketConnected ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-red-500/10 border-red-500/20 text-red-600'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isSocketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></span>
                   {isSocketConnected ? 'Socket Connected' : 'Socket Offline'}
@@ -719,7 +874,7 @@ export default function Camera() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsRegModalOpen(true)}
-                className="flex items-center gap-2 px-6 h-10 rounded-xl bg-[#4285F4] border border-[#4285F4] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+                className="flex items-center gap-2 px-6 h-10 rounded-2xl bg-[#4285F4] border border-[#4285F4] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
               >
                 <Plus className="w-4 h-4" />
                 <span>Машин бүртгэх</span>
@@ -734,7 +889,9 @@ export default function Camera() {
                     setPage(1);
                   }}
                   valueFormat="YYYY-MM-DD"
-                  classNames={{ input: "rounded-xl border-[color:var(--surface-border)] bg-white shadow-sm h-10 font-bold" }}
+                  leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400" />}
+                  rightSection={<ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+                  classNames={{ input: "flex items-center gap-2 rounded-2xl bg-white hover:bg-slate-50 transition-all h-10 px-4 font-black text-[10px] uppercase tracking-widest text-slate-700 shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0" }}
                   clearable
                 />
               </div>
@@ -743,18 +900,96 @@ export default function Camera() {
 
           <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20">
             <div className="overflow-x-auto custom-scrollbar">
-              <table className="w-full text-[11px] border-collapse bg-white">
+              <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead>
-                   <tr className="bg-gray-50/80 border-b border-gray-100">
-                      {["№", "Дугаар", "Орсон", "Гарсан", "Хугацаа/мин", "Төрөл", "Хөнгөлөлт", "Дүн", "Төлбөр", "И-Баримт", "Төлөв", "Шалтгаан", ""].map((col, i) => (
-                        <th key={col} className={`py-3 px-3 font-bold text-gray-500 uppercase tracking-tighter text-[10px] ${i === 0 ? 'text-center w-12' : 'text-left'}`}>
-                          {col}
+                   <tr className="bg-slate-900 border-b border-white/10">
+                      {[
+                        { id: 'no', label: "№", width: 'w-12' },
+                        { id: 'dugaar', label: "Дугаар" },
+                        { id: 'orson', label: "Орсон" },
+                        { id: 'garsan', label: "Гарсан", sortable: true },
+                        { 
+                          id: 'duration', 
+                          label: "Хугацаа/мин", 
+                          filter: true, 
+                          current: durationFilter,
+                          set: (v: string) => { setDurationFilter(v); setPage(1); },
+                          options: [
+                            { label: "Удаан зогссон эхэнд", value: "longest" },
+                            { label: "Сүүлд орсон эхэнд", value: "latest_in" },
+                            { label: "Сүүлд гарсан эхэнд", value: "latest_out" }
+                          ] 
+                        },
+                        { 
+                          id: 'type', 
+                          label: "Төрөл", 
+                          filter: true,
+                          current: typeFilter,
+                          set: (v: string) => { setTypeFilter(v); setPage(1); },
+                          options: [
+                             { label: "Бүгд", value: "all" },
+                             { label: "Төлбөртэй", value: "client" }
+                          ]
+                        },
+                        { id: 'discount', label: "Хөнгөлөлт" },
+                        { id: 'amount', label: "Дүн" },
+                        { id: 'payment', label: "Төлбөр" },
+                        { id: 'ebarimt', label: "И-Баримт" },
+                        { 
+                          id: 'status', 
+                          label: "Төлөв",
+                          filter: true,
+                          current: statusFilter,
+                          set: (v: string) => { setStatusFilter(v); setPage(1); },
+                          options: [
+                            { label: "Бүгд", value: "all" },
+                            { label: "Идэвхтэй", value: "active" },
+                            { label: "Төлсөн", value: "paid" },
+                            { label: "Төлөөгүй", value: "unpaid" },
+                            { label: "Үнэгүй", value: "free" }
+                          ]
+                        },
+                        { id: 'reason', label: "Шалтгаан" },
+                        { id: 'actions', label: "" },
+                      ].map((h, i) => (
+                        <th key={h.id} className={`group relative py-3 px-3 text-slate-400 uppercase tracking-tighter text-[10px] text-center ${h.width || ''}`}>
+                          <div className={`flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? '' : 'w-full'}`}>
+                             {h.filter && <Filter className="w-3 h-3" />}
+                             {h.label}
+                             {h.sortable && <ArrowUpDown className="w-3 h-3" />}
+                          </div>
+
+                           {h.options && (
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/95 backdrop-blur-xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] border border-white/10 translate-y-3 group-hover:translate-y-0 ring-1 ring-black/50 overflow-hidden">
+                                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 rotate-45 border-l border-t border-white/10"></div>
+                                 <div className="relative flex flex-col gap-1 z-10">
+                                   <div className="px-3 py-1.5 mb-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5">
+                                      {h.label} Сонгох
+                                   </div>
+                                   {h.options.map((opt, idx) => (
+                                     <div 
+                                       key={idx} 
+                                       onClick={() => (h as any).set?.(opt.value)}
+                                       className={`px-4 py-2.5 rounded-xl text-[11px] font-semibold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                          (h as any).current === opt.value 
+                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-400/50' 
+                                            : 'hover:bg-white/10 text-slate-300 hover:text-white'
+                                       }`}
+                                     >
+                                       <span>{opt.label}</span>
+                                       {(h as any).current === opt.value && (
+                                         <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white] animate-pulse" />
+                                       )}
+                                     </div>
+                                   ))}
+                                 </div>
+                              </div>
+                           )}
                         </th>
                       ))}
-                      <th className="w-24"></th>
-                    </tr>
+                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50">
+                <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {transactions.length === 0 ? (
                     <tr>
                       <td colSpan={14} className="py-20 text-center">
@@ -775,114 +1010,142 @@ export default function Camera() {
                       const niitDun = transaction.niitDun || 0;
                       const isCurrentlyIn = !mur?.garsanKhaalga;
                       
-                      // Action logic: only show exit controls if they are inside and not marked as fully 'Paid' (tuluv 1) already, 
-                      // though usually status 1 means they can leave. If status is 0, they definitely need action.
-                      const showActionBtn = isCurrentlyIn && (tuluv === 0 || tuluv === 2);
+                      // Debt logic: marked as debt (-4) OR left without payment (tuluv 0, out, balance > 0)
+                      const isDebt = tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
+                      // Active logic: still inside and not yet paid (tuluv 0 or 2)
+                      const isActive = isCurrentlyIn && (tuluv === 0 || tuluv === 2);
+                      const showActionBtn = isActive || isDebt;
 
                       return (
                         <tr
                           key={transaction._id || idx}
-                          className="hover:bg-blue-50/30 transition-colors group"
+                          className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group"
                         >
                           <td className="py-2.5 px-3 text-center text-gray-400">
                             {(page - 1) * pageSize + idx + 1}
                           </td>
                           <td className="py-2.5 px-3">
                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-700">{transaction.mashiniiDugaar || "-"}</span>
+                                <span className=" text-slate-700 dark:text-slate-300">{transaction.mashiniiDugaar || "-"}</span>
                                 <Copy 
-                                  className="w-3 h-3 text-slate-300 cursor-pointer hover:text-blue-500 transition-colors" 
+                                  className="w-3 h-3 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors" 
                                   onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
                                 />
                              </div>
                           </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap text-gray-600">
-                             {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                             <span className=" text-slate-800 dark:text-slate-300">
+                               {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
+                             </span>
                           </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap text-gray-600">
-                             {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
+                          <td className="py-2.5 px-3 whitespace-nowrap">
+                             <span className=" text-slate-800 dark:text-slate-300">
+                               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
+                             </span>
                           </td>
                           <td className="py-2.5 px-3">
-                             <div className={`px-2 py-1 rounded-md font-bold text-center w-24 ${isCurrentlyIn ? "bg-[#D9E9FF] text-[#2D5BFF]" : "bg-gray-100 text-gray-500"}`}>
+                             <div className={`px-2 py-1.5 rounded-2xl text-center w-[130px] inline-block whitespace-nowrap border ${
+                               !garsanTsag 
+                                 ? "bg-blue-100 border-blue-200 text-blue-900 dark:bg-blue-900/40 dark:border-blue-800 dark:text-blue-100 font-medium" 
+                                 : "bg-emerald-50 border-emerald-100 text-slate-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-100 font-medium"
+                             }`}>
                                 <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
                              </div>
 
                           </td>
-                          <td className="py-2.5 px-3 text-gray-600">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-2.5 px-3 text-gray-600">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.khungulult || ""}
                           </td>
-                          <td className="py-2.5 px-3 font-bold text-gray-700">
+                          <td className="py-2.5 px-3  text-slate-800 dark:text-slate-300">
                              {transaction.niitDun || 0}
                           </td>
-                          <td className="py-2.5 px-3 text-gray-600">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.tulsunDun || ""}
                           </td>
-                          <td className="py-2.5 px-3 text-gray-600">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.ebarimtId || 0}
                           </td>
-                           <td className="py-2.5 px-3">
-                              {showActionBtn ? (
-                                confirmExitId === transaction._id ? (
-                                  <div className="flex items-center gap-1">
-                                    <button 
-                                      onClick={() => handleManualExit(transaction, 'pay')}
-                                      className="bg-emerald-500 text-white px-2 py-1 rounded-md font-bold text-[8px] uppercase tracking-tighter hover:bg-emerald-600 transition-colors"
-                                    >
-                                      Төлөх
-                                    </button>
-                                    <button 
-                                      onClick={() => handleManualExit(transaction, 'free')}
-                                      className="bg-amber-500 text-white px-2 py-1 rounded-md font-bold text-[8px] uppercase tracking-tighter hover:bg-amber-600 transition-colors"
-                                    >
-                                      Үнэгүй
-                                    </button>
-                                    <button 
-                                      onClick={() => setConfirmExitId(null)}
-                                      className="bg-gray-400 text-white px-2 py-1 rounded-md font-bold text-[8px] uppercase tracking-tighter hover:bg-gray-500 transition-colors"
-                                    >
-                                      Болих
-                                    </button>
-                                  </div>
+                            <td className="py-2.5 px-3 relative">
+                                {showActionBtn ? (
+                                    <div className="flex items-center gap-1">
+                                      <button 
+                                        onClick={() => {
+                                           if (niitDun > 0 || isDebt) {
+                                              setSelectedTransaction(transaction);
+                                              setConfirmExitId(null);
+                                           } else {
+                                              setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
+                                           }
+                                        }}
+                                        className={`flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-tighter shadow-sm active:scale-95 transition-all border ${
+                                           isDebt 
+                                           ? "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100 dark:bg-amber-900/40 dark:border-amber-800 dark:text-amber-400" 
+                                           : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/50 dark:hover:bg-blue-900/50"
+                                        }`}
+                                      >
+                                         <span className={`w-1.5 h-1.5 rounded-full ${isDebt ? "bg-amber-500" : "bg-blue-500 animate-pulse"}`}></span>
+                                         <span>{isDebt ? "Төлбөр" : "Идэвхтэй"}</span>
+                                      </button>
+                                      {confirmExitId === transaction._id && (
+                                         <div className="absolute left-0 mt-8 z-50 flex items-center gap-1 bg-white p-2 rounded-xl shadow-2xl border border-gray-100 min-w-[200px]">
+                                            <button 
+                                              onClick={() => handleManualExit(transaction, "pay")}
+                                              className="flex-1 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase hover:bg-emerald-600 transition-colors"
+                                            >
+                                              Төлөх
+                                            </button>
+                                            <button 
+                                              onClick={() => handleManualExit(transaction, "free")}
+                                              className="flex-1 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase hover:bg-amber-600 transition-colors"
+                                            >
+                                              Үнэгүй
+                                            </button>
+                                            <button 
+                                              onClick={() => setConfirmExitId(null)}
+                                              className="p-1.5 text-gray-400 hover:text-gray-600"
+                                            >
+                                               <X className="w-4 h-4" />
+                                            </button>
+                                         </div>
+                                      )}
+                                    </div>
                                 ) : (
-                                  <button 
-                                    onClick={() => {
-                                      if (niitDun > 0) {
-                                        setConfirmExitId(transaction._id);
-                                      } else {
-                                        handleManualExit(transaction, 'free');
-                                      }
-                                    }}
-                                    className="bg-[#4285F4] text-white px-2.5 py-1 rounded-md font-bold text-[9px] uppercase tracking-tighter active:scale-95 transition-transform"
-                                  >
-                                    Идэвхтэй
-                                  </button>
-                                )
-                              ) : (
-                                <div className="flex items-center gap-1.5">
-                                   <span className={`w-1.5 h-1.5 rounded-full ${
-                                     tuluv === 1 ? 'bg-emerald-500' : 
-                                     tuluv === 2 ? 'bg-indigo-500' : 
-                                     tuluv === -1 ? 'bg-rose-500' : 
-                                     (!isCurrentlyIn && niitDun === 0) ? 'bg-emerald-500' : 'bg-gray-400'
-                                   }`}></span>
-                                   <span className={`text-[9px] font-bold uppercase ${
-                                     tuluv === 1 ? 'text-emerald-600' : 
-                                     tuluv === 2 ? 'text-indigo-600' : 
-                                     tuluv === -1 ? 'text-rose-600' : 
-                                     (!isCurrentlyIn && niitDun === 0) ? 'text-emerald-600' : 'text-gray-500'
-                                   }`}>
-                                      {tuluv === 1 ? "Төлсөн" : 
-                                       tuluv === 2 ? "Урьдчилсан" : 
-                                       tuluv === -1 ? "Зөрчилтэй" : 
-                                       (!isCurrentlyIn && niitDun === 0) ? "Үнэгүй" :
-                                       (niitDun > 0 ? "Төлөөгүй" : "Идэвхтэй")}
-                                   </span>
-                                </div>
-                              )}
-                           </td>
+                                  (() => {
+                                    if (tuluv === 1) return (
+                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                        <span className="text-[9px] font-bold uppercase">Төлсөн</span>
+                                      </div>
+                                    );
+                                    if (tuluv === 2) return (
+                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg dark:bg-indigo-900/20 dark:border-indigo-800/50 dark:text-indigo-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                        <span className="text-[9px] font-bold uppercase">Урьдчилсан</span>
+                                      </div>
+                                    );
+                                    if (tuluv === -2 || tuluv === -1) return (
+                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                        <span className="text-[9px] font-bold uppercase">Зөрчилтэй</span>
+                                      </div>
+                                    );
+                                    if (!isCurrentlyIn && niitDun === 0) return (
+                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-gray-50 text-gray-500 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
+                                        <span className="text-[9px] font-bold uppercase">Үнэгүй</span>
+                                      </div>
+                                    );
+                                    return (
+                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        <span className="text-[9px] font-bold uppercase">Идэвхтэй</span>
+                                      </div>
+                                    );
+                                  })()
+                                )}
+                             </td>
                           <td className="py-2.5 px-3 text-gray-400 italic truncate max-w-[100px]">
                              {transaction.zurchil || ""}
                           </td>
@@ -904,7 +1167,7 @@ export default function Camera() {
                     })
                   )}
                 </tbody>
-                <tfoot className="bg-gray-50/50 border-t border-gray-100 font-bold text-[10px]">
+                <tfoot className="bg-gray-50/50 border-t border-gray-100  text-[10px]">
                    <tr>
                       <td colSpan={6} className="py-3 px-3 text-right text-gray-400 uppercase">Нийт дүн</td>
                       <td className="py-3 px-3"></td>
@@ -925,7 +1188,7 @@ export default function Camera() {
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
+              className="px-4 py-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
             >
               Өмнөх
             </button>
@@ -935,7 +1198,7 @@ export default function Camera() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
-              className="px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
+              className="px-4 py-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
             >
               Дараах
             </button>
@@ -1004,7 +1267,7 @@ export default function Camera() {
           <PaymentModal
             transaction={selectedTransaction}
             onClose={() => setSelectedTransaction(null)}
-            onConfirm={async (amount, method) => {
+            onConfirm={async (amount, method, extraData) => {
               try {
                 const zogsooliinId = selectedTransaction.tuukh?.[0]?.zogsooliinId || selectedTransaction.barilgiinId || effectiveBarilgiinId;
                 
@@ -1028,8 +1291,37 @@ export default function Camera() {
                 
                 if (resp.status === 200 || resp.data === "Amjilttai") {
                   toast.success("Төлбөр амжилттай бүртгэгдлээ");
+
+                  // E-Barimt (payment.md section 3)
+                  if (extraData?.ebarimt) {
+                    try {
+                      const ebResp = await uilchilgee(token || "").post("/ebarimtShivye", {
+                        id: selectedTransaction._id,
+                        type: extraData.ebarimt.type,
+                        register: extraData.ebarimt.register
+                      });
+                      if (ebResp.data?.success || ebResp.data?.qrData) {
+                        setEbarimtResult(ebResp.data);
+                        toast.success("И-Баримт амжилттай үүслээ");
+                      }
+                    } catch (ebErr) {
+                      console.error("Ebarimt error:", ebErr);
+                      toast.error("И-Баримт үүсгэхэд алдаа гарлаа");
+                    }
+                  }
+
+                  // Hardware Gate Kick (payment.md section 5)
+                  const parkingList = parkingConfigData?.jagsaalt || parkingConfigData || [];
+                  const parking = Array.isArray(parkingList) ? parkingList.find((p: any) => p._id === zogsooliinId) : parkingList;
+                  
+                  if (parking?.garakhKhaalgaGarTokhirgoo === true) {
+                    const exitIP = activeExitIP || exitCameras[0]?.cameraIP;
+                    if (exitIP) {
+                      khaalgaNeey(exitIP);
+                    }
+                  }
+
                   setSelectedTransaction(null);
-                  // Refresh the list to show updated status
                   fetchList();
                 } else {
                   toast.error("Алдаа гарлаа: " + (resp.data?.message || "Үл мэдэгдэх алдаа"));

@@ -458,7 +458,7 @@ const TulburTootsoo: React.FC = () => {
       },
       {
         title: "Шалтгаан",
-        width: "13rem",
+        width: "20rem",
         dataIndex: "shaltgaan",
         ellipsis: true,
         align: "center",
