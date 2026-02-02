@@ -999,23 +999,78 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false }
   );
 
+  // Fetch standalone receivables (manual adjustments not yet invoiced)
+  const { data: receivableData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+        "/gereeniiTulukhAvlaga",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId || null,
+      ]
+      : null,
+    async ([url, tkn, orgId, branch]) => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: orgId,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+          query: {
+            baiguullagiinId: orgId,
+            ...(branch ? { barilgiinId: branch } : {}),
+          },
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
   const allHistoryItems = useMemo(() => {
-    const raw = Array.isArray(historyData?.jagsaalt)
+    const invoices = Array.isArray(historyData?.jagsaalt)
       ? historyData.jagsaalt
       : Array.isArray(historyData)
         ? historyData
         : [];
-    if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1])) return raw;
+
+    const receivables = Array.isArray(receivableData?.jagsaalt)
+      ? receivableData.jagsaalt
+      : Array.isArray(receivableData)
+        ? receivableData
+        : [];
+
+    // Combine and deduplicate by ID. 
+    // If an ID exists in both (meaning it was merged into an invoice), the invoice version wins.
+    const combined = [...invoices];
+
+    // Collect all IDs that should be considered "already tracked by an invoice"
+    // This includes the invoice ID itself AND any merged transaction IDs inside the medeelel.guilgeenuud array
+    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
+    invoices.forEach((it: any) => {
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
+        Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+      gList.forEach((g: any) => {
+        if (g?._id) trackingIds.add(String(g._id));
+      });
+    });
+
+    receivables.forEach((r: any) => {
+      if (!trackingIds.has(String(r._id))) {
+        combined.push(r);
+      }
+    });
+
+    if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1])) return combined;
     const [start, end] = ekhlekhOgnoo;
     const s = start ? new Date(start).getTime() : Number.NEGATIVE_INFINITY;
     const e = end ? new Date(end).getTime() : Number.POSITIVE_INFINITY;
-    return raw.filter((it: any) => {
+    return combined.filter((it: any) => {
       const d = new Date(
         it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
       ).getTime();
       return d >= s && d <= e;
     });
-  }, [historyData, ekhlekhOgnoo]);
+  }, [historyData, receivableData, ekhlekhOgnoo]);
 
   const { gereeGaralt } = useGereeJagsaalt(
     emptyQuery,
@@ -1123,7 +1178,7 @@ export default function DansniiKhuulga() {
         if (!isLinkedToCancelledGeree) return false;
 
         // Check if invoice has unpaid amount
-        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
         const isUnpaid = !isPaidLike(it) && amount > 0;
 
         // Check if invoice has zardal (expenses) that need to be paid
@@ -1191,7 +1246,7 @@ export default function DansniiKhuulga() {
 
   const totalSum = useMemo(() => {
     return filteredItems.reduce((s: number, it: any) => {
-      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
       return s + v;
     }, 0);
   }, [filteredItems]);
@@ -1224,14 +1279,14 @@ export default function DansniiKhuulga() {
         map.set(key, {
           ...it,
           _historyCount: 1,
-          _totalTulbur: Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0,
+          _totalTulbur: Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0,
           _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
         });
       } else {
         // Aggregate values
         const existing = map.get(key);
         existing._historyCount += 1;
-        existing._totalTulbur += Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+        existing._totalTulbur += Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
       }
     });
@@ -1329,7 +1384,7 @@ export default function DansniiKhuulga() {
         if (!matchesGeree) return false;
 
         // Check if invoice has unpaid amount
-        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
         const isUnpaid = !isPaidLike(it) && amount > 0;
 
         // Check if invoice has zardal (expenses) that need to be paid
@@ -2188,7 +2243,7 @@ export default function DansniiKhuulga() {
                           return (
                             <label
                               key={col.key}
-                              className="flex items-center gap-2.5 text-xs text-muted-foreground cursor-pointer hover:text-theme transition-colors"
+                              className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer hover:text-theme transition-colors"
                             >
                               <input
                                 type="checkbox"
@@ -2322,7 +2377,7 @@ export default function DansniiKhuulga() {
                         it?.gereeniiDugaar || ct?.gereeniiDugaar || "-"
                       );
                       const total = Number(
-                        it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0
+                        it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0
                       );
                       // const khayag =
                       //   resident && resident.bairNer
@@ -2627,7 +2682,7 @@ export default function DansniiKhuulga() {
 
                       } else if (col.key === "tulbur") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          return sum + Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                          return sum + Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
                         }, 0);
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "paid") {
@@ -2639,7 +2694,7 @@ export default function DansniiKhuulga() {
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "uldegdel") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const tulbur = Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0);
+                          const tulbur = Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
                           const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
                           const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + (tulbur - tulsun);

@@ -54,7 +54,15 @@ export function getPaymentStatusLabel(
   // Derive unpaid if looks like an issued invoice or has amount
   const looksIssued =
     item.ognoo || item.createdAt || item.nekhemjlekhiinOgnoo || item.qpayUrl;
-  const amount = Number(item.niitTulbur ?? item.niitDun ?? item.total ?? 0);
+  const amount = Number(
+    item.niitTulbur ??
+    item.niitDun ??
+    item.total ??
+    item.tulukhDun ??
+    item.undsenDun ??
+    item.dun ??
+    0
+  );
   if (looksIssued || amount > 0) return "Төлөөгүй";
 
   return "Тодорхойгүй";

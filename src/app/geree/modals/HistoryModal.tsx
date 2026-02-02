@@ -303,9 +303,9 @@ export default function HistoryModal({
         });
         // 3. Process Standalone Transactions (Top-level item is the transaction)
         // If item has 'turul' and isn't just a container for zardluud/guilgeenuud
-        // The user payload showed: turul: "ashiglalt", dun: 200, tulukhDun: 200, tailbar: "a"
-        // Process standalone transaction types - these are direct transaction records
-        if (item.turul && (item.turul === "ashiglalt" || item.turul === "avlaga" || item.turul === "tulult" || item.turul === "voucher" || item.turul === "turgul")) {
+        const hasChildren = zardluud.length > 0 || guilgeenuud.length > 0;
+
+        if (!hasChildren && item.turul && (item.turul === "ashiglalt" || item.turul === "avlaga" || item.turul === "tulult" || item.turul === "voucher" || item.turul === "turgul")) {
           const type = item.turul;
           const amt = Number(item.tulukhDun || item.dun || 0);
           const tulsunAmt = Number(item.tulsunDun || 0);
@@ -328,6 +328,7 @@ export default function HistoryModal({
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
+              if (item._id) processedIds.add(item._id.toString());
             }
           } else if (type === "ashiglalt") {
             // Ashiglalt type - like payment, reduces balance
@@ -347,6 +348,7 @@ export default function HistoryModal({
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
+              if (item._id) processedIds.add(item._id.toString());
             }
           } else {
             // avlaga, turgul, voucher - adds to balance
@@ -372,6 +374,7 @@ export default function HistoryModal({
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
+              if (item._id) processedIds.add(item._id.toString());
             }
           }
         }
