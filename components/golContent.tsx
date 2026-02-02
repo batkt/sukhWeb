@@ -109,21 +109,24 @@ export default function GolContent({ children }: GolContentProps) {
   }, [token]);
 
   useEffect(() => {
-    // Only auto-select on login if there's no existing selection in localStorage
-    // This prevents resetting the user's building choice
-    if (justLoggedInRef.current) {
-      const stored =
-        typeof window !== "undefined"
-          ? localStorage.getItem("selectedBuildingId")
-          : null;
-      if (filteredBuildings.length > 0 && !stored) {
-        setSelectedBuildingId(filteredBuildings[0]._id);
-        justLoggedInRef.current = false;
-      } else {
-        justLoggedInRef.current = false;
+    if (filteredBuildings.length > 0) {
+      // Check if current selection is valid (exists in the filtered list)
+      const isSelectionValid = selectedBuildingId && filteredBuildings.some((b: any) => b._id === selectedBuildingId);
+      
+      if (!isSelectionValid) {
+        // Try to recover from localStorage first
+        const stored = typeof window !== "undefined" ? localStorage.getItem("selectedBuildingId") : null;
+        const isStoredValid = stored && filteredBuildings.some((b: any) => b._id === stored);
+
+        if (isStoredValid && stored) {
+           setSelectedBuildingId(stored);
+        } else {
+           // Default to first available building if no valid selection exists
+           setSelectedBuildingId(filteredBuildings[0]._id);
+        }
       }
     }
-  }, [filteredBuildings, setSelectedBuildingId]);
+  }, [filteredBuildings, selectedBuildingId, setSelectedBuildingId]);
 
   useEffect(() => {
     setOpenSubmenuIndex(null);

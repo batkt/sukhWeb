@@ -499,17 +499,19 @@ export default function Camera() {
     else if (Array.isArray(data?.data)) list = data.data;
     else if (Array.isArray(data)) list = data;
 
-    const plateMap = new Map<string, Uilchluulegch>();
+    const transactionMap = new Map<string, Uilchluulegch>();
 
-    list.forEach(item => {
-      if (item.mashiniiDugaar) plateMap.set(item.mashiniiDugaar, item);
+    list.forEach((item, index) => {
+      const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
+      transactionMap.set(key, item);
     });
 
     Object.values(liveUpdates).forEach((update: any) => {
-      if (update.mashiniiDugaar) plateMap.set(update.mashiniiDugaar, update);
+      const key = update._id || update.mashiniiDugaar;
+      if (key) transactionMap.set(key, update);
     });
 
-    let merged = Array.from(plateMap.values());
+    let merged = Array.from(transactionMap.values());
 
     merged.sort((a, b) => {
       const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
@@ -709,8 +711,8 @@ export default function Camera() {
                   <Calendar className="w-4 h-4" />
                </div>
                <div>
-                  <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-none">Гүйлгээний түүх</h3>
-                  <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter opacity-70">СҮҮЛД БҮРТГЭГДСЭН ГҮЙЛГЭЭНИЙ ЖАГСААЛТ</p>
+                  <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-none">Жагсаалт</h3>
+                
                </div>
             </div>
 
