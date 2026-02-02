@@ -168,26 +168,31 @@ export default function TransactionModal({
               </div>
             </div>
 
-            {/* Initial Balance Checkbox - available for all types */}
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10"
-            >
-              <input
-                type="checkbox"
-                id="ekhniiUldegdel"
-                checked={ekhniiUldegdel}
-                onChange={(e) => setEkhniiUldegdel(e.target.checked)}
-                className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
-              />
-              <label
-                htmlFor="ekhniiUldegdel"
-                className="text-xs font-medium text-rose-700 cursor-pointer select-none"
-              >
-                Эхний үлдэгдэл эсэх
-              </label>
-            </motion.div>
+            {/* Initial Balance Checkbox - only for avlaga type */}
+            <AnimatePresence>
+              {transactionType === "avlaga" && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10 overflow-hidden"
+                >
+                  <input
+                    type="checkbox"
+                    id="ekhniiUldegdel"
+                    checked={ekhniiUldegdel}
+                    onChange={(e) => setEkhniiUldegdel(e.target.checked)}
+                    className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+                  />
+                  <label
+                    htmlFor="ekhniiUldegdel"
+                    className="text-xs font-medium text-rose-700 cursor-pointer select-none"
+                  >
+                    Эхний үлдэгдэл эсэх
+                  </label>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="grid grid-cols-2 gap-4">
               {/* Date Input */}
