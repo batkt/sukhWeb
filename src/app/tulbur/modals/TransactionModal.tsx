@@ -38,10 +38,31 @@ export default function TransactionModal({
   const [amount, setAmount] = useState("0.00");
   const [tailbar, setTailbar] = useState("");
   const [ekhniiUldegdel, setEkhniiUldegdel] = useState(false);
+  const [lastShow, setLastShow] = useState(false);
+
+  const resetForm = () => {
+    setTransactionType("avlaga");
+    setTransactionDate(new Date().toISOString().split("T")[0]);
+    setAmount("0.00");
+    setTailbar("");
+    setEkhniiUldegdel(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  React.useEffect(() => {
+    if (show && !lastShow) {
+      resetForm();
+    }
+    setLastShow(show);
+  }, [show, lastShow]);
 
   useModalHotkeys({
     isOpen: show,
-    onClose,
+    onClose: handleClose,
     container: modalRef.current,
   });
 
@@ -57,6 +78,7 @@ export default function TransactionModal({
     };
 
     await onSubmit(data);
+    resetForm();
   };
 
   if (!show) return null;
@@ -69,7 +91,7 @@ export default function TransactionModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={onClose}
+          onClick={handleClose}
         />
 
         <motion.div
@@ -88,7 +110,7 @@ export default function TransactionModal({
             </h2>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               disabled={isProcessing}
             >
@@ -101,7 +123,7 @@ export default function TransactionModal({
 
             {/* Resident Info Card */}
             {resident && (
-              <div className="bg-[color:var(--surface-hover)]/50 rounded-xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
+              <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] font-semibold text-sm">
                   {resident?.toot || "?"}
                 </div>
@@ -133,7 +155,7 @@ export default function TransactionModal({
                     onClick={() => setTransactionType(option.value as TransactionData["type"])}
                     disabled={isProcessing}
                     className={`
-                      relative py-1.5 px-3 text-sm font-semibold rounded-md transition-all duration-200
+                      relative py-1.5 px-3 text-sm font-semibold rounded-2xl transition-all duration-200
                       ${transactionType === option.value
                         ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]"
                         : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
@@ -146,28 +168,26 @@ export default function TransactionModal({
               </div>
             </div>
 
-            {/* Initial Balance Checkbox - only for avlaga type */}
-            {transactionType === "avlaga" && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10"
+            {/* Initial Balance Checkbox - available for all types */}
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10"
+            >
+              <input
+                type="checkbox"
+                id="ekhniiUldegdel"
+                checked={ekhniiUldegdel}
+                onChange={(e) => setEkhniiUldegdel(e.target.checked)}
+                className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
+              />
+              <label
+                htmlFor="ekhniiUldegdel"
+                className="text-xs font-medium text-rose-700 cursor-pointer select-none"
               >
-                <input
-                  type="checkbox"
-                  id="ekhniiUldegdel"
-                  checked={ekhniiUldegdel}
-                  onChange={(e) => setEkhniiUldegdel(e.target.checked)}
-                  className="w-4 h-4 rounded border-rose-300 text-rose-600 focus:ring-rose-500 cursor-pointer"
-                />
-                <label
-                  htmlFor="ekhniiUldegdel"
-                  className="text-xs font-medium text-rose-700 cursor-pointer select-none"
-                >
-                  Эхний үлдэгдэл эсэх
-                </label>
-              </motion.div>
-            )}
+                Эхний үлдэгдэл эсэх
+              </label>
+            </motion.div>
 
             <div className="grid grid-cols-2 gap-4">
               {/* Date Input */}
@@ -234,7 +254,7 @@ export default function TransactionModal({
           <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isProcessing}
               className="px-5 py-2.5 text-sm font-medium text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors disabled:opacity-50"
             >

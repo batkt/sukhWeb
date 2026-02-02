@@ -204,6 +204,8 @@ export default function HistoryModal({
       }
 
       const flatLedger: LedgerEntry[] = [];
+      const processedIds = new Set<string>();
+      const invoiceIds = new Set(contractItems.map((item: any) => item._id?.toString()));
 
       contractItems.forEach((item: any) => {
         const itemDate = item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || new Date().toISOString();
@@ -232,8 +234,9 @@ export default function HistoryModal({
           if (z.zaalt !== true && z.ner) {
             const amt = pickAmount(z);
             if (amt > 0) {
+              const rowId = z._id?.toString() || `z-${Math.random()}`;
               flatLedger.push({
-                _id: z._id || `z-${Math.random()}`,
+                _id: rowId,
                 parentInvoiceId: item._id,
                 ognoo: itemDate,
                 ner: z.ner,
@@ -247,6 +250,7 @@ export default function HistoryModal({
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
+              if (z._id) processedIds.add(z._id.toString());
             }
           }
         });
@@ -260,11 +264,12 @@ export default function HistoryModal({
           const paid = Number(g.tulsunDun || 0);
 
           if (amt > 0) {
+            const rowId = g._id?.toString() || `g-charge-${Math.random()}`;
             flatLedger.push({
-              _id: g._id || `g-charge-${Math.random()}`,
+              _id: rowId,
               parentInvoiceId: item._id,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
-              ner: "Авлага",
+              ner: g.ekhniiUldegdelEsekh === true ? "Эхний үлдэгдэл" : "Авлага",
               tulukhDun: amt,
               tulsunDun: 0,
               uldegdel: 0,
@@ -275,10 +280,12 @@ export default function HistoryModal({
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
               sourceCollection: "nekhemjlekhiinTuukh"
             });
+            if (g._id) processedIds.add(g._id.toString());
           }
           if (paid > 0) {
+            const rowId = g._id?.toString() || `g-paid-${Math.random()}`;
             flatLedger.push({
-              _id: g._id || `g-paid-${Math.random()}`,
+              _id: rowId,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
               ner: "Төлөлт",
               tulukhDun: 0,
@@ -291,6 +298,7 @@ export default function HistoryModal({
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
               sourceCollection: "nekhemjlekhiinTuukh"
             });
+            if (g._id) processedIds.add(g._id.toString());
           }
         });
         // 3. Process Standalone Transactions (Top-level item is the transaction)
@@ -371,6 +379,13 @@ export default function HistoryModal({
 
       // Process receivable records from gereeniiTulukhAvlaga
       matchedReceivables.forEach((rec: any) => {
+        const recId = rec._id?.toString();
+        // Skip if already processed in invoice loop
+        if (recId && processedIds.has(recId)) return;
+
+        // Skip orphans (has nekhemjlekhId but parent invoice is gone)
+        if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString())) return;
+
         const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
         const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
         const amt = Number(rec.tulukhDun || rec.undsenDun || 0);
@@ -379,7 +394,7 @@ export default function HistoryModal({
           flatLedger.push({
             _id: rec._id,
             ognoo: recDate,
-            ner: rec.zardliinNer || "Авлага",
+            ner: rec.ekhniiUldegdelEsekh === true ? "Эхний үлдэгдэл" : (rec.zardliinNer || "Авлага"),
             tulukhDun: amt,
             tulsunDun: 0,
             uldegdel: 0,
@@ -395,6 +410,13 @@ export default function HistoryModal({
 
       // Process payment records from gereeniiTulsunAvlaga
       matchedPayments.forEach((payment: any) => {
+        const pId = payment._id?.toString();
+        // Skip if already processed in invoice loop
+        if (pId && processedIds.has(pId)) return;
+
+        // Skip orphans (has nekhemjlekhId but parent invoice is gone)
+        if (payment.nekhemjlekhId && !invoiceIds.has(payment.nekhemjlekhId.toString())) return;
+
         const paymentDate = payment.ognoo || payment.createdAt || new Date().toISOString();
         const ajiltan = payment.guilgeeKhiisenAjiltniiNer || "Admin";
         const tulsunDun = Number(payment.tulsunDun || 0);
@@ -430,7 +452,20 @@ export default function HistoryModal({
       });
 
       // Sort Chronologically: Oldest -> Newest
-      flatLedger.sort((a, b) => new Date(a.ognoo).getTime() - new Date(b.ognoo).getTime());
+      flatLedger.sort((a, b) => {
+        // Compare by transaction date (day start only) to group same-day entries
+        const dA = new Date(a.ognoo);
+        const dB = new Date(b.ognoo);
+        const dayA = new Date(dA.getFullYear(), dA.getMonth(), dA.getDate()).getTime();
+        const dayB = new Date(dB.getFullYear(), dB.getMonth(), dB.getDate()).getTime();
+
+        if (dayA !== dayB) return dayA - dayB;
+
+        // If same logical day, sort by actual creation time
+        const createA = a.burtgesenOgnoo && a.burtgesenOgnoo !== "-" ? new Date(a.burtgesenOgnoo).getTime() : dayA;
+        const createB = b.burtgesenOgnoo && b.burtgesenOgnoo !== "-" ? new Date(b.burtgesenOgnoo).getTime() : dayB;
+        return createA - createB;
+      });
 
       // Calculate Running Balance
       let runningBalance = contractItems[0]?.ekhniiUldegdel ? Number(contractItems[0].ekhniiUldegdel) : 0; // Or 0 if not reliable
@@ -496,6 +531,27 @@ export default function HistoryModal({
       }
 
       if (response.data.success || response.status === 200 || response.status === 204) {
+        // Cascade delete related records when deleting from nekhemjlekhiinTuukh
+        if (source === "nekhemjlekhiinTuukh" && contract?.gereeniiId) {
+          // Delete related records from gereeniiTulsunAvlaga
+          await uilchilgee(token || undefined).delete(`/gereeniiTulsunAvlaga`, {
+            params: {
+              baiguullagiinId: baiguullagiinId || undefined,
+              gereeniiId: contract.gereeniiId,
+              nekhemjlekhiinId: id,
+            }
+          }).catch(() => { }); // Silently ignore if no records exist
+
+          // Delete related records from gereeniiTulukhAvlaga
+          await uilchilgee(token || undefined).delete(`/gereeniiTulukhAvlaga`, {
+            params: {
+              baiguullagiinId: baiguullagiinId || undefined,
+              gereeniiId: contract.gereeniiId,
+              nekhemjlekhiinId: id,
+            }
+          }).catch(() => { }); // Silently ignore if no records exist
+        }
+
         // Show success message
         setDeleteSuccess(true);
         setTimeout(() => setDeleteSuccess(false), 2000);
@@ -634,13 +690,13 @@ export default function HistoryModal({
                 <tr className="border-b border-slate-100 dark:border-slate-800">
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Огноо</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлөх дүн</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Төлсөн дүн</th>
-                  <th className="py-2 px-2 text-right text-[9px] font-bold text-slate-400 uppercase">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөх дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлсөн дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Үлдэгдэл</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
-                  <th className="py-2 px-2 text-left text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
+                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
                   <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase w-10">Үйлдэл</th>
+                  <th className="py-2  text-center text-[9px] font-bold text-slate-400 uppercase w-12">Үйлдэл</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -695,15 +751,15 @@ export default function HistoryModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-")) {
+                              if (row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem) {
                                 handleDeleteClick(row._id, row.ner || row.khelber || "");
                               }
                             }}
-                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
-                            title={row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "Устгах" : "Устгах боломжгүй"}
-                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-")}
+                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
+                            title={row.isSystem ? "Системээс үүсгэсэн - устгах боломжгүй" : row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "Устгах" : "Устгах боломжгүй"}
+                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-") || row.isSystem}
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 !text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500" : "text-slate-300 dark:text-slate-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>

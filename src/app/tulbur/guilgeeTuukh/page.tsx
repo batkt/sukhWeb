@@ -47,6 +47,7 @@ import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import TransactionModal, { type TransactionData } from "../modals/TransactionModal";
 import HistoryModal from "../../geree/modals/HistoryModal";
+import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -858,6 +859,7 @@ export default function DansniiKhuulga() {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
+  const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState(false);
   // Map gereeId -> total paid amount (Төлсөн дүн)
   const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<
     Record<string, number>
@@ -1349,19 +1351,25 @@ export default function DansniiKhuulga() {
 
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidents.length;
-    const totalCount = filteredItems.length;
-    const paidCount = filteredItems.filter((it: any) => isPaidLike(it)).length;
-    const unpaidCount = filteredItems.filter(
-      (it: any) => isUnpaidLike(it) && !isOverdueLike(it)
-    ).length;
+    const paidCount = deduplicatedResidents.filter((r: any) => {
+      const gid =
+        (r?.gereeniiId && String(r.gereeniiId)) ||
+        (contractsByNumber[String(r.gereeniiDugaar)]?._id && String(contractsByNumber[String(r.gereeniiDugaar)]._id)) ||
+        "";
+
+      const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+      const uldegdel = r._totalTulbur - paid;
+      return uldegdel <= 1; // Paid means balance is settled
+    }).length;
+    const unpaidCount = residentCount - paidCount;
 
     return [
       { title: "Оршин суугч", value: residentCount },
-      { title: "Нийт гүйлгээ", value: totalCount },
+      { title: "Цуцласан гэрээний авлага", value: cancelledGereesWithUnpaid },
       { title: "Төлсөн", value: paidCount },
       { title: "Төлөөгүй", value: unpaidCount },
     ];
-  }, [filteredItems, deduplicatedResidents, cancelledGereesWithUnpaid]);
+  }, [deduplicatedResidents, cancelledGereesWithUnpaid, paidSummaryByGereeId, contractsByNumber]);
 
   const zaaltOruulakh = async () => {
     try {
@@ -1545,8 +1553,8 @@ export default function DansniiKhuulga() {
           dun: data.amount,
           orshinSuugchId: data.residentId,
           gereeniiId: data.gereeniiId,
-          tailbar: data.tailbar || `Төлөлт - ${data.date}`,
-          markEkhniiUldegdel: false,
+          tailbar: data.tailbar || (data.ekhniiUldegdel ? `Эхний үлдэгдэл - ${data.date}` : `Төлөлт - ${data.date}`),
+          ...(data.ekhniiUldegdel && { markEkhniiUldegdel: true }),
           createdBy: ajiltan._id,
           createdAt: new Date().toISOString(),
         });
@@ -1589,9 +1597,9 @@ export default function DansniiKhuulga() {
           dun: data.amount,
           orshinSuugchId: data.residentId,
           gereeniiId: data.gereeniiId,
-          tailbar: data.tailbar || `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`,
+          tailbar: data.tailbar || (data.ekhniiUldegdel ? `Эхний үлдэгдэл - ${data.date}` : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`),
           ognoo: data.date,
-          ekhniiUldegdelEsekh: data.ekhniiUldegdel, // Pass the initial balance flag
+          ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }), // Only include when checked
           createdBy: ajiltan._id,
           createdAt: new Date().toISOString(),
         });
@@ -1958,7 +1966,7 @@ export default function DansniiKhuulga() {
               if (title === "Нийт гүйлгээ") return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
-              if (title === "Цуцласан авлага") return "overdue";
+              if (title === "Цуцласан гэрээний авлага") return "overdue";
               return null;
             };
 
@@ -2027,7 +2035,7 @@ export default function DansniiKhuulga() {
                     options={[
                       { value: "all", label: "Бүгд" },
                       { value: "paid", label: "Төлсөн" },
-                      { value: "overdue", label: "Цуцласан авлага" },
+                      { value: "overdue", label: "Цуцласан гэрээний авлага" },
                       { value: "unpaid", label: "Төлөөгүй" },
                     ]}
                     placeholder="Төлөв"
@@ -2122,6 +2130,16 @@ export default function DansniiKhuulga() {
                   </div>
                 )}
               </div>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                transition={{ duration: 0.3 }}
+              >
+                <IconTextButton
+                  onClick={() => setIsInitialBalanceModalOpen(true)}
+                  icon={<Upload className="w-5 h-5" />}
+                  label="Эхний үлдэгдэл"
+                />
+              </motion.div>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -2648,7 +2666,7 @@ export default function DansniiKhuulga() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 gap-3 text-md">
-            <div className="text-theme/70">Нийт: {filteredItems.length}</div>
+            <div className="text-theme/70">Нийт: {deduplicatedResidents.length}</div>
 
             <div className="flex items-center gap-3">
               <span id="guilgee-page-size">
@@ -2673,7 +2691,7 @@ export default function DansniiKhuulga() {
                 <div className="text-theme/70 px-1">{page}</div>
                 <button
                   className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-                  disabled={page * rowsPerPage >= filteredItems.length}
+                  disabled={page * rowsPerPage >= deduplicatedResidents.length}
                   onClick={() => setPage(page + 1)}
                 >
                   Дараах
@@ -2772,6 +2790,21 @@ export default function DansniiKhuulga() {
         resident={selectedTransactionResident}
         onSubmit={handleTransactionSubmit}
         isProcessing={isProcessingTransaction}
+      />
+
+      {/* Initial Balance Excel Import Modal */}
+      <InitialBalanceExcelModal
+        show={isInitialBalanceModalOpen}
+        onClose={() => setIsInitialBalanceModalOpen(false)}
+        baiguullagiinId={ajiltan?.baiguullagiinId || ""}
+        barilgiinId={selectedBuildingId || barilgiinId || undefined}
+        onSuccess={() => {
+          mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
+          mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
+          // Clear payment summary state to force re-fetch
+          setPaidSummaryByGereeId({});
+          requestedGereeIdsRef.current.clear();
+        }}
       />
     </div>
   );

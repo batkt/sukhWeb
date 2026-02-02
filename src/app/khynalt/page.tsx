@@ -391,25 +391,16 @@ export default function Khynalt() {
     let unpaid = 0;
     const byBld: Record<string, number> = {};
     const seriesMap = new Map<string, { paid: number; unpaid: number }>();
-    const paidResidents = new Set<string>();
-    const unpaidResidents = new Set<string>();
+
+    const residentInvoiceStats = new Map<string, { totalTulbur: number; totalTulsun: number }>();
+    residents.forEach((r: any) => {
+      residentInvoiceStats.set(String(r._id || ""), { totalTulbur: 0, totalTulsun: 0 });
+    });
 
     list.forEach((it) => {
-      const amount =
-        Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-
-
-      let tulsunInvoice = 0;
-      if (Array.isArray(it.paymentHistory)) {
-        tulsunInvoice = it.paymentHistory.reduce((s: number, p: any) => s + (Number(p.dun) || 0), 0);
-      } else if (isPaidLike(it)) {
-        tulsunInvoice = amount;
-      }
-
-
-      const uldegdelInvoice = it.uldegdel != null
-        ? Number(it.uldegdel)
-        : (isPaidLike(it) ? 0 : amount - tulsunInvoice);
+      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      const uldegdelInvoice = it.uldegdel != null ? Number(it.uldegdel) : (isPaidLike(it) ? 0 : amount);
+      const tulsunInvoice = amount - uldegdelInvoice;
 
       const invoiceKeys: string[] = [];
       const osIdRaw = String(it?.orshinSuugchId || "");
@@ -433,22 +424,19 @@ export default function Khynalt() {
         }
       }
 
-
-      if (tulsunInvoice > 0) {
-        if (osId) paidResidents.add(osId);
-      }
-      if (uldegdelInvoice > 0) {
-        if (osId) unpaidResidents.add(osId);
+      if (osId && residentInvoiceStats.has(osId)) {
+        const stats = residentInvoiceStats.get(osId)!;
+        stats.totalTulbur += amount;
+        stats.totalTulsun += tulsunInvoice;
       }
 
       paid += tulsunInvoice;
       unpaid += Math.max(0, uldegdelInvoice);
 
       const barilga =
-        residentById.get(osId)?.barilgiinId ||
-        residentById.get(osId)?.barilga ||
-        it?.barilgiinId ||
-        "Тодорхойгүй";
+        osId && residentById.has(osId)
+          ? residentById.get(osId)?.barilgiinId || residentById.get(osId)?.barilga
+          : it?.barilgiinId || "Тодорхойгүй";
       byBld[barilga] = (byBld[barilga] || 0) + amount;
 
       const created = String(it?.createdAt || it?.ognoo || it?.date || "");
@@ -462,9 +450,21 @@ export default function Khynalt() {
       }
     });
 
+    const finalPaidResidents = new Set<string>();
+    const finalUnpaidResidents = new Set<string>();
+
+    residentInvoiceStats.forEach((stats, osId) => {
+      const uldegdel = stats.totalTulbur - stats.totalTulsun;
+      // If resident has ANY debt > 1 tugrug, they are Unpaid
+      if (uldegdel > 1) {
+        finalUnpaidResidents.add(osId);
+      } else {
+        // If they have no debt or have overpaid, they are Paid
+        finalPaidResidents.add(osId);
+      }
+    });
 
     const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
-
     const totalInvoiceAmount = list.reduce((s, it) => s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0), 0);
     const finalUnpaid = totalInvoiceAmount - finalPaid;
 
@@ -479,8 +479,8 @@ export default function Khynalt() {
     return {
       incomeTotals: { paid: finalPaid, unpaid: finalUnpaid },
       incomeByBuilding: byBld,
-      residentsPaidCount: paidResidents.size,
-      residentsUnpaidCount: unpaidResidents.size,
+      residentsPaidCount: finalPaidResidents.size,
+      residentsUnpaidCount: finalUnpaidResidents.size,
       incomeSeries: { labels: orderedLabels, paid: paidArr, unpaid: unpaidArr },
       expenseSeries: { labels: orderedLabels, expenses: unpaidArr },
       profitSeries: {
@@ -488,7 +488,7 @@ export default function Khynalt() {
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
       },
     };
-  }, [incomeData, residents, orderedLabels, buildLabel]);
+  }, [incomeData, residents, orderedLabels, buildLabel, buildingPaymentSummary]);
 
   const {
     incomeTotals,

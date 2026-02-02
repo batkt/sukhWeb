@@ -316,134 +316,134 @@ export default function AshiglaltiinZardluud() {
     return (
       <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto overflow-auto max-h-[calc(100vh-220px)] custom-scrollbar pr-2 pb-10">
         <div className="flex items-center justify-between bg-white/40 dark:bg-black/20 p-4 rounded-3xl border border-[color:var(--surface-border)] backdrop-blur-md">
-           <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setView("list")}
-                className="p-2.5 bg-white dark:bg-gray-900 border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] rounded-xl transition-all shadow-sm hover:scale-105"
-              >
-                <ChevronRight className="w-4 h-4 rotate-180 text-theme" />
-              </button>
-              <div>
-                <h2 className="text-lg font-black text-[color:var(--panel-text)] uppercase tracking-tight leading-none">
-                  {editingItem ? "Зардал засах" : "Шинэ зардал нэмэх"}
-                </h2>
-                <p className="text-[10px] font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">
-                  {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"} зардал
-                </p>
-              </div>
-           </div>
-           <div className="flex items-center gap-2">
-              <MButton
-                onClick={() => setView("list")}
-                variant="subtle"
-                size="sm"
-                className="px-6 h-10 text-slate-500 font-bold hover:bg-slate-100/50 rounded-xl"
-              >
-                Буцах
-              </MButton>
-              <MButton
-                size="sm"
-                className="btn-save shadow-lg shadow-blue-500/20 rounded-xl px-10 h-10 font-black uppercase tracking-widest text-[10px]"
-                onClick={handleSave}
-              >
-                Хадгалах
-              </MButton>
-           </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setView("list")}
+              className="p-2.5 bg-white dark:bg-gray-900 border border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] rounded-xl transition-all shadow-sm hover:scale-105"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180 text-theme" />
+            </button>
+            <div>
+              <h2 className="text-lg font-black text-[color:var(--panel-text)] uppercase tracking-tight leading-none">
+                {editingItem ? "Зардал засах" : "Шинэ зардал нэмэх"}
+              </h2>
+              <p className="text-[10px] font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">
+                {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"} зардал
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <MButton
+              onClick={() => setView("list")}
+              variant="subtle"
+              size="sm"
+              className="px-6 h-10 text-slate-500 font-bold hover:bg-slate-100/50 rounded-xl"
+            >
+              Буцах
+            </MButton>
+            <MButton
+              size="sm"
+              className="btn-save shadow-lg shadow-blue-500/20 rounded-xl px-10 h-10 font-black uppercase tracking-widest text-[10px]"
+              onClick={handleSave}
+            >
+              Хадгалах
+            </MButton>
+          </div>
         </div>
 
         <div className="bg-white/60 dark:bg-black/20 p-6 rounded-3xl border border-[color:var(--surface-border)] shadow-xl space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1.5">
-                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                  Зардлын нэр
-                </label>
-                <MTextInput
-                  value={formData.ner}
-                  onChange={(e) => {
-                    const newName = e.currentTarget.value;
-                    const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
-                    setFormData({
-                      ...formData,
-                      ner: newName,
-                      zaalt: isCakhilgaan ? true : formData.zaalt,
-                      tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
-                    });
-                  }}
-                  placeholder="Жишээ: Цэвэр ус..."
-                  classNames={{ input: "rounded-xl h-11 font-bold text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
-                  leftSection={<Activity className="w-4 h-4 text-theme opacity-50" />}
-                />
-              </div>
-
-              {!formData.ner.toLowerCase().includes("цахилгаан") && (
-                <div className="space-y-1.5">
-                  <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                    Зардлын төрөл
-                  </label>
-                  <MSelect
-                    value={formData.zardliinTurul ?? undefined}
-                    onChange={(value) => setFormData({ ...formData, zardliinTurul: value as string })}
-                    data={[
-                      { label: "Энгийн / Default", value: "Энгийн" },
-                      { label: "Лифт / Elevator", value: "Лифт" },
-                    ]}
-                    placeholder="Сонгох..."
-                    searchable={false}
-                    classNames={{ input: "rounded-xl h-11 font-bold text-base" }}
-                    leftSection={<Layers className="w-4 h-4 text-theme opacity-50" />}
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                  {formData.ner.toLowerCase().includes("цахилгаан") ? "Суурь хураамж (₮)" : "Тарифын дүн (₮)"}
-                </label>
-                <MTextInput
-                  value={tariffInputValue}
-                  onChange={(e) => {
-                    const raw = e.currentTarget.value;
-                    const cleanValue = raw.replace(/[^0-9.]/g, "");
-                    const n = Number(cleanValue);
-                    setTariffInputValue(cleanValue);
-                    setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
-                  }}
-                  onBlur={() => {
-                    if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
-                    else setTariffInputValue("");
-                  }}
-                  onFocus={() => {
-                    if (formData.tariff) setTariffInputValue(formData.tariff.toString());
-                  }}
-                  placeholder="0.00"
-                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
-                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1.5">
+              <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                Зардлын нэр
+              </label>
+              <MTextInput
+                value={formData.ner}
+                onChange={(e) => {
+                  const newName = e.currentTarget.value;
+                  const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
+                  setFormData({
+                    ...formData,
+                    ner: newName,
+                    zaalt: isCakhilgaan ? true : formData.zaalt,
+                    tariffUsgeer: isCakhilgaan ? "кВт" : formData.tariffUsgeer,
+                  });
+                }}
+                placeholder="Жишээ: Цэвэр ус..."
+                classNames={{ input: "rounded-xl h-11 font-bold text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
+                leftSection={<Activity className="w-4 h-4 text-theme opacity-50" />}
+              />
             </div>
+
+            {!formData.ner.toLowerCase().includes("цахилгаан") && (
+              <div className="space-y-1.5">
+                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                  Зардлын төрөл
+                </label>
+                <MSelect
+                  value={formData.zardliinTurul ?? undefined}
+                  onChange={(value) => setFormData({ ...formData, zardliinTurul: value as string })}
+                  data={[
+                    { label: "Энгийн / Default", value: "Энгийн" },
+                    { label: "Лифт / Elevator", value: "Лифт" },
+                  ]}
+                  placeholder="Сонгох..."
+                  searchable={false}
+                  classNames={{ input: "rounded-xl h-11 font-bold text-base" }}
+                  leftSection={<Layers className="w-4 h-4 text-theme opacity-50" />}
+                />
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                Тайлбар / Тэмдэглэл
+                {formData.ner.toLowerCase().includes("цахилгаан") ? "Суурь хураамж (₮)" : "Тарифын дүн (₮)"}
               </label>
-              <MTextarea
-                value={formData.tailbar}
-                onChange={(e) => setFormData({ ...formData, tailbar: e.currentTarget.value })}
-                placeholder="Нэмэлт тайлбар оруулах..."
-                minRows={3}
-                classNames={{ input: "rounded-2xl shadow-sm p-4 text-sm" }}
+              <MTextInput
+                value={tariffInputValue}
+                onChange={(e) => {
+                  const raw = e.currentTarget.value;
+                  const cleanValue = raw.replace(/[^0-9.]/g, "");
+                  const n = Number(cleanValue);
+                  setTariffInputValue(cleanValue);
+                  setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
+                }}
+                onBlur={() => {
+                  if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
+                  else setTariffInputValue("");
+                }}
+                onFocus={() => {
+                  if (formData.tariff) setTariffInputValue(formData.tariff.toString());
+                }}
+                placeholder="0.00"
+                classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
+                rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
               />
             </div>
-            
-            <div className="pt-4 border-t border-[color:var(--surface-border)] flex items-center justify-between opacity-50">
-                <div className="flex items-center gap-2">
-                   <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
-                      <Settings className="w-3 h-3 text-slate-400" />
-                   </div>
-                   <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Автоматаар хадгалагдана</span>
-                </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+              Тайлбар / Тэмдэглэл
+            </label>
+            <MTextarea
+              value={formData.tailbar}
+              onChange={(e) => setFormData({ ...formData, tailbar: e.currentTarget.value })}
+              placeholder="Нэмэлт тайлбар оруулах..."
+              minRows={3}
+              classNames={{ input: "rounded-2xl shadow-sm p-4 text-sm" }}
+            />
+          </div>
+
+          <div className="pt-4 border-t border-[color:var(--surface-border)] flex items-center justify-between opacity-50">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
+                <Settings className="w-3 h-3 text-slate-400" />
+              </div>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Автоматаар хадгалагдана</span>
             </div>
+          </div>
         </div>
       </div>
     );
@@ -458,23 +458,23 @@ export default function AshiglaltiinZardluud() {
         id="zardal-panel"
         className="animate-in fade-in duration-700 space-y-6 overflow-auto max-h-[calc(100vh-220px)] custom-scrollbar pr-2"
       >
-        <div className="flex items-center gap-3 mb-1">
-           <div className="p-3 rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/20">
-              <CreditCard className="w-6 h-6" />
-           </div>
-           <div>
-              <h1 className="text-2xl font-black text-[color:var(--panel-text)] uppercase tracking-tighter">Ашиглалтын зардал</h1>
-              <p className="text-[10px] font-bold text-[color:var(--muted-text)] opacity-70">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
-           </div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl shadow-blue-500/30 w-fit shrink-0">
+            <CreditCard className="w-7 h-7" />
+          </div>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-[color:var(--panel-text)] uppercase tracking-tighter leading-none">Ашиглалтын зардал</h1>
+            <p className="text-[10px] sm:text-xs font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           <div className="flex-1">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
                 <div className="flex items-center gap-3">
                   <div>
-                    <h3 className="text-lg  text-theme">Тогтмол зардлууд</h3>
+                    <h3 className="text-lg text-theme">Тогтмол зардлууд</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
                       {ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length} зардал
                     </p>
@@ -485,14 +485,8 @@ export default function AshiglaltiinZardluud() {
                   id="zardal-add-btn"
                   type="button"
                   className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                  style={{ borderRadius: '0.75rem' }}
-                  onClick={() => {
-                    setFormData({
-                      ...formData,
-                      turul: "Тогтмол",
-                    });
-                    openAddModal(false);
-                  }}
+                  style={{ borderRadius: "0.75rem" }}
+                  onClick={() => openAddModal(false)}
                 >
                   <span>Нэмэх</span>
                 </button>
@@ -502,26 +496,23 @@ export default function AshiglaltiinZardluud() {
                 <div className="flex justify-center items-center p-10">
                   <Loader />
                 </div>
-              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
-                  .length === 0 ? (
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length === 0 ? (
                 <div className="p-12 text-center">
                   <p className="text-theme font-medium">Тогтмол зардал байхгүй байна</p>
                   <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
                 </div>
               ) : (
                 <div id="zardal-list" className="flex flex-col">
-                  <div className="overflow-auto max-h-[350px] custom-scrollbar">
-                    <div className="min-w-full inline-block align-middle">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
-                          <tr className="text-left text-[color:var(--muted-text)] text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
-                            <th className="py-3 px-4">Нэр</th>
-                            <th className="py-3 px-4 text-center">Төрөл</th>
-                            <th className="py-3 px-4 text-center">Тариф</th>
-                            <th className="py-3 px-4">Тайлбар</th>
-                            <th className="py-3 px-4 text-center">Үйлдэл</th>
-                          </tr>
-                        </thead>
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
+                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                          <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
+                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">Үйлдэл</th>
+                        </tr>
+                      </thead>
                       <tbody>
                         {ashiglaltiinZardluud
                           .filter((x) => x._id)
@@ -530,8 +521,8 @@ export default function AshiglaltiinZardluud() {
                             filterText.trim() === ""
                               ? true
                               : String(x.ner || "")
-                                  .toLowerCase()
-                                  .includes(filterText.toLowerCase())
+                                .toLowerCase()
+                                .includes(filterText.toLowerCase())
                           )
                           .map((mur) => {
                             const displayValue = mur.tariff;
@@ -545,37 +536,31 @@ export default function AshiglaltiinZardluud() {
                                 key={mur._id}
                                 className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
-                                <td className="py-3 px-4 text-theme">
-                                  <div className="font-semibold">{mur.ner}</div>
+                                <td className="py-2 px-2 text-theme">
+                                  <div className="font-semibold text-[13px] sm:text-sm max-w-[100px] sm:max-w-[120px] leading-tight break-words">{mur.ner}</div>
                                 </td>
 
-                                <td className="py-3 px-4 text-center">
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                                    {mur.turul}
-                                  </span>
-                                </td>
-
-                                <td className="py-3 px-4">
-                                  <div className="flex flex-col items-center gap-1">
-                                    <div className="font-semibold text-theme text-base">
-                                      {formatNumber(currentValue, 0)} ₮
+                                <td className="py-2 px-2">
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <div className="font-black text-theme text-sm sm:text-base whitespace-nowrap">
+                                      {formatNumber(currentValue, 2)} ₮
                                     </div>
                                     {changed && (
-                                      <span className="text-xs text-amber-600 font-medium">
+                                      <span className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter whitespace-nowrap">
                                         Өөрчлөгдсөн
                                       </span>
                                     )}
                                   </div>
                                 </td>
-                                <td className="py-3 px-4 text-theme text-sm max-w-xs truncate">
-                                  {mur.tailbar || <span className="text-[color:var(--muted-text)]">-</span>}
+                                <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
+                                  {mur.tailbar || <span className="text-[color:var(--muted-text)] opacity-40">-</span>}
                                 </td>
-                                <td className="py-3 px-4">
-                                  <div className="flex items-center justify-center gap-2">
+                                <td className="py-2 px-2">
+                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
                                     <button
                                       onClick={() => openEditModal(mur, false)}
-                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-                                      style={{ borderRadius: '0.5rem' }}
+                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors shrink-0"
+                                      style={{ borderRadius: "0.5rem" }}
                                       title="Засах"
                                     >
                                       <Edit className="w-4 h-4" />
@@ -585,8 +570,8 @@ export default function AshiglaltiinZardluud() {
                                         setItemToDelete(mur);
                                         setDeleteModalOpen(true);
                                       }}
-                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-                                      style={{ borderRadius: '0.5rem' }}
+                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors shrink-0"
+                                      style={{ borderRadius: "0.5rem" }}
                                       title="Устгах"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -598,191 +583,22 @@ export default function AshiglaltiinZardluud() {
                           })}
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
-                        <tr className="">
-                          <td colSpan={2} className="py-3 px-4 text-theme">
-                            <div className=" text-base">Нийт дүн:</div>
+                        <tr className="bg-white/50 dark:bg-black/20">
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
+                            <div className="text-[11px] sm:text-xs font-black uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
                           </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="text-lg  text-blue-600 dark:text-blue-400">
-                            {formatNumber(
-                              ashiglaltiinZardluud
-                                .filter((x) => x._id)
-                                .filter((x) => x.turul === "Тогтмол")
-                                .filter((x) =>
-                                  filterText.trim() === ""
-                                    ? true
-                                    : String(x.ner || "")
-                                        .toLowerCase()
-                                        .includes(filterText.toLowerCase())
-                                )
-                                .reduce((sum, item) => {
-                                  const displayValue = item.tariff;
-                                  const currentValue =
-                                    editedTariffs[item._id!] !== undefined
-                                      ? editedTariffs[item._id!]
-                                      : displayValue;
-                                  return sum + currentValue;
-                                }, 0)
-                            )} ₮
-                            </div>
-                          </td>
-                          <td colSpan={2}></td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
-                </div>
-              </div>
-              )}
-            </div>
-          </div>
-
-          {/* Variable expenses section */}
-          <div className="flex-1">
-            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h3 className="text-lg  text-theme">Хувьсах зардлууд</h3>
-                    <p className="text-xs text-[color:var(--muted-text)]">
-                      {ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length} зардал
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  id="zardal-add-variable-btn"
-                  type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                  style={{ borderRadius: '0.75rem' }}
-                  onClick={() => {
-                    setFormData({
-                      ...formData,
-                      turul: "Дурын",
-                    });
-                    openAddModal(false);
-                  }}
-                >
-                  <span>Нэмэх</span>
-                </button>
-              </div>
-
-              {isLoadingAshiglaltiin ? (
-                <div className="flex justify-center items-center p-10">
-                  <Loader />
-                </div>
-              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын")
-                  .length === 0 ? (
-                <div className="p-12 text-center">
-                  <p className="text-theme font-medium">Хувьсах зардал байхгүй байна</p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
-                </div>
-              ) : (
-                <div className="flex flex-col">
-                  <div className="overflow-auto max-h-[350px] custom-scrollbar">
-                    <div className="min-w-full inline-block align-middle">
-                      <table className="w-full text-sm">
-                        <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
-                          <tr className="text-left text-[color:var(--muted-text)] text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
-                            <th className="py-3 px-4">Нэр</th>
-                            <th className="py-3 px-4 text-center">Төрөл</th>
-                            <th className="py-3 px-4 text-center">Тариф</th>
-                            <th className="py-3 px-4">Тайлбар</th>
-                            <th className="py-3 px-4 text-center">Үйлдэл</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {ashiglaltiinZardluud
-                            .filter((x) => x._id)
-                            .filter((x) => x.turul === "Дурын")
-                            .filter((x) =>
-                              filterText.trim() === ""
-                                ? true
-                                : String(x.ner || "")
-                                    .toLowerCase()
-                                    .includes(filterText.toLowerCase())
-                            )
-                            .map((mur) => {
-                              const displayValue = mur.tariff;
-                              const currentValue =
-                                editedTariffs[mur._id!] !== undefined
-                                  ? editedTariffs[mur._id!]
-                                  : displayValue;
-                              const changed = currentValue !== displayValue;
-                              return (
-                                <tr
-                                  key={mur._id}
-                                  className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
-                                >
-                                  <td className="py-3 px-4 text-theme">
-                                    <div className="font-semibold">{mur.ner}</div>
-                                  </td>
-
-                                  <td className="py-3 px-4 text-center">
-                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                      {mur.turul}
-                                    </span>
-                                  </td>
-
-                                  <td className="py-3 px-4">
-                                    <div className="flex flex-col items-center gap-1">
-                                      <div className="font-semibold text-theme text-base">
-                                        {formatNumber(currentValue, 0)} ₮
-                                      </div>
-                                      {changed && (
-                                        <span className="text-xs text-amber-600 font-medium">
-                                          Өөрчлөгдсөн
-                                        </span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="py-3 px-4 text-theme text-sm max-w-xs truncate">
-                                    {mur.tailbar || <span className="text-[color:var(--muted-text)]">-</span>}
-                                  </td>
-                                  <td className="py-3 px-4">
-                                    <div className="flex items-center justify-center gap-2">
-                                      <button
-                                        onClick={() => openEditModal(mur, false)}
-                                        className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors"
-                                        style={{ borderRadius: '0.5rem' }}
-                                        title="Засах"
-                                      >
-                                        <Edit className="w-4 h-4" />
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          setItemToDelete(mur);
-                                          setDeleteModalOpen(true);
-                                        }}
-                                        className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-                                        style={{ borderRadius: '0.5rem' }}
-                                        title="Устгах"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                        </tbody>
-                        <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
-                          <tr className="">
-                            <td colSpan={2} className="py-3 px-4 text-theme">
-                              <div className=" text-base">Нийт дүн:</div>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              <div className="text-lg  text-emerald-600 dark:text-emerald-400">
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
+                            <div className="text-sm sm:text-lg font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)
-                                  .filter((x) => x.turul === "Дурын")
+                                  .filter((x) => x.turul === "Тогтмол")
                                   .filter((x) =>
                                     filterText.trim() === ""
                                       ? true
                                       : String(x.ner || "")
-                                          .toLowerCase()
-                                          .includes(filterText.toLowerCase())
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase())
                                   )
                                   .reduce((sum, item) => {
                                     const displayValue = item.tariff;
@@ -793,13 +609,167 @@ export default function AshiglaltiinZardluud() {
                                     return sum + currentValue;
                                   }, 0)
                               )} ₮
-                              </div>
-                            </td>
-                            <td colSpan={2}></td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                            </div>
+                          </td>
+                          <td className="hidden md:table-cell"></td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Variable expenses section */}
+          <div className="flex-1">
+            <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+              <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h3 className="text-lg text-theme">Хувьсах зардлууд</h3>
+                    <p className="text-xs text-[color:var(--muted-text)]">
+                      {ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length} зардал
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  id="zardal-add-variable-btn"
+                  type="button"
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  style={{ borderRadius: "0.75rem" }}
+                  onClick={() => openAddModal(true)}
+                >
+                  <span>Нэмэх</span>
+                </button>
+              </div>
+
+              {isLoadingAshiglaltiin ? (
+                <div className="flex justify-center items-center p-10">
+                  <Loader />
+                </div>
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-theme font-medium">Хувьсах зардал байхгүй байна</p>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
+                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                          <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
+                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">Үйлдэл</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ashiglaltiinZardluud
+                          .filter((x) => x._id)
+                          .filter((x) => x.turul === "Дурын")
+                          .filter((x) =>
+                            filterText.trim() === ""
+                              ? true
+                              : String(x.ner || "")
+                                .toLowerCase()
+                                .includes(filterText.toLowerCase())
+                          )
+                          .map((mur) => {
+                            const displayValue = mur.tariff;
+                            const currentValue =
+                              editedTariffs[mur._id!] !== undefined
+                                ? editedTariffs[mur._id!]
+                                : displayValue;
+                            const changed = currentValue !== displayValue;
+                            return (
+                              <tr
+                                key={mur._id}
+                                className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
+                              >
+                                <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
+                                  <div className="font-semibold text-[13px] sm:text-sm max-w-[120px] sm:max-w-[150px] md:max-w-[200px] leading-tight break-words">{mur.ner}</div>
+                                </td>
+
+                                <td className="py-2 sm:py-3 px-2 sm:px-4">
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <div className="font-black text-theme text-sm sm:text-base whitespace-nowrap">
+                                      {formatNumber(currentValue, 0)} ₮
+                                    </div>
+                                    {changed && (
+                                      <span className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter whitespace-nowrap">
+                                        Өөрчлөгдсөн
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
+                                  {mur.tailbar || <span className="text-[color:var(--muted-text)] opacity-40">-</span>}
+                                </td>
+                                <td className="py-2 px-2">
+                                  <div className="flex items-center justify-center gap-1 sm:gap-2">
+                                    <button
+                                      onClick={() => openEditModal(mur, false)}
+                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors shrink-0"
+                                      style={{ borderRadius: "0.5rem" }}
+                                      title="Засах"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setItemToDelete(mur);
+                                        setDeleteModalOpen(true);
+                                      }}
+                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors shrink-0"
+                                      style={{ borderRadius: "0.5rem" }}
+                                      title="Устгах"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                      <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
+                        <tr className="bg-white/50 dark:bg-black/20">
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
+                            <div className="text-[11px] sm:text-xs font-black uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
+                          </td>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
+                            <div className="text-sm sm:text-lg font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                              {formatNumber(
+                                ashiglaltiinZardluud
+                                  .filter((x) => x._id)
+                                  .filter((x) => x.turul === "Дурын")
+                                  .filter((x) =>
+                                    filterText.trim() === ""
+                                      ? true
+                                      : String(x.ner || "")
+                                        .toLowerCase()
+                                        .includes(filterText.toLowerCase())
+                                  )
+                                  .reduce((sum, item) => {
+                                    const displayValue = item.tariff;
+                                    const currentValue =
+                                      editedTariffs[item._id!] !== undefined
+                                        ? editedTariffs[item._id!]
+                                        : displayValue;
+                                    return sum + currentValue;
+                                  }, 0)
+                              )} ₮
+                            </div>
+                          </td>
+                          <td className="hidden md:table-cell"></td>
+                          <td></td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
               )}
@@ -816,8 +786,7 @@ export default function AshiglaltiinZardluud() {
             header:
               "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
             title: "text-theme font-semibold",
-            close:
-              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+            close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
           }}
           overlayProps={{ opacity: 0.5, blur: 6 }}
           centered
@@ -846,8 +815,6 @@ export default function AshiglaltiinZardluud() {
             </div>
           </div>
         </MModal>
-
-
       </div>
     </div>
   );
