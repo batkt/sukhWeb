@@ -243,7 +243,23 @@ export default function HistoryModal({
         zardluud.forEach((z: any) => {
           // Include all zardluud entries including zaalt (electricity) entries
           if (z.ner) {
-            const amt = pickAmount(z);
+            let amt = pickAmount(z);
+            
+            // Special handling for "Эхний үлдэгдэл" - if it's 0 in the invoice,
+            // check if there's a gereeniiTulukhAvlaga record with the actual value
+            if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+              if (amt === 0 || amt === undefined) {
+                // Find matching ekhniiUldegdel from gereeniiTulukhAvlaga
+                const ekhniiUldegdelRec = matchedReceivables.find(
+                  (r: any) => r.ekhniiUldegdelEsekh === true
+                );
+                if (ekhniiUldegdelRec) {
+                  amt = Number(ekhniiUldegdelRec.uldegdel ?? ekhniiUldegdelRec.undsenDun ?? ekhniiUldegdelRec.tulukhDun ?? 0);
+                  console.log(`💰 [HistoryModal] Updated ekhniiUldegdel from gereeniiTulukhAvlaga: ${amt}`);
+                }
+              }
+            }
+            
             if (amt > 0) {
               const rowId = z._id?.toString() || `z-${Math.random()}`;
               flatLedger.push({
@@ -257,11 +273,21 @@ export default function HistoryModal({
                 isSystem,
                 ajiltan,
                 khelber: "Нэхэмжлэх",
-                tailbar: z.ner,
+                tailbar: z.tailbar || z.ner,
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
               if (z._id) processedIds.add(z._id.toString());
+              
+              // Mark the gereeniiTulukhAvlaga record as processed if this is ekhniiUldegdel
+              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+                const ekhniiUldegdelRec = matchedReceivables.find(
+                  (r: any) => r.ekhniiUldegdelEsekh === true
+                );
+                if (ekhniiUldegdelRec?._id) {
+                  processedIds.add(ekhniiUldegdelRec._id.toString());
+                }
+              }
             }
           }
         });
@@ -392,6 +418,11 @@ export default function HistoryModal({
       });
 
       // Process receivable records from gereeniiTulukhAvlaga
+      // Track if we've already added ekhniiUldegdel from invoice zardluud
+      const hasEkhniiUldegdelInInvoice = flatLedger.some(
+        (entry) => entry.ner === "Эхний үлдэгдэл" && entry.sourceCollection === "nekhemjlekhiinTuukh"
+      );
+      
       matchedReceivables.forEach((rec: any) => {
         const recId = rec._id?.toString();
         // Skip if already processed in invoice loop
@@ -399,10 +430,20 @@ export default function HistoryModal({
 
         // Skip orphans (has nekhemjlekhId but parent invoice is gone)
         if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString())) return;
+        
+        // Skip ekhniiUldegdel records if they're already included in the invoice zardluud
+        // This prevents duplicate "Эхний үлдэгдэл" entries
+        if (rec.ekhniiUldegdelEsekh === true && hasEkhniiUldegdelInInvoice) {
+          console.log(`⏭️ [HistoryModal] Skipping duplicate ekhniiUldegdel from gereeniiTulukhAvlaga: ${recId}`);
+          return;
+        }
 
         const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
         const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
-        const amt = Number(rec.tulukhDun || rec.undsenDun || 0);
+        // For ekhniiUldegdel, use uldegdel (remaining balance) if available, otherwise undsenDun
+        const amt = rec.ekhniiUldegdelEsekh === true 
+          ? Number(rec.uldegdel ?? rec.undsenDun ?? rec.tulukhDun ?? 0)
+          : Number(rec.tulukhDun || rec.undsenDun || 0);
 
         if (amt > 0) {
           flatLedger.push({

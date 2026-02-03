@@ -173,7 +173,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700 dark:text-slate-300">Зардлын нийт дүн:</span>
                       <span className="font-semibold text-slate-900 dark:text-[var(--panel-text)]">
-                        {formatNumber(preview.zardluudTotal || 0)} ₮
+                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} ₮
                       </span>
                     </div>
                    
@@ -181,7 +181,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="flex justify-between items-center">
                       <span className="text-base font-semibold text-slate-800 dark:text-slate-200">Нийт төлбөр:</span>
                       <span className="text-2xl  text-blue-600 dark:text-blue-400">
-                        {formatNumber((preview.niitTulbur || 0) - (preview.ekhniiUldegdel || 0))} ₮
+                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} ₮
                       </span>
                     </div>
                   </div>

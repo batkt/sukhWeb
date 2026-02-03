@@ -1351,20 +1351,32 @@ export default function DansniiKhuulga() {
 
       if (!key || key === "||") return; // Skip if no valid identifier
 
+      // For ekhniiUldegdel records from gereeniiTulukhAvlaga, use uldegdel (remaining balance)
+      const isEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      const itemAmount = isEkhniiUldegdel
+        ? Number(it?.uldegdel ?? it?.undsenDun ?? it?.tulukhDun ?? 0) || 0
+        : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+
       if (!map.has(key)) {
         // First occurrence - store as base record
         map.set(key, {
           ...it,
           _historyCount: 1,
-          _totalTulbur: Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0,
+          _totalTulbur: itemAmount,
           _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
+          _hasEkhniiUldegdel: isEkhniiUldegdel,
+          _ekhniiUldegdelAmount: isEkhniiUldegdel ? itemAmount : 0,
         });
       } else {
         // Aggregate values
         const existing = map.get(key);
         existing._historyCount += 1;
-        existing._totalTulbur += Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+        existing._totalTulbur += itemAmount;
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
+        if (isEkhniiUldegdel) {
+          existing._hasEkhniiUldegdel = true;
+          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + itemAmount;
+        }
       }
     });
 
@@ -3030,8 +3042,9 @@ export default function DansniiKhuulga() {
                       if (col.key === "gereeniiDugaar") {
 
                       } else if (col.key === "tulbur") {
+                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          return sum + Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+                          return sum + Number(it?._totalTulbur ?? 0);
                         }, 0);
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "paid") {
@@ -3042,8 +3055,9 @@ export default function DansniiKhuulga() {
                         }, 0);
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "uldegdel") {
+                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const tulbur = Number(it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+                          const tulbur = Number(it?._totalTulbur ?? 0);
                           const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
                           const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + (tulbur - tulsun);
