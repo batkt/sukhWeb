@@ -124,80 +124,62 @@ export default function HistoryModal({
       console.log("🔍 Filtering history for:", { contractId, residentId, gereeniiId, gereeDugaar, toot, ner, ovog, utas });
 
       // Filter for this specific contract/resident using multiple strategies
+      // When gereeniiId is available, REQUIRE it to match - otherwise we'd pull in invoices
+      // from other contracts (same resident, different apartment) and double-count charges
       const contractItems = rawList.filter((item: any) => {
-        // Strategy 1: Match by orshinSuugchId
-        const itemResidentId = String(item?.orshinSuugchId || "").trim();
-        if (residentId && itemResidentId && itemResidentId === residentId) {
-          return true;
-        }
-
-        // Strategy 2: Match by gereeniiId
         const itemGereeId = String(item?.gereeniiId || "").trim();
+        const itemGereeDugaar = String(item?.gereeniiDugaar || "").trim();
+
+        // If we have gereeniiId, require it to match - strict contract scoping
         if (gereeniiId && itemGereeId && itemGereeId === gereeniiId) {
           return true;
         }
-
-        // Strategy 3: Match by gereeniiDugaar
-        const itemGereeDugaar = String(item?.gereeniiDugaar || "").trim();
+        // If we have gereeDugaar but no gereeniiId, use dugaar
         if (gereeDugaar && itemGereeDugaar && itemGereeDugaar === gereeDugaar) {
           return true;
         }
-
-        // Strategy 4: Match by toot + ner (both must match)
-        if (toot && ner) {
-          const itemToot = String(item?.toot || item?.medeelel?.toot || "").trim();
-          const itemNer = String(item?.ner || "").trim().toLowerCase();
-          if (itemToot === toot && itemNer === ner) {
-            return true;
+        // Fallback: when no gereeniiId/gereeDugaar, use other strategies
+        if (!gereeniiId && !gereeDugaar) {
+          const itemResidentId = String(item?.orshinSuugchId || "").trim();
+          if (residentId && itemResidentId && itemResidentId === residentId) return true;
+          if (toot && ner) {
+            const itemToot = String(item?.toot || item?.medeelel?.toot || "").trim();
+            const itemNer = String(item?.ner || "").trim().toLowerCase();
+            if (itemToot === toot && itemNer === ner) return true;
+          }
+          if (utas && utas.length >= 8) {
+            const itemUtas = Array.isArray(item?.utas) && item.utas.length > 0
+              ? String(item.utas[0] || "").trim() : String(item?.utas || "").trim();
+            if (itemUtas === utas) return true;
+          }
+          if (ovog && ner) {
+            const itemOvog = String(item?.ovog || "").trim().toLowerCase();
+            const itemNer2 = String(item?.ner || "").trim().toLowerCase();
+            if (itemOvog === ovog && itemNer2 === ner) return true;
           }
         }
-
-        // Strategy 5: Match by phone number (if 8+ digits)
-        if (utas && utas.length >= 8) {
-          const itemUtas = (() => {
-            if (Array.isArray(item?.utas) && item.utas.length > 0) {
-              return String(item.utas[0] || "").trim();
-            }
-            return String(item?.utas || "").trim();
-          })();
-          if (itemUtas === utas) {
-            return true;
-          }
-        }
-
-        // Strategy 6: Match by ovog + ner (both must match)
-        if (ovog && ner) {
-          const itemOvog = String(item?.ovog || "").trim().toLowerCase();
-          const itemNer = String(item?.ner || "").trim().toLowerCase();
-          if (itemOvog === ovog && itemNer === ner) {
-            return true;
-          }
-        }
-
         return false;
       });
 
-      // Filter payment records for this contract
+      // Filter payment records for this contract (require gereeniiId when available)
       const matchedPayments = paymentRecords.filter((rec: any) => {
         const recGereeId = String(rec?.gereeniiId || "").trim();
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
-
         if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
-        if (residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
         if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
+        if (!gereeniiId && !gereeDugaar && residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
         return false;
       });
 
-      // Filter receivable records for this contract
+      // Filter receivable records for this contract (require gereeniiId when available)
       const matchedReceivables = receivableRecords.filter((rec: any) => {
         const recGereeId = String(rec?.gereeniiId || "").trim();
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
-
         if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
-        if (residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
         if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
+        if (!gereeniiId && !gereeDugaar && residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
         return false;
       });
 
@@ -208,16 +190,42 @@ export default function HistoryModal({
         matchedReceivables: matchedReceivables.length
       });
 
+      // Deduplicate invoices: when multiple invoices exist for same contract + same month, keep only one
+      // to avoid double-counting charges (374k instead of 309k) and duplicate React keys
+      const monthKey = (it: any) => {
+        const d = new Date(it?.ognoo || it?.createdAt || 0);
+        return `${it?.gereeniiId || ""}-${d.getFullYear()}-${d.getMonth()}`;
+      };
+      const seenMonths = new Set<string>();
+      const dedupedContractItems = contractItems.filter((item: any) => {
+        const key = monthKey(item);
+        if (seenMonths.has(key)) return false;
+        seenMonths.add(key);
+        return true;
+      });
+      // Prefer paid invoice when deduping same month
+      const contractItemsToProcess = dedupedContractItems.length < contractItems.length
+        ? contractItems.filter((item: any) => {
+            const key = monthKey(item);
+            const sameMonth = contractItems.filter((it: any) => monthKey(it) === key);
+            const paid = sameMonth.find((it: any) => it?.tuluv === "Төлсөн");
+            const best = paid || sameMonth.sort((a: any, b: any) =>
+              new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime()
+            )[0];
+            return item._id === best?._id;
+          })
+        : contractItems;
+
       // Log first item for debugging
-      if (contractItems.length > 0) {
-        console.log("📋 Sample item structure:", JSON.stringify(contractItems[0], null, 2));
+      if (contractItemsToProcess.length > 0) {
+        console.log("📋 Sample item structure:", JSON.stringify(contractItemsToProcess[0], null, 2));
       }
 
       const flatLedger: LedgerEntry[] = [];
       const processedIds = new Set<string>();
-      const invoiceIds = new Set(contractItems.map((item: any) => item._id?.toString()));
+      const invoiceIds = new Set(contractItemsToProcess.map((item: any) => item._id?.toString()));
 
-      contractItems.forEach((item: any) => {
+      contractItemsToProcess.forEach((item: any) => {
         const itemDate = item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || new Date().toISOString();
         const ajiltan = item.createdBy?.ner || item.ajiltan || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || "Admin";
         const source = item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
@@ -259,7 +267,9 @@ export default function HistoryModal({
             }
             
             if (amt > 0) {
-              const rowId = z._id?.toString() || `z-${Math.random()}`;
+              // Use composite key: invoiceId-zardalId so entries stay unique when multiple
+              // invoices share the same zardluud template (same _ids) -> fixes React duplicate key
+              const rowId = `${item._id}-${z._id?.toString() || `z-${Math.random()}`}`;
               flatLedger.push({
                 _id: rowId,
                 parentInvoiceId: item._id,
@@ -331,7 +341,7 @@ export default function HistoryModal({
             if (g._id) processedIds.add(g._id.toString());
           }
           if (paid > 0) {
-            const rowId = g._id?.toString() || `g-paid-${Math.random()}`;
+            const rowId = `${item._id}-g-paid-${g._id?.toString() || Math.random()}`;
             flatLedger.push({
               _id: rowId,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
@@ -652,9 +662,14 @@ export default function HistoryModal({
 
       // If it's a sub-item (zardal or guilgee) in an invoice
       if (entry?.parentInvoiceId && source === "nekhemjlekhiinTuukh") {
+        // Extract actual zardal/guilgee _id from composite key (invoiceId-zardalId or invoiceId-g-guilgeeId)
+        let zardalId = id;
+        if (id.includes("-g-paid-")) zardalId = id.split("-g-paid-")[1] || id;
+        else if (id.includes("-g-")) zardalId = id.split("-g-")[1] || id;
+        else if (id.includes("-")) zardalId = id.substring(id.indexOf("-") + 1);
         response = await uilchilgee(token || undefined).post(`${endpoint}/deleteZardal`, {
           invoiceId: entry.parentInvoiceId,
-          zardalId: id,
+          zardalId,
           baiguullagiinId: baiguullagiinId || undefined,
         });
       } else {
@@ -887,13 +902,14 @@ export default function HistoryModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              if (row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem) {
+                              const canDelete = row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem;
+                              if (canDelete) {
                                 handleDeleteClick(row._id, row.ner || row.khelber || "");
                               }
                             }}
-                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
-                            title={row.isSystem ? "Системээс үүсгэсэн - устгах боломжгүй" : row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") ? "Устгах" : "Устгах боломжгүй"}
-                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-") || row.isSystem}
+                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
+                            title={row.isSystem ? "Системээс үүсгэсэн - устгах боломжгүй" : row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") ? "Устгах" : "Устгах боломжгүй"}
+                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-") || row._id.includes("-z-") || row.isSystem}
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500" : "text-slate-300 dark:text-slate-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
