@@ -903,7 +903,7 @@ export default function HistoryModal({
                             onClick={(e) => {
                               e.stopPropagation();
                               const canDelete = row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem;
-                              if (canDelete) {
+                              if (canDelete && row._id) {
                                 handleDeleteClick(row._id, row.ner || row.khelber || "");
                               }
                             }}
