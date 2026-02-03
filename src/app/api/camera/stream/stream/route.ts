@@ -63,12 +63,6 @@ export async function POST(request: NextRequest) {
     // R2WPlayer may send 'url' instead of 'rtsp'
     const rtspUrl = rtsp || url;
 
-    console.log("Parsed request body:", {
-      rawText: rawText.substring(0, 200), // First 200 chars for debugging
-      contentType: contentType,
-      parsedBody: body,
-      rtspUrl: rtspUrl,
-    });
 
     if (!rtspUrl || typeof rtspUrl !== "string") {
       console.error("Missing RTSP URL in request:", {
@@ -129,15 +123,6 @@ export async function POST(request: NextRequest) {
         formData.append("sdp64", sdp64);
       }
       
-      console.log("Forwarding to proxy:", {
-        proxyUrl: streamingProxyUrl,
-        rtspUrl: rtspUrl,
-        hasSdp: !!sdp64,
-        jsonBody: proxyRequestBodyJson,
-        formBody: formData.toString(),
-        rtspUrlLength: rtspUrl.length,
-        rtspUrlStartsWith: rtspUrl.substring(0, 50),
-      });
 
       // The working version sends form-encoded data directly to the proxy
       // Try form-encoded format first (matching R2WPlayer's original format)
@@ -181,17 +166,6 @@ export async function POST(request: NextRequest) {
         });
       }
       
-      // Log the actual request being sent for debugging
-      console.log("Proxy request details:", {
-        method: "POST",
-        url: streamingProxyUrl,
-        headers: {
-          "Content-Type": contentTypeUsed,
-        },
-        body: requestBodyString,
-        bodyLength: requestBodyString.length,
-      });
-
       if (!proxyResponse.ok) {
         // Try to get error details from the proxy response
         let errorDetails = `Proxy service returned ${proxyResponse.status}`;
@@ -242,23 +216,12 @@ export async function POST(request: NextRequest) {
 
       // Get response from proxy service
       const contentType = proxyResponse.headers.get("content-type");
-      
-      // Log the response for debugging
-      console.log("Proxy response:", {
-        status: proxyResponse.status,
-        contentType: contentType,
-        headers: Object.fromEntries(proxyResponse.headers.entries()),
-      });
+
       
       // If response is JSON (SDP answer or stream URL)
       if (contentType?.includes("application/json")) {
         const proxyData = await proxyResponse.json();
         
-        console.log("Proxy JSON response:", {
-          hasSdp64: !!proxyData.sdp64,
-          hasSdp: !!proxyData.sdp,
-          keys: Object.keys(proxyData),
-        });
         
         // R2WPlayer expects sdp64 in the response for WebRTC
         if (proxyData.sdp64) {

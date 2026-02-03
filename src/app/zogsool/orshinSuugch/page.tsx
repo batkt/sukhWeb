@@ -83,7 +83,7 @@ export default function OrshinSuugch() {
   const { data: residentsData, mutate } = useSWR(
     shouldFetch
       ? [
-          "/zochinJagsaalt", // Changed endpoint to /zochinJagsaalt
+          "/zochinJagsaalt",
           token,
           ajiltan?.baiguullagiinId,
           effectiveBarilgiinId,
@@ -205,7 +205,16 @@ export default function OrshinSuugch() {
                 </tr>
               </thead>
               <tbody>
-                {residents.length === 0 ? (
+                {!residentsData && !residents.length ? (
+                   <tr>
+                    <td colSpan={8} className="px-4 py-20 text-center">
+                       <div className="flex flex-col items-center gap-4">
+                          <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Уншиж байна...</p>
+                       </div>
+                    </td>
+                  </tr>
+                ) : residents.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-2">

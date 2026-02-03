@@ -70,21 +70,26 @@ export default function ResidentRegistrationModal({
                 ovog: found.ovog || prev.ovog,
                 unit: found.toot || found.burtgeliinDugaar || prev.unit,
             }));
-            toast.success("Оршин суугч олдлоо");
+            toast.success("Оршин суугчийн мэдээлэл олдлоо");
+            setStep(2); 
         } else {
-             // Silently proceed for new registration
+             toast.error("Оршин суугч бүртгэлгүй байна");
         }
-        // Proceed to Step 2 regardless of search result
-        setStep(2);
 
     } catch(err) {
         console.error(err);
         toast.error("Хайлт хийхэд алдаа гарлаа");
-        // Proceed even on error?
-        setStep(2);
     } finally {
         setSearching(false);
     }
+  };
+
+  const handleManualProceed = () => {
+    if (!formData.phone || formData.phone.length < 4) {
+        toast.error("Утасны дугаараа оруулна уу");
+        return;
+    }
+    setStep(2);
   };
 
   const handleSave = async () => {
@@ -206,15 +211,15 @@ export default function ResidentRegistrationModal({
                          </div>
 
                          <button 
-                            onClick={() => handleSearch()}
-                            disabled={searching || !formData.phone}
+                            onClick={handleManualProceed}
+                            disabled={searching}
                             className="w-full flex items-center justify-center gap-2 h-12 rounded-xl bg-blue-600 text-white font-bold uppercase tracking-widest hover:bg-blue-700 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                          >
                             {searching ? (
                                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <>
-                                    <span>Үргэлжлүүлэх</span>
+                                    <span>{formData.phone ? 'Үргэлжлүүлэх' : 'Хайх'}</span>
                                     <ArrowRight className="w-4 h-4" />
                                 </>
                             )}
@@ -269,13 +274,13 @@ export default function ResidentRegistrationModal({
                                         <select
                                             value={formData.type}
                                             onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-                                            className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                            className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                                         >
                                             <option value="Оршин суугч">Оршин суугч</option>
                                             <option value="Түрээслэгч">Түрээслэгч</option>
                                         </select>
                                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-zinc-900 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                             Төрөл
                                         </label>
                                     </div>
@@ -295,9 +300,9 @@ export default function ResidentRegistrationModal({
 
                                 <div className="space-y-5">
                                     {/* License Plate Special Input */}
-                                    <div className="relative p-6 rounded-2xl bg-slate-100 dark:bg-zinc-900 flex justify-center items-center overflow-hidden group">
+                                    <div className="relative p-6 rounded-2xl bg-slate-100 dark:bg-white/[0.03] flex justify-center items-center overflow-hidden group border border-slate-200 dark:border-white/5">
                                         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-5"></div>
-                                        <div className="relative w-64 h-14 bg-white dark:bg-white rounded-lg border-2 border-black flex items-center shadow-sm transform group-hover:scale-105 transition-transform duration-300">
+                                        <div className="relative w-64 h-14 bg-white dark:bg-slate-50 rounded-lg border-2 border-black flex items-center shadow-lg transform group-hover:scale-105 transition-transform duration-300">
                                             <div className="h-full w-12 bg-blue-600 flex flex-col items-center justify-center border-r-2 border-black">
                                                 <div className="text-[6px] text-white font-bold leading-none mb-0.5">MNG</div>
                                                 <div className="w-6 h-6 rounded-full bg-amber-400 border border-amber-600 flex items-center justify-center">
@@ -338,13 +343,13 @@ export default function ResidentRegistrationModal({
                                             <select
                                                 value={formData.frequency}
                                                 onChange={(e) => setFormData({...formData, frequency: e.target.value})}
-                                                className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                                className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
                                             >
                                                 <option value="saraar">Сараар</option>
                                                 <option value="jileer">Жилээр</option>
                                             </select>
                                             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                                            <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-zinc-900 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                                                 Давтамж
                                             </label>
                                         </div>
@@ -393,17 +398,16 @@ export default function ResidentRegistrationModal({
                             disabled={loading}
                             className="
                                 flex items-center gap-2 px-8 py-2.5 rounded-xl
-                                bg-slate-900 dark:bg-white 
-                                text-white dark:text-slate-900
+                                bg-[#4285F4] text-white
                                 text-xs font-black uppercase tracking-wider
-                                shadow-lg shadow-slate-900/20 dark:shadow-white/10
-                                hover:scale-[1.02] active:scale-[0.98]
+                                shadow-lg shadow-blue-500/20
+                                hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98]
                                 disabled:opacity-70 disabled:cursor-not-allowed
                                 transition-all duration-200
                             "
                         >
                             {loading ? (
-                                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <Save className="w-4 h-4" />
                             )}
@@ -441,10 +445,10 @@ const InputField = ({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-zinc-900/50 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+        className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
         placeholder={placeholder}
       />
-      <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-zinc-900 text-[10px] font-bold text-slate-400 uppercase tracking-wider group-focus-within:text-blue-500 transition-colors">
+      <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px] font-bold text-slate-400 uppercase tracking-wider group-focus-within:text-blue-500 transition-colors">
         {label}
       </label>
     </div>

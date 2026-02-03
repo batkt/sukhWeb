@@ -25,7 +25,8 @@ import {
   ChevronDown,
   Plus,
   Filter,
-  ArrowUpDown
+  ArrowUpDown,
+  Tag
 } from "lucide-react";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
@@ -265,7 +266,7 @@ export default function Camera() {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   // Helper to fetch list via REST (as a fallback or for filters)
-  const fetchList = async () => {
+  const fetchList = useCallback(async () => {
     if (!rangeStart || !rangeEnd || !token) return;
     
     // archive.md logic: Handle Archive collections based on date range
@@ -364,7 +365,21 @@ export default function Camera() {
     } finally {
       setIsInitialLoading(false);
     }
-  };
+  }, [
+    rangeStart, 
+    rangeEnd, 
+    token, 
+    ajiltan?.baiguullagiinId, 
+    effectiveBarilgiinId, 
+    searchTerm, 
+    typeFilter, 
+    statusFilter, 
+    activeExitIP, 
+    exitCameras, 
+    durationFilter, 
+    page, 
+    pageSize
+  ]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
@@ -448,7 +463,8 @@ export default function Camera() {
   }, [baiguullaga?._id, exitCameras]);
 
   useEffect(() => {
-    if (!baiguullaga?._id || !cameras.length) return;
+    const bId = ajiltan?.baiguullagiinId || baiguullaga?._id;
+    if (!bId || !cameras.length) return;
     if (!socketRef.current) {
       socketRef.current = getSocket();
     }
@@ -463,16 +479,24 @@ export default function Camera() {
     setIsConnected(s.connected);
 
     const handleGeneralUpdate = (data: any) => {
-      if (data?._id && data?.baiguullagiinId === baiguullaga?._id) {
-        setLiveUpdates((prev) => ({ ...prev, [data._id]: data }));
+      if (data?._id && data?.baiguullagiinId === bId) {
+        setLiveUpdates((prev: Record<string, Uilchluulegch>) => {
+          const newState: Record<string, Uilchluulegch> = { ...prev, [data._id]: data };
+          // If we have a synthetic entry (key == plate), remove it now that we have the real data
+          if (data.mashiniiDugaar && newState[data.mashiniiDugaar]) {
+            delete newState[data.mashiniiDugaar];
+          }
+          return newState;
+        });
+        fetchList();
       }
     };
 
-    s.on(`zogsool${baiguullaga._id}`, handleGeneralUpdate);
-    cleanup.push(() => s.off(`zogsool${baiguullaga._id}`, handleGeneralUpdate));
+    s.on(`zogsool${bId}`, handleGeneralUpdate);
+    cleanup.push(() => s.off(`zogsool${bId}`, handleGeneralUpdate));
 
     const handleOroh = (data: any) => {
-      if (!data || !data?.mashiniiDugaar || !data?.baiguullagiinId || data?.baiguullagiinId !== baiguullaga?._id)
+      if (!data || !data?.mashiniiDugaar || !data?.baiguullagiinId || data?.baiguullagiinId !== bId)
         return;
 
       if (!data?.oruulakhguiEsekh) {
@@ -499,13 +523,12 @@ export default function Camera() {
         },
       }));
 
+      fetchList();
       const dugaar = data.mashiniiDugaar?.replace("???", "");
-      // Removed: uilchilgee(token || undefined).get(url).catch(() => {});
-      // Removed: zurchilteiMashinMsgilgeekh(dugaar);
     };
 
     const handleGarah = (u: any) => {
-      if (!u || !u?.mashiniiDugaar || !u?.baiguullagiinId || u?.baiguullagiinId !== baiguullaga?._id)
+      if (!u || !u?.mashiniiDugaar || !u?.baiguullagiinId || u?.baiguullagiinId !== bId)
         return;
 
       let dugaar = u.mashiniiDugaar?.replace("???", "");
@@ -518,7 +541,7 @@ export default function Camera() {
       if (niit < 0) niit = 0;
 
       let url = `/sambar/${garsanKhaalga}/${dugaar}/${niit}`;
-      if (baiguullaga?._id === "65cf2f027fbc788f85e50b90" || baiguullaga?._id === "6549bbe0d437e6d25d557341") {
+      if (bId === "65cf2f027fbc788f85e50b90" || bId === "6549bbe0d437e6d25d557341") {
         const start = moment(u?.createdAt).format("YYYY-MM-DD HH:mm:ss");
         const end = moment().format("YYYY-MM-DD HH:mm:ss");
         url = `/sambarOgnootoi/${garsanKhaalga}/${dugaar}/${niit}/${start}/${end}`;
@@ -529,25 +552,25 @@ export default function Camera() {
           khaalgaNeey(u.tuukh[0].garsanKhaalga);
         }
       }
-      // Removed: uilchilgee(token || undefined).get(url).catch(() => {});
       if (u?._id) handleGeneralUpdate(u);
     };
 
     const handleGarahTulsun = (data: any) => {
-      if (!data || !data?.mashiniiDugaar || !data?.baiguullagiinId || data?.baiguullagiinId !== baiguullaga?._id)
+      if (!data || !data?.mashiniiDugaar || !data?.baiguullagiinId || data?.baiguullagiinId !== bId)
         return;
       khaalgaNeey(data.cameraIP);
+      fetchList();
     };
 
     entryCameras.forEach((cam) => {
-      const eventName = `zogsoolOroh${baiguullaga._id}${cam.cameraIP}`;
+      const eventName = `zogsoolOroh${bId}${cam.cameraIP}`;
       s.on(eventName, handleOroh);
       cleanup.push(() => s.off(eventName, handleOroh));
     });
 
     exitCameras.forEach((cam) => {
-      const e1 = `zogsoolGarakh${baiguullaga?._id}${cam.cameraIP}`;
-      const e2 = `zogsoolGarahTulsun${baiguullaga?._id}${cam.cameraIP}`;
+      const e1 = `zogsoolGarakh${bId}${cam.cameraIP}`;
+      const e2 = `zogsoolGarahTulsun${bId}${cam.cameraIP}`;
 
       s.on(e1, handleGarah);
       s.on(e2, handleGarahTulsun);
@@ -559,7 +582,7 @@ export default function Camera() {
     });
 
     return () => cleanup.forEach((fn) => fn());
-  }, [baiguullaga?._id, camerasHash, token]);
+  }, [baiguullaga?._id, ajiltan?.baiguullagiinId, camerasHash, token, fetchList]);
 
   const isSocketConnected = isConnected;
 
@@ -577,13 +600,28 @@ export default function Camera() {
     else if (Array.isArray(data)) list = data;
 
     const transactionMap = new Map<string, Uilchluulegch>();
+    const platesWithRealId = new Set<string>();
 
     list.forEach((item, index) => {
       const key = item._id || `list_${index}_${item.mashiniiDugaar || "unknown"}`;
       transactionMap.set(key, item);
+      if (item._id && item._id !== item.mashiniiDugaar) {
+        platesWithRealId.add(item.mashiniiDugaar);
+      }
+    });
+
+    // First pass of liveUpdates to identify more real IDs
+    Object.values(liveUpdates).forEach((update: any) => {
+      if (update._id && update._id !== update.mashiniiDugaar) {
+        platesWithRealId.add(update.mashiniiDugaar);
+      }
     });
 
     Object.values(liveUpdates).forEach((update: any) => {
+      // If synthetic (id == plate) and we have a real record for this plate, skip the synthetic one
+      if (update._id === update.mashiniiDugaar && platesWithRealId.has(update.mashiniiDugaar)) {
+        return;
+      }
       const key = update._id || update.mashiniiDugaar;
       if (key) transactionMap.set(key, update);
     });
@@ -703,6 +741,19 @@ export default function Camera() {
     window.addEventListener("keydown", handleShortcuts);
     return () => window.removeEventListener("keydown", handleShortcuts);
   }, [entryCameras, exitCameras, transactions, khaalgaNeey, handleManualExit]);
+
+  // Click outside listener for action menu
+  useEffect(() => {
+    if (!confirmExitId) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".action-menu-container")) {
+        setConfirmExitId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [confirmExitId]);
 
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
@@ -872,6 +923,19 @@ export default function Camera() {
             </div>
 
             <div className="flex items-center gap-3">
+              <div className="relative group w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
+                  <input
+                    type="text"
+                    placeholder="Улсын дугаар хайх..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full pl-9 pr-4 h-10 rounded-2xl bg-white hover:bg-slate-50 transition-all border-0 text-[10px] uppercase font-black tracking-widest text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
+                  />
+              </div>
               <button
                 onClick={() => setIsRegModalOpen(true)}
                 className="flex items-center gap-2 px-6 h-10 rounded-2xl bg-[#4285F4] border border-[#4285F4] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
@@ -898,8 +962,8 @@ export default function Camera() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20">
-            <div className="overflow-x-auto custom-scrollbar">
+          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
+            <div className="overflow-x-auto custom-scrollbar flex-1">
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead>
                    <tr className="bg-slate-900 border-b border-white/10">
@@ -932,48 +996,48 @@ export default function Camera() {
                           ]
                         },
                         { id: 'discount', label: "Хөнгөлөлт" },
-                        { id: 'amount', label: "Дүн" },
-                        { id: 'payment', label: "Төлбөр" },
-                        { id: 'ebarimt', label: "И-Баримт" },
+                        { id: 'amount', label: "Дүн", align: 'right' },
+                        { id: 'payment', label: "Төлбөр", align: 'right' },
+                        { id: 'ebarimt', label: "И-Баримт", align: 'right' },
                         { 
                           id: 'status', 
                           label: "Төлөв",
+                          width: 'w-40',
                           filter: true,
                           current: statusFilter,
                           set: (v: string) => { setStatusFilter(v); setPage(1); },
                           options: [
                             { label: "Бүгд", value: "all" },
-                            { label: "Идэвхтэй", value: "active" },
+                            { label: "Идэвхтэй", value: "active"},
                             { label: "Төлсөн", value: "paid" },
-                            { label: "Төлөөгүй", value: "unpaid" },
+                            { label: "Төлөөгүй", value: "unpaid"},
                             { label: "Үнэгүй", value: "free" }
                           ]
                         },
                         { id: 'reason', label: "Шалтгаан" },
                         { id: 'actions', label: "" },
                       ].map((h, i) => (
-                        <th key={h.id} className={`group relative py-3 px-3 text-slate-400 uppercase tracking-tighter text-[10px] text-center ${h.width || ''}`}>
-                          <div className={`flex items-center justify-center gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? '' : 'w-full'}`}>
+                        <th key={h.id} className={`group relative py-3 px-3 text-slate-400 uppercase tracking-tighter text-[10px] ${(h as any).align === 'right' ? 'text-right' : 'text-center'} ${h.width || ''}`}>
+                          <div className={`flex items-center ${(h as any).align === 'right' ? 'justify-end' : 'justify-center'} gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? '' : 'w-full'}`}>
                              {h.filter && <Filter className="w-3 h-3" />}
                              {h.label}
                              {h.sortable && <ArrowUpDown className="w-3 h-3" />}
                           </div>
 
                            {h.options && (
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-slate-900/95 backdrop-blur-xl text-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] p-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] border border-white/10 translate-y-3 group-hover:translate-y-0 ring-1 ring-black/50 overflow-hidden">
-                                 <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-900 rotate-45 border-l border-t border-white/10"></div>
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100">
                                  <div className="relative flex flex-col gap-1 z-10">
-                                   <div className="px-3 py-1.5 mb-1 text-[9px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5">
+                                   <div className="px-3 py-2 mb-1 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                                       {h.label} Сонгох
                                    </div>
                                    {h.options.map((opt, idx) => (
                                      <div 
                                        key={idx} 
                                        onClick={() => (h as any).set?.(opt.value)}
-                                       className={`px-4 py-2.5 rounded-xl text-[11px] font-semibold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                       className={`px-3 py-2.5 rounded-full text-[11px] font-bold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
                                           (h as any).current === opt.value 
-                                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/40 ring-1 ring-emerald-400/50' 
-                                            : 'hover:bg-white/10 text-slate-300 hover:text-white'
+                                            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40' 
+                                            : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                        }`}
                                      >
                                        <span>{opt.label}</span>
@@ -992,10 +1056,12 @@ export default function Camera() {
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="py-20 text-center">
-                        <div className="flex flex-col items-center gap-2 opacity-30">
-                           <Calendar className="w-12 h-12 mb-2" />
-                           <p className="text-xs font-black uppercase tracking-widest">Мэдээлэл олдсонгүй</p>
+                      <td colSpan={14} className="py-40 text-center bg-slate-50/10 dark:bg-white/5">
+                        <div className="flex flex-col items-center justify-center gap-4 opacity-30">
+                           <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
+                              <Calendar className="w-12 h-12 text-slate-400" />
+                           </div>
+                           <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Одоогоор мэдээлэл байхгүй байна</p>
                         </div>
                       </td>
                     </tr>
@@ -1015,17 +1081,18 @@ export default function Camera() {
                       // Active logic: still inside and not yet paid (tuluv 0 or 2)
                       const isActive = isCurrentlyIn && (tuluv === 0 || tuluv === 2);
                       const showActionBtn = isActive || isDebt;
+                      const hasPayment = niitDun > 0 || isDebt;
 
                       return (
-                        <tr
-                          key={transaction._id || idx}
-                          className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group"
-                        >
+                          <tr
+                            key={transaction._id || idx}
+                            className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-gray-50 dark:border-white/5 ${isActive ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}
+                          >
                           <td className="py-2.5 px-3 text-center text-gray-400">
                             {(page - 1) * pageSize + idx + 1}
                           </td>
                           <td className="py-2.5 px-3">
-                             <div className="flex items-center gap-2">
+                             <div className="flex items-center justify-center gap-2">
                                 <span className=" text-slate-700 dark:text-slate-300">{transaction.mashiniiDugaar || "-"}</span>
                                 <Copy 
                                   className="w-3 h-3 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors" 
@@ -1059,105 +1126,155 @@ export default function Camera() {
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.khungulult || ""}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-right font-medium">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300">
+                            <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-center font-bold">
                              {(() => {
                                 const history = transaction.tuukh?.[0];
                                 const tulsunDun = history?.tulsunDun || 0;
-                                const payHistory = history?.tulbur?.[0];
-                                const method = payHistory?.turul;
+                                const payHistory = history?.tulbur || [];
                                 const labels: any = { 
                                   cash: "Бэлэн", 
-                                  khaan: "Хаан Карт", 
+                                  khaan: "Хаан", 
                                   qpay: "QPay", 
                                   transfer: "Дансаар", 
-                                  discount: "Хөнгөлөлт" 
+                                  discount: "Хөнгөлөлт",
+                                  free: "Үнэгүй"
                                 };
                                 
-                                if (tulsunDun > 0) {
-                                  return `${labels[method] || "Төлөлт"} : ${formatNumber(tulsunDun)} Төлөгдсөн`;
+                                if (payHistory.length > 0) {
+                                  return payHistory.map((p: any) => `${labels[p.turul] || "Төлөлт"} : ${formatNumber(p.dun)}`).join(", ");
                                 }
+
+                                if (tulsunDun > 0) {
+                                  return `Төлөлт : ${formatNumber(tulsunDun)}`;
+                                }
+
+                                if (!history && !garsanTsag) return "-";
+                                
+                                if ((history as any)?.zurchil === "Үнэгүй хугацаанд" || (transaction as any).zurchil === "Үнэгүй хугацаанд" || (garsanTsag && tulsunDun === 0)) {
+                                  return <span className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-tighter">Үнэгүй</span>
+                                }
+
                                 return formatNumber(tulsunDun);
                              })()}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-right">
                              {transaction.tuukh?.[0]?.ebarimtId || 0}
                           </td>
-                            <td className="py-2.5 px-3 relative">
+                            <td className="py-3 px-3 relative">
                                 {showActionBtn ? (
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center gap-1 action-menu-container">
+                                      {/* Main Action Trigger */}
                                       <button 
-                                        onClick={() => {
-                                           if (niitDun > 0 || isDebt) {
-                                              setSelectedTransaction(transaction);
-                                              setConfirmExitId(null);
-                                           } else {
-                                              setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
-                                           }
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
                                         }}
-                                        className={`flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-tighter shadow-sm active:scale-95 transition-all border ${
-                                           isDebt 
-                                           ? "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100 dark:bg-amber-900/40 dark:border-amber-800 dark:text-amber-400" 
-                                           : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700/50 dark:hover:bg-blue-900/50"
+                                        className={`group/btn flex items-center justify-center flex-nowrap gap-2 w-[120px] px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-tight shadow-md active:scale-95 transition-all duration-300 border ${
+                                           hasPayment
+                                           ? "bg-amber-500 text-white border-amber-400 hover:bg-amber-600 shadow-amber-500/20" 
+                                           : "bg-blue-600 text-white border-blue-500 hover:bg-blue-700 shadow-blue-500/20"
                                         }`}
                                       >
-                                         <span className={`w-1.5 h-1.5 rounded-full ${isDebt ? "bg-amber-500" : "bg-blue-500 animate-pulse"}`}></span>
-                                         <span>{isDebt ? "Төлбөр" : "Идэвхтэй"}</span>
+                                         <div className="flex items-center justify-center flex-nowrap overflow-hidden">
+                                           <span className="whitespace-nowrap">{isActive ? "Идэвхтэй" : "Төлбөр"}</span>
+                                         </div>
                                       </button>
+
+                                      {/* Enhanced Dropdown Menu */}
                                       {confirmExitId === transaction._id && (
-                                         <div className="absolute left-0 mt-8 z-50 flex items-center gap-1 bg-white p-2 rounded-xl shadow-2xl border border-gray-100 min-w-[200px]">
-                                            <button 
-                                              onClick={() => handleManualExit(transaction, "pay")}
-                                              className="flex-1 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase hover:bg-emerald-600 transition-colors"
-                                            >
-                                              Төлөх
-                                            </button>
-                                            <button 
-                                              onClick={() => handleManualExit(transaction, "free")}
-                                              className="flex-1 bg-amber-500 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase hover:bg-amber-600 transition-colors"
-                                            >
-                                              Үнэгүй
-                                            </button>
-                                            <button 
-                                              onClick={() => setConfirmExitId(null)}
-                                              className="p-1.5 text-gray-400 hover:text-gray-600"
-                                            >
-                                               <X className="w-4 h-4" />
-                                            </button>
+                                         <div className="absolute right-0 top-full mt-2 z-[60] min-w-[160px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="px-3 py-2 mb-1 border-b border-slate-100 dark:border-white/5">
+                                              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Үйлдэл сонгох</p>
+                                            </div>
+
+                                            {isActive ? (
+                                              <div className="space-y-1">
+                                                <button 
+                                                  onClick={() => handleManualExit(transaction, "pay")}
+                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:bg-amber-500/20 transition-all group/item"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 group-hover/item:scale-110 transition-transform">
+                                                      <Tag className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>Хөнгөлөлт</span>
+                                                  </div>
+                                                </button>
+                                                <button 
+                                                  onClick={() => {
+                                                      if (niitDun > 0) {
+                                                          handleManualExit(transaction, "pay");
+                                                      } else {
+                                                          handleManualExit(transaction, "free");
+                                                      }
+                                                  }}
+                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:bg-blue-500/20 transition-all group/item"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 group-hover/item:scale-110 transition-transform">
+                                                      <ArrowUpDown className="w-3.5 h-3.5 rotate-90" />
+                                                    </div>
+                                                    <span>Гаргах</span>
+                                                  </div>
+                                                </button>
+                                              </div>
+                                            ) : (
+                                              <div className="space-y-1">
+                                                <button 
+                                                  onClick={() => handleManualExit(transaction, "pay")}
+                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:bg-emerald-500/20 transition-all group/item"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 group-hover/item:scale-110 transition-transform">
+                                                      <DollarSign className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>Төлөх</span>
+                                                  </div>
+                                                </button>
+                                                <button 
+                                                  onClick={() => handleManualExit(transaction, "free")}
+                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-500/10 hover:text-slate-600 dark:hover:bg-slate-500/20 transition-all group/item"
+                                                >
+                                                  <div className="flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-slate-500/10 text-slate-600 group-hover/item:scale-110 transition-transform">
+                                                      <Info className="w-3.5 h-3.5" />
+                                                    </div>
+                                                    <span>Үнэгүй</span>
+                                                  </div>
+                                                </button>
+                                              </div>
+                                            )}
                                          </div>
                                       )}
                                     </div>
                                 ) : (
                                   (() => {
                                     if (tuluv === 1) return (
-                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-lg dark:bg-emerald-900/20 dark:border-emerald-800/50 dark:text-emerald-400">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                        <span className="text-[9px] font-bold uppercase">Төлсөн</span>
+                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-emerald-500 text-white border border-emerald-400 rounded-full shadow-lg shadow-emerald-500/20">
+                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Төлсөн</span>
                                       </div>
                                     );
                                     if (tuluv === 2) return (
-                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-lg dark:bg-indigo-900/20 dark:border-indigo-800/50 dark:text-indigo-400">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                                        <span className="text-[9px] font-bold uppercase">Урьдчилсан</span>
+                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-indigo-500 text-white border border-indigo-400 rounded-full shadow-lg shadow-indigo-500/20">
+                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Урьдчилсан</span>
                                       </div>
                                     );
                                     if (tuluv === -2 || tuluv === -1) return (
-                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-amber-50 text-amber-600 border border-amber-100 rounded-lg dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                        <span className="text-[9px] font-bold uppercase">Зөрчилтэй</span>
+                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-amber-500 text-white border border-amber-400 rounded-full shadow-lg shadow-amber-500/20">
+                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Зөрчилтэй</span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && niitDun === 0) return (
-                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-gray-50 text-gray-500 border border-gray-200 rounded-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400">
-                                        <span className="text-[9px] font-bold uppercase">Үнэгүй</span>
+                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-slate-500 text-white border border-slate-400 rounded-full shadow-lg shadow-slate-500/20">
+                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Үнэгүй</span>
                                       </div>
                                     );
                                     return (
-                                      <div className="flex items-center justify-center gap-1.5 w-[90px] px-2 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg dark:bg-blue-900/20 dark:border-blue-800/50 dark:text-blue-400">
-                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                        <span className="text-[9px] font-bold uppercase">Идэвхтэй</span>
+                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1.5 bg-blue-600 text-white border border-blue-400 rounded-full shadow-lg shadow-blue-600/30">
+                                        <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap text-center">Идэвхтэй</span>
                                       </div>
                                     );
                                   })()

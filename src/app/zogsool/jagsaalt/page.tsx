@@ -304,11 +304,11 @@ export default function Jagsaalt() {
                         { id: 'duration', label: "Хугацаа/мин", filter: true, current: durationFilter, set: setDurationFilter, options: [{ label: "Удаан зогссон эхэнд", value: "longest" }, { label: "Сүүлд орсон эхэнд", value: "latest_in" }, { label: "Сүүлд гарсан эхэнд", value: "latest_out" }] },
                         { id: 'calc', label: "Бодогдсон" },
                         { id: 'payment', label: "Төлбөр" },
-                        { id: 'discount', label: "Хөнгөлөлт" },
-                        { id: 'ebarimt', label: "И-Баримт" },
                         { id: 'status', label: "Төлөв", filter: true, current: statusFilter, set: setStatusFilter, options: [{ label: "Бүгд", value: "all" }, { label: "Идэвхтэй", value: "active" }, { label: "Төлсөн", value: "paid" }, { label: "Төлөөгүй", value: "unpaid" }, { label: "Үнэгүй", value: "free" }] },
                         { id: 'reason', label: "Шалтгаан" },
                         { id: 'staff', label: "Бүртгэсэн" },
+                        { id: 'discount', label: "Хөнгөлөлт" },
+                        { id: 'ebarimt', label: "И-Баримт" },
                       ].map((h) => (
                         <th key={h.id} className={`group relative py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] text-center ${h.width || ''}`}>
                             <div 
@@ -379,25 +379,25 @@ export default function Jagsaalt() {
                             )}
                             {(page - 1) * pageSize + idx + 1}
                           </td>
-                          <td className="py-4 px-3 whitespace-nowrap">
+                          <td className="py-4 px-3 whitespace-nowrap text-center">
                             <div className="flex flex-col">
                               <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300">
                                 {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-3 whitespace-nowrap">
+                          <td className="py-4 px-3 whitespace-nowrap text-center">
                             <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
                               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
                             </span>
                           </td>
-                          <td className="py-4 px-3">
+                          <td className="py-4 px-3 text-center">
                              <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
                                 {mur?.turul || "Үйлчлүүлэгч"}
                              </span>
                           </td>
-                          <td className="py-4 px-3">
-                            <div className="flex items-center gap-2 group/copy">
+                          <td className="py-4 px-3 text-center">
+                            <div className="flex items-center justify-center gap-2 group/copy">
                                <span className="text-xs font-black text-slate-800 dark:text-slate-200 tracking-tight">{transaction.mashiniiDugaar || "-"}</span>
                                <Copy 
                                  className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-all opacity-0 group-hover/copy:opacity-100 scale-90 group-hover/copy:scale-100" 
@@ -414,13 +414,13 @@ export default function Jagsaalt() {
                               <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
                             </div>
                           </td>
-                          <td className="py-4 px-3 text-right">
+                          <td className="py-4 px-3 text-center">
                              <span className="text-xs font-black text-slate-900 dark:text-white">
                                {formatNumber(niitDun)}₮
                              </span>
                           </td>
-                          <td className="py-4 px-3 text-right">
-                            <div className="flex flex-col items-end gap-0.5">
+                          <td className="py-4 px-3 text-center">
+                            <div className="flex flex-col items-center gap-0.5">
                                {(() => {
                                   const tulsunDun = mur?.tulsunDun || 0;
                                   const payHistory = mur?.tulbur?.[0];
@@ -435,12 +435,6 @@ export default function Jagsaalt() {
                                   return <span className="text-[11px] font-bold text-slate-300">0.00₮</span>;
                                })()}
                             </div>
-                          </td>
-                          <td className="py-4 px-3 text-[11px] font-medium text-slate-500">
-                            {mur?.khungulult || "-"}
-                          </td>
-                          <td className="py-4 px-3 text-[11px] font-medium text-slate-500">
-                            {mur?.ebarimtId || "-"}
                           </td>
                           <td className="py-4 px-3 text-center">
                              {(() => {
@@ -467,14 +461,20 @@ export default function Jagsaalt() {
                              })()}
                           </td>
                           <td className="py-4 px-3 max-w-[150px]">
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate group-hover:whitespace-normal font-medium">
+                            <p className="text-[10px] text-slate-400 dark:text-slate-500 italic truncate group-hover:whitespace-normal font-medium text-center">
                               {transaction.zurchil || (!isCurrentlyIn && !garsanTsag ? "Гарсан цаг тодорхойгүй!" : "-")}
                             </p>
                           </td>
-                          <td className="py-4 px-3">
+                          <td className="py-4 px-3 text-center">
                             <div className="flex flex-col">
                               <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">{mur?.burtgesenAjiltaniiNer || "-"}</span>
                             </div>
+                          </td>
+                          <td className="py-4 px-3 text-[11px] font-medium text-slate-500 text-center">
+                            {mur?.khungulult || "-"}
+                          </td>
+                          <td className="py-4 px-3 text-[11px] font-medium text-slate-500 text-center">
+                            {mur?.ebarimtId || "-"}
                           </td>
                         </tr>
                       );

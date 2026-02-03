@@ -28,6 +28,9 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
       if (e.key === "F4") handleSave();
+      if (e.key === "F7") {
+          if (onConfirm) onConfirm(0, "cash", { ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined } });
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -309,27 +312,22 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     {/* Action Buttons */}
                     <div className="grid grid-cols-2 gap-3 mt-auto">
                         <button 
-                            onClick={onClose}
-                            className="py-3 rounded-xl border border-red-200 text-red-500 font-bold uppercase text-[10px] hover:bg-red-50 transition-colors"
+                            onClick={async () => {
+                                // "Free" logic: set amount to 0, use 'cash' (or special method if backend supports), and confirm
+                                if (onConfirm) onConfirm(0, "cash", { ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined } });
+                            }}
+                            disabled={isProcessing}
+                            className="py-3 rounded-xl border border-amber-200 text-amber-600 font-bold uppercase text-[10px] hover:bg-amber-50 transition-colors disabled:opacity-50"
                         >
-                            Цуцлах [ESC]
+                            Үнэгүй [F7]
                         </button>
-                        <div className="flex flex-col gap-2">
-                            <button 
-                                onClick={handleSave}
-                                disabled={isProcessing}
-                                className="py-2.5 rounded-xl border border-emerald-500 text-emerald-600 font-bold uppercase text-[10px] hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                            >
-                                {isProcessing ? "Уншиж байна..." : "Шууд хадгалах [F4]"}
-                            </button>
-                            <button 
-                                onClick={handleSave} 
-                                disabled={isProcessing}
-                                className="py-2.5 rounded-xl bg-emerald-500 text-white font-bold uppercase text-[10px] hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
-                            >
-                                {isProcessing ? "Төлж байна..." : "Хадгалах"}
-                            </button>
-                        </div>
+                        <button 
+                            onClick={handleSave} 
+                            disabled={isProcessing}
+                            className="py-3 rounded-xl bg-emerald-500 text-white font-bold uppercase text-[10px] hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+                        >
+                            {isProcessing ? "Уншиж байна..." : "Төлөх [F4]"}
+                        </button>
                     </div>
                 </div>
             </div>
