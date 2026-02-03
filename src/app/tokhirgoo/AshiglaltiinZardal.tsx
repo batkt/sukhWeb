@@ -503,7 +503,7 @@ export default function AshiglaltiinZardluud() {
                 </div>
               ) : (
                 <div id="zardal-list" className="flex flex-col">
-                  <div className="overflow-x-auto custom-scrollbar">
+                  <div className="overflow-y-auto custom-scrollbar max-h-[50vh]">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
                         <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
@@ -657,7 +657,7 @@ export default function AshiglaltiinZardluud() {
                 </div>
               ) : (
                 <div className="flex flex-col">
-                  <div className="overflow-x-auto custom-scrollbar">
+                  <div className="overflow-y-auto custom-scrollbar max-h-[50vh]">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
                         <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">

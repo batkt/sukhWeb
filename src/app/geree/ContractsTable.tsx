@@ -196,16 +196,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                         >
                           <Edit className="w-5 h-5" />
                         </button>
-                        <button
-                          onClick={() =>
-                            handlePreviewContractTemplate(String(contract._id))
-                          }
-                          className="p-2 rounded-2xl hover-surface transition-colors"
-                          title="Гэрээний загвар харах"
-                          id="geree-eye-btn"
-                        >
-                          <Eye className="w-5 h-5" />
-                        </button>
+                        
                         <button
                           onClick={() => handlePreviewInvoice(contract)}
                           className="p-2 rounded-2xl hover-surface transition-colors"

@@ -310,6 +310,42 @@ export default function Khynalt() {
     { revalidateOnFocus: false }
   );
 
+  // Fetch ekhniiUldegdel from gereeniiTulukhAvlaga
+  const { data: tulukhAvlagaData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+        "/gereeniiTulukhAvlaga",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+      ]
+      : null,
+    async ([url, tkn, bId, barId]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  // Calculate ekhniiUldegdel total from gereeniiTulukhAvlaga
+  const ekhniiUldegdelTotal = useMemo(() => {
+    const list = Array.isArray(tulukhAvlagaData?.jagsaalt)
+      ? tulukhAvlagaData.jagsaalt
+      : [];
+    
+    // Sum up uldegdel from all ekhniiUldegdel records
+    return list
+      .filter((item: any) => item.ekhniiUldegdelEsekh === true)
+      .reduce((sum: number, item: any) => sum + Number(item.uldegdel || 0), 0);
+  }, [tulukhAvlagaData]);
+
   // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
   const [chartColors, setChartColors] = useState({
     text: "#0f172a", // light default
@@ -466,7 +502,8 @@ export default function Khynalt() {
 
     const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
     const totalInvoiceAmount = list.reduce((s, it) => s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0), 0);
-    const finalUnpaid = totalInvoiceAmount - finalPaid;
+    // Include ekhniiUldegdel from gereeniiTulukhAvlaga in the unpaid total
+    const finalUnpaid = (totalInvoiceAmount - finalPaid) + ekhniiUldegdelTotal;
 
     const paidArr: number[] = [];
     const unpaidArr: number[] = [];
@@ -488,7 +525,7 @@ export default function Khynalt() {
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
       },
     };
-  }, [incomeData, residents, orderedLabels, buildLabel, buildingPaymentSummary]);
+  }, [incomeData, residents, orderedLabels, buildLabel, buildingPaymentSummary, ekhniiUldegdelTotal]);
 
   const {
     incomeTotals,

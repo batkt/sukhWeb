@@ -222,23 +222,53 @@ const InvoiceModal = ({
       try {
         if (!isOpen || !token || !baiguullagiinId || !resident?._id) return;
 
-        const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
-          params: {
-            baiguullagiinId,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 2000,
-          },
-        });
+        const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
+        const residentGereeId = String(resident?.gereeniiId || "").trim();
+        const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+
+        // Fetch both nekhemjlekhiinTuukh and gereeniiTulukhAvlaga in parallel
+        const [resp, tulukhAvlagaResp] = await Promise.all([
+          uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+            params: {
+              baiguullagiinId,
+              barilgiinId: selectedBuildingId || barilgiinId || null,
+              khuudasniiDugaar: 1,
+              khuudasniiKhemjee: 2000,
+            },
+          }),
+          uilchilgee(token).get(`/gereeniiTulukhAvlaga`, {
+            params: {
+              baiguullagiinId,
+              barilgiinId: selectedBuildingId || barilgiinId || null,
+              khuudasniiDugaar: 1,
+              khuudasniiKhemjee: 2000,
+            },
+          }).catch(() => ({ data: { jagsaalt: [] } })),
+        ]);
+
         const data = resp.data;
         const list = Array.isArray(data?.jagsaalt)
           ? data.jagsaalt
           : Array.isArray(data)
             ? data
             : [];
-        const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
-        const residentGereeId = String(resident?.gereeniiId || "").trim();
-        const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+
+        // Get gereeniiTulukhAvlaga records (contains ekhniiUldegdel)
+        const tulukhAvlagaList = Array.isArray(tulukhAvlagaResp.data?.jagsaalt)
+          ? tulukhAvlagaResp.data.jagsaalt
+          : [];
+
+        // Filter tulukhAvlaga for this resident (ekhniiUldegdel records)
+        const residentTulukhAvlaga = tulukhAvlagaList.filter((item: any) => {
+          const itemGid = String(item?.gereeniiId || "").trim();
+          const itemRid = String(item?.orshinSuugchId || "").trim();
+          const itemDugaar = String(item?.gereeniiDugaar || "").trim();
+
+          if (residentGereeId && itemGid === residentGereeId) return true;
+          if (residentId && itemRid === residentId) return true;
+          if (residentGereeDugaar && itemDugaar === residentGereeDugaar) return true;
+          return false;
+        });
 
         const residentInvoices = list.filter((item: any) => {
           const itemGid = String(item?.gereeniiId || item?.gereeId || "").trim();
@@ -300,7 +330,22 @@ const InvoiceModal = ({
           allGuilgeenuud.push(...g);
         });
 
-        const rows = [...allZardluud, ...allGuilgeenuud];
+        // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
+        const ekhniiUldegdelRows = residentTulukhAvlaga
+          .filter((item: any) => item.ekhniiUldegdelEsekh === true)
+          .map((item: any) => ({
+            _id: item._id,
+            ner: item.zardliinNer || "Эхний үлдэгдэл",
+            tariff: Number(item.tulukhDun || item.undsenDun || 0),
+            dun: Number(item.tulukhDun || item.undsenDun || 0),
+            turul: "avlaga",
+            zardliinTurul: "Авлага",
+            tailbar: item.tailbar || "Эхний үлдэгдэл",
+            ognoo: item.ognoo,
+            isEkhniiUldegdel: true,
+          }));
+
+        const rows = [...allZardluud, ...allGuilgeenuud, ...ekhniiUldegdelRows];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -329,11 +374,19 @@ const InvoiceModal = ({
           turul: z.turul,
           zardliinTurul: z.zardliinTurul,
           tailbar: z.tailbar || invoiceTailbar,
+          isEkhniiUldegdel: z.isEkhniiUldegdel || false,
         });
         setInvRows(rows.map(norm));
-        const t = Number(
+
+        // Calculate total including ekhniiUldegdel from gereeniiTulukhAvlaga
+        const ekhniiUldegdelTotal = residentTulukhAvlaga
+          .filter((item: any) => item.ekhniiUldegdelEsekh === true)
+          .reduce((sum: number, item: any) => sum + Number(item.uldegdel || item.tulukhDun || 0), 0);
+        
+        const invoiceTotal = Number(
           latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
         );
+        const t = invoiceTotal + ekhniiUldegdelTotal;
         setInvTotal(Number.isFinite(t) ? t : null);
 
         try {
@@ -697,24 +750,34 @@ const InvoiceModal = ({
                 </div>
               </div>
 
-              {/* <div className="mt-3">
+              <div className="mt-3">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-slate-500">
-                      Өмнөх сарын үлдэгдэл:
+                      Эхний үлдэгдэл:
                     </span>{" "}
                     <span className="font-medium">
-                      {contractData?.medeelel?.ekhniiUldegdel != null
-                        ? formatCurrency(
-                            Number(contractData.medeelel.ekhniiUldegdel),
-                          )
-                        : contractData?.ekhniiUldegdel != null
-                          ? formatCurrency(Number(contractData.ekhniiUldegdel))
-                          : "-"}
+                      {formatCurrency(
+                        (() => {
+                          // First check invRows for ekhniiUldegdel items from gereeniiTulukhAvlaga
+                          const ekhniiUldegdelFromRows = invRows
+                            .filter((r: any) => r.isEkhniiUldegdel === true)
+                            .reduce((sum: number, r: any) => sum + Number(r.dun || 0), 0);
+                          if (ekhniiUldegdelFromRows > 0) return ekhniiUldegdelFromRows;
+                          
+                          // Fallback to contractData or resident
+                          return Number(
+                            contractData?.medeelel?.ekhniiUldegdel ??
+                              contractData?.ekhniiUldegdel ??
+                              resident?.ekhniiUldegdel ??
+                              0,
+                          );
+                        })(),
+                      )}
                     </span>
                   </div>
                 </div>
-              </div> */}
+              </div>
             </div>
 
             <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
@@ -837,7 +900,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 export default function DansniiKhuulga() {
   const { mutate } = useSWRConfig();
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(500);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
@@ -1441,16 +1504,17 @@ export default function DansniiKhuulga() {
   }, [deduplicatedResidents, cancelledGereesWithUnpaid, paidSummaryByGereeId, contractsByNumber]);
 
   const zaaltOruulakh = async () => {
+    const hide = message.loading({
+      content: "Заалтын Excel файл бэлдэж байна…",
+      duration: 0,
+    });
+
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
         message.warning("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
-
-      const hide = message.loading({
-        content: "Заалтын Excel файл бэлдэж байна…",
-        duration: 0,
-      });
 
       const response = await uilchilgee(token).post(
         "/zaaltExcelDataAvya",
@@ -1492,14 +1556,56 @@ export default function DansniiKhuulga() {
 
       message.success("Заалтын мэдээлэл амжилттай татагдлаа");
     } catch (err: any) {
-      const errorMsg = getErrorMessage(err);
+      hide();
+
+      // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
+      let errorMsg = "Алдаа гарлаа";
+      
+      try {
+        const responseData = err?.response?.data;
+        
+        if (responseData instanceof Blob) {
+          const errorText = await responseData.text();
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (responseData instanceof ArrayBuffer) {
+          const decoder = new TextDecoder("utf-8");
+          const errorText = decoder.decode(responseData);
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (typeof responseData === "string") {
+          try {
+            const errorJson = JSON.parse(responseData);
+            errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          } catch {
+            errorMsg = responseData || errorMsg;
+          }
+        } else if (responseData && typeof responseData === "object") {
+          errorMsg = responseData.aldaa || responseData.message || responseData.error || errorMsg;
+        } else {
+          errorMsg = getErrorMessage(err);
+        }
+      } catch {
+        // If all parsing fails, try getErrorMessage as fallback
+        const fallback = getErrorMessage(err);
+        if (fallback && fallback !== "Алдаа гарлаа") {
+          errorMsg = fallback;
+        }
+      }
+
       openErrorOverlay(errorMsg);
     }
   };
 
   const exceleerTatya = async () => {
+    const hide = message.loading({
+      content: "Excel загвар бэлдэж байна…",
+      duration: 0,
+    });
+
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
         message.warning("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
@@ -1510,10 +1616,6 @@ export default function DansniiKhuulga() {
       };
 
       const path = "/zaaltExcelTemplateAvya";
-      const hide = message.loading({
-        content: "Excel загвар бэлдэж байна…",
-        duration: 0,
-      });
       let resp: any;
       try {
         resp = await uilchilgee(token).post(path, body, {
@@ -1555,9 +1657,49 @@ export default function DansniiKhuulga() {
       a.remove();
       window.URL.revokeObjectURL(url);
       message.success("Excel загвар татагдлаа");
-    } catch (e) {
-      console.error(e);
-      message.error("Excel загвар татахад алдаа гарлаа");
+    } catch (err: any) {
+      hide();
+      console.error(err);
+
+      // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
+      let errorMsg = "Excel загвар татахад алдаа гарлаа";
+      
+      try {
+        const responseData = err?.response?.data;
+        
+        if (responseData instanceof Blob) {
+          const errorText = await responseData.text();
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (responseData instanceof ArrayBuffer) {
+          const decoder = new TextDecoder("utf-8");
+          const errorText = decoder.decode(responseData);
+          const errorJson = JSON.parse(errorText);
+          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+        } else if (typeof responseData === "string") {
+          try {
+            const errorJson = JSON.parse(responseData);
+            errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          } catch {
+            errorMsg = responseData || errorMsg;
+          }
+        } else if (responseData && typeof responseData === "object") {
+          errorMsg = responseData.aldaa || responseData.message || responseData.error || errorMsg;
+        } else {
+          const parsed = getErrorMessage(err);
+          if (parsed && parsed !== "Алдаа гарлаа") {
+            errorMsg = parsed;
+          }
+        }
+      } catch {
+        // If all parsing fails, try getErrorMessage as fallback
+        const fallback = getErrorMessage(err);
+        if (fallback && fallback !== "Алдаа гарлаа") {
+          errorMsg = fallback;
+        }
+      }
+
+      openErrorOverlay(errorMsg);
     }
   };
 

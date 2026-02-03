@@ -55,7 +55,7 @@ export default function DansniiKhuulga() {
   }, [ajiltan, router]);
 
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(20);
+  const [rowsPerPage, setRowsPerPage] = useState(500);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined

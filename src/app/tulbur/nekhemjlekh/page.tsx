@@ -1965,42 +1965,33 @@ export default function InvoicingZardluud() {
                                   </div>
                                 </div>
 
-                                {/* Show initial balance/note for this history item if present */}
-                                {(item?.medeelel?.ekhniiUldegdel != null ||
-                                  item?.ekhniiUldegdel != null ||
-                                  item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                  item?.ekhniiUldegdelUsgeer) && (
-                                  <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Эхний үлдэгдэл:
-                                      </span>{" "}
-                                      <span className="font-medium">
-                                        {item?.medeelel?.ekhniiUldegdel != null
-                                          ? formatCurrency(
-                                              Number(
-                                                item.medeelel.ekhniiUldegdel,
-                                              ),
-                                            )
-                                          : item?.ekhniiUldegdel != null
-                                            ? formatCurrency(
-                                                Number(item.ekhniiUldegdel),
-                                              )
-                                            : "-"}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-slate-500">
-                                        Тайлбар:
-                                      </span>{" "}
-                                      <span className="font-medium">
-                                        {item?.medeelel?.ekhniiUldegdelUsgeer ||
-                                          item?.ekhniiUldegdelUsgeer ||
-                                          "-"}
-                                      </span>
-                                    </div>
+                                {/* Always show initial balance (even when 0) */}
+                                <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <span className="text-slate-500">
+                                      Эхний үлдэгдэл:
+                                    </span>{" "}
+                                    <span className="font-medium">
+                                      {formatCurrency(
+                                        Number(
+                                          item?.medeelel?.ekhniiUldegdel ??
+                                            item?.ekhniiUldegdel ??
+                                            0,
+                                        ),
+                                      )}
+                                    </span>
                                   </div>
-                                )}
+                                  <div>
+                                    <span className="text-slate-500">
+                                      Тайлбар:
+                                    </span>{" "}
+                                    <span className="font-medium">
+                                      {item?.medeelel?.ekhniiUldegdelUsgeer ||
+                                        item?.ekhniiUldegdelUsgeer ||
+                                        "-"}
+                                    </span>
+                                  </div>
+                                </div>
 
                                 {rows.length > 0 && (
                                   <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
