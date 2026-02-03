@@ -429,7 +429,7 @@ export default function Jagsaalt() {
                                   if (tulsunDun > 0) return (
                                     <>
                                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">{formatNumber(tulsunDun)}₮</span>
-                                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{labels[method] || "Төлсөн"}</span>
+                                       <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{(method && labels[method]) || "Төлсөн"}</span>
                                     </>
                                   );
                                   return <span className="text-[11px] font-bold text-slate-300">0.00₮</span>;
