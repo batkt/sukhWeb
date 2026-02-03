@@ -63,7 +63,6 @@ export const socket = (): Socket => {
   // Strip /api/ suffix if present to avoid joining it as a namespace
   const socketBase = apiUrl.endsWith("/api/") ? apiUrl.slice(0, -5) : apiUrl;
 
-  // Manual override from documentation if needed: "https://turees.zevtabs.mn" 
   // or use the current API host
   const endpoint = socketBase.includes("localhost") ? socketBase : "https://amarhome.mn";
 

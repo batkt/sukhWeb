@@ -63,7 +63,6 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     description: "Зогсоолын мэдээлэл харах эрх",
     children: [
       { id: "zogsool.jagsaalt", label: "Жагсаалт", description: "Зогсоолын жагсаалт" },
-      { id: "zogsool.mashinBurtgel", label: "Машин бүртгэл", description: "Машин бүртгэх" },
       { id: "zogsool.camera", label: "Камер касс", description: "Камер касс харах" },
       { id: "zogsool.cameraKhyanalt", label: "Камерын хяналт", description: "Камерын хяналт" },
       { id: "zogsool.orshinSuugch", label: "Оршин суугч", description: "Оршин суугчийн мэдээлэл" },
@@ -120,7 +119,6 @@ export function getParentPermissionId(permissionId: string): string | null {
   return null;
 }
 
-// Helper function to get all child permission IDs
 export function getChildPermissionIds(permissionId: string): string[] {
   const ids: string[] = [];
   

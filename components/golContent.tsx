@@ -232,16 +232,8 @@ export default function GolContent({ children }: GolContentProps) {
           path: "/jagsaalt",
         },
         {
-          label: "Машин бүртгэл",
-          path: "/mashinBurtgel",
-        },
-        {
           label: "Камер касс",
           path: "/camera",
-        },
-        {
-          label: "Камерын хяналт",
-          path: "/cameraKhyanalt",
         },
         {
           label: "Оршин суугч",

@@ -1059,11 +1059,28 @@ export default function Camera() {
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.khungulult || ""}
                           </td>
-                          <td className="py-2.5 px-3  text-slate-800 dark:text-slate-300">
-                             {transaction.niitDun || 0}
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300">
+                             {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
-                             {transaction.tuukh?.[0]?.tulsunDun || ""}
+                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300">
+                             {(() => {
+                                const history = transaction.tuukh?.[0];
+                                const tulsunDun = history?.tulsunDun || 0;
+                                const payHistory = history?.tulbur?.[0];
+                                const method = payHistory?.turul;
+                                const labels: any = { 
+                                  cash: "Бэлэн", 
+                                  khaan: "Хаан Карт", 
+                                  qpay: "QPay", 
+                                  transfer: "Дансаар", 
+                                  discount: "Хөнгөлөлт" 
+                                };
+                                
+                                if (tulsunDun > 0) {
+                                  return `${labels[method] || "Төлөлт"} : ${formatNumber(tulsunDun)} Төлөгдсөн`;
+                                }
+                                return formatNumber(tulsunDun);
+                             })()}
                           </td>
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.ebarimtId || 0}
