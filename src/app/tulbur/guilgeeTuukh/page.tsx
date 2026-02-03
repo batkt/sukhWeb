@@ -2362,20 +2362,24 @@ export default function DansniiKhuulga() {
                 </Tooltip>
 
                 {ajiltan?.erkh === "Admin" && (
-                  <motion.div
-                    whileHover={{ scale: 1.03 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <IconTextButton
-                      onClick={handleSendInvoices}
-                      icon={isSendingInvoices ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
-                      label="Нэхэмжлэх илгээх"
-                      showLabelFrom="xl"
-                      disabled={isSendingInvoices || selectedGereeIds.length === 0}
-                      className={selectedGereeIds.length > 0 ? "bg-theme text-white border-transparent hover:bg-theme/90" : ""}
-                    />
-                  </motion.div>
+                  <Tooltip title="Нэхэмжлэх илгээх">
+                    <motion.div
+                      whileHover={{ scale: 1.03 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <IconTextButton
+                        onClick={handleSendInvoices}
+                        icon={isSendingInvoices ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                        label="Нэхэмжлэх илгээх"
+                        showLabelFrom="xl"
+                        disabled={isSendingInvoices || selectedGereeIds.length === 0}
+                        className={selectedGereeIds.length > 0 ? "bg-theme text-white border-transparent hover:bg-theme/90" : ""}
+                      />
+
+                    </motion.div>
+                  </Tooltip>
                 )}
+
                 <AnimatePresence>
                   {isColumnModalOpen && (
                     <motion.div

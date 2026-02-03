@@ -13,6 +13,16 @@ interface Query {
   [key: string]: any;
 }
 
+interface Toot {
+  toot: string;
+  source: string;
+  baiguullagiinId: string;
+  barilgiinId: string;
+  davkhar?: string;
+  orts?: string;
+  [key: string]: any;
+}
+
 interface OrshinSuugch {
   _id?: string;
   id?: number;
@@ -28,6 +38,7 @@ interface OrshinSuugch {
   nevtrekhNer?: string;
   tuluv?: string;
   toot?: string | number;
+  toots?: Toot[];
   baiguullagiinId?: string;
   tsahilgaaniiZaalt?: string | number;
   [key: string]: any;
@@ -41,13 +52,13 @@ const fetcherJagsaalt = async ([
   khuudaslalt,
   query,
 ]: [
-  string,
-  string,
-  string | number,
-  string | number | null | undefined,
-  Khuudaslalt,
-  Query
-]): Promise<any> => {
+    string,
+    string,
+    string | number,
+    string | number | null | undefined,
+    Khuudaslalt,
+    Query
+  ]): Promise<any> => {
   try {
     // Build the query object for residents (mirror employee/contract list behavior)
     const queryObj: any = {
@@ -88,20 +99,20 @@ const fetcherJagsaalt = async ([
       const lst = Array.isArray(d?.jagsaalt)
         ? d.jagsaalt
         : Array.isArray(d?.list)
-        ? d.list
-        : Array.isArray(d?.rows)
-        ? d.rows
-        : Array.isArray(d?.data?.jagsaalt)
-        ? d.data.jagsaalt
-        : Array.isArray(d?.data)
-        ? d.data
-        : Array.isArray(d)
-        ? d
-        : [];
+          ? d.list
+          : Array.isArray(d?.rows)
+            ? d.rows
+            : Array.isArray(d?.data?.jagsaalt)
+              ? d.data.jagsaalt
+              : Array.isArray(d?.data)
+                ? d.data
+                : Array.isArray(d)
+                  ? d
+                  : [];
       const pageSize = Number(
         d?.khuudasniiKhemjee ||
-          fallbackPageSize ||
-          khuudaslalt.khuudasniiKhemjee
+        fallbackPageSize ||
+        khuudaslalt.khuudasniiKhemjee
       );
       return {
         khuudasniiDugaar: Number(
@@ -114,8 +125,8 @@ const fetcherJagsaalt = async ([
           d?.niitKhuudas != null
             ? Number(d.niitKhuudas)
             : pageSize
-            ? Math.max(0, Math.ceil(lst.length / pageSize))
-            : 0,
+              ? Math.max(0, Math.ceil(lst.length / pageSize))
+              : 0,
       };
     };
 
@@ -137,13 +148,22 @@ const fetcherJagsaalt = async ([
     const orgOnly = (list || []).filter(
       (it: any) => toStr(it?.baiguullagiinId) === toStr(baiguullagiinId)
     );
-    const branchAware = orgOnly.filter((it: any) => {
+    const branchAware = orgOnly.filter((it: OrshinSuugch) => {
       if (!barilgiinId) return true;
-      // Support alternate field names for building id
+      const tId = toStr(barilgiinId);
+
+      // Check primary building ID
       const itemBid = toStr(
         it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
       );
-      return itemBid === toStr(barilgiinId);
+      if (itemBid === tId) return true;
+
+      // Check toots array if available
+      if (Array.isArray(it.toots)) {
+        return it.toots.some(t => toStr(t.barilgiinId) === tId);
+      }
+
+      return false;
     });
     const finalList = branchAware;
     const serverTotal = Number((data as any)?.niitMur);
@@ -189,8 +209,8 @@ export function useOrshinSuugchJagsaalt(
     fetcherJagsaalt,
     {
       revalidateOnFocus: false,
-      onError: (err: any) => {},
-      onSuccess: (data: any) => {},
+      onError: (err: any) => { },
+      onSuccess: (data: any) => { },
     }
   );
 

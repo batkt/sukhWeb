@@ -485,32 +485,65 @@ export default function HistoryModal({
         return createA - createB;
       });
 
-      // Calculate Running Balance BACKWARDS from the current contract balance
-      // This ensures the final history item matches the table's "uldegdel" exactly.
+      // Calculate Running Balance
       // Use fresh fetched balance if available, otherwise fallback to prop
-      let runningBalance = freshContract?.uldegdel !== undefined
+      const currentBalance = freshContract?.uldegdel !== undefined
         ? Number(freshContract.uldegdel)
-        : (contract?.uldegdel ? Number(contract.uldegdel) : 0);
+        : (contract?.uldegdel ? Number(contract.uldegdel) : null);
 
-      console.log(`💰 [HistoryModal] Backward Calc Start (Current Balance): ${runningBalance}`);
+      // Calculate total charges and payments in the ledger
+      const totalCharges = flatLedger.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0);
+      const totalPayments = flatLedger.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0);
 
-      // Iterate from newest to oldest
-      for (let i = flatLedger.length - 1; i >= 0; i--) {
-        const row = flatLedger[i];
+      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}`);
 
-        // The row's displayed balance should be the balance AFTER this transaction
-        row.uldegdel = runningBalance;
+      // Determine calculation strategy:
+      // If we have a valid current balance from the contract, use backward calculation
+      // If no current balance (null/undefined) OR if current balance is 0 but we have charges without payments,
+      // use forward calculation starting from 0
+      const hasValidCurrentBalance = currentBalance !== null && currentBalance !== undefined;
+      const hasUnpaidCharges = totalCharges > 0 && totalPayments === 0;
+      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges);
 
-        // Calculate the balance BEFORE this transaction for the next iteration (going backwards)
-        // Logic: Previous + Charge - Pay = Current
-        // Therefore: Previous = Current - Charge + Pay
-        const charge = Number(row.tulukhDun || 0);
-        const pay = Number(row.tulsunDun || 0);
+      if (useForwardCalc) {
+        // FORWARD calculation: Start from 0, accumulate balance
+        console.log(`💰 [HistoryModal] Using FORWARD calculation (starting from 0)`);
+        let runningBalance = 0;
 
-        runningBalance = runningBalance - charge + pay;
+        for (let i = 0; i < flatLedger.length; i++) {
+          const row = flatLedger[i];
+          const charge = Number(row.tulukhDun || 0);
+          const pay = Number(row.tulsunDun || 0);
+
+          // Balance AFTER this transaction
+          runningBalance = runningBalance + charge - pay;
+          row.uldegdel = runningBalance;
+        }
+
+        console.log(`💰 [HistoryModal] Forward Calc End (Final Balance): ${runningBalance}`);
+      } else {
+        // BACKWARD calculation: Start from current balance, work backwards
+        console.log(`💰 [HistoryModal] Using BACKWARD calculation (starting from ${currentBalance})`);
+        let runningBalance = currentBalance;
+
+        // Iterate from newest to oldest
+        for (let i = flatLedger.length - 1; i >= 0; i--) {
+          const row = flatLedger[i];
+
+          // The row's displayed balance should be the balance AFTER this transaction
+          row.uldegdel = runningBalance;
+
+          // Calculate the balance BEFORE this transaction for the next iteration (going backwards)
+          // Logic: Previous + Charge - Pay = Current
+          // Therefore: Previous = Current - Charge + Pay
+          const charge = Number(row.tulukhDun || 0);
+          const pay = Number(row.tulsunDun || 0);
+
+          runningBalance = runningBalance - charge + pay;
+        }
+
+        console.log(`💰 [HistoryModal] Backward Calc End (Initial Balance): ${runningBalance}`);
       }
-
-      console.log(`💰 [HistoryModal] Backward Calc End (Initial Balance): ${runningBalance}`);
 
       // Validating against Contract Current Balance (Optional but good for debug)
       // console.log("Final Calculated Balance:", runningBalance);

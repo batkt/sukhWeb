@@ -51,64 +51,16 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   setRowsPerPage,
 }) => {
   const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
-  const handleToggleSelectAll = (checked: boolean) => {
-    setSelectAllContracts(checked);
-    if (checked) {
-      const ids = currentContracts.map((c: any) => String(c._id));
-      setSelectedContracts(ids);
-    } else {
-      // Clear all selections
-      setSelectedContracts([]);
-    }
-  };
-
-  const handleToggleRow = (contract: any, checked: boolean) => {
-    const id = String(contract._id);
-    setSelectedContracts((prev) => {
-      if (checked) {
-        return Array.from(new Set([...prev, id]));
-      }
-      return prev.filter((x) => x !== id);
-    });
-  };
-
-  const handleRowClick = (contract: any, e: React.MouseEvent<HTMLTableRowElement>) => {
-    // Don't toggle if clicking on action buttons, checkbox, or sort buttons
-    const target = e.target as HTMLElement;
-    if (
-      target.closest('button') ||
-      target.closest('input[type="checkbox"]') ||
-      target.closest('th button')
-    ) {
-      return;
-    }
-    
-    // Toggle the checkbox state
-    const id = String(contract._id);
-    const isSelected = selectedContracts.includes(id);
-    handleToggleRow(contract, !isSelected);
-  };
-
   return (
     <div className="table-surface overflow-hidden rounded-2xl w-full">
       <div className="rounded-3xl p-6 neu-table allow-overflow">
         <div
-          className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
+          className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
           id="geree-table"
         >
           <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
             <thead className="z-10 bg-white dark:bg-gray-800">
               <tr>
-                {ajiltan?.erkh === "Admin" && (
-                  <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
-                    <input
-                      id="geree-select-all"
-                      type="checkbox"
-                      checked={selectAllContracts}
-                      onChange={(e) => handleToggleSelectAll(e.target.checked)}
-                    />
-                  </th>
-                )}
                 <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                   №
                 </th>
@@ -207,22 +159,12 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                   return (
                   <tr
                     key={contract._id || idx}
-                    onClick={(e) => ajiltan?.erkh === "Admin" && handleRowClick(contract, e)}
+                 
                     className={`transition-colors border-b last:border-b-0 ${
                       ajiltan?.erkh === "Admin" ? "cursor-pointer hover:bg-[color:var(--surface-hover)]" : ""
                     } ${isSelected ? "bg-[color:var(--surface-hover)]/50" : ""}`}
                   >
-                    {ajiltan?.erkh === "Admin" && (
-                      <td className="p-1 text-center text-theme w-12 border-r border-[color:var(--surface-border)]">
-                        <input
-                          type="checkbox"
-                          checked={selectedContracts.includes(String(contract._id))}
-                          onChange={(e) =>
-                            handleToggleRow(contract, e.target.checked)
-                          }
-                        />
-                      </td>
-                    )}
+        
                     <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
                       {startIndex + idx + 1}
                     </td>
