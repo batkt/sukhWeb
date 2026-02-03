@@ -331,21 +331,40 @@ const InvoiceModal = ({
         });
 
         // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
+        // Use undsenDun (original amount) for invoice display, NOT uldegdel (remaining after payments)
+        // The invoice should always show the original charge amount
         const ekhniiUldegdelRows = residentTulukhAvlaga
           .filter((item: any) => item.ekhniiUldegdelEsekh === true)
           .map((item: any) => ({
             _id: item._id,
-            ner: item.zardliinNer || "Эхний үлдэгдэл",
-            tariff: Number(item.tulukhDun || item.undsenDun || 0),
-            dun: Number(item.tulukhDun || item.undsenDun || 0),
-            turul: "avlaga",
+            ner: "Эхний үлдэгдэл", // Always display as "Эхний үлдэгдэл" in Зардал column
+            tariff: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            dun: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            turul: "ekhniiUldegdel", // Use special turul to avoid the avlaga formatting
             zardliinTurul: "Авлага",
-            tailbar: item.tailbar || "Эхний үлдэгдэл",
+            tailbar: item.zardliinNer || item.tailbar || "Эхний үлдэгдэл", // Full description in Тайлбар column
             ognoo: item.ognoo,
             isEkhniiUldegdel: true,
           }));
 
-        const rows = [...allZardluud, ...allGuilgeenuud, ...ekhniiUldegdelRows];
+        // Filter out 0.00 "Эхний үлдэгдэл" entries from invoice zardluud
+        // when we have actual ekhniiUldegdel from gereeniiTulukhAvlaga
+        const hasEkhniiUldegdelFromAvlaga = ekhniiUldegdelRows.length > 0;
+        const filteredZardluud = hasEkhniiUldegdelFromAvlaga
+          ? allZardluud.filter((z: any) => {
+              // Skip "Эхний үлдэгдэл" entries with 0 or no value
+              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+                const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+                if (amt === 0) {
+                  console.log(`⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`);
+                  return false;
+                }
+              }
+              return true;
+            })
+          : allZardluud;
+
+        const rows = [...filteredZardluud, ...allGuilgeenuud, ...ekhniiUldegdelRows];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -368,7 +387,9 @@ const InvoiceModal = ({
               ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
                 z.ognoo,
               )}`
-              : z.ner || z.name || "",
+              : z.turul === "ekhniiUldegdel" || z.isEkhniiUldegdel
+                ? "Эхний үлдэгдэл" // Always show simple name for ekhniiUldegdel
+                : z.ner || z.name || "",
           tariff: Number(z?.tariff) || 0,
           dun: pickAmount(z),
           turul: z.turul,
@@ -379,9 +400,11 @@ const InvoiceModal = ({
         setInvRows(rows.map(norm));
 
         // Calculate total including ekhniiUldegdel from gereeniiTulukhAvlaga
+        // Use undsenDun (original amount) for invoice total, NOT uldegdel (remaining after payments)
+        // The invoice total should always show the original amount
         const ekhniiUldegdelTotal = residentTulukhAvlaga
           .filter((item: any) => item.ekhniiUldegdelEsekh === true)
-          .reduce((sum: number, item: any) => sum + Number(item.uldegdel || item.tulukhDun || 0), 0);
+          .reduce((sum: number, item: any) => sum + Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0), 0);
         
         const invoiceTotal = Number(
           latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
@@ -1305,7 +1328,20 @@ export default function DansniiKhuulga() {
       }
 
       if (searchTerm) {
-        if (!matchesSearch(it, searchTerm)) return false;
+        // Augment item with resident/contract data so invoices match search even when
+        // they only have orshinSuugchId/gereeniiId (ner/utas come from lookup)
+        const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
+        const contract = cId ? (contractsById as any)[cId] : undefined;
+        const rId = String(it?.orshinSuugchId ?? it?.residentId ?? contract?.orshinSuugchId ?? "").trim();
+        const resident = rId ? (residentsById as any)[rId] : undefined;
+        const augmented = {
+          ...it,
+          _searchNer: resident?.ner ?? it?.ner ?? contract?.ner,
+          _searchOvog: resident?.ovog ?? it?.ovog ?? contract?.ovog,
+          _searchUtas: resident?.utas ?? it?.utas ?? contract?.utas,
+          _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return false;
       }
 
       return true;
@@ -1332,6 +1368,36 @@ export default function DansniiKhuulga() {
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
+    // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
+    // IMPORTANT: Use buildingHistoryItems (unfiltered) so that search/filter doesn't break duplicate detection
+    // These contracts should NOT have standalone ekhniiUldegdel records added separately
+    const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
+    
+    buildingHistoryItems.forEach((it: any) => {
+      // Check if this is an invoice (has zardluud or medeelel.zardluud)
+      const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud :
+                       Array.isArray(it?.zardluud) ? it.zardluud : [];
+      
+      // Check if invoice contains ekhniiUldegdel in its zardluud
+      const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
+        const ner = String(z?.ner || "").toLowerCase();
+        const isEkhUld = z?.isEkhniiUldegdel === true || 
+                         ner.includes("эхний үлдэгдэл") ||
+                         ner.includes("ekhniuldegdel") ||
+                         ner.includes("ekhnii uldegdel");
+        const hasValue = Number(z?.dun || z?.tariff || 0) > 0;
+        return isEkhUld && hasValue;
+      });
+      
+      if (hasEkhniiUldegdelInZardluud) {
+        const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+        const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+        if (gereeId) contractsWithEkhniiUldegdelInInvoice.add(gereeId);
+        if (gereeDugaar) contractsWithEkhniiUldegdelInInvoice.add(gereeDugaar);
+      }
+    });
+
+    // SECOND PASS: Build deduplicated residents, skipping standalone ekhniiUldegdel for contracts that already have it in invoice
     filteredItems.forEach((it: any) => {
       // Create a unique key for each resident
       const residentId = String(it?.orshinSuugchId || "").trim();
@@ -1351,10 +1417,25 @@ export default function DansniiKhuulga() {
 
       if (!key || key === "||") return; // Skip if no valid identifier
 
-      // For ekhniiUldegdel records from gereeniiTulukhAvlaga, use uldegdel (remaining balance)
-      const isEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
-      const itemAmount = isEkhniiUldegdel
-        ? Number(it?.uldegdel ?? it?.undsenDun ?? it?.tulukhDun ?? 0) || 0
+      // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
+      const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      
+      // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
+      // This prevents double-counting
+      if (isStandaloneEkhniiUldegdel) {
+        const contractHasEkhniiUldegdelInInvoice = 
+          (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
+          (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
+        
+        if (contractHasEkhniiUldegdelInInvoice) {
+          // Skip this record - ekhniiUldegdel is already counted in the invoice's niitTulbur
+          return;
+        }
+      }
+
+      // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
+      const itemAmount = isStandaloneEkhniiUldegdel
+        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
         : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
 
       if (!map.has(key)) {
@@ -1364,8 +1445,8 @@ export default function DansniiKhuulga() {
           _historyCount: 1,
           _totalTulbur: itemAmount,
           _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
-          _hasEkhniiUldegdel: isEkhniiUldegdel,
-          _ekhniiUldegdelAmount: isEkhniiUldegdel ? itemAmount : 0,
+          _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel,
+          _ekhniiUldegdelAmount: isStandaloneEkhniiUldegdel ? itemAmount : 0,
         });
       } else {
         // Aggregate values
@@ -1373,7 +1454,7 @@ export default function DansniiKhuulga() {
         existing._historyCount += 1;
         existing._totalTulbur += itemAmount;
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
-        if (isEkhniiUldegdel) {
+        if (isStandaloneEkhniiUldegdel) {
           existing._hasEkhniiUldegdel = true;
           existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + itemAmount;
         }
@@ -1381,7 +1462,7 @@ export default function DansniiKhuulga() {
     });
 
     return Array.from(map.values());
-  }, [filteredItems]);
+  }, [filteredItems, buildingHistoryItems]);
 
   const totalPages = Math.max(1, Math.ceil(deduplicatedResidents.length / rowsPerPage));
   useEffect(() => {
@@ -1804,7 +1885,8 @@ export default function DansniiKhuulga() {
               Array.isArray(key) &&
               (key[0] === "/nekhemjlekhiinTuukh" ||
                 key[0] === "/geree" ||
-                key[0] === "/orshinSuugch"),
+                key[0] === "/orshinSuugch" ||
+                key[0] === "/gereeniiTulukhAvlaga"),
             undefined,
             { revalidate: true }
           );
@@ -1849,7 +1931,8 @@ export default function DansniiKhuulga() {
               Array.isArray(key) &&
               (key[0] === "/nekhemjlekhiinTuukh" ||
                 key[0] === "/geree" ||
-                key[0] === "/orshinSuugch"),
+                key[0] === "/orshinSuugch" ||
+                key[0] === "/gereeniiTulukhAvlaga"),
             undefined,
             { revalidate: true }
           );
@@ -1953,19 +2036,20 @@ export default function DansniiKhuulga() {
         }
 
         // Refresh data
-        mutate(
-          (key: any) =>
-            Array.isArray(key) &&
-            (key[0] === "/nekhemjlekhiinTuukh" ||
-              key[0] === "/geree" ||
-              key[0] === "/orshinSuugch"),
-          undefined,
-          { revalidate: true }
-        );
-      }
-    } catch (error: any) {
-      const msg = getErrorMessage(error);
-      openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/nekhemjlekhiinTuukh" ||
+                key[0] === "/geree" ||
+                key[0] === "/orshinSuugch" ||
+                key[0] === "/gereeniiTulukhAvlaga"),
+            undefined,
+            { revalidate: true }
+          );
+        }
+      } catch (error: any) {
+        const msg = getErrorMessage(error);
+        openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
     } finally {
       setIsSendingInvoices(false);
     }
@@ -3219,6 +3303,7 @@ export default function DansniiKhuulga() {
         onSuccess={() => {
           mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
+          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga", undefined, { revalidate: true });
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
           requestedGereeIdsRef.current.clear();

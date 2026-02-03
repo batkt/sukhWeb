@@ -240,24 +240,22 @@ export default function HistoryModal({
         const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud :
           Array.isArray(item?.zardluud) ? item.zardluud : [];
 
+        // Track if we found ekhniiUldegdel with value in invoice zardluud
+        let foundEkhniiUldegdelInInvoice = false;
+        
         zardluud.forEach((z: any) => {
           // Include all zardluud entries including zaalt (electricity) entries
           if (z.ner) {
             let amt = pickAmount(z);
+            const isEkhniiUldegdel = z.isEkhniiUldegdel === true || 
+                                      z.ner === "Эхний үлдэгдэл" || 
+                                      (z.ner && z.ner.includes("Эхний үлдэгдэл"));
             
-            // Special handling for "Эхний үлдэгдэл" - if it's 0 in the invoice,
-            // check if there's a gereeniiTulukhAvlaga record with the actual value
-            if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
-              if (amt === 0 || amt === undefined) {
-                // Find matching ekhniiUldegdel from gereeniiTulukhAvlaga
-                const ekhniiUldegdelRec = matchedReceivables.find(
-                  (r: any) => r.ekhniiUldegdelEsekh === true
-                );
-                if (ekhniiUldegdelRec) {
-                  amt = Number(ekhniiUldegdelRec.uldegdel ?? ekhniiUldegdelRec.undsenDun ?? ekhniiUldegdelRec.tulukhDun ?? 0);
-                  console.log(`💰 [HistoryModal] Updated ekhniiUldegdel from gereeniiTulukhAvlaga: ${amt}`);
-                }
-              }
+            // For "Эхний үлдэгдэл" entries with 0 value, SKIP them entirely
+            // We'll use the gereeniiTulukhAvlaga record instead (which has the actual value)
+            if (isEkhniiUldegdel && (amt === 0 || amt === undefined)) {
+              console.log(`⏭️ [HistoryModal] Skipping 0.00 ekhniiUldegdel from invoice, will use gereeniiTulukhAvlaga`);
+              return;
             }
             
             if (amt > 0) {
@@ -279,18 +277,31 @@ export default function HistoryModal({
               });
               if (z._id) processedIds.add(z._id.toString());
               
-              // Mark the gereeniiTulukhAvlaga record as processed if this is ekhniiUldegdel
-              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
-                const ekhniiUldegdelRec = matchedReceivables.find(
-                  (r: any) => r.ekhniiUldegdelEsekh === true
-                );
-                if (ekhniiUldegdelRec?._id) {
-                  processedIds.add(ekhniiUldegdelRec._id.toString());
-                }
+              // Mark ALL ekhniiUldegdel records from gereeniiTulukhAvlaga as processed
+              // if this invoice zardal is ekhniiUldegdel WITH value
+              // This prevents double-counting
+              if (isEkhniiUldegdel) {
+                foundEkhniiUldegdelInInvoice = true;
+                matchedReceivables.forEach((r: any) => {
+                  if (r.ekhniiUldegdelEsekh === true && r._id) {
+                    processedIds.add(r._id.toString());
+                    console.log(`✅ [HistoryModal] Marked gereeniiTulukhAvlaga ekhniiUldegdel as processed: ${r._id}`);
+                  }
+                });
               }
             }
           }
         });
+        
+        // If we found ekhniiUldegdel in invoice, mark all gereeniiTulukhAvlaga ekhniiUldegdel as processed
+        // (Double-check in case the loop missed some)
+        if (foundEkhniiUldegdelInInvoice) {
+          matchedReceivables.forEach((r: any) => {
+            if (r.ekhniiUldegdelEsekh === true && r._id) {
+              processedIds.add(r._id.toString());
+            }
+          });
+        }
 
         // 2. Process Manual Transactions (Guilgeenuud - Avlaga/Charges)
         const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud) ? item.medeelel.guilgeenuud :
@@ -418,15 +429,26 @@ export default function HistoryModal({
       });
 
       // Process receivable records from gereeniiTulukhAvlaga
-      // Track if we've already added ekhniiUldegdel from invoice zardluud
+      // Track if we've already added ekhniiUldegdel from invoice zardluud WITH a value > 0
       const hasEkhniiUldegdelInInvoice = flatLedger.some(
-        (entry) => entry.ner === "Эхний үлдэгдэл" && entry.sourceCollection === "nekhemjlekhiinTuukh"
+        (entry) => {
+          const isEkhniiUldegdelName = entry.ner === "Эхний үлдэгдэл" || 
+                                        (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
+          return isEkhniiUldegdelName && 
+                 entry.sourceCollection === "nekhemjlekhiinTuukh" &&
+                 Number(entry.tulukhDun || 0) > 0;
+        }
       );
+      
+      console.log(`📊 [HistoryModal] hasEkhniiUldegdelInInvoice: ${hasEkhniiUldegdelInInvoice}, processedIds count: ${processedIds.size}`);
       
       matchedReceivables.forEach((rec: any) => {
         const recId = rec._id?.toString();
         // Skip if already processed in invoice loop
-        if (recId && processedIds.has(recId)) return;
+        if (recId && processedIds.has(recId)) {
+          console.log(`⏭️ [HistoryModal] Skipping already processed receivable: ${recId}`);
+          return;
+        }
 
         // Skip orphans (has nekhemjlekhId but parent invoice is gone)
         if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString())) return;
@@ -536,16 +558,24 @@ export default function HistoryModal({
       // Calculate total charges and payments in the ledger
       const totalCharges = flatLedger.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0);
       const totalPayments = flatLedger.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0);
+      
+      // Check if there's ekhniiUldegdel from gereeniiTulukhAvlaga (not in invoice)
+      const hasEkhniiUldegdelFromAvlaga = flatLedger.some(
+        (row) => row.sourceCollection === "gereeniiTulukhAvlaga" && 
+                 (row.ner === "Эхний үлдэгдэл" || (row.ner && row.ner.includes("Эхний үлдэгдэл")))
+      );
 
-      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}`);
+      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
 
       // Determine calculation strategy:
+      // ALWAYS use forward calculation when there's ekhniiUldegdel from gereeniiTulukhAvlaga
+      // because the contract's uldegdel doesn't include it
       // If we have a valid current balance from the contract, use backward calculation
       // If no current balance (null/undefined) OR if current balance is 0 but we have charges without payments,
       // use forward calculation starting from 0
       const hasValidCurrentBalance = currentBalance !== null && currentBalance !== undefined;
       const hasUnpaidCharges = totalCharges > 0 && totalPayments === 0;
-      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges);
+      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges) || hasEkhniiUldegdelFromAvlaga;
 
       if (useForwardCalc) {
         // FORWARD calculation: Start from 0, accumulate balance
