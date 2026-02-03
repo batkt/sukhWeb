@@ -117,6 +117,7 @@ export default function AshiglaltiinZardluud() {
   });
 
   const [tariffInputValue, setTariffInputValue] = useState<string>("");
+  const [suuriKhuraamjInput, setSuuriKhuraamjInput] = useState<string>("");
   const [zaaltTariffInput, setZaaltTariffInput] = useState<string>("");
   const [zaaltDefaultDunInput, setZaaltDefaultDunInput] = useState<string>("");
   const [tariff150kvInput, setTariff150kvInput] = useState<string>("");
@@ -156,6 +157,7 @@ export default function AshiglaltiinZardluud() {
       tariff300pluskv: 0,
     });
     setTariffInputValue("");
+    setSuuriKhuraamjInput("");
     setZaaltTariffInput("");
     setZaaltDefaultDunInput("");
     setTariff150kvInput("");
@@ -185,6 +187,9 @@ export default function AshiglaltiinZardluud() {
       tariff300pluskv: item.tariff300pluskv || 0,
     });
     setTariffInputValue(formatNumber(item.tariff, 2));
+    setSuuriKhuraamjInput(
+      item.suuriKhuraamj ? formatNumber(item.suuriKhuraamj, 2) : ""
+    );
     setZaaltTariffInput(
       item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : ""
     );
@@ -211,12 +216,39 @@ export default function AshiglaltiinZardluud() {
 
     showSpinner();
     try {
-      const isCakhilgaan = formData.ner.toLowerCase().includes("цахилгаан");
-      const payload = {
-        ...formData,
-        zaalt: isCakhilgaan ? true : formData.zaalt,
-        barilgiinId: selectedBuildingId || barilgiinId || undefined,
-      };
+      const nameLower = formData.ner.toLowerCase();
+      
+      // Check if this is a VARIABLE electricity charge (meter-based, uses Excel readings)
+      // Only plain "Цахилгаан" should be zaalt=true
+      // "Дундын өмчлөл Цахилгаан" is a FIXED charge and should NOT be zaalt=true
+      const isVariableElectricity = nameLower.includes("цахилгаан") && 
+                                     !nameLower.includes("дундын") && 
+                                     !nameLower.includes("өмчлөл");
+      
+      // Check if this is a FIXED electricity charge (like "Дундын өмчлөл Цахилгаан")
+      const isFixedElectricity = nameLower.includes("цахилгаан") && 
+                                  (nameLower.includes("дундын") || nameLower.includes("өмчлөл"));
+      
+      let payload = { ...formData, barilgiinId: selectedBuildingId || barilgiinId || undefined };
+      
+      if (isVariableElectricity) {
+        // Variable electricity: zaalt=true, tariffUsgeer="кВт", tariff=0 (kWh rate from orshinSuugch)
+        payload = {
+          ...payload,
+          zaalt: true,
+          tariffUsgeer: "кВт",
+          tariff: 0, // kWh rate comes from orshinSuugch.tsahilgaaniiZaalt
+          suuriKhuraamj: formData.suuriKhuraamj, // base fee
+        };
+      } else if (isFixedElectricity) {
+        // Fixed electricity: zaalt=false, tariffUsgeer="₮", tariff is the fixed amount
+        payload = {
+          ...payload,
+          zaalt: false,
+          tariffUsgeer: "₮",
+          // Keep tariff as the fixed amount
+        };
+      }
 
       if (editingItem) {
         if (!editingItem._id) return;
@@ -395,32 +427,65 @@ export default function AshiglaltiinZardluud() {
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                {formData.ner.toLowerCase().includes("цахилгаан") ? "Суурь хураамж (₮)" : "Тарифын дүн (₮)"}
-              </label>
-              <MTextInput
-                value={tariffInputValue}
-                onChange={(e) => {
-                  const raw = e.currentTarget.value;
-                  const cleanValue = raw.replace(/[^0-9.]/g, "");
-                  const n = Number(cleanValue);
-                  setTariffInputValue(cleanValue);
-                  setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
-                }}
-                onBlur={() => {
-                  if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
-                  else setTariffInputValue("");
-                }}
-                onFocus={() => {
-                  if (formData.tariff) setTariffInputValue(formData.tariff.toString());
-                }}
-                placeholder="0.00"
-                classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
-                leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
-              />
-            </div>
+            {/* Variable electricity (Цахилгаан only, NOT Дундын өмчлөл) - show Суурь хураамж */}
+            {formData.ner.toLowerCase().includes("цахилгаан") && 
+             !formData.ner.toLowerCase().includes("дундын") && 
+             !formData.ner.toLowerCase().includes("өмчлөл") ? (
+              <div className="space-y-1.5">
+                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                  Суурь хураамж (₮)
+                </label>
+                <MTextInput
+                  value={suuriKhuraamjInput}
+                  onChange={(e) => {
+                    const raw = e.currentTarget.value;
+                    const cleanValue = raw.replace(/[^0-9.]/g, "");
+                    const n = Number(cleanValue);
+                    setSuuriKhuraamjInput(cleanValue);
+                    setFormData({ ...formData, suuriKhuraamj: Number.isFinite(n) ? n : 0 });
+                  }}
+                  onBlur={() => {
+                    if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formatNumber(formData.suuriKhuraamj, 2));
+                    else setSuuriKhuraamjInput("");
+                  }}
+                  onFocus={() => {
+                    if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formData.suuriKhuraamj.toString());
+                  }}
+                  placeholder="0.00"
+                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
+                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
+                />
+                <p className="text-[9px] text-[color:var(--muted-text)] ml-1">Excel файлаас ирэх суурь дүн (заалтаас авна)</p>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
+                  Тарифын дүн (₮)
+                </label>
+                <MTextInput
+                  value={tariffInputValue}
+                  onChange={(e) => {
+                    const raw = e.currentTarget.value;
+                    const cleanValue = raw.replace(/[^0-9.]/g, "");
+                    const n = Number(cleanValue);
+                    setTariffInputValue(cleanValue);
+                    setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
+                  }}
+                  onBlur={() => {
+                    if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
+                    else setTariffInputValue("");
+                  }}
+                  onFocus={() => {
+                    if (formData.tariff) setTariffInputValue(formData.tariff.toString());
+                  }}
+                  placeholder="0.00"
+                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
+                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
+                />
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
