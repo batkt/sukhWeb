@@ -1858,6 +1858,7 @@ export default function DansniiKhuulga() {
           orshinSuugchId: data.residentId,
           gereeniiId: data.gereeniiId,
           tailbar: data.tailbar || (data.ekhniiUldegdel ? `Эхний үлдэгдэл - ${data.date}` : `Төлөлт - ${data.date}`),
+          ognoo: data.date,
           ...(data.ekhniiUldegdel && { markEkhniiUldegdel: true }),
           createdBy: ajiltan._id,
           createdAt: new Date().toISOString(),

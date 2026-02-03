@@ -67,7 +67,7 @@ export default function HistoryModal({
         khuudasniiKhemjee: 5000,
       };
 
-      const contractIdToFetch = contract?._id || contract?.gereeniiId;
+      const contractIdToFetch = contract?.gereeniiId || contract?._id;
 
       // Fetch all necessary data concurrently
       const [historyResp, paymentResp, receivableResp, contractResp] = await Promise.all([
@@ -462,9 +462,9 @@ export default function HistoryModal({
 
         const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
         const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
-        // For ekhniiUldegdel, use uldegdel (remaining balance) if available, otherwise undsenDun
+        // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
         const amt = rec.ekhniiUldegdelEsekh === true 
-          ? Number(rec.uldegdel ?? rec.undsenDun ?? rec.tulukhDun ?? 0)
+          ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
           : Number(rec.tulukhDun || rec.undsenDun || 0);
 
         if (amt > 0) {
