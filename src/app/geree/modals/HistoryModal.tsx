@@ -241,7 +241,8 @@ export default function HistoryModal({
           Array.isArray(item?.zardluud) ? item.zardluud : [];
 
         zardluud.forEach((z: any) => {
-          if (z.zaalt !== true && z.ner) {
+          // Include all zardluud entries including zaalt (electricity) entries
+          if (z.ner) {
             const amt = pickAmount(z);
             if (amt > 0) {
               const rowId = z._id?.toString() || `z-${Math.random()}`;
