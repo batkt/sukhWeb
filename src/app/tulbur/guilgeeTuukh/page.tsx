@@ -3047,13 +3047,14 @@ export default function DansniiKhuulga() {
                       const total = Number(
                         it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0
                       );
-                      // const khayag =
-                      //   resident && resident.bairNer
-                      //     ? String(resident.bairNer).trim()
-                      //     : it.bairNer
-                      //     ? String(it.bairNer).trim()
-                      //     : "-";
-                      const tuluvLabel = getPaymentStatusLabel(it);
+                      const gidForPaid =
+                        (it?.gereeniiId && String(it.gereeniiId)) ||
+                        (ct?._id && String(ct._id)) ||
+                        "";
+                      const paidFromSummary = gidForPaid ? paidSummaryByGereeId[gidForPaid] ?? 0 : 0;
+                      // Enrich with authoritative paid so getPaymentStatusLabel uses it (not backend tuluv)
+                      const itForTuluv = { ...it, _paidFromSummary: paidFromSummary };
+                      const tuluvLabel = getPaymentStatusLabel(itForTuluv);
                       const isPaid = tuluvLabel === "Төлсөн";
                       const ner = resident
                         ? [resident.ner]

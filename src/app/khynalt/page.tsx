@@ -436,7 +436,11 @@ export default function Khynalt() {
 
     list.forEach((it) => {
       const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-      const uldegdelInvoice = it.uldegdel != null ? Number(it.uldegdel) : (isPaidLike(it) ? 0 : amount);
+      // When backend returns uldegdel=0 for unpaid invoices, use isPaidLike to avoid misclassifying
+      const backendUldegdel = it.uldegdel != null ? Number(it.uldegdel) : null;
+      const uldegdelInvoice = backendUldegdel !== null
+        ? (backendUldegdel > 0 ? backendUldegdel : (isPaidLike(it) ? 0 : amount))
+        : (isPaidLike(it) ? 0 : amount);
       const tulsunInvoice = amount - uldegdelInvoice;
 
       const invoiceKeys: string[] = [];
