@@ -578,15 +578,21 @@ export default function HistoryModal({
 
       console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
 
+      // Compute expected balance from ledger (charges - payments)
+      const computedBalance = totalCharges - totalPayments;
+
       // Determine calculation strategy:
       // ALWAYS use forward calculation when there's ekhniiUldegdel from gereeniiTulukhAvlaga
       // because the contract's uldegdel doesn't include it
       // If we have a valid current balance from the contract, use backward calculation
+      // EXCEPT when overpaid: contract may have stale positive balance while computed is negative - use forward
       // If no current balance (null/undefined) OR if current balance is 0 but we have charges without payments,
       // use forward calculation starting from 0
       const hasValidCurrentBalance = currentBalance !== null && currentBalance !== undefined;
       const hasUnpaidCharges = totalCharges > 0 && totalPayments === 0;
-      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges) || hasEkhniiUldegdelFromAvlaga;
+      const isOverpaid = computedBalance < 0;
+      const contractStaleOnOverpayment = isOverpaid && (currentBalance ?? 0) >= 0;
+      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges) || hasEkhniiUldegdelFromAvlaga || contractStaleOnOverpayment;
 
       if (useForwardCalc) {
         // FORWARD calculation: Start from 0, accumulate balance
@@ -919,20 +925,28 @@ export default function HistoryModal({
                         </td>
                       </tr>
                     ))}
-                    {/* Total Summary Row */}
-                    <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
-                      <td colSpan={2} className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right">Нийт</td>
-                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulukhDun, 0), 2)}
-                      </td>
-                      <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                        {formatNumber(filteredData.reduce((sum, row) => sum + row.tulsunDun, 0), 2)}
-                      </td>
-                      <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${filteredData.length > 0 && filteredData[0].uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : filteredData.length > 0 && filteredData[0].uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
-                        {filteredData.length > 0 ? formatNumber(filteredData[0].uldegdel, 2) : "-"}
-                      </td>
-                      <td colSpan={3}></td>
-                    </tr>
+                    {/* Total Summary Row - balance = charges - payments (shows overpayment as negative) */}
+                    {(() => {
+                      const totalCharges = filteredData.reduce((sum, row) => sum + (row.tulukhDun || 0), 0);
+                      const totalPayments = filteredData.reduce((sum, row) => sum + (row.tulsunDun || 0), 0);
+                      const balance = totalCharges - totalPayments;
+                      const balanceClass = balance < 0 ? "!text-emerald-600 dark:!text-emerald-400" : balance > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme";
+                      return (
+                        <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
+                          <td colSpan={2} className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right">Нийт</td>
+                          <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
+                            {formatNumber(totalCharges, 2)}
+                          </td>
+                          <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
+                            {formatNumber(totalPayments, 2)}
+                          </td>
+                          <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${balanceClass}`}>
+                            {formatNumber(balance, 2)}
+                          </td>
+                          <td colSpan={3}></td>
+                        </tr>
+                      );
+                    })()}
                   </>
                 )}
               </tbody>

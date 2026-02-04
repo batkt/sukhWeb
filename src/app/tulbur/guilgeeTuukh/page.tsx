@@ -211,6 +211,8 @@ const InvoiceModal = ({
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
   const [cronData, setCronData] = React.useState<any>(null);
+  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(null);
+
   const invValid = React.useMemo(() => {
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
     const invSum = invRows.reduce(
@@ -221,6 +223,7 @@ const InvoiceModal = ({
   }, [invRows]);
   React.useEffect(() => {
     const run = async () => {
+      setTotalPaidFromApi(null);
       try {
         if (!isOpen || !token || !baiguullagiinId || !resident?._id) return;
 
@@ -432,12 +435,31 @@ const InvoiceModal = ({
         } catch (cronError) {
           setCronData(null);
         }
+
+        // Fetch actual total paid from /tulsunSummary for correct Үлдэгдэл дүн (handles overpayment)
+        const gereeId = residentGereeId || latest?.gereeniiId || latest?.gereeId;
+        if (gereeId) {
+          uilchilgee(token)
+            .post("/tulsunSummary", {
+              baiguullagiinId,
+              gereeniiId: gereeId,
+            })
+            .then((paidResp) => {
+              const paid =
+                Number(paidResp.data?.totalTulsunDun ?? paidResp.data?.totalInvoicePayment ?? 0) || 0;
+              setTotalPaidFromApi(paid);
+            })
+            .catch(() => setTotalPaidFromApi(null));
+        } else {
+          setTotalPaidFromApi(null);
+        }
       } catch (e) {
         setInvRows([]);
         setInvTotal(null);
         setPaymentStatusLabel("Тодорхойгүй");
         setLatestInvoice(null);
         setCronData(null);
+        setTotalPaidFromApi(null);
       }
     };
     run();
@@ -618,12 +640,24 @@ const InvoiceModal = ({
   }, [invoiceRows, invTotal, invValid, nekhemjlekhData, invRows]);
 
   const uldegdelDun = useMemo(() => {
+    // Prefer balance from table (same as HistoryModal) - most reliable
+    if (resident?._contractBalance != null) {
+      return Number(resident._contractBalance);
+    }
+    const total = totalSum;
+    // Use API-paid amount for correct balance (handles overpayment when invoice data is stale)
+    if (totalPaidFromApi !== null) {
+      return total - totalPaidFromApi;
+    }
     const inv = latestInvoice || nekhemjlekhData;
     if (inv?.uldegdel != null) return Number(inv.uldegdel);
-    const total = totalSum;
     const paid = Number(inv?.tulsunDun ?? 0) || 0;
     return total - paid;
-  }, [totalSum, latestInvoice, nekhemjlekhData]);
+  }, [totalSum, totalPaidFromApi, latestInvoice, nekhemjlekhData, resident?._contractBalance]);
+
+  // When balance <= 0 (paid or overpaid), show Төлсөн regardless of invoice tuluv
+  const effectivePaymentStatus =
+    uldegdelDun <= 0 ? "Төлсөн" : paymentStatusLabel;
 
   if (!isOpen) return null;
 
@@ -857,21 +891,21 @@ const InvoiceModal = ({
             <div className="border-t border-gray-100 pt-4 print-break">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  {paymentStatusLabel !== "Тодорхойгүй" && (
+                  {effectivePaymentStatus !== "Тодорхойгүй" && (
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-slate-500">
                         Төлбөрийн төлөв:
                       </span>
                       <span
-                        className={`badge-status ${paymentStatusLabel === "Төлсөн"
+                        className={`badge-status ${effectivePaymentStatus === "Төлсөн"
                           ? "badge-paid"
-                          : paymentStatusLabel === "Төлөөгүй" ||
-                            paymentStatusLabel === "Хугацаа хэтэрсэн"
+                          : effectivePaymentStatus === "Төлөөгүй" ||
+                            effectivePaymentStatus === "Хугацаа хэтэрсэн"
                             ? "badge-unpaid"
                             : "badge-unknown"
                           }`}
                       >
-                        {paymentStatusLabel}
+                        {effectivePaymentStatus}
                       </span>
                     </div>
                   )}
@@ -3038,7 +3072,12 @@ export default function DansniiKhuulga() {
                                     <div className="flex items-center justify-center gap-2">
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data
+                                          const gid =
+                                            (it?.gereeniiId && String(it.gereeniiId)) ||
+                                            (ct?._id && String(ct._id)) ||
+                                            "";
+                                          const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                          const contractBalance = total - paid;
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3047,6 +3086,7 @@ export default function DansniiKhuulga() {
                                             gereeniiDugaar: dugaar,
                                             gereeniiId: it?.gereeniiId || ct?._id,
                                             ...it,
+                                            _contractBalance: contractBalance,
                                           };
                                           setSelectedResident(residentData);
                                           setIsModalOpen(true);
