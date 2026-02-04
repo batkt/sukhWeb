@@ -886,7 +886,7 @@ export default function HistoryModal({
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
                         <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
-                          {row.ajiltan}
+                          {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {Number(row.tulukhDun) !== 0 ? formatNumber(row.tulukhDun, 2) : "-"}
