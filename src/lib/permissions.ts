@@ -42,9 +42,8 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Тайлан",
     description: "Тайлангийн мэдээлэл харах эрх",
     children: [
-      { id: "tailan.orlogoAvlaga", label: "Орлого авлага", description: "Орлого авлагын тайлан" },
+      { id: "tailan.orlogoAvlaga", label: "Авлагын товчоо", description: "Авлагын товчооны тайлан" },
       { id: "tailan.sariinTulbur", label: "Сарын төлбөр", description: "Сарын төлбөрийн тайлан" },
-      { id: "tailan.nekhemjlekhiinTuukh", label: "Нэхэмжлэхийн түүх", description: "Нэхэмжлэхийн түүх" },
       { id: "tailan.avlagiinNasjilt", label: "Авлагийн насжилт", description: "Авлагийн насжилт" },
     ],
   },

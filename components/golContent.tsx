@@ -195,9 +195,8 @@ export default function GolContent({ children }: GolContentProps) {
       label: "Тайлан",
       path: "tailan",
       submenu: [
-        { label: "Орлого авлага", path: "/orlogo-avlaga" },
+        { label: "Авлагын товчоо", path: "/orlogo-avlaga" },
         { label: "Сарын төлбөр", path: "/sariin-tulbur" },
-        { label: "Нэхэмжлэхийн түүх", path: "/nekhemjlekhiin-tuukh" },
         { label: "Авлагийн насжилт", path: "/avlagiin-nasjilt" },
       ],
     },

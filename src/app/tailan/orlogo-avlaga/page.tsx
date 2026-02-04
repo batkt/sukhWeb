@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { Eye } from "lucide-react";
-import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -20,7 +19,13 @@ interface OrlogoAvlagaItem {
   davkhar: string;
   bairNer?: string;
   orts?: string;
+  niitTulbur?: number;
+  tulbur?: number;
+  uldegdel?: number;
+  tulsunDun?: number;
 }
+
+type TabType = "tulult" | "avlaga";
 
 export default function OrlogoAvlagaPage() {
   const { selectedBuildingId } = useBuilding();
@@ -29,26 +34,40 @@ export default function OrlogoAvlagaPage() {
     token || null,
     ajiltan?.baiguullagiinId || null
   );
-  const [data, setData] = useState<OrlogoAvlagaItem[]>([]);
+  const [activeTab, setActiveTab] = useState<TabType>("tulult");
+  const [paidList, setPaidList] = useState<any[]>([]);
+  const [unpaidList, setUnpaidList] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >([null, null]);
+  const [filters, setFilters] = useState({
+    orshinSuugch: "",
+    toot: "",
+    davkhar: "",
+    gereeniiDugaar: "",
+  });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedFilters(filters);
+      debounceRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filters]);
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
-  const [isNekhOpen, setIsNekhOpen] = useState(false);
-  // nekhData will hold { grouped: {month, items, total}[], allZardluud: any[] }
-  const [nekhData, setNekhData] = useState<any | null>(null);
-  const [nekhLoading, setNekhLoading] = useState(false);
-  const [nekhError, setNekhError] = useState<string | null>(null);
-  const [selectedContract, setSelectedContract] = useState<string | null>(null);
-  const { zardluud: globalZardluud } = useAshiglaltiinZardluud({
-    token: token ?? undefined,
-    baiguullagiinId: baiguullaga?._id,
-    barilgiinId: selectedBuildingId || null,
-  });
+  const [pageSize, setPageSize] = useState(200);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [expandedData, setExpandedData] = useState<any | null>(null);
+  const [expandedLoading, setExpandedLoading] = useState(false);
+  const [expandedError, setExpandedError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,35 +82,23 @@ export default function OrlogoAvlagaPage() {
             barilgiinId: selectedBuildingId,
             bairNer: undefined,
             orts: undefined,
-            davkhar: undefined,
-            toot: undefined,
+            davkhar: debouncedFilters.davkhar || undefined,
+            toot: debouncedFilters.toot || undefined,
+            gereeniiDugaar: debouncedFilters.gereeniiDugaar || undefined,
+            orshinSuugch: debouncedFilters.orshinSuugch || undefined,
             ekhlekhOgnoo: dateRange?.[0] || undefined,
             duusakhOgnoo: dateRange?.[1] || undefined,
           }
         );
         setApiResponse(response.data);
-        // merge paid and unpaid lists and sort newest-first (prefer createdAt, then ognoo)
         const paid = Array.isArray(response.data?.paid?.list)
           ? response.data.paid.list
           : [];
         const unpaid = Array.isArray(response.data?.unpaid?.list)
           ? response.data.unpaid.list
           : [];
-        const combined = paid.concat(unpaid);
-        combined.sort((a: any, b: any) => {
-          const ta = a?.createdAt
-            ? new Date(a.createdAt).getTime()
-            : a?.ognoo
-            ? new Date(a.ognoo).getTime()
-            : 0;
-          const tb = b?.createdAt
-            ? new Date(b.createdAt).getTime()
-            : b?.ognoo
-            ? new Date(b.ognoo).getTime()
-            : 0;
-          return tb - ta;
-        });
-        setData(combined);
+        setPaidList(paid);
+        setUnpaidList(unpaid);
       } catch (err: any) {
         setError(err?.response?.data?.aldaa || err.message || "Unknown error");
       } finally {
@@ -100,19 +107,227 @@ export default function OrlogoAvlagaPage() {
     };
 
     fetchData();
-  }, [selectedBuildingId, baiguullaga, token, dateRange]);
+  }, [selectedBuildingId, baiguullaga, token, dateRange, debouncedFilters]);
 
-  const totalOrlogo = useMemo(() => {
-    return apiResponse?.paid?.sum || 0;
-  }, [apiResponse]);
+  const totalOrlogo = useMemo(
+    () => apiResponse?.paid?.sum || 0,
+    [apiResponse]
+  );
+  const totalZarlaga = useMemo(
+    () => apiResponse?.unpaid?.sum || 0,
+    [apiResponse]
+  );
+  const totalUldegdel = useMemo(
+    () => totalOrlogo - totalZarlaga,
+    [totalOrlogo, totalZarlaga]
+  );
 
-  const totalZarlaga = useMemo(() => {
-    return apiResponse?.unpaid?.sum || 0;
-  }, [apiResponse]);
+  const fetchNekhData = async (gereeniiDugaar: string) => {
+    if (!baiguullaga || !selectedBuildingId) return;
+    setExpandedLoading(true);
+    setExpandedError(null);
+    try {
+      const resp = await uilchilgee(token ?? undefined).post(
+        "/tailan/nekhemjlekhiin-tuukh",
+        {
+          baiguullagiinId: baiguullaga._id,
+          barilgiinId: selectedBuildingId,
+          gereeniiDugaar,
+          khuudasniiKhemjee: 1000,
+        }
+      );
+      const raw = Array.isArray(resp.data?.list)
+        ? resp.data.list
+        : Array.isArray(resp.data)
+        ? resp.data
+        : [];
 
-  const totalUldegdel = useMemo(() => {
-    return totalOrlogo - totalZarlaga;
-  }, [totalOrlogo, totalZarlaga]);
+      const formatOgnoo = (d: string) =>
+        d
+          ? d.split("T")[0].replace(/-/g, ".") +
+            (d.includes("T") ? " " + (d.split("T")[1]?.slice(0, 8) || "") : "")
+          : "-";
+
+      const pickAmount = (obj: any) => {
+        const n = (v: any) => {
+          const num = Number(v);
+          return Number.isFinite(num) ? num : 0;
+        };
+        const dun = n(obj?.dun);
+        if (dun !== 0) return dun;
+        const td = n(obj?.tulukhDun);
+        if (td !== 0) return td;
+        const tar = n(obj?.tariff);
+        if (tar !== 0) return tar;
+        const amt = n(obj?.amount);
+        if (amt !== 0) return amt;
+        return 0;
+      };
+
+      const detailRows: Array<{
+        ognoo: string;
+        tailbar: string;
+        tulukhDun: number;
+        tulsunDun: number;
+      }> = [];
+
+      raw.forEach((r: any) => {
+        const itemDate = r.ognoo || r.nekhemjlekhiinOgnoo || r.createdAt || "";
+        const ognooStr = formatOgnoo(itemDate);
+
+        const zardluud =
+          Array.isArray(r?.nememjlekh?.zardluud) ? r.nememjlekh.zardluud
+          : Array.isArray(r?.medeelel?.zardluud) ? r.medeelel.zardluud
+          : Array.isArray(r?.zardluud) ? r.zardluud : [];
+        const guilgeenuud =
+          Array.isArray(r?.nememjlekh?.guilgeenuud) ? r.nememjlekh.guilgeenuud
+          : Array.isArray(r?.medeelel?.guilgeenuud) ? r.medeelel.guilgeenuud
+          : Array.isArray(r?.guilgeenuud) ? r.guilgeenuud : [];
+
+        const invoiceTotal = Number(r.niitTulbur ?? r.tulbur ?? r.niitDun ?? 0) || 0;
+        const isEkhniiUldegdelZardal = (z: any) =>
+          z.isEkhniiUldegdel === true ||
+          z.ner === "Эхний үлдэгдэл" ||
+          (z.ner && z.ner.includes("Эхний үлдэгдэл"));
+        const zardalWithNer = zardluud.filter((z: any) => z.ner && !isEkhniiUldegdelZardal(z));
+        zardalWithNer.forEach((z: any) => {
+          let amt = pickAmount(z);
+          if (amt === 0 && invoiceTotal > 0 && zardalWithNer.length > 0) {
+            amt = Math.round((invoiceTotal / zardalWithNer.length) * 100) / 100;
+          }
+          if (amt > 0) {
+            const isPaid = r.tuluv === "Төлсөн";
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: z.tailbar || z.ner,
+              tulukhDun: amt,
+              tulsunDun: isPaid ? amt : 0,
+            });
+          }
+        });
+
+        guilgeenuud.forEach((g: any) => {
+          if (g.ekhniiUldegdelEsekh === true) return; // Don't display ekhniiUldegdel
+          const amt = Number(g.tulukhDun || 0);
+          const paid = Number(g.tulsunDun || 0);
+          if (amt > 0) {
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: g.tailbar || "Авлага",
+              tulukhDun: amt,
+              tulsunDun: 0,
+            });
+          }
+          if (paid > 0) {
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: g.tailbar || "Төлөлт",
+              tulukhDun: 0,
+              tulsunDun: paid,
+            });
+          }
+        });
+
+        const hasChildren = zardluud.length > 0 || guilgeenuud.length > 0;
+        if (
+          !hasChildren &&
+          r.turul &&
+          (r.turul === "ashiglalt" || r.turul === "avlaga" || r.turul === "tulult" || r.turul === "voucher" || r.turul === "turgul")
+        ) {
+          const amt = Number(r.tulukhDun || r.dun || 0);
+          const tulsunAmt = Number(r.tulsunDun || 0);
+          if (r.turul === "tulult" && (tulsunAmt > 0 || Math.abs(amt) > 0)) {
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: r.tailbar || "Төлөлт",
+              tulukhDun: 0,
+              tulsunDun: tulsunAmt > 0 ? tulsunAmt : Math.abs(amt),
+            });
+          } else if (r.turul === "ashiglalt" && (tulsunAmt > 0 || Math.abs(amt) > 0)) {
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: r.tailbar || "Ашиглалт",
+              tulukhDun: 0,
+              tulsunDun: tulsunAmt > 0 ? tulsunAmt : Math.abs(amt),
+            });
+          } else if ((r.turul === "avlaga" || r.turul === "turgul" || r.turul === "voucher") && amt > 0) {
+            const name = r.turul === "avlaga" ? "Авлага" : r.turul === "turgul" ? "Торгууль" : "Voucher";
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: r.tailbar || name,
+              tulukhDun: amt,
+              tulsunDun: 0,
+            });
+          }
+        }
+
+        if (zardluud.length === 0 && guilgeenuud.length === 0 && !hasChildren) {
+          const amt = Number(r.niitTulbur ?? r.tulbur ?? r.niitDun ?? 0) || 0;
+          if (amt > 0) {
+            detailRows.push({
+              ognoo: ognooStr,
+              tailbar: r.tailbar || r.dugaalaltDugaar || r.gereeniiDugaar || "Нэхэмжлэх",
+              tulukhDun: amt,
+              tulsunDun: r.tuluv === "Төлсөн" ? amt : 0,
+            });
+          }
+        }
+      });
+
+      detailRows.sort((a, b) => {
+        const dA = new Date(a.ognoo.replace(/\./g, "-")).getTime();
+        const dB = new Date(b.ognoo.replace(/\./g, "-")).getTime();
+        return dA - dB;
+      });
+
+      const sumTulukh = detailRows.reduce((s: number, row: any) => s + (row.tulukhDun || 0), 0);
+      const sumTulsun = detailRows.reduce((s: number, row: any) => s + (row.tulsunDun || 0), 0);
+      setExpandedData({
+        rows: detailRows,
+        sumTulukh,
+        sumTulsun,
+        raw,
+      });
+    } catch (e: any) {
+      setExpandedError(
+        e?.response?.data?.aldaa || e.message || "Unknown error"
+      );
+      setExpandedData(null);
+    } finally {
+      setExpandedLoading(false);
+    }
+  };
+
+  const handleAmountClick = (gereeniiDugaar: string) => {
+    if (expandedRow === gereeniiDugaar) {
+      setExpandedRow(null);
+      setExpandedData(null);
+      return;
+    }
+    setExpandedRow(gereeniiDugaar);
+    fetchNekhData(gereeniiDugaar);
+  };
+
+  const displayList =
+    activeTab === "tulult" ? paidList : unpaidList;
+
+  const getItemAmount = (item: any) => {
+    const amt = item?.niitTulbur ?? item?.tulbur ?? item?.sum ?? 0;
+    return Number(amt) || 0;
+  };
+
+  const getItemTulukh = (item: any) => {
+    return Number(item?.uldegdel ?? item?.niitTulbur ?? item?.tulbur ?? 0) || 0;
+  };
+
+  const getItemTulsun = (item: any) => {
+    return Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0;
+  };
+
+  const paginatedList = displayList.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   if (loading) {
     return (
@@ -132,8 +347,8 @@ export default function OrlogoAvlagaPage() {
 
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <h1 className="text-2xl ">Орлого авлага</h1>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <h1 className="text-2xl">Авлагын товчоо</h1>
         <div className="w-full md:w-[320px]">
           <DatePickerInput
             type="range"
@@ -159,23 +374,101 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="neu-panel p-3 rounded-xl">
+          <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
+          <input
+            type="text"
+            value={filters.orshinSuugch}
+            onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Овог, нэрээр хайх"
+          />
+        </div>
+        <div className="neu-panel p-3 rounded-xl">
+          <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
+          <input
+            type="text"
+            value={filters.toot}
+            onChange={(e) => setFilters((p) => ({ ...p, toot: e.target.value }))}
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Тоот"
+          />
+        </div>
+        <div className="neu-panel p-3 rounded-xl">
+          <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
+          <input
+            type="text"
+            value={filters.davkhar}
+            onChange={(e) => setFilters((p) => ({ ...p, davkhar: e.target.value }))}
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Давхар"
+          />
+        </div>
+        <div className="neu-panel p-3 rounded-xl">
+          <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
+          <input
+            type="text"
+            value={filters.gereeniiDugaar}
+            onChange={(e) => setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))}
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="ГД"
+          />
+        </div>
+      </div>
+
+      <div className="flex gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("tulult");
+            setExpandedRow(null);
+            setExpandedData(null);
+            setCurrentPage(1);
+          }}
+          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+            activeTab === "tulult"
+              ? "neu-panel bg-white/20 border border-white/20"
+              : "hover:menu-surface"
+          }`}
+        >
+          Орлого
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("avlaga");
+            setExpandedRow(null);
+            setExpandedData(null);
+            setCurrentPage(1);
+          }}
+          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+            activeTab === "avlaga"
+              ? "neu-panel bg-white/20 border border-white/20"
+              : "hover:menu-surface"
+          }`}
+        >
+          Авлага
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт орлого</h3>
-          <p className="text-2xl  text-green-600">
+          <p className="text-2xl text-green-600">
             {formatNumber(totalOrlogo)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Нийт зарлага</h3>
-          <p className="text-2xl  text-red-600">
+          <p className="text-2xl text-red-600">
             {formatNumber(totalZarlaga)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="font-semibold mb-2">Үлдэгдэл</h3>
           <p
-            className={`text-2xl  ${
+            className={`text-2xl ${
               totalUldegdel >= 0 ? "text-green-600" : "text-red-600"
             }`}
           >
@@ -186,7 +479,7 @@ export default function OrlogoAvlagaPage() {
 
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[35vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
@@ -194,123 +487,204 @@ export default function OrlogoAvlagaPage() {
                     №
                   </th>
                   <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                    Гэрээний дугаар
-                  </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                    Овог
+                    ГД
                   </th>
                   <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-
-                  {/* <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">Тоот</th> */}
                   <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
                     Давхар
                   </th>
                   <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                    Үйлдэл
+                    Тоот
                   </th>
+                  {activeTab === "tulult" ? (
+                    <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      Төлөлт
+                    </th>
+                  ) : (
+                    <>
+                      <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Төлөх дүн
+                      </th>
+                      <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                        Төлсөн
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {data.length === 0 ? (
+                {paginatedList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-theme/60">
+                    <td
+                      colSpan={activeTab === "tulult" ? 6 : 7}
+                      className="p-8 text-center text-theme/60"
+                    >
                       Мэдээлэл алга байна
                     </td>
                   </tr>
                 ) : (
-                  data
-                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                    .map((item, idx) => (
-                      <tr
-                        key={idx}
-                        className="transition-colors border-b last:border-b-0"
-                      >
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {(currentPage - 1) * pageSize + idx + 1}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.gereeniiDugaar}
-                        </td>
-                        <td className="p-3 text-left text-theme whitespace-nowrap">
-                          {item.ovog}
-                        </td>
-                        <td className="p-3 text-left text-theme whitespace-nowrap">
-                          {item.ner}
-                        </td>
+                  paginatedList.map((item, idx) => {
+                    const rowNum = (currentPage - 1) * pageSize + idx + 1;
+                    const gd = item.gereeniiDugaar || "-";
+                    const isExpanded = expandedRow === gd;
 
-                        {/* <td className="p-3 text-center text-theme whitespace-nowrap">{item.toot}</td> */}
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          {item.davkhar}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">
-                          <button
-                            className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-                            onClick={async () => {
-                              setSelectedContract(item.gereeniiDugaar || null);
-                              setIsNekhOpen(true);
-                              setNekhLoading(true);
-                              setNekhError(null);
-                              try {
-                                const resp = await uilchilgee(
-                                  token ?? undefined
-                                ).post("/tailan/nekhemjlekhiin-tuukh", {
-                                  baiguullagiinId: baiguullaga?._id,
-                                  barilgiinId: selectedBuildingId,
-                                  gereeniiDugaar: item.gereeniiDugaar,
-                                  khuudasniiKhemjee: 1000,
-                                });
-                                const raw = Array.isArray(resp.data?.list)
-                                  ? resp.data.list
-                                  : Array.isArray(resp.data)
-                                  ? resp.data
-                                  : [];
-                                const groups: Record<string, any[]> = {};
-                                const allZardluud: any[] = [];
-                                raw.forEach((r: any) => {
-                                  const month = r.ognoo
-                                    ? r.ognoo.split("T")[0].slice(0, 7)
-                                    : "unknown";
-                                  if (!groups[month]) groups[month] = [];
-                                  groups[month].push(r);
-
-                                  // Collect ashiglaltiin zardluud from each record (if present)
-                                  const z = Array.isArray(r?.medeelel?.zardluud)
-                                    ? r.medeelel.zardluud
-                                    : Array.isArray(r?.zardluud)
-                                    ? r.zardluud
-                                    : [];
-                                  z.forEach((zz: any) => allZardluud.push(zz));
-                                });
-                                const grouped = Object.keys(groups)
-                                  .sort((a, b) => b.localeCompare(a))
-                                  .map((m) => ({
-                                    month: m,
-                                    items: groups[m],
-                                    total: groups[m].reduce(
-                                      (s: any, it: any) =>
-                                        s + (it.niitTulbur || it.tulbur || 0),
-                                      0
-                                    ),
-                                  }));
-                                setNekhData({ grouped, allZardluud, raw });
-                              } catch (e: any) {
-                                setNekhError(
-                                  e?.response?.data?.aldaa ||
-                                    e.message ||
-                                    "Unknown error"
-                                );
-                              } finally {
-                                setNekhLoading(false);
-                              }
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                    return (
+                      <React.Fragment key={`${gd}-${idx}`}>
+                        <tr
+                          key={`${gd}-${idx}`}
+                          className="transition-colors border-b last:border-b-0"
+                        >
+                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                            {rowNum}
+                          </td>
+                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                            {gd}
+                          </td>
+                          <td className="p-3 text-left text-theme whitespace-nowrap">
+                            {[item.ovog, item.ner].filter(Boolean).join(" ") || "-"}
+                          </td>
+                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                            {item.davkhar || "-"}
+                          </td>
+                          <td className="p-3 text-center text-theme whitespace-nowrap">
+                            {item.toot || item.nememjlekh?.toot || "-"}
+                          </td>
+                          {activeTab === "tulult" ? (
+                            <td className="p-3 text-center whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() => handleAmountClick(gd)}
+                                className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                                {formatNumber(getItemAmount(item))} ₮
+                              </button>
+                            </td>
+                          ) : (
+                            <>
+                              <td className="p-3 text-center whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAmountClick(gd)}
+                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronDown className="w-4 h-4" />
+                                  ) : (
+                                    <ChevronRight className="w-4 h-4" />
+                                  )}
+                                  {formatNumber(getItemTulukh(item))} ₮
+                                </button>
+                              </td>
+                              <td className="p-3 text-center text-theme whitespace-nowrap">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAmountClick(gd)}
+                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                >
+                                  {formatNumber(getItemTulsun(item))} ₮
+                                </button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                        {isExpanded && (
+                          <tr key={`${gd}-exp-${idx}`}>
+                            <td
+                              colSpan={activeTab === "tulult" ? 6 : 7}
+                              className="p-4 bg-[color:var(--surface-hover)]/30 border-b"
+                            >
+                              {expandedLoading ? (
+                                <div className="py-4 text-center">
+                                  Уншиж байна...
+                                </div>
+                              ) : expandedError ? (
+                                <div className="text-red-500 py-2">
+                                  Алдаа: {expandedError}
+                                </div>
+                              ) : expandedData ? (
+                                <div className="space-y-3">
+                                  <h4 className="font-medium text-sm">
+                                    {activeTab === "tulult"
+                                      ? "Төлөлтийн дэлгэрэнгүй"
+                                      : "Авлагын дэлгэрэнгүй"}{" "}
+                                    — {gd}
+                                  </h4>
+                                  <table className="min-w-full text-sm">
+                                    <thead>
+                                      <tr>
+                                        <th className="text-left p-2">№</th>
+                                        <th className="text-left p-2">Огноо</th>
+                                        <th className="text-left p-2">Тайлбар</th>
+                                        {activeTab === "avlaga" && (
+                                          <th className="text-right p-2">
+                                            Төлөх дүн
+                                          </th>
+                                        )}
+                                        <th className="text-right p-2">
+                                          Төлсөн дүн
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {expandedData.rows.map(
+                                        (r: any, ri: number) => (
+                                          <tr key={ri} className="border-t">
+                                            <td className="p-2">{ri + 1}</td>
+                                            <td className="p-2">{r.ognoo}</td>
+                                            <td className="p-2">{r.tailbar}</td>
+                                            {activeTab === "avlaga" && (
+                                              <td className="p-2 text-right">
+                                                {formatNumber(r.tulukhDun || 0)}{" "}
+                                                ₮
+                                              </td>
+                                            )}
+                                            <td className="p-2 text-right">
+                                              {formatNumber(r.tulsunDun || 0)} ₮
+                                            </td>
+                                          </tr>
+                                        )
+                                      )}
+                                      <tr className="border-t-2 font-semibold">
+                                        <td
+                                          colSpan={
+                                            activeTab === "avlaga" ? 3 : 2
+                                          }
+                                          className="p-2"
+                                        >
+                                          Нийт
+                                        </td>
+                                        {activeTab === "avlaga" && (
+                                          <td className="p-2 text-right">
+                                            {formatNumber(
+                                              expandedData.sumTulukh
+                                            )}{" "}
+                                            ₮
+                                          </td>
+                                        )}
+                                        <td className="p-2 text-right">
+                                          {formatNumber(
+                                            expandedData.sumTulsun
+                                          )}{" "}
+                                          ₮
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : null}
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -319,7 +693,9 @@ export default function OrlogoAvlagaPage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <div className="text-sm text-theme/70">Нийт: {data.length}</div>
+        <div className="text-sm text-theme/70">
+          Нийт: {displayList.length}
+        </div>
         <div className="flex items-center gap-3">
           <PageSongokh
             value={pageSize}
@@ -340,272 +716,14 @@ export default function OrlogoAvlagaPage() {
             <div className="text-theme/70 px-1">{currentPage}</div>
             <button
               className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage * pageSize >= data.length}
+              disabled={currentPage * pageSize >= displayList.length}
               onClick={() => setCurrentPage(currentPage + 1)}
             >
               Дараах
             </button>
           </div>
-
-          {/* <div className="flex items-center justify-between px-2 py-1 text-xs mt-4">
-            <div className="text-theme/70">Нийт: {data.length}</div>
-            <div className="flex items-center gap-3">
-              <PageSongokh
-                value={pageSize}
-                onChange={(v) => {
-                  setPageSize(v);
-                  setCurrentPage(1);
-                }}
-                className="text-xs px-2 py-1"
-              />
-              <div className="flex items-center gap-1">
-                <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Өмнөх
-                </button>
-                <div className="text-theme/70 px-1">{currentPage}</div>
-                <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-                  disabled={currentPage * pageSize >= data.length}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Дараах
-                </button>
-              </div>
-            </div>
-          </div> */}
         </div>
       </div>
-
-      {isNekhOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-6">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsNekhOpen(false)}
-          />
-          <div className="bg-white max-h-[80vh] dark:bg-gray-900 rounded-2xl shadow-lg z-10 w-full max-w-3xl overflow-y-auto custom-scrollbar">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold">
-                Нэхэмжлэхийн түүх - {selectedContract}
-              </h3>
-              <button
-                className="btn-minimal"
-                onClick={() => setIsNekhOpen(false)}
-              >
-                Хаах
-              </button>
-            </div>
-            <div className="p-4">
-              {nekhLoading ? (
-                <div className="p-6 text-center">Уншиж байна...</div>
-              ) : nekhError ? (
-                <div className="text-red-500 p-4">Алдаа: {nekhError}</div>
-              ) : !nekhData ||
-                (Array.isArray(nekhData.grouped) &&
-                  nekhData.grouped.length === 0 &&
-                  (!Array.isArray(nekhData.allZardluud) ||
-                    nekhData.allZardluud.length === 0)) ? (
-                <div className="p-4">Мэдээлэл алга байна</div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Show aggregated ashiglaltiin zardluud first */}
-                  {Array.isArray(nekhData.allZardluud) &&
-                    nekhData.allZardluud.length > 0 && (
-                      <div>
-                        <h4 className="font-medium mb-2">Зардлууд</h4>
-                        <div className="grid grid-cols-1 gap-2 text-sm">
-                          {(() => {
-                            const map = new Map<
-                              string,
-                              {
-                                key: string;
-                                name: string;
-                                amount: number;
-                                count: number;
-                              }
-                            >();
-                            (nekhData.allZardluud || []).forEach((z: any) => {
-                              const key =
-                                z._id ||
-                                z.zardalId ||
-                                String(z.ner || z.name || "unknown");
-                              const amt =
-                                Number(z.dun ?? z.tulukhDun ?? z.tariff ?? 0) ||
-                                0;
-                              const existing = map.get(key) || {
-                                key,
-                                name: z.ner || z.name || "",
-                                amount: 0,
-                                count: 0,
-                              };
-                              existing.amount += amt;
-                              existing.count += 1;
-                              if (!existing.name) {
-                                const g = (globalZardluud || []).find(
-                                  (gg: any) => String(gg._id) === String(key)
-                                );
-                                if (g) existing.name = g.ner || existing.name;
-                              }
-                              map.set(key, existing);
-                            });
-                            const arr = Array.from(map.values());
-                            return arr.map((it) => (
-                              <div
-                                key={it.key}
-                                className="flex items-center justify-between p-2 border rounded-md"
-                              >
-                                <div className="truncate">
-                                  {it.name || it.key}
-                                </div>
-                                <div className="font-medium">
-                                  {formatNumber(it.amount)} ₮
-                                </div>
-                              </div>
-                            ));
-                          })()}
-                        </div>
-                      </div>
-                    )}
-
-                  {/* Then show grouped monthly invoice items */}
-                  {Array.isArray(nekhData.grouped) &&
-                    nekhData.grouped.length > 0 &&
-                    nekhData.grouped.map((g: any) => (
-                      <div key={g.month} className="mb-4">
-                        <h4 className="font-medium mb-2">
-                          {g.month} — Нийт: {formatNumber(g.total)} ₮
-                        </h4>
-                        <table className="min-w-full text-sm">
-                          <thead>
-                            <tr>
-                              <th className="text-left p-2">Огноо</th>
-                              <th className="text-right p-2">Төлбөр</th>
-                              <th className="p-2 text-right">Төлөв</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {g.items.map((it: any, i: number) => (
-                              <tr key={i} className="border-t">
-                                <td className="p-2">
-                                  {it.ognoo
-                                    ? it.ognoo.split("T")[0].replace(/-/g, ".")
-                                    : it.ognoo}
-                                </td>
-                                <td className="p-2 text-right">
-                                  {formatNumber(
-                                    it.niitTulbur || it.tulbur || 0
-                                  )}{" "}
-                                  ₮
-                                </td>
-                                <td className="p-2 text-right">{it.tuluv || ""}</td>
-                              </tr>
-                            ))}
-
-                        
-                            {/* {Array.isArray(nekhData.raw) &&
-                              nekhData.raw.length > 0 && (
-                                <div>
-                                  <h4 className="font-medium mb-2">
-                                    Бичлэгүүд (nekhemjlekhiinTuukh)
-                                  </h4>
-                                  <div className="space-y-3 text-sm">
-                                    {nekhData.raw.map(
-                                      (rec: any, ri: number) => {
-                                        const recDate =
-                                          rec.ognoo || rec.createdAt || "-";
-                                        const recNumber =
-                                          rec.dugaalaltDugaar ||
-                                          rec.gereeniiDugaar ||
-                                          rec.invoiceNo ||
-                                          `#${ri + 1}`;
-                                        const recTotal = Number(
-                                          rec.niitTulbur ??
-                                            rec.niitDun ??
-                                            rec.total ??
-                                            0
-                                        );
-                                        const rows = Array.isArray(
-                                          rec?.medeelel?.zardluud
-                                        )
-                                          ? rec.medeelel.zardluud
-                                          : Array.isArray(rec?.zardluud)
-                                          ? rec.zardluud
-                                          : [];
-                                        return (
-                                          <div
-                                            key={ri}
-                                            className="p-3 border rounded-2xl"
-                                          >
-                                            <div className="flex items-center justify-between mb-2">
-                                              <div className="text-sm">
-                                                <div className="font-medium">
-                                                  {recNumber}
-                                                </div>
-                                                <div className="text-xs text-theme/70">
-                                                  {recDate &&
-                                                    String(recDate)
-                                                      .split("T")[0]
-                                                      .replace(/-/g, ".")}
-                                                </div>
-                                              </div>
-                                              <div className="text-right">
-                                                <div className="font-medium">
-                                                  {formatNumber(recTotal)} ₮
-                                                </div>
-                                              </div>
-                                            </div>
-                                            {rows.length === 0 ? (
-                                              <div className="text-theme/60 text-sm">
-                                                Зардал оруулаагүй
-                                              </div>
-                                            ) : (
-                                              <div className="grid grid-cols-1 gap-2">
-                                                {rows.map(
-                                                  (z: any, zi: number) => (
-                                                    <div
-                                                      key={zi}
-                                                      className="flex items-center justify-between text-sm"
-                                                    >
-                                                      <div className="truncate">
-                                                        {z.ner ||
-                                                          z.name ||
-                                                          z.tailbar ||
-                                                          "-"}
-                                                      </div>
-                                                      <div className="font-medium">
-                                                        {formatNumber(
-                                                          z.dun ||
-                                                            z.tulukhDun ||
-                                                            z.tariff ||
-                                                            0
-                                                        )}{" "}
-                                                        ₮
-                                                      </div>
-                                                    </div>
-                                                  )
-                                                )}
-                                              </div>
-                                            )}
-                                          </div>
-                                        );
-                                      }
-                                    )}
-                                  </div>
-                                </div>
-                              )} */}
-                          </tbody>
-                        </table>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

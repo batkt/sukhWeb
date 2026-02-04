@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -54,6 +54,25 @@ export default function AvlagiinNasjiltPage() {
     khuudasniiDugaar: 1,
     khuudasniiKhemjee: 20,
   });
+  const [filters, setFilters] = useState({
+    orshinSuugch: "",
+    toot: "",
+    davkhar: "",
+    gereeniiDugaar: "",
+  });
+  const [debouncedFilters, setDebouncedFilters] = useState(filters);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedFilters(filters);
+      debounceRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, [filters]);
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
@@ -75,6 +94,10 @@ export default function AvlagiinNasjiltPage() {
         view: formData.view,
         khuudasniiDugaar: formData.khuudasniiDugaar,
         khuudasniiKhemjee: formData.khuudasniiKhemjee,
+        orshinSuugch: debouncedFilters.orshinSuugch || undefined,
+        toot: debouncedFilters.toot || undefined,
+        davkhar: debouncedFilters.davkhar || undefined,
+        gereeniiDugaar: debouncedFilters.gereeniiDugaar || undefined,
       };
 
       const response = await uilchilgee(token ?? undefined).post(
@@ -104,6 +127,10 @@ export default function AvlagiinNasjiltPage() {
         view: formData.view,
         khuudasniiDugaar: formData.khuudasniiDugaar,
         khuudasniiKhemjee: 1000, // Get all data for client-side pagination
+        orshinSuugch: debouncedFilters.orshinSuugch || undefined,
+        toot: debouncedFilters.toot || undefined,
+        davkhar: debouncedFilters.davkhar || undefined,
+        gereeniiDugaar: debouncedFilters.gereeniiDugaar || undefined,
       };
 
       const response = await uilchilgee(token ?? undefined).post(
@@ -168,7 +195,7 @@ export default function AvlagiinNasjiltPage() {
 
   useEffect(() => {
     fetchData();
-  }, [selectedBuildingId, baiguullaga, dateRange, formData]);
+  }, [selectedBuildingId, baiguullaga, dateRange, formData, debouncedFilters]);
 
   const totalAvlaga = useMemo(() => {
     if (!Array.isArray(data)) return 0;
@@ -209,30 +236,48 @@ export default function AvlagiinNasjiltPage() {
               }}
             />
           </div>
-          {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Харагдац</label>
-            <TusgaiZagvar
-              value={formData.view}
-              onChange={(v: string) => setFormData({ ...formData, view: v })}
-              options={[
-                { value: "delgerengui", label: "Дэлгэрэнгүй" },
-                { value: "togtvor", label: "Товч" },
-              ]}
-              placeholder="Харагдац сонгох"
-              className="h-[40px] w-full"
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="neu-panel p-3 rounded-xl">
+            <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
+            <input
+              type="text"
+              value={filters.orshinSuugch}
+              onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
+              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Овог, нэрээр хайх"
             />
-          </div> */}
-          {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Хуудасны хэмжээ</label>
-            <PageSongokh
-              value={formData.khuudasniiKhemjee}
-              onChange={(v: number) =>
-                setFormData({ ...formData, khuudasniiKhemjee: v })
-              }
-              options={[20, 50, 100]}
-              className="h-[40px] w-full"
+          </div>
+          <div className="neu-panel p-3 rounded-xl">
+            <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
+            <input
+              type="text"
+              value={filters.toot}
+              onChange={(e) => setFilters((p) => ({ ...p, toot: e.target.value }))}
+              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Тоот"
             />
-          </div> */}
+          </div>
+          <div className="neu-panel p-3 rounded-xl">
+            <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
+            <input
+              type="text"
+              value={filters.davkhar}
+              onChange={(e) => setFilters((p) => ({ ...p, davkhar: e.target.value }))}
+              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Давхар"
+            />
+          </div>
+          <div className="neu-panel p-3 rounded-xl">
+            <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
+            <input
+              type="text"
+              value={filters.gereeniiDugaar}
+              onChange={(e) => setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))}
+              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="ГД"
+            />
+          </div>
         </div>
         {/* <button
           type="submit"
@@ -264,7 +309,7 @@ export default function AvlagiinNasjiltPage() {
       {/* Data Table */}
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[48vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
