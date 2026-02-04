@@ -227,7 +227,8 @@ export default function HistoryModal({
 
       contractItemsToProcess.forEach((item: any) => {
         const itemDate = item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || new Date().toISOString();
-        const ajiltan = item.createdBy?.ner || item.ajiltan || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || "Admin";
+        // Use only employee fields - never item.ner (resident name) or createdBy?.ner (may be resident)
+        const ajiltan = item.burtgesenAjiltaniiNer || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || item.ajiltan || "Admin";
         const source = item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
         const isSystem = source === "automataar" || source === "cron" || !item.maililgeesenAjiltniiId;
 

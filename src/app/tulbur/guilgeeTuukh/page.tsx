@@ -143,6 +143,7 @@ interface InvoiceModalProps {
   token: string;
   liftFloors: string[];
   barilgiinId?: string | null;
+  refreshTrigger?: number;
 }
 
 interface Zardal {
@@ -173,6 +174,7 @@ const InvoiceModal = ({
   token,
   liftFloors,
   barilgiinId,
+  refreshTrigger = 0,
 }: InvoiceModalProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   useModalHotkeys({
@@ -234,6 +236,7 @@ const InvoiceModal = ({
               barilgiinId: selectedBuildingId || barilgiinId || null,
               khuudasniiDugaar: 1,
               khuudasniiKhemjee: 2000,
+              _t: Date.now(),
             },
           }),
           uilchilgee(token).get(`/gereeniiTulukhAvlaga`, {
@@ -445,6 +448,7 @@ const InvoiceModal = ({
     resident?._id,
     selectedBuildingId,
     barilgiinId,
+    refreshTrigger,
   ]);
 
   const contractData = latestInvoice || nekhemjlekhData;
@@ -613,6 +617,14 @@ const InvoiceModal = ({
     return rowSum;
   }, [invoiceRows, invTotal, invValid, nekhemjlekhData, invRows]);
 
+  const uldegdelDun = useMemo(() => {
+    const inv = latestInvoice || nekhemjlekhData;
+    if (inv?.uldegdel != null) return Number(inv.uldegdel);
+    const total = totalSum;
+    const paid = Number(inv?.tulsunDun ?? 0) || 0;
+    return total - paid;
+  }, [totalSum, latestInvoice, nekhemjlekhData]);
+
   if (!isOpen) return null;
 
   return (
@@ -772,35 +784,6 @@ const InvoiceModal = ({
                   </p>
                 </div>
               </div>
-
-              <div className="mt-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-500">
-                      Эхний үлдэгдэл:
-                    </span>{" "}
-                    <span className="font-medium">
-                      {formatCurrency(
-                        (() => {
-                          // First check invRows for ekhniiUldegdel items from gereeniiTulukhAvlaga
-                          const ekhniiUldegdelFromRows = invRows
-                            .filter((r: any) => r.isEkhniiUldegdel === true)
-                            .reduce((sum: number, r: any) => sum + Number(r.dun || 0), 0);
-                          if (ekhniiUldegdelFromRows > 0) return ekhniiUldegdelFromRows;
-                          
-                          // Fallback to contractData or resident
-                          return Number(
-                            contractData?.medeelel?.ekhniiUldegdel ??
-                              contractData?.ekhniiUldegdel ??
-                              resident?.ekhniiUldegdel ??
-                              0,
-                          );
-                        })(),
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
@@ -858,6 +841,15 @@ const InvoiceModal = ({
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-medium text-slate-700">
+                      Үлдэгдэл дүн:
+                    </td>
+                    <td className="py-2 px-3"></td>
+                    <td className="py-2 px-3 text-right font-bold text-theme">
+                      {formatNumber(uldegdelDun)} ₮
+                    </td>
+                  </tr>
                 </tfoot>
               </table>
             </div>
@@ -887,6 +879,12 @@ const InvoiceModal = ({
                     Нийт дүн:{" "}
                     <span className=" text-slate-900">
                       {formatNumber(totalSum)} ₮
+                    </span>
+                  </span>
+                  <span className="text-sm text-slate-500">
+                    Үлдэгдэл дүн:{" "}
+                    <span className=" text-slate-900">
+                      {formatNumber(uldegdelDun)} ₮
                     </span>
                   </span>
                 </div>
@@ -949,6 +947,7 @@ export default function DansniiKhuulga() {
   const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
   const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState(false);
+  const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
   // Map gereeId -> total paid amount (Төлсөн дүн)
   const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<
     Record<string, number>
@@ -1891,6 +1890,7 @@ export default function DansniiKhuulga() {
             undefined,
             { revalidate: true }
           );
+          setInvoiceRefreshTrigger((t) => t + 1);
         }
       } else {
         // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
@@ -1937,6 +1937,7 @@ export default function DansniiKhuulga() {
             undefined,
             { revalidate: true }
           );
+          setInvoiceRefreshTrigger((t) => t + 1);
         }
       }
     } catch (error: any) {
@@ -2047,6 +2048,7 @@ export default function DansniiKhuulga() {
             undefined,
             { revalidate: true }
           );
+          setInvoiceRefreshTrigger((t) => t + 1);
         }
       } catch (error: any) {
         const msg = getErrorMessage(error);
@@ -3257,6 +3259,7 @@ export default function DansniiKhuulga() {
           token={token || ""}
           liftFloors={liftFloors}
           barilgiinId={selectedBuildingId || barilgiinId || null}
+          refreshTrigger={invoiceRefreshTrigger}
         />
       )}
 
@@ -3277,6 +3280,7 @@ export default function DansniiKhuulga() {
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
           requestedGereeIdsRef.current.clear();
+          setInvoiceRefreshTrigger((t) => t + 1);
         }}
       />
 

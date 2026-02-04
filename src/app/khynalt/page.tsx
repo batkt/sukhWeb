@@ -32,6 +32,7 @@ import {
 } from "chart.js";
 import useSWR from "swr";
 import formatNumber from "../../../tools/function/formatNumber";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 
 ChartJS.register(
   CategoryScale,
@@ -536,6 +537,13 @@ export default function Khynalt() {
     profitSeries,
   } = incomeComputed;
 
+  // Use same totals as Төлбөр тооцоо (guilgeeTuukh) table footer for Орлого and Төлбөр дутуу
+  const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    effectiveBarilgiinId
+  );
+
   const overdue2m = useMemo(() => {
     if (overdueData?.success) {
       return {
@@ -851,7 +859,7 @@ export default function Khynalt() {
     },
     {
       title: "Орлого",
-      value: formatCurrency(incomeTotals.paid),
+      value: formatCurrency(footerTotals.totalPaid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
       onClick: () => router.push("/tulbur"),
@@ -860,7 +868,7 @@ export default function Khynalt() {
     },
     {
       title: "Төлбөр дутуу",
-      value: formatCurrency(incomeTotals.unpaid),
+      value: formatCurrency(footerTotals.totalUldegdel),
       subtitle: "Төлөөгүй дүн",
       color: "from-red-500 to-red-600",
       onClick: () => router.push("/tulbur"),
