@@ -1047,6 +1047,7 @@ export default function DansniiKhuulga() {
         minWidth: 140,
       },
       { key: "tulbur", label: "Төлбөр", align: "center", minWidth: 110 },
+      { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл", align: "center", minWidth: 110 },
       { key: "uldegdel", label: "Үлдэгдэл", align: "center", minWidth: 110 },
       { key: "paid", label: "Гүйцэтгэл", align: "center", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
@@ -1063,7 +1064,7 @@ export default function DansniiKhuulga() {
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >(() => {
-    const hiddenByDefault = ["orts", "davkhar", "tulbur", "tuluv", "lastLog"];
+    const hiddenByDefault = ["orts", "davkhar", "tulbur", "ekhniiUldegdel", "tuluv", "lastLog"];
     return columnDefs.reduce((acc, col) => {
       acc[col.key] = !hiddenByDefault.includes(col.key);
       return acc;
@@ -1072,6 +1073,13 @@ export default function DansniiKhuulga() {
   const visibleColumns = useMemo(
     () => columnDefs.filter((col) => columnVisibility[col.key] !== false),
     [columnDefs, columnVisibility]
+  );
+
+  // Columns that appear in "Багана сонгох" modal (exclude structural checkbox, index, action)
+  const selectableColumnKeys = ["ner", "toot", "utas", "orts", "davkhar", "gereeniiDugaar", "tulbur", "ekhniiUldegdel", "uldegdel", "paid", "tuluv", "lastLog"] as const;
+  const selectableColumnDefs = useMemo(
+    () => columnDefs.filter((col) => selectableColumnKeys.includes(col.key as typeof selectableColumnKeys[number])),
+    [columnDefs]
   );
   const stickyOffsets = useMemo(() => {
     let left = 0;
@@ -1548,6 +1556,7 @@ export default function DansniiKhuulga() {
         : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
 
       // For invoices: add guilgeenuud net (includes negative ekhniiUldegdel like -87.79 from Excel)
+      let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
                            Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
@@ -1556,6 +1565,21 @@ export default function DansniiKhuulga() {
           0
         );
         itemAmount += guilgeeNet;
+        // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
+        const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud : Array.isArray(it?.zardluud) ? it.zardluud : [];
+        const fromZardluud = zardluud.reduce((s: number, z: any) => {
+          const ner = String(z?.ner || "").toLowerCase();
+          const isEkh = z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel") || ner.includes("ekhnii uldegdel");
+          if (!isEkh) return s;
+          const amt = Number(z?.dun ?? z?.tariff ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
+          if (g?.ekhniiUldegdelEsekh !== true) return s;
+          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0) - Number(g?.tulsunDun ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
       }
 
       if (!map.has(key)) {
@@ -1565,8 +1589,8 @@ export default function DansniiKhuulga() {
           _historyCount: 1,
           _totalTulbur: itemAmount,
           _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
-          _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel,
-          _ekhniiUldegdelAmount: isStandaloneEkhniiUldegdel ? itemAmount : 0,
+          _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
+          _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
         });
       } else {
         // Aggregate values
@@ -1574,9 +1598,9 @@ export default function DansniiKhuulga() {
         existing._historyCount += 1;
         existing._totalTulbur += itemAmount;
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
-        if (isStandaloneEkhniiUldegdel) {
+        if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
-          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + itemAmount;
+          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
         }
       }
     });
@@ -1659,22 +1683,37 @@ export default function DansniiKhuulga() {
       let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
         : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+      let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud : Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
         const guilgeeNet = guilgeenuud.reduce((sum: number, g: any) => sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)), 0);
         itemAmount += guilgeeNet;
+        const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud : Array.isArray(it?.zardluud) ? it.zardluud : [];
+        const fromZardluud = zardluud.reduce((s: number, z: any) => {
+          const ner = String(z?.ner || "").toLowerCase();
+          const isEkh = z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel") || ner.includes("ekhnii uldegdel");
+          if (!isEkh) return s;
+          const amt = Number(z?.dun ?? z?.tariff ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
+          if (g?.ekhniiUldegdelEsekh !== true) return s;
+          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0) - Number(g?.tulsunDun ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
       }
 
       if (!map.has(key)) {
-        map.set(key, { ...it, _historyCount: 1, _totalTulbur: itemAmount, _totalTulsun: Number(it?.tulsunDun ?? 0) || 0, _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel, _ekhniiUldegdelAmount: isStandaloneEkhniiUldegdel ? itemAmount : 0 });
+        map.set(key, { ...it, _historyCount: 1, _totalTulbur: itemAmount, _totalTulsun: Number(it?.tulsunDun ?? 0) || 0, _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0, _ekhniiUldegdelAmount: ekhniiUldegdelDelta });
       } else {
         const existing = map.get(key);
         existing._historyCount += 1;
         existing._totalTulbur += itemAmount;
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
-        if (isStandaloneEkhniiUldegdel) {
+        if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
-          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + itemAmount;
+          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
         }
       }
     });
@@ -2849,7 +2888,7 @@ export default function DansniiKhuulga() {
                         Багана сонгох
                       </h4>
                       <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar">
-                        {columnDefs.map((col) => {
+                        {selectableColumnDefs.map((col) => {
                           const isChecked = columnVisibility[col.key] !== false;
                           return (
                             <label
@@ -3094,7 +3133,7 @@ export default function DansniiKhuulga() {
                             const alignClass =
                               col.align === "left"
                                 ? "text-left pl-2"
-                                : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel"
+                                : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
                                   ? "text-right pr-2"
                                   : "text-center";
                             const stickyClass = col.sticky
@@ -3187,6 +3226,16 @@ export default function DansniiKhuulga() {
                                     {formatNumber(total)} ₮
                                   </td>
                                 );
+                              case "ekhniiUldegdel": {
+                                const amt = Number(it?._ekhniiUldegdelAmount ?? 0);
+                                return (
+                                  <td key={col.key} className={cellClass} style={style}>
+                                    <span className={amt < 0 ? "!text-emerald-600 dark:!text-emerald-400" : amt > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>
+                                      {formatNumber(amt, 2)} ₮
+                                    </span>
+                                  </td>
+                                );
+                              }
                               case "paid": {
                                 const gid =
                                   (it?.gereeniiId && String(it.gereeniiId)) ||
@@ -3334,7 +3383,7 @@ export default function DansniiKhuulga() {
                   <tr className="font-bold">
                     {visibleColumns.map((col, colIdx) => {
                       const alignClass =
-                        col.align === "right" || col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel"
+                        col.align === "right" || col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
                           ? "text-right pr-2"
                           : col.align === "center"
                             ? "text-center"
@@ -3355,6 +3404,11 @@ export default function DansniiKhuulga() {
                           return sum + Number(it?._totalTulbur ?? 0);
                         }, 0);
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
+                      } else if (col.key === "ekhniiUldegdel") {
+                        const total = deduplicatedResidents.reduce((sum: number, it: any) => {
+                          return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
+                        }, 0);
+                        content = <span className={total < 0 ? "!text-emerald-600 dark:!text-emerald-400" : total > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "paid") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           const gid = getGereeId(it);
