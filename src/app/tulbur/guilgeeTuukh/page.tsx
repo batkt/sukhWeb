@@ -1554,31 +1554,33 @@ export default function DansniiKhuulga() {
     );
   }, [deduplicatedResidents, page, rowsPerPage]);
 
+  // Helper to resolve gereeId from resident (used for paidSummary lookup)
+  const getGereeId = (it: any) =>
+    (it?.gereeniiId && String(it.gereeniiId)) ||
+    (it?.gereeId && String(it.gereeId)) ||
+    (it?.gereeniiDugaar &&
+      String(
+        (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+      )) ||
+    "";
+
   // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
-  // CRITICAL FIX: Only fetch for the CURRENTLY VISIBLE (paginated) items.
-  // This prevents firing 20,000 requests at once and stops the infinite loop.
+  // Fetch for ALL deduplicatedResidents so footer totals (uldegdel, paid) are correct.
+  // Limit to 500 to prevent firing too many requests for very large datasets.
   useEffect(() => {
-    if (!token || !ajiltan?.baiguullagiinId || paginated.length === 0) return;
+    if (!token || !ajiltan?.baiguullagiinId || deduplicatedResidents.length === 0) return;
 
     const baiguullagiinId = ajiltan.baiguullagiinId;
+    const toFetch = deduplicatedResidents.slice(0, 500);
 
-    paginated.forEach((it: any) => {
-      const gid =
-        (it?.gereeniiId && String(it.gereeniiId)) ||
-        (it?.gereeId && String(it.gereeId)) ||
-        (it?.gereeniiDugaar &&
-          String(
-            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
-          ));
-
+    toFetch.forEach((it: any) => {
+      const gid = getGereeId(it);
       if (!gid) return;
 
-      // If we already have the data or are currently fetching it, skip
       if (paidSummaryByGereeId[gid] !== undefined || requestedGereeIdsRef.current.has(gid)) {
         return;
       }
 
-      // Mark as requested IMMEDIATELY to prevent concurrent duplicate requests
       requestedGereeIdsRef.current.add(gid);
 
       uilchilgee(token)
@@ -1593,16 +1595,14 @@ export default function DansniiKhuulga() {
           setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
         })
         .catch(() => {
-          // On error, let it be eligible for retry if the user re-pages or refreshes
           requestedGereeIdsRef.current.delete(gid);
         });
     });
   }, [
     token,
     ajiltan?.baiguullagiinId,
-    paginated, // Dependency on current page items ensures we only fetch what the user sees
+    deduplicatedResidents,
     contractsByNumber,
-    // CRITICAL: paidSummaryByGereeId MUST NOT be here as it's updated inside this effect
   ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
@@ -1655,11 +1655,7 @@ export default function DansniiKhuulga() {
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidents.length;
     const paidCount = deduplicatedResidents.filter((r: any) => {
-      const gid =
-        (r?.gereeniiId && String(r.gereeniiId)) ||
-        (contractsByNumber[String(r.gereeniiDugaar)]?._id && String(contractsByNumber[String(r.gereeniiDugaar)]._id)) ||
-        "";
-
+      const gid = getGereeId(r);
       const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
       const uldegdel = r._totalTulbur - paid;
       return uldegdel <= 1; // Paid means balance is settled
@@ -3221,7 +3217,7 @@ export default function DansniiKhuulga() {
                         content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
                       } else if (col.key === "paid") {
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
+                          const gid = getGereeId(it);
                           const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + paid;
                         }, 0);
@@ -3230,7 +3226,7 @@ export default function DansniiKhuulga() {
                         // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
                         const total = deduplicatedResidents.reduce((sum: number, it: any) => {
                           const tulbur = Number(it?._totalTulbur ?? 0);
-                          const gid = (it?.gereeniiId && String(it.gereeniiId)) || "";
+                          const gid = getGereeId(it);
                           const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
                           return sum + (tulbur - tulsun);
                         }, 0);
