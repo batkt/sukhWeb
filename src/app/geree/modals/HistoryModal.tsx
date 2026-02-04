@@ -238,9 +238,9 @@ export default function HistoryModal({
             return Number.isFinite(num) ? num : null;
           };
           const dun = n(obj?.dun);
-          if (dun !== null && dun > 0) return dun;
+          if (dun !== null && dun !== 0) return dun;
           const td = n(obj?.tulukhDun);
-          if (td !== null && td > 0) return td;
+          if (td !== null && td !== 0) return td;
           const tar = n(obj?.tariff);
           return tar ?? 0;
         };
@@ -267,7 +267,8 @@ export default function HistoryModal({
               return;
             }
             
-            if (amt > 0) {
+            // Include ekhniiUldegdel even when negative (credit); regular charges need amt > 0
+            if ((isEkhniiUldegdel && amt !== 0) || amt > 0) {
               // Use composite key: invoiceId-zardalId so entries stay unique when multiple
               // invoices share the same zardluud template (same _ids) -> fixes React duplicate key
               const rowId = `${item._id}-${z._id?.toString() || `z-${Math.random()}`}`;
@@ -445,9 +446,10 @@ export default function HistoryModal({
         (entry) => {
           const isEkhniiUldegdelName = entry.ner === "Эхний үлдэгдэл" || 
                                         (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
+          const amt = Number(entry.tulukhDun || 0);
           return isEkhniiUldegdelName && 
                  entry.sourceCollection === "nekhemjlekhiinTuukh" &&
-                 Number(entry.tulukhDun || 0) > 0;
+                 amt !== 0;
         }
       );
       
@@ -478,7 +480,8 @@ export default function HistoryModal({
           ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
           : Number(rec.tulukhDun || rec.undsenDun || 0);
 
-        if (amt > 0) {
+        // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
+        if ((rec.ekhniiUldegdelEsekh === true && amt !== 0) || amt > 0) {
           flatLedger.push({
             _id: rec._id,
             ognoo: recDate,
@@ -886,7 +889,7 @@ export default function HistoryModal({
                           {row.ajiltan}
                         </td>
                         <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {row.tulukhDun > 0 ? formatNumber(row.tulukhDun, 2) : "-"}
+                          {Number(row.tulukhDun) !== 0 ? formatNumber(row.tulukhDun, 2) : "-"}
                         </td>
                         <td className="py-2 px-2 text-right whitespace-nowrap text-slate-700 dark:text-slate-200">
                           {row.tulsunDun > 0 ? formatNumber(row.tulsunDun, 2) : "-"}

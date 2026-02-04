@@ -1398,31 +1398,57 @@ export default function DansniiKhuulga() {
   }, [filteredItems]);
 
   // Deduplicate by resident (orshinSuugchId or ner+utas combination)
+  // CRITICAL: Use buildingHistoryItems for amount calculation so negative ekhniiUldegdel (e.g. -87.79)
+  // is always included even when filtered out. Filter which residents to show via filteredItems.
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
+    // Build set of resident keys that pass the current filter (tuluv, orts, davkhar, search)
+    const residentKeysFromFiltered = new Set<string>();
+    filteredItems.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      const ner = String(it?.ner || "").trim().toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      if (key && key !== "||") residentKeysFromFiltered.add(key);
+    });
+
     // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
-    // IMPORTANT: Use buildingHistoryItems (unfiltered) so that search/filter doesn't break duplicate detection
-    // These contracts should NOT have standalone ekhniiUldegdel records added separately
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
     
     buildingHistoryItems.forEach((it: any) => {
       // Check if this is an invoice (has zardluud or medeelel.zardluud)
       const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud :
                        Array.isArray(it?.zardluud) ? it.zardluud : [];
-      
-      // Check if invoice contains ekhniiUldegdel in its zardluud
+      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
+                         Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+
+      // Check if invoice contains ekhniiUldegdel in its zardluud (include negative)
       const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
         const ner = String(z?.ner || "").toLowerCase();
         const isEkhUld = z?.isEkhniiUldegdel === true || 
                          ner.includes("эхний үлдэгдэл") ||
                          ner.includes("ekhniuldegdel") ||
                          ner.includes("ekhnii uldegdel");
-        const hasValue = Number(z?.dun || z?.tariff || 0) > 0;
-        return isEkhUld && hasValue;
+        const amt = Number(z?.dun || z?.tariff || 0);
+        return isEkhUld && amt !== 0;
+      });
+      // Also check guilgeenuud for ekhniiUldegdel (e.g. Excel-ээр оруулсан эхний үлдэгдэл)
+      const hasEkhniiUldegdelInGuilgee = guilgeenuud.some((g: any) => {
+        if (g?.ekhniiUldegdelEsekh !== true) return false;
+        const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
+        return amt !== 0;
       });
       
-      if (hasEkhniiUldegdelInZardluud) {
+      if (hasEkhniiUldegdelInZardluud || hasEkhniiUldegdelInGuilgee) {
         const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
         const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
         if (gereeId) contractsWithEkhniiUldegdelInInvoice.add(gereeId);
@@ -1430,12 +1456,17 @@ export default function DansniiKhuulga() {
       }
     });
 
-    // SECOND PASS: Build deduplicated residents, skipping standalone ekhniiUldegdel for contracts that already have it in invoice
-    filteredItems.forEach((it: any) => {
+    // SECOND PASS: Build deduplicated residents from buildingHistoryItems (all data for correct totals)
+    // Only include residents that have at least one item in filteredItems
+    buildingHistoryItems.forEach((it: any) => {
       // Create a unique key for each resident
       const residentId = String(it?.orshinSuugchId || "").trim();
-      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      // For receivables, gereeId might be missing - resolve from gereeDugaar via contractsByNumber
+      if (!gereeId && gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id) {
+        gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
+      }
       const ner = String(it?.ner || "").trim().toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
@@ -1449,27 +1480,41 @@ export default function DansniiKhuulga() {
       const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return; // Skip if no valid identifier
+      if (!residentKeysFromFiltered.has(key)) return; // Only include residents that pass the filter
 
       // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      const standaloneAmount = Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
       
       // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
-      // This prevents double-counting
+      // This prevents double-counting. BUT: never skip NEGATIVE standalone (e.g. Excel-ээр оруулсан эхний үлдэгдэл -87.79)
+      // because invoice's ekhniiUldegdel is typically positive - they are different entries.
       if (isStandaloneEkhniiUldegdel) {
         const contractHasEkhniiUldegdelInInvoice = 
           (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
           (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
         
-        if (contractHasEkhniiUldegdelInInvoice) {
-          // Skip this record - ekhniiUldegdel is already counted in the invoice's niitTulbur
+        if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) {
+          // Skip only when positive - invoice's ekhniiUldegdel covers it
           return;
         }
       }
 
       // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
-      const itemAmount = isStandaloneEkhniiUldegdel
+      let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
         : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+
+      // For invoices: add guilgeenuud net (includes negative ekhniiUldegdel like -87.79 from Excel)
+      if (!isStandaloneEkhniiUldegdel) {
+        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
+                           Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+        const guilgeeNet = guilgeenuud.reduce(
+          (sum: number, g: any) => sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)),
+          0
+        );
+        itemAmount += guilgeeNet;
+      }
 
       if (!map.has(key)) {
         // First occurrence - store as base record
@@ -1495,7 +1540,7 @@ export default function DansniiKhuulga() {
     });
 
     return Array.from(map.values());
-  }, [filteredItems, buildingHistoryItems]);
+  }, [filteredItems, buildingHistoryItems, contractsByNumber]);
 
   const totalPages = Math.max(1, Math.ceil(deduplicatedResidents.length / rowsPerPage));
   useEffect(() => {
