@@ -631,7 +631,7 @@ export default function Camera() {
     // Filter Type
     if (typeFilter !== 'all') {
       merged = merged.filter(t => {
-         const type = t.tuukh?.[0]?.turul || "Үйлчлүүлэгч"; 
+         const type = t.turul || t.tuukh?.[0]?.turul || "Үйлчлүүлэгч"; 
          return type === 'Үйлчлүүлэгч';
       });
     }
@@ -1121,7 +1121,7 @@ export default function Camera() {
 
                           </td>
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
-                             {transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
+                             {transaction.turul || transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
                           </td>
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
                              {transaction.tuukh?.[0]?.khungulult || ""}

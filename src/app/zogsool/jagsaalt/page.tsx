@@ -82,6 +82,7 @@ interface Vehicle {
   mashiniiDugaar: string;
   niitDun?: number;
   zurchil?: string;
+  turul?: string; // Type
   tuukh?: Array<{
     tsagiinTuukh?: Array<{
       orsonTsag?: string;
@@ -393,7 +394,7 @@ export default function Jagsaalt() {
                           </td>
                           <td className="py-4 px-3 text-center">
                              <span className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                                {mur?.turul || "Үйлчлүүлэгч"}
+                                {transaction.turul || mur?.turul || "Үйлчлүүлэгч"}
                              </span>
                           </td>
                           <td className="py-4 px-3 text-center">

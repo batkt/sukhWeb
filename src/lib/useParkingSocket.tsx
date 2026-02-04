@@ -27,6 +27,7 @@ interface Uilchluulegch {
   mashiniiDugaar: string;
   baiguullagiinId: string;
   barilgiinId?: string;
+  turul?: string; // Type (Зочин, Оршин суугч, etc.)
   tuukh?: TuukhEntry[];
   niitDun?: number;
   createdAt?: string;
