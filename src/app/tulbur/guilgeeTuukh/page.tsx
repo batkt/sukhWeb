@@ -42,6 +42,7 @@ import {
 } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSocket } from "@/context/SocketContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { AnimatePresence } from "framer-motion";
@@ -337,20 +338,36 @@ const InvoiceModal = ({
         });
 
         // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
-        // Use undsenDun (original amount) for invoice display, NOT uldegdel (remaining after payments)
-        // The invoice should always show the original charge amount
         const ekhniiUldegdelRows = residentTulukhAvlaga
           .filter((item: any) => item.ekhniiUldegdelEsekh === true)
           .map((item: any) => ({
             _id: item._id,
-            ner: "Эхний үлдэгдэл", // Always display as "Эхний үлдэгдэл" in Зардал column
+            ner: "Эхний үлдэгдэл",
             tariff: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
             dun: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
-            turul: "ekhniiUldegdel", // Use special turul to avoid the avlaga formatting
+            turul: "ekhniiUldegdel",
             zardliinTurul: "Авлага",
-            tailbar: item.zardliinNer || item.tailbar || "Эхний үлдэгдэл", // Full description in Тайлбар column
+            tailbar: item.zardliinNer || item.tailbar || "Эхний үлдэгдэл",
             ognoo: item.ognoo,
             isEkhniiUldegdel: true,
+          }));
+
+        // Add avlaga (non-ekhniiUldegdel) from gereeniiTulukhAvlaga - e.g. when user adds avlaga via geree
+        const avlagaRows = residentTulukhAvlaga
+          .filter((item: any) => {
+            if (item.ekhniiUldegdelEsekh === true) return false;
+            const t = String(item.turul || "").toLowerCase();
+            return t === "avlaga" || t === "авлага";
+          })
+          .map((item: any) => ({
+            _id: item._id,
+            ner: (item.zardliinNer || item.tailbar || "Авлага") + " (авлага)",
+            tariff: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            dun: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            turul: "avlaga",
+            zardliinTurul: "Авлага",
+            tailbar: item.tailbar || item.zardliinNer || "Авлага",
+            ognoo: item.ognoo,
           }));
 
         // Filter out 0.00 "Эхний үлдэгдэл" entries from invoice zardluud
@@ -370,7 +387,12 @@ const InvoiceModal = ({
             })
           : allZardluud;
 
-        const rows = [...filteredZardluud, ...allGuilgeenuud, ...ekhniiUldegdelRows];
+        // Avlaga: prefer tulukhAvlaga; invoice guilgeenuud for non-avlaga (tulult, ashiglalt) only to avoid duplicate
+        const guilgeeNonAvlaga = allGuilgeenuud.filter((g: any) => {
+          const gt = String(g?.turul || "").toLowerCase();
+          return gt !== "avlaga" && gt !== "авлага";
+        });
+        const rows = [...filteredZardluud, ...ekhniiUldegdelRows, ...avlagaRows, ...guilgeeNonAvlaga];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -405,18 +427,9 @@ const InvoiceModal = ({
         });
         setInvRows(rows.map(norm));
 
-        // Calculate total including ekhniiUldegdel from gereeniiTulukhAvlaga
-        // Use undsenDun (original amount) for invoice total, NOT uldegdel (remaining after payments)
-        // The invoice total should always show the original amount
-        const ekhniiUldegdelTotal = residentTulukhAvlaga
-          .filter((item: any) => item.ekhniiUldegdelEsekh === true)
-          .reduce((sum: number, item: any) => sum + Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0), 0);
-        
-        const invoiceTotal = Number(
-          latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
-        );
-        const t = invoiceTotal + ekhniiUldegdelTotal;
-        setInvTotal(Number.isFinite(t) ? t : null);
+        // Total = sum of displayed rows (avoids double-count when invoice.niitTulbur already includes avlaga)
+        const rowTotal = rows.reduce((s: number, r: any) => s + pickAmount(r), 0);
+        setInvTotal(Number.isFinite(rowTotal) && rowTotal > 0 ? rowTotal : null);
 
         try {
           const cronResp = await uilchilgee(token).get(
@@ -677,29 +690,9 @@ const InvoiceModal = ({
       >
         <div className="invoice-modal h-full flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
-            <div className="flex items-center gap-4">
-              <div>
-                <h2 className="text-xl  text-slate-800">
-                  Үйлчилгээний нэхэмжлэх
-                </h2>
-                <p className="text-sm text-slate-500">
-                  Нэхэмжлэхийн дугаар:{" "}
-                  {contractData?.nekhemjlekhiinDugaar ||
-                    nekhemjlekhData?.nekhemjlekhiinDugaar ||
-                    latestInvoice?.nekhemjlekhiinDugaar ||
-                    "-"}
-                </p>
-                <p className="text-sm text-slate-500">
-                  Огноо:{" "}
-                  {formatDate(
-                    contractData?.ognoo ||
-                    nekhemjlekhData?.ognoo ||
-                    latestInvoice?.ognoo ||
-                    "",
-                  ) || "-"}
-                </p>
-              </div>
-            </div>
+            <h2 className="text-xl font-bold text-slate-800">
+              Үйлчилгээний нэхэмжлэх
+            </h2>
             <button
               onClick={() => onClose()}
               className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
@@ -725,99 +718,67 @@ const InvoiceModal = ({
           </div>
 
           <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
-            <div className="grid grid-cols-2 gap-6 print-break">
-              <div>
-                <h3 className="text-xl  text-slate-800 mb-3">
-                  {baiguullaga?.ner}
+            {/* Нэхэмжлэгч (left) and Төлөгч (right) - matches nekhemjlekh header layout */}
+            <div className="grid grid-cols-2 gap-4 print-break">
+              <div className="rounded-xl border border-emerald-200 bg-transparent p-4">
+                <h3 className="text-sm font-semibold text-emerald-500 mb-3 flex items-center gap-2">
+                  <span className="inline-block w-1 h-4 rounded" />
+                  Нэхэмжлэгч
                 </h3>
-                <div className="space-y-2 text-sm text-slate-600">
-                  <p className="flex items-center gap-2">
-                    <span className="font-medium">Имэйл:</span>{" "}
-                    {(() => {
-                      const mailFromTokhirgoo = Array.isArray(
-                        (baiguullaga as any)?.tokhirgoo?.mail,
-                      )
-                        ? (baiguullaga as any).tokhirgoo.mail[0]
-                        : undefined;
-                      const mailFromOrg = Array.isArray(
-                        (baiguullaga as any)?.mail,
-                      )
-                        ? (baiguullaga as any).mail[0]
-                        : undefined;
-                      const mailLegacy = (baiguullaga as any)?.email;
-                      return (
-                        mailFromTokhirgoo || mailFromOrg || mailLegacy || "-"
-                      );
-                    })()}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-medium">Утас:</span>{" "}
-                    {(() => {
-                      const utasFromTokhirgoo = Array.isArray(
-                        (baiguullaga as any)?.tokhirgoo?.utas,
-                      )
-                        ? (baiguullaga as any).tokhirgoo.utas[0]
-                        : undefined;
-                      const utasFromOrg = Array.isArray(
-                        (baiguullaga as any)?.utas,
-                      )
+                <div className="space-y-1.5 text-sm text-slate-600">
+                  <p><span className="font-medium text-slate-500">Нэхэмжлэгч:</span> {baiguullaga?.ner || "-"}</p>
+                  <p><span className="font-medium text-slate-500">Утас:</span>{" "}
+                    {Array.isArray((baiguullaga as any)?.tokhirgoo?.utas)
+                      ? (baiguullaga as any).tokhirgoo.utas[0]
+                      : Array.isArray((baiguullaga as any)?.utas)
                         ? (baiguullaga as any).utas[0]
-                        : undefined;
-                      const utasLegacy = (baiguullaga as any)?.utas;
-                      return (
-                        utasFromTokhirgoo || utasFromOrg || utasLegacy || "-"
-                      );
-                    })()}
+                        : (baiguullaga as any)?.utas || "-"}
                   </p>
-                  <p className="flex items-center gap-2">
-                    <span className="font-medium">Хаяг:</span>{" "}
-                    {baiguullaga?.khayag || "-"}
+                  <p><span className="font-medium text-slate-500">Хаяг:</span> {baiguullaga?.khayag || "-"}</p>
+                  <p><span className="font-medium text-slate-500">Данс:</span>{" "}
+                    {latestInvoice?.nekhemjlekhiinDans ||
+                      latestInvoice?.dansniiDugaar ||
+                      (baiguullaga as any)?.dans ||
+                      [((baiguullaga as any)?.bankniiNer), ((baiguullaga as any)?.dans)].filter(Boolean).join(" ") ||
+                      "-"}
                   </p>
                 </div>
               </div>
-              <div className="space-y-2">
-                <div className="inline-block text-left bg-transparent p-3 rounded-xl">
-                  <p className="text-sm text-slate-600">
-                    <span className="font-medium">Огноо:</span>{" "}
-                    {formatDate(
-                      contractData?.ognoo ||
-                      nekhemjlekhData?.ognoo ||
-                      latestInvoice?.ognoo ||
-                      currentDate,
-                    )}
+              <div className="rounded-xl border border-gray-200 bg-transparent p-4">
+                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <span className="inline-block w-1 h-4 bg-slate-400 rounded" />
+                  Төлөгч
+                </h3>
+                <div className="space-y-1.5 text-sm text-slate-600">
+                  <p><span className="font-medium text-slate-500">Төлөгч:</span> {resident?.ovog} {resident?.ner}</p>
+                  <p><span className="font-medium text-slate-500">Гэрээний дугаар:</span> {contractData?.gereeniiDugaar || "-"}</p>
+                  <p><span className="font-medium text-slate-500">Байр:</span>{" "}
+                    {contractData?.khayag ||
+                      resident?.toots?.[0]?.bairniiNer ||
+                      (resident as any)?.bairniiNer || "-"}
+                  </p>
+                  <p><span className="font-medium text-slate-500">Орц:</span>{" "}
+                    {contractData?.orts ||
+                      resident?.toots?.[0]?.orts ||
+                      (resident as any)?.orts || "-"}
+                  </p>
+                  <p><span className="font-medium text-slate-500">Тоот:</span>{" "}
+                    {resident?.toots?.[0]?.toot || resident?.toot || contractData?.medeelel?.toot || "-"}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="border border-blue-400 rounded-xl p-4 print-break">
-              <div className="flex items-center gap-3 mb-3">
-                <div>
-                  <h3 className="font-medium text-slate-800">
-                    {resident?.ovog} {resident?.ner}
-                  </h3>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="space-y-1">
-                  <p>
-                    <span className="text-slate-500">Тоот:</span>{" "}
-                    {resident?.toots?.[0]?.toot || resident?.toot}
-                  </p>
-                  <p>
-                    <span className="text-slate-500">Гэрээ №:</span>{" "}
-                    {contractData?.gereeniiDugaar || "-"}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p>
-                    <span className="text-slate-500">Утас:</span>{" "}
-                    {Array.isArray(resident?.utas)
-                      ? resident.utas[0]
-                      : resident?.utas || "-"}
-                  </p>
-                </div>
-              </div>
+            {/* Invoice metadata: дугаар, огноо */}
+            <div className="flex flex-wrap gap-4 text-sm text-slate-500 print-break">
+              <span>
+                <span className="font-medium">Нэхэмжлэхийн дугаар:</span>{" "}
+                {contractData?.nekhemjlekhiinDugaar || latestInvoice?.nekhemjlekhiinDugaar || "-"}
+              </span>
+              <span>
+                <span className="font-medium">Огноо:</span>{" "}
+                {formatDate(contractData?.ognoo || latestInvoice?.ognoo || currentDate)}
+              </span>
             </div>
 
             <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
@@ -875,15 +836,18 @@ const InvoiceModal = ({
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-medium text-slate-700">
-                      Үлдэгдэл дүн:
-                    </td>
-                    <td className="py-2 px-3"></td>
-                    <td className="py-2 px-3 text-right font-bold text-theme">
-                      {formatNumber(uldegdelDun)} ₮
-                    </td>
-                  </tr>
+                  {/* Үлдэгдэл дүн: only show when user has made payment (balance differs from total) */}
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) || Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                    <tr>
+                      <td className="py-2 px-3 font-medium text-slate-700">
+                        Үлдэгдэл дүн:
+                      </td>
+                      <td className="py-2 px-3"></td>
+                      <td className="py-2 px-3 text-right font-bold text-theme">
+                        {formatNumber(uldegdelDun)} ₮
+                      </td>
+                    </tr>
+                  ) : null}
                 </tfoot>
               </table>
             </div>
@@ -915,12 +879,15 @@ const InvoiceModal = ({
                       {formatNumber(totalSum)} ₮
                     </span>
                   </span>
-                  <span className="text-sm text-slate-500">
-                    Үлдэгдэл дүн:{" "}
-                    <span className=" text-slate-900">
-                      {formatNumber(uldegdelDun)} ₮
+                  {/* Үлдэгдэл дүн: only show when user has made payment */}
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) || Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                    <span className="text-sm text-slate-500">
+                      Үлдэгдэл дүн:{" "}
+                      <span className=" text-slate-900">
+                        {formatNumber(uldegdelDun)} ₮
+                      </span>
                     </span>
-                  </span>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -954,6 +921,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 
 export default function DansniiKhuulga() {
   const { mutate } = useSWRConfig();
+  const socket = useSocket();
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
   const { searchTerm } = useSearch();
@@ -991,6 +959,33 @@ export default function DansniiKhuulga() {
   >({});
   // Use a ref to track what's currently being requested across renders without causing loops
   const requestedGereeIdsRef = useRef<Set<string>>(new Set());
+
+  // Socket: revalidate data when payment, avlaga, or delete happens (from any tab/source)
+  useEffect(() => {
+    const baiguullagiinId = ajiltan?.baiguullagiinId;
+    if (!socket || !baiguullagiinId) return;
+    const event = `tulburUpdated:${baiguullagiinId}`;
+    const handler = () => {
+      mutate(
+        (key: any) =>
+          Array.isArray(key) &&
+          (key[0] === "/nekhemjlekhiinTuukh" ||
+            key[0] === "/gereeniiTulukhAvlaga" ||
+            key[0] === "/gereeniiTulsunAvlaga" ||
+            key[0] === "/geree" ||
+            key[0] === "/orshinSuugch"),
+        undefined,
+        { revalidate: true }
+      );
+      setPaidSummaryByGereeId({});
+      requestedGereeIdsRef.current.clear();
+      setInvoiceRefreshTrigger((t) => t + 1);
+    };
+    socket.on(event, handler);
+    return () => {
+      socket.off(event, handler);
+    };
+  }, [socket, ajiltan?.baiguullagiinId, mutate]);
 
   // Selection state for "Send Invoice"
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
@@ -3550,6 +3545,7 @@ export default function DansniiKhuulga() {
           // Clear cache and revalidate all relevant data
           mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
           mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulsunAvlaga", undefined, { revalidate: true });
+          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga", undefined, { revalidate: true });
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
 
           // Clear payment summary state to force re-fetch

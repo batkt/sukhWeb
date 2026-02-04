@@ -89,42 +89,80 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
               <div className="space-y-6">
-                {/* Contract Info */}
+                {/* Contract Info - Excel-style layout */}
                 <div className="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-5 border border-slate-200 dark:border-gray-700">
-                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     Гэрээний мэдээлэл
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400">Нэхэмжлэгч:</span>
-                      <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
-                        {preview.sohNer || "-"}
-                      </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                    {/* Left: Нэхэмжлэгч (Organization) */}
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">нэхэмжлэгч</span>
+                        <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.baiguullagiinNer || preview.sohNer || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Утас</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.baiguullagiinUtas || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Хаяг</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.baiguullagiinKhayag || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Дансны мэдээлэл</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.dansniiMedeelel || "-"}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400">Төлөгч:</span>
-                      <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
-                        {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400">Гэрээний дугаар:</span>
-                      <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">{preview.gereeniiDugaar || "-"}</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400">Утас:</span>
-                      <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
-                        {preview.utas?.join(", ") || "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-slate-600 dark:text-slate-400">Байршил:</span>
-                      <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
-                        Давхар {preview.davkhar || "-"}, Тоот {preview.toot || "-"}
-                      </p>
+                    {/* Right: Төлөгч (Payer / Resident) */}
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Төлөгч</span>
+                        <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Гэрээний дугаар</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.gereeniiDugaar || "-"}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Байр</span>
+                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.davkhar || "-"}</p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Орц</span>
+                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.orts || "-"}</p>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Тоот</span>
+                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.toot || "-"}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Оршин суугчийн нэр</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
+                          {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Утас</span>
+                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
+                          {Array.isArray(preview.utas) ? preview.utas.join(", ") : preview.utas || "-"}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
