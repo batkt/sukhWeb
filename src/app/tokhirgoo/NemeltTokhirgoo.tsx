@@ -271,7 +271,7 @@ export default function NemeltTokhirgoo() {
 
         if (effectiveBarilgiinId && data.barilguud) {
             const barilga = data.barilguud.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
-            if (barilga && barilga.tokhirgoo && barilga.tokhirgoo.zochinTokhirgoo && barilga.tokhirgoo.zochinTokhirgoo.zochinUrikhEsekh !== undefined) {
+            if (barilga && barilga.tokhirgoo && barilga.tokhirgoo.zochinTokhirgoo) {
                zt = barilga.tokhirgoo.zochinTokhirgoo;
             }
         }
@@ -285,7 +285,6 @@ export default function NemeltTokhirgoo() {
             setGuestFrequencyType(zt.davtamjiinTurul ?? "saraar");
             setGuestFrequencyValue(zt.davtamjUtga ?? "");
         } else {
-            // Reset to clean state if no settings found
             setGuestConfigEnabled(false);
             setGuestLimit("");
             setGuestFreeMinutes("");
@@ -315,49 +314,33 @@ export default function NemeltTokhirgoo() {
             davtamjUtga: Number(guestFrequencyValue) || null
         };
 
-        if (effectiveBarilgiinId) {
-            // Save to Specific Building
-            // First fetch latest to ensure we don't overwrite concurrent changes to other buildings
-            const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`);
-            const currentData = resp.data;
-            
-            if (currentData && currentData.barilguud) {
-                const updatedBarilguud = currentData.barilguud.map((b: any) => {
-                    if (String(b._id) === String(effectiveBarilgiinId)) {
-                        return {
-                            ...b,
-                            tokhirgoo: {
-                                ...(b.tokhirgoo || {}),
-                                zochinTokhirgoo: configToSave
-                            }
-                        };
-                    }
-                    return b;
-                });
+        const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`);
+        const currentData = resp.data;
 
-                await uilchilgee(token).put(`/baiguullaga/${ajiltan.baiguullagiinId}`, {
-                    barilguud: updatedBarilguud
-                });
-            }
-        } else {
-            // Save to Organization Root (Default)
-            // Ideally we'd merge with existing tokhirgoo, but here we construct the payload
-            // Assuming backend merges top-level keys or we need to send full structure.
-            // Safe approach: Fetch first
-            const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`);
-            const currentData = resp.data;
-
-            const payload = {
-                tokhirgoo: {
-                    ...(currentData.tokhirgoo || {}),
-                    zochinTokhirgoo: configToSave
+        if (effectiveBarilgiinId && currentData.barilguud) {
+            const updatedBarilguud = currentData.barilguud.map((b: any) => {
+                if (String(b._id) === String(effectiveBarilgiinId)) {
+                    return {
+                        ...b,
+                        tokhirgoo: {
+                            ...(b.tokhirgoo || {}),
+                            zochinTokhirgoo: configToSave
+                        }
+                    };
                 }
+                return b;
+            });
+            await uilchilgee(token).post(`/baiguullaga/${ajiltan.baiguullagiinId}`, { barilguud: updatedBarilguud });
+        } else {
+            const newTokhirgoo = {
+                ...(currentData.tokhirgoo || {}),
+                zochinTokhirgoo: configToSave
             };
-            await uilchilgee(token).put(`/baiguullaga/${ajiltan.baiguullagiinId}`, payload);
+            if (newTokhirgoo._id) delete newTokhirgoo._id;
+            await uilchilgee(token).post(`/baiguullaga/${ajiltan.baiguullagiinId}`, { tokhirgoo: newTokhirgoo });
         }
         
         openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
-        // Refresh to show saved state
         await fetchGuestSettings();
     } catch (error) {
         openErrorOverlay("Зочны тохиргоо хадгалахад алдаа гарлаа");

@@ -278,9 +278,18 @@ export default function OrshinSuugch() {
                         </div>
                       </td>
                        <td className="py-4 px-4">
-                         <span className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
-                           {resident.zochinTurul || resident.turul || "-"}
-                         </span>
+                         <div className="flex flex-col gap-1.5">
+                            <span className="px-2 py-1 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 w-fit">
+                              {resident.zochinTurul || resident.turul || "-"}
+                            </span>
+                            {resident.zochinErkhiinToo !== undefined && (
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 w-fit">
+                                    <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">
+                                        Хэрэглэсэн {(resident.mashinuud?.length || 0) + (residentsData?.ezenList?.filter((e: any) => e.ezemshigchiinId === resident._id)?.length || 0)}/{resident.zochinErkhiinToo}
+                                    </span>
+                                </div>
+                            )}
+                         </div>
                       </td>
                        <td className="py-4 px-4">
                          <p className="text-[10px] text-slate-500 italic max-w-[150px] truncate">

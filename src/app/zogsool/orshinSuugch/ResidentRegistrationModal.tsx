@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Save, User, Car, Phone, Hash, Home, Clock, FileText, ChevronDown, Search, ArrowRight } from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { User, Phone, MapPin, Car, Briefcase, Calendar, Info, Search, X, ArrowRight, Home, ChevronDown, Clock, Hash, FileText, Save } from "lucide-react";
 import { toast } from "react-hot-toast";
 import uilchilgee from "@/lib/uilchilgee";
 import { motion, AnimatePresence } from "framer-motion";
+import useSWR from "swr";
 
 interface ResidentRegistrationModalProps {
   onClose: () => void;
@@ -39,15 +40,41 @@ export default function ResidentRegistrationModal({
     description: ""
   });
 
+  // Fetch guest defaults from Barilga
+  const { data: buildingData } = useSWR(
+    barilgiinId ? `/barilga/${barilgiinId}` : null,
+    async (url) => {
+        const resp = await uilchilgee(token).get(url, {
+            params: { baiguullagiinId }
+        });
+        return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const guestDefaults = useMemo(() => {
+    return buildingData?.zochinTokhirgoo || null;
+  }, [buildingData]);
+
+  useEffect(() => {
+    if (guestDefaults && step === 1) { 
+        setFormData(prev => ({
+            ...prev,
+            rightsCount: guestDefaults.zochinErkhiinToo ?? prev.rightsCount,
+            freeMinutes: guestDefaults.zochinTusBurUneguiMinut ?? prev.freeMinutes,
+            type: guestDefaults.zochinTurul || prev.type,
+            frequency: guestDefaults.davtamjiinTurul || prev.frequency,
+        }));
+    }
+  }, [guestDefaults, step]);
+
   const handleSearch = async (phoneOverride?: any) => {
     const phoneToSearch = typeof phoneOverride === 'string' ? phoneOverride : formData.phone;
 
-    if (!phoneToSearch || phoneToSearch.length < 4) {
-      toast.error("Утасны дугаараа бүтэн оруулна уу");
-      return;
+    if (!phoneToSearch || phoneToSearch.length < 8) {
+        toast.error("Утасны дугаар зөв оруулна уу");
+        return;
     }
-    
-    if (searching) return;
 
     setSearching(true);
     try {
@@ -56,29 +83,33 @@ export default function ResidentRegistrationModal({
                 baiguullagiinId,
                 barilgiinId,
                 search: phoneToSearch,
-                khuudasniiKhemjee: 1 
             }
         });
-        
-        const list = resp.data?.jagsaalt || [];
-        if (list.length > 0) {
-            const found = list[0];
+
+        const found = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt[0] : null;
+
+        if (found) {
             setFormData(prev => ({
                 ...prev,
                 phone: phoneToSearch,
                 name: found.ner || found.orshinSuugchNer || prev.name,
                 ovog: found.ovog || prev.ovog,
                 unit: found.toot || found.burtgeliinDugaar || prev.unit,
+                rightsCount: found.zochinErkhiinToo ?? prev.rightsCount,
+                freeMinutes: found.zochinTusBurUneguiMinut ?? prev.freeMinutes,
+                type: found.zochinTurul || found.turul || prev.type,
+                frequency: found.davtamjiinTurul || prev.frequency,
             }));
             toast.success("Оршин суугчийн мэдээлэл олдлоо");
             setStep(2); 
         } else {
-             toast.error("Оршин суугч бүртгэлгүй байна");
+            setFormData(prev => ({ ...prev, phone: phoneToSearch }));
+            toast.error("Оршин суугч олдсонгүй. Шинээр бүртгэнэ.");
+            setStep(2);
         }
-
-    } catch(err) {
-        console.error(err);
-        toast.error("Хайлт хийхэд алдаа гарлаа");
+    } catch (err) {
+        setFormData(prev => ({ ...prev, phone: phoneToSearch }));
+        setStep(2);
     } finally {
         setSearching(false);
     }
@@ -93,16 +124,19 @@ export default function ResidentRegistrationModal({
   };
 
   const handleSave = async () => {
-    if (!formData.plate || !formData.name || !formData.phone) {
-      toast.error("Шаардлагатай мэдээллийг гүйцэд оруулна уу");
+    if (!formData.name || !formData.phone) {
+      toast.error("Нэр, утас заавал оруулна уу");
       return;
     }
 
     setLoading(true);
     try {
+      const plateToUse = formData.plate.trim().toUpperCase() || "БҮРТГЭЛГҮЙ";
+      
       const payload = {
-        mashiniiDugaar: formData.plate.toUpperCase(),
         baiguullagiinId: baiguullagiinId,
+        barilgiinId: barilgiinId,
+        mashiniiDugaar: plateToUse,
         ezemshigchiinUtas: formData.phone,
         khariltsagchMedeelel: {
           ner: formData.name,
@@ -115,7 +149,7 @@ export default function ResidentRegistrationModal({
           davtamjiinTurul: formData.frequency,
           ezenToot: formData.unit,
           idevkhiteiEsekh: true,
-          mashiniiDugaar: formData.plate.toUpperCase(),
+          mashiniiDugaar: plateToUse,
           zochinErkhiinToo: formData.rightsCount,
           zochinTailbar: formData.description,
           zochinTurul: formData.type,
@@ -123,7 +157,7 @@ export default function ResidentRegistrationModal({
           zochinUrikhEsekh: true
         },
         mashinMedeelel: {
-          dugaar: formData.plate.toUpperCase(),
+          dugaar: plateToUse,
           ezemshigchiinNer: formData.name,
           ezemshigchiinRegister: formData.register || "00000000",
           ezemshigchiinUtas: formData.phone,
