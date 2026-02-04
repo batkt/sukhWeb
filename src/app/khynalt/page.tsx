@@ -556,15 +556,56 @@ export default function Khynalt() {
   }, [overdueData]);
 
   const cancelledReceivables = useMemo(() => {
-    if (cancelledData?.success) {
+    if (cancelledData?.success && (cancelledData.list?.length ?? 0) > 0) {
       return {
         count: cancelledData.total || 0,
         total: cancelledData.sum || 0,
         items: cancelledData.list || [],
       };
     }
-    return { count: 0, total: 0, items: [] };
-  }, [cancelledData]);
+    // Fallback: derive from gereeniiTulukhAvlaga + cancelled contracts (when tailan API returns no data)
+    const isCancelled = (c: any) => {
+      const s = String(c?.tuluv ?? c?.status ?? "").toLowerCase();
+      return s.includes("цуцлагдсан") || s.includes("цуцалсан") || s.includes("идэвхгүй") || s === "tsutlsasan";
+    };
+    const cancelledContractIds = new Set(
+      (contracts || [])
+        .filter((c: any) => isCancelled(c))
+        .map((c: any) => String(c._id || ""))
+        .filter(Boolean)
+    );
+    const tulukhList = Array.isArray(tulukhAvlagaData?.jagsaalt) ? tulukhAvlagaData.jagsaalt : [];
+    const byContract = new Map<string, { amount: number; item: any }>();
+    tulukhList.forEach((rec: any) => {
+      const gid = String(rec?.gereeniiId ?? "").trim();
+      if (!gid || !cancelledContractIds.has(gid)) return;
+      const amt = Number(rec?.uldegdel ?? rec?.undsenDun ?? rec?.tulukhDun ?? 0) || 0;
+      if (amt <= 0) return;
+      const existing = byContract.get(gid);
+      if (existing) {
+        existing.amount += amt;
+      } else {
+        byContract.set(gid, {
+          amount: amt,
+          item: {
+            niitTulbur: amt,
+            ovog: rec?.ovog,
+            ner: rec?.ner,
+            toot: rec?.toot,
+            gereeniiDugaar: rec?.gereeniiDugaar,
+            gereeniiTuluv: "Цуцлагдсан",
+            dugaalaltDugaar: rec?.gereeniiDugaar || rec?._id,
+          },
+        });
+      }
+    });
+    const items = Array.from(byContract.values()).map(({ amount, item }) => ({
+      ...item,
+      niitTulbur: amount,
+    }));
+    const total = items.reduce((s, it) => s + (Number(it?.niitTulbur ?? 0) || 0), 0);
+    return { count: items.length, total, items };
+  }, [cancelledData, contracts, tulukhAvlagaData]);
 
   const incomeLineData: Dataset = useMemo(() => {
     const pretty = incomeSeries.labels.map((lb) => {
