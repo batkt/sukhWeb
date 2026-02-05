@@ -1,8 +1,8 @@
 "use client";
 
-import { Settings, Search as SearchIcon, X, LogOut, Type, Menu } from "lucide-react";
+import { Settings, Search as SearchIcon, X, LogOut, Type, Menu, HelpCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
 import UnguSongokh from "./ungu/unguSongokh";
@@ -14,6 +14,10 @@ import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "./selectZagvar/tusgaiZagvar";
+
+const TuslamjTokhirgoo = lazy(() =>
+  import("@/app/tokhirgoo/TuslamjTokhirgoo").then((m) => ({ default: m.default }))
+);
 
 interface GolContentProps {
   children: React.ReactNode;
@@ -46,6 +50,7 @@ export default function GolContent({ children }: GolContentProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
+  const [tuslamjModalOpen, setTuslamjModalOpen] = useState<boolean>(false);
   const { searchTerm, setSearchTerm } = useSearch();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
   const [isMobile, setIsMobile] = useState(false);
@@ -545,6 +550,15 @@ export default function GolContent({ children }: GolContentProps) {
               <UnguSongokh />
               <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
+              <button
+                type="button"
+                aria-label="Тусламж"
+                onClick={() => setTuslamjModalOpen(true)}
+                className="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
+              >
+                <HelpCircle className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
+              </button>
+
               {isLoggedIn && (
                 <div className="relative z-[150]" ref={desktopAvatarRef}>
                   <button
@@ -649,6 +663,15 @@ export default function GolContent({ children }: GolContentProps) {
               <UnguSongokh />
               <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
+              <button
+                type="button"
+                aria-label="Тусламж"
+                onClick={() => setTuslamjModalOpen(true)}
+                className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+              >
+                <HelpCircle className="w-4 h-4 text-[color:var(--panel-text)]" />
+              </button>
+
               {isLoggedIn && (
                 <div className="relative z-[150]" ref={mobileAvatarRef}>
                   <div
@@ -706,6 +729,46 @@ export default function GolContent({ children }: GolContentProps) {
           </div>
         </div>
       </nav>
+
+      {/* Tuslamj (Help) Modal */}
+      {tuslamjModalOpen && (
+        <ModalPortal>
+          <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setTuslamjModalOpen(false)}
+              aria-hidden="true"
+            />
+            <div
+              className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-4 border-b border-[color:var(--surface-border)]">
+                <h3 className="text-lg font-semibold text-theme">Тусламж</h3>
+                <button
+                  type="button"
+                  onClick={() => setTuslamjModalOpen(false)}
+                  className="p-2 rounded-xl hover:bg-[color:var(--surface-hover)] transition-colors"
+                  aria-label="Хаах"
+                >
+                  <X className="w-5 h-5 text-theme" />
+                </button>
+              </div>
+              <div className="overflow-y-auto max-h-[calc(85vh-64px)]">
+                <Suspense
+                  fallback={
+                    <div className="p-8 text-center text-theme/70">
+                      Уншиж байна...
+                    </div>
+                  }
+                >
+                  <TuslamjTokhirgoo compact />
+                </Suspense>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (

@@ -11,7 +11,6 @@ const Baaz = lazy(() => import("./Baaz"));
 const EbarimtTokhirgoo = lazy(() => import("./EbarimtTokhirgoo"));
 const Dans = lazy(() => import("./Dans"));
 const EmailTokhirgoo = lazy(() => import("./EmailTokhirgoo"));
-const TuslamjTokhirgoo = lazy(() => import("./TuslamjTokhirgoo"));
 const Medegdel = lazy(() => import("./Medegdel"));
 const NevtreltiinTuukh = lazy(() => import("./NevtreltiinTuukh"));
 const Zogsool = lazy(() => import("./Zogsool"));
@@ -179,11 +178,6 @@ function Tokhirgoo() {
         //   text: "И-мэйл",
         //   tsonkh: EmailTokhirgoo,
         // },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Тусламж",
-          tsonkh: TuslamjTokhirgoo,
-        },
         {
           icon: <Settings className="w-5 h-5" />,
           text: "Бааз",

@@ -311,6 +311,57 @@ export default function Khynalt() {
     { revalidateOnFocus: false }
   );
 
+  // Fetch orlogo-avlaga for correct Нийт орлого and paid/unpaid counts (filters out non-payers)
+  const { data: orlogoAvlagaData } = useSWR(
+    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId && rangeStart && rangeEnd
+      ? [
+        "/tailan/orlogo-avlaga",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
+      : null,
+    async ([, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post("/tailan/orlogo-avlaga", {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const {
+    totalOrlogoFromTailan,
+    residentsPaidCountFromTailan,
+    residentsUnpaidCountFromTailan,
+  } = useMemo(() => {
+    const rawPaid = Array.isArray(orlogoAvlagaData?.paid?.list)
+      ? orlogoAvlagaData.paid.list
+      : [];
+    const paid = rawPaid.filter(
+      (item: any) =>
+        (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0
+    );
+    const total = paid.reduce(
+      (sum: number, item: any) =>
+        sum + (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0),
+      0
+    );
+    const rawUnpaid = Array.isArray(orlogoAvlagaData?.unpaid?.list)
+      ? orlogoAvlagaData.unpaid.list
+      : [];
+    return {
+      totalOrlogoFromTailan: total,
+      residentsPaidCountFromTailan: paid.length,
+      residentsUnpaidCountFromTailan: rawUnpaid.length,
+    };
+  }, [orlogoAvlagaData]);
+
   // Fetch ekhniiUldegdel from gereeniiTulukhAvlaga
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId
@@ -540,6 +591,15 @@ export default function Khynalt() {
     expenseSeries,
     profitSeries,
   } = incomeComputed;
+
+  // Use orlogo-avlaga data for Тайлангийн дүгнэлт when available (correct filters)
+  const displayResidentsPaidCount = orlogoAvlagaData
+    ? residentsPaidCountFromTailan
+    : residentsPaidCount;
+  // Unpaid = total - paid (API unpaid list may exclude residents with only Эхний үлдэгдэл)
+  const displayResidentsUnpaidCount = orlogoAvlagaData
+    ? totalResidents - residentsPaidCountFromTailan
+    : residentsUnpaidCount;
 
   // Use same totals as Төлбөр тооцоо (guilgeeTuukh) table footer for Орлого and Төлбөр дутуу
   const footerTotals = useTulburFooterTotals(
@@ -854,7 +914,6 @@ export default function Khynalt() {
   }, [buildingConfig, residents, effectiveBarilgiinId]);
 
   // Calculate totals from chart data
-  const totalIncome = incomeSeries.paid.reduce((sum, val) => sum + val, 0);
   const totalExpenses = expenseSeries.expenses.reduce(
     (sum, val) => sum + val,
     0,
@@ -1174,7 +1233,7 @@ export default function Khynalt() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="text-center">
               <p className="text-2xl  text-[color:var(--theme)]">
-                {formatCurrency(totalIncome)}
+                {formatCurrency(totalOrlogoFromTailan)}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
                 Нийт орлого
@@ -1204,7 +1263,7 @@ export default function Khynalt() {
             </div> */}
             <div className="text-center">
               <p className="text-2xl  text-[color:var(--theme)]">
-                {residentsUnpaidCount}
+                {displayResidentsUnpaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
                 Төлөөгүй оршин суугч
@@ -1212,7 +1271,7 @@ export default function Khynalt() {
             </div>
             <div className="text-center">
               <p className="text-2xl  text-[color:var(--theme)]">
-                {residentsPaidCount}
+                {displayResidentsPaidCount}
               </p>
               <p className="text-sm text-[color:var(--muted-text)]">
                 Төлсөн оршин суугч

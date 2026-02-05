@@ -1301,7 +1301,18 @@ export default function DansniiKhuulga() {
 
     return buildingHistoryItems.filter((it: any) => {
       const paid = isPaidLike(it);
-      if (tuluvFilter === "paid") return paid;
+      if (tuluvFilter === "paid") {
+        if (!paid) return false;
+        // Also require resident has at least one payment record (excludes e.g. negative initial balance with no payments)
+        const gid =
+          String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
+          (it?.gereeniiDugaar &&
+            String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+          "";
+        const paidAmt = gid ? paidSummaryByGereeId[gid] : undefined;
+        if (paidAmt === undefined) return true; // Not fetched yet, rely on isPaidLike
+        return paidAmt > 0;
+      }
       if (tuluvFilter === "unpaid")
         return isUnpaidLike(it) && !isOverdueLike(it);
       if (tuluvFilter === "overdue") {
@@ -1388,9 +1399,11 @@ export default function DansniiKhuulga() {
     searchTerm,
     gereeGaralt?.jagsaalt,
     contractsById,
+    contractsByNumber,
     residentsById,
     selectedOrtsFilter,
     selectedDavkharFilter,
+    paidSummaryByGereeId,
   ]);
 
   // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
@@ -1832,7 +1845,8 @@ export default function DansniiKhuulga() {
       const gid = getGereeId(r);
       const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
       const uldegdel = r._totalTulbur - paid;
-      return uldegdel <= 1; // Paid means balance is settled
+      // Paid = balance settled AND has at least one payment record (excludes e.g. negative initial balance with no payments)
+      return uldegdel <= 1 && paid > 0;
     }).length;
     const unpaidCount = residentCount - paidCount;
 
@@ -2631,7 +2645,7 @@ export default function DansniiKhuulga() {
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (title: string): "all" | "paid" | "unpaid" | "overdue" | null => {
-              if (title === "Нийт гүйлгээ") return "all";
+              if (title === "Оршин суугч" || title === "Нийт гүйлгээ") return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
               if (title === "Цуцласан гэрээний авлага") return "overdue";

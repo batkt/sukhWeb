@@ -91,12 +91,17 @@ export default function OrlogoAvlagaPage() {
           }
         );
         setApiResponse(response.data);
-        const paid = Array.isArray(response.data?.paid?.list)
+        const rawPaid = Array.isArray(response.data?.paid?.list)
           ? response.data.paid.list
           : [];
         const unpaid = Array.isArray(response.data?.unpaid?.list)
           ? response.data.unpaid.list
           : [];
+        // Exclude residents with no actual payments from paid list (e.g. only Эхний үлдэгдэл from gereeniiTulukhAvlaga)
+        const paid = rawPaid.filter(
+          (item: any) =>
+            (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0
+        );
         setPaidList(paid);
         setUnpaidList(unpaid);
       } catch (err: any) {
@@ -110,8 +115,13 @@ export default function OrlogoAvlagaPage() {
   }, [selectedBuildingId, baiguullaga, token, dateRange, debouncedFilters]);
 
   const totalOrlogo = useMemo(
-    () => apiResponse?.paid?.sum || 0,
-    [apiResponse]
+    () =>
+      paidList.reduce(
+        (sum, item) =>
+          sum + (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0),
+        0
+      ),
+    [paidList]
   );
   const totalZarlaga = useMemo(
     () => apiResponse?.unpaid?.sum || 0,
