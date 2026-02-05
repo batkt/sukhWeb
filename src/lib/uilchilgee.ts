@@ -46,6 +46,22 @@ export function getApiUrl(): string {
 // Export a runtime-resolved url so server-side code can also pick up branch overrides
 export const url = process.env.NEXT_PUBLIC_API_URL || getApiUrl();
 
+// Admin API URL (e.g. for tuslamj from systemiinUdirdlaga)
+export function getAdminApiUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_ADMIN_API_URL || "https://admin.zevtabs.mn/api"
+  );
+}
+
+// Admin file/image URL (zuragpack: /api/file?path=tuslamj/{zurgiinId})
+export function getAdminFileUrl(pathOrId: string): string {
+  if (!pathOrId?.trim()) return "";
+  const s = pathOrId.trim();
+  if (s.startsWith("http://") || s.startsWith("https://")) return s;
+  const base = getAdminApiUrl().replace(/\/$/, "");
+  return `${base}/file?path=tuslamj/${encodeURIComponent(s)}`;
+}
+
 // Export for debugging - can be accessed in browser console
 if (typeof window !== "undefined") {
   (window as any).__API_URL__ = getApiUrl();
@@ -171,6 +187,14 @@ export const togloomUilchilgee = (token?: string): AxiosInstance => {
     return config;
   });
   return instance;
+};
+
+// Axios instance for Admin API (tuslamj, etc.)
+export const adminUilchilgee = (): AxiosInstance => {
+  return axios.create({
+    baseURL: getAdminApiUrl(),
+    headers: { "Content-Type": "application/json" },
+  });
 };
 
 // Axios instance for Zogsool service

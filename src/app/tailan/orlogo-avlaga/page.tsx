@@ -616,18 +616,18 @@ export default function OrlogoAvlagaPage() {
                                       : "Авлагын дэлгэрэнгүй"}{" "}
                                     — {gd}
                                   </h4>
-                                  <table className="min-w-full text-sm">
+                                  <table className="w-auto text-sm table-fixed">
                                     <thead>
                                       <tr>
-                                        <th className="text-left p-2">№</th>
-                                        <th className="text-left p-2">Огноо</th>
-                                        <th className="text-left p-2">Тайлбар</th>
+                                        <th className="text-left p-2 w-10">№</th>
+                                        <th className="text-left p-2 w-28">Огноо</th>
+                                        <th className="text-left p-2 w-40">Тайлбар</th>
                                         {activeTab === "avlaga" && (
-                                          <th className="text-right p-2">
+                                          <th className="text-right p-2 w-24">
                                             Төлөх дүн
                                           </th>
                                         )}
-                                        <th className="text-right p-2">
+                                        <th className="text-right p-2 w-24">
                                           Төлсөн дүн
                                         </th>
                                       </tr>
@@ -638,7 +638,7 @@ export default function OrlogoAvlagaPage() {
                                           <tr key={ri} className="border-t">
                                             <td className="p-2">{ri + 1}</td>
                                             <td className="p-2">{r.ognoo}</td>
-                                            <td className="p-2">{r.tailbar}</td>
+                                            <td className="p-2 truncate" title={r.tailbar}>{r.tailbar}</td>
                                             {activeTab === "avlaga" && (
                                               <td className="p-2 text-right">
                                                 {formatNumber(r.tulukhDun || 0)}{" "}
@@ -652,14 +652,9 @@ export default function OrlogoAvlagaPage() {
                                         )
                                       )}
                                       <tr className="border-t-2 font-semibold">
-                                        <td
-                                          colSpan={
-                                            activeTab === "avlaga" ? 3 : 2
-                                          }
-                                          className="p-2"
-                                        >
-                                          Нийт
-                                        </td>
+                                        <td className="p-2" />
+                                        <td className="p-2" />
+                                        <td className="p-2" />
                                         {activeTab === "avlaga" && (
                                           <td className="p-2 text-right">
                                             {formatNumber(
@@ -668,8 +663,8 @@ export default function OrlogoAvlagaPage() {
                                             ₮
                                           </td>
                                         )}
-                                        <td className="p-2 text-right">
-                                          {formatNumber(
+                                        <td className="p-2 text-right whitespace-nowrap">
+                                          Нийт {formatNumber(
                                             expandedData.sumTulsun
                                           )}{" "}
                                           ₮

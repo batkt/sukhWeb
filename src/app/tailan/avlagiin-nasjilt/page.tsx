@@ -15,7 +15,6 @@ interface AvlagiinNasjiltItem {
   gereeniiDugaar: string;
   bairNer: string;
   ner: string;
-  ovog?: string;
   utas?: string[];
   toot?: string;
   davkhar?: string;
@@ -44,7 +43,7 @@ export default function AvlagiinNasjiltPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(200);
   const [summary, setSummary] = useState<any>(null);
 
   const [formData, setFormData] = useState({
@@ -159,7 +158,7 @@ export default function AvlagiinNasjiltPage() {
               _id: item.gereeniiId || item._id,
               gereeniiDugaar: item.gereeniiDugaar,
               bairNer: item.bairNer,
-              ner: `${item.ovog || ""} ${item.ner || ""}`.trim(),
+              ner: `${item.ner || ""}`.trim(),
               ognoo: item.ognoo,
               avlaga: avlaga,
               nasjilt: nasjilt,
@@ -309,7 +308,7 @@ export default function AvlagiinNasjiltPage() {
       {/* Data Table */}
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
@@ -319,9 +318,7 @@ export default function AvlagiinNasjiltPage() {
                   <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
                     Гэрээний дугаар
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
-                    Овог
-                  </th>
+                  
                   <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
@@ -393,9 +390,7 @@ export default function AvlagiinNasjiltPage() {
                         <td className="p-2 text-center text-theme whitespace-nowrap">
                           {item.gereeniiDugaar}
                         </td>
-                        <td className="p-2 text-left text-theme whitespace-nowrap">
-                          {item.ovog || ""}
-                        </td>
+                        
                         <td className="p-2 text-left text-theme whitespace-nowrap">
                           {item.ner || ""}
                         </td>

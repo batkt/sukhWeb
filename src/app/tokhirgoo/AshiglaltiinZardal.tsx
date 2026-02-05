@@ -549,7 +549,7 @@ export default function AshiglaltiinZardluud() {
                 <button
                   id="zardal-add-btn"
                   type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(false)}
                 >
@@ -607,7 +607,7 @@ export default function AshiglaltiinZardluud() {
 
                                 <td className="py-2 px-2">
                                   <div className="flex flex-col items-center gap-0.5">
-                                    <div className="font-black text-theme text-sm sm:text-base whitespace-nowrap">
+                                    <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
                                       {formatNumber(currentValue, 2)} ₮
                                     </div>
                                     {changed && (
@@ -703,7 +703,7 @@ export default function AshiglaltiinZardluud() {
                 <button
                   id="zardal-add-variable-btn"
                   type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 !text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(true)}
                 >
@@ -761,7 +761,7 @@ export default function AshiglaltiinZardluud() {
 
                                 <td className="py-2 sm:py-3 px-2 sm:px-4">
                                   <div className="flex flex-col items-center gap-0.5">
-                                    <div className="font-black text-theme text-sm sm:text-base whitespace-nowrap">
+                                    <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
                                       {formatNumber(currentValue, 0)} ₮
                                     </div>
                                     {changed && (

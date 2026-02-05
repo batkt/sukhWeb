@@ -934,7 +934,7 @@ export default function Khynalt() {
   const kpiCards = kpiCardsRaw.filter(c => c.show !== false);
 
   return (
-    <div className="h-full overflow-hidden custom-scrollbar">
+    <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="min-h-full pl-4 pt-4 pb-4 pr-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4">
           <h1 className="text-2xl  text-[color:var(--panel-text)] leading-tight">
@@ -1039,7 +1039,7 @@ export default function Khynalt() {
             </div>
           </div>
 
-          {/* Overdue receivables 2+ months */}
+         
           <div
             className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}

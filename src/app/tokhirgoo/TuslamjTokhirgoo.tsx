@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
-import { useAuth } from "@/lib/useAuth";
-import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
-import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { useState } from "react";
+import { useTuslamj } from "@/lib/useTuslamj";
+import { getAdminFileUrl } from "@/lib/uilchilgee";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 
 type Props = {
   ajiltan?: any;
@@ -13,204 +12,167 @@ type Props = {
 };
 
 export default function TuslamjTokhirgoo(props: Props) {
-  const auth = useAuth();
-  const token = useMemo(
-    () => props.token || auth.token || "",
-    [props.token, auth.token]
-  );
-  const orgId = useMemo(
-    () => props.ajiltan?.baiguullagiinId || auth.ajiltan?.baiguullagiinId || "",
-    [props.ajiltan?.baiguullagiinId, auth.ajiltan?.baiguullagiinId]
-  );
-  const barilgiinId = auth.barilgiinId || null;
+  const { list: tuslamjList, loading: tuslamjLoading, error: tuslamjError } =
+    useTuslamj("sukh");
 
-  // Apply a gentle static green theme only while this page is mounted
-  useEffect(() => {
-    const root = document.documentElement;
-    const prevTheme = root.getAttribute("data-theme");
-    root.setAttribute("data-theme", "green-static");
-    return () => {
-      if (prevTheme) root.setAttribute("data-theme", prevTheme);
-      else root.removeAttribute("data-theme");
-    };
-  }, []);
-
-  const [file, setFile] = useState<File | null>(null);
-  const [ner, setNer] = useState("");
-  const [tailbar, setTailbar] = useState("");
-  const [uploading, setUploading] = useState(false);
-  const [lastUploadedId, setLastUploadedId] = useState<string | null>(null);
-
-  const [viewId, setViewId] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
-    };
-  }, []);
-
-  const onUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
-      if (!orgId) return openErrorOverlay("Байгууллага сонгогдоогүй");
-      if (!file) return openErrorOverlay("PDF файл оруулна уу");
-      if (file.type !== "application/pdf")
-        return openErrorOverlay("Зөвхөн PDF файл байж болно");
-      const max = 10 * 1024 * 1024; // 10MB
-      if (file.size > max)
-        return openErrorOverlay("Файлын хэмжээ 10MB-аас хэтэрсэн байна");
-
-      const fd = new FormData();
-      fd.append("file", file);
-      if (ner.trim()) fd.append("ner", ner.trim());
-      if (tailbar.trim()) fd.append("tailbar", tailbar.trim());
-
-      setUploading(true);
-      const resp = await uilchilgee(token).post("/pdfFile/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-        params: {
-          baiguullagiinId: orgId,
-          ...(barilgiinId ? { barilgiinId } : {}),
-        },
-      });
-
-      const data = resp?.data || {};
-      if (data?.queued) {
-        openSuccessOverlay(
-          "Сүлжээ байхгүй тул илгээгдлээ. Интернэт ормогц сервер рүү дамжина."
-        );
-        setLastUploadedId(null);
-      } else {
-        const newId = data?.id || data?._id || data?.result?.id || null;
-        setLastUploadedId(newId);
-        openSuccessOverlay("Амжилттай байршлаа");
-        if (newId) setViewId(String(newId));
-      }
-      setFile(null);
-      setNer("");
-      setTailbar("");
-    } catch (err) {
-      aldaaBarigch(err);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const openPdf = async () => {
-    try {
-      if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
-      const id = viewId?.trim();
-      if (!id) return openErrorOverlay("PDF ID оруулна уу");
-      // Cleanup previous object URL
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-        objectUrlRef.current = null;
-      }
-
-      const resp = await uilchilgee(token).get(
-        `/pdfFile/${encodeURIComponent(id)}/file`,
-        {
-          responseType: "blob" as any,
-        }
-      );
-      const blob = resp?.data as Blob;
-      const url = URL.createObjectURL(blob);
-      objectUrlRef.current = url;
-      setPreviewUrl(url);
-      // Also open in a new tab for convenience
-      window.open(url, "_blank", "noopener,noreferrer");
-    } catch (err) {
-      aldaaBarigch(err);
-    }
-  };
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   return (
-    <div className="space-y-6">
-      {/* Upload panel */}
-      <div className="rounded-2xl p-6">
-        <h2 className="text-xl font-semibold mb-4">PDF байршуулах</h2>
-        <form onSubmit={onUpload} className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Файл (PDF, 10MB хүртэл)
-              </label>
-              <input
-                type="file"
-                accept="application/pdf,.pdf"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-                className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-theme">
-                Нэр (сонголттой)
-              </label>
-              <input
-                type="text"
-                value={ner}
-                onChange={(e) => setNer(e.target.value)}
-                placeholder="Жишээ: Ашиглалтын заавар"
-                className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
-              />
-            </div>
+    <div
+      id="tuslamj-panel"
+      className="xxl:col-span-9 col-span-12 lg:col-span-12 flex flex-col min-h-0"
+      style={{ height: "calc(100vh - 220px)" }}
+    >
+      <div className="neu-panel allow-overflow p-4 md:p-6 flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div className="flex flex-col flex-1 min-h-0 bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+          <div className="p-5 border-b border-[color:var(--surface-border)] flex-shrink-0">
+            <h3 className="text-lg text-theme">Тусламж</h3>
+            <p className="text-xs text-[color:var(--muted-text)]">
+              Админ нэмсэн тусламж, зааварчилгаа
+            </p>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1 text-theme">
-              Тайлбар (сонголттой)
-            </label>
-            <textarea
-              value={tailbar}
-              onChange={(e) => setTailbar(e.target.value)}
-              rows={3}
-              placeholder="Товч тайлбар..."
-              className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            <button type="submit" disabled={uploading} className="btn-minimal">
-              {uploading ? "Илгээж байна…" : "Байршуулах"}
-            </button>
-            {lastUploadedId && (
-              <span className="text-sm text-theme/80">
-                ID: {lastUploadedId}
-              </span>
+          <div className="p-5 flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            {tuslamjLoading ? (
+              <div className="text-theme/70 py-8 text-center">
+                Уншиж байна...
+              </div>
+            ) : tuslamjError ? (
+              <div className="text-red-500 py-4 text-center">
+                Тусламж ачааллахад алдаа: {tuslamjError}
+              </div>
+            ) : tuslamjList.length === 0 ? (
+              <div className="text-theme/60 py-8 text-center">
+                Тусламж байхгүй байна. Админ тусламж нэмснээр энд харагдана.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tuslamjList.map((t) => {
+                  const hasAlkhamuud =
+                    Array.isArray(t.alkhamuud) && t.alkhamuud.length > 0;
+                  const isExpanded = expandedId === t._id;
+
+                  return (
+                    <div
+                      key={t._id}
+                      className="rounded-xl border border-[color:var(--surface-border)] overflow-hidden bg-[color:var(--surface-bg)]"
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedId(isExpanded ? null : t._id)
+                        }
+                        className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-[color:var(--surface-hover)] transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-theme">
+                            {t.garchig || "Тусламж"}
+                          </div>
+                          {!hasAlkhamuud && t.tailbar && (
+                            <div className="text-sm text-theme/70 mt-1 line-clamp-2">
+                              {t.tailbar}
+                            </div>
+                          )}
+                        </div>
+                        {hasAlkhamuud && (
+                          <span className="flex-shrink-0 text-theme/60">
+                            {isExpanded ? (
+                              <ChevronDown className="w-5 h-5" />
+                            ) : (
+                              <ChevronRight className="w-5 h-5" />
+                            )}
+                          </span>
+                        )}
+                      </button>
+
+                      {isExpanded && hasAlkhamuud && (
+                        <div className="px-4 pb-4 pt-0 space-y-2 border-t border-[color:var(--surface-border)]">
+                          {t.zurgiinId && (
+                            <div className="pt-2">
+                              <img
+                                src={getAdminFileUrl(t.zurgiinId)}
+                                alt={t.garchig || ""}
+                                className="max-w-full h-auto rounded-lg border border-[color:var(--surface-border)] object-contain max-h-64"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            </div>
+                          )}
+                          {t.tailbar && (
+                            <p className="text-sm text-theme/80 pt-2">
+                              {t.tailbar}
+                            </p>
+                          )}
+                          {t.alkhamuud!.map((a, i) => (
+                            <div
+                              key={i}
+                              className="flex flex-col sm:flex-row items-start gap-3 p-3 rounded-lg bg-[color:var(--surface-hover)]/50"
+                            >
+                              {a.zurgiinId && (
+                                <div className="flex-shrink-0">
+                                  <img
+                                    src={getAdminFileUrl(a.zurgiinId)}
+                                    alt={a.garchig || ""}
+                                    className="max-w-full sm:max-w-48 h-auto rounded-lg border border-[color:var(--surface-border)] object-contain max-h-48"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = "none";
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-theme text-sm">
+                                  {a.garchig || `#${i + 1}`}
+                                </div>
+                                {a.tailbar && (
+                                  <div className="text-sm text-theme/70 mt-0.5">
+                                    {a.tailbar}
+                                  </div>
+                                )}
+                              </div>
+                              {a.link && (
+                                <a
+                                  href={a.link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex-shrink-0 text-theme/80 hover:text-theme"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {isExpanded && !hasAlkhamuud && (
+                        <div className="px-4 pb-4 pt-0 border-t border-[color:var(--surface-border)]">
+                          {t.zurgiinId && (
+                            <div className="pt-2">
+                              <img
+                                src={getAdminFileUrl(t.zurgiinId)}
+                                alt={t.garchig || ""}
+                                className="max-w-full h-auto rounded-lg border border-[color:var(--surface-border)] object-contain max-h-64"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            </div>
+                          )}
+                          {t.tailbar && (
+                            <p className="text-sm text-theme/80 pt-2 whitespace-pre-wrap">
+                              {t.tailbar}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-        </form>
-      </div>
-
-      {/* View panel */}
-      <div className="rounded-2xl p-6 neu-panel">
-        <h2 className="text-xl font-semibold mb-4">PDF харах</h2>
-        <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3">
-          <div className="flex-1">
-            <label className="block text-sm font-medium mb-1 text-theme">
-              PDF ID
-            </label>
-            <input
-              type="text"
-              value={viewId}
-              onChange={(e) => setViewId(e.target.value)}
-              placeholder="Жишээ: 672fdc0a…"
-              className="w-full rounded-2xl border px-4 py-2 bg-white text-theme"
-            />
-          </div>
-          <div className="flex-none">
-            <button onClick={openPdf} className="btn-minimal">
-              Нээх
-            </button>
-          </div>
         </div>
-
-        {previewUrl && (
-          <div className="mt-4 border rounded-xl overflow-hidden">
-            <iframe src={previewUrl} className="w-full h-[480px] bg-white" />
-          </div>
-        )}
       </div>
     </div>
   );

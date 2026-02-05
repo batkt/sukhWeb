@@ -55,7 +55,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
     <div className="table-surface overflow-hidden rounded-2xl w-full">
       <div className="rounded-3xl p-6 neu-table allow-overflow">
         <div
-          className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full"
+          className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
           id="geree-table"
         >
           <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">

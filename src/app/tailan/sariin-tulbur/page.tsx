@@ -34,7 +34,7 @@ export default function SariinTulburPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(200);
 
   const [formData, setFormData] = useState({
     ekhlekhOgnoo: "",
