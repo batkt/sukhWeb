@@ -198,6 +198,7 @@ export default function GolContent({ children }: GolContentProps) {
         { label: "Авлагын товчоо", path: "/orlogo-avlaga" },
         { label: "Сарын төлбөр", path: "/sariin-tulbur" },
         { label: "Авлагийн насжилт", path: "/avlagiin-nasjilt" },
+        { label: "Зогсоол", path: "/zogsool" },
       ],
     },
     {

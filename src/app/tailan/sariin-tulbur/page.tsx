@@ -405,7 +405,7 @@ export default function SariinTulburPage() {
       {/* Data Table */}
       <div className=" overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
