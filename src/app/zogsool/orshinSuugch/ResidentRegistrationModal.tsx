@@ -13,6 +13,7 @@ interface ResidentRegistrationModalProps {
   barilgiinId?: string;
   baiguullagiinId?: string;
   onSuccess?: () => void;
+  editData?: any;
 }
 
 export default function ResidentRegistrationModal({
@@ -20,24 +21,26 @@ export default function ResidentRegistrationModal({
   token,
   barilgiinId,
   baiguullagiinId,
-  onSuccess
+  onSuccess,
+  editData
 }: ResidentRegistrationModalProps) {
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
-  const [step, setStep] = useState(1); // 1: Search Phone, 2: Full Form
+  const [step, setStep] = useState(editData ? 2 : 1); // 1: Search Phone, 2: Full Form
 
   const [formData, setFormData] = useState({
-    plate: "",
-    name: "",
-    ovog: "",
-    phone: "",
-    register: "",
-    unit: "",
-    type: "Оршин суугч" as "Оршин суугч" | "Түрээслэгч",
-    frequency: "saraar",
-    rightsCount: 2,
-    freeMinutes: 0,
-    description: ""
+    plate: editData?.mashiniiDugaar || "",
+    name: editData?.ner || editData?.orshinSuugchNer || "",
+    ovog: editData?.ovog || "",
+    phone: editData?.utas || "",
+    register: editData?.register || "",
+    unit: editData?.toot || editData?.burtgeliinDugaar || "",
+    type: (editData?.zochinTurul || editData?.turul || "Оршин суугч") as "Оршин суугч" | "Түрээслэгч",
+    frequency: editData?.davtamjiinTurul || "saraar",
+    rightsCount: editData?.zochinErkhiinToo ?? 2,
+    freeMinutes: editData?.zochinTusBurUneguiMinut ?? 0,
+    description: editData?.zochinTailbar || editData?.tailbar || "",
+    orshinSuugchTurul: editData?.orshinSuugchTurul || ""
   });
 
   // Fetch guest defaults from Barilga
@@ -54,6 +57,27 @@ export default function ResidentRegistrationModal({
 
   const guestDefaults = useMemo(() => {
     return buildingData?.zochinTokhirgoo || null;
+  }, [buildingData]);
+
+  const availableToots = useMemo(() => {
+    const mapping = buildingData?.tokhirgoo?.davkhariinToonuud;
+    if (!mapping) return [];
+    
+    const allUnits = new Set<string>();
+    Object.values(mapping).forEach((units: any) => {
+        if (Array.isArray(units)) {
+            units.forEach(u => u && allUnits.add(String(u).trim()));
+        } else if (typeof units === 'string') {
+            units.split(',').forEach(u => u && allUnits.add(u.trim()));
+        }
+    });
+    
+    return Array.from(allUnits).sort((a, b) => {
+        const numA = parseInt(a);
+        const numB = parseInt(b);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.localeCompare(b);
+    });
   }, [buildingData]);
 
   useEffect(() => {
@@ -138,6 +162,7 @@ export default function ResidentRegistrationModal({
         barilgiinId: barilgiinId,
         mashiniiDugaar: plateToUse,
         ezemshigchiinUtas: formData.phone,
+        orshinSuugchTurul: formData.orshinSuugchTurul || undefined,
         khariltsagchMedeelel: {
           ner: formData.name,
           ovog: formData.ovog || formData.name,
@@ -154,7 +179,8 @@ export default function ResidentRegistrationModal({
           zochinTailbar: formData.description,
           zochinTurul: formData.type,
           zochinTusBurUneguiMinut: formData.freeMinutes,
-          zochinUrikhEsekh: true
+          zochinUrikhEsekh: true,
+          orshinSuugchTurul: formData.orshinSuugchTurul || undefined
         },
         mashinMedeelel: {
           dugaar: plateToUse,
@@ -163,8 +189,10 @@ export default function ResidentRegistrationModal({
           ezemshigchiinUtas: formData.phone,
           turul: formData.type,
           baiguullagiinId: baiguullagiinId,
-          barilgiinId: barilgiinId
+          barilgiinId: barilgiinId,
+          orshinSuugchTurul: formData.orshinSuugchTurul || undefined
         },
+        ezemshigchiinId: editData?._id || undefined, // Important for updates
         tukhainBaaziinKholbolt: null
       };
 
@@ -207,10 +235,10 @@ export default function ResidentRegistrationModal({
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
-                            {step === 1 ? 'Хайлт' : 'Оршин суугч бүртгэл'}
+                            {step === 1 ? 'Хайлт' : (editData ? 'Засах' : 'Оршин суугч бүртгэл')}
                         </h2>
                         <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
-                            {step === 1 ? 'Утасны дугаараар хайх' : 'Шинээр оршин суугч болон тээврийн хэрэгсэл нэмэх'}
+                            {step === 1 ? 'Утасны дугаараар хайх' : (editData ? 'Оршин суугчийн мэдээлэл засах' : 'Шинээр оршин суугч болон тээврийн хэрэгсэл нэмэх')}
                         </p>
                     </div>
                     <button 
@@ -363,13 +391,26 @@ export default function ResidentRegistrationModal({
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-5">
-                                        <InputField 
-                                            icon={Home} 
-                                            label="Тоот" 
-                                            value={formData.unit} 
-                                            onChange={v => setFormData({...formData, unit: v})} 
-                                            placeholder="Тоот"
-                                        />
+                                        <div className="group relative">
+                                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors z-10">
+                                                <Home className="w-4 h-4" />
+                                            </div>
+                                            <input 
+                                                list="toot-suggestions"
+                                                value={formData.unit}
+                                                onChange={e => setFormData({...formData, unit: e.target.value})}
+                                                className="w-full h-11 pl-10 pr-4 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                                                placeholder="Тоот сонгох"
+                                            />
+                                            <datalist id="toot-suggestions">
+                                                {availableToots.map(t => (
+                                                    <option key={t} value={t} />
+                                                ))}
+                                            </datalist>
+                                            <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px] font-bold text-slate-400 uppercase tracking-wider group-focus-within:text-blue-500 transition-colors">
+                                                Тоот
+                                            </label>
+                                        </div>
                                         <div className="group relative">
                                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                                 <Clock className="w-4 h-4" />
@@ -387,6 +428,29 @@ export default function ResidentRegistrationModal({
                                                 Давтамж
                                             </label>
                                         </div>
+                                    </div>
+
+                                    {/* Resident Type Dropdown */}
+                                    <div className="group relative">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                            <User className="w-4 h-4" />
+                                        </div>
+                                        <select
+                                            value={formData.orshinSuugchTurul}
+                                            onChange={(e) => setFormData({...formData, orshinSuugchTurul: e.target.value})}
+                                            className="w-full h-11 pl-10 pr-8 bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option value="">-- Сонгох --</option>
+                                            <option value="Үнэгүй">Үнэгүй</option>
+                                            <option value="Дотоод">Дотоод</option>
+                                            <option value="СӨХ">СӨХ</option>
+                                            <option value="Жолооч">Жолооч</option>
+                                            <option value="Ажилтан">Ажилтан</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                        <label className="absolute -top-2 left-3 px-1 bg-white dark:bg-[#0f1117] text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                            Оршин суугч төрөл
+                                        </label>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-5">

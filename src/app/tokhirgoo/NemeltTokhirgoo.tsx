@@ -15,9 +15,10 @@ import { useSpinner } from "@/context/SpinnerContext";
 import { Trash2 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
+import createMethod from "../../../tools/function/createMethod";
 
 export default function NemeltTokhirgoo() {
-  const { token, ajiltan, barilgiinId } = useAuth();
+  const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const { showSpinner, hideSpinner } = useSpinner();
 
@@ -256,94 +257,153 @@ export default function NemeltTokhirgoo() {
     if (token && ajiltan?.baiguullagiinId) {
       fetchLiftFloors();
       fetchInvoiceSchedule();
-      fetchGuestSettings();
     }
   }, [token, ajiltan?.baiguullagiinId, selectedBuildingId, barilgiinId]);
 
-  const fetchGuestSettings = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
-    try {
-        const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`);
-        const data = resp.data;
-        const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-        
-        let zt = data?.tokhirgoo?.zochinTokhirgoo;
-
-        if (effectiveBarilgiinId && data.barilguud) {
-            const barilga = data.barilguud.find((b: any) => String(b._id) === String(effectiveBarilgiinId));
-            if (barilga && barilga.tokhirgoo && barilga.tokhirgoo.zochinTokhirgoo) {
-               zt = barilga.tokhirgoo.zochinTokhirgoo;
-            }
-        }
-
-        if (zt) {
-            setGuestConfigEnabled(zt.zochinUrikhEsekh ?? false);
-            setGuestLimit(zt.zochinErkhiinToo ?? "");
-            setGuestFreeMinutes(zt.zochinTusBurUneguiMinut ?? "");
-            setGuestTotalFreeMinutes(zt.zochinNiitUneguiMinut ?? "");
-            setGuestNote(zt.zochinTailbar ?? "");
-            setGuestFrequencyType(zt.davtamjiinTurul ?? "saraar");
-            setGuestFrequencyValue(zt.davtamjUtga ?? "");
-        } else {
-            setGuestConfigEnabled(false);
-            setGuestLimit("");
-            setGuestFreeMinutes("");
-            setGuestTotalFreeMinutes("");
-            setGuestNote("");
-            setGuestFrequencyType("saraar");
-            setGuestFrequencyValue("");
-        }
-    } catch (error) {
-        console.error("Error fetching guest settings:", error);
+  // Reactive Effect for Guest Settings
+  useEffect(() => {
+    const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+    if (!baiguullaga) {
+        return;
     }
+
+    let target: any = baiguullaga;
+    let syncSource = "org-level";
+    
+    if (effectiveBarilgiinId && baiguullaga.barilguud) {
+        const b = baiguullaga.barilguud.find((x: any) => {
+            const xId = x._id || x.id;
+            return String(xId).trim() === String(effectiveBarilgiinId).trim();
+        });
+        if (b) {
+            target = b;
+            syncSource = "building-level";
+        }
+    }
+
+    const tok = (target.tokhirgoo || {}) as any;
+    // Priority 1: target.tokhirgoo.zochinTokhirgoo (schema standard)
+    const zt = tok.zochinTokhirgoo || {};
+    // Priority 2: target.zochinTokhirgoo (legacy)
+    const rootZt = (target as any).zochinTokhirgoo || {};
+    
+    // Fallback Org Level
+    const orgTok = (baiguullaga.tokhirgoo || {}) as any;
+    const orgZt = (orgTok.zochinTokhirgoo || baiguullaga.zochinTokhirgoo || {}) as any;
+
+    const find = (field: string, def: any = "") => {
+        // 1. Check schema standard: target.tokhirgoo.zochinTokhirgoo
+        if (zt[field] !== undefined && zt[field] !== null) return zt[field];
+        // 2. Check root zochinTokhirgoo
+        if (rootZt[field] !== undefined && rootZt[field] !== null) return rootZt[field];
+        // 3. Check target.tokhirgoo root (legacy)
+        if (tok[field] !== undefined && tok[field] !== null) return tok[field];
+        // 4. Check target root
+        if (target[field] !== undefined && target[field] !== null) return target[field];
+        
+        // Final Fallback to Org level (if syncing at building level)
+        if (syncSource === "building-level") {
+            const b = baiguullaga as any;
+            if (orgZt[field] !== undefined && orgZt[field] !== null) return orgZt[field];
+            if (orgTok[field] !== undefined && orgTok[field] !== null) return orgTok[field];
+            if (b[field] !== undefined && b[field] !== null) return b[field];
+        }
+        
+        return def;
+    };
+
+    const isEnabled = !!find("zochinUrikhEsekh", false);
+
+    setGuestConfigEnabled(isEnabled);
+    setGuestLimit(find("zochinErkhiinToo", ""));
+    setGuestFreeMinutes(find("zochinTusBurUneguiMinut", ""));
+    setGuestTotalFreeMinutes(find("zochinNiitUneguiMinut", ""));
+    setGuestNote(find("zochinTailbar", ""));
+    setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
+    setGuestFrequencyValue(find("davtamjUtga", ""));
+
+  }, [baiguullaga, selectedBuildingId, barilgiinId]);
+
+  const fetchGuestSettings = async () => {
+    // legacy fetcher removed, now handled by the reactive effect above
+    await baiguullagaMutate();
   };
 
   const saveGuestSettings = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) return;
+    if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+    }
     showSpinner();
     try {
         const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-        const configToSave = {
-            zochinUrikhEsekh: guestConfigEnabled,
+
+        // 1. Fetch FRESH and FULL organization data
+        const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`, {
+            headers: { "X-Org-Only": "1" }
+        });
+        
+        const freshOrg = resp.data;
+        if (!freshOrg || !freshOrg._id) {
+            throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+        }
+
+        // 2. Prepare schema-compliant configuration
+        const zochinTokhirgoo = {
+            zochinUrikhEsekh: !!guestConfigEnabled,
             zochinTurul: "Оршин суугч",
             zochinErkhiinToo: Number(guestLimit) || 0,
             zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
             zochinNiitUneguiMinut: Number(guestTotalFreeMinutes) || 0,
-            zochinTailbar: guestNote,
+            zochinTailbar: guestNote || "",
             davtamjiinTurul: guestFrequencyType,
             davtamjUtga: Number(guestFrequencyValue) || null
         };
 
-        const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`);
-        const currentData = resp.data;
+        // Deep copy to prevent state mutation
+        let payload: any = JSON.parse(JSON.stringify(freshOrg));
 
-        if (effectiveBarilgiinId && currentData.barilguud) {
-            const updatedBarilguud = currentData.barilguud.map((b: any) => {
-                if (String(b._id) === String(effectiveBarilgiinId)) {
+        if (effectiveBarilgiinId && payload.barilguud) {
+            let found = false;
+            payload.barilguud = payload.barilguud.map((b: any) => {
+                const bId = b._id || b.id;
+                if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+                    found = true;
                     return {
                         ...b,
                         tokhirgoo: {
                             ...(b.tokhirgoo || {}),
-                            zochinTokhirgoo: configToSave
+                            zochinTokhirgoo: zochinTokhirgoo
                         }
                     };
                 }
                 return b;
             });
-            await uilchilgee(token).post(`/baiguullaga/${ajiltan.baiguullagiinId}`, { barilguud: updatedBarilguud });
+            
+            if (!found) {
+                throw new Error("Сонгосон барилга байгууллагын жагсаалтад олдсонгүй. Хадгалах боломжгүй.");
+            }
         } else {
-            const newTokhirgoo = {
-                ...(currentData.tokhirgoo || {}),
-                zochinTokhirgoo: configToSave
+            // Organization level update
+            payload.tokhirgoo = {
+                ...(payload.tokhirgoo || {}),
+                zochinTokhirgoo: zochinTokhirgoo
             };
-            if (newTokhirgoo._id) delete newTokhirgoo._id;
-            await uilchilgee(token).post(`/baiguullaga/${ajiltan.baiguullagiinId}`, { tokhirgoo: newTokhirgoo });
         }
         
-        openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
-        await fetchGuestSettings();
-    } catch (error) {
-        openErrorOverlay("Зочны тохиргоо хадгалахад алдаа гарлаа");
+        // Use createMethod to perform a POST update (project convention for configs)
+        const result = await createMethod(`baiguullaga/${freshOrg._id}`, token, payload);
+        
+        if (result?.data) {
+            openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
+            const finalData = result.data.result || result.data;
+            await baiguullagaMutate(finalData, false);
+            await baiguullagaMutate(); 
+        } else {
+            throw new Error("Хадгалахад алдаа гарлаа");
+        }
+    } catch (error: any) {
+        openErrorOverlay(error?.message || "Зочны тохиргоо хадгалахад алдаа гарлаа");
     } finally {
         hideSpinner();
     }

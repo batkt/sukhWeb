@@ -12,13 +12,16 @@ import {
   Clock,
   Filter,
   MoreHorizontal,
-  Plus
+  Plus,
+  Edit2,
+  Trash2
 } from "lucide-react";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import moment from "moment";
 import { toast } from "react-hot-toast";
 import ResidentRegistrationModal from "./ResidentRegistrationModal";
+import deleteMethod from "../../../../tools/function/deleteMethod";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -67,6 +70,7 @@ interface ResidentParking {
   zochinErkhiinToo?: number;
   zochinTusBurUneguiMinut?: number;
   zochinNiitUneguiMinut?: number;
+  orshinSuugchTurul?: string;
 }
 
 export default function OrshinSuugch() {
@@ -76,6 +80,7 @@ export default function OrshinSuugch() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const [editingResident, setEditingResident] = useState<ResidentParking | null>(null);
   const pageSize = 50;
 
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
@@ -114,6 +119,24 @@ export default function OrshinSuugch() {
   const totalPages = Math.ceil(
     (residentsData?.niitMur || 0) / pageSize
   );
+  
+  const handleDelete = async (r: ResidentParking) => {
+    const id = r._id;
+    if (!id || !token) return;
+    if (!window.confirm(`${r.ner || r.orshinSuugchNer || "Энэ хэрэглэгчийг"} устгахдаа итгэлтэй байна уу?`)) return;
+    
+    try {
+        // Based on save endpoint /zochinHadgalya, we might need a specific delete endpoint
+        // but trying regular deleteMethod first as it's common in this project
+        const res = await deleteMethod("orshinSuugch", token, id);
+        if (res.data) {
+            toast.success("Амжилттай устгагдлаа");
+            mutate();
+        }
+    } catch (err) {
+        toast.error("Устгахад алдаа гарлаа");
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0f172a]/50">
@@ -182,6 +205,19 @@ export default function OrshinSuugch() {
           />
         )}
 
+        {editingResident && (
+            <ResidentRegistrationModal 
+                onClose={() => setEditingResident(null)}
+                token={token || ""}
+                barilgiinId={effectiveBarilgiinId}
+                baiguullagiinId={ajiltan?.baiguullagiinId}
+                editData={editingResident}
+                onSuccess={() => {
+                    mutate(); // Refresh the list
+                }}
+            />
+        )}
+
         {/* Content Table */}
         <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-2xl flex-1 mt-2">
           <div className="overflow-x-auto custom-scrollbar">
@@ -195,8 +231,10 @@ export default function OrshinSuugch() {
                         { label: "Утас" },
                         { label: "Дугаар" },
                         { label: "Төрөл" },
+                        { label: "Оршин суугч төрөл" },
                         { label: "Тайлбар" },
                         { label: "Тоот", align: 'text-right' },
+                        { label: "Үйлдэл", width: 'w-24 text-center' }
                       ].map((h, idx) => (
                         <th key={idx} className={`py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] ${h.width || 'text-left'} ${h.align || ''}`}>
                             {h.label}
@@ -207,7 +245,7 @@ export default function OrshinSuugch() {
               <tbody>
                 {!residentsData && !residents.length ? (
                    <tr>
-                    <td colSpan={8} className="px-4 py-20 text-center">
+                    <td colSpan={10} className="px-4 py-20 text-center">
                        <div className="flex flex-col items-center gap-4">
                           <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                           <p className="text-xs font-bold text-slate-400 uppercase tracking-widest animate-pulse">Уншиж байна...</p>
@@ -216,7 +254,7 @@ export default function OrshinSuugch() {
                   </tr>
                 ) : residents.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
+                    <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-2">
                         <User className="w-12 h-12 opacity-50" />
                         <p>Оршин суугчийн мэдээлэл олдсонгүй</p>
@@ -301,6 +339,24 @@ export default function OrshinSuugch() {
                             <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px] font-bold text-emerald-700 dark:text-emerald-400">
                               {resident.toot ? `${resident.toot} тоот` : "-"}
                             </span>
+                         </div>
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                         <div className="flex justify-center items-center gap-1">
+                            <button 
+                                onClick={() => setEditingResident(resident)}
+                                className="p-2 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                                title="Засах"
+                            >
+                                <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button 
+                                onClick={() => handleDelete(resident)}
+                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                                title="Устгах"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
                          </div>
                       </td>
                     </tr>
