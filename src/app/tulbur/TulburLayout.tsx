@@ -81,7 +81,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
                   : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
               }`}
             >
-              Төлбөр тооцоо
+              Гүйлгээний түүх
             </button>
             )}
             {showDans && (
