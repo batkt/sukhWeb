@@ -10,6 +10,7 @@ import EmployeeModal from "./modals/EmployeeModal";
 import DeleteConfirmModal from "./modals/DeleteModal";
 import PaymentModal from "./modals/PaymentModal";
 import TemplatesModal from "./modals/TemplatesModal";
+import ZagvarEditorModal from "./modals/ZagvarEditorModal";
 import PreviewModal from "./modals/PreviewModal";
 import InvoicePreviewModal from "./modals/InvoicePreviewModal";
 import AddUnitModal from "./modals/AddUnitModal";
@@ -31,6 +32,10 @@ export default function GereeModals() {
   // Credentials Modal State
   const [showCredentialsModal, setShowCredentialsModal] = useState(false);
   const [credentialsEmployee, setCredentialsEmployee] = useState<any>(null);
+
+  // Zagvar Editor Modal (full-screen for create/edit template)
+  const [showZagvarEditorModal, setShowZagvarEditorModal] = useState(false);
+  const [zagvarEditorTemplateId, setZagvarEditorTemplateId] = useState<string | null>(null);
 
   // Expose the permissions and credentials modal handler via a ref or context
   React.useEffect(() => {
@@ -191,12 +196,28 @@ export default function GereeModals() {
         onClose={() => state.setShowList2Modal(false)}
         templates={data.zagvaruud}
         onPreview={actions.handlePreviewTemplate}
-        onEdit={actions.handleEditTemplate}
+        onEdit={(id) => {
+          state.setShowList2Modal(false);
+          setZagvarEditorTemplateId(id);
+          setShowZagvarEditorModal(true);
+        }}
         onDelete={actions.handleDeleteTemplate}
         onCreateNew={() => {
           state.setShowList2Modal(false);
-          router.push("/geree/zagvar/gereeniiZagvar");
+          setZagvarEditorTemplateId(null);
+          setShowZagvarEditorModal(true);
         }}
+      />
+
+      {/* Zagvar Editor Modal - full-screen for create/edit template */}
+      <ZagvarEditorModal
+        show={showZagvarEditorModal}
+        onClose={() => {
+          setShowZagvarEditorModal(false);
+          setZagvarEditorTemplateId(null);
+        }}
+        templateId={zagvarEditorTemplateId}
+        onSuccess={() => data.zagvarJagsaaltMutate?.()}
       />
 
       {/* Preview Modal */}

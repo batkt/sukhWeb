@@ -481,9 +481,9 @@ export default function ContractEditor({
   };
 
   return (
-    <div className="contract-editor flex flex-col md:flex-row h-full rounded-2xl">
+    <div className="contract-editor flex flex-col md:flex-row min-h-0 h-full rounded-2xl">
       {/* Sidebar */}
-      <div className="w-full md:w-80 neu-panel rounded-2xl flex flex-col h-full">
+      <div className="w-full md:w-80 shrink-0 neu-panel rounded-2xl flex flex-col min-h-0 overflow-hidden">
         <div className="p-4 border-b border-[color:var(--surface-border)]">
           <h3 className="font-semibold text-[color:var(--panel-text)]">
             Хувьсагчид
@@ -526,7 +526,7 @@ export default function ContractEditor({
         </div>
       </div>
 
-      <div className="relative flex-1 flex flex-col overflow-hidden">
+      <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="bg-transparent border-b border-[color:var(--surface-border)] px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => (onBack ? onBack() : router.push("/geree"))}
@@ -711,7 +711,7 @@ export default function ContractEditor({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 custom-scrollbar">
           <div
             className="w-full max-w-[21cm] mx-auto neu-panel overflow-auto"
             style={{ minHeight: "29.7cm", padding: "2cm" }}
