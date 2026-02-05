@@ -8,13 +8,17 @@ import { Shield, Building2, Settings, ArrowLeft, Save } from "lucide-react";
 import { ALL_PERMISSIONS } from "@/lib/permissions";
 import { Check } from "lucide-react";
 import { useGereeContext } from "@/app/geree/GereeContext";
+import updateMethod from "../../../../../tools/function/updateMethod";
+import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
+import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getErrorMessage } from "@/lib/uilchilgee";
 
 export default function EmployeeSettingsPage() {
   const params = useParams();
   const router = useRouter();
-  const { ajiltan } = useAuth();
+  const { ajiltan, baiguullaga, token } = useAuth();
   const employeeId = params.id as string;
-  const { data, actions } = useGereeContext();
+  const { data } = useGereeContext();
 
   const [selectedBuildings, setSelectedBuildings] = useState<string[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
@@ -53,18 +57,12 @@ export default function EmployeeSettingsPage() {
     return data.employeesList?.find((emp: any) => emp._id === employeeId);
   }, [data.employeesList, employeeId]);
 
-  // Get buildings list from multiple sources
+  // Get buildings list from baiguullaga (useAuth)
   const buildings = useMemo(() => {
-    // Try ajiltan's baiguullaga first
-    const fromAjiltan = (ajiltan as any)?.baiguullaga?.barilguud;
-    if (fromAjiltan && fromAjiltan.length > 0) return fromAjiltan;
-    
-    // Fallback to data.baiguullaga
-    const fromData = (data as any)?.baiguullaga?.barilguud;
-    if (fromData && fromData.length > 0) return fromData;
-    
+    const list = baiguullaga?.barilguud;
+    if (list && Array.isArray(list) && list.length > 0) return list;
     return [];
-  }, [ajiltan, data]);
+  }, [baiguullaga]);
 
   // Initialize permissions when employee is loaded
   useEffect(() => {
@@ -80,7 +78,7 @@ export default function EmployeeSettingsPage() {
       
       setSelectedPermissions(windowPerms);
       setSelectedSettings(settingsPerms);
-      setSelectedBuildings(employee.barilganuud || []);
+      setSelectedBuildings(employee.barilguud || []);
     }
   }, [employee]);
 
@@ -117,7 +115,7 @@ export default function EmployeeSettingsPage() {
   };
 
   const handleSave = async () => {
-    if (!employee) return;
+    if (!employee || !token) return;
     
     try {
       setSaving(true);
@@ -126,16 +124,18 @@ export default function EmployeeSettingsPage() {
       const allPermissions = [...selectedPermissions, ...selectedSettings];
       const payloadPermissions = allPermissions.map((id) => "/" + id.replace(/\./g, "/"));
 
-      // Use the existing update action from GereeContext
-      await actions.handleEditEmployee({
-        ...employee,
+      // Backend expects barilguud (not barilganuud)
+      await updateMethod("ajiltan", token, {
+        _id: employee._id,
         tsonkhniiErkhuud: payloadPermissions,
-        barilganuud: selectedBuildings,
+        barilguud: selectedBuildings,
       });
 
+      openSuccessOverlay("Ажилтны тохиргоо амжилттай хадгалагдлаа");
       router.push("/geree/ajiltan");
     } catch (error) {
       console.error("Error saving:", error);
+      openErrorOverlay(getErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -190,9 +190,9 @@ export default function EmployeeSettingsPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-4 lg:h-[calc(100vh-200px)] lg:min-h-[400px]">
           {/* Section 1: Building Assignment */}
-          <div className="neu-panel rounded-2xl p-4">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-blue-500" />
@@ -218,7 +218,7 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="space-y-2 flex-1 min-h-0 max-h-[260px] lg:max-h-none overflow-y-auto custom-scrollbar">
               {buildings.length === 0 ? (
                 <div className="text-center py-8 text-subtle text-sm">
                   Барилга олдсонгүй
@@ -254,7 +254,7 @@ export default function EmployeeSettingsPage() {
           </div>
 
           {/* Section 2: Window Permissions (Modules) */}
-          <div className="neu-panel rounded-2xl p-4">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-500" />
@@ -289,7 +289,7 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-none overflow-y-auto custom-scrollbar">
               {ALL_PERMISSIONS.map((perm) => {
                 const isSelected = selectedPermissions.includes(perm.id);
                 const hasChildren = perm.children && perm.children.length > 0;
@@ -353,7 +353,7 @@ export default function EmployeeSettingsPage() {
           </div>
 
           {/* Section 3: Settings Permissions */}
-          <div className="neu-panel rounded-2xl p-4">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-500" />
@@ -379,7 +379,7 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-none overflow-y-auto custom-scrollbar">
               {SETTINGS_PERMISSIONS.map((setting) => {
                 const isSelected = selectedSettings.includes(setting.id);
                 return (

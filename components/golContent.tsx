@@ -740,7 +740,7 @@ export default function GolContent({ children }: GolContentProps) {
               aria-hidden="true"
             />
             <div
-              className="relative w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
+              className="relative max-w-7xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-[color:var(--surface-border)]">
@@ -887,7 +887,7 @@ export default function GolContent({ children }: GolContentProps) {
         <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4 lg:py-6 h-full">
           <div className="relative">
             <div 
-              className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain"
+              className="neu-panel rounded-[2rem] p-2 min-h-[60vh] md:h-[calc(100vh-140px)] overflow-y-auto md:overflow-y-hidden overflow-x-hidden overscroll-contain flex flex-col"
               style={{ 
                 WebkitOverflowScrolling: 'touch',
                 touchAction: 'pan-y'

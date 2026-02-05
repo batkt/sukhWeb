@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, lazy, Suspense, Component, ReactNode } from "react";
+import { useMemo, useState, useEffect, lazy, Suspense, Component, ReactNode } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { Settings } from "lucide-react";
+import { hasPermission } from "@/lib/permissionUtils";
 
 // Dynamic imports for better code splitting
 const AppTokhirgoo = lazy(() => import("./AppTokhirgoo"));
@@ -82,21 +83,15 @@ const AdminLayout = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  // Use a column flex layout so header stays visible and the content area
-  // can grow/shrink. Use min-h-0 on the scrolling container so children can
-  // use flex-based heights and inner scrolling works on all browsers.
-  <div className="w-full pb-6" style={{ minHeight: "calc(100vh - 140px)" }}>
-    <header className="px-4 pt-3">
+  <div className="w-full pb-6 flex flex-col min-h-0" style={{ minHeight: "calc(100vh - 140px)" }}>
+    <header className="px-4 pt-3 flex-shrink-0">
       <h1 className="text-2xl font-semibold mb-2 text-[color:var(--panel-text)] leading-tight">
         {title}
       </h1>
     </header>
 
-    <main
-      className="px-4 overflow-y-auto lg:overflow-y-visible custom-scrollbar"
-      style={{ maxHeight: "calc(100vh - 200px)" }}
-    >
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6">
+    <main className="flex-1 min-h-0 overflow-hidden px-4 flex flex-col">
+      <div className="flex-1 min-h-0 flex flex-col lg:grid lg:grid-cols-12 gap-6">
         {children}
       </div>
     </main>
@@ -130,88 +125,39 @@ function Tokhirgoo() {
   };
 
   const tokhirgoo = useMemo(() => {
-    if (ajiltan?.erkh === "Admin") {
-      return [
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Барилгын тохиргоо",
-          tsonkh: BarilgiinTokhirgoo,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Нэмэлт тохиргоо",
-          tsonkh: NemeltTokhirgoo,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "И-Баримт",
-          tsonkh: EbarimtTokhirgoo,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: " Ашиглалтын зардал",
-          tsonkh: AshiglaltiinZardal,
-        },
-        // {
-        //   icon: <Settings className="w-5 h-5" />,
-        //   text: "Мэдэгдэл",
-        //   tsonkh: Medegdel,
-        // },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Данс",
-          tsonkh: Dans,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Зогсоол",
-          tsonkh: Zogsool,
-        },
-        // {
-        //   icon: <Settings className="w-5 h-5" />,
-        //   text: " Хэрэглэгчийн апп",
-        //   tsonkh: AppTokhirgoo,
-        // },
+    const isAdmin = ajiltan?.erkh === "Admin" || ajiltan?.erkh === "admin";
+    const has = (path: string) => hasPermission(ajiltan, path);
 
-        // {
-        //   icon: <Settings className="w-5 h-5" />,
-        //   text: "И-мэйл",
-        //   tsonkh: EmailTokhirgoo,
-        // },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Бааз",
-          tsonkh: Baaz,
-          comingSoon: true,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Нэвтрэлтийн түүх",
-          tsonkh: NevtreltiinTuukh,
-          comingSoon: true,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Устгасан түүх",
-          tsonkh: UstgasanTuukh,
-          comingSoon: true,
-        },
-        {
-          icon: <Settings className="w-5 h-5" />,
-          text: "Зассан түүх",
-          tsonkh: ZassanTuukh,
-          comingSoon: true,
-        },
-      ];
-    } else {
-      return [
-        // {
-        //   icon: <Settings className="w-5 h-5" />,
-        //   text: "Нууц үг солих",
-        //   tsonkh: NuutsUgSolikh,
-        // },
-      ];
+    const allTabs = [
+      { perm: "tokhirgoo.barilga", text: "Барилгын тохиргоо", tsonkh: BarilgiinTokhirgoo, comingSoon: false },
+      { perm: "tokhirgoo.nemelt", text: "Нэмэлт тохиргоо", tsonkh: NemeltTokhirgoo, comingSoon: false },
+      { perm: "tokhirgoo.ebarimt", text: "И-Баримт", tsonkh: EbarimtTokhirgoo, comingSoon: false },
+      { perm: "tokhirgoo.ashiglaltiinZardal", text: "Ашиглалтын зардал", tsonkh: AshiglaltiinZardal, comingSoon: false },
+      { perm: "tokhirgoo.dans", text: "Данс", tsonkh: Dans, comingSoon: false },
+      { perm: "tokhirgoo.zogsool", text: "Зогсоол", tsonkh: Zogsool, comingSoon: false },
+      { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: true },
+      { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: true },
+      { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: true },
+      { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: true },
+    ];
+
+    if (isAdmin) {
+      return allTabs.map((t) => ({
+        icon: <Settings className="w-5 h-5" />,
+        text: t.text,
+        tsonkh: t.tsonkh,
+        comingSoon: t.comingSoon,
+      }));
     }
+
+    return allTabs
+      .filter((t) => has(t.perm))
+      .map((t) => ({
+        icon: <Settings className="w-5 h-5" />,
+        text: t.text,
+        tsonkh: t.tsonkh,
+        comingSoon: t.comingSoon,
+      }));
   }, [ajiltan]);
 
   const Tsonkh = useMemo(
@@ -219,11 +165,22 @@ function Tokhirgoo() {
     [tokhirgoo, selectedIndexInternal]
   );
 
+  // Clamp selected index when tabs change (e.g. non-admin loses permissions)
+  useEffect(() => {
+    if (tokhirgoo.length > 0 && selectedIndexInternal >= tokhirgoo.length) {
+      setSelectedIndexInternal(0);
+      try {
+        localStorage.setItem(STORAGE_KEY, "0");
+      } catch (e) {}
+    }
+  }, [tokhirgoo.length, selectedIndexInternal]);
+
   return (
     <AdminLayout title="Тохиргоо">
-      <div className="w-full lg:col-span-3 ">
-        <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-5 space-y-2 bg-transparent">
+      {tokhirgoo.length > 0 && (
+      <div className="w-full lg:col-span-3 min-h-0 flex flex-col overflow-hidden">
+        <div className="bg-transparent rounded-2xl shadow-lg overflow-hidden flex-1 min-h-0 flex flex-col">
+          <div className="p-5 space-y-2 bg-transparent overflow-y-auto custom-scrollbar flex-1 min-h-0">
             {tokhirgoo.map((item: any, i) => {
               const isActive = i === selectedIndexInternal;
               const isSoon = Boolean(item?.comingSoon);
@@ -256,33 +213,43 @@ function Tokhirgoo() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="w-full lg:col-span-9 text-theme">
-        {Tsonkh &&
-          ajiltan &&
-          (() => {
-            const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
-            return (
-              <ChunkErrorBoundary>
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center p-8">
-                      <div className="text-theme opacity-60">
-                        Ачааллаж байна...
+      <div className={`w-full text-theme min-h-0 flex flex-col overflow-hidden ${tokhirgoo.length > 0 ? "lg:col-span-9" : "lg:col-span-12"}`}>
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+          {tokhirgoo.length === 0 && ajiltan && (
+            <div className="flex flex-col items-center justify-center p-12 text-theme/70">
+              <Settings className="w-16 h-16 mb-4 opacity-50" />
+              <p className="text-lg font-medium">Тохиргооны эрх олдсонгүй</p>
+              <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
+            </div>
+          )}
+          {Tsonkh &&
+            ajiltan &&
+            (() => {
+              const AnyWindow = Tsonkh as unknown as React.ComponentType<any>;
+              return (
+                <ChunkErrorBoundary>
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center p-8">
+                        <div className="text-theme opacity-60">
+                          Ачааллаж байна...
+                        </div>
                       </div>
-                    </div>
-                  }
-                >
-                  <AnyWindow
-                    ajiltan={ajiltan}
-                    baiguullaga={baiguullaga}
-                    token={token || ""}
-                    setSongogdsonTsonkhniiIndex={setSelectedIndex}
-                  />
-                </Suspense>
-              </ChunkErrorBoundary>
-            );
-          })()}
+                    }
+                  >
+                    <AnyWindow
+                      ajiltan={ajiltan}
+                      baiguullaga={baiguullaga}
+                      token={token || ""}
+                      setSongogdsonTsonkhniiIndex={setSelectedIndex}
+                    />
+                  </Suspense>
+                </ChunkErrorBoundary>
+              );
+            })()}
+        </div>
       </div>
     </AdminLayout>
   );

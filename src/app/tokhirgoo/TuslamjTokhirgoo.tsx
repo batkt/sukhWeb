@@ -70,9 +70,6 @@ export default function TuslamjTokhirgoo(props: Props) {
               </div>
             ) : (
               <div className="space-y-4">
-                {currentTsonkh.tailbar && (
-                  <p className="text-sm text-theme">{currentTsonkh.tailbar}</p>
-                )}
                 {currentTsonkh.zaavar && (
                   <div
                     className="tsonkh-zaavar prose prose-sm max-w-none text-theme prose-headings:text-theme prose-p:text-theme/90 prose-a:text-theme"
