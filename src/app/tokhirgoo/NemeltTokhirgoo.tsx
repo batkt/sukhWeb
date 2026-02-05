@@ -289,7 +289,7 @@ export default function NemeltTokhirgoo() {
     
     // Fallback Org Level
     const orgTok = (baiguullaga.tokhirgoo || {}) as any;
-    const orgZt = (orgTok.zochinTokhirgoo || baiguullaga.zochinTokhirgoo || {}) as any;
+    const orgZt = (orgTok.zochinTokhirgoo || (baiguullaga as any).zochinTokhirgoo || {}) as any;
 
     const find = (field: string, def: any = "") => {
         // 1. Check schema standard: target.tokhirgoo.zochinTokhirgoo
