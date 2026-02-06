@@ -256,14 +256,18 @@ export default function Khynalt() {
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        `/tailan/udsan-avlaga/${ajiltan.baiguullagiinId}`,
+        `/tailan/udsan-avlaga`,
         token,
         effectiveBarilgiinId,
+        ajiltan.baiguullagiinId,
       ]
       : null,
-    async ([url, tkn, barId]): Promise<any> => {
+    async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
-        params: barId ? { barilgiinId: barId } : {},
+        params: {
+          ...(barId ? { barilgiinId: barId } : {}),
+          baiguullagiinId: bId,
+        },
       });
       return resp.data;
     },
@@ -273,14 +277,18 @@ export default function Khynalt() {
   const { data: cancelledData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        `/tailan/tsutslasan-gereenii-avlaga/${ajiltan.baiguullagiinId}`,
+        `/tailan/tsutslasan-gereenii-avlaga`,
         token,
         effectiveBarilgiinId,
+        ajiltan.baiguullagiinId,
       ]
       : null,
-    async ([url, tkn, barId]): Promise<any> => {
+    async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
-        params: barId ? { barilgiinId: barId } : {},
+        params: {
+          ...(barId ? { barilgiinId: barId } : {}),
+          baiguullagiinId: bId,
+        },
       });
       return resp.data;
     },
