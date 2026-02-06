@@ -562,11 +562,11 @@ export default function OrlogoAvlagaPage() {
                             {item.toot || item.nememjlekh?.toot || "-"}
                           </td>
                           {activeTab === "tulult" ? (
-                            <td className="p-3 text-center whitespace-nowrap">
+                            <td className="p-3 text-right whitespace-nowrap">
                               <button
                                 type="button"
                                 onClick={() => handleAmountClick(gd)}
-                                className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="w-4 h-4" />
@@ -578,11 +578,11 @@ export default function OrlogoAvlagaPage() {
                             </td>
                           ) : (
                             <>
-                              <td className="p-3 text-center whitespace-nowrap">
+                              <td className="p-3 text-right whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {isExpanded ? (
                                     <ChevronDown className="w-4 h-4" />
@@ -592,11 +592,11 @@ export default function OrlogoAvlagaPage() {
                                   {formatNumber(getItemTulukh(item))} ₮
                                 </button>
                               </td>
-                              <td className="p-3 text-center text-theme whitespace-nowrap">
+                              <td className="p-3 text-right text-theme whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {formatNumber(getItemTulsun(item))} ₮
                                 </button>
@@ -633,11 +633,11 @@ export default function OrlogoAvlagaPage() {
                                         <th className="text-left p-2 w-28">Огноо</th>
                                         <th className="text-left p-2 w-40">Тайлбар</th>
                                         {activeTab === "avlaga" && (
-                                          <th className="text-right p-2 w-24">
+                                          <th className="text-center p-2 w-24">
                                             Төлөх дүн
                                           </th>
                                         )}
-                                        <th className="text-right p-2 w-24">
+                                        <th className="text-center p-2 w-24">
                                           Төлсөн дүн
                                         </th>
                                       </tr>

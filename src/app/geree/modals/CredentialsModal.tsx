@@ -9,7 +9,7 @@ interface CredentialsModalProps {
   show: boolean;
   onClose: () => void;
   employee: any;
-  onSave: (id: string, nevtrekhNer: string, nuutsUg: string) => Promise<void>;
+  onSave: (employee: any, nevtrekhNer: string, nuutsUg: string) => Promise<void>;
   isSaving?: boolean;
 }
 
@@ -41,7 +41,7 @@ export default function CredentialsModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (employee?._id) {
-      await onSave(employee._id, nevtrekhNer, nuutsUg);
+      await onSave(employee, nevtrekhNer, nuutsUg);
       onClose();
     }
   };

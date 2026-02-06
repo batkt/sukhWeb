@@ -14,6 +14,7 @@ import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "./selectZagvar/tusgaiZagvar";
+import { hasPermission } from "@/lib/permissionUtils";
 
 const TuslamjTokhirgoo = lazy(() =>
   import("@/app/tokhirgoo/TuslamjTokhirgoo").then((m) => ({ default: m.default }))
@@ -69,6 +70,7 @@ export default function GolContent({ children }: GolContentProps) {
   }, []);
 
   const { ajiltan, token, garya } = useAuth();
+  const has = (path: string) => hasPermission(ajiltan, path);
   const { baiguullaga } = useBaiguullaga(
     token || null,
     ajiltan?.baiguullagiinId || null
@@ -189,64 +191,69 @@ export default function GolContent({ children }: GolContentProps) {
     };
   }, []);
 
-  const menuItems: MenuItem[] = [
+  const allMenuItems: MenuItem[] = [
     { label: "Хяналт", path: "khynalt" },
     { label: "Гэрээ", path: "geree" },
-    {
-      label: "Төлбөр",
-      path: "tulbur",
-    },
+    { label: "Төлбөр", path: "tulbur" },
     {
       label: "Тайлан",
       path: "tailan",
       submenu: [
-        { label: "Авлагын товчоо", path: "/orlogo-avlaga" },
-        { label: "Сарын төлбөр", path: "/sariin-tulbur" },
-        { label: "Авлагийн насжилт", path: "/avlagiin-nasjilt" },
-        { label: "Зогсоол", path: "/zogsool" },
+        { label: "Авлагын товчоо", path: "orlogo-avlaga" },
+        { label: "Сарын төлбөр", path: "sariin-tulbur" },
+        { label: "Авлагийн насжилт", path: "avlagiin-nasjilt" },
+        { label: "Зогсоол", path: "zogsool" },
       ],
     },
     {
       label: "Мэдэгдэл",
       path: "medegdel",
       submenu: [
-        {
-          label: "Мэдэгдэл",
-          path: "/medegdel",
-        },
-        // {
-        //   label: "Шаардлага",
-        //   path: "/shaardlaga",
-        // },
-        // {
-        //   label: "Дуудлага",
-        //   path: "/duudlaga",
-        // },
-        {
-          label: "Санал хүсэлт",
-          path: "/sanalKhuselt",
-        },
+        { label: "Мэдэгдэл", path: "medegdel" },
+        { label: "Санал хүсэлт", path: "sanalKhuselt" },
       ],
     },
     {
       label: "Зогсоол",
       path: "zogsool",
       submenu: [
-        {
-          label: "Жагсаалт",
-          path: "/jagsaalt",
-        },
-        {
-          label: "Камер касс",
-          path: "/camera",
-        },
-        {
-          label: "Оршин суугч",
-          path: "/orshinSuugch",
-        },
+        { label: "Жагсаалт", path: "jagsaalt" },
+        { label: "Камер касс", path: "camera" },
+        { label: "Оршин суугч", path: "orshinSuugch" },
       ],
     },
   ];
+
+  const menuItems = allMenuItems.filter((item) => {
+    if (ajiltan?.erkh?.toLowerCase() === "admin") return true;
+    if (item.submenu) {
+      const allowedSubs = item.submenu.filter(
+        (sub) =>
+          has(item.path) ||
+          has(`/${item.path}`) ||
+          has(`${item.path}.${sub.path}`) ||
+          has(`/${item.path}/${sub.path}`)
+      );
+      if (allowedSubs.length === 0) return false;
+      return true;
+    }
+    return has(item.path) || has(`/${item.path}`);
+  }).map((item) => {
+    if (item.submenu) {
+      const allowedSubs = item.submenu.filter(
+        (sub) =>
+          has(item.path) ||
+          has(`/${item.path}`) ||
+          has(`${item.path}.${sub.path}`) ||
+          has(`/${item.path}/${sub.path}`)
+      );
+      return { ...item, submenu: allowedSubs };
+    }
+    return item;
+  }).filter((item) => {
+    if (item.submenu && item.submenu.length === 0) return false;
+    return true;
+  });
 
   const handleLogout = async (e?: React.MouseEvent) => {
     if (e) {
@@ -580,6 +587,7 @@ export default function GolContent({ children }: GolContentProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <ul className="py-2">
+                        {(has("tokhirgoo") || has("/tokhirgoo") || ajiltan?.erkh?.toLowerCase() === "admin") && (
                         <li>
                           <button
                             type="button"
@@ -595,6 +603,7 @@ export default function GolContent({ children }: GolContentProps) {
                             <span>Тохиргоо</span>
                           </button>
                         </li>
+                        )}
                         <li>
                           <button
                             type="button"
@@ -688,6 +697,7 @@ export default function GolContent({ children }: GolContentProps) {
                   {showLogout && (
                     <div className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
                       <ul className="py-2">
+                        {(has("tokhirgoo") || has("/tokhirgoo") || ajiltan?.erkh?.toLowerCase() === "admin") && (
                         <li>
                           <button
                             onMouseDown={(e) => {
@@ -702,6 +712,7 @@ export default function GolContent({ children }: GolContentProps) {
                             <span>Тохиргоо</span>
                           </button>
                         </li>
+                        )}
                         <li>
                           <button
                             onClick={handleKhemjee}

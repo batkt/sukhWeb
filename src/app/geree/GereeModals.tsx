@@ -314,23 +314,24 @@ export default function GereeModals() {
         show={showCredentialsModal}
         onClose={() => setShowCredentialsModal(false)}
         employee={credentialsEmployee}
-        onSave={async (id, nevtrekhNer, nuutsUg) => {
-           if (!token) return;
+        onSave={async (emp, nevtrekhNer, nuutsUg) => {
+           if (!token || !emp?._id) return;
            try {
-              // Only send critical fields
-              // Use direct axios for full control or updateMethod
-              await uilchilgee(token).put(`/ajiltan/${id}`, {
-                  _id: id,
-                  nevtrekhNer,
-                  nuutsUg
-              });
-              
+              // Send full employee with updated credentials so backend doesn't
+              // overwrite baiguullagiinId/barilguud (which would remove from list)
+              const payload: any = { ...emp, nevtrekhNer };
+              if (nuutsUg && nuutsUg.trim()) {
+                payload.nuutsUg = nuutsUg;
+              } else {
+                delete payload.nuutsUg; // Don't send hashed password; backend keeps existing
+              }
+              await uilchilgee(token).put(`/ajiltan/${emp._id}`, payload);
+
               openSuccessOverlay("Нэвтрэх эрх шинэчлэгдлээ");
               setShowCredentialsModal(false);
-              
-              // Refresh lists
+
               await data.ajiltniiJagsaaltMutate();
-              
+
            } catch (err: any) {
               const msg = err?.response?.data?.aldaa || "Алдаа гарлаа";
               openErrorOverlay(msg);
