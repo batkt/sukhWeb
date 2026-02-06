@@ -425,7 +425,7 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-2">
         <button
           type="button"
           onClick={() => {
