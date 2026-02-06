@@ -208,36 +208,33 @@ export default function AvlagiinNasjiltPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl  mb-6">Авлагийн насжилт</h1>
+      <h1 className="text-2xl">Авлагийн насжилт</h1>
 
-      <div className="space-y-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          <div className="p-4 rounded-xl">
-            <DatePickerInput
-              type="range"
-              locale="mn"
-              value={dateRange}
-              onChange={setDateRange}
-              size="sm"
-              radius="md"
-              variant="filled"
-              dropdownType="popover"
-              popoverProps={{
-                position: "bottom-start",
-                withinPortal: true,
-                width: 320,
-              }}
-              clearable
-              placeholder="Огноо сонгох"
-              classNames={{
-                input:
-                  "neu-panel text-theme placeholder:text-theme !h-[40px] !py-2 !w-full",
-              }}
-            />
-          </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="p-3 rounded-xl mt-6">
+          <DatePickerInput
+            type="range"
+            locale="mn"
+            value={dateRange}
+            onChange={setDateRange}
+            size="sm"
+            radius="md"
+            variant="filled"
+            dropdownType="popover"
+            popoverProps={{
+              position: "bottom-start",
+              withinPortal: true,
+              width: 320,
+            }}
+            clearable
+            placeholder="Огноо сонгох"
+            classNames={{
+              input:
+                "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden",
+            }}
+          />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
             <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
             <input
               type="text"
@@ -247,7 +244,7 @@ export default function AvlagiinNasjiltPage() {
               placeholder="Овог, нэрээр хайх"
             />
           </div>
-          <div className="neu-panel p-3 rounded-xl">
+          <div className="p-3 rounded-xl">
             <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
             <input
               type="text"
@@ -257,7 +254,7 @@ export default function AvlagiinNasjiltPage() {
               placeholder="Тоот"
             />
           </div>
-          <div className="neu-panel p-3 rounded-xl">
+          <div className="p-3 rounded-xl">
             <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
             <input
               type="text"
@@ -267,7 +264,7 @@ export default function AvlagiinNasjiltPage() {
               placeholder="Давхар"
             />
           </div>
-          <div className="neu-panel p-3 rounded-xl">
+          <div className="p-3 rounded-xl">
             <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
             <input
               type="text"
@@ -277,7 +274,6 @@ export default function AvlagiinNasjiltPage() {
               placeholder="ГД"
             />
           </div>
-        </div>
         {/* <button
           type="submit"
           disabled={loading}
@@ -308,7 +304,7 @@ export default function AvlagiinNasjiltPage() {
       {/* Data Table */}
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>

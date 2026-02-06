@@ -357,9 +357,10 @@ export default function OrlogoAvlagaPage() {
 
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h1 className="text-2xl">Авлагын товчоо</h1>
-        <div className="w-full md:w-[320px]">
+      <h1 className="text-2xl">Авлагын товчоо</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="p-3 rounded-xl mt-6">
           <DatePickerInput
             type="range"
             locale="mn"
@@ -378,14 +379,11 @@ export default function OrlogoAvlagaPage() {
             placeholder="Огноо сонгох"
             classNames={{
               input:
-                "neu-panel text-theme placeholder:text-theme !h-[40px] !py-2 !w-full",
+                "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden",
             }}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
           <input
             type="text"
@@ -395,7 +393,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Овог, нэрээр хайх"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
           <input
             type="text"
@@ -405,7 +403,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Тоот"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
           <input
             type="text"
@@ -415,7 +413,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Давхар"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
           <input
             type="text"
@@ -489,7 +487,7 @@ export default function OrlogoAvlagaPage() {
 
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[25vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
