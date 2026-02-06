@@ -138,17 +138,12 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
 
   const paymentMethods = [
     { id: "cash", label: "Бэлэн", icon: <Banknote className="w-5 h-5" /> },
-    { id: "khaan", label: "Хаан Карт", icon: <CreditCard className="w-5 h-5" /> },
-    { id: "qpay", label: "QPay", icon: <Check className="w-5 h-5" /> },
+    { id: "khaan", label: "Карт", icon: <CreditCard className="w-5 h-5" /> },
     { id: "transfer", label: "Дансаар", icon: <ArrowRight className="w-5 h-5" /> },
     { id: "discount", label: "Хөнгөлөлт", icon: <Tag className="w-5 h-5" /> },
   ];
 
-  const apps = [
-    { id: "qpay", label: "QPay", color: "bg-[#003366] text-white", icon: "Q" },
-    { id: "toki", label: "Toki", color: "bg-[#FFCC00] text-black", icon: "Toki" },
-    { id: "socialpay", label: "SocialPay", color: "bg-[#00D18B] text-white", icon: "P" },
-  ];
+  /* Apps section removed as requested */
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -185,18 +180,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                         ))}
                     </div>
 
-                    {/* App Payments */}
-                    <div className="flex gap-4">
-                        {apps.map((app) => (
-                            <button
-                                key={app.id}
-                                onClick={() => setPaymentMethod(app.id)}
-                                className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform ${app.color} ${paymentMethod === app.id ? 'ring-4 ring-offset-2 ring-blue-500' : ''}`}
-                            >
-                                <span className="font-black text-lg">{app.icon}</span>
-                            </button>
-                        ))}
-                    </div>
+
 
                     {/* E-Barimt Selection */}
                     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">

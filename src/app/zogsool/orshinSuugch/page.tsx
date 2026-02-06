@@ -330,6 +330,15 @@ export default function OrshinSuugch() {
                          </div>
                       </td>
                        <td className="py-4 px-4">
+                         {resident.orshinSuugchTurul ? (
+                           <span className="px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 text-[10px] font-bold text-green-700 dark:text-green-400">
+                             {resident.orshinSuugchTurul}
+                           </span>
+                         ) : (
+                           <span className="text-[10px] text-slate-400 italic">-</span>
+                         )}
+                      </td>
+                       <td className="py-4 px-4">
                          <p className="text-[10px] text-slate-500 italic max-w-[150px] truncate">
                            {resident.zochinTailbar || resident.tailbar || "-"}
                          </p>

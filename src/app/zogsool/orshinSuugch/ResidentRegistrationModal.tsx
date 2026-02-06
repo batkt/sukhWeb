@@ -187,7 +187,8 @@ export default function ResidentRegistrationModal({
           ezemshigchiinNer: formData.name,
           ezemshigchiinRegister: formData.register || "00000000",
           ezemshigchiinUtas: formData.phone,
-          turul: formData.type,
+          turul: formData.orshinSuugchTurul || formData.type,
+          ezemshigchiinTalbainDugaar: formData.unit,
           baiguullagiinId: baiguullagiinId,
           barilgiinId: barilgiinId,
           orshinSuugchTurul: formData.orshinSuugchTurul || undefined
