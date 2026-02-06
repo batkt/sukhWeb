@@ -25,7 +25,7 @@ export function Calendar({
       className={cn("p-3", className)}
       classNames={{
         // Root table wrappers
-        months: "flex flex-col gap-3 sm:flex-row sm:gap-4",
+        months: "flex flex-row gap-4",
         // Make month a flex column so caption and nav stack naturally and we can control order
         month: "flex flex-col items-stretch gap-2",
         // Caption above, nav beneath

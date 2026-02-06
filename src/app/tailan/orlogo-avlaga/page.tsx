@@ -357,9 +357,10 @@ export default function OrlogoAvlagaPage() {
 
   return (
     <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h1 className="text-2xl">Авлагын товчоо</h1>
-        <div className="w-full md:w-[320px]">
+      <h1 className="text-2xl">Авлагын товчоо</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="p-3 rounded-xl mt-6">
           <DatePickerInput
             type="range"
             locale="mn"
@@ -378,14 +379,11 @@ export default function OrlogoAvlagaPage() {
             placeholder="Огноо сонгох"
             classNames={{
               input:
-                "neu-panel text-theme placeholder:text-theme !h-[40px] !py-2 !w-full",
+                "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden",
             }}
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
           <input
             type="text"
@@ -395,7 +393,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Овог, нэрээр хайх"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
           <input
             type="text"
@@ -405,7 +403,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Тоот"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
           <input
             type="text"
@@ -415,7 +413,7 @@ export default function OrlogoAvlagaPage() {
             placeholder="Давхар"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
           <input
             type="text"
@@ -427,7 +425,7 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-2">
         <button
           type="button"
           onClick={() => {
@@ -489,7 +487,7 @@ export default function OrlogoAvlagaPage() {
 
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[25vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
@@ -562,11 +560,11 @@ export default function OrlogoAvlagaPage() {
                             {item.toot || item.nememjlekh?.toot || "-"}
                           </td>
                           {activeTab === "tulult" ? (
-                            <td className="p-3 text-center whitespace-nowrap">
+                            <td className="p-3 text-right whitespace-nowrap">
                               <button
                                 type="button"
                                 onClick={() => handleAmountClick(gd)}
-                                className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="w-4 h-4" />
@@ -578,11 +576,11 @@ export default function OrlogoAvlagaPage() {
                             </td>
                           ) : (
                             <>
-                              <td className="p-3 text-center whitespace-nowrap">
+                              <td className="p-3 text-right whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {isExpanded ? (
                                     <ChevronDown className="w-4 h-4" />
@@ -592,11 +590,11 @@ export default function OrlogoAvlagaPage() {
                                   {formatNumber(getItemTulukh(item))} ₮
                                 </button>
                               </td>
-                              <td className="p-3 text-center text-theme whitespace-nowrap">
+                              <td className="p-3 text-right text-theme whitespace-nowrap">
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer flex items-center justify-center gap-1 mx-auto"
+                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {formatNumber(getItemTulsun(item))} ₮
                                 </button>
@@ -633,11 +631,11 @@ export default function OrlogoAvlagaPage() {
                                         <th className="text-left p-2 w-28">Огноо</th>
                                         <th className="text-left p-2 w-40">Тайлбар</th>
                                         {activeTab === "avlaga" && (
-                                          <th className="text-right p-2 w-24">
+                                          <th className="text-center p-2 w-24">
                                             Төлөх дүн
                                           </th>
                                         )}
-                                        <th className="text-right p-2 w-24">
+                                        <th className="text-center p-2 w-24">
                                           Төлсөн дүн
                                         </th>
                                       </tr>

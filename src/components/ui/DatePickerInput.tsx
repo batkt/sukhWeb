@@ -222,7 +222,7 @@ export function DatePickerInput(
         }
       >
         {leftSection && <div>{leftSection}</div>}
-        <span className={(displayText ? "text-theme" : "text-subtle") + " flex-1 text-center"}>
+        <span className={(displayText ? "text-theme" : "text-subtle") + " flex-1 text-center whitespace-nowrap min-w-0 overflow-hidden text-ellipsis"}>
           {displayText || placeholder}
         </span>
 
