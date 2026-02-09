@@ -644,11 +644,15 @@ export default function GolContent({ children }: GolContentProps) {
                                   setShowSanalDropdown(false);
                                   router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                 }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 ${isUnread ? "text-[color:var(--panel-text)] font-medium" : "text-[color:var(--panel-text)]/80"}`}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${
+                                  isUnread
+                                    ? "bg-blue-500/10 dark:bg-blue-500/20 border-l-2 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/15 dark:hover:bg-blue-500/25"
+                                    : "text-[color:var(--panel-text)]/80 hover:menu-surface/80"
+                                }`}
                               >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100" : "opacity-60"}`} />
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-60"}`} />
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-medium truncate">{item.title || "Мэдэгдэл"}</div>
+                                  <div className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                   )}
@@ -845,11 +849,15 @@ export default function GolContent({ children }: GolContentProps) {
                                   setShowSanalDropdown(false);
                                   router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                 }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer hover:menu-surface/80 ${isUnread ? "text-[color:var(--panel-text)] font-medium" : "text-[color:var(--panel-text)]/80"}`}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${
+                                  isUnread
+                                    ? "bg-blue-500/10 dark:bg-blue-500/20 border-l-2 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/15 dark:hover:bg-blue-500/25"
+                                    : "text-[color:var(--panel-text)]/80 hover:menu-surface/80"
+                                }`}
                               >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100" : "opacity-60"}`} />
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-60"}`} />
                                 <div className="min-w-0 flex-1">
-                                  <div className="font-medium truncate">{item.title || "Мэдэгдэл"}</div>
+                                  <div className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                   )}

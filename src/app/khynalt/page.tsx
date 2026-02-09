@@ -28,7 +28,6 @@ import {
   Tooltip,
   Legend,
   ArcElement,
-  BarElement,
 } from "chart.js";
 import useSWR from "swr";
 import formatNumber from "../../../tools/function/formatNumber";
@@ -813,6 +812,58 @@ export default function Khynalt() {
     };
   }, [incomeSeries]);
 
+  // Line chart data for Хуримтлагдсан авлага (top 10 by amount)
+  const huurimtlagdsanAvlagaChartData: Dataset = useMemo(() => {
+    const top = huurimtlagdsanAvlaga.items
+      .slice(0, 10)
+      .map((it: any) => ({
+        name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
+        amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
+      }));
+    return {
+      labels: top.map((t: { name: string; amount: number }) => {
+        const s = t.name || "-";
+        return s.length > 12 ? s.slice(0, 11) + "…" : s;
+      }),
+      datasets: [
+        {
+          label: "Төлбөр (₮)",
+          data: top.map((t: { name: string; amount: number }) => t.amount),
+          borderColor: "#ef4444",
+          backgroundColor: "rgba(239,68,68,0.2)",
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    };
+  }, [huurimtlagdsanAvlaga.items]);
+
+  // Line chart data for Цуцлагдсан гэрээний авлага (top 10 by amount)
+  const cancelledReceivablesChartData: Dataset = useMemo(() => {
+    const top = cancelledReceivables.items
+      .slice(0, 10)
+      .map((it: any) => ({
+        name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
+        amount: Number(it?.niitTulbur ?? 0) || 0,
+      }));
+    return {
+      labels: top.map((t: { name: string; amount: number }) => {
+        const s = t.name || "-";
+        return s.length > 12 ? s.slice(0, 11) + "…" : s;
+      }),
+      datasets: [
+        {
+          label: "Төлбөр (₮)",
+          data: top.map((t: { name: string; amount: number }) => t.amount),
+          borderColor: "#f97316",
+          backgroundColor: "rgba(249,115,22,0.2)",
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    };
+  }, [cancelledReceivables.items]);
+
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
   }
@@ -1204,7 +1255,6 @@ export default function Khynalt() {
             </div>
           </div>
 
-         
           <div
             className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
@@ -1214,50 +1264,39 @@ export default function Khynalt() {
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
-              <div className="mb-2 flex items-baseline justify-between gap-2 flex-shrink-0">
+              <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
                   Хуримтлагдсан авлага
                 </h3>
-                <div className="text-right flex-shrink-0">
-                  <div className="text-sm text-[color:var(--muted-text)]">
-                    Нийт
-                  </div>
-                  <div className="text-base font-semibold text-[color:var(--panel-text)]">
-                    {huurimtlagdsanAvlaga.count} / {formatCurrency(huurimtlagdsanAvlaga.total)}
-                  </div>
-                </div>
+                <p className="text-sm text-[color:var(--muted-text)] mt-1">
+                  {huurimtlagdsanAvlaga.count} Оршин суугч / {formatCurrency(huurimtlagdsanAvlaga.total)}
+                </p>
               </div>
-              <div className="flex-1 min-h-[80px] overflow-auto custom-scrollbar pr-1">
-                {huurimtlagdsanAvlaga.items.slice(0, 12).map((it: any, idx: number) => {
-                  const amount = (it?.amount ?? Number(it?.uldegdel ?? it?.niitTulbur ?? it?.tulbur ?? 0)) || 0;
-                  const name = it?.name ?? [it?.ovog, it?.ner, it?.toot]
-                    .filter(Boolean)
-                    .join(" ") ?? it?.gereeniiDugaar ?? "-";
-                  const ageLabel = formatAvlagaAge(it);
-                  return (
-                    <div
-                      key={it?.dugaalaltDugaar || it?.gereeniiDugaar || idx}
-                      className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0 gap-2 min-w-0"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
-                          {name || "-"}
-                        </div>
-                        <div className="text-xs text-[color:var(--muted-text)] truncate">
-                          {ageLabel}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold text-red-500 flex-shrink-0">
-                        {formatCurrency(amount)}
-                      </div>
-                    </div>
-                  );
-                })}
-                {huurimtlagdsanAvlaga.items.length === 0 && (
-                  <div className="min-h-[80px] flex items-center justify-center text-sm text-[color:var(--muted-text)]">
-                    Мэдээлэл байхгүй
-                  </div>
-                )}
+              <div className="flex-1 min-h-0">
+                <Line
+                  data={huurimtlagdsanAvlagaChartData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
+                      title: { display: false },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: chartColors.text, maxRotation: 45 },
+                        grid: { color: chartColors.grid },
+                      },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                    },
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1272,54 +1311,39 @@ export default function Khynalt() {
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
-              <div className="mb-2 flex items-baseline justify-between gap-2 flex-shrink-0">
+              <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
                   Цуцлагдсан гэрээний авлага
                 </h3>
-                <div className="text-right">
-                  <div className="text-sm text-[color:var(--muted-text)]">
-                    Нийт
-                  </div>
-                  <div className="text-base font-semibold text-[color:var(--panel-text)]">
-                    {cancelledReceivables.count} /{" "}
-                    {formatCurrency(cancelledReceivables.total)}
-                  </div>
-                </div>
+                <p className="text-sm text-[color:var(--muted-text)] mt-1">
+                  {cancelledReceivables.count} Оршин суугч / {formatCurrency(cancelledReceivables.total)}
+                </p>
               </div>
-              <div className="flex-1 min-h-[80px] overflow-auto custom-scrollbar pr-1">
-                {cancelledReceivables.items
-                  .slice(0, 12)
-                  .map((it: any, idx: number) => {
-                    const amount = Number(it?.niitTulbur ?? 0) || 0;
-                    const name = [it?.ovog, it?.ner, it?.toot]
-                      .filter(Boolean)
-                      .join(" ");
-                    const label =
-                      it?.gereeniiTuluv || it?.tuluv || "Цуцлагдсан";
-                    return (
-                      <div
-                        key={it?.dugaalaltDugaar || idx}
-                        className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
-                      >
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
-                            {name || it?.gereeniiDugaar || "-"}
-                          </div>
-                          <div className="text-xs text-[color:var(--muted-text)] truncate">
-                            {label}
-                          </div>
-                        </div>
-                        <div className="text-sm font-semibold text-red-500">
-                          {formatCurrency(amount)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                {cancelledReceivables.items.length === 0 && (
-                  <div className="min-h-[80px] flex items-center justify-center text-sm text-[color:var(--muted-text)]">
-                    Мэдээлэл байхгүй
-                  </div>
-                )}
+              <div className="flex-1 min-h-0">
+                <Line
+                  data={cancelledReceivablesChartData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
+                      title: { display: false },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: chartColors.text, maxRotation: 45 },
+                        grid: { color: chartColors.grid },
+                      },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                    },
+                  }}
+                />
               </div>
             </div>
           </div>

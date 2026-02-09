@@ -8,6 +8,7 @@ import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/useAuth";
+import { useBuilding } from "@/context/BuildingContext";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import {
   CheckCircle,
@@ -46,6 +47,7 @@ export default function SanalKhuselt() {
   const searchParams = useSearchParams();
   const preselectedId = searchParams.get("id");
   const { ajiltan, token } = useAuth();
+  const { selectedBuildingId } = useBuilding();
 
   const [medegdelList, setMedegdelList] = useState<MedegdelItem[]>([]);
   const [selectedMedegdel, setSelectedMedegdel] = useState<MedegdelItem | null>(
@@ -83,19 +85,28 @@ export default function SanalKhuselt() {
       if (item.status !== "pending" || item.kharsanEsekh) return;
 
       try {
-        await uilchilgee(token).put(`/medegdel/${item._id}`, {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
-          barilgiinId: ajiltan?.barilgiinId,
-          orshinSuugchId: item.orshinSuugchId,
-          title: item.title,
-          message: item.message,
-          kharsanEsekh: true,
-          status: item.status,
+        await uilchilgee(token).patch(`/medegdel/${item._id}/kharsanEsekh`, {}, {
+          params: { baiguullagiinId: ajiltan.baiguullagiinId },
         });
         markedSeenIds.current.add(item._id);
-        mutate((key) => Array.isArray(key) && key[0] === "/medegdel/unreadCount");
-        mutate((key) => Array.isArray(key) && key[0] === "/medegdel/unreadList");
+        setMedegdelList((prev) =>
+          prev.map((it) => (it._id === item._id ? { ...it, kharsanEsekh: true } : it))
+        );
+        setSelectedMedegdel((prev) =>
+          prev?._id === item._id ? { ...prev, kharsanEsekh: true } : prev
+        );
+        // Fetch fresh unread count and update cache directly (same params as golContent)
+        const countRes = await uilchilgee(token).get("/medegdel/unreadCount", {
+          params: { baiguullagiinId: ajiltan.baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}) },
+        });
+        const unreadKey = ["/medegdel/unreadCount", token, ajiltan.baiguullagiinId, selectedBuildingId];
+        mutate(unreadKey, countRes.data, { revalidate: false });
+        // Revalidate unread list so dropdown shows updated kharsanEsekh
+        mutate(
+          (k) => Array.isArray(k) && k[0] === "/medegdel/unreadList",
+          undefined,
+          { revalidate: true }
+        );
       } catch {
         // Ignore - don't block UI
       }
