@@ -3103,9 +3103,9 @@ select,
   background: var(--hover-bg) !important;
 }
 
-/* Let specific panels overflow (for dropdowns) */
+/* Let specific panels overflow (for dropdowns, hover shadows) */
 .neu-panel.allow-overflow {
-  overflow: visible;
+  overflow: visible !important;
 }
 
 /* Table should span container width */

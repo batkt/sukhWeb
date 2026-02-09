@@ -966,7 +966,7 @@ export default function HistoryModal({
             </button>
             <button
               onClick={handlePrint}
-              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white transition-all"
+              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-bold !text-white transition-all"
             >
               Хэвлэх
             </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Settings, Search as SearchIcon, X, LogOut, Type, Menu, HelpCircle } from "lucide-react";
+import { Settings, Search as SearchIcon, X, LogOut, Type, Menu, HelpCircle, Bell, MessageSquare, ChevronRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useAuth } from "@/lib/useAuth";
@@ -15,6 +15,8 @@ import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "./selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
+import useSWR from "swr";
+import uilchilgee from "@/lib/uilchilgee";
 
 const TuslamjTokhirgoo = lazy(() =>
   import("@/app/tokhirgoo/TuslamjTokhirgoo").then((m) => ({ default: m.default }))
@@ -51,6 +53,7 @@ export default function GolContent({ children }: GolContentProps) {
   const router = useRouter();
   const [mounted, setMounted] = useState<boolean>(false);
   const [showLogout, setShowLogout] = useState<boolean>(false);
+  const [showSanalDropdown, setShowSanalDropdown] = useState<boolean>(false);
   const [tuslamjModalOpen, setTuslamjModalOpen] = useState<boolean>(false);
   const { searchTerm, setSearchTerm } = useSearch();
   const { selectedBuildingId, setSelectedBuildingId } = useBuilding();
@@ -71,6 +74,32 @@ export default function GolContent({ children }: GolContentProps) {
 
   const { ajiltan, token, garya } = useAuth();
   const has = (path: string) => hasPermission(ajiltan, path);
+  const canSeeSanalKhuselt = has("medegdel") || has("/medegdel") || has("medegdel.sanalKhuselt") || has("/medegdel/sanalKhuselt") || ajiltan?.erkh?.toLowerCase() === "admin";
+  const { data: sanalUnreadData } = useSWR(
+    token && ajiltan?.baiguullagiinId && canSeeSanalKhuselt
+      ? ["/medegdel/unreadCount", token, ajiltan.baiguullagiinId, selectedBuildingId]
+      : null,
+    async ([url, tkn, bId, barId]) => {
+      const res = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: bId, ...(barId ? { barilgiinId: barId } : {}) },
+      });
+      return res.data;
+    },
+    { revalidateOnFocus: true, refreshInterval: 60000 }
+  );
+  const sanalUnreadCount = Number(sanalUnreadData?.count ?? 0) || 0;
+  const { data: sanalUnreadListData } = useSWR(
+    token && ajiltan?.baiguullagiinId && canSeeSanalKhuselt && showSanalDropdown
+      ? ["/medegdel/unreadList", token, ajiltan.baiguullagiinId, selectedBuildingId]
+      : null,
+    async ([url, tkn, bId, barId]) => {
+      const res = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: bId, ...(barId ? { barilgiinId: barId } : {}) },
+      });
+      return res.data;
+    }
+  );
+  const sanalUnreadList = (sanalUnreadListData?.data ?? []) as Array<{ _id: string; title?: string; message?: string; turul?: string; createdAt?: string; kharsanEsekh?: boolean; status?: string }>;
   const { baiguullaga } = useBaiguullaga(
     token || null,
     ajiltan?.baiguullagiinId || null
@@ -96,6 +125,8 @@ export default function GolContent({ children }: GolContentProps) {
 
   const desktopAvatarRef = useRef<HTMLDivElement>(null);
   const mobileAvatarRef = useRef<HTMLDivElement>(null);
+  const bellDesktopRef = useRef<HTMLDivElement>(null);
+  const bellMobileRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
 
@@ -144,6 +175,8 @@ export default function GolContent({ children }: GolContentProps) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenSubmenuIndex(null);
       }
+      const inBell = bellDesktopRef.current?.contains(e.target as Node) || bellMobileRef.current?.contains(e.target as Node);
+      if (!inBell) setShowSanalDropdown(false);
     };
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
@@ -566,6 +599,92 @@ export default function GolContent({ children }: GolContentProps) {
                 <HelpCircle className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
               </button>
 
+              {isLoggedIn && canSeeSanalKhuselt && (
+                <div className="relative z-[150]" ref={bellDesktopRef}>
+                  <div className="relative inline-block">
+                    <button
+                      type="button"
+                      aria-label="Санал хүсэлт"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowLogout(false);
+                        setShowSanalDropdown(!showSanalDropdown);
+                      }}
+                      className="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300"
+                    >
+                      <Bell className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
+                    </button>
+                    {sanalUnreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                        {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
+                      </span>
+                    )}
+                  </div>
+                  {showSanalDropdown && (
+                    <div
+                      className="absolute right-0 mt-2 w-72 max-h-[320px] overflow-y-auto menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
+                        <span className="text-sm font-medium text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                      </div>
+                      <ul className="py-2">
+                        {sanalUnreadList.length === 0 ? (
+                          <li className="px-4 py-3 text-sm text-[color:var(--panel-text)]/70">Мэдэгдэл алга</li>
+                        ) : (
+                          sanalUnreadList.map((item) => {
+                            const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                            return (
+                            <li key={item._id}>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setShowSanalDropdown(false);
+                                  router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                }}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 ${isUnread ? "text-[color:var(--panel-text)] font-medium" : "text-[color:var(--panel-text)]/80"}`}
+                              >
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100" : "opacity-60"}`} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium truncate">{item.title || "Мэдэгдэл"}</div>
+                                  {item.message && (
+                                    <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                  )}
+                                  {item.createdAt && (
+                                    <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                      {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                  )}
+                                </div>
+                                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                              </button>
+                            </li>
+                          );
+                          })
+                        )}
+                      </ul>
+                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setShowSanalDropdown(false);
+                            router.push("/medegdel/sanalKhuselt");
+                          }}
+                          className="w-full flex items-center justify-center gap-2 text-sm text-[color:var(--theme)] hover:underline"
+                        >
+                          Бүгдийг харах
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {isLoggedIn && (
                 <div className="relative z-[150]" ref={desktopAvatarRef}>
                   <button
@@ -680,6 +799,92 @@ export default function GolContent({ children }: GolContentProps) {
               >
                 <HelpCircle className="w-4 h-4 text-[color:var(--panel-text)]" />
               </button>
+
+              {isLoggedIn && canSeeSanalKhuselt && (
+                <div className="relative z-[150]" ref={bellMobileRef}>
+                  <div className="relative inline-block">
+                    <button
+                      type="button"
+                      aria-label="Санал хүсэлт"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowLogout(false);
+                        setShowSanalDropdown(!showSanalDropdown);
+                      }}
+                      className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+                    >
+                      <Bell className="w-4 h-4 text-[color:var(--panel-text)]" />
+                    </button>
+                    {sanalUnreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                        {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
+                      </span>
+                    )}
+                  </div>
+                  {showSanalDropdown && (
+                    <div
+                      className="absolute right-0 mt-2 w-72 max-h-[280px] overflow-y-auto menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
+                        <span className="text-sm font-medium text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                      </div>
+                      <ul className="py-2">
+                        {sanalUnreadList.length === 0 ? (
+                          <li className="px-4 py-3 text-sm text-[color:var(--panel-text)]/70">Мэдэгдэл алга</li>
+                        ) : (
+                          sanalUnreadList.map((item) => {
+                            const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                            return (
+                            <li key={item._id}>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  setShowSanalDropdown(false);
+                                  router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                }}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer hover:menu-surface/80 ${isUnread ? "text-[color:var(--panel-text)] font-medium" : "text-[color:var(--panel-text)]/80"}`}
+                              >
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100" : "opacity-60"}`} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium truncate">{item.title || "Мэдэгдэл"}</div>
+                                  {item.message && (
+                                    <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                  )}
+                                  {item.createdAt && (
+                                    <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                      {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                    </div>
+                                  )}
+                                </div>
+                                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                              </button>
+                            </li>
+                          );
+                          })
+                        )}
+                      </ul>
+                      <div className="border-t border-[color:var(--panel-text)]/20 px-3 py-2">
+                        <button
+                          type="button"
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setShowSanalDropdown(false);
+                            router.push("/medegdel/sanalKhuselt");
+                          }}
+                          className="w-full flex items-center justify-center gap-2 text-sm text-[color:var(--theme)] hover:underline"
+                        >
+                          Бүгдийг харах
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {isLoggedIn && (
                 <div className="relative z-[150]" ref={mobileAvatarRef}>
@@ -862,7 +1067,7 @@ export default function GolContent({ children }: GolContentProps) {
                       {hasSubmenu && isOpen && (
                         <div className="pl-4 space-y-1 animate-fadeIn">
                           {item.submenu!.map((sub, j) => {
-                            const subPath = `/${item.path}${sub.path}`;
+                            const subPath = `/${item.path}/${sub.path}`;
                             const isSubActive = pathname.startsWith(subPath);
                             return (
                               <button

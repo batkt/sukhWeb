@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { notification, Select } from "antd";
+import { mutate } from "swr";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -41,6 +43,8 @@ interface MedegdelItem {
 
 export default function SanalKhuselt() {
   const { t } = useTranslation();
+  const searchParams = useSearchParams();
+  const preselectedId = searchParams.get("id");
   const { ajiltan, token } = useAuth();
 
   const [medegdelList, setMedegdelList] = useState<MedegdelItem[]>([]);
@@ -63,6 +67,42 @@ export default function SanalKhuselt() {
       fetchMedegdelData(ajiltan.baiguullagiinId);
     }
   }, [ajiltan, token]);
+
+  useEffect(() => {
+    if (preselectedId && medegdelList.length > 0) {
+      const found = medegdelList.find((it) => it._id === preselectedId);
+      if (found) setSelectedMedegdel(found);
+    }
+  }, [preselectedId, medegdelList]);
+
+  const markedSeenIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const markAsSeen = async (item: MedegdelItem) => {
+      if (!item || !token || !ajiltan?.baiguullagiinId || markedSeenIds.current.has(item._id)) return;
+      if (item.status !== "pending" || item.kharsanEsekh) return;
+
+      try {
+        await uilchilgee(token).put(`/medegdel/${item._id}`, {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+          barilgiinId: ajiltan?.barilgiinId,
+          orshinSuugchId: item.orshinSuugchId,
+          title: item.title,
+          message: item.message,
+          kharsanEsekh: true,
+          status: item.status,
+        });
+        markedSeenIds.current.add(item._id);
+        mutate((key) => Array.isArray(key) && key[0] === "/medegdel/unreadCount");
+        mutate((key) => Array.isArray(key) && key[0] === "/medegdel/unreadList");
+      } catch {
+        // Ignore - don't block UI
+      }
+    };
+
+    if (selectedMedegdel) markAsSeen(selectedMedegdel);
+  }, [selectedMedegdel, token, ajiltan]);
 
   const fetchMedegdelData = async (baiguullagiinId: string) => {
     setLoading(true);
@@ -93,7 +133,10 @@ export default function SanalKhuselt() {
         );
         setMedegdelList(filteredData);
         if (filteredData.length > 0) {
-          setSelectedMedegdel(filteredData[0]);
+          const toSelect = preselectedId
+            ? filteredData.find((it: MedegdelItem) => it._id === preselectedId)
+            : null;
+          setSelectedMedegdel(toSelect || filteredData[0]);
         }
       } else {
         notification.error({ message: t("Өгөгдөл татахад алдаа гарлаа") });
@@ -469,7 +512,7 @@ export default function SanalKhuselt() {
                     </h3>
                     <div className="rounded-2xl overflow-hidden border border-[color:var(--surface-border)]">
                       <img 
-                        src={`${getApiUrl().replace(/\/api\/$/, '')}/${selectedMedegdel.zurag.replace(/^public\//, '')}`} 
+                        src={`${getApiUrl().replace(/\/$/, '')}/${selectedMedegdel.zurag.replace(/^public\//, '')}`} 
                         alt="Medegdel" 
                         className="w-full h-auto object-contain max-h-[500px] bg-black/5"
                       />

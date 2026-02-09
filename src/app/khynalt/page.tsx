@@ -371,6 +371,33 @@ export default function Khynalt() {
   }, [orlogoAvlagaData]);
 
   // Fetch ekhniiUldegdel from gereeniiTulukhAvlaga
+  // Fetch avlagiin-nasjilt for aging (days/months overdue) to show "how long" on авлага
+  const { data: avlagiinNasjiltData } = useSWR(
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
+      ? [
+        "/tailan/avlagiin-nasjilt",
+        token,
+        ajiltan.baiguullagiinId,
+        effectiveBarilgiinId,
+        rangeStart,
+        rangeEnd,
+      ]
+      : null,
+    async ([, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post("/tailan/avlagiin-nasjilt", {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
+        view: "delgerengui",
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 500,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
@@ -626,6 +653,78 @@ export default function Khynalt() {
     }
     return { count: 0, total: 0, items: [] };
   }, [overdueData]);
+
+  // Map gereeniiDugaar/gereeniiId -> aging info from avlagiin-nasjilt
+  const avlagaAgingMap = useMemo(() => {
+    const list = avlagiinNasjiltData?.detailed?.list ?? avlagiinNasjiltData?.jagsaalt ?? [];
+    const map = new Map<string, { daysOverdue?: number; monthsOverdue?: number; ageBucket?: string }>();
+    (Array.isArray(list) ? list : []).forEach((it: any) => {
+      const gd = it?.gereeniiDugaar ?? it?.gereeniiId;
+      if (gd) {
+        const aging = {
+          daysOverdue: it?.daysOverdue,
+          monthsOverdue: it?.monthsOverdue,
+          ageBucket: it?.ageBucket,
+        };
+        map.set(String(gd), aging);
+        if (it?.gereeniiId && String(it.gereeniiId) !== String(gd)) {
+          map.set(String(it.gereeniiId), aging);
+        }
+      }
+    });
+    return map;
+  }, [avlagiinNasjiltData]);
+
+  const formatAvlagaAge = (it: any): string => {
+    const key = it?.gereeniiDugaar ?? it?.gereeniiId ?? "";
+    const aging = avlagaAgingMap.get(String(key));
+    const months = it?.monthsOverdue ?? aging?.monthsOverdue;
+    const days = it?.daysOverdue ?? aging?.daysOverdue;
+    const ageBucket = it?.ageBucket ?? aging?.ageBucket;
+    if (months != null && Number(months) > 0) return `${months} сар хэтэрсэн`;
+    if (days != null && Number(days) > 0) return `${days} хоног хэтэрсэн`;
+    if (ageBucket === "0-30") return "30 хоног хүртэл";
+    if (ageBucket === "31-60") return "31-60 хоног";
+    if (ageBucket === "61-90" || ageBucket === "91-180") return "61+ хоног";
+    if (ageBucket === "180+") return "180+ хоног";
+    const oldestOgnoo = it?.oldestOgnoo ?? it?.ognoo;
+    if (oldestOgnoo) {
+      const d = new Date(oldestOgnoo);
+      if (!isNaN(d.getTime())) {
+        const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+        if (diffDays > 0) return `${diffDays} хоног хэтэрсэн`;
+      }
+    }
+    return it?.gereeniiDugaar ? "Төлбөр дутуу" : "Төлбөр дутуу";
+  };
+
+  // Хуримтлагдсан авлага: use orlogo-avlaga unpaid (accumulated receivables for date range) as primary, fallback to udsan-avlaga
+  const huurimtlagdsanAvlaga = useMemo(() => {
+    const unpaidList = Array.isArray(orlogoAvlagaData?.unpaid?.list)
+      ? orlogoAvlagaData.unpaid.list
+      : [];
+    const unpaidSum = Number(orlogoAvlagaData?.unpaid?.sum ?? 0) || 0;
+
+    if (unpaidList.length > 0) {
+      const items = unpaidList.map((it: any) => {
+        const amount =
+          Number(it?.uldegdel ?? it?.niitTulbur ?? it?.tulbur ?? 0) || 0;
+        const name = [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ");
+        return {
+          ...it,
+          amount,
+          name: name || it?.gereeniiDugaar || "-",
+          dugaalaltDugaar: it?.gereeniiDugaar || it?._id || it?.dugaalaltDugaar,
+        };
+      });
+      return {
+        count: items.length,
+        total: unpaidSum,
+        items,
+      };
+    }
+    return overdue2m;
+  }, [orlogoAvlagaData, overdue2m]);
 
   const cancelledReceivables = useMemo(() => {
     if (cancelledData?.success && (cancelledData.list?.length ?? 0) > 0) {
@@ -1001,9 +1100,9 @@ export default function Khynalt() {
   const kpiCards = kpiCardsRaw.filter(c => c.show !== false);
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar">
-      <div className="min-h-full pl-4 pt-4 pb-4 pr-0">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4">
+    <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
+      <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4 flex-shrink-0">
           <h1 className="text-2xl  text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
@@ -1030,12 +1129,12 @@ export default function Khynalt() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
           {kpiCards.map((card, index) => (
             <div
               key={index}
               onClick={card.onClick}
-              className={`neu-panel rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
+              className={`neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
                 ? "opacity-100 translate-y-0"
                 : "opacity-0 translate-y-4"
                 }`}
@@ -1044,7 +1143,7 @@ export default function Khynalt() {
                 willChange: "opacity, box-shadow",
               }}
             >
-              <div className="h-full flex flex-col justify-between transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
+              <div className="h-full flex flex-col justify-between transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
                 <div>
                   <h3 className="text-sm font-semibold text-[color:var(--panel-text)] mb-2">
                     {card.title}
@@ -1061,23 +1160,22 @@ export default function Khynalt() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0 flex-1 min-h-0">
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "600ms",
               willChange: "opacity, box-shadow",
             }}
           >
-            {/* inner wrapper: hover scale has no delay */}
-            <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
-              <div className="mb-4">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+              <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
                   Орлогын тайлан
                 </h3>
               </div>
-              <div className="h-64">
+              <div className="flex-1 min-h-0">
                 <Line
                   data={incomeLineData as any}
                   options={{
@@ -1108,57 +1206,55 @@ export default function Khynalt() {
 
          
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "700ms",
               willChange: "opacity, box-shadow",
             }}
           >
-            <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+              <div className="mb-2 flex items-baseline justify-between gap-2 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
-                  Хуримтлагдсан авлага /+ 2сар /
+                  Хуримтлагдсан авлага
                 </h3>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   <div className="text-sm text-[color:var(--muted-text)]">
                     Нийт
                   </div>
                   <div className="text-base font-semibold text-[color:var(--panel-text)]">
-                    {overdue2m.count} / {formatCurrency(overdue2m.total)}
+                    {huurimtlagdsanAvlaga.count} / {formatCurrency(huurimtlagdsanAvlaga.total)}
                   </div>
                 </div>
               </div>
-              <div className="h-64 overflow-auto custom-scrollbar pr-1">
-                {overdue2m.items.slice(0, 12).map((it: any, idx: number) => {
-                  const amount = Number(it?.niitTulbur ?? 0) || 0;
-                  const name = [it?.ovog, it?.ner, it?.toot]
+              <div className="flex-1 min-h-[80px] overflow-auto custom-scrollbar pr-1">
+                {huurimtlagdsanAvlaga.items.slice(0, 12).map((it: any, idx: number) => {
+                  const amount = (it?.amount ?? Number(it?.uldegdel ?? it?.niitTulbur ?? it?.tulbur ?? 0)) || 0;
+                  const name = it?.name ?? [it?.ovog, it?.ner, it?.toot]
                     .filter(Boolean)
-                    .join(" ");
-                  const months = it?.monthsOverdue || 0;
+                    .join(" ") ?? it?.gereeniiDugaar ?? "-";
+                  const ageLabel = formatAvlagaAge(it);
                   return (
                     <div
-                      key={it?.dugaalaltDugaar || idx}
-                      className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0"
+                      key={it?.dugaalaltDugaar || it?.gereeniiDugaar || idx}
+                      className="flex items-center justify-between py-2 border-b border-[color:var(--surface-border)]/60 last:border-0 gap-2 min-w-0"
                     >
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-[color:var(--panel-text)] truncate">
-                          {name || it?.gereeniiDugaar || "-"}
+                          {name || "-"}
                         </div>
                         <div className="text-xs text-[color:var(--muted-text)] truncate">
-                          {months > 0
-                            ? `${months} сар хэтэрсэн`
-                            : `Хугацаа хэтэрсэн`}
+                          {ageLabel}
                         </div>
                       </div>
-                      <div className="text-sm font-semibold text-red-500">
+                      <div className="text-sm font-semibold text-red-500 flex-shrink-0">
                         {formatCurrency(amount)}
                       </div>
                     </div>
                   );
                 })}
-                {overdue2m.items.length === 0 && (
-                  <div className="h-full flex items-center justify-center text-sm text-[color:var(--muted-text)]">
+                {huurimtlagdsanAvlaga.items.length === 0 && (
+                  <div className="min-h-[80px] flex items-center justify-center text-sm text-[color:var(--muted-text)]">
                     Мэдээлэл байхгүй
                   </div>
                 )}
@@ -1168,15 +1264,15 @@ export default function Khynalt() {
 
           {/* Cancelled contract receivables */}
           <div
-            className={`neu-panel rounded-3xl p-4 transition-opacity duration-500 cursor-pointer ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "800ms",
               willChange: "opacity, box-shadow",
             }}
           >
-            <div className="transition-shadow duration-200 hover:shadow-[0_12px_30px_var(--theme)]">
-              <div className="mb-2 flex items-baseline justify-between gap-2">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+              <div className="mb-2 flex items-baseline justify-between gap-2 flex-shrink-0">
                 <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
                   Цуцлагдсан гэрээний авлага
                 </h3>
@@ -1190,7 +1286,7 @@ export default function Khynalt() {
                   </div>
                 </div>
               </div>
-              <div className="h-64 overflow-auto custom-scrollbar pr-1">
+              <div className="flex-1 min-h-[80px] overflow-auto custom-scrollbar pr-1">
                 {cancelledReceivables.items
                   .slice(0, 12)
                   .map((it: any, idx: number) => {
@@ -1220,7 +1316,7 @@ export default function Khynalt() {
                     );
                   })}
                 {cancelledReceivables.items.length === 0 && (
-                  <div className="h-full flex items-center justify-center text-sm text-[color:var(--muted-text)]">
+                  <div className="min-h-[80px] flex items-center justify-center text-sm text-[color:var(--muted-text)]">
                     Мэдээлэл байхгүй
                   </div>
                 )}
@@ -1230,72 +1326,7 @@ export default function Khynalt() {
         </div>
 
         {/* Summary from Tailan */}
-        <div
-          className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-          style={{ transitionDelay: "1000ms" }}
-        >
-          <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">
-            Тайлангийн дүгнэлт
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {formatCurrency(totalOrlogoFromTailan)}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Нийт орлого
-              </p>
-            </div>
-            {/* <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {formatCurrency(totalExpenses)}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Нийт зарлага
-              </p>
-            </div> */}
-            {/* <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {formatCurrency(totalProfit)}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">Ашиг</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {totalTransactions}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Нийт гүйлгээ
-              </p>
-            </div> */}
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {displayResidentsUnpaidCount}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Төлөөгүй оршин суугч
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {displayResidentsPaidCount}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Төлсөн оршин суугч
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {filteredTotalResidents}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Оршин суугч
-              </p>
-            </div>
-          </div>
-        </div>
-
+        
         {/* Additional Info */}
         {/* <div
           className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${
