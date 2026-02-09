@@ -330,7 +330,7 @@ export default function KhyanaltFrontend() {
               onClick={handleOpenTemplateModal}
               className="btn-minimal-sm btn-minimal inline-flex items-center gap-1.5 px-2 py-1 text-xs"
             >
-              <Plus className="w-3.5 h-3.5" />
+               
               Нэмэх
             </button>
           </div>
