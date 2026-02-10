@@ -3,6 +3,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { ConfigProvider } from "antd";
+import { Toaster } from "sonner";
 import "@mantine/core/styles.css";
 // Removed Mantine dates styles; using custom DatePicker component
 import dayjs from "dayjs";
@@ -295,6 +296,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         <BuildingProvider>
           <RequestScopeSync />
           {children}
+          <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />
           

@@ -15,8 +15,10 @@ import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "./selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { useSocket } from "@/context/SocketContext";
+import { toast } from "sonner";
 
 const TuslamjTokhirgoo = lazy(() =>
   import("@/app/tokhirgoo/TuslamjTokhirgoo").then((m) => ({ default: m.default }))
@@ -100,6 +102,38 @@ export default function GolContent({ children }: GolContentProps) {
     }
   );
   const sanalUnreadList = (sanalUnreadListData?.data ?? []) as Array<{ _id: string; title?: string; message?: string; turul?: string; createdAt?: string; kharsanEsekh?: boolean; status?: string }>;
+  const socket = useSocket();
+
+  // Global medegdel socket: show toast when new notification or chat message arrives (so toast shows on any page, not only sanalKhuselt)
+  useEffect(() => {
+    if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
+    const event = "baiguullagiin" + ajiltan.baiguullagiinId;
+    const handler = (payload: { type?: string }) => {
+      if (payload?.type === "medegdelNew") {
+        toast("Таны шинэ мэдэгдэл ирлээ", {
+          description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
+          duration: 4000,
+        });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+      }
+      if (payload?.type === "medegdelUserReply" || payload?.type === "medegdelAdminReply") {
+        toast("Шинэ чат мессеж ирлээ", {
+          description: "Харилцаанд шинэ хариу орсон байна.",
+          duration: 4000,
+        });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+      }
+      if (payload?.type === "medegdelSeen") {
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
+      }
+    };
+    socket.on(event, handler);
+    return () => {
+      socket.off(event, handler);
+    };
+  }, [socket, ajiltan?.baiguullagiinId, canSeeSanalKhuselt]);
+
   const { baiguullaga } = useBaiguullaga(
     token || null,
     ajiltan?.baiguullagiinId || null

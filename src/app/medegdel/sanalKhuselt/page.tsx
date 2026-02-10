@@ -96,6 +96,8 @@ export default function SanalKhuselt() {
   selectedMedegdelRef.current = selectedMedegdel ?? null;
   /** When refetching list after socket, keep this root selected (avoids jump when admin sends reply). */
   const keepSelectionRootIdRef = useRef<string | null>(null);
+  /** Reply id we just sent from this tab; skip adding it again when we receive the same id via socket. */
+  const lastSentAdminReplyIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (ajiltan?.baiguullagiinId && token) {
@@ -181,7 +183,7 @@ export default function SanalKhuselt() {
     };
 
     if (selectedMedegdel) markAsSeen(selectedMedegdel);
-  }, [selectedMedegdel, token, ajiltan]);
+  }, [selectedMedegdel?._id, selectedMedegdel, token, ajiltan]);
 
   const fetchMedegdelData = async (
     baiguullagiinId: string,
@@ -240,14 +242,40 @@ export default function SanalKhuselt() {
     }
   };
 
-  // When user replies from app, backend emits to baiguullagiin; refetch list and open thread so reply shows on web
+  // Real-time: new medegdel from app, user reply, or admin reply. Refetch list/thread; toast is shown globally from golContent.
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
     const bId = ajiltan.baiguullagiinId;
     console.log("[sanalKhuselt] SUBSCRIBE socket event=", event);
-    const handler = (payload: { type?: string; data?: { parentId?: unknown } }) => {
+    const handler = (payload: { type?: string; data?: { parentId?: unknown; rootId?: string } }) => {
       console.log("[sanalKhuselt] RECV socket", event, "payload.type=", payload?.type, "payload=", payload);
+      // Real-time seen: update list, selection, and thread so "seen" shows without refresh
+      if (payload?.type === "medegdelSeen") {
+        const rootId = payload?.data?.rootId != null ? String(payload.data.rootId) : null;
+        if (rootId) {
+          setMedegdelList((prev) =>
+            prev.map((it) => (String(it._id) === rootId ? { ...it, kharsanEsekh: true } : it))
+          );
+          setSelectedMedegdel((prev) => {
+            if (!prev) return prev;
+            const prevRootId = String((prev as MedegdelItem).parentId || prev._id);
+            return prevRootId === rootId ? { ...prev, kharsanEsekh: true } : prev;
+          });
+          const sel = selectedMedegdelRef.current;
+          const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
+          if (currentRootId === rootId) {
+            setThreadMessages((prev) => prev.map((m) => ({ ...m, kharsanEsekh: true })));
+          }
+          mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+          mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
+        }
+      }
+      // Toast is shown globally from golContent so it appears on any page; here we only refetch and update list/thread
+      if (payload?.type === "medegdelNew") {
+        fetchMedegdelData(bId);
+        mutate((k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+      }
       if (payload?.type === "medegdelUserReply") {
         const replyData = payload?.data as MedegdelItem | undefined;
         const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
@@ -259,16 +287,23 @@ export default function SanalKhuselt() {
         }
         if (currentRootId) keepSelectionRootIdRef.current = currentRootId;
         fetchMedegdelData(bId, { keepSelection: true });
+        mutate((k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelAdminReply") {
         const replyData = payload?.data as MedegdelItem | undefined;
+        const replyId = replyData?._id != null ? String(replyData._id) : null;
+        if (replyId && replyId === lastSentAdminReplyIdRef.current) {
+          lastSentAdminReplyIdRef.current = null;
+          const sel = selectedMedegdelRef.current;
+          if (sel) keepSelectionRootIdRef.current = String((sel as MedegdelItem).parentId || sel._id);
+          fetchMedegdelData(bId, { keepSelection: true });
+          return;
+        }
         const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
         const sel = selectedMedegdelRef.current;
         const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
         const isForOpenThread = replyParentId !== null && currentRootId !== null && replyParentId === currentRootId;
-        // Only append if not already in thread (avoids duplicate when admin sent from this tab)
         if (isForOpenThread && replyData) {
-          const replyId = replyData._id != null ? String(replyData._id) : null;
           setThreadMessages((prev) => {
             if (replyId && prev.some((m) => String(m._id) === replyId)) return prev;
             return [...prev, { ...replyData, parentId: replyParentId }];
@@ -408,7 +443,13 @@ export default function SanalKhuselt() {
       setReplyInput("");
       const newReply = res.data?.data;
       if (newReply) {
-        setThreadMessages((prev) => [...prev, { ...newReply, parentId: newReply.parentId ? String(newReply.parentId) : rootId }]);
+        const replyId = newReply._id != null ? String(newReply._id) : null;
+        if (replyId) lastSentAdminReplyIdRef.current = replyId;
+        const item = { ...newReply, parentId: newReply.parentId ? String(newReply.parentId) : rootId };
+        setThreadMessages((prev) => {
+          if (replyId && prev.some((m) => String(m._id) === replyId)) return prev;
+          return [...prev, item];
+        });
       }
     } catch (e) {
       console.error("[sanalKhuselt] sendAdminReply error", e);
