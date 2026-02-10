@@ -39,7 +39,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[1000]"
           onClick={onClose}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
@@ -48,28 +48,29 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-0 overflow-hidden max-h-[85vh] flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[1100] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-500/10 to-blue-500/5 dark:from-blue-900/20 dark:to-blue-900/10">
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-[var(--panel-text)]">
+            <div className="invoice-modal h-full flex flex-col">
+            {/* Header – match Үйлчилгээний нэхэмжлэх style */}
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
+              <div>
+                <h3 className="text-xl font-semibold text-slate-800">
                 Нэхэмжлэхийн урьдчилсан харалт
-              </h3>
+                </h3>
+                <p className="text-sm text-slate-500">
+                  {getMonthName(preview.ognoo)}
+                </p>
+              </div>
               <div className="flex items-center gap-4">
-                <div className="text-right mr-4">
-                  <p className="text-lg  text-blue-600 dark:text-blue-400">
-                    {getMonthName(preview.ognoo)}
-                  </p>
-                </div>
                 <button
                   onClick={onClose}
-                  className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   aria-label="Хаах"
                   title="Хаах"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-slate-700 dark:text-[var(--panel-text)]"
+                    className="h-6 w-6 text-slate-700"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -86,83 +87,72 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
               </div>
             </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            {/* Content – reuse structure but in invoice-modal look */}
+            <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
               <div className="space-y-6">
-                {/* Contract Info - Excel-style layout */}
-                <div className="bg-slate-50 dark:bg-gray-800/50 rounded-xl p-5 border border-slate-200 dark:border-gray-700">
-                  <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Гэрээний мэдээлэл
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                    {/* Left: Нэхэмжлэгч (Organization) */}
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">нэхэмжлэгч</span>
-                        <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.baiguullagiinNer || preview.sohNer || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Утас</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.baiguullagiinUtas || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Хаяг</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.baiguullagiinKhayag || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Дансны мэдээлэл</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.dansniiMedeelel || "-"}
-                        </p>
-                      </div>
+                {/* Contract Info - match Үйлчилгээний нэхэмжлэх layout */}
+                <div className="grid grid-cols-2 gap-4 print-break">
+                  {/* Left: Нэхэмжлэгч (Organization) */}
+                  <div className="rounded-xl border border-emerald-200 bg-transparent p-4">
+                    <h3 className="text-sm font-semibold text-emerald-500 mb-3 flex items-center gap-2">
+                      <span className="inline-block w-1 h-4 rounded" />
+                      Нэхэмжлэгч
+                    </h3>
+                    <div className="space-y-1.5 text-sm text-slate-600">
+                      <p>
+                        <span className="font-medium text-slate-500">Нэхэмжлэгч:</span>{" "}
+                        {preview.baiguullagiinNer || preview.sohNer || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Утас:</span>{" "}
+                        {preview.baiguullagiinUtas || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Хаяг:</span>{" "}
+                        {preview.baiguullagiinKhayag || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Данс:</span>{" "}
+                        {preview.dansniiMedeelel || "-"}
+                      </p>
                     </div>
-                    {/* Right: Төлөгч (Payer / Resident) */}
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Төлөгч</span>
-                        <p className="font-semibold text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Гэрээний дугаар</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.gereeniiDugaar || "-"}</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Байр</span>
-                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.davkhar || "-"}</p>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Орц</span>
-                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.orts || "-"}</p>
-                        </div>
-                        <div>
-                          <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Тоот</span>
-                          <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">{preview.toot || "-"}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Оршин суугчийн нэр</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
-                          {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 dark:text-slate-400 block text-xs uppercase tracking-wide mb-0.5">Утас</span>
-                        <p className="font-medium text-slate-900 dark:text-[var(--panel-text)]">
-                          {Array.isArray(preview.utas) ? preview.utas.join(", ") : preview.utas || "-"}
-                        </p>
-                      </div>
+                  </div>
+
+                  {/* Right: Төлөгч (Payer / Resident) */}
+                  <div className="rounded-xl border border-gray-200 bg-transparent p-4">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <span className="inline-block w-1 h-4 bg-slate-400 rounded" />
+                      Төлөгч
+                    </h3>
+                    <div className="space-y-1.5 text-sm text-slate-600">
+                      <p>
+                        <span className="font-medium text-slate-500">Төлөгч:</span>{" "}
+                        {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Гэрээний дугаар:</span>{" "}
+                        {preview.gereeniiDugaar || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Байр:</span>{" "}
+                        {preview.davkhar || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Орц:</span>{" "}
+                        {preview.orts || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Тоот:</span>{" "}
+                        {preview.toot || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Оршин суугчийн нэр:</span>{" "}
+                        {preview.ovog ? `${preview.ovog} ${preview.ner}` : preview.ner || "-"}
+                      </p>
+                      <p>
+                        <span className="font-medium text-slate-500">Утас:</span>{" "}
+                        {Array.isArray(preview.utas) ? preview.utas.join(", ") : preview.utas || "-"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -175,9 +165,9 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     </svg>
                     Зардлын жагсаалт
                   </h4>
-                  <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-gray-700">
+                  <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
                     <table className="w-full text-sm">
-                      <thead className="bg-slate-100 dark:bg-gray-800">
+                      <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">№</th>
                           <th className="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Зардлын нэр</th>
@@ -206,7 +196,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 </div>
 
                 {/* Summary */}
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl p-5 border border-blue-200 dark:border-blue-800">
+                <div className="rounded-xl p-5 border border-blue-200 dark:border-blue-800 bg-transparent">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700 dark:text-slate-300">Зардлын нийт дүн:</span>
@@ -227,13 +217,13 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 dark:bg-gray-800/50 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
+                  <div className="rounded-lg p-4 border border-gray-200 bg-transparent">
                     <span className="text-xs text-slate-600 dark:text-slate-400">Үүсгэсэн огноо</span>
                     <p className="text-sm font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.ognoo)}
                     </p>
                   </div>
-                  <div className="bg-slate-50 dark:bg-gray-800/50 rounded-lg p-4 border border-slate-200 dark:border-gray-700">
+                  <div className="rounded-lg p-4 border border-gray-200 bg-transparent">
                     <span className="text-xs text-slate-600 dark:text-slate-400">Төлөх огноо</span>
                     <p className="text-sm font-semibold text-slate-900 dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.tulukhOgnoo)}
@@ -244,16 +234,19 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-800/50">
-              <motion.button
-                type="button"
-                onClick={onClose}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="btn-minimal btn-cancel px-6 py-2 rounded-lg text-sm font-medium"
-              >
-                Хаах
-              </motion.button>
+            <div className="border-t border-gray-100 bg-gray-50 p-4 no-print rounded-b-3xl">
+              <div className="flex justify-end gap-3">
+                <motion.button
+                  type="button"
+                  onClick={onClose}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="btn-minimal btn-cancel px-6 py-2 rounded-lg text-sm font-medium"
+                >
+                  Хаах
+                </motion.button>
+              </div>
+            </div>
             </div>
           </motion.div>
         </motion.div>

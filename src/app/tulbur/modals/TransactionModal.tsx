@@ -40,12 +40,26 @@ export default function TransactionModal({
   const [ekhniiUldegdel, setEkhniiUldegdel] = useState(false);
   const [lastShow, setLastShow] = useState(false);
 
+  // Ашиглалтын зардал (цахилгаан кВт) – additional fields when type === "ashiglalt"
+  const [ashiglaltZardal, setAshiglaltZardal] = useState<"" | "tsakhilgaan_kv">("");
+  const [tsahilgaanKv, setTsahilgaanKv] = useState("");
+  const [umnukhZaalt, setUmnukhZaalt] = useState("");
+  const [suuliinZaalt, setSuuliinZaalt] = useState("");
+  const [guidliinKoeff, setGuidliinKoeff] = useState("");
+  const [showUsageOnInvoice, setShowUsageOnInvoice] = useState(true);
+
   const resetForm = () => {
     setTransactionType("avlaga");
     setTransactionDate(new Date().toISOString().split("T")[0]);
     setAmount("0.00");
     setTailbar("");
     setEkhniiUldegdel(false);
+     setAshiglaltZardal("");
+     setTsahilgaanKv("");
+     setUmnukhZaalt("");
+     setSuuliinZaalt("");
+     setGuidliinKoeff("");
+     setShowUsageOnInvoice(true);
   };
 
   const handleClose = () => {
@@ -56,6 +70,13 @@ export default function TransactionModal({
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
+      // Prefill electricity usage when opening for a resident
+      if (resident?.tsahilgaaniiZaalt) {
+        setAshiglaltZardal("tsakhilgaan_kv");
+        setTsahilgaanKv(
+          String(resident.tsahilgaaniiZaalt).replace(/,/g, "")
+        );
+      }
     }
     setLastShow(show);
   }, [show, lastShow]);
@@ -67,13 +88,41 @@ export default function TransactionModal({
   });
 
   const handleSubmit = async () => {
+    // Build tailbar including optional ashiglalt (electricity) details
+    let finalTailbar = tailbar;
+    if (
+      transactionType === "ashiglalt" &&
+      ashiglaltZardal === "tsakhilgaan_kv" &&
+      showUsageOnInvoice
+    ) {
+      const parts: string[] = [];
+      if (tsahilgaanKv.trim()) {
+        parts.push(`Цахилгаан кВт: ${tsahilgaanKv.trim()}`);
+      }
+      if (umnukhZaalt.trim()) {
+        parts.push(`Өмнөх заалт: ${umnukhZaalt.trim()}`);
+      }
+      if (suuliinZaalt.trim()) {
+        parts.push(`Сүүлийн заалт: ${suuliinZaalt.trim()}`);
+      }
+      if (guidliinKoeff.trim()) {
+        parts.push(`Гүйдлийн коэффициент: ${guidliinKoeff.trim()}`);
+      }
+      const usageText = parts.join(", ");
+      if (usageText) {
+        finalTailbar = finalTailbar
+          ? `${finalTailbar} | ${usageText}`
+          : usageText;
+      }
+    }
+
     const data: TransactionData = {
       type: transactionType,
       date: transactionDate,
       amount: parseFloat(amount.replace(/,/g, "")) || 0,
       residentId: resident?._id,
       gereeniiId: resident?.gereeniiId,
-      tailbar,
+      tailbar: finalTailbar,
       ekhniiUldegdel,
     };
 
@@ -85,7 +134,7 @@ export default function TransactionModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -100,7 +149,7 @@ export default function TransactionModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="relative modal-surface rounded-2xl shadow-2xl w-[500px] overflow-hidden border border-[color:var(--surface-border)]"
+          className="relative modal-surface rounded-2xl shadow-2xl w-[500px] !max-h-[80vh] overflow-y-auto border border-[color:var(--surface-border)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -238,6 +287,137 @@ export default function TransactionModal({
                 />
               </div>
             </div>
+
+            {/* Ашиглалтын зардал – Цахилгаан кВ (only when type is ashiglalt) */}
+            {transactionType === "ashiglalt" && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                    Ашиглалтын зардал
+                  </label>
+                  <select
+                    value={ashiglaltZardal}
+                    onChange={(e) =>
+                      setAshiglaltZardal(e.target.value as "" | "tsakhilgaan_kv")
+                    }
+                    disabled={isProcessing}
+                    className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                  >
+                    <option value="">Сонгоно уу</option>
+                    <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
+                  </select>
+                </div>
+
+                {ashiglaltZardal === "tsakhilgaan_kv" && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                          Цахилгаан кВт
+                        </label>
+                        <input
+                          type="text"
+                          value={tsahilgaanKv}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setTsahilgaanKv(val);
+                            }
+                          }}
+                          disabled={isProcessing}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                          Гүйдлийн коэффициент
+                        </label>
+                        <input
+                          type="text"
+                          value={guidliinKoeff}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setGuidliinKoeff(val);
+                            }
+                          }}
+                          disabled={isProcessing}
+                          placeholder="1.00"
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                          Өмнөх заалт
+                        </label>
+                        <input
+                          type="text"
+                          value={umnukhZaalt}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setUmnukhZaalt(val);
+                            }
+                          }}
+                          disabled={isProcessing}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                          Сүүлийн заалт
+                        </label>
+                        <input
+                          type="text"
+                          value={suuliinZaalt}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setSuuliinZaalt(val);
+                            }
+                          }}
+                          disabled={isProcessing}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-medium text-[color:var(--panel-text)]">
+                          Нэхэмжлэх дээр харах эсэх
+                        </p>
+                        <p className="text-[10px] text-[color:var(--muted-text)]">
+                          Идэвхтэй бол энэ мэдээлэл нэхэмжлэхийн тайлбарт харагдана
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowUsageOnInvoice((v) => !v)}
+                        disabled={isProcessing}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          showUsageOnInvoice
+                            ? "bg-[color:var(--theme)]"
+                            : "bg-[color:var(--surface-border)]"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            showUsageOnInvoice ? "translate-x-5" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Tailbar Input */}
             <div className="space-y-1.5">

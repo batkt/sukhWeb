@@ -17,7 +17,7 @@ interface ResidentModalProps {
   getTootOptions: (orts: string, floor: string) => string[];
   selectedBarilga: any;
   baiguullaga: any;
-  contracts: any[];
+  currentResidents: any[];
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -32,7 +32,7 @@ export default function ResidentModal({
   getTootOptions,
   selectedBarilga,
   baiguullaga,
-  contracts,
+  currentResidents,
   onSubmit,
 }: ResidentModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
@@ -71,6 +71,48 @@ export default function ResidentModal({
   const handleLocalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validate()) {
+      // Duplicate check: same ovog + ner + phone already registered
+      const ovog = (newResident.ovog || "").toString().trim().toLowerCase();
+      const ner = (newResident.ner || "").toString().trim().toLowerCase();
+      const phone =
+        (Array.isArray(newResident.utas)
+          ? newResident.utas[0]
+          : newResident.utas || ""
+        )
+          .toString()
+          .trim();
+
+      if (ovog && ner && phone && Array.isArray(currentResidents)) {
+        const duplicates = currentResidents.filter((r: any) => {
+          const rOvog = (r.ovog || "").toString().trim().toLowerCase();
+          const rNer = (r.ner || "").toString().trim().toLowerCase();
+          const rPhone = (Array.isArray(r.utas) ? r.utas[0] : r.utas || "")
+            .toString()
+            .trim();
+          // Ignore the same resident when editing
+          const isSameResident =
+            editingResident && String(editingResident._id || "") === String(r._id || "");
+          if (isSameResident) return false;
+          return rOvog === ovog && rNer === ner && rPhone === phone;
+        });
+
+        if (duplicates.length > 0) {
+          const tootList = duplicates
+            .map((r: any) => {
+              const orts = r.orts || "-";
+              const davkhar = r.davkhar || "-";
+              const toot = r.toot || "-";
+              return `${orts} орц, ${davkhar} давхар, ${toot} тоот`;
+            })
+            .join("; ");
+
+          openErrorOverlay(
+            `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`
+          );
+          return;
+        }
+      }
+
       onSubmit(e);
     }
   };
