@@ -41,6 +41,17 @@ export function getApiUrl(): string {
   return "https://amarhome.mn/api/";
 }
 
+/** Base URL for medegdel static assets (images/audio). Use origin + /medegdel/ so nginx can serve or proxy without /api. */
+export function getMedegdelAssetUrl(): string {
+  const api = getApiUrl();
+  try {
+    const u = new URL(api);
+    return `${u.origin}/medegdel/`;
+  } catch {
+    return api.replace(/\/?$/, "") + "/medegdel/";
+  }
+}
+
 // Export url for backward compatibility and direct access
 // Note: This will use default on server-side, runtime check happens in functions
 // Export a runtime-resolved url so server-side code can also pick up branch overrides

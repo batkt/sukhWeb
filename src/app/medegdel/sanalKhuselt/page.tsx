@@ -9,9 +9,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
+import { useSocket } from "@/context/SocketContext";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import {
   CheckCircle,
+  CheckCheck,
   Clock,
   XCircle,
   MessageSquare,
@@ -20,10 +22,25 @@ import {
   ChevronRight,
   Search,
   ArrowLeft,
+  Send,
+  ImagePlus,
+  Mic,
+  Square,
 } from "lucide-react";
+
+/** Normalize zurag/duu to API path "baiguullagiinId/filename". Handles full server paths (e.g. /root/sukhBack/public/medegdel/.../file.jpg) and relative paths. */
+function normalizeMedegdelAssetPath(p: string | null | undefined): string {
+  if (p == null || !p.trim()) return "";
+  const s = p.trim().replace(/^\/+/, "").replace(/^public\/medegdel\/?/i, "").replace(/^public\/?/i, "");
+  const parts = s.split("/").filter(Boolean);
+  if (parts.length >= 2) return parts.slice(-2).join("/");
+  if (parts.length === 1) return parts[0];
+  return s || p.trim();
+}
 
 interface MedegdelItem {
   _id: string;
+  parentId?: string | null;
   status: string;
   orshinSuugchId: string | null;
   baiguullagiinId: string;
@@ -40,6 +57,7 @@ interface MedegdelItem {
   repliedBy?: string;
   tailbar?: string;
   zurag?: string;
+  duu?: string; // voice message path
 }
 
 export default function SanalKhuselt() {
@@ -48,6 +66,7 @@ export default function SanalKhuselt() {
   const preselectedId = searchParams.get("id");
   const { ajiltan, token } = useAuth();
   const { selectedBuildingId } = useBuilding();
+  const socket = useSocket();
 
   const [medegdelList, setMedegdelList] = useState<MedegdelItem[]>([]);
   const [selectedMedegdel, setSelectedMedegdel] = useState<MedegdelItem | null>(
@@ -59,16 +78,63 @@ export default function SanalKhuselt() {
     newStatus: string;
     oldStatus: string;
   } | null>(null);
+  const [tailbarText, setTailbarText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [showDetail, setShowDetail] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [threadMessages, setThreadMessages] = useState<MedegdelItem[]>([]);
+  const [threadLoading, setThreadLoading] = useState(false);
+  const [replyInput, setReplyInput] = useState("");
+  const [replySending, setReplySending] = useState(false);
+  const [replyImage, setReplyImage] = useState<File | null>(null);
+  const [replyVoiceBlob, setReplyVoiceBlob] = useState<Blob | null>(null);
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const replyImageInputRef = useRef<HTMLInputElement>(null);
+  const selectedMedegdelRef = useRef<MedegdelItem | null>(null);
+  selectedMedegdelRef.current = selectedMedegdel ?? null;
+  /** When refetching list after socket, keep this root selected (avoids jump when admin sends reply). */
+  const keepSelectionRootIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (ajiltan?.baiguullagiinId && token) {
       fetchMedegdelData(ajiltan.baiguullagiinId);
     }
   }, [ajiltan, token]);
+
+  const fetchThread = async (rootId: string) => {
+    if (!token || !ajiltan?.baiguullagiinId) {
+      console.warn("[sanalKhuselt] fetchThread skip (missing token/baiguullagiinId) rootId=", rootId);
+      return;
+    }
+    setThreadLoading(true);
+    try {
+      const params: { baiguullagiinId: string; tukhainBaaziinKholbolt?: string } = { baiguullagiinId: ajiltan.baiguullagiinId };
+      if (ajiltan.tukhainBaaziinKholbolt) params.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
+      const res = await uilchilgee(token).get(`/medegdel/thread/${rootId}`, { params });
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        setThreadMessages(res.data.data);
+        console.log("[sanalKhuselt] fetchThread ok rootId=", rootId, "count=", res.data.data.length);
+      } else {
+        setThreadMessages([]);
+      }
+    } catch (e) {
+      console.warn("[sanalKhuselt] fetchThread error rootId=", rootId, e);
+      setThreadMessages([]);
+    } finally {
+      setThreadLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedMedegdel || !token || !ajiltan?.baiguullagiinId) {
+      setThreadMessages([]);
+      return;
+    }
+    const rootId = (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id;
+    fetchThread(rootId);
+  }, [selectedMedegdel?._id]);
 
   useEffect(() => {
     if (preselectedId && medegdelList.length > 0) {
@@ -95,6 +161,8 @@ export default function SanalKhuselt() {
         setSelectedMedegdel((prev) =>
           prev?._id === item._id ? { ...prev, kharsanEsekh: true } : prev
         );
+        // Backend marks root + all replies in thread; update thread messages so "seen" shows without refetch
+        setThreadMessages((prev) => prev.map((m) => ({ ...m, kharsanEsekh: true })));
         // Fetch fresh unread count and update cache directly (same params as golContent)
         const countRes = await uilchilgee(token).get("/medegdel/unreadCount", {
           params: { baiguullagiinId: ajiltan.baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}) },
@@ -115,7 +183,11 @@ export default function SanalKhuselt() {
     if (selectedMedegdel) markAsSeen(selectedMedegdel);
   }, [selectedMedegdel, token, ajiltan]);
 
-  const fetchMedegdelData = async (baiguullagiinId: string) => {
+  const fetchMedegdelData = async (
+    baiguullagiinId: string,
+    options?: { keepSelection?: boolean }
+  ) => {
+    console.log("[sanalKhuselt] fetchMedegdelData start baiguullagiinId=", baiguullagiinId);
     setLoading(true);
     try {
       const response = await uilchilgee(token || undefined).get("/medegdel", {
@@ -137,13 +209,21 @@ export default function SanalKhuselt() {
             turul === "гомдол"
           );
         });
-        // Sort by date desc
+        // Sort by last activity (updatedAt) so last replied chat is on top
         filteredData.sort(
           (a: any, b: any) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
         );
         setMedegdelList(filteredData);
-        if (filteredData.length > 0) {
+        console.log("[sanalKhuselt] fetchMedegdelData ok count=", filteredData.length);
+        const rootIdToKeep = keepSelectionRootIdRef.current;
+        if (options?.keepSelection && (rootIdToKeep != null || selectedMedegdelRef.current)) {
+          // Prefer explicit root we stored (e.g. when socket fired); else use current selection
+          const rootId = rootIdToKeep ?? String(((selectedMedegdelRef.current as MedegdelItem)?.parentId || selectedMedegdelRef.current?._id) ?? "");
+          keepSelectionRootIdRef.current = null;
+          const fresh = filteredData.find((it: MedegdelItem) => String(it._id) === String(rootId));
+          if (fresh) setSelectedMedegdel(fresh);
+        } else if (filteredData.length > 0) {
           const toSelect = preselectedId
             ? filteredData.find((it: MedegdelItem) => it._id === preselectedId)
             : null;
@@ -153,10 +233,188 @@ export default function SanalKhuselt() {
         notification.error({ message: t("Өгөгдөл татахад алдаа гарлаа") });
       }
     } catch (error) {
-      console.error("Error fetching medegdel:", error);
+      console.error("[sanalKhuselt] fetchMedegdelData error", error);
       notification.error({ message: t("Өгөгдөл татахад алдаа гарлаа") });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // When user replies from app, backend emits to baiguullagiin; refetch list and open thread so reply shows on web
+  useEffect(() => {
+    if (!socket || !ajiltan?.baiguullagiinId) return;
+    const event = "baiguullagiin" + ajiltan.baiguullagiinId;
+    const bId = ajiltan.baiguullagiinId;
+    console.log("[sanalKhuselt] SUBSCRIBE socket event=", event);
+    const handler = (payload: { type?: string; data?: { parentId?: unknown } }) => {
+      console.log("[sanalKhuselt] RECV socket", event, "payload.type=", payload?.type, "payload=", payload);
+      if (payload?.type === "medegdelUserReply") {
+        const replyData = payload?.data as MedegdelItem | undefined;
+        const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
+        const sel = selectedMedegdelRef.current;
+        const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
+        const isForOpenThread = replyParentId !== null && currentRootId !== null && replyParentId === currentRootId;
+        if (isForOpenThread && replyData) {
+          setThreadMessages((prev) => [...prev, { ...replyData, parentId: replyParentId }]);
+        }
+        if (currentRootId) keepSelectionRootIdRef.current = currentRootId;
+        fetchMedegdelData(bId, { keepSelection: true });
+      }
+      if (payload?.type === "medegdelAdminReply") {
+        const replyData = payload?.data as MedegdelItem | undefined;
+        const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
+        const sel = selectedMedegdelRef.current;
+        const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
+        const isForOpenThread = replyParentId !== null && currentRootId !== null && replyParentId === currentRootId;
+        // Only append if not already in thread (avoids duplicate when admin sent from this tab)
+        if (isForOpenThread && replyData) {
+          const replyId = replyData._id != null ? String(replyData._id) : null;
+          setThreadMessages((prev) => {
+            if (replyId && prev.some((m) => String(m._id) === replyId)) return prev;
+            return [...prev, { ...replyData, parentId: replyParentId }];
+          });
+        }
+        // Pin which root to keep selected so refetch doesn’t jump to another chat
+        if (currentRootId) keepSelectionRootIdRef.current = currentRootId;
+        fetchMedegdelData(bId, { keepSelection: true });
+      }
+    };
+    socket.on(event, handler);
+    return () => {
+      socket.off(event, handler);
+    };
+  }, [socket, ajiltan?.baiguullagiinId, fetchMedegdelData, fetchThread]);
+
+  /** Compress image client-side to avoid 413 (Nginx body size). Max width 1280, JPEG 0.82. */
+  const compressImageForChat = (file: File): Promise<File> => {
+    if (!file.type.startsWith("image/")) return Promise.resolve(file);
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const max = 1280;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > max || h > max) {
+          if (w > h) {
+            h = Math.round((h * max) / w);
+            w = max;
+          } else {
+            w = Math.round((w * max) / h);
+            h = max;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg") || "image.jpg", { type: "image/jpeg" }));
+            else resolve(file);
+          },
+          "image/jpeg",
+          0.82
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    });
+  };
+
+  const uploadChatFile = async (file: File): Promise<string> => {
+    const form = new FormData();
+    form.append("baiguullagiinId", ajiltan!.baiguullagiinId);
+    form.append("file", file);
+    const res = await uilchilgee(token ?? undefined).post<{ success: boolean; path: string }>("/medegdel/uploadChatFile", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    if (!res.data?.path) throw new Error("Upload failed");
+    return res.data.path;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      const chunks: BlobPart[] = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        if (chunks.length) setReplyVoiceBlob(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
+      };
+      mr.start();
+      mediaRecorderRef.current = mr;
+      setRecording(true);
+    } catch (err) {
+      console.error(err);
+      notification.error({ message: t("Дуу бичих эрх олдсонгүй") });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      setRecording(false);
+    }
+  };
+
+  const sendAdminReply = async () => {
+    const rootId = selectedMedegdel ? String((selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id) : null;
+    const hasText = replyInput.trim().length > 0;
+    const hasImage = !!replyImage;
+    const hasVoice = !!replyVoiceBlob;
+    if (!rootId || (!hasText && !hasImage && !hasVoice)) {
+      notification.warning({ message: t("Хариу эсвэл зураг/дуу оруулна уу") });
+      return;
+    }
+    if (!token || !ajiltan?.baiguullagiinId) {
+      notification.error({ message: t("Нэвтрэх эрх эсвэл байгууллага алга") });
+      return;
+    }
+    keepSelectionRootIdRef.current = rootId;
+    setReplySending(true);
+    try {
+      let zuragPath: string | undefined;
+      let voicePath: string | undefined;
+      if (replyImage) {
+        const toUpload = await compressImageForChat(replyImage);
+        zuragPath = await uploadChatFile(toUpload);
+        setReplyImage(null);
+      }
+      if (replyVoiceBlob) {
+        const voiceFile = new File([replyVoiceBlob], "voice.webm", { type: replyVoiceBlob.type });
+        voicePath = await uploadChatFile(voiceFile);
+        setReplyVoiceBlob(null);
+      }
+      const body: { parentId: string; message: string; baiguullagiinId: string; tukhainBaaziinKholbolt?: string; zurag?: string; voiceUrl?: string } = {
+        parentId: rootId,
+        message: replyInput.trim() || "",
+        baiguullagiinId: ajiltan.baiguullagiinId,
+      };
+      if (zuragPath) body.zurag = zuragPath;
+      if (voicePath) body.voiceUrl = voicePath;
+      if (ajiltan.tukhainBaaziinKholbolt) body.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
+      const res = await uilchilgee(token).post<{ success: boolean; data: MedegdelItem }>("/medegdel/adminReply", body);
+      setReplyInput("");
+      const newReply = res.data?.data;
+      if (newReply) {
+        setThreadMessages((prev) => [...prev, { ...newReply, parentId: newReply.parentId ? String(newReply.parentId) : rootId }]);
+      }
+    } catch (e) {
+      console.error("[sanalKhuselt] sendAdminReply error", e);
+      notification.error({ message: t("Хариу илгээхэд алдаа гарлаа") });
+    } finally {
+      setReplySending(false);
     }
   };
 
@@ -200,6 +458,7 @@ export default function SanalKhuselt() {
 
   const handleStatusChange = (newStatus: string) => {
     if (!selectedMedegdel) return;
+    setTailbarText(selectedMedegdel.tailbar || "");
     setPendingStatusChange({
       id: selectedMedegdel._id,
       newStatus,
@@ -228,6 +487,8 @@ export default function SanalKhuselt() {
           message: currentItem.message,
           kharsanEsekh: currentItem.kharsanEsekh,
           status: pendingStatusChange.newStatus,
+          tailbar: tailbarText.trim() || undefined,
+          repliedBy: ajiltan?._id,
           updatedAt: new Date().toISOString(),
         }
       );
@@ -242,8 +503,15 @@ export default function SanalKhuselt() {
         );
         setSelectedMedegdel((prev) =>
           prev
-            ? { ...prev, status: pendingStatusChange.newStatus }
+            ? { ...prev, status: pendingStatusChange.newStatus, tailbar: tailbarText.trim() || prev.tailbar }
             : null
+        );
+        setMedegdelList((prev) =>
+          prev.map((item) =>
+            item._id === pendingStatusChange.id
+              ? { ...item, tailbar: tailbarText.trim() || item.tailbar }
+              : item
+          )
         );
         notification.success({ message: t("Төлөв амжилттай шинэчлэгдлээ") });
       }
@@ -251,14 +519,18 @@ export default function SanalKhuselt() {
       notification.error({ message: t("Төлөв шинэчлэхэд алдаа гарлаа") });
     } finally {
       setPendingStatusChange(null);
+      setTailbarText("");
     }
   };
 
   const filteredList = medegdelList.filter((item) => {
+    // Don't show user_reply as separate list rows (they appear in thread view)
+    const type = item.turul?.toLowerCase() || "";
+    if (type === "user_reply") return false;
+
     const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Type Filter
-    const type = item.turul?.toLowerCase() || "";
     const matchesType = filterType === "all" 
       ? true 
       : filterType === "sanal" 
@@ -304,7 +576,7 @@ export default function SanalKhuselt() {
                 placeholder={t("Хайх...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
                 />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -363,7 +635,7 @@ export default function SanalKhuselt() {
                     }}
                     className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-blue-50/50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm"
+                        ? "bg-blue-200 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 shadow-sm"
                         : "bg-[color:var(--surface-bg)] border-[color:var(--surface-border)] hover:border-blue-300/50 hover:bg-[color:var(--surface-hover)]"
                     }`}
                   >
@@ -457,20 +729,41 @@ export default function SanalKhuselt() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="flex gap-2 w-full overflow-hidden"
+                          className="flex flex-col gap-3 w-full overflow-hidden"
                         >
-                           <button
-                            onClick={confirmStatusChange}
-                            className="flex-1 py-1.5 px-3 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
-                          >
-                            {t("Батлах")}
-                          </button>
-                          <button
-                            onClick={() => setPendingStatusChange(null)}
-                            className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
-                          >
-                            {t("Болих")}
-                          </button>
+                          {(pendingStatusChange.newStatus === "done" || pendingStatusChange.newStatus === "rejected") && (
+                            <div>
+                              <label className="block text-xs font-medium text-theme/70 mb-1.5">
+                                {t("Хариу тайлбар")} {pendingStatusChange.newStatus === "rejected" && `(${t("Татгалзсан шалтгаан")})`}
+                              </label>
+                              <textarea
+                                value={tailbarText}
+                                onChange={(e) => setTailbarText(e.target.value)}
+                                placeholder={pendingStatusChange.newStatus === "done" 
+                                  ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)") 
+                                  : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)")}
+                                rows={3}
+                                className="w-full px-3 py-2 rounded-xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
+                              />
+                              <p className="text-[10px] text-theme/50 mt-1">
+                                {t("Хэрэглэгчийн апп-д шууд мэдэгдэл ирнэ")}
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={confirmStatusChange}
+                              className="flex-1 py-1.5 px-3 bg-blue-600 !text-white text-xs font-semibold rounded-2xl shadow-sm hover:bg-blue-700 transition-colors"
+                            >
+                              {t("Батлах")}
+                            </button>
+                            <button
+                              onClick={() => { setPendingStatusChange(null); setTailbarText(""); }}
+                              className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs font-semibold rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
+                            >
+                              {t("Болих")}
+                            </button>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -480,30 +773,7 @@ export default function SanalKhuselt() {
 
               {/* Detail Content */}
               <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-[color:var(--surface-bg)]">
-                {/* Meta Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 rounded-2xl bg-[color:var(--surface-hover)]/50 border border-[color:var(--surface-border)]">
-                        <div className="flex items-center gap-2 text-theme/50 text-xs mb-1">
-                            <Calendar className="w-3.5 h-3.5" />
-                            Огноо
-                        </div>
-                        <div className="font-semibold text-theme text-sm">
-                            {moment(selectedMedegdel.ognoo || selectedMedegdel.createdAt).format("YYYY-MM-DD")}
-                        </div>
-                    </div>
-                    
-                     <div className="p-4 rounded-2xl bg-[color:var(--surface-hover)]/50 border border-[color:var(--surface-border)]">
-                        <div className="flex items-center gap-2 text-theme/50 text-xs mb-1">
-                             <Clock className="w-3.5 h-3.5 " />
-                             Цаг
-                        </div>
-                        <div className="font-semibold text-theme text-sm">
-                            {moment(selectedMedegdel.ognoo || selectedMedegdel.createdAt).format("HH:mm")}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Message Body */}
+               
                 <div>
                     <h3 className="text-sm  text-theme/80 tracking-wide mb-3 flex items-center gap-2">
                         <MessageSquare className="w-4 h-4" />
@@ -515,7 +785,7 @@ export default function SanalKhuselt() {
                 </div>
 
                 {/* Image Section */}
-                {selectedMedegdel.zurag && (
+                {selectedMedegdel.zurag && normalizeMedegdelAssetPath(selectedMedegdel.zurag) && (
                   <div>
                     <h3 className="text-sm text-theme/80 tracking-wide mb-3 flex items-center gap-2">
                        <MessageSquare className="w-4 h-4" />
@@ -523,7 +793,7 @@ export default function SanalKhuselt() {
                     </h3>
                     <div className="rounded-2xl overflow-hidden border border-[color:var(--surface-border)]">
                       <img 
-                        src={`${getApiUrl().replace(/\/$/, '')}/${selectedMedegdel.zurag.replace(/^public\//, '')}`} 
+                        src={`${getApiUrl().replace(/\/$/, "")}/medegdel/${normalizeMedegdelAssetPath(selectedMedegdel.zurag)}`} 
                         alt="Medegdel" 
                         className="w-full h-auto object-contain max-h-[500px] bg-black/5"
                       />
@@ -531,14 +801,14 @@ export default function SanalKhuselt() {
                   </div>
                 )}
 
-                {/* Reply Section */}
-                {selectedMedegdel.tailbar && (
+                {/* Reply Section (single admin tailbar when no thread) */}
+                {selectedMedegdel.tailbar && threadMessages.length <= 1 && (
                      <div>
                         <h3 className="text-sm  text-blue-600 dark:text-blue-400  tracking-wide mb-3 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-blue-500" />
                             {t("Хариу тайлбар")}
                         </h3>
-                        <div className="p-6 rounded-2xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 text-theme leading-relaxed whitespace-pre-wrap relative">
+                        <div className="p-6 rounded-2xl bg-blue-200 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 text-theme leading-relaxed whitespace-pre-wrap relative">
                              {selectedMedegdel.tailbar}
                              {selectedMedegdel.repliedAt && (
                                 <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800/50 text-xs text-theme/50 flex items-center gap-2">
@@ -549,6 +819,155 @@ export default function SanalKhuselt() {
                         </div>
                     </div>
                 )}
+
+                {/* Thread / chat history (same as app) */}
+                <div>
+                  <h3 className="text-sm text-theme/80 tracking-wide mb-3 flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    
+                  </h3>
+                  {threadLoading ? (
+                    <div className="py-6 text-center text-theme/50 text-sm">{t("Уншиж байна...")}</div>
+                  ) : threadMessages.length === 0 ? (
+                    <div className="py-4 text-center text-theme/50 text-sm">{t("Харилцаа байхгүй")}</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {threadMessages.map((msg) => {
+                        const isUser = (msg.turul || "").toLowerCase() === "user_reply";
+                        return (
+                          <div
+                            key={msg._id}
+                            className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                                isUser
+                                  ? "bg-blue-100 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-br-md"
+                                  : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-bl-md"
+                              }`}
+                            >
+                              {msg.zurag && (() => {
+                                const path = normalizeMedegdelAssetPath(msg.zurag);
+                                const url = path ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}` : "";
+                                return url ? (
+                                  <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden my-1 max-w-[280px]">
+                                    <img src={url} alt="" className="w-full h-auto object-cover" />
+                                  </a>
+                                ) : null;
+                              })()}
+                              {msg.duu && (() => {
+                                const path = normalizeMedegdelAssetPath(msg.duu);
+                                const audioUrl = path ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}` : "";
+                                return audioUrl ? (
+                                  <div className="my-1">
+                                    <audio controls src={audioUrl} className="max-w-full h-9" />
+                                  </div>
+                                ) : null;
+                              })()}
+                              {msg.message ? <p className="text-theme text-sm whitespace-pre-wrap">{msg.message}</p> : null}
+                              <p className="text-theme/50 text-xs mt-1">
+                                {moment(msg.createdAt).format("YYYY-MM-DD HH:mm")}
+                              </p>
+                              {msg.kharsanEsekh && msg.updatedAt && (
+                                <p className="text-theme/40 text-xs mt-1 flex items-center gap-1 justify-end">
+                                  <CheckCheck className="w-3.5 h-3.5 text-blue-500" aria-hidden />
+                                  <span>{moment(msg.updatedAt).format("HH:mm")}</span>
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Admin reply bar (like app) – text, image, voice */}
+                <div className="mt-4 pt-4 border-t border-[color:var(--surface-border)]">
+                  <input
+                    ref={replyImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setReplyImage(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  {(replyImage || replyVoiceBlob) && (
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {replyImage && (
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-blue-100 dark:bg-blue-900/30 px-2 py-1 text-sm">
+                          <ImagePlus className="w-4 h-4" />
+                          {replyImage.name}
+                          <button type="button" onClick={() => setReplyImage(null)} className="text-red-500 hover:underline">×</button>
+                        </span>
+                      )}
+                      {replyVoiceBlob && (
+                        <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 text-sm">
+                          <Mic className="w-4 h-4" />
+                          {t("Дуу")}
+                          <button type="button" onClick={() => setReplyVoiceBlob(null)} className="text-red-500 hover:underline">×</button>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  <div className="flex gap-2 items-center">
+                    <button
+                      type="button"
+                      onClick={() => replyImageInputRef.current?.click()}
+                      disabled={replySending}
+                      className="rounded-2xl border border-[color:var(--surface-border)] p-2.5 text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50"
+                      aria-label={t("Зураг")}
+                    >
+                      <ImagePlus className="w-5 h-5" />
+                    </button>
+                    {!recording ? (
+                      <button
+                        type="button"
+                        onClick={startRecording}
+                        disabled={replySending}
+                        className="rounded-2xl border border-[color:var(--surface-border)] p-2.5 text-theme hover:bg-[color:var(--surface-hover)] disabled:opacity-50"
+                        aria-label={t("Дуу бичих")}
+                      >
+                        <Mic className="w-5 h-5" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={stopRecording}
+                        className="rounded-22xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-2.5 text-red-600"
+                        aria-label={t("Зогсоох")}
+                      >
+                        <Square className="w-5 h-5" />
+                      </button>
+                    )}
+                    <input
+                      type="text"
+                      value={replyInput}
+                      onChange={(e) => setReplyInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendAdminReply();
+                        }
+                      }}
+                      placeholder={t("Хариу бичих...")}
+                      className="flex-1 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-ground)] px-4 py-3 text-theme placeholder:text-theme/50 focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+                      disabled={replySending}
+                    />
+                    <button
+                      type="button"
+                      onClick={sendAdminReply}
+                      disabled={replySending || (!replyInput.trim() && !replyImage && !replyVoiceBlob)}
+                      className="rounded-2xl bg-blue-500 dark:bg-blue-700 text-white p-3 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+                      aria-label={t("Илгээх")}
+                    >
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
               </div>
             </>
           ) : (
