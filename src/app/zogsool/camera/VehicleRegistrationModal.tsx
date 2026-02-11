@@ -25,8 +25,14 @@ export default function VehicleRegistrationModal({
 }: VehicleRegistrationModalProps) {
   const [plate, setPlate] = useState("");
   const [selectedIP, setSelectedIP] = useState("");
-  const [regDate, setRegDate] = useState(moment().format("YYYY-MM-DDTHH:mm"));
+  const [regDate, setRegDate] = useState(() => moment().format("YYYY-MM-DDTHH:mm"));
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Reset date and plate to current time and empty when modal opens
+    setRegDate(moment().format("YYYY-MM-DDTHH:mm"));
+    setPlate("");
+  }, []);
 
   useEffect(() => {
     if (selectedCameraIP) {
@@ -122,40 +128,33 @@ export default function VehicleRegistrationModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-lg bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-[24px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-white/20 dark:border-white/5 ring-1 ring-black/5">
-        {/* Decorative elements */}
-
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl"></div>
-
+      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200/50 dark:border-white/10">
         {/* Header */}
-        <div className="relative flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/5">
+        <div className="relative flex items-center justify-between px-5 py-4 border-b border-slate-200/50 bg-white">
           <div className="flex items-center gap-3">
-             <div className="relative">
-                  <Keyboard className="w-8 h-8" />
-             </div>
+             <Keyboard className="w-5 h-5 text-slate-600 dark:text-slate-400" />
              <div>
-                <h2 className="text-lg font-black text-slate-800 dark:text-white uppercase tracking-tighter">Машин бүртгэх</h2>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Зогсоолын системд гараар бүртгэх</p>
+                <h2 className="text-lg font-black text-slate-800 dark:text-white tracking-tight">Машин бүртгэх</h2>
+                <p className="text-[9px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">Зогсоолын системд гараар бүртгэх</p>
              </div>
           </div>
           <button 
             onClick={onClose} 
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 transition-all duration-200"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-200"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="relative p-5 space-y-5">
+        <div className="relative p-4 space-y-3">
           {/* Main Inputs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Input: Plate Number */}
-            <div className="space-y-3 md:col-span-2">
+            <div className="space-y-1.5 md:col-span-2">
+               <label className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">Улсын дугаар</label>
                <div className="relative group">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl opacity-0 group-focus-within:opacity-100 transition duration-500 blur-sm"></div>
-                  <div className="relative bg-white dark:bg-black rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden group-focus-within:border-transparent transition-colors">
-                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 select-none">MNG</span>
+                  <div className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden group-focus-within:border-blue-500 transition-all shadow-sm">
+                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 select-none">MNG</span>
                      <input
                         type="text"
                         value={plate}
@@ -188,27 +187,27 @@ export default function VehicleRegistrationModal({
                           }
                         }}
                         placeholder="0000 УБА"
-                        className="w-full h-14 pl-14 pr-10 bg-transparent border-none font-black text-2xl text-slate-800 focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-gray-200 placeholder:tracking-normal caret-blue-500"
+                        className="w-full h-12 pl-14 pr-11 bg-transparent border-none font-black text-xl text-slate-800 dark:text-white focus:ring-0 outline-none uppercase tracking-[0.2em] placeholder:text-slate-300 dark:placeholder:text-slate-600 placeholder:tracking-normal caret-blue-500"
                         autoFocus
                      />
                      {plate && (
-                       <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full bg-slate-100 text-slate-400 hover:bg-rose-100 hover:text-rose-500 transition-all">
-                          <X className="w-4 h-4" />
+                       <button onClick={handleClear} className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-slate-100 dark:bg-white/5 text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 hover:text-rose-500 transition-all">
+                          <X className="w-3.5 h-3.5" />
                        </button>
                      )}
                   </div>
                </div>
-               <p className="text-[9px] font-bold text-center text-slate-400 tracking-widest">УЛСЫН ДУГААРЫГ КИРИЛ ҮСГЭЭР ОРУУЛНА УУ</p>
+               <p className="text-[8px] font-semibold text-center text-slate-500 dark:text-slate-400 tracking-wide">Улсын дугаарыг кирил үсгээр оруулна уу</p>
             </div>
 
             {/* Input: Camera Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-400 uppercase roundede-xl tracking-widest ml-1">Камер сонголт</label>
-              <div className="relative group ">
+              <label className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">Камер сонголт</label>
+              <div className="relative group">
                 <select
                   value={selectedIP}
                   onChange={(e) => setSelectedIP(e.target.value)}
-                  className="w-full h-10 pl-3 pr-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 font-bold text-slate-700 dark:text-gray-200 text-[11px] appearance-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none cursor-pointer"
+                  className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 font-semibold text-slate-700 dark:text-slate-300 text-xs appearance-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none cursor-pointer shadow-sm"
                 >
                   {entryCameras.map(cam => (
                     <option key={cam.cameraIP} value={cam.cameraIP}>
@@ -216,7 +215,7 @@ export default function VehicleRegistrationModal({
                     </option>
                   ))}
                 </select>
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-indigo-500 transition-colors">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
                    <Camera className="w-3.5 h-3.5" />
                 </div>
               </div>
@@ -224,27 +223,24 @@ export default function VehicleRegistrationModal({
 
             {/* Input: Date Select */}
             <div className="space-y-1.5">
-              <label className="text-[9px] font-black text-slate-400 rounded-xl uppercase tracking-widest ml-1">Огноо сонголт</label>
+              <label className="text-[9px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">Огноо сонголт</label>
               <div className="relative group">
                 <input
                   type="datetime-local"
                   value={regDate}
                   onChange={(e) => setRegDate(e.target.value)}
-                  className="w-full h-10 pl-3 pr-8 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 font-bold text-slate-700 dark:text-gray-200 text-[11px] focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10 font-semibold text-slate-700 dark:text-slate-300 text-xs focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-9 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-indigo-500 transition-colors">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
                    <Calendar className="w-3.5 h-3.5" />
                 </div>
-
               </div>
             </div>
           </div>
 
           {/* Virtual Keyboard */}
-          {/* Virtual Keyboard */}
-          {/* Virtual Keyboard */}
-          <div className="bg-slate-50/50 dark:bg-black/20 p-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
-            <div className="space-y-1.5">
+          <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 dark:from-slate-800/50 dark:to-slate-900/50 p-3 rounded-xl border border-slate-200/50 dark:border-white/10 shadow-lg">
+            <div className="space-y-1">
               {keys.map((row, i) => (
                 <div key={i} className="flex justify-center flex-wrap gap-1">
                   {row.map(char => (
@@ -252,14 +248,14 @@ export default function VehicleRegistrationModal({
                       key={char}
                       onClick={() => handleKey(char)}
                       className="
-                        relative w-8 h-9 rounded-2xl
-                        bg-white dark:bg-zinc-800 
-                        border-b-[3px] border-r-[1px] border-slate-200 dark:border-white/10
-                        active:border-b-0 active:translate-y-[2px]
-                        font-black text-xs text-slate-600 dark:text-gray-300
-                        hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200
-                        transition-all duration-75
-                        shadow-sm
+                        relative w-8 h-8 rounded-lg
+                        bg-white dark:bg-slate-800 
+                        border-2 border-slate-200 dark:border-white/10
+                        active:scale-95 active:translate-y-0.5
+                        font-bold text-[11px] text-slate-700 dark:text-slate-300
+                        hover:bg-blue-50 dark:hover:bg-blue-500/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-500/50
+                        transition-all duration-150
+                        shadow-sm hover:shadow-md
                       "
                     >
                       {char}
@@ -269,15 +265,17 @@ export default function VehicleRegistrationModal({
                     <button
                       onClick={handleBackspace}
                       className="
-                        px-3 h-9 rounded-2xl
-                        bg-rose-50 border-b-[3px] border-r-[1px] border-rose-200 
-                        active:border-b-0 active:translate-y-[2px]
-                        text-rose-500 
-                        hover:bg-rose-500 hover:text-white hover:border-rose-600
-                        transition-all duration-75
+                        px-2.5 h-8 rounded-lg
+                        bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-500/20 dark:to-rose-600/20
+                        border-2 border-rose-200 dark:border-rose-500/30
+                        active:scale-95 active:translate-y-0.5
+                        text-rose-600 dark:text-rose-400
+                        hover:bg-gradient-to-br hover:from-rose-500 hover:to-rose-600 hover:text-white hover:border-rose-600
+                        transition-all duration-150
+                        shadow-sm hover:shadow-md
                       "
                     >
-                      <Delete className="w-4 h-4" />
+                      <Delete className="w-3 h-3" />
                     </button>
                   )}
                 </div>
@@ -286,33 +284,26 @@ export default function VehicleRegistrationModal({
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-1">
-             <button
-               onClick={handleClear}
-               className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all"
-             >
-               Бүгдийг арилгах
-             </button>
-
+          <div className="flex items-center justify-end pt-2 border-t border-slate-200/50 dark:border-white/10">
              <div className="flex gap-2">
                <button
                   onClick={onClose}
-                  className="px-5 py-2.5 rounded-2xl border-2 border-transparent hover:border-slate-100 text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-50 transition-all"
+                  className="px-5 py-2 rounded-lg border-2 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm"
                 >
-                  Болих
+                  Хаах
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={loading}
                   className="
                     relative overflow-hidden
-                    px-6 py-2.5 rounded-2xl 
+                    px-6 py-2 rounded-lg 
                     bg-gradient-to-r from-blue-600 to-indigo-600 
-                    text-white font-black text-[10px] uppercase tracking-widest 
+                    text-white font-bold text-[10px] uppercase tracking-wide 
                     shadow-lg shadow-blue-500/30 
                     hover:scale-[1.02] active:scale-[0.98] 
                     disabled:opacity-70 disabled:cursor-not-allowed
-                    distabled:hover:scale-100
+                    disabled:hover:scale-100
                     transition-all duration-200
                   "
                 >
@@ -323,7 +314,7 @@ export default function VehicleRegistrationModal({
                         <div className="w-2.5 h-2.5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
                         <span>Хадгалж байна...</span>
                       </>
-                    ) : 'Бүртгэх'}
+                    ) : 'Хадгалах'}
                   </span>
                 </button>
              </div>

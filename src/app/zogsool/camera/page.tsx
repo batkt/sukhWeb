@@ -41,6 +41,7 @@ import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import PaymentModal from "./PaymentModal";
 import VehicleRegistrationModal from "./VehicleRegistrationModal";
 import { toast } from "react-hot-toast";
+import Button from "@/components/ui/Button";
 
 
 const RealTimeDuration = ({ orsonTsag, garsanTsag }: { orsonTsag?: string; garsanTsag?: string }) => {
@@ -109,7 +110,9 @@ export default function Camera() {
   const [activeExitIP, setActiveExitIP] = useState<string>("");
   const [confirmExitId, setConfirmExitId] = useState<string | null>(null);
   const [isRegModalOpen, setIsRegModalOpen] = useState(false);
-  const pageSize = 100;
+  const [pageSize, setPageSize] = useState(10);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
+  const pageSizeRef = useRef<HTMLDivElement>(null);
   const [durationFilter, setDurationFilter] = useState("latest_out");
   const [typeFilter, setTypeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -307,22 +310,33 @@ export default function Camera() {
     }
 
     if (statusFilter === 'active') {
-      query["tuukh.tuluv"] = { $in: [0, -2] };
+      // Идэвхтэй: Currently in (no exit) and no payment due
       query["tuukh.garsanKhaalga"] = { $exists: false };
+      query["tuukh.tsagiinTuukh.garsanTsag"] = { $exists: false };
+      query.niitDun = 0;
     } else if (statusFilter === 'paid') {
+      // Төлсөн: Payment completed (tuluv === 1 and exited, or tuluv === 2)
       query["tuukh.tuluv"] = { $in: [1, 2] };
     } else if (statusFilter === 'unpaid') {
-      query["tuukh.tuluv"] = { $in: [0, -4] };
-      query.niitDun = { $gt: 0 };
+      // Төлбөртэй: Has debt or unpaid amount
+      query.$and = [
+        {
+          $or: [
+            { "tuukh.tuluv": -4 },
+            { "tuukh.tuluv": 0, niitDun: { $gt: 0 }, "tuukh.garsanKhaalga": { $exists: true } }
+          ]
+        }
+      ];
     } else if (statusFilter === 'free') {
+      // Үнэгүй: Exited with no payment
+      query["tuukh.garsanKhaalga"] = { $exists: true };
       query.niitDun = 0;
-      query["tuukh.tuluv"] = { $nin: [0, -2] };
     }
 
     // The mandatory $or structure for date filtering as requested
     const exitCameraIP = activeExitIP || (exitCameras[0]?.cameraIP);
     
-    query.$or = [
+    const dateOr = [
       {
         ...(exitCameraIP ? { "tuukh.0.garsanKhaalga": exitCameraIP } : {}),
         "tuukh.tsagiinTuukh.garsanTsag": {
@@ -338,6 +352,13 @@ export default function Camera() {
         }
       }
     ];
+    
+    // Merge date filter with status filter
+    if (statusFilter === 'unpaid' && query.$and) {
+      query.$and.push({ $or: dateOr });
+    } else {
+      query.$or = dateOr;
+    }
 
     const sortObj = durationFilter === 'longest' 
       ? { "tuukh.0.niitKhugatsaa": -1 }
@@ -642,11 +663,31 @@ export default function Camera() {
     // Filter Status
     if (statusFilter !== 'all') {
       merged = merged.filter(t => {
-        const tuluv = t.tuukh?.[0]?.tuluv;
-        if (statusFilter === 'active') return tuluv === 0 || tuluv === -2;
-        if (statusFilter === 'paid') return tuluv === 1 || tuluv === 2;
-        if (statusFilter === 'unpaid') return (tuluv === 0 || tuluv === -4) && (t.niitDun || 0) > 0;
-        if (statusFilter === 'free') return (t.niitDun || 0) === 0 && (tuluv !== 0 && tuluv !== -2);
+        const mur = t.tuukh?.[0];
+        const tsag = mur?.tsagiinTuukh?.[0];
+        const garsanTsag = tsag?.garsanTsag;
+        // Check both garsanKhaalga and garsanTsag - if either exists, car has exited
+        const isCurrentlyIn = !mur?.garsanKhaalga && !garsanTsag;
+        const niitDun = t.niitDun || 0;
+        const tuluv = mur?.tuluv;
+        const isDebt = tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
+        
+        if (statusFilter === 'active') {
+          // Идэвхтэй: Currently in and no payment due
+          return isCurrentlyIn && niitDun === 0;
+        }
+        if (statusFilter === 'paid') {
+          // Төлсөн: Payment completed (tuluv === 1 and not currently in, or tuluv === 2)
+          return (tuluv === 1 && !isCurrentlyIn) || tuluv === 2;
+        }
+        if (statusFilter === 'unpaid') {
+          // Төлбөртэй: Has debt or unpaid amount
+          return !isCurrentlyIn && (niitDun > 0 || isDebt);
+        }
+        if (statusFilter === 'free') {
+          // Үнэгүй: Exited with no payment
+          return !isCurrentlyIn && niitDun === 0;
+        }
         return true;
       });
     }
@@ -656,6 +697,7 @@ export default function Camera() {
       const getInTime = (t: Uilchluulegch) => t.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag ? new Date(t.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag).getTime() : (t.createdAt ? new Date(t.createdAt).getTime() : 0);
       const getOutTime = (t: Uilchluulegch) => t.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag ? new Date(t.tuukh?.[0]?.tsagiinTuukh?.[0]?.garsanTsag).getTime() : 0;
       
+      // Sorting by duration filter (which includes exit time sorting)
       if (durationFilter === 'longest') {
          const durA = getOutTime(a) ? (getOutTime(a) - getInTime(a)) : (Date.now() - getInTime(a));
          const durB = getOutTime(b) ? (getOutTime(b) - getInTime(b)) : (Date.now() - getInTime(b));
@@ -663,18 +705,18 @@ export default function Camera() {
       } else if (durationFilter === 'latest_in') {
          return getInTime(b) - getInTime(a);
       } else {
+         // latest_out - sort by exit time (latest exit first), fallback to entry time if not exited
          const timeA = getOutTime(a) || getInTime(a);
          const timeB = getOutTime(b) || getInTime(b);
          return timeB - timeA;
       }
     });
 
-    if (page === 1) {
-      return merged.slice(0, pageSize);
-    }
-
-    return merged;
-  }, [listData, liveUpdates, page, durationFilter, typeFilter, statusFilter]);
+    // Paginate
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    return merged.slice(startIndex, endIndex);
+  }, [listData, liveUpdates, page, pageSize, durationFilter, typeFilter, statusFilter]);
 
   const stats = useMemo(() => {
     const total = transactions.reduce((sum: number, t: Uilchluulegch) => sum + (t.niitDun || 0), 0);
@@ -757,6 +799,18 @@ export default function Camera() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [confirmExitId]);
+
+  // Click outside listener for page size dropdown
+  useEffect(() => {
+    if (!isPageSizeOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (pageSizeRef.current && !pageSizeRef.current.contains(e.target as Node)) {
+        setIsPageSizeOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isPageSizeOpen]);
 
   function formatCurrency(n: number) {
     return `${formatNumber(n)} ₮`;
@@ -915,15 +969,15 @@ export default function Camera() {
         {/* Transactions Table Section */}
         <div className="space-y-4">
           {/* ─── Top Bar ─── */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/80 dark:bg-white/[0.03] backdrop-blur-xl border border-slate-200/40 dark:border-white/[0.06] shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/60 dark:bg-white/[0.02] backdrop-blur-xl border border-slate-200/30 dark:border-white/[0.04] shadow-sm" style={{ zIndex: 1 }}>
             {/* Left: Title */}
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-9 h-9 rounded-xl ">
-                <Calendar className="w-4 h-4 text-black dark:text-slate-300" />
+                <Calendar className="w-4 h-4 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
-                <h3 className="text-[13px] text-slate-800 dark:text-white tracking-tight leading-none">Жагсаалт</h3>
-                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
+                <h3 className="text-[13px] text-slate-700 dark:text-slate-300 tracking-tight leading-none">Жагсаалт</h3>
+                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
               </div>
             </div>
 
@@ -940,7 +994,7 @@ export default function Camera() {
                     setSearchTerm(e.target.value);
                     setPage(1);
                   }}
-                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 dark:focus:border-blue-500/30 outline-none transition-all"
+                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] text-[11px] text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-500/20 dark:focus:border-blue-500/20 outline-none transition-all"
                 />
               </div>
 
@@ -957,36 +1011,48 @@ export default function Camera() {
                   leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />}
                   rightSection={null}
                   classNames={{
-                    input: "flex items-center gap-2 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] h-9 px-4 text-[11px] text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 transition-all font-[family-name:var(--font-mono)]"
+                    input: "flex items-center gap-2 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] h-9 px-4 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-[family-name:var(--font-mono)]"
                   }}
                   clearable
                 />
               </div>
 
               {/* Register button */}
-              <button
+              <Button
                 onClick={() => setIsRegModalOpen(true)}
-                className="flex items-center gap-2 px-6 h-9 rounded-full text-[11px] text-white active:scale-[0.97] transition-all shadow-lg"
-                style={{
-                  background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
-                }}
+                variant="secondary"
+                size="sm"
+                className="rounded-lg h-8 px-4 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-slate-700 shadow-sm"
               >
-                <span>Машин бүртгэх</span>
-              </button>
+                Машин бүртгэх
+              </Button>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
-            <div className="overflow-x-auto custom-scrollbar flex-1">
+          <div className="relative rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col" style={{ overflow: 'visible' }}>
+            <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1" style={{ maxHeight: `${pageSize * 60}px` }}>
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
-                <thead>
-                   <tr className="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm sticky top-0 z-20">
+                <thead className="sticky top-0 z-20">
+                   <tr className="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm">
                       {[
                         { id: 'no', label: "№", width: 'w-12' },
                         { id: 'dugaar', label: "Дугаар", width: 'w-28' },
                         { id: 'orson', label: "Орсон", width: 'w-36' },
-                        { id: 'garsan', label: "Гарсан", width: 'w-36', sortable: true },
+                        { 
+                          id: 'garsan', 
+                          label: "Гарсан", 
+                          width: 'w-36', 
+                          sortable: true,
+                          onClick: () => {
+                            // Toggle between latest_out and other duration filters
+                            if (durationFilter === 'latest_out') {
+                              setDurationFilter('latest_in');
+                            } else {
+                              setDurationFilter('latest_out');
+                            }
+                            setPage(1);
+                          }
+                        },
                         { 
                           id: 'duration', 
                           label: "Хугацаа/мин", 
@@ -1034,31 +1100,47 @@ export default function Camera() {
                         { id: 'reason', label: "Шалтгаан", width: 'w-36' },
                       ].map((h, i) => (
                         <th key={h.id} className={`group relative py-4 px-3 text-slate-700 dark:text-slate-300  uppercase tracking-wider text-xs border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ''} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors`}>
-                          <div className="flex items-center justify-center gap-2 cursor-pointer h-full">
-                             {h.filter && <Filter className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                          <div 
+                            className="flex items-center justify-center gap-2 cursor-pointer h-full"
+                            onClick={() => (h as any).onClick?.()}
+                          >
+                             {h.filter && <Filter className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 transition-colors" />}
                              <span>{h.label}</span>
                              {h.sortable && <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />}
                           </div>
 
                            {h.options && (
                               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100 origin-top text-left">
-                                 <div className="relative flex flex-col gap-0.5 z-10">
+                                 <div className="relative flex flex-col gap-0 z-10">
                                    <div className="px-3 py-2 mb-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                                       {h.label} Сонгох
                                    </div>
-                                   {h.options.map((opt, idx) => (
-                                     <div 
-                                       key={idx} 
-                                       onClick={() => (h as any).set?.(opt.value)}
-                                       className={`px-3 py-2.5 rounded-lg text-[11px]  text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
-                                          (h as any).current === opt.value 
-                                            ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
-                                            : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                                       }`}
-                                     >
-                                       <span>{opt.label}</span>
-                                       {(h as any).current === opt.value && (
-                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                                   {h.options.map((opt, idx, arr) => (
+                                     <div key={idx}>
+                                       <div 
+                                         onClick={() => (h as any).set?.(opt.value)}
+                                         className={`px-3 py-2.5 rounded-md text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                            (h as any).current === opt.value 
+                                              ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
+                                              : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                         }`}
+                                         style={{
+                                           borderRadius: '0.375rem',
+                                         }}
+                                         onMouseEnter={(e) => {
+                                           e.currentTarget.style.borderRadius = '0.5rem';
+                                         }}
+                                         onMouseLeave={(e) => {
+                                           e.currentTarget.style.borderRadius = '0.375rem';
+                                         }}
+                                       >
+                                         <span>{opt.label}</span>
+                                         {(h as any).current === opt.value && (
+                                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                                         )}
+                                       </div>
+                                       {idx < arr.length - 1 && (
+                                         <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />
                                        )}
                                      </div>
                                    ))}
@@ -1077,7 +1159,7 @@ export default function Camera() {
                            <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
                               <Calendar className="w-12 h-12 text-slate-400" />
                            </div>
-                           <p className="text-base font-black uppercase tracking-[0.2em] text-slate-400">Одоогоор мэдээлэл байхгүй байна</p>
+                           <p className="text-base uppercase tracking-[0.2em] text-slate-400">Одоогоор мэдээлэл байхгүй байна</p>
                         </div>
                       </td>
                     </tr>
@@ -1121,32 +1203,69 @@ export default function Camera() {
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
                              <span className=" text-slate-600 dark:text-slate-400 font-medium font-[family-name:var(--font-mono)] text-xs">
-                               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
+                               {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
                              </span>
                           </td>
                           <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
-                             <div className={`px-2.5 py-1.5 rounded-lg text-center min-w-[90px] inline-block whitespace-nowrap text-xs  ${
-                               !garsanTsag 
-                                 ? "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" 
-                                 : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
-                             }`}>
-                                <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
-                             </div>
+                             {(() => {
+                                // Match duration color to status color - must follow exact same logic order as status column
+                                const getStatusColor = () => {
+                                  if (tuluv === 1) {
+                                    return (isCurrentlyIn && niitDun === 0) 
+                                      ? "bg-blue-500 text-white border-blue-600" 
+                                      : "bg-green-500 text-white border-green-600";
+                                  }
+                                  if (!isCurrentlyIn && (niitDun > 0 || isDebt)) {
+                                    return "bg-yellow-500 text-white border-yellow-600";
+                                  }
+                                  if (tuluv === -2 || tuluv === -1) {
+                                    return "bg-red-500 text-white border-red-600";
+                                  }
+                                  if (!isCurrentlyIn && niitDun === 0) {
+                                    return "bg-gray-500 text-white border-gray-600";
+                                  }
+                                  return "bg-blue-500 text-white border-blue-600";
+                                };
+                                
+                                return (
+                                  <div className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border shadow-sm text-xs ${getStatusColor()}`} style={{ borderRadius: '6px' }}>
+                                    <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
+                                  </div>
+                                );
+                             })()}
                           </td>
                           <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.turul || transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right font-medium border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.tuukh?.[0]?.khungulult || "0"}
                           </td>
-                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-center  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-3 px-3 text-center font-medium relative border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-3 px-3 text-right font-medium relative border-r border-slate-200 dark:border-white/5 text-sm">
                              {(() => {
                                 const history = transaction.tuukh?.[0];
                                 const tulsunDun = history?.tulsunDun || 0;
-                                const payHistory = history?.tulbur || [];
+                                // Ensure tulbur is always an array - handle both array and single object cases
+                                const rawTulbur = history?.tulbur;
+                                let payHistory: any[] = [];
+                                
+                                if (Array.isArray(rawTulbur)) {
+                                  // It's already an array - use it directly
+                                  payHistory = rawTulbur;
+                                } else if (rawTulbur && typeof rawTulbur === 'object') {
+                                  // It's a single object - wrap it in an array
+                                  payHistory = [rawTulbur];
+                                } else {
+                                  // It's null/undefined - use empty array
+                                  payHistory = [];
+                                }
+                                
+                                // Debug: log to see what we're getting
+                                if (payHistory.length > 0 && process.env.NODE_ENV === 'development') {
+                                  console.log('Payment History:', payHistory);
+                                }
                                 // ... (labels logic) ...
                                 const labels: Record<string, string> = { 
                                   belen: "Бэлэн", cash: "Бэлэн",
@@ -1167,35 +1286,51 @@ export default function Camera() {
                                   khungulult: "bg-amber-100 text-amber-700 border-amber-200",
                                   discount: "bg-amber-100 text-amber-700 border-amber-200",
                                 };
-
+                                const textColorMap: Record<string, string> = {
+                                  belen: "text-emerald-600 dark:text-emerald-400",
+                                  cash: "text-emerald-600 dark:text-emerald-400",
+                                  khaan: "text-teal-600 dark:text-teal-400",
+                                  qpay: "text-purple-600 dark:text-purple-400",
+                                  khariltsakh: "text-blue-600 dark:text-blue-400",
+                                  transfer: "text-blue-600 dark:text-blue-400",
+                                  khungulult: "text-amber-600 dark:text-amber-400",
+                                  discount: "text-amber-600 dark:text-amber-400",
+                                };
                                 if (payHistory.length > 0) {
                                   const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
                                   return (
-                                    <div className="group/pay relative inline-block cursor-pointer">
+                                    <div className="group/pay relative inline-block cursor-pointer ml-auto">
                                       <span className="text-sm  text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
                                         {formatNumber(totalPaid)}
                                         {payHistory.length > 1 && <span className="ml-1 text-[10px] text-slate-400">({payHistory.length})</span>}
                                       </span>
                                       
                                       {/* Popup reused logic */}
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[80] min-w-[200px] p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto text-left">
-                                         {/* ... popup content ... */}
-                                        <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 pb-1.5 border-b border-slate-100 dark:border-white/5">
-                                          Төлбөрийн дэлгэрэнгүй
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[99999] min-w-[220px] max-w-[320px] max-h-[400px] overflow-y-auto p-3.5 bg-white dark:bg-slate-900 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto text-left" style={{ position: 'absolute', zIndex: 99999 }}>
+                                        <div className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2.5 pb-2 border-b border-slate-100 dark:border-white/5 sticky top-0 bg-white dark:bg-slate-900 backdrop-blur-sm z-10">
+                                          Төлбөрийн дэлгэрэнгүй ({payHistory.length})
                                         </div>
-                                        <div className="space-y-1.5">
-                                          {payHistory.map((p: any, pi: number) => (
-                                            <div key={pi} className="flex items-center justify-between gap-3">
-                                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px]  border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
-                                                {labels[p.turul] || p.turul}
-                                              </span>
-                                              <span className="text-[10px]  text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)]">{formatNumber(p.dun || 0)}</span>
-                                            </div>
-                                          ))}
+                                        <div className="space-y-2">
+                                          {payHistory && payHistory.length > 0 ? (
+                                            payHistory.map((p: any, pi: number) => {
+                                              // Use a unique key combining index, turul, and dun to ensure proper rendering
+                                              const uniqueKey = `${pi}-${p.turul || 'unknown'}-${p.dun || 0}-${p.ognoo || ''}`;
+                                              return (
+                                                <div key={uniqueKey} className="flex items-center justify-between gap-4 py-1">
+                                                  <span className={`text-[10px] font-medium ${textColorMap[p.turul] || 'text-slate-600 dark:text-slate-400'}`}>
+                                                    {labels[p.turul] || p.turul || 'Төлбөр'}
+                                                  </span>
+                                                  <span className="text-[11px] text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)] font-semibold">{formatNumber(p.dun || 0)}</span>
+                                                </div>
+                                              );
+                                            })
+                                          ) : (
+                                            <div className="text-[10px] text-slate-400 text-center py-2">Төлбөр байхгүй</div>
+                                          )}
                                         </div>
-                                        <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
-                                          <span className="text-[9px]  text-slate-400 uppercase">Нийт</span>
-                                          <span className="text-xs font-black text-emerald-600 font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
+                                        <div className="mt-3 pt-2 border-t border-slate-100 dark:border-white/5 flex justify-between items-center sticky bottom-0 bg-white dark:bg-slate-900 backdrop-blur-sm z-10">
+                                          <span className="text-[10px] font-black text-slate-400 uppercase">НИЙТ</span>
+                                          <span className="text-sm font-black text-emerald-600 font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -1209,52 +1344,51 @@ export default function Camera() {
                                 if (!history && !garsanTsag) return <span className="text-slate-300">0</span>;
                                 
                                 if ((history as any)?.zurchil === "Үнэгүй хугацаанд" || (transaction as any).zurchil === "Үнэгүй хугацаанд" || (garsanTsag && tulsunDun === 0)) {
-                                  return <span className="text-emerald-600 dark:text-emerald-400  text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">Үнэгүй</span>
+                                  return <span className="text-emerald-600 dark:text-emerald-400  text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded inline-block">Үнэгүй</span>
                                 }
 
                                 return <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-sm">{formatNumber(tulsunDun)}</span>;
                              })()}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
-                             {transaction.tuukh?.[0]?.ebarimtId || "0"}
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right font-medium border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                             {transaction.tuukh?.[0]?.ebarimtId || ""}
                           </td>
                           <td className="py-3 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                                 {showActionBtn ? (
                                     <div className="flex items-center justify-center gap-1 action-menu-container">
-                                      <button 
+                                      <Button
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
                                         }}
-                                        className={`group/btn flex items-center justify-center gap-1 w-full max-w-[110px] px-2.5 py-1.5 rounded-lg text-[10px]  uppercase tracking-wide shadow-md active:scale-[0.97] transition-all duration-200 border ${
-                                           (isPaid && niitDun > 0)
-                                           ? "bg-green-500 text-white border-green-600 hover:bg-green-600"
-                                           : (!isCurrentlyIn && isDebt)
-                                           ? "bg-yellow-500 text-white border-yellow-600 hover:bg-yellow-600"
-                                           : (tuluv === -1 || tuluv === -2)
-                                           ? "bg-red-500 text-white border-red-600 hover:bg-red-600"
-                                           : "bg-blue-500 text-white dark:text-black border-blue-600 hover:bg-blue-600"
-                                        }`}
+                                        variant={
+                                          (isPaid && niitDun > 0)
+                                            ? "success"
+                                            : (!isCurrentlyIn && isDebt)
+                                            ? "warning"
+                                            : (tuluv === -1 || tuluv === -2)
+                                            ? "danger"
+                                            : "primary"
+                                        }
+                                        size="sm"
+                                        className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto rounded-md uppercase tracking-wide hover:rounded-lg"
                                       >
-                                          <span className={`!text-white ${(isPaid && niitDun > 0) || (!isCurrentlyIn && isDebt) || (tuluv === -1 || tuluv === -2) ? "" : "dark:!text-black"}`}>
-                                            {!isCurrentlyIn 
-                                              ? (isDebt ? "Төлбөртэй" : "Дууссан") 
-                                              : (isPaid && niitDun > 0) 
-                                                ? "Төлсөн" 
-                                                : (tuluv === 2) 
-                                                  ? "Төлбөртэй" 
-                                                  : (niitDun > 0) 
-                                                    ? "Төлбөр" 
-                                                    : "Идэвхтэй"
-                                            }
-                                          </span>
-                                           {/* removed chevron */}
-                                      </button>
+                                        {!isCurrentlyIn 
+                                          ? (isDebt ? "Төлбөртэй" : "Дууссан") 
+                                          : (isPaid && niitDun > 0) 
+                                            ? "Төлсөн" 
+                                            : (tuluv === 2) 
+                                              ? "Төлбөртэй" 
+                                              : (niitDun > 0) 
+                                                ? "Төлбөр" 
+                                                : "Идэвхтэй"
+                                        }
+                                      </Button>
                                       {/* ... dropdown menu code ... */}
                                       {confirmExitId === transaction._id && (
                                          <div className="absolute right-0 top-full mt-2 z-[60] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left">
                                             {/* ... dropdown content ... */}
-                                            <div className="space-y-1">
+                                            <div className="space-y-0">
                                                 {/* Re-implement dropdown buttons with same logic but larger padding text */}
                                                 {(isCurrentlyIn ? [
                                                     { label: "Хөнгөлөлт", icon: Tag, color: "amber", action: () => handleManualExit(transaction, "pay") },
@@ -1262,19 +1396,46 @@ export default function Camera() {
                                                 ] : [
                                                     { label: "Төлөх", icon: DollarSign, color: "emerald", action: () => handleManualExit(transaction, "pay") },
                                                     { label: "Үнэгүй", icon: Info, color: "slate", action: () => handleManualExit(transaction, "free") }
-                                                ]).map((btn, bi) => (
-                                                    <button 
-                                                        key={bi}
-                                                        onClick={btn.action}
-                                                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[11px]  text-slate-700 dark:text-slate-300 hover:bg-${btn.color}-50 hover:text-${btn.color}-600 dark:hover:bg-${btn.color}-500/10 transition-all group/item`}
-                                                    >
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={`p-1.5 rounded-lg bg-${btn.color}-100 text-${btn.color}-600 dark:bg-${btn.color}-500/20 group-hover/item:scale-110 transition-transform`}>
-                                                                <btn.icon className="w-3.5 h-3.5" />
+                                                ]).map((btn, bi, arr) => (
+                                                    <div key={bi}>
+                                                        <button 
+                                                            onClick={btn.action}
+                                                            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md text-[11px] text-slate-700 dark:text-slate-300 transition-all duration-200 group/item ${
+                                                                btn.color === 'amber' 
+                                                                    ? 'hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10' 
+                                                                    : btn.color === 'blue'
+                                                                    ? 'hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-500/10'
+                                                                    : btn.color === 'emerald'
+                                                                    ? 'hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-500/10'
+                                                                    : 'hover:bg-slate-50 hover:text-slate-600 dark:hover:bg-slate-500/10'
+                                                            } hover:rounded-lg`}
+                                                            style={{
+                                                                borderRadius: '0.375rem',
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.borderRadius = '0.5rem';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.borderRadius = '0.375rem';
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <btn.icon className={`w-3.5 h-3.5 ${
+                                                                    btn.color === 'amber' 
+                                                                        ? 'text-amber-600 dark:text-amber-400' 
+                                                                        : btn.color === 'blue'
+                                                                        ? 'text-blue-600 dark:text-blue-400'
+                                                                        : btn.color === 'emerald'
+                                                                        ? 'text-emerald-600 dark:text-emerald-400'
+                                                                        : 'text-slate-600 dark:text-slate-400'
+                                                                } group-hover/item:scale-110 transition-transform`} />
+                                                                <span>{btn.label}</span>
                                                             </div>
-                                                             <span>{btn.label}</span>
-                                                        </div>
-                                                    </button>
+                                                        </button>
+                                                        {bi < arr.length - 1 && (
+                                                            <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />
+                                                        )}
+                                                    </div>
                                                 ))}
                                             </div>
                                          </div>
@@ -1283,39 +1444,39 @@ export default function Camera() {
                                 ) : (
                                   (() => {
                                     // Status badges logic
-                                    const badgeClass = "flex items-center justify-center flex-nowrap w-[100px] mx-auto px-2 py-1.5 rounded-lg border";
+                                    const badgeClass = "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
                                     if (tuluv === 1) return (
-                                      <div className={`${badgeClass} ${(isCurrentlyIn && niitDun === 0) ? "bg-blue-500 text-white dark:text-black border-blue-600 shadow-sm" : "bg-green-500 text-white border-green-600 shadow-sm"}`}>
-                                        <span className={`text-[10px] !text-white ${(isCurrentlyIn && niitDun === 0) ? "dark:!text-black" : ""} uppercase whitespace-nowrap`}>
+                                      <div className={`${badgeClass} ${(isCurrentlyIn && niitDun === 0) ? "bg-blue-500 text-white border-blue-600 shadow-sm" : "bg-green-500 text-white border-green-600 shadow-sm"}`} style={{ borderRadius: '6px' }}>
+                                        <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                           {(isCurrentlyIn && niitDun === 0) ? "Идэвхтэй" : "Төлсөн"}
                                         </span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && (niitDun > 0 || isDebt)) return (
-                                      <div className={`${badgeClass} bg-yellow-500 text-white border-yellow-600 shadow-sm`}>
+                                      <div className={`${badgeClass} bg-yellow-500 text-white border-yellow-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Төлбөртэй</span>
                                       </div>
                                     );
                                     if (tuluv === -2 || tuluv === -1) return (
-                                      <div className={`${badgeClass} bg-red-500 text-white border-red-600 shadow-sm`}>
+                                      <div className={`${badgeClass} bg-red-500 text-white border-red-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Зөрчилтэй</span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && niitDun === 0) return (
-                                      <div className={`${badgeClass} bg-gray-500 text-white border-gray-600 shadow-sm`}>
+                                      <div className={`${badgeClass} bg-gray-500 text-white border-gray-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Үнэгүй</span>
                                       </div>
                                     );
                                     return (
-                                      <div className={`${badgeClass} bg-blue-500 text-white dark:text-black border-blue-600 shadow-sm`}>
-                                        <span className="text-[10px] !text-white dark:!text-black uppercase tracking-tight whitespace-nowrap text-center ">Идэвхтэй</span>
+                                      <div className={`${badgeClass} bg-blue-500 text-white border-blue-600 shadow-sm`} style={{ borderRadius: '6px' }}>
+                                        <span className="text-[10px] !text-white uppercase tracking-tight whitespace-nowrap text-center ">Идэвхтэй</span>
                                       </div>
                                     );
                                   })()
                                 )}
                              </td>
                           <td className="py-3 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
-                             {transaction.zurchil || "0"}
+                             {transaction.zurchil || ""}
                           </td>
                         </tr>
                       );
@@ -1343,34 +1504,81 @@ export default function Camera() {
             </div>
 
             {/* Pagination */}
-            <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 rounded-b-2xl flex items-center justify-between gap-4">
-              <span className="text-xs  text-slate-500 dark:text-slate-400">
-                Нийт {total} бичлэг
-              </span>
+            <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 rounded-b-2xl flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3">
+                <div className="relative" ref={pageSizeRef}>
+                  <button
+                    onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 shadow-sm"
+                  >
+                    <span>{pageSize}</span>
+                    <ChevronDown className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isPageSizeOpen && (
+                    <div className="absolute bottom-full left-0 mb-2 w-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 z-50">
+                      {[10, 20, 50, 100, 500].map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => {
+                            setPageSize(size);
+                            setPage(1);
+                            setIsPageSizeOpen(false);
+                          }}
+                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all duration-200 ${
+                            pageSize === size
+                              ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
+                              : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                          }`}
+                          style={{
+                            borderRadius: '0.5rem',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (pageSize !== size) {
+                              e.currentTarget.style.borderRadius = '0.625rem';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (pageSize !== size) {
+                              e.currentTarget.style.borderRadius = '0.5rem';
+                            }
+                          }}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  Нийт {total} бичлэг
+                </span>
+              </div>
               <div className="flex items-center gap-2">
-                <button
+                <Button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-400"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <div className="flex items-center gap-1">
-                  <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-xs  text-slate-900 dark:text-white">
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 rounded-xl"
+                  leftIcon={<ChevronLeft className="w-4 h-4" />}
+                />
+                <div className="flex items-center gap-1.5 px-2">
+                  <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs font-semibold text-slate-900 dark:text-white">
                     {page}
                   </span>
-                  <span className="text-slate-400 text-xs">/</span>
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  <span className="text-slate-400 dark:text-slate-500 text-xs">/</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                     {Math.ceil(total / pageSize)}
                   </span>
                 </div>
-                <button
+                <Button
                   onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
                   disabled={page >= Math.ceil(total / pageSize)}
-                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-400"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 rounded-xl"
+                  leftIcon={<ChevronRight className="w-4 h-4" />}
+                />
               </div>
             </div>
           </div>
