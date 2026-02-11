@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { X, CreditCard, Banknote, Landmark, ArrowRight, Check, Delete, Loader2, Wallet, Clock, Car } from "lucide-react";
+import { X, CreditCard, Banknote, Landmark, ArrowRight, Check, Delete, Loader2, Wallet, Clock, Car, Tag } from "lucide-react";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { socket } from "@/lib/uilchilgee";
@@ -30,6 +30,7 @@ const PAYMENT_METHODS = [
   { id: "khaan",       label: "Карт",        icon: <CreditCard className="w-5 h-5" />, accent: "sky" },
   { id: "khariltsakh", label: "Дансаар",     icon: <ArrowRight className="w-5 h-5" />, accent: "violet" },
   { id: "qpay",        label: "QPay",        icon: <Landmark className="w-5 h-5" />,   accent: "amber" },
+  { id: "khungulult",   label: "Хөнгөлөлт",   icon: <Tag className="w-5 h-5" />,        accent: "rose" },
 ] as const;
 
 const QUICK_CASH = [500, 1000, 5000, 10000, 20000] as const;
@@ -66,6 +67,13 @@ function accentClasses(accent: string, isActive: boolean) {
       activeIcon: "bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
       badge: "bg-amber-500",
     },
+    rose: {
+      active: "bg-rose-500/10 dark:bg-rose-500/15 border-rose-500 ring-2 ring-rose-500/25",
+      inactive: "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
+      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
+      activeIcon: "bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400",
+      badge: "bg-rose-500",
+    },
   };
   const c = map[accent] || map.emerald;
   return { container: isActive ? c.active : c.inactive, icon: isActive ? c.activeIcon : c.icon, badge: c.badge };
@@ -82,6 +90,8 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
   const [processingTurul, setProcessingTurul] = useState<string | null>(null);
   const [ebarimtType, setEbarimtType] = useState<"1" | "3">("1");
   const [register, setRegister] = useState("");
+  const [discountReason, setDiscountReason] = useState("");
+  const [activeMethod, setActiveMethod] = useState<string>("belen");
   const [qpayData, setQpayData] = useState<any>(null);
 
   /* ─── Derived ─── */
@@ -106,6 +116,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
   /* ─── Core: turulruuTooKhiikhFunction ─── */
 
   const turulruuTooKhiikhFunction = useCallback(async (turul: string) => {
+    setActiveMethod(turul);
     const existingIdx = tulbur.findIndex((t) => t.turul === turul);
     if (existingIdx !== -1) {
       const newTulbur = tulbur.filter((_, i) => i !== existingIdx);
@@ -120,18 +131,29 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
 
     if (dun <= 0) { toast.error("Дүн 0-ээс их байх ёстой"); return; }
     if (dun > remaining) { toast.error("Нийт дүнгээс хэтэрсэн байна"); return; }
+    
+    if (turul === "khungulult" && !discountReason) {
+      toast.error("Хөнгөлөлтийн тайлбар оруулна уу");
+      return;
+    }
 
-    const newEntry: TulburEntry = { turul, dun, ognoo: new Date().toISOString() };
+    const newEntry: TulburEntry = { 
+      turul, 
+      dun, 
+      ognoo: new Date().toISOString(),
+      khariu: turul === "khungulult" ? { reason: discountReason } : undefined
+    };
     const newTulbur = [...tulbur, newEntry];
     setTulbur(newTulbur);
 
     const newPaid = newTulbur.reduce((s, t) => s + t.dun, 0);
     setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
+    setDiscountReason("");
 
     if (turul === "khaan" && dun > 0) {
       await batalgaajuulaltKhiiya(turul, newEntry, newTulbur);
     }
-  }, [tulbur, tuljBuiDun, niitDun, paidSoFar]);
+  }, [tulbur, tuljBuiDun, niitDun, paidSoFar, discountReason]);
 
   /* ─── Terminal ─── */
 
@@ -375,7 +397,10 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     return (
                       <button
                         key={method.id}
-                        onClick={() => !isProcessing && turulruuTooKhiikhFunction(method.id)}
+                        onClick={() => {
+                          setActiveMethod(method.id);
+                          if (!isProcessing) turulruuTooKhiikhFunction(method.id);
+                        }}
                         disabled={isProcessing && processingTurul !== method.id}
                         className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
                       >
@@ -400,6 +425,20 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                   })}
                 </div>
               </div>
+
+              {/* Discount Reason Input */}
+              {activeMethod === "khungulult" && (
+                <div className="rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/[0.05] p-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                  <span className="text-[10px] font-extrabold text-rose-500 dark:text-rose-400 uppercase tracking-[0.15em]">Хөнгөлөлтийн тайлбар</span>
+                  <input
+                    type="text"
+                    placeholder="Жишээ: Лояалти, Удирдлагын зөвшөөрөл..."
+                    value={discountReason}
+                    onChange={(e) => setDiscountReason(e.target.value)}
+                    className="w-full h-10 px-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-white/[0.04] text-[13px] font-semibold text-slate-800 dark:text-white placeholder:text-rose-300 dark:placeholder:text-rose-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/50 outline-none transition-all"
+                  />
+                </div>
+              )}
 
               {/* Split summary */}
               {tulbur.length > 0 && (
