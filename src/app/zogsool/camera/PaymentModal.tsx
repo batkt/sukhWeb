@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { X, CreditCard, Banknote, Landmark, Tag, ArrowRight, Check, Delete, Loader2 } from "lucide-react";
+import { X, CreditCard, Banknote, Landmark, ArrowRight, Check, Delete, Loader2, Wallet, Clock, Car } from "lucide-react";
 import { type Uilchluulegch } from "@/lib/useParkingSocket";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { socket } from "@/lib/uilchilgee";
 import { toast } from "react-hot-toast";
+import moment from "moment";
 
 /* ─── Types ─── */
 
@@ -13,7 +14,7 @@ interface TulburEntry {
   turul: string;
   dun: number;
   ognoo: string;
-  khariu?: any; // terminal / qpay response
+  khariu?: any;
 }
 
 interface PaymentModalProps {
@@ -25,141 +26,142 @@ interface PaymentModalProps {
 /* ─── Constants ─── */
 
 const PAYMENT_METHODS = [
-  { id: "belen",       label: "Бэлэн",      icon: <Banknote className="w-5 h-5" />,    color: "emerald" },
-  { id: "khaan",       label: "Карт",        icon: <CreditCard className="w-5 h-5" />,  color: "teal" },
-  { id: "khariltsakh", label: "Дансаар",     icon: <ArrowRight className="w-5 h-5" />,  color: "blue" },
-  { id: "qpay",        label: "QPay",        icon: <Landmark className="w-5 h-5" />,    color: "purple" },
+  { id: "belen",       label: "Бэлэн",      icon: <Banknote className="w-5 h-5" />,   accent: "emerald" },
+  { id: "khaan",       label: "Карт",        icon: <CreditCard className="w-5 h-5" />, accent: "sky" },
+  { id: "khariltsakh", label: "Дансаар",     icon: <ArrowRight className="w-5 h-5" />, accent: "violet" },
+  { id: "qpay",        label: "QPay",        icon: <Landmark className="w-5 h-5" />,   accent: "amber" },
 ] as const;
 
 const QUICK_CASH = [500, 1000, 5000, 10000, 20000] as const;
+
+/* ─── Accent color utility ─── */
+
+function accentClasses(accent: string, isActive: boolean) {
+  const map: Record<string, { active: string; inactive: string; icon: string; activeIcon: string; badge: string }> = {
+    emerald: {
+      active: "bg-emerald-500/10 dark:bg-emerald-500/15 border-emerald-500 ring-2 ring-emerald-500/25",
+      inactive: "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
+      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
+      activeIcon: "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+      badge: "bg-emerald-500",
+    },
+    sky: {
+      active: "bg-sky-500/10 dark:bg-sky-500/15 border-sky-500 ring-2 ring-sky-500/25",
+      inactive: "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
+      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
+      activeIcon: "bg-sky-500/15 dark:bg-sky-500/20 text-sky-600 dark:text-sky-400",
+      badge: "bg-sky-500",
+    },
+    violet: {
+      active: "bg-violet-500/10 dark:bg-violet-500/15 border-violet-500 ring-2 ring-violet-500/25",
+      inactive: "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
+      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
+      activeIcon: "bg-violet-500/15 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400",
+      badge: "bg-violet-500",
+    },
+    amber: {
+      active: "bg-amber-500/10 dark:bg-amber-500/15 border-amber-500 ring-2 ring-amber-500/25",
+      inactive: "bg-white dark:bg-white/[0.04] border-slate-200/60 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.15] hover:shadow-md",
+      icon: "bg-slate-100 dark:bg-white/[0.06] text-slate-400 dark:text-slate-500",
+      activeIcon: "bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
+      badge: "bg-amber-500",
+    },
+  };
+  const c = map[accent] || map.emerald;
+  return { container: isActive ? c.active : c.inactive, icon: isActive ? c.activeIcon : c.icon, badge: c.badge };
+}
 
 /* ─── Component ─── */
 
 export default function PaymentModal({ transaction, onClose, onConfirm }: PaymentModalProps) {
   const niitDun = transaction.niitDun || 0;
 
-  // Split entries accumulated so far
   const [tulbur, setTulbur] = useState<TulburEntry[]>([]);
-
-  // Currently displayed amount in the numpad area (auto-fills with remaining)
   const [turulruuKhiikhDun, setTurulruuKhiikhDun] = useState<string>(niitDun.toString());
-
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingTurul, setProcessingTurul] = useState<string | null>(null);
-
-  // E-Barimt
   const [ebarimtType, setEbarimtType] = useState<"1" | "3">("1");
   const [register, setRegister] = useState("");
-
-  // QPay
   const [qpayData, setQpayData] = useState<any>(null);
 
-  /* ─── Derived values ─── */
+  /* ─── Derived ─── */
 
-  // Map turul → dun for quick UI lookups
   const value = useMemo(() => {
     const m: Record<string, number> = {};
-    tulbur.forEach((t) => {
-      m[t.turul] = (m[t.turul] || 0) + t.dun;
-    });
+    tulbur.forEach((t) => { m[t.turul] = (m[t.turul] || 0) + t.dun; });
     return m;
   }, [tulbur]);
 
-  // Already-paid total
   const paidSoFar = useMemo(() => tulbur.reduce((s, t) => s + t.dun, 0), [tulbur]);
-
-  // Remaining to be split
   const tulukhDun = Math.max(0, niitDun - paidSoFar);
-
-  // Current numpad amount
   const tuljBuiDun = parseInt(turulruuKhiikhDun) || 0;
 
-  /* ─── Core logic (pay.md: turulruuTooKhiikhFunction) ─── */
+  // Duration display
+  const orsonTsag = transaction.tuukh?.[0]?.tsagiinTuukh?.[0]?.orsonTsag;
+  const duration = orsonTsag ? moment.duration(moment().diff(moment(orsonTsag))) : null;
+  const durationStr = duration
+    ? `${Math.floor(duration.asHours())}ц ${duration.minutes()}м`
+    : "-";
+
+  /* ─── Core: turulruuTooKhiikhFunction ─── */
 
   const turulruuTooKhiikhFunction = useCallback(async (turul: string) => {
-    // If already has entry for this type → toggle it OFF (remove)
     const existingIdx = tulbur.findIndex((t) => t.turul === turul);
     if (existingIdx !== -1) {
-      const removed = tulbur[existingIdx];
       const newTulbur = tulbur.filter((_, i) => i !== existingIdx);
       setTulbur(newTulbur);
-      // Recalculate remaining
       const newPaid = newTulbur.reduce((s, t) => s + t.dun, 0);
       setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
       return;
     }
 
-    // Amount to assign
     const dun = tuljBuiDun;
     const remaining = niitDun - paidSoFar;
 
-    if (dun <= 0) {
-      toast.error("Дүн 0-ээс их байх ёстой");
-      return;
-    }
-    if (dun > remaining) {
-      toast.error("Нийт дүнгээс хэтэрсэн байна");
-      return;
-    }
+    if (dun <= 0) { toast.error("Дүн 0-ээс их байх ёстой"); return; }
+    if (dun > remaining) { toast.error("Нийт дүнгээс хэтэрсэн байна"); return; }
 
-    const newEntry: TulburEntry = {
-      turul,
-      dun,
-      ognoo: new Date().toISOString(),
-    };
-
+    const newEntry: TulburEntry = { turul, dun, ognoo: new Date().toISOString() };
     const newTulbur = [...tulbur, newEntry];
     setTulbur(newTulbur);
 
-    // Auto-set remaining
     const newPaid = newTulbur.reduce((s, t) => s + t.dun, 0);
     setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
 
-    // Auto-trigger for "khaan" (POS terminal)
     if (turul === "khaan" && dun > 0) {
       await batalgaajuulaltKhiiya(turul, newEntry, newTulbur);
     }
   }, [tulbur, tuljBuiDun, niitDun, paidSoFar]);
 
-  /* ─── Terminal / QPay integration (pay.md: batalgaajuulaltKhiiya) ─── */
+  /* ─── Terminal ─── */
 
   const batalgaajuulaltKhiiya = useCallback(async (turul: string, entry: TulburEntry, currentTulbur: TulburEntry[]) => {
     if (turul === "khaan") {
       setIsProcessing(true);
       setProcessingTurul("khaan");
       try {
-        const terminalResp = await fetch("http://127.0.0.1:27028", {
+        const resp = await fetch("http://127.0.0.1:27028", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            service_name: "doSaleTransaction",
-            amount: entry.dun.toString(),
-          }),
+          body: JSON.stringify({ service_name: "doSaleTransaction", amount: entry.dun.toString() }),
         });
-        const data = await terminalResp.json();
+        const data = await resp.json();
         if (data.response_code === "000") {
-          // Attach response to the entry
-          setTulbur((prev) =>
-            prev.map((t) =>
-              t === entry || (t.turul === "khaan" && t.dun === entry.dun && !t.khariu)
-                ? { ...t, khariu: data }
-                : t
-            )
-          );
+          setTulbur((prev) => prev.map((t) =>
+            t === entry || (t.turul === "khaan" && t.dun === entry.dun && !t.khariu) ? { ...t, khariu: data } : t
+          ));
           toast.success("Карт төлбөр амжилттай");
         } else {
           toast.error("Терминалын алдаа: " + (data.response_msg || "Амжилтгүй"));
-          // Remove the entry
           setTulbur((prev) => prev.filter((t) => t !== entry));
-          const newPaid = currentTulbur.filter((t) => t !== entry).reduce((s, t) => s + t.dun, 0);
-          setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
+          const np = currentTulbur.filter((t) => t !== entry).reduce((s, t) => s + t.dun, 0);
+          setTurulruuKhiikhDun(Math.max(0, niitDun - np).toString());
         }
-      } catch (err) {
-        toast.error("Терминалын сервис холбогдоогүй байна (127.0.0.1:27028)");
-        // Remove the entry
+      } catch {
+        toast.error("Терминалын сервис холбогдоогүй (127.0.0.1:27028)");
         setTulbur((prev) => prev.filter((t) => t !== entry));
-        const newPaid = currentTulbur.filter((t) => t !== entry).reduce((s, t) => s + t.dun, 0);
-        setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
+        const np = currentTulbur.filter((t) => t !== entry).reduce((s, t) => s + t.dun, 0);
+        setTurulruuKhiikhDun(Math.max(0, niitDun - np).toString());
       } finally {
         setIsProcessing(false);
         setProcessingTurul(null);
@@ -167,65 +169,41 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     }
   }, [niitDun]);
 
-  /* ─── Save to server (pay.md: guilgeeniiTuukhKhadgalya) ─── */
+  /* ─── Save ─── */
 
   const guilgeeniiTuukhKhadgalya = useCallback(() => {
-    // Filter out zero entries
     const validTulbur = tulbur.filter((t) => t.dun > 0);
-    if (validTulbur.length === 0) {
-      toast.error("Төлбөрийн мэдээлэл оруулна уу");
+    if (validTulbur.length === 0) { toast.error("Төлбөрийн мэдээлэл оруулна уу"); return; }
+
+    const nonDiscount = validTulbur.filter((t) => t.turul !== "khungulult").reduce((s, t) => s + t.dun, 0);
+    const discount = validTulbur.filter((t) => t.turul === "khungulult").reduce((s, t) => s + t.dun, 0);
+    const expected = niitDun - discount;
+
+    if (Math.abs(nonDiscount - expected) > 1) {
+      toast.error(`Төлбөрын дүн зөрүүтэй. Нийт: ${formatNumber(niitDun)}₮, Оруулсан: ${formatNumber(nonDiscount)}₮`);
       return;
     }
 
-    // Validation: sum must match (±1₮ tolerance)
-    const nonDiscountPayments = validTulbur
-      .filter((t) => t.turul !== "khungulult")
-      .reduce((s, t) => s + t.dun, 0);
-    const discountPayments = validTulbur
-      .filter((t) => t.turul === "khungulult")
-      .reduce((s, t) => s + t.dun, 0);
-    const expectedPayAmount = niitDun - discountPayments;
-
-    if (Math.abs(nonDiscountPayments - expectedPayAmount) > 1) {
-      toast.error(`Төлбөрын дүн зөрүүтэй. Нийт: ${formatNumber(niitDun)}₮, Оруулсан: ${formatNumber(nonDiscountPayments)}₮`);
-      return;
-    }
-
-    // Call parent's onConfirm with the full tulbur array
     if (onConfirm) {
       const totalPaid = validTulbur.reduce((s, t) => s + t.dun, 0);
-      const primaryMethod = validTulbur[0]?.turul || "belen";
-      onConfirm(totalPaid, primaryMethod, {
+      onConfirm(totalPaid, validTulbur[0]?.turul || "belen", {
         tulbur: validTulbur,
-        ebarimt: {
-          type: ebarimtType,
-          register: ebarimtType === "3" ? register : undefined,
-        },
+        ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
       });
     }
   }, [tulbur, niitDun, onConfirm, ebarimtType, register]);
 
-  /* ─── F4 quick-pay (pay.md: f4Darsan) ─── */
+  /* ─── F4 quick-pay ─── */
 
   const f4Darsan = useCallback(() => {
     if (tulbur.length === 0) {
-      // Auto-fill all remaining as cash and submit
-      const entry: TulburEntry = {
-        turul: "belen",
-        dun: niitDun,
-        ognoo: new Date().toISOString(),
-      };
+      const entry: TulburEntry = { turul: "belen", dun: niitDun, ognoo: new Date().toISOString() };
       setTulbur([entry]);
       setTurulruuKhiikhDun("0");
-
-      // Submit immediately
       if (onConfirm) {
         onConfirm(niitDun, "belen", {
           tulbur: [entry],
-          ebarimt: {
-            type: ebarimtType,
-            register: ebarimtType === "3" ? register : undefined,
-          },
+          ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
         });
       }
     } else {
@@ -233,7 +211,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     }
   }, [tulbur, niitDun, onConfirm, ebarimtType, register, guilgeeniiTuukhKhadgalya]);
 
-  /* ─── Numpad functions (pay.md: mungunDunNemekh) ─── */
+  /* ─── Numpad ─── */
 
   const mungunDunNemekh = (digit: string) => {
     setTurulruuKhiikhDun((prev) => {
@@ -243,36 +221,23 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     });
   };
 
-  const handleBackspace = () => {
-    setTurulruuKhiikhDun((prev) => {
-      if (prev.length <= 1) return "0";
-      return prev.slice(0, -1);
-    });
-  };
-
-  const handleClear = () => {
-    setTurulruuKhiikhDun("0");
-  };
-
-  /* ─── Quick cash (pay.md: hylbarNemekh) — ADDS to current display ─── */
+  const handleBackspace = () => setTurulruuKhiikhDun((p) => (p.length <= 1 ? "0" : p.slice(0, -1)));
+  const handleClear = () => setTurulruuKhiikhDun("0");
 
   const hylbarNemekh = (val: number) => {
     setTurulruuKhiikhDun((prev) => {
-      const current = parseInt(prev) || 0;
-      const next = current + val;
-      // Don't exceed remaining
-      const max = niitDun - paidSoFar;
-      return Math.min(next, max).toString();
+      const next = (parseInt(prev) || 0) + val;
+      return Math.min(next, niitDun - paidSoFar).toString();
     });
   };
 
-  /* ─── Keyboard shortcuts ─── */
+  /* ─── Keys ─── */
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isProcessing) return;
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      const t = e.target as HTMLElement;
+      if (t.tagName === "INPUT" || t.tagName === "TEXTAREA") return;
 
       if (e.key === "Escape") { onClose(); return; }
       if (e.key === "F4") { e.preventDefault(); f4Darsan(); return; }
@@ -280,199 +245,234 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
         e.preventDefault();
         if (onConfirm) onConfirm(0, "belen", {
           tulbur: [{ turul: "belen", dun: 0, ognoo: new Date().toISOString() }],
-          ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined }
+          ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
         });
         return;
       }
-
-      // Numpad digits
-      if (/^[0-9]$/.test(e.key)) {
-        e.preventDefault();
-        mungunDunNemekh(e.key);
-      }
-      if (e.key === "Backspace") {
-        e.preventDefault();
-        handleBackspace();
-      }
+      if (/^[0-9]$/.test(e.key)) { e.preventDefault(); mungunDunNemekh(e.key); }
+      if (e.key === "Backspace") { e.preventDefault(); handleBackspace(); }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isProcessing, f4Darsan, ebarimtType, register, onConfirm, onClose]);
 
-  /* ─── QPay Socket Listener ─── */
+  /* ─── QPay Socket ─── */
 
   useEffect(() => {
     const hasQpay = tulbur.some((t) => t.turul === "qpay");
     if (hasQpay && transaction?._id) {
       const s = socket();
-      const eventName = `qpay/${transaction.baiguullagiinId}/${transaction._id}`;
-
-      const handleQPaySuccess = (data: any) => {
-        console.log("QPay success via socket:", data);
-        // Attach response
-        setTulbur((prev) =>
-          prev.map((t) =>
-            t.turul === "qpay" && !t.khariu ? { ...t, khariu: data } : t
-          )
-        );
+      const ev = `qpay/${transaction.baiguullagiinId}/${transaction._id}`;
+      const handler = (data: any) => {
+        setTulbur((prev) => prev.map((t) => t.turul === "qpay" && !t.khariu ? { ...t, khariu: data } : t));
         toast.success("QPay төлбөр амжилттай");
       };
-
-      s.on(eventName, handleQPaySuccess);
-      return () => { s.off(eventName, handleQPaySuccess); };
+      s.on(ev, handler);
+      return () => { s.off(ev, handler); };
     }
   }, [tulbur, transaction]);
 
-  /* ─── QPay QR Fetch ─── */
+  /* ─── QPay QR ─── */
 
   useEffect(() => {
-    const qpayEntry = tulbur.find((t) => t.turul === "qpay");
-    if (qpayEntry && transaction?._id) {
-      const fetchQR = async () => {
+    const qe = tulbur.find((t) => t.turul === "qpay");
+    if (qe && transaction?._id) {
+      (async () => {
         try {
-          const resp = await fetch(`https://amarhome.mn/api/payment/qpay?id=${transaction._id}&amount=${qpayEntry.dun}`);
-          const data = await resp.json();
-          if (data.qr_image || data.qrData) {
-            setQpayData(data);
-          }
-        } catch (err) {
-          console.error("QPay QR fetch error:", err);
-        }
-      };
-      fetchQR();
-    } else {
-      setQpayData(null);
-    }
+          const r = await fetch(`https://amarhome.mn/api/payment/qpay?id=${transaction._id}&amount=${qe.dun}`);
+          const d = await r.json();
+          if (d.qr_image || d.qrData) setQpayData(d);
+        } catch {}
+      })();
+    } else { setQpayData(null); }
   }, [tulbur, transaction]);
 
-  /* ─── Color helpers ─── */
+  /* ─── Progress ─── */
 
-  const getMethodColor = (id: string, isActive: boolean) => {
-    if (!isActive) return {
-      bg: "bg-white dark:bg-zinc-800",
-      border: "border-gray-100 dark:border-white/10",
-      iconBg: "bg-gray-100 dark:bg-white/10",
-      iconText: "text-gray-500 dark:text-gray-400",
-    };
-    const colors: Record<string, any> = {
-      belen:       { bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-500 ring-2 ring-emerald-500/20", iconBg: "bg-emerald-100 dark:bg-emerald-500/20", iconText: "text-emerald-600" },
-      khaan:       { bg: "bg-teal-50 dark:bg-teal-500/10", border: "border-teal-500 ring-2 ring-teal-500/20", iconBg: "bg-teal-100 dark:bg-teal-500/20", iconText: "text-teal-600" },
-      khariltsakh: { bg: "bg-blue-50 dark:bg-blue-500/10", border: "border-blue-500 ring-2 ring-blue-500/20", iconBg: "bg-blue-100 dark:bg-blue-500/20", iconText: "text-blue-600" },
-      qpay:        { bg: "bg-purple-50 dark:bg-purple-500/10", border: "border-purple-500 ring-2 ring-purple-500/20", iconBg: "bg-purple-100 dark:bg-purple-500/20", iconText: "text-purple-600" },
-    };
-    return colors[id] || colors.belen;
-  };
+  const progressPct = niitDun > 0 ? Math.min(100, (paidSoFar / niitDun) * 100) : 0;
 
-  /* ─── Render ─── */
+  /* ═══════════════════════ RENDER ═══════════════════════ */
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-zinc-900 w-full max-w-4xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Тооцоо хийх</h2>
-          <div className="flex items-center gap-4">
-            <span className="text-xl font-black text-slate-800 dark:text-gray-200 uppercase">{transaction.mashiniiDugaar}</span>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors">
-              <X className="w-6 h-6 text-gray-400" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(12px)" }}
+    >
+      <div
+        className="w-full max-w-[920px] rounded-[28px] overflow-hidden flex flex-col max-h-[92vh] shadow-2xl border
+                   bg-white dark:bg-[#18181b] border-slate-200/40 dark:border-white/[0.06]"
+      >
+        {/* ─── Header ─── */}
+        <div className="relative px-7 pt-6 pb-5 border-b border-slate-100 dark:border-white/[0.06]">
+          {/* Accent glow */}
+          <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-emerald-500 via-sky-500 to-violet-500 opacity-80" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-white/[0.06] border border-slate-200/50 dark:border-white/[0.06]">
+                <Wallet className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+              </div>
+              <div>
+                <h2 className="text-[15px] font-extrabold text-slate-800 dark:text-white tracking-tight">Тооцоо хийх</h2>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                    <Car className="w-3.5 h-3.5" />
+                    <span className="font-bold uppercase tracking-wide">{transaction.mashiniiDugaar}</span>
+                  </div>
+                  {duration && (
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
+                      <Clock className="w-3 h-3" />
+                      <span className="font-medium">{durationStr}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              <X className="w-5 h-5 text-slate-400 dark:text-slate-500" />
             </button>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mt-4 h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-500 ease-out"
+              style={{
+                width: `${progressPct}%`,
+                background: progressPct >= 100
+                  ? "linear-gradient(90deg, #10b981, #34d399)"
+                  : "linear-gradient(90deg, #3b82f6, #6366f1)",
+              }}
+            />
+          </div>
+          <div className="flex justify-between mt-1.5 text-[10px] font-bold uppercase tracking-wider">
+            <span className="text-slate-400 dark:text-slate-500">Оруулсан: {formatNumber(paidSoFar)}₮</span>
+            <span className={`${tulukhDun > 0 ? "text-rose-500" : "text-emerald-500"}`}>
+              {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}₮` : "Бүрэн төлсөн ✓"}
+            </span>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+        {/* ─── Body ─── */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-0">
 
-            {/* ─── Left Side: Payment Methods ─── */}
-            <div className="space-y-6">
-              {/* Method Buttons */}
-              <div className="grid grid-cols-2 gap-4">
-                {PAYMENT_METHODS.map((method) => {
-                  const isActive = value[method.id] !== undefined && value[method.id] > 0;
-                  const colors = getMethodColor(method.id, isActive);
-                  const isLoading = processingTurul === method.id;
+            {/* ─── LEFT: Methods + extras (3 cols) ─── */}
+            <div className="lg:col-span-3 p-6 space-y-5 border-r-0 lg:border-r border-slate-100 dark:border-white/[0.06]">
+              {/* Payment methods */}
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">Төлбөрийн хэлбэр</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {PAYMENT_METHODS.map((method) => {
+                    const isActive = (value[method.id] || 0) > 0;
+                    const ac = accentClasses(method.accent, isActive);
+                    const isLoading = processingTurul === method.id;
 
-                  return (
-                    <button
-                      key={method.id}
-                      onClick={() => !isProcessing && turulruuTooKhiikhFunction(method.id)}
-                      disabled={isProcessing && processingTurul !== method.id}
-                      className={`relative flex items-center gap-3 p-4 rounded-2xl shadow-sm border transition-all duration-200 ${colors.bg} ${colors.border} ${isProcessing ? "opacity-60 cursor-not-allowed" : "hover:shadow-md hover:scale-[1.02]"}`}
-                    >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colors.iconBg} ${colors.iconText}`}>
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : method.icon}
-                      </div>
-                      <div className="text-left flex-1 min-w-0">
-                        <span className="font-bold text-slate-700 dark:text-gray-200 text-sm whitespace-nowrap block">{method.label}</span>
-                        {isActive && (
-                          <span className="text-xs font-black text-emerald-600 block mt-0.5">
-                            {formatNumber(value[method.id])}₮
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Active badge */}
-                      {isActive && (
-                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg">
-                          <Check className="w-3 h-3 text-white" strokeWidth={3} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Active Splits Summary */}
-              {tulbur.length > 0 && (
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-2">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Хуваарилалт</span>
-                  {tulbur.map((t, i) => {
-                    const label = PAYMENT_METHODS.find((m) => m.id === t.turul)?.label || t.turul;
                     return (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-600 dark:text-gray-300">{label}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-black text-slate-800 dark:text-gray-100">{formatNumber(t.dun)}₮</span>
-                          {t.khariu && <Check className="w-3.5 h-3.5 text-emerald-500" />}
-                          <button
-                            onClick={() => {
-                              const newTulbur = tulbur.filter((_, idx) => idx !== i);
-                              setTulbur(newTulbur);
-                              const newPaid = newTulbur.reduce((s, t2) => s + t2.dun, 0);
-                              setTurulruuKhiikhDun(Math.max(0, niitDun - newPaid).toString());
-                            }}
-                            className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-500/20 text-red-400 transition-colors"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
+                      <button
+                        key={method.id}
+                        onClick={() => !isProcessing && turulruuTooKhiikhFunction(method.id)}
+                        disabled={isProcessing && processingTurul !== method.id}
+                        className={`relative flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 ${ac.container} ${isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.97]"}`}
+                      >
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors duration-200 ${ac.icon}`}>
+                          {isLoading ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : method.icon}
                         </div>
-                      </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{method.label}</span>
+                          {isActive && (
+                            <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                              {formatNumber(value[method.id])}₮
+                            </span>
+                          )}
+                        </div>
+                        {isActive && (
+                          <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full ${ac.badge} flex items-center justify-center shadow-lg ring-2 ring-white dark:ring-[#18181b]`}>
+                            <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                          </div>
+                        )}
+                      </button>
                     );
                   })}
-                  <div className="border-t border-slate-200 dark:border-white/10 pt-2 mt-2 flex justify-between text-sm font-black">
-                    <span className="text-slate-500">Нийт оруулсан</span>
-                    <span className="text-emerald-600">{formatNumber(paidSoFar)}₮</span>
+                </div>
+              </div>
+
+              {/* Split summary */}
+              {tulbur.length > 0 && (
+                <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
+                  <div className="px-4 py-2.5 bg-slate-100/50 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/[0.06]">
+                    <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Хуваарилалт</span>
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {tulbur.map((t, i) => {
+                      const label = PAYMENT_METHODS.find((m) => m.id === t.turul)?.label || t.turul;
+                      const accent = PAYMENT_METHODS.find((m) => m.id === t.turul)?.accent || "emerald";
+                      return (
+                        <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-100/50 dark:hover:bg-white/[0.03] transition-colors">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full bg-${accent}-500`} />
+                            <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">{label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[12px] font-extrabold text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}₮</span>
+                            {t.khariu && <Check className="w-3.5 h-3.5 text-emerald-500" />}
+                            <button
+                              onClick={() => {
+                                const nw = tulbur.filter((_, idx) => idx !== i);
+                                setTulbur(nw);
+                                setTurulruuKhiikhDun(Math.max(0, niitDun - nw.reduce((s, t2) => s + t2.dun, 0)).toString());
+                              }}
+                              className="p-0.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/15 text-red-400 dark:text-red-500 transition-colors"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
 
-              {/* E-Barimt Selection */}
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 space-y-3">
+              {/* Quick cash */}
+              <div>
+                <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-2.5">Бэлэн мөнгө нэмэх</p>
+                <div className="flex gap-2 flex-wrap">
+                  {QUICK_CASH.map((val) => (
+                    <button
+                      key={val}
+                      onClick={() => hylbarNemekh(val)}
+                      disabled={isProcessing}
+                      className="px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                    >
+                      +{formatNumber(val)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* E-Barimt */}
+              <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">И-Баримт төрөл</span>
-                  <div className="flex p-0.5 bg-gray-200 dark:bg-white/10 rounded-lg">
-                    <button
-                      onClick={() => setEbarimtType("1")}
-                      className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${ebarimtType === "1" ? "bg-white dark:bg-white/20 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
-                    >
-                      Хувь хүн
-                    </button>
-                    <button
-                      onClick={() => setEbarimtType("3")}
-                      className={`px-3 py-1 rounded-md text-[10px] font-bold transition-all ${ebarimtType === "3" ? "bg-white dark:bg-white/20 shadow text-slate-800 dark:text-white" : "text-slate-500"}`}
-                    >
-                      Байгууллага
-                    </button>
+                  <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">И-Баримт</span>
+                  <div className="flex p-[3px] rounded-xl bg-slate-200/50 dark:bg-white/[0.06]">
+                    {(["1", "3"] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => setEbarimtType(v)}
+                        className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${
+                          ebarimtType === v
+                            ? "bg-white dark:bg-white/[0.12] shadow-sm text-slate-800 dark:text-white"
+                            : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                        }`}
+                      >
+                        {v === "1" ? "Хувь хүн" : "Байгууллага"}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 {ebarimtType === "3" && (
@@ -481,65 +481,49 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     placeholder="Байгууллагын регистер"
                     value={register}
                     onChange={(e) => setRegister(e.target.value)}
-                    className="w-full h-10 px-4 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 text-sm font-bold focus:ring-2 focus:ring-blue-500/20 outline-none"
+                    className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[13px] font-semibold text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
                   />
                 )}
               </div>
 
-              {/* Quick Cash Buttons (pay.md: hylbarNemekh — adds to display) */}
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Бэлэн мөнгө нэмэх</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {QUICK_CASH.map((val) => (
-                    <button
-                      key={val}
-                      onClick={() => hylbarNemekh(val)}
-                      disabled={isProcessing}
-                      className="py-2.5 rounded-xl border border-gray-200 dark:border-white/10 font-bold text-slate-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-xs disabled:opacity-50"
-                    >
-                      +{formatNumber(val)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* QPay QR Display */}
+              {/* QPay QR */}
               {qpayData && (
-                <div className="flex flex-col items-center justify-center p-6 bg-blue-50/30 dark:bg-blue-500/10 rounded-3xl border-2 border-dashed border-blue-200 dark:border-blue-500/30 mt-2">
+                <div className="flex flex-col items-center p-6 rounded-2xl bg-gradient-to-b from-blue-50 to-white dark:from-blue-500/[0.08] dark:to-transparent border border-blue-200/50 dark:border-blue-500/20">
                   <img
                     src={qpayData.qr_image || `data:image/png;base64,${qpayData.qrData}`}
                     alt="QPay QR"
-                    className="w-40 h-40 mb-3 border rounded-xl overflow-hidden shadow-sm bg-white"
+                    className="w-36 h-36 mb-3 rounded-xl shadow-lg bg-white border border-slate-100"
                   />
-                  <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest animate-pulse text-center leading-relaxed">
-                    Утсаараа эсвэл банкаараа<br />уншуулж төлнө үү
+                  <p className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 uppercase tracking-widest animate-pulse text-center leading-relaxed">
+                    Утсаараа уншуулж төлнө үү
                   </p>
                 </div>
               )}
             </div>
 
-            {/* ─── Right Side: Keypad & Input ─── */}
-            <div className="flex flex-col gap-6">
-              {/* Amount Display */}
-              <div className="text-center space-y-1">
-                <div className="text-4xl font-black text-emerald-500 tracking-tight">
-                  {formatNumber(tuljBuiDun)}₮
+            {/* ─── RIGHT: Keypad (2 cols) ─── */}
+            <div className="lg:col-span-2 p-6 flex flex-col gap-5 bg-slate-50/30 dark:bg-white/[0.01]">
+              {/* Amount display */}
+              <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] shadow-sm">
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Оруулах дүн</p>
+                <div className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
+                  {formatNumber(tuljBuiDun)}<span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5">₮</span>
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
-                  <p className="text-xs text-slate-400 dark:text-gray-500">
+                  <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500 font-medium">
                     Үлдэгдэл: {formatNumber(tulukhDun)}₮
                   </p>
                 )}
               </div>
 
-              {/* Keypad */}
-              <div className="grid grid-cols-3 gap-3 flex-1">
+              {/* Numpad */}
+              <div className="grid grid-cols-3 gap-2 flex-1">
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                   <button
                     key={num}
                     onClick={() => mungunDunNemekh(num.toString())}
                     disabled={isProcessing}
-                    className="h-14 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 font-black text-2xl text-slate-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 hover:shadow-sm active:scale-95 transition-all disabled:opacity-50"
+                    className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] font-extrabold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                   >
                     {num}
                   </button>
@@ -547,60 +531,66 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                 <button
                   onClick={handleClear}
                   disabled={isProcessing}
-                  className="h-14 rounded-2xl border border-orange-200 dark:border-orange-500/30 bg-orange-50 dark:bg-orange-500/10 font-black text-xl text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-500/20 active:scale-95 transition-all disabled:opacity-50"
+                  className="h-[52px] rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/[0.08] font-extrabold text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
                 >
-                  C
+                  AC
                 </button>
                 <button
                   onClick={() => mungunDunNemekh("0")}
                   disabled={isProcessing}
-                  className="h-14 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-zinc-800 font-black text-2xl text-slate-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10 hover:shadow-sm active:scale-95 transition-all disabled:opacity-50"
+                  className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] font-extrabold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                 >
                   0
                 </button>
                 <button
                   onClick={handleBackspace}
                   disabled={isProcessing}
-                  className="h-14 rounded-2xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-500/20 active:scale-95 transition-all disabled:opacity-50"
+                  className="h-[52px] rounded-xl border border-rose-200/60 dark:border-rose-500/20 bg-rose-50 dark:bg-rose-500/[0.08] text-rose-500 dark:text-rose-400 flex items-center justify-center hover:bg-rose-100 dark:hover:bg-rose-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
                 >
-                  <Delete className="w-6 h-6" />
+                  <Delete className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Summary Card */}
-              <div className="p-4 rounded-2xl border border-dashed border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/5 space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-500 dark:text-gray-400 uppercase">
-                  <span>Нийт дүн:</span>
-                  <span className="text-slate-700 dark:text-gray-200 font-bold">{formatNumber(niitDun)}₮</span>
+              {/* Summary */}
+              <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
+                <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
+                  <span className="font-bold text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
+                  <span className="font-extrabold text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}₮</span>
                 </div>
-                <div className="flex justify-between items-center text-xs font-bold text-emerald-600 uppercase">
-                  <span>Оруулсан:</span>
-                  <span>{formatNumber(paidSoFar)}₮</span>
+                <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
+                  <span className="font-bold text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>
+                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}₮</span>
                 </div>
-                <div className={`flex justify-between items-center text-sm font-black uppercase ${tulukhDun > 0 ? "text-red-500" : "text-emerald-600"}`}>
-                  <span>Дутуу:</span>
-                  <span>{formatNumber(tulukhDun)}₮</span>
+                <div className={`px-4 py-2.5 flex justify-between text-[12px] ${tulukhDun > 0 ? "bg-rose-50/50 dark:bg-rose-500/[0.05]" : "bg-emerald-50/50 dark:bg-emerald-500/[0.05]"}`}>
+                  <span className={`font-bold uppercase ${tulukhDun > 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>Дутуу</span>
+                  <span className={`font-extrabold ${tulukhDun > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                    {formatNumber(tulukhDun)}₮
+                  </span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mt-auto">
+              {/* Actions */}
+              <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => {
                     if (onConfirm) onConfirm(0, "belen", {
                       tulbur: [{ turul: "belen", dun: 0, ognoo: new Date().toISOString() }],
-                      ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined }
+                      ebarimt: { type: ebarimtType, register: ebarimtType === "3" ? register : undefined },
                     });
                   }}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl border border-amber-200 dark:border-amber-500/30 text-amber-600 font-bold uppercase text-[10px] hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors disabled:opacity-50"
+                  className="py-3 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold uppercase text-[10px] tracking-wider hover:bg-amber-50 dark:hover:bg-amber-500/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   Үнэгүй [F7]
                 </button>
                 <button
                   onClick={f4Darsan}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl bg-emerald-500 text-white font-bold uppercase text-[10px] hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="py-3 rounded-xl font-bold uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
+                  style={{
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
+                  }}
                 >
                   {isProcessing ? (
                     <>
