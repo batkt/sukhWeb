@@ -291,7 +291,7 @@ export default function Jagsaalt() {
              </div>
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-2xl flex-1 mt-2">
+        <div className="relative overflow-y-auto custom-scrollbar max-h-[65vh] rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-2xl flex-1 mt-2">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1300px]">
               <thead className="bg-slate-900 dark:bg-black/40 border-b border-white/5">

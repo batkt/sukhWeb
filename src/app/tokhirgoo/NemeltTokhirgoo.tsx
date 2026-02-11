@@ -519,7 +519,7 @@ export default function NemeltTokhirgoo() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium text-theme">
-                    {invoiceActive ? "Идэвхитэй" : "Идэвхгүй"}
+                    {invoiceActive ? "Идэвхтэй" : "Идэвхгүй"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
