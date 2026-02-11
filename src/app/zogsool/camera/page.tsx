@@ -769,7 +769,7 @@ export default function Camera() {
   };
 
   return (
-    <div className="h-full overflow-x-hidden custom-scrollbar bg-[color:var(--surface-bg)]">
+    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-[color:var(--surface-bg)]">
       <div className="min-h-full p-4 lg:p-6 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -922,7 +922,7 @@ export default function Camera() {
                 <Calendar className="w-4 h-4 text-black dark:text-slate-300" />
               </div>
               <div>
-                <h3 className="text-[13px] font-extrabold text-slate-800 dark:text-white tracking-tight leading-none">Жагсаалт</h3>
+                <h3 className="text-[13px] text-slate-800 dark:text-white tracking-tight leading-none">Жагсаалт</h3>
                 <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
               </div>
             </div>
@@ -940,7 +940,7 @@ export default function Camera() {
                     setSearchTerm(e.target.value);
                     setPage(1);
                   }}
-                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 dark:focus:border-blue-500/30 outline-none transition-all"
+                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] text-[11px] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 dark:focus:border-blue-500/30 outline-none transition-all"
                 />
               </div>
 
@@ -955,9 +955,9 @@ export default function Camera() {
                   }}
                   valueFormat="YYYY-MM-DD"
                   leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />}
-                  rightSection={<ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-500" />}
+                  rightSection={null}
                   classNames={{
-                    input: "flex items-center gap-2 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] h-9 px-4 font-semibold text-[11px] text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 transition-all font-[family-name:var(--font-mono)]"
+                    input: "flex items-center gap-2 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] h-9 px-4 text-[11px] text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 transition-all font-[family-name:var(--font-mono)]"
                   }}
                   clearable
                 />
@@ -966,7 +966,7 @@ export default function Camera() {
               {/* Register button */}
               <button
                 onClick={() => setIsRegModalOpen(true)}
-                className="flex items-center gap-2 px-6 h-9 rounded-full font-semibold text-[11px] text-white active:scale-[0.97] transition-all shadow-lg"
+                className="flex items-center gap-2 px-6 h-9 rounded-full text-[11px] text-white active:scale-[0.97] transition-all shadow-lg"
                 style={{
                   background: "linear-gradient(135deg, #3b82f6, #2563eb)",
                   boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
@@ -977,7 +977,7 @@ export default function Camera() {
             </div>
           </div>
 
-          <div className="relative overflow-y-auto custom-scrollbar max-h-[30vh] rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
+          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
             <div className="overflow-x-auto custom-scrollbar flex-1">
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead>
@@ -990,7 +990,7 @@ export default function Camera() {
                         { 
                           id: 'duration', 
                           label: "Хугацаа/мин", 
-                          width: 'w-32',
+                          width: 'w-42',
                           filter: true, 
                           current: durationFilter,
                           set: (v: string) => { setDurationFilter(v); setPage(1); },
@@ -1032,9 +1032,8 @@ export default function Camera() {
                           ]
                         },
                         { id: 'reason', label: "Шалтгаан", width: 'w-36' },
-                        { id: 'actions', label: "", width: 'w-12' },
                       ].map((h, i) => (
-                        <th key={h.id} className={`group relative py-4 px-3 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ''} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors`}>
+                        <th key={h.id} className={`group relative py-4 px-3 text-slate-700 dark:text-slate-300  uppercase tracking-wider text-xs border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ''} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors`}>
                           <div className="flex items-center justify-center gap-2 cursor-pointer h-full">
                              {h.filter && <Filter className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />}
                              <span>{h.label}</span>
@@ -1051,7 +1050,7 @@ export default function Camera() {
                                      <div 
                                        key={idx} 
                                        onClick={() => (h as any).set?.(opt.value)}
-                                       className={`px-3 py-2.5 rounded-lg text-[11px] font-bold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                       className={`px-3 py-2.5 rounded-lg text-[11px]  text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
                                           (h as any).current === opt.value 
                                             ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
                                             : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
@@ -1092,9 +1091,10 @@ export default function Camera() {
                       const tuluv = mur?.tuluv;
                       const niitDun = transaction.niitDun || 0;
                       const isCurrentlyIn = !mur?.garsanKhaalga;
+                      const isPaid = tuluv === 1;
                       const isDebt = tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
-                      const isActive = isCurrentlyIn && (tuluv === 0 || tuluv === 2);
-                      const showActionBtn = isActive || isDebt;
+                      const isActive = isCurrentlyIn; 
+                      const showActionBtn = isCurrentlyIn || isDebt;
                       const hasPayment = niitDun > 0 || isDebt;
 
                       return (
@@ -1107,7 +1107,7 @@ export default function Camera() {
                           </td>
                           <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
                              <div className="flex items-center justify-center gap-2">
-                                <span className=" text-slate-700 dark:text-slate-300 font-bold font-[family-name:var(--font-mono)] text-sm">{transaction.mashiniiDugaar || "-"}</span>
+                                <span className=" text-slate-700 dark:text-slate-300  font-[family-name:var(--font-mono)] text-sm">{transaction.mashiniiDugaar || "-"}</span>
                                 <Copy 
                                   className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors" 
                                   onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
@@ -1125,7 +1125,7 @@ export default function Camera() {
                              </span>
                           </td>
                           <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
-                             <div className={`px-2.5 py-1.5 rounded-lg text-center min-w-[90px] inline-block whitespace-nowrap text-xs font-bold ${
+                             <div className={`px-2.5 py-1.5 rounded-lg text-center min-w-[90px] inline-block whitespace-nowrap text-xs  ${
                                !garsanTsag 
                                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" 
                                  : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
@@ -1139,7 +1139,7 @@ export default function Camera() {
                           <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.tuukh?.[0]?.khungulult || "0"}
                           </td>
-                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-center font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-center  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
                           <td className="py-3 px-3 text-center font-medium relative border-r border-slate-200 dark:border-white/5 text-sm">
@@ -1172,7 +1172,7 @@ export default function Camera() {
                                   const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
                                   return (
                                     <div className="group/pay relative inline-block cursor-pointer">
-                                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
+                                      <span className="text-sm  text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
                                         {formatNumber(totalPaid)}
                                         {payHistory.length > 1 && <span className="ml-1 text-[10px] text-slate-400">({payHistory.length})</span>}
                                       </span>
@@ -1186,15 +1186,15 @@ export default function Camera() {
                                         <div className="space-y-1.5">
                                           {payHistory.map((p: any, pi: number) => (
                                             <div key={pi} className="flex items-center justify-between gap-3">
-                                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
+                                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px]  border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
                                                 {labels[p.turul] || p.turul}
                                               </span>
-                                              <span className="text-[10px] font-bold text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)]">{formatNumber(p.dun || 0)}</span>
+                                              <span className="text-[10px]  text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)]">{formatNumber(p.dun || 0)}</span>
                                             </div>
                                           ))}
                                         </div>
                                         <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
-                                          <span className="text-[9px] font-bold text-slate-400 uppercase">Нийт</span>
+                                          <span className="text-[9px]  text-slate-400 uppercase">Нийт</span>
                                           <span className="text-xs font-black text-emerald-600 font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
                                         </div>
                                       </div>
@@ -1203,13 +1203,13 @@ export default function Camera() {
                                 }
 
                                 if (tulsunDun > 0) {
-                                  return <span className="text-sm font-bold text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">{formatNumber(tulsunDun)}</span>;
+                                  return <span className="text-sm  text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">{formatNumber(tulsunDun)}</span>;
                                 }
 
                                 if (!history && !garsanTsag) return <span className="text-slate-300">0</span>;
                                 
                                 if ((history as any)?.zurchil === "Үнэгүй хугацаанд" || (transaction as any).zurchil === "Үнэгүй хугацаанд" || (garsanTsag && tulsunDun === 0)) {
-                                  return <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">Үнэгүй</span>
+                                  return <span className="text-emerald-600 dark:text-emerald-400  text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">Үнэгүй</span>
                                 }
 
                                 return <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-sm">{formatNumber(tulsunDun)}</span>;
@@ -1226,14 +1226,29 @@ export default function Camera() {
                                           e.stopPropagation();
                                           setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
                                         }}
-                                        className={`group/btn flex items-center justify-center gap-1 w-full max-w-[110px] px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm active:scale-95 transition-all duration-200 border ${
-                                           hasPayment
-                                           ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 dark:hover:bg-amber-900/40" 
-                                           : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50 dark:hover:bg-blue-900/40"
+                                        className={`group/btn flex items-center justify-center gap-1 w-full max-w-[110px] px-2.5 py-1.5 rounded-lg text-[10px]  uppercase tracking-wide shadow-md active:scale-[0.97] transition-all duration-200 border ${
+                                           (isPaid && niitDun > 0)
+                                           ? "bg-green-500 text-white border-green-600 hover:bg-green-600"
+                                           : (!isCurrentlyIn && isDebt)
+                                           ? "bg-yellow-500 text-white border-yellow-600 hover:bg-yellow-600"
+                                           : (tuluv === -1 || tuluv === -2)
+                                           ? "bg-red-500 text-white border-red-600 hover:bg-red-600"
+                                           : "bg-blue-500 text-white dark:text-black border-blue-600 hover:bg-blue-600"
                                         }`}
                                       >
-                                          <span>{isActive ? "Идэвхтэй" : "Төлбөр"}</span>
-                                          <ChevronDown className="w-3.5 h-3.5 opacity-50" />
+                                          <span className={`!text-white ${(isPaid && niitDun > 0) || (!isCurrentlyIn && isDebt) || (tuluv === -1 || tuluv === -2) ? "" : "dark:!text-black"}`}>
+                                            {!isCurrentlyIn 
+                                              ? (isDebt ? "Төлбөртэй" : "Дууссан") 
+                                              : (isPaid && niitDun > 0) 
+                                                ? "Төлсөн" 
+                                                : (tuluv === 2) 
+                                                  ? "Төлбөртэй" 
+                                                  : (niitDun > 0) 
+                                                    ? "Төлбөр" 
+                                                    : "Идэвхтэй"
+                                            }
+                                          </span>
+                                           {/* removed chevron */}
                                       </button>
                                       {/* ... dropdown menu code ... */}
                                       {confirmExitId === transaction._id && (
@@ -1241,9 +1256,9 @@ export default function Camera() {
                                             {/* ... dropdown content ... */}
                                             <div className="space-y-1">
                                                 {/* Re-implement dropdown buttons with same logic but larger padding text */}
-                                                {(isActive ? [
+                                                {(isCurrentlyIn ? [
                                                     { label: "Хөнгөлөлт", icon: Tag, color: "amber", action: () => handleManualExit(transaction, "pay") },
-                                                    { label: "Гаргах", icon: ArrowUpDown, color: "blue", action: () => niitDun > 0 ? handleManualExit(transaction, "pay") : handleManualExit(transaction, "free") }
+                                                    { label: "Гаргах", icon: ArrowUpDown, color: "blue", action: () => (isPaid || niitDun === 0) ? handleManualExit(transaction, "free") : handleManualExit(transaction, "pay") }
                                                 ] : [
                                                     { label: "Төлөх", icon: DollarSign, color: "emerald", action: () => handleManualExit(transaction, "pay") },
                                                     { label: "Үнэгүй", icon: Info, color: "slate", action: () => handleManualExit(transaction, "free") }
@@ -1251,13 +1266,13 @@ export default function Camera() {
                                                     <button 
                                                         key={bi}
                                                         onClick={btn.action}
-                                                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-${btn.color}-50 hover:text-${btn.color}-600 dark:hover:bg-${btn.color}-500/10 transition-all group/item`}
+                                                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[11px]  text-slate-700 dark:text-slate-300 hover:bg-${btn.color}-50 hover:text-${btn.color}-600 dark:hover:bg-${btn.color}-500/10 transition-all group/item`}
                                                     >
                                                         <div className="flex items-center gap-2">
                                                             <div className={`p-1.5 rounded-lg bg-${btn.color}-100 text-${btn.color}-600 dark:bg-${btn.color}-500/20 group-hover/item:scale-110 transition-transform`}>
                                                                 <btn.icon className="w-3.5 h-3.5" />
                                                             </div>
-                                                            <span>{btn.label}</span>
+                                                             <span>{btn.label}</span>
                                                         </div>
                                                     </button>
                                                 ))}
@@ -1270,28 +1285,30 @@ export default function Camera() {
                                     // Status badges logic
                                     const badgeClass = "flex items-center justify-center flex-nowrap w-[100px] mx-auto px-2 py-1.5 rounded-lg border";
                                     if (tuluv === 1) return (
-                                      <div className={`${badgeClass} bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30`}>
-                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Төлсөн</span>
+                                      <div className={`${badgeClass} ${(isCurrentlyIn && niitDun === 0) ? "bg-blue-500 text-white dark:text-black border-blue-600 shadow-sm" : "bg-green-500 text-white border-green-600 shadow-sm"}`}>
+                                        <span className={`text-[10px] !text-white ${(isCurrentlyIn && niitDun === 0) ? "dark:!text-black" : ""} uppercase whitespace-nowrap`}>
+                                          {(isCurrentlyIn && niitDun === 0) ? "Идэвхтэй" : "Төлсөн"}
+                                        </span>
                                       </div>
                                     );
-                                    if (tuluv === 2) return (
-                                      <div className={`${badgeClass} bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30`}>
-                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Урьдчилсан</span>
+                                    if (!isCurrentlyIn && (niitDun > 0 || isDebt)) return (
+                                      <div className={`${badgeClass} bg-yellow-500 text-white border-yellow-600 shadow-sm`}>
+                                        <span className="text-[10px] !text-white uppercase whitespace-nowrap">Төлбөртэй</span>
                                       </div>
                                     );
                                     if (tuluv === -2 || tuluv === -1) return (
-                                      <div className={`${badgeClass} bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30`}>
-                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Зөрчилтэй</span>
+                                      <div className={`${badgeClass} bg-red-500 text-white border-red-600 shadow-sm`}>
+                                        <span className="text-[10px] !text-white uppercase whitespace-nowrap">Зөрчилтэй</span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && niitDun === 0) return (
-                                      <div className={`${badgeClass} bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5`}>
-                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Үнэгүй</span>
+                                      <div className={`${badgeClass} bg-gray-500 text-white border-gray-600 shadow-sm`}>
+                                        <span className="text-[10px] !text-white uppercase whitespace-nowrap">Үнэгүй</span>
                                       </div>
                                     );
                                     return (
-                                      <div className={`${badgeClass} bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30`}>
-                                        <span className="text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap text-center">Идэвхтэй</span>
+                                      <div className={`${badgeClass} bg-blue-500 text-white dark:text-black border-blue-600 shadow-sm`}>
+                                        <span className="text-[10px] !text-white dark:!text-black uppercase tracking-tight whitespace-nowrap text-center ">Идэвхтэй</span>
                                       </div>
                                     );
                                   })()
@@ -1300,22 +1317,12 @@ export default function Camera() {
                           <td className="py-3 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
                              {transaction.zurchil || "0"}
                           </td>
-                          <td className="py-3 px-3">
-                             <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
-                                   <Info className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
-                                   <ExternalLink className="w-3.5 h-3.5" />
-                                </div>
-                             </div>
-                          </td>
                         </tr>
                       );
                     })
                   )}
                 </tbody>
-                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 font-bold text-slate-800 dark:text-white sticky bottom-0 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10  text-slate-800 dark:text-white sticky bottom-0 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
                     <tr>
                       <td colSpan={6} className="py-3 px-3 text-right text-xs uppercase tracking-wider border-r border-slate-200 dark:border-white/5">
                         Нийт Дүн:
@@ -1337,7 +1344,7 @@ export default function Camera() {
 
             {/* Pagination */}
             <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 rounded-b-2xl flex items-center justify-between gap-4">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+              <span className="text-xs  text-slate-500 dark:text-slate-400">
                 Нийт {total} бичлэг
               </span>
               <div className="flex items-center gap-2">
@@ -1349,7 +1356,7 @@ export default function Camera() {
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <div className="flex items-center gap-1">
-                  <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-xs font-bold text-slate-900 dark:text-white">
+                  <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-xs  text-slate-900 dark:text-white">
                     {page}
                   </span>
                   <span className="text-slate-400 text-xs">/</span>
@@ -1641,7 +1648,7 @@ const CameraStream = React.memo(({
           <div className="absolute inset-0 bg-red-500/20 rounded-full blur-2xl animate-pulse"></div>
           <div className="relative p-6 rounded-3xl bg-gray-900/80 backdrop-blur-sm border border-red-500/30">
             <VideoOff className="w-16 h-16 mb-4 mx-auto opacity-75 animate-pulse" />
-            <p className="text-base font-semibold mb-2 text-center">
+            <p className="text-base mb-2 text-center">
               Камер холбогдохгүй байна
             </p>
             <p className="text-xs opacity-60 text-center mb-3 font-mono">
@@ -1707,13 +1714,13 @@ const CameraStream = React.memo(({
             backdrop-blur-xl border-2
             shadow-[0_8px_32px_rgba(0,0,0,0.3)]
             ${cameraType === 'entry' 
-              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-100 hover:bg-emerald-500 hover:text-white hover:border-emerald-400' 
-              : 'bg-rose-500/20 border-rose-500/40 text-rose-100 hover:bg-rose-500 hover:text-white hover:border-rose-400'
+              ? 'bg-emerald-500/20 border-emerald-500/40 text-white hover:bg-emerald-500 hover:border-emerald-400' 
+              : 'bg-rose-500/20 border-rose-500/40 text-white hover:bg-rose-500 hover:border-rose-400'
             }
           `}
         >
-          <div className={`w-2 h-2 rounded-full animate-pulse ${cameraType === 'entry' ? 'bg-emerald-400' : 'bg-rose-400'} group-hover:bg-white`}></div>
-          <span>Нээх</span>
+          <div className={`w-2 h-2 rounded-full animate-pulse ${cameraType === 'entry' ? 'bg-emerald-400' : 'bg-rose-400'} group-hover:bg-white `}></div>
+          <span className="!text-white">Нээх</span>
           <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>
       </div>
@@ -1757,7 +1764,7 @@ const CameraStream = React.memo(({
               className={`w-2 h-2 rounded-full ${cameraType === "entry" ? "bg-green-500" : "bg-red-500"} animate-pulse`}
             ></div>
             <div>
-              <p className="font-semibold text-xs">{gateName || name}</p>
+              <p className=" text-xs">{gateName || name}</p>
               <p className="text-xs opacity-75 font-mono">
                 {ip}:{port}
               </p>
