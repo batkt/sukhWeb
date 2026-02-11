@@ -278,7 +278,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
             }
 
-            toast.success("Амжилттай нэвтэрлээ");
             return true;
           } else {
             toast.error("Хэрэглэгчийн мэдээлэл буруу байна");

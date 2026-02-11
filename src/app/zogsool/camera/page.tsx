@@ -1129,26 +1129,69 @@ export default function Camera() {
                           <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-right font-medium">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
-                            <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-center font-bold">
+                            <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-center font-bold relative">
                              {(() => {
                                 const history = transaction.tuukh?.[0];
                                 const tulsunDun = history?.tulsunDun || 0;
                                 const payHistory = history?.tulbur || [];
-                                const labels: any = { 
-                                  cash: "Бэлэн", 
-                                  khaan: "Хаан", 
-                                  qpay: "QPay", 
-                                  transfer: "Дансаар", 
-                                  discount: "Хөнгөлөлт",
-                                  free: "Үнэгүй"
+                                const labels: Record<string, string> = { 
+                                  belen: "Бэлэн", cash: "Бэлэн",
+                                  khaan: "Карт",
+                                  qpay: "QPay",
+                                  khariltsakh: "Дансаар", transfer: "Дансаар",
+                                  khungulult: "Хөнгөлөлт", discount: "Хөнгөлөлт",
+                                  free: "Үнэгүй",
+                                  monpay: "MonPay", socialpay: "SocialPay", toki: "Toki"
+                                };
+                                const colorMap: Record<string, string> = {
+                                  belen: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                                  cash: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                                  khaan: "bg-teal-100 text-teal-700 border-teal-200",
+                                  qpay: "bg-purple-100 text-purple-700 border-purple-200",
+                                  khariltsakh: "bg-blue-100 text-blue-700 border-blue-200",
+                                  transfer: "bg-blue-100 text-blue-700 border-blue-200",
+                                  khungulult: "bg-amber-100 text-amber-700 border-amber-200",
+                                  discount: "bg-amber-100 text-amber-700 border-amber-200",
                                 };
                                 
                                 if (payHistory.length > 0) {
-                                  return payHistory.map((p: any) => `${labels[p.turul] || "Төлөлт"} : ${formatNumber(p.dun)}`).join(", ");
+                                  const summary = payHistory.map((p: any) => labels[p.turul] || p.turul).join(", ");
+                                  const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
+                                  return (
+                                    <div className="group/pay relative inline-block cursor-pointer">
+                                      <span className="text-xs font-bold hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5">
+                                        {formatNumber(totalPaid)}₮
+                                        {payHistory.length > 1 && <span className="ml-1 text-[9px] text-slate-400">({payHistory.length})</span>}
+                                      </span>
+
+                                      {/* Payment detail popup */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[80] min-w-[200px] p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto">
+                                        <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 pb-1.5 border-b border-slate-100 dark:border-white/5">
+                                          Төлбөрийн дэлгэрэнгүй
+                                        </div>
+                                        <div className="space-y-1.5">
+                                          {payHistory.map((p: any, pi: number) => (
+                                            <div key={pi} className="flex items-center justify-between gap-3">
+                                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
+                                                {labels[p.turul] || p.turul}
+                                              </span>
+                                              <span className="text-xs font-black text-slate-800 dark:text-gray-200 whitespace-nowrap">{formatNumber(p.dun || 0)}₮</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5 flex justify-between">
+                                          <span className="text-[9px] font-bold text-slate-400 uppercase">Нийт</span>
+                                          <span className="text-xs font-black text-emerald-600">{formatNumber(totalPaid)}₮</span>
+                                        </div>
+                                        {/* Arrow */}
+                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white dark:bg-slate-900 border-b border-r border-slate-200/50 dark:border-white/10 rotate-45"></div>
+                                      </div>
+                                    </div>
+                                  );
                                 }
 
                                 if (tulsunDun > 0) {
-                                  return `Төлөлт : ${formatNumber(tulsunDun)}`;
+                                  return <span className="text-xs">{formatNumber(tulsunDun)}₮</span>;
                                 }
 
                                 if (!history && !garsanTsag) return "-";
@@ -1405,20 +1448,22 @@ export default function Camera() {
               try {
                 const zogsooliinId = selectedTransaction.tuukh?.[0]?.zogsooliinId || selectedTransaction.barilgiinId || effectiveBarilgiinId;
                 
+                // Build tulbur array from split entries (pay.md)
+                const splitEntries = extraData?.tulbur || [{ turul: method, dun: amount, ognoo: new Date().toISOString() }];
+                const tulburArray = splitEntries
+                  .filter((t: any) => t.dun > 0 || amount === 0) // keep zero for free exits
+                  .map((t: any) => ({
+                    ...t,
+                    baiguullagiinId: ajiltan?.baiguullagiinId,
+                    barilgiinId: effectiveBarilgiinId,
+                    burtgesenAjiltaniiId: ajiltan?._id,
+                    burtgesenAjiltaniiNer: ajiltan?.ner,
+                    zogsooliinId: zogsooliinId,
+                  }));
+
                 const payload = {
                   id: selectedTransaction._id,
-                  tulbur: [
-                    {
-                      ognoo: new Date().toISOString(),
-                      baiguullagiinId: ajiltan?.baiguullagiinId,
-                      barilgiinId: effectiveBarilgiinId,
-                      burtgesenAjiltaniiId: ajiltan?._id,
-                      burtgesenAjiltaniiNer: ajiltan?.ner,
-                      dun: amount,
-                      turul: method,
-                      zogsooliinId: zogsooliinId,
-                    }
-                  ]
+                  tulbur: tulburArray,
                 };
 
                 const resp = await uilchilgee(token || "").post("/zogsooliinTulburTulye", payload);
