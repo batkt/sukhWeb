@@ -26,7 +26,9 @@ import {
   Plus,
   Filter,
   ArrowUpDown,
-  Tag
+  Tag,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import moment from "moment";
@@ -590,6 +592,7 @@ export default function Camera() {
 
 
 
+  const total = listData?.niitMur || 0;
   const transactions: Uilchluulegch[] = useMemo(() => {
     const data = listData;
     let list: Uilchluulegch[] = [];
@@ -1312,43 +1315,62 @@ export default function Camera() {
                     })
                   )}
                 </tbody>
-                <tfoot className="bg-gray-50/50 border-t border-gray-100  text-[10px]">
-                   <tr>
-                      <td colSpan={6} className="py-3 px-3 text-right text-gray-400 uppercase">Нийт дүн</td>
-                      <td className="py-3 px-3"></td>
-                      <td className="py-3 px-3 text-gray-700">0</td>
-                      <td className="py-3 px-3 text-gray-700">0</td>
-                      <td className="py-3 px-3 text-gray-700">0</td>
-                      <td colSpan={3}></td>
-                   </tr>
-                </tfoot>
+                  <tfoot className="bg-slate-50 dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 font-bold text-slate-800 dark:text-white sticky bottom-0 z-30 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+                    <tr>
+                      <td colSpan={6} className="py-3 px-3 text-right text-xs uppercase tracking-wider border-r border-slate-200 dark:border-white/5">
+                        Нийт Дүн:
+                      </td>
+                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                          {formatNumber(transactions.reduce((sum, t) => sum + (t.tuukh?.[0]?.khungulult || 0), 0))}
+                      </td>
+                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                          {formatNumber(transactions.reduce((sum, t) => sum + (t.niitDun || 0), 0))}
+                      </td>
+                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                          {formatNumber(transactions.reduce((sum, t) => sum + (t.tuukh?.[0]?.tulsunDun || 0), 0))}
+                      </td>
+                      <td colSpan={4} className="border-r border-slate-200 dark:border-white/5"></td>
+                    </tr>
+                  </tfoot>
               </table>
+            </div>
+
+            {/* Pagination */}
+            <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900 rounded-b-2xl flex items-center justify-between gap-4">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                Нийт {total} бичлэг
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-400"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <div className="flex items-center gap-1">
+                  <span className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-white/5 text-xs font-bold text-slate-900 dark:text-white">
+                    {page}
+                  </span>
+                  <span className="text-slate-400 text-xs">/</span>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {Math.ceil(total / pageSize)}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setPage((p) => Math.min(Math.ceil(total / pageSize), p + 1))}
+                  disabled={page >= Math.ceil(total / pageSize)}
+                  className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-slate-600 dark:text-slate-400"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
-            >
-              Өмнөх
-            </button>
-            <span className="px-4 py-2 text-sm text-[color:var(--panel-text)]">
-              {page} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="px-4 py-2 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface)] text-[color:var(--panel-text)] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[color:var(--surface-hover)] transition text-sm"
-            >
-              Дараах
-            </button>
-          </div>
-        )}
+        </div>
 
         {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mt-4">
           <div className="neu-panel rounded-lg p-3">
@@ -1491,8 +1513,6 @@ export default function Camera() {
           />
         )}
       </div>
-    </div>
-
   );
 }
 
