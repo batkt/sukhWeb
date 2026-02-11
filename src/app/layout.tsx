@@ -4,11 +4,17 @@ import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
 import Script from "next/script";
 import LocatorWarningSuppress from "./locator-setup";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 
 const inter = Inter({
   subsets: ["latin", "cyrillic"],
   variable: "--font-inter",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin", "cyrillic"],
+  variable: "--font-mono",
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +47,7 @@ var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('da
         </Script>
       </head>
       <body
-        className={`${inter.variable} ${inter.className} min-h-screen bg-card text-foreground font-sans`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${inter.className} min-h-screen bg-card text-foreground font-sans`}
         suppressHydrationWarning
       >
         {process.env.NODE_ENV === "development" && <LocatorWarningSuppress />}

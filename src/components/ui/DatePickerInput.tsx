@@ -6,6 +6,7 @@ import { DateRange, SelectRangeEventHandler } from "react-day-picker";
 import { Calendar } from "./calendar";
 
 import dayjs from "dayjs";
+import { mn } from "date-fns/locale";
 
 // Types mimicking the subset of Mantine's DatePickerInput we use in the app
 export type DateValue = Date | null;
@@ -253,12 +254,13 @@ export function DatePickerInput(
                 className="fixed inset-0 z-[11000] flex items-center justify-center p-4"
                 onClick={() => setOpen(false)}
               >
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-md" />
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="relative bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl p-4 w-full max-w-md"
-                  style={{ maxHeight: "90vh", overflow: "auto" }}
+                  className="relative bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl p-4 w-full max-w-sm border border-slate-200/50 dark:border-white/10 animate-in slide-in-from-bottom-4 duration-300"
+                  style={{ maxHeight: "85vh", overflow: "auto" }}
                 >
+                  <div className="w-12 h-1 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto mb-6" />
                   <Calendar
                     mode={type === "range" ? "range" : "single"}
                     selected={selected as any}
@@ -274,25 +276,23 @@ export function DatePickerInput(
                     weekStartsOn={1}
                     showOutsideDays
                     fixedWeeks
+                    locale={mn}
                   />
                 </div>
               </div>,
               document.body
             )
-          : createPortal(
+            : createPortal(
               <div
                 ref={dropdownRef}
-                className="menu-surface rounded-2xl shadow-xl bg-[color:var(--surface-bg)]"
+                className="fixed z-[9999] rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 animate-in fade-in zoom-in-95 duration-200"
                 role="dialog"
                 aria-modal="true"
                 style={{
-                  position: "fixed",
-                  zIndex: 9999,
                   top: dropdownPos?.top ?? 0,
                   left: dropdownPos?.left ?? 0,
                   width: dropdownPos?.width ?? undefined,
                   maxWidth: "96vw",
-                  padding: "0.75rem",
                 }}
               >
                 <Calendar
@@ -310,6 +310,7 @@ export function DatePickerInput(
                   weekStartsOn={1}
                   showOutsideDays
                   fixedWeeks
+                  locale={mn}
                 />
               </div>,
               document.body

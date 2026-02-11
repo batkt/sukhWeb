@@ -911,40 +911,38 @@ export default function Camera() {
 
         {/* Transactions Table Section */}
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* ─── Top Bar ─── */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/80 dark:bg-white/[0.03] backdrop-blur-xl border border-slate-200/40 dark:border-white/[0.06] shadow-sm">
+            {/* Left: Title */}
             <div className="flex items-center gap-3">
-               <div className="p-2 rounded-xl bg-slate-900 text-white shadow-lg">
-                  <Calendar className="w-4 h-4" />
-               </div>
-               <div>
-                  <h3 className="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest leading-none">Жагсаалт</h3>
-                
-               </div>
+              <div className="flex items-center justify-center w-9 h-9 rounded-xl ">
+                <Calendar className="w-4 h-4 text-black dark:text-slate-300" />
+              </div>
+              <div>
+                <h3 className="text-[13px] font-extrabold text-slate-800 dark:text-white tracking-tight leading-none">Жагсаалт</h3>
+                <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="relative group w-64">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Улсын дугаар хайх..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setPage(1);
-                    }}
-                    className="w-full pl-9 pr-4 h-10 rounded-2xl bg-white hover:bg-slate-50 transition-all border-0 text-[10px] uppercase font-black tracking-widest text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 shadow-[0_2px_10px_rgba(0,0,0,0.08)]"
-                  />
+            {/* Right: Search + Register + DatePicker */}
+            <div className="flex items-center gap-2.5 flex-wrap font-[family-name:var(--font-mono)]">
+              {/* Search */}
+              <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Улсын дугаар хайх..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-56 pl-10 pr-4 h-9 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] text-[11px] font-semibold text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 dark:focus:border-blue-500/30 outline-none transition-all"
+                />
               </div>
-              <button
-                onClick={() => setIsRegModalOpen(true)}
-                className="flex items-center gap-2 px-6 h-10 rounded-2xl bg-[#4285F4] border border-[#4285F4] text-white text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Машин бүртгэх</span>
-              </button>
 
-              <div className="min-w-[240px]">
+              {/* Date picker */}
+              <div className="min-w-[220px]">
                 <DatePickerInput
                   type="range"
                   value={dateRange}
@@ -953,12 +951,26 @@ export default function Camera() {
                     setPage(1);
                   }}
                   valueFormat="YYYY-MM-DD"
-                  leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400" />}
-                  rightSection={<ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
-                  classNames={{ input: "flex items-center gap-2 rounded-2xl bg-white hover:bg-slate-50 transition-all h-10 px-4 font-black text-[10px] uppercase tracking-widest text-slate-700 shadow-[0_2px_10px_rgba(0,0,0,0.08)] border-0" }}
+                  leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />}
+                  rightSection={<ChevronDown className="w-3 h-3 text-slate-400 dark:text-slate-500" />}
+                  classNames={{
+                    input: "flex items-center gap-2 rounded-full bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/50 dark:border-white/[0.08] h-9 px-4 font-semibold text-[11px] text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500/20 transition-all font-[family-name:var(--font-mono)]"
+                  }}
                   clearable
                 />
               </div>
+
+              {/* Register button */}
+              <button
+                onClick={() => setIsRegModalOpen(true)}
+                className="flex items-center gap-2 px-6 h-9 rounded-full font-semibold text-[11px] text-white active:scale-[0.97] transition-all shadow-lg"
+                style={{
+                  background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.35)",
+                }}
+              >
+                <span>Машин бүртгэх</span>
+              </button>
             </div>
           </div>
 
@@ -966,15 +978,16 @@ export default function Camera() {
             <div className="overflow-x-auto custom-scrollbar flex-1">
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead>
-                   <tr className="bg-slate-900 border-b border-white/10">
+                   <tr className="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm sticky top-0 z-20">
                       {[
                         { id: 'no', label: "№", width: 'w-12' },
-                        { id: 'dugaar', label: "Дугаар" },
-                        { id: 'orson', label: "Орсон" },
-                        { id: 'garsan', label: "Гарсан", sortable: true },
+                        { id: 'dugaar', label: "Дугаар", width: 'w-28' },
+                        { id: 'orson', label: "Орсон", width: 'w-36' },
+                        { id: 'garsan', label: "Гарсан", width: 'w-36', sortable: true },
                         { 
                           id: 'duration', 
                           label: "Хугацаа/мин", 
+                          width: 'w-32',
                           filter: true, 
                           current: durationFilter,
                           set: (v: string) => { setDurationFilter(v); setPage(1); },
@@ -987,6 +1000,7 @@ export default function Camera() {
                         { 
                           id: 'type', 
                           label: "Төрөл", 
+                          width: 'w-28',
                           filter: true,
                           current: typeFilter,
                           set: (v: string) => { setTypeFilter(v); setPage(1); },
@@ -995,14 +1009,14 @@ export default function Camera() {
                              { label: "Төлбөртэй", value: "client" }
                           ]
                         },
-                        { id: 'discount', label: "Хөнгөлөлт" },
-                        { id: 'amount', label: "Дүн", align: 'right' },
-                        { id: 'payment', label: "Төлбөр", align: 'right' },
-                        { id: 'ebarimt', label: "И-Баримт", align: 'right' },
+                        { id: 'discount', label: "Хөнгөлөлт", width: 'w-28' },
+                        { id: 'amount', label: "Дүн", width: 'w-28' },
+                        { id: 'payment', label: "Төлбөр", width: 'w-36' },
+                        { id: 'ebarimt', label: "И-Баримт", width: 'w-28' },
                         { 
                           id: 'status', 
                           label: "Төлөв",
-                          width: 'w-40',
+                          width: 'w-36',
                           filter: true,
                           current: statusFilter,
                           set: (v: string) => { setStatusFilter(v); setPage(1); },
@@ -1014,35 +1028,35 @@ export default function Camera() {
                             { label: "Үнэгүй", value: "free" }
                           ]
                         },
-                        { id: 'reason', label: "Шалтгаан" },
-                        { id: 'actions', label: "" },
+                        { id: 'reason', label: "Шалтгаан", width: 'w-36' },
+                        { id: 'actions', label: "", width: 'w-12' },
                       ].map((h, i) => (
-                        <th key={h.id} className={`group relative py-3 px-3 text-slate-400 uppercase tracking-tighter text-[10px] ${(h as any).align === 'right' ? 'text-right' : 'text-center'} ${h.width || ''}`}>
-                          <div className={`flex items-center ${(h as any).align === 'right' ? 'justify-end' : 'justify-center'} gap-2 cursor-pointer hover:text-white transition-colors ${h.width ? '' : 'w-full'}`}>
-                             {h.filter && <Filter className="w-3 h-3" />}
-                             {h.label}
-                             {h.sortable && <ArrowUpDown className="w-3 h-3" />}
+                        <th key={h.id} className={`group relative py-4 px-3 text-slate-700 dark:text-slate-300 font-bold uppercase tracking-wider text-xs border-r border-slate-200 dark:border-white/5 last:border-r-0 text-center ${h.width || ''} hover:bg-slate-50 dark:hover:bg-white/5 transition-colors`}>
+                          <div className="flex items-center justify-center gap-2 cursor-pointer h-full">
+                             {h.filter && <Filter className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />}
+                             <span>{h.label}</span>
+                             {h.sortable && <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-50 group-hover:opacity-100 transition-opacity" />}
                           </div>
 
                            {h.options && (
-                              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100">
-                                 <div className="relative flex flex-col gap-1 z-10">
-                                   <div className="px-3 py-2 mb-1 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
+                              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-0 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-[100] translate-y-2 group-hover:translate-y-0 overflow-hidden scale-95 group-hover:scale-100 origin-top text-left">
+                                 <div className="relative flex flex-col gap-0.5 z-10">
+                                   <div className="px-3 py-2 mb-1 text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-white/5">
                                       {h.label} Сонгох
                                    </div>
                                    {h.options.map((opt, idx) => (
                                      <div 
                                        key={idx} 
                                        onClick={() => (h as any).set?.(opt.value)}
-                                       className={`px-3 py-2.5 rounded-full text-[11px] font-bold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
+                                       className={`px-3 py-2.5 rounded-lg text-[11px] font-bold text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
                                           (h as any).current === opt.value 
-                                            ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/40' 
+                                            ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
                                             : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                        }`}
                                      >
                                        <span>{opt.label}</span>
                                        {(h as any).current === opt.value && (
-                                         <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_white] animate-pulse" />
+                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
                                        )}
                                      </div>
                                    ))}
@@ -1056,29 +1070,26 @@ export default function Camera() {
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="py-40 text-center bg-slate-50/10 dark:bg-white/5">
-                        <div className="flex flex-col items-center justify-center gap-4 opacity-30">
+                      <td colSpan={14} className="py-40 text-center bg-slate-50/10 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-b-3xl">
+                        <div className="flex flex-col items-center justify-center gap-4 opacity-40">
                            <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
                               <Calendar className="w-12 h-12 text-slate-400" />
                            </div>
-                           <p className="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Одоогоор мэдээлэл байхгүй байна</p>
+                           <p className="text-base font-black uppercase tracking-[0.2em] text-slate-400">Одоогоор мэдээлэл байхгүй байна</p>
                         </div>
                       </td>
                     </tr>
                   ) : (
                     transactions.map((transaction, idx) => {
                       const mur = transaction.tuukh?.[0];
+                      // ... (unchanged logic variables) ...
                       const tsag = mur?.tsagiinTuukh?.[0];
                       const orsonTsag = tsag?.orsonTsag;
                       const garsanTsag = tsag?.garsanTsag;
-                      
                       const tuluv = mur?.tuluv;
                       const niitDun = transaction.niitDun || 0;
                       const isCurrentlyIn = !mur?.garsanKhaalga;
-                      
-                      // Debt logic: marked as debt (-4) OR left without payment (tuluv 0, out, balance > 0)
                       const isDebt = tuluv === -4 || (tuluv === 0 && niitDun > 0 && !isCurrentlyIn);
-                      // Active logic: still inside and not yet paid (tuluv 0 or 2)
                       const isActive = isCurrentlyIn && (tuluv === 0 || tuluv === 2);
                       const showActionBtn = isActive || isDebt;
                       const hasPayment = niitDun > 0 || isDebt;
@@ -1086,54 +1097,54 @@ export default function Camera() {
                       return (
                           <tr
                             key={transaction._id || idx}
-                            className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-gray-50 dark:border-white/5 ${isActive ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}
+                            className={`hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all duration-200 group border-b border-slate-200 dark:border-white/5 ${isActive ? 'bg-blue-50/40 dark:bg-blue-900/10' : ''}`}
                           >
-                          <td className="py-2.5 px-3 text-center text-gray-400">
+                          <td className="py-3 px-3 text-center text-gray-400 border-r border-slate-200 dark:border-white/5 text-xs">
                             {(page - 1) * pageSize + idx + 1}
                           </td>
-                          <td className="py-2.5 px-3">
+                          <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
                              <div className="flex items-center justify-center gap-2">
-                                <span className=" text-slate-700 dark:text-slate-300">{transaction.mashiniiDugaar || "-"}</span>
+                                <span className=" text-slate-700 dark:text-slate-300 font-bold font-[family-name:var(--font-mono)] text-sm">{transaction.mashiniiDugaar || "-"}</span>
                                 <Copy 
-                                  className="w-3 h-3 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors" 
+                                  className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 cursor-pointer hover:text-blue-500 transition-colors" 
                                   onClick={() => copyToClipboard(transaction.mashiniiDugaar)}
                                 />
                              </div>
                           </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap">
-                             <span className=" text-slate-800 dark:text-slate-300">
+                          <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
+                             <span className=" text-slate-600 dark:text-slate-400 font-medium font-[family-name:var(--font-mono)] text-xs">
                                {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
                              </span>
                           </td>
-                          <td className="py-2.5 px-3 whitespace-nowrap">
-                             <span className=" text-slate-800 dark:text-slate-300">
+                          <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
+                             <span className=" text-slate-600 dark:text-slate-400 font-medium font-[family-name:var(--font-mono)] text-xs">
                                {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : "-"}
                              </span>
                           </td>
-                          <td className="py-2.5 px-3">
-                             <div className={`px-2 py-1.5 rounded-2xl text-center w-[130px] inline-block whitespace-nowrap border ${
+                          <td className="py-3 px-3 border-r border-slate-200 dark:border-white/5 text-center">
+                             <div className={`px-2.5 py-1.5 rounded-lg text-center min-w-[90px] inline-block whitespace-nowrap text-xs font-bold ${
                                !garsanTsag 
-                                 ? "bg-blue-100 border-blue-200 text-blue-900 dark:bg-blue-900/40 dark:border-blue-800 dark:text-blue-100 font-medium" 
-                                 : "bg-emerald-50 border-emerald-100 text-slate-800 dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-100 font-medium"
+                                 ? "bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300" 
+                                 : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300"
                              }`}>
                                 <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
                              </div>
-
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.turul || transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 ">
-                             {transaction.tuukh?.[0]?.khungulult || ""}
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
+                             {transaction.tuukh?.[0]?.khungulult || "0"}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-right font-medium">
+                          <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-center font-bold border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
-                            <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-center font-bold relative">
+                          <td className="py-3 px-3 text-center font-medium relative border-r border-slate-200 dark:border-white/5 text-sm">
                              {(() => {
                                 const history = transaction.tuukh?.[0];
                                 const tulsunDun = history?.tulsunDun || 0;
                                 const payHistory = history?.tulbur || [];
+                                // ... (labels logic) ...
                                 const labels: Record<string, string> = { 
                                   belen: "Бэлэн", cash: "Бэлэн",
                                   khaan: "Карт",
@@ -1153,189 +1164,146 @@ export default function Camera() {
                                   khungulult: "bg-amber-100 text-amber-700 border-amber-200",
                                   discount: "bg-amber-100 text-amber-700 border-amber-200",
                                 };
-                                
+
                                 if (payHistory.length > 0) {
-                                  const summary = payHistory.map((p: any) => labels[p.turul] || p.turul).join(", ");
                                   const totalPaid = payHistory.reduce((s: number, p: any) => s + (p.dun || 0), 0);
                                   return (
                                     <div className="group/pay relative inline-block cursor-pointer">
-                                      <span className="text-xs font-bold hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5">
-                                        {formatNumber(totalPaid)}₮
-                                        {payHistory.length > 1 && <span className="ml-1 text-[9px] text-slate-400">({payHistory.length})</span>}
+                                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-blue-600 transition-colors border-b border-dashed border-slate-300 dark:border-slate-600 pb-0.5 font-[family-name:var(--font-mono)]">
+                                        {formatNumber(totalPaid)}
+                                        {payHistory.length > 1 && <span className="ml-1 text-[10px] text-slate-400">({payHistory.length})</span>}
                                       </span>
-
-                                      {/* Payment detail popup */}
-                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[80] min-w-[200px] p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto">
+                                      
+                                      {/* Popup reused logic */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-[80] min-w-[200px] p-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] opacity-0 invisible group-hover/pay:opacity-100 group-hover/pay:visible transition-all duration-200 translate-y-1 group-hover/pay:translate-y-0 scale-95 group-hover/pay:scale-100 pointer-events-none group-hover/pay:pointer-events-auto text-left">
+                                         {/* ... popup content ... */}
                                         <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 pb-1.5 border-b border-slate-100 dark:border-white/5">
                                           Төлбөрийн дэлгэрэнгүй
                                         </div>
                                         <div className="space-y-1.5">
                                           {payHistory.map((p: any, pi: number) => (
                                             <div key={pi} className="flex items-center justify-between gap-3">
-                                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
+                                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[9px] font-bold border ${colorMap[p.turul] || "bg-gray-100 text-gray-700 border-gray-200"}`}>
                                                 {labels[p.turul] || p.turul}
                                               </span>
-                                              <span className="text-xs font-black text-slate-800 dark:text-gray-200 whitespace-nowrap">{formatNumber(p.dun || 0)}₮</span>
+                                              <span className="text-[10px] font-bold text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)]">{formatNumber(p.dun || 0)}</span>
                                             </div>
                                           ))}
                                         </div>
-                                        <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5 flex justify-between">
+                                        <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
                                           <span className="text-[9px] font-bold text-slate-400 uppercase">Нийт</span>
-                                          <span className="text-xs font-black text-emerald-600">{formatNumber(totalPaid)}₮</span>
+                                          <span className="text-xs font-black text-emerald-600 font-[family-name:var(--font-mono)]">{formatNumber(totalPaid)}</span>
                                         </div>
-                                        {/* Arrow */}
-                                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white dark:bg-slate-900 border-b border-r border-slate-200/50 dark:border-white/10 rotate-45"></div>
                                       </div>
                                     </div>
                                   );
                                 }
 
                                 if (tulsunDun > 0) {
-                                  return <span className="text-xs">{formatNumber(tulsunDun)}₮</span>;
+                                  return <span className="text-sm font-bold text-slate-700 dark:text-slate-300 font-[family-name:var(--font-mono)]">{formatNumber(tulsunDun)}</span>;
                                 }
 
-                                if (!history && !garsanTsag) return "-";
+                                if (!history && !garsanTsag) return <span className="text-slate-300">0</span>;
                                 
                                 if ((history as any)?.zurchil === "Үнэгүй хугацаанд" || (transaction as any).zurchil === "Үнэгүй хугацаанд" || (garsanTsag && tulsunDun === 0)) {
-                                  return <span className="text-emerald-600 dark:text-emerald-400 font-black text-[10px] uppercase tracking-tighter">Үнэгүй</span>
+                                  return <span className="text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px] uppercase tracking-widest bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded">Үнэгүй</span>
                                 }
 
-                                return formatNumber(tulsunDun);
+                                return <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-sm">{formatNumber(tulsunDun)}</span>;
                              })()}
                           </td>
-                          <td className="py-2.5 px-3 text-slate-800 dark:text-slate-300 text-right">
-                             {transaction.tuukh?.[0]?.ebarimtId || 0}
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                             {transaction.tuukh?.[0]?.ebarimtId || "0"}
                           </td>
-                            <td className="py-3 px-3 relative">
+                          <td className="py-3 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
                                 {showActionBtn ? (
                                     <div className="flex items-center justify-center gap-1 action-menu-container">
-                                      {/* Main Action Trigger */}
                                       <button 
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
                                         }}
-                                        className={`group/btn flex items-center justify-center flex-nowrap gap-2 w-[120px] px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-tight shadow-md active:scale-95 transition-all duration-300 border ${
+                                        className={`group/btn flex items-center justify-center gap-1 w-full max-w-[110px] px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wide shadow-sm active:scale-95 transition-all duration-200 border ${
                                            hasPayment
-                                           ? "bg-amber-500 text-white border-amber-400 hover:bg-amber-600 shadow-amber-500/20" 
-                                           : "bg-blue-600 text-white border-blue-500 hover:bg-blue-700 shadow-blue-500/20"
+                                           ? "bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/50 dark:hover:bg-amber-900/40" 
+                                           : "bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/50 dark:hover:bg-blue-900/40"
                                         }`}
                                       >
-                                         <div className="flex items-center justify-center flex-nowrap overflow-hidden">
-                                           <span className="whitespace-nowrap">{isActive ? "Идэвхтэй" : "Төлбөр"}</span>
-                                         </div>
+                                          <span>{isActive ? "Идэвхтэй" : "Төлбөр"}</span>
+                                          <ChevronDown className="w-3.5 h-3.5 opacity-50" />
                                       </button>
-
-                                      {/* Enhanced Dropdown Menu */}
+                                      {/* ... dropdown menu code ... */}
                                       {confirmExitId === transaction._id && (
-                                         <div className="absolute right-0 top-full mt-2 z-[60] min-w-[160px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="px-3 py-2 mb-1 border-b border-slate-100 dark:border-white/5">
-                                              <p className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Үйлдэл сонгох</p>
+                                         <div className="absolute right-0 top-full mt-2 z-[60] min-w-[170px] p-1.5 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] animate-in fade-in slide-in-from-top-2 duration-200 text-left">
+                                            {/* ... dropdown content ... */}
+                                            <div className="space-y-1">
+                                                {/* Re-implement dropdown buttons with same logic but larger padding text */}
+                                                {(isActive ? [
+                                                    { label: "Хөнгөлөлт", icon: Tag, color: "amber", action: () => handleManualExit(transaction, "pay") },
+                                                    { label: "Гаргах", icon: ArrowUpDown, color: "blue", action: () => niitDun > 0 ? handleManualExit(transaction, "pay") : handleManualExit(transaction, "free") }
+                                                ] : [
+                                                    { label: "Төлөх", icon: DollarSign, color: "emerald", action: () => handleManualExit(transaction, "pay") },
+                                                    { label: "Үнэгүй", icon: Info, color: "slate", action: () => handleManualExit(transaction, "free") }
+                                                ]).map((btn, bi) => (
+                                                    <button 
+                                                        key={bi}
+                                                        onClick={btn.action}
+                                                        className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-${btn.color}-50 hover:text-${btn.color}-600 dark:hover:bg-${btn.color}-500/10 transition-all group/item`}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <div className={`p-1.5 rounded-lg bg-${btn.color}-100 text-${btn.color}-600 dark:bg-${btn.color}-500/20 group-hover/item:scale-110 transition-transform`}>
+                                                                <btn.icon className="w-3.5 h-3.5" />
+                                                            </div>
+                                                            <span>{btn.label}</span>
+                                                        </div>
+                                                    </button>
+                                                ))}
                                             </div>
-
-                                            {isActive ? (
-                                              <div className="space-y-1">
-                                                <button 
-                                                  onClick={() => handleManualExit(transaction, "pay")}
-                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:bg-amber-500/20 transition-all group/item"
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 group-hover/item:scale-110 transition-transform">
-                                                      <Tag className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <span>Хөнгөлөлт</span>
-                                                  </div>
-                                                </button>
-                                                <button 
-                                                  onClick={() => {
-                                                      if (niitDun > 0) {
-                                                          handleManualExit(transaction, "pay");
-                                                      } else {
-                                                          handleManualExit(transaction, "free");
-                                                      }
-                                                  }}
-                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-blue-500/10 hover:text-blue-600 dark:hover:bg-blue-500/20 transition-all group/item"
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 group-hover/item:scale-110 transition-transform">
-                                                      <ArrowUpDown className="w-3.5 h-3.5 rotate-90" />
-                                                    </div>
-                                                    <span>Гаргах</span>
-                                                  </div>
-                                                </button>
-                                              </div>
-                                            ) : (
-                                              <div className="space-y-1">
-                                                <button 
-                                                  onClick={() => handleManualExit(transaction, "pay")}
-                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:bg-emerald-500/20 transition-all group/item"
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 group-hover/item:scale-110 transition-transform">
-                                                      <DollarSign className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <span>Төлөх</span>
-                                                  </div>
-                                                </button>
-                                                <button 
-                                                  onClick={() => handleManualExit(transaction, "free")}
-                                                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl text-[10px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-500/10 hover:text-slate-600 dark:hover:bg-slate-500/20 transition-all group/item"
-                                                >
-                                                  <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-slate-500/10 text-slate-600 group-hover/item:scale-110 transition-transform">
-                                                      <Info className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <span>Үнэгүй</span>
-                                                  </div>
-                                                </button>
-                                              </div>
-                                            )}
                                          </div>
                                       )}
                                     </div>
                                 ) : (
                                   (() => {
+                                    // Status badges logic
+                                    const badgeClass = "flex items-center justify-center flex-nowrap w-[100px] mx-auto px-2 py-1.5 rounded-lg border";
                                     if (tuluv === 1) return (
-                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-emerald-500 text-white border border-emerald-400 rounded-full shadow-lg shadow-emerald-500/20">
-                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Төлсөн</span>
+                                      <div className={`${badgeClass} bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800/30`}>
+                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Төлсөн</span>
                                       </div>
                                     );
                                     if (tuluv === 2) return (
-                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-indigo-500 text-white border border-indigo-400 rounded-full shadow-lg shadow-indigo-500/20">
-                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Урьдчилсан</span>
+                                      <div className={`${badgeClass} bg-indigo-50 text-indigo-600 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800/30`}>
+                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Урьдчилсан</span>
                                       </div>
                                     );
                                     if (tuluv === -2 || tuluv === -1) return (
-                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-amber-500 text-white border border-amber-400 rounded-full shadow-lg shadow-amber-500/20">
-                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Зөрчилтэй</span>
+                                      <div className={`${badgeClass} bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800/30`}>
+                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Зөрчилтэй</span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && niitDun === 0) return (
-                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1 bg-slate-500 text-white border border-slate-400 rounded-full shadow-lg shadow-slate-500/20">
-                                        <span className="text-[9px] font-black uppercase whitespace-nowrap">Үнэгүй</span>
+                                      <div className={`${badgeClass} bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800/50 dark:text-slate-400 dark:border-white/5`}>
+                                        <span className="text-[10px] font-extrabold uppercase whitespace-nowrap">Үнэгүй</span>
                                       </div>
                                     );
                                     return (
-                                      <div className="flex items-center justify-center flex-nowrap w-[120px] mx-auto px-2 py-1.5 bg-blue-600 text-white border border-blue-400 rounded-full shadow-lg shadow-blue-600/30">
-                                        <span className="text-[9px] font-black uppercase tracking-tight whitespace-nowrap text-center">Идэвхтэй</span>
+                                      <div className={`${badgeClass} bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800/30`}>
+                                        <span className="text-[10px] font-extrabold uppercase tracking-tight whitespace-nowrap text-center">Идэвхтэй</span>
                                       </div>
                                     );
                                   })()
                                 )}
                              </td>
-                          <td className="py-2.5 px-3 text-gray-400 italic truncate max-w-[100px]">
-                             {transaction.zurchil || ""}
+                          <td className="py-3 px-3 text-gray-400 italic truncate max-w-[100px] border-r border-slate-200 dark:border-white/5 text-[10px] text-center">
+                             {transaction.zurchil || "0"}
                           </td>
-                          <td className="py-2.5 px-3">
+                          <td className="py-3 px-3">
                              <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <div className="p-1.5 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer">
-                                   <Info className="w-3.5 h-3.5 text-slate-400" />
+                                <div className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+                                   <Info className="w-3.5 h-3.5" />
                                 </div>
-                                <div className="p-1.5 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer">
-                                   <Share2 className="w-3.5 h-3.5 text-slate-400" />
-                                </div>
-                                <div className="p-1.5 rounded border border-gray-100 hover:bg-gray-50 cursor-pointer">
-                                   <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                                <div className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
+                                   <ExternalLink className="w-3.5 h-3.5" />
                                 </div>
                              </div>
                           </td>
