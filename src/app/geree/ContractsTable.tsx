@@ -188,14 +188,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     })}
                     <td className="p-1 whitespace-nowrap">
                       <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => handleEdit(contract)}
-                          className="p-2 rounded-2xl action-edit hover-surface transition-colors"
-                          title="Засах"
-                          id="geree-edit-btn"
-                        >
-                          <Edit className="w-5 h-5" />
-                        </button>
+                        
                         
                         <button
                           onClick={() => handlePreviewInvoice(contract)}

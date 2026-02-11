@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import uilchilgee from "@/lib/uilchilgee";
+import { message } from "antd";
 
 interface TransactionModalProps {
   show: boolean;
@@ -11,6 +13,10 @@ interface TransactionModalProps {
   resident?: any;
   onSubmit: (data: TransactionData) => Promise<void>;
   isProcessing?: boolean;
+  /** For electricity (цахилгаан) auto-calc: org and building */
+  token?: string;
+  baiguullagiinId?: string;
+  barilgiinId?: string | null;
 }
 
 export interface TransactionData {
@@ -29,6 +35,9 @@ export default function TransactionModal({
   resident,
   onSubmit,
   isProcessing = false,
+  token,
+  baiguullagiinId,
+  barilgiinId,
 }: TransactionModalProps) {
   const modalRef = React.useRef<HTMLDivElement>(null);
   const [transactionType, setTransactionType] = useState<TransactionData["type"]>("avlaga");
@@ -47,6 +56,8 @@ export default function TransactionModal({
   const [suuliinZaalt, setSuuliinZaalt] = useState("");
   const [guidliinKoeff, setGuidliinKoeff] = useState("");
   const [showUsageOnInvoice, setShowUsageOnInvoice] = useState(true);
+  const [includeSuuriKhuraamj, setIncludeSuuriKhuraamj] = useState(true);
+  const [isCalculatingTsakhilgaan, setIsCalculatingTsakhilgaan] = useState(false);
 
   const resetForm = () => {
     setTransactionType("avlaga");
@@ -60,6 +71,7 @@ export default function TransactionModal({
      setSuuliinZaalt("");
      setGuidliinKoeff("");
      setShowUsageOnInvoice(true);
+     setIncludeSuuriKhuraamj(true);
   };
 
   const handleClose = () => {
@@ -70,12 +82,24 @@ export default function TransactionModal({
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
-      // Prefill electricity usage when opening for a resident
-      if (resident?.tsahilgaaniiZaalt) {
+      // Prefill Цахилгаан кВт and readings from resident (orshinSuugch) or geree
+      const tsakhilgaanKvVal = resident?.tsahilgaaniiZaalt ?? resident?.suuliinZaalt ?? resident?.umnukhZaalt;
+      const umnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
+      const suuliinVal = resident?.suuliinZaalt ?? resident?.umnukhZaalt ?? resident?.tsahilgaaniiZaalt;
+      const hasAny = [tsakhilgaanKvVal, umnukhVal, suuliinVal].some(
+        (v) => v != null && v !== "" && String(v).trim() !== ""
+      );
+      if (hasAny) {
         setAshiglaltZardal("tsakhilgaan_kv");
-        setTsahilgaanKv(
-          String(resident.tsahilgaaniiZaalt).replace(/,/g, "")
-        );
+        if (tsakhilgaanKvVal != null && tsakhilgaanKvVal !== "") {
+          setTsahilgaanKv(String(tsakhilgaanKvVal).replace(/,/g, ""));
+        }
+        if (umnukhVal != null && umnukhVal !== "") {
+          setUmnukhZaalt(String(umnukhVal).replace(/,/g, ""));
+        }
+        if (suuliinVal != null && suuliinVal !== "") {
+          setSuuliinZaalt(String(suuliinVal).replace(/,/g, ""));
+        }
       }
     }
     setLastShow(show);
@@ -86,6 +110,44 @@ export default function TransactionModal({
     onClose: handleClose,
     container: modalRef.current,
   });
+
+  const handleTsakhilgaanTootsool = async () => {
+    if (!token || !baiguullagiinId) {
+      message.warning("Тооцоолох бол байгууллага сонгогдсон байх шаардлагатай.");
+      return;
+    }
+    const u = parseFloat(String(umnukhZaalt).replace(/,/g, ""));
+    const s = parseFloat(String(suuliinZaalt).replace(/,/g, ""));
+    if (Number.isNaN(u) || Number.isNaN(s)) {
+      message.warning("Өмнөх заалт болон Сүүлийн заалт оруулна уу.");
+      return;
+    }
+    setIsCalculatingTsakhilgaan(true);
+    try {
+      const res = await uilchilgee(token).post<{
+        success: boolean;
+        niitDun?: number;
+        tailbar?: string;
+      }>("/tsakhilgaanTootsool", {
+        baiguullagiinId,
+        barilgiinId: barilgiinId || undefined,
+        umnukhZaalt: String(umnukhZaalt).replace(/,/g, ""),
+        suuliinZaalt: String(suuliinZaalt).replace(/,/g, ""),
+        guidliinKoeff: guidliinKoeff ? String(guidliinKoeff).replace(/,/g, "") : undefined,
+        includeSuuriKhuraamj,
+      });
+      if (res.data?.success && typeof res.data.niitDun === "number") {
+        setAmount(String(res.data.niitDun));
+        if (res.data.tailbar && !tailbar) setTailbar(res.data.tailbar);
+        message.success("Цахилгааны дүн тооцоолсон.");
+      }
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Тооцоолол амжилтгүй.";
+      message.error(msg);
+    } finally {
+      setIsCalculatingTsakhilgaan(false);
+    }
+  };
 
   const handleSubmit = async () => {
     // Build tailbar including optional ashiglalt (electricity) details
@@ -207,7 +269,7 @@ export default function TransactionModal({
                       relative py-1.5 px-3 text-sm font-semibold rounded-2xl transition-all duration-200
                       ${transactionType === option.value
                         ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]"
-                        : "text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
+                        : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
                     `}
                   >
@@ -388,28 +450,67 @@ export default function TransactionModal({
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
+                      <div className="space-y-0.5 min-w-0">
                         <p className="text-xs font-medium text-[color:var(--panel-text)]">
-                          Нэхэмжлэх дээр харах эсэх
-                        </p>
-                        <p className="text-[10px] text-[color:var(--muted-text)]">
-                          Идэвхтэй бол энэ мэдээлэл нэхэмжлэхийн тайлбарт харагдана
+                          Суурь хүраамж нэмэх
                         </p>
                       </div>
                       <button
                         type="button"
-                        onClick={() => setShowUsageOnInvoice((v) => !v)}
+                        role="switch"
+                        aria-checked={includeSuuriKhuraamj}
+                        onClick={() => setIncludeSuuriKhuraamj((v) => !v)}
                         disabled={isProcessing}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          showUsageOnInvoice
-                            ? "bg-[color:var(--theme)]"
-                            : "bg-[color:var(--surface-border)]"
+                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 disabled:opacity-50 ${
+                          includeSuuriKhuraamj ? "bg-[color:var(--theme)]" : "bg-gray-400 dark:bg-gray-500"
                         }`}
+                        style={includeSuuriKhuraamj ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
                       >
                         <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            showUsageOnInvoice ? "translate-x-5" : "translate-x-1"
+                          className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${
+                            includeSuuriKhuraamj ? "translate-x-5 border-white/80" : "translate-x-0"
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {token && baiguullagiinId && (
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={handleTsakhilgaanTootsool}
+                          disabled={isProcessing || isCalculatingTsakhilgaan}
+                          className="px-4 py-2 text-sm font-medium bg-[color:var(--theme)] !text-white hover:opacity-90 rounded-2xl transition-all disabled:opacity-50"
+                        >
+                          {isCalculatingTsakhilgaan ? "Тооцоолж байна..." : "Цахилгаан дүн тооцоолох"}
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-4 mt-1 p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
+                      <div className="space-y-0.5 min-w-0">
+                        <p className="text-xs font-medium text-[color:var(--panel-text)]">
+                          Нэхэмжлэх дээр харах эсэх
+                        </p>
+                        
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={showUsageOnInvoice}
+                        onClick={() => setShowUsageOnInvoice((v) => !v)}
+                        disabled={isProcessing}
+                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-bg)] disabled:opacity-50 ${
+                          showUsageOnInvoice
+                            ? "bg-[color:var(--theme)]"
+                            : "bg-gray-400 dark:bg-gray-500"
+                        }`}
+                        style={showUsageOnInvoice ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${
+                            showUsageOnInvoice ? "translate-x-5 border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.2)]" : "translate-x-0"
                           }`}
                         />
                       </button>
@@ -449,7 +550,7 @@ export default function TransactionModal({
               type="button"
               onClick={handleSubmit}
               disabled={isProcessing}
-              className="px-6 py-2.5 text-sm font-bold text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
+              className="px-6 py-2.5 text-sm font-bold !text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">

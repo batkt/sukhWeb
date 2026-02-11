@@ -101,14 +101,17 @@ export default function GolContent({ children }: GolContentProps) {
       return res.data;
     }
   );
-  const sanalUnreadList = (sanalUnreadListData?.data ?? []) as Array<{ _id: string; title?: string; message?: string; turul?: string; createdAt?: string; kharsanEsekh?: boolean; status?: string }>;
+  const sanalUnreadListRaw = (sanalUnreadListData?.data ?? []) as Array<{ _id: string; title?: string; message?: string; turul?: string; createdAt?: string; kharsanEsekh?: boolean; status?: string }>;
+  const isSanal = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "sanal" || x === "санал"; };
+  const isGomdol = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "gomdol" || x === "гомдол"; };
+  const sanalUnreadList = sanalUnreadListRaw.filter((item) => isSanal(item.turul) || isGomdol(item.turul));
   const socket = useSocket();
 
   // Global medegdel socket: show toast when new notification or chat message arrives (so toast shows on any page, not only sanalKhuselt)
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
-    const handler = (payload: { type?: string }) => {
+    const handler = (payload: { type?: string; data?: { _id?: string } }) => {
       if (payload?.type === "medegdelNew") {
         toast("Таны шинэ мэдэгдэл ирлээ", {
           description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
@@ -116,11 +119,26 @@ export default function GolContent({ children }: GolContentProps) {
         });
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
-      if (payload?.type === "medegdelUserReply" || payload?.type === "medegdelAdminReply") {
+      if (payload?.type === "medegdelUserReply") {
         toast("Шинэ чат мессеж ирлээ", {
           description: "Харилцаанд шинэ хариу орсон байна.",
           duration: 4000,
         });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+      }
+      if (payload?.type === "medegdelAdminReply") {
+        // Skip toast when this client sent the reply (socket often arrives before API response, so check both sending flag and last-sent id)
+        const win = typeof window !== "undefined" ? (window as any) : undefined;
+        const sendingReply = win?.__medegdelSendingReply === true;
+        const replyId = payload?.data?._id != null ? String(payload.data._id) : null;
+        const lastSentId = win?.__medegdelLastSentReplyId;
+        const sentByMe = sendingReply || (replyId && lastSentId === replyId);
+        if (!sentByMe) {
+          toast("Шинэ чат мессеж ирлээ", {
+            description: "Харилцаанд шинэ хариу орсон байна.",
+            duration: 4000,
+          });
+        }
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelSeen") {
@@ -656,7 +674,7 @@ export default function GolContent({ children }: GolContentProps) {
                   </div>
                   {showSanalDropdown && (
                     <div
-                      className="absolute right-0 mt-2 w-72 max-h-[320px] overflow-y-auto menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto overflow-x-hidden menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
@@ -668,6 +686,15 @@ export default function GolContent({ children }: GolContentProps) {
                         ) : (
                           sanalUnreadList.map((item) => {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                            const isSanalItem = isSanal(item.turul);
+                            const typeLabel = isSanalItem ? "Санал" : "Гомдол";
+                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 font-semibold text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
                             <li key={item._id}>
                               <button
@@ -678,15 +705,14 @@ export default function GolContent({ children }: GolContentProps) {
                                   setShowSanalDropdown(false);
                                   router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                 }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${
-                                  isUnread
-                                    ? "bg-blue-500/10 dark:bg-blue-500/20 border-l-2 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/15 dark:hover:bg-blue-500/25"
-                                    : "text-[color:var(--panel-text)]/80 hover:menu-surface/80"
-                                }`}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
                               >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-60"}`} />
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                 <div className="min-w-0 flex-1">
-                                  <div className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={badgeClass}>{typeLabel}</span>
+                                    <span className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</span>
+                                  </div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                   )}
@@ -861,7 +887,7 @@ export default function GolContent({ children }: GolContentProps) {
                   </div>
                   {showSanalDropdown && (
                     <div
-                      className="absolute right-0 mt-2 w-72 max-h-[280px] overflow-y-auto menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
+                      className="absolute right-0 mt-2 w-[400px] max-w-[calc(100vw-2rem)] max-h-[360px] overflow-y-auto overflow-x-hidden menu-surface rounded-xl transition-all duration-300 z-[9999] shadow-xl pointer-events-auto"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
@@ -873,6 +899,15 @@ export default function GolContent({ children }: GolContentProps) {
                         ) : (
                           sanalUnreadList.map((item) => {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
+                            const isSanalItem = isSanal(item.turul);
+                            const typeLabel = isSanalItem ? "Санал" : "Гомдол";
+                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 font-semibold text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
+                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
                             <li key={item._id}>
                               <button
@@ -883,15 +918,14 @@ export default function GolContent({ children }: GolContentProps) {
                                   setShowSanalDropdown(false);
                                   router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
                                 }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${
-                                  isUnread
-                                    ? "bg-blue-500/10 dark:bg-blue-500/20 border-l-2 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/15 dark:hover:bg-blue-500/25"
-                                    : "text-[color:var(--panel-text)]/80 hover:menu-surface/80"
-                                }`}
+                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
                               >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${isUnread ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-60"}`} />
+                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
                                 <div className="min-w-0 flex-1">
-                                  <div className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className={badgeClass}>{typeLabel}</span>
+                                    <span className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</span>
+                                  </div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
                                   )}

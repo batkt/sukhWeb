@@ -3358,17 +3358,35 @@ export default function DansniiKhuulga() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data
-                                          const residentData = resident || {
-                                            _id: it?.orshinSuugchId,
-                                            ovog: it?.ovog,
-                                            ner: ner,
-                                            toot: toot,
-                                            utas: utas,
-                                            gereeniiDugaar: dugaar,
-                                            gereeniiId: it?.gereeniiId || ct?._id,
-                                            ...it,
-                                          };
+                                          // Create resident-like object from transaction data; include цахилгаан from geree or orshinSuugch
+                                          const residentData = resident
+                                            ? {
+                                                ...resident,
+                                                _id: resident._id ?? it?.orshinSuugchId,
+                                                ovog: resident.ovog ?? it?.ovog,
+                                                ner: ner,
+                                                toot: toot,
+                                                utas: utas,
+                                                gereeniiDugaar: dugaar,
+                                                gereeniiId: it?.gereeniiId || ct?._id,
+                                                tsahilgaaniiZaalt: resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt ?? ct?.umnukhZaalt,
+                                                umnukhZaalt: ct?.umnukhZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt,
+                                                suuliinZaalt: ct?.suuliinZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.umnukhZaalt,
+                                                ...it,
+                                              }
+                                            : {
+                                                _id: it?.orshinSuugchId,
+                                                ovog: it?.ovog,
+                                                ner: ner,
+                                                toot: toot,
+                                                utas: utas,
+                                                gereeniiDugaar: dugaar,
+                                                gereeniiId: it?.gereeniiId || ct?._id,
+                                                tsahilgaaniiZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt ?? it?.tsahilgaaniiZaalt,
+                                                umnukhZaalt: ct?.umnukhZaalt ?? ct?.suuliinZaalt,
+                                                suuliinZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt,
+                                                ...it,
+                                              };
                                           setSelectedTransactionResident(residentData);
                                           setIsTransactionModalOpen(true);
                                         }}
@@ -3583,6 +3601,9 @@ export default function DansniiKhuulga() {
         resident={selectedTransactionResident}
         onSubmit={handleTransactionSubmit}
         isProcessing={isProcessingTransaction}
+        token={token ?? undefined}
+        baiguullagiinId={ajiltan?.baiguullagiinId}
+        barilgiinId={effectiveBarilgiinId ?? undefined}
       />
 
       {/* Initial Balance Excel Import Modal */}

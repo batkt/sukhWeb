@@ -769,7 +769,7 @@ export default function Camera() {
   };
 
   return (
-    <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar bg-[color:var(--surface-bg)]">
+    <div className="h-full overflow-x-hidden custom-scrollbar bg-[color:var(--surface-bg)]">
       <div className="min-h-full p-4 lg:p-6 space-y-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -977,7 +977,7 @@ export default function Camera() {
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
+          <div className="relative overflow-y-auto custom-scrollbar max-h-[30vh] rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col">
             <div className="overflow-x-auto custom-scrollbar flex-1">
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead>
