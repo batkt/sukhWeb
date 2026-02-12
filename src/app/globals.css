@@ -287,7 +287,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.2em;
-  font-family: inherit;
+  font-family: Roboto, sans-serif;
   font-weight: 600;
   font-size: 14px; /* slightly smaller */
   padding: 0.35em 1em; /* more compact */
@@ -436,11 +436,11 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    font-family: inherit;
+    font-family: Roboto, sans-serif;
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    font-family: Roboto, sans-serif;
   }
 }
 
@@ -1430,7 +1430,7 @@ html[data-mode="dark"]:not([data-theme]),
 }
 /* Professional menu font for top navigation/menu items */
 .menu-pro-font {
-  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Roboto",  sans-serif;
   font-weight: 600; /* keep the menu prominent */
   letter-spacing: 0.2px;
 }
