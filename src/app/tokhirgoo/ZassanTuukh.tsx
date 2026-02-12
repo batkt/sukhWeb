@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import {
   Tooltip,
   TooltipContent,
@@ -13,9 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  X
+  X,
+  Calendar
 } from "lucide-react";
 import moment from "moment";
+import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -234,6 +237,10 @@ export default function ZassanTuukh({
   const [pageSize, setPageSize] = useState(10);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
+    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
+    dayjs().format("YYYY-MM-DD"),
+  ]);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<EditRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -246,6 +253,7 @@ export default function ZassanTuukh({
     { value: "barilga", label: "Барилга" },
     { value: "talbai", label: "Талбай" },
     { value: "aldangi", label: "Алданги" },
+    { value: "orshinSuugch", label: "Оршин суугч" },
   ], []);
 
   // Fetch edit history
@@ -255,13 +263,15 @@ export default function ZassanTuukh({
           "/audit/zasakhTuukh",
           token,
           baiguullaga._id,
+          dateRange[0],
+          dateRange[1],
           selectedModel,
           selectedEmployee,
           page,
           pageSize,
         ]
       : null,
-    async ([url, tkn, orgId, model, employee, pg, pgSize]) => {
+    async ([url, tkn, orgId, startDate, endDate, model, employee, pg, pgSize]) => {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: pg,
@@ -274,6 +284,11 @@ export default function ZassanTuukh({
       
       if (employee) {
         params.ajiltniiId = employee;
+      }
+      
+      if (startDate && endDate) {
+        params.ekhlekhOgnoo = `${startDate} 00:00:00`;
+        params.duusakhOgnoo = `${endDate} 23:59:59`;
       }
       
       const resp = await uilchilgee(tkn).get(url, { params });
@@ -329,6 +344,13 @@ export default function ZassanTuukh({
   const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
 
+  const handleDateChange = (
+    dates: [string | null, string | null] | undefined
+  ) => {
+    setDateRange((dates || [null, null]) as [string | null, string | null]);
+    setPage(1);
+  };
+
   const handleViewDetails = (record: EditRecord) => {
     setSelectedRecord(record);
     setIsDetailModalOpen(true);
@@ -362,9 +384,9 @@ export default function ZassanTuukh({
 
           {/* Filters */}
           <div className="flex flex-col gap-4">
-            {/* Model and Employee Filters */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
+            {/* Model, Employee, and Date Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
@@ -386,7 +408,7 @@ export default function ZassanTuukh({
                 </select>
               </div>
 
-              <div className="flex-1">
+              <div>
                 <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
                   Ажилтан
                 </label>
@@ -406,6 +428,23 @@ export default function ZassanTuukh({
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                  Огноо
+                </label>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
+                  <DatePickerInput
+                    type="range"
+                    value={dateRange}
+                    onChange={handleDateChange}
+                    className="text-[color:var(--panel-text)] flex-1"
+                    locale="mn"
+                    valueFormat="YYYY-MM-DD"
+                  />
+                </div>
               </div>
             </div>
           </div>
