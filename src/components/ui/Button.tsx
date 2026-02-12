@@ -56,6 +56,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           fullWidth && "w-full",
           className
         )}
+        style={{ borderRadius: '0.5rem', ...(props.style || {}) }}
         disabled={disabled || isLoading}
         {...props}
       >

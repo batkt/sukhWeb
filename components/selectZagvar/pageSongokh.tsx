@@ -92,7 +92,7 @@ export default function PageSongokh({
               setOpen(false);
             }}
             className={`w-full text-left px-3 py-1 rounded-2xl text-sm transition-colors ${
-              active ? "bg-black/10 font-semibold" : "hover:bg-black/8"
+              active ? "bg-black/10 " : "hover:bg-black/8"
             }`}
           >
             {opt}

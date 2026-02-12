@@ -535,7 +535,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                               item.comingSoon
                                 ? "cursor-not-allowed opacity-60"
                                 : ""
@@ -552,7 +552,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 style={{ transform: "translate(20%, -20%)" }}
                               >
                                 <div
-                                  className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
+                                  className="inline-block bg-green-500 text-white text-[10px]  px-4 py-0.5 shadow-sm"
                                   style={{ transform: "rotate(45deg)" }}
                                 >
                                   Тун удахгүй
@@ -599,7 +599,7 @@ export default function GolContent({ children }: GolContentProps) {
                             setOpenSubmenuIndex(null);
                             router.push(`/${item.path}`);
                           }}
-                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                             item.comingSoon
                               ? "cursor-not-allowed opacity-60"
                               : ""
@@ -616,7 +616,7 @@ export default function GolContent({ children }: GolContentProps) {
                               style={{ transform: "translate(20%, -20%)" }}
                             >
                               <div
-                                className="inline-block bg-green-500 text-white text-[10px] font-semibold px-4 py-0.5 shadow-sm"
+                                className="inline-block bg-green-500 text-white text-[10px]  px-4 py-0.5 shadow-sm"
                                 style={{ transform: "rotate(45deg)" }}
                               >
                                 Тун удахгүй
@@ -672,7 +672,7 @@ export default function GolContent({ children }: GolContentProps) {
                       <Bell className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
                     </button>
                     {sanalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px] font-bold leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px]  leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
                         {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
                       </span>
                     )}
@@ -683,7 +683,7 @@ export default function GolContent({ children }: GolContentProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm font-medium text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                        <span className="text-sm  text-[color:var(--panel-text)]">Санал хүсэлт</span>
                       </div>
                       <ul className="py-2">
                         {sanalUnreadList.length === 0 ? (
@@ -693,12 +693,12 @@ export default function GolContent({ children }: GolContentProps) {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
                             const isSanalItem = isSanal(item.turul);
                             const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 font-semibold text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
                             const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
                             const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
                             const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
                             <li key={item._id}>
@@ -716,7 +716,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className={badgeClass}>{typeLabel}</span>
-                                    <span className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</span>
+                                    <span className={`truncate ${isUnread ? "" : ""}`}>{item.title || "Мэдэгдэл"}</span>
                                   </div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -885,7 +885,7 @@ export default function GolContent({ children }: GolContentProps) {
                       <Bell className="w-4 h-4 text-[color:var(--panel-text)]" />
                     </button>
                     {sanalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px]  leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
                         {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
                       </span>
                     )}
@@ -896,7 +896,7 @@ export default function GolContent({ children }: GolContentProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm font-medium text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                        <span className="text-sm  text-[color:var(--panel-text)]">Санал хүсэлт</span>
                       </div>
                       <ul className="py-2">
                         {sanalUnreadList.length === 0 ? (
@@ -906,12 +906,12 @@ export default function GolContent({ children }: GolContentProps) {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
                             const isSanalItem = isSanal(item.turul);
                             const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 font-semibold text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 font-semibold text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
                             const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
                             const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
                             const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
                             <li key={item._id}>
@@ -929,7 +929,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center gap-2 flex-wrap">
                                     <span className={badgeClass}>{typeLabel}</span>
-                                    <span className={`truncate ${isUnread ? "font-semibold" : "font-medium"}`}>{item.title || "Мэдэгдэл"}</span>
+                                    <span className={`truncate ${isUnread ? "" : ""}`}>{item.title || "Мэдэгдэл"}</span>
                                   </div>
                                   {item.message && (
                                     <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
@@ -1041,7 +1041,7 @@ export default function GolContent({ children }: GolContentProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-[color:var(--surface-border)]">
-                <h3 className="text-lg font-semibold text-theme">Тусламж</h3>
+                <h3 className="text-lg  text-theme">Тусламж</h3>
                 <button
                   type="button"
                   onClick={() => setTuslamjModalOpen(false)}
@@ -1083,7 +1083,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="sticky top-0 z-10 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ThemedLogo size={32} />
-                  <span className="text-lg font-bold text-theme">Цэс</span>
+                  <span className="text-lg  text-theme">Цэс</span>
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
@@ -1114,7 +1114,7 @@ export default function GolContent({ children }: GolContentProps) {
                             setMobileMenuOpen(false);
                           }
                         }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm  transition-all duration-200 ${
                           item.comingSoon
                             ? "cursor-not-allowed opacity-60 text-theme"
                             : ""
@@ -1161,7 +1161,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 }}
                                 className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
                                   isSubActive
-                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)] font-semibold border-l-2 border-[color:var(--theme)]"
+                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)]  border-l-2 border-[color:var(--theme)]"
                                     : "text-theme hover:bg-[color:var(--surface-hover)] hover:translate-x-1"
                                 }`}
                               >
@@ -1255,7 +1255,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)]">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
+                  className={`px-6 py-3 rounded-xl  transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'general'
                       ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
                       : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
@@ -1269,7 +1269,7 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab('font-size')}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
+                  className={`px-6 py-3 rounded-xl  transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'font-size'
                       ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
                       : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
@@ -1303,7 +1303,7 @@ export default function GolContent({ children }: GolContentProps) {
                           setShowSettingsModal(false);
                           router.push("/tokhirgoo");
                         }}
-                        className="px-6 py-3 bg-[color:var(--theme)] hover:opacity-90 text-white rounded-xl font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 group"
+                        className="px-6 py-3 bg-[color:var(--theme)] hover:opacity-90 text-white rounded-xl  transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 group"
                         style={{ borderRadius: '0.75rem' }}
                       >
                         <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
@@ -1315,16 +1315,16 @@ export default function GolContent({ children }: GolContentProps) {
                       <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-200/50 dark:border-blue-600/50 hover:shadow-lg dark:hover:shadow-blue-500/10 transition-all duration-200 hover:scale-105">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
-                          <h5 className="font-semibold text-theme">Хэрэглэгч</h5>
+                          <h5 className=" text-theme">Хэрэглэгч</h5>
                         </div>
-                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] font-medium">{userName}</p>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] ">{userName}</p>
                       </div>
                       <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-200/50 dark:border-purple-600/50 hover:shadow-lg dark:hover:shadow-purple-500/10 transition-all duration-200 hover:scale-105">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse"></div>
-                          <h5 className="font-semibold text-theme">Байгууллага</h5>
+                          <h5 className=" text-theme">Байгууллага</h5>
                         </div>
-                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] font-medium">{baiguullaga?.ner || "-"}</p>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] ">{baiguullaga?.ner || "-"}</p>
                       </div>
                     </div>
                   </div>
@@ -1337,7 +1337,7 @@ export default function GolContent({ children }: GolContentProps) {
                     <div className="p-8 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30 rounded-2xl text-center border-2 border-emerald-200/50 dark:border-emerald-600/50 shadow-lg dark:shadow-emerald-500/10 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/10 dark:to-transparent"></div>
                       <div className="relative z-10">
-                        <p className="text-theme dark:text-[color:var(--panel-text)] font-medium mb-3 opacity-70 text-sm flex items-center justify-center gap-2">
+                        <p className="text-theme dark:text-[color:var(--panel-text)]  mb-3 opacity-70 text-sm flex items-center justify-center gap-2">
                           <Type className="w-4 h-4" />
                           Жишээ текст
                         </p>
@@ -1395,7 +1395,7 @@ export default function GolContent({ children }: GolContentProps) {
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => handleFontSizeChange(2)}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 2
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-theme dark:text-[color:var(--panel-text)] border-blue-200/50 dark:border-blue-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
@@ -1406,7 +1406,7 @@ export default function GolContent({ children }: GolContentProps) {
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(6)}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 6
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-theme dark:text-[color:var(--panel-text)] border-green-200/50 dark:border-green-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
@@ -1417,7 +1417,7 @@ export default function GolContent({ children }: GolContentProps) {
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(10)}
-                        className={`px-4 py-3 rounded-xl font-medium transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 10
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 text-theme dark:text-[color:var(--panel-text)] border-orange-200/50 dark:border-orange-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'

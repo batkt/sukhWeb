@@ -44,9 +44,11 @@ export default function TusgaiZagvar({
   const instanceId = useRef<string>(
     `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   );
-  const [portalStyle, setPortalStyle] = useState<React.CSSProperties | null>(
-    null
-  );
+  const [portalStyle, setPortalStyle] = useState<{
+    top: string;
+    left: string;
+    width: string;
+  } | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -71,7 +73,11 @@ export default function TusgaiZagvar({
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setPortalStyle({ top: r.bottom, left: r.left, width: r.width });
+    setPortalStyle({ 
+      top: `${r.bottom}px`, 
+      left: `${r.left}px`, 
+      width: `${r.width}px` 
+    });
 
     // Reposition the portal on scroll/resize instead of closing it so the user
     // can scroll the page while the dropdown stays open.
@@ -81,7 +87,11 @@ export default function TusgaiZagvar({
       if (raf) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         const r2 = el.getBoundingClientRect();
-        setPortalStyle({ top: r2.bottom, left: r2.left, width: r2.width });
+        setPortalStyle({ 
+          top: `${r2.bottom}px`, 
+          left: `${r2.left}px`, 
+          width: `${r2.width}px` 
+        });
       }) as unknown as number;
     };
 
@@ -172,13 +182,13 @@ export default function TusgaiZagvar({
             role="listbox"
             style={{
               position: "fixed",
-              top: portalStyle?.top ?? 0,
-              left: portalStyle?.left ?? 0,
+              top: portalStyle?.top ?? "0px",
+              left: portalStyle?.left ?? "0px",
               width: portalStyle?.width ?? "auto",
               // Ensure dropdown appears above modal overlays (modals use very high z-index),
               // set a sufficiently large zIndex so the portal is visible when used inside modals.
               zIndex: 11000,
-            }}
+            } as React.CSSProperties}
           >
             <div
               className={`mt-2 w-full max-h-60 rounded-2xl overflow-hidden shadow-xl bg-[color:var(--surface-bg)] backdrop-blur-xl border border-white/10 isolate ${
@@ -206,10 +216,10 @@ export default function TusgaiZagvar({
                           ? "opacity-50 cursor-not-allowed text-gray-400"
                           : tone === "neutral"
                           ? opt.value === value
-                            ? "font-semibold text-slate-900 bg-gray-50"
+                            ? " text-slate-900 bg-gray-50"
                             : "text-slate-700 hover:bg-gray-50"
                           : opt.value === value
-                          ? "font-semibold text-theme"
+                          ? " text-theme"
                           : "text-theme hover:bg-black/8"
                       }`}
                     >

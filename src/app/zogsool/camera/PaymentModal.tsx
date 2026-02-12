@@ -335,7 +335,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                 <Wallet className="w-5 h-5 text-slate-500 dark:text-slate-400" />
               </div>
               <div>
-                <h2 className="text-[15px] font-extrabold text-slate-800 dark:text-white tracking-tight">Тооцоо хийх</h2>
+                <h2 className="text-[15px]  text-slate-800 dark:text-white tracking-tight">Тооцоо хийх</h2>
                 <div className="flex items-center gap-3 mt-0.5">
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
                     <Car className="w-3.5 h-3.5" />
@@ -387,7 +387,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
             <div className="lg:col-span-3 p-6 space-y-5 border-r-0 lg:border-r border-slate-100 dark:border-white/[0.06]">
               {/* Payment methods */}
               <div>
-                <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">Төлбөрийн хэлбэр</p>
+                <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-3">Төлбөрийн хэлбэр</p>
                 <div className="grid grid-cols-2 gap-3">
                   {PAYMENT_METHODS.map((method) => {
                     const isActive = (value[method.id] || 0) > 0;
@@ -410,7 +410,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                         <div className="flex-1 text-left min-w-0">
                           <span className="text-[13px]  text-slate-700 dark:text-slate-200 block leading-tight">{method.label}</span>
                           {isActive && (
-                            <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                            <span className="text-[11px]  text-emerald-600 dark:text-emerald-400 block mt-0.5">
                               {formatNumber(value[method.id])}₮
                             </span>
                           )}
@@ -429,7 +429,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {/* Discount Reason Input */}
               {activeMethod === "khungulult" && (
                 <div className="rounded-2xl border border-rose-200 dark:border-rose-500/20 bg-rose-50/50 dark:bg-rose-500/[0.05] p-4 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  <span className="text-[10px] font-extrabold text-rose-500 dark:text-rose-400 uppercase tracking-[0.15em]">Хөнгөлөлтийн тайлбар</span>
+                  <span className="text-[10px]  text-rose-500 dark:text-rose-400 uppercase tracking-[0.15em]">Хөнгөлөлтийн тайлбар</span>
                   <input
                     type="text"
                     placeholder="Жишээ: Лояалти, Удирдлагын зөвшөөрөл..."
@@ -444,7 +444,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {tulbur.length > 0 && (
                 <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] overflow-hidden">
                   <div className="px-4 py-2.5 bg-slate-100/50 dark:bg-white/[0.03] border-b border-slate-100 dark:border-white/[0.06]">
-                    <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Хуваарилалт</span>
+                    <span className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">Хуваарилалт</span>
                   </div>
                   <div className="p-3 space-y-1">
                     {tulbur.map((t, i) => {
@@ -457,7 +457,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                             <span className="text-[12px]  text-slate-600 dark:text-slate-300">{label}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[12px] font-extrabold text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}₮</span>
+                            <span className="text-[12px]  text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}₮</span>
                             {t.khariu && <Check className="w-3.5 h-3.5 text-emerald-500" />}
                             <button
                               onClick={() => {
@@ -479,7 +479,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
 
               {/* Quick cash */}
               <div>
-                <p className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-2.5">Бэлэн мөнгө нэмэх</p>
+                <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] mb-2.5">Бэлэн мөнгө нэмэх</p>
                 <div className="flex gap-2 flex-wrap">
                   {QUICK_CASH.map((val) => (
                     <button
@@ -497,7 +497,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {/* E-Barimt */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-slate-50/50 dark:bg-white/[0.02] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">И-Баримт</span>
+                  <span className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em]">И-Баримт</span>
                   <div className="flex p-[3px] rounded-xl bg-slate-200/50 dark:bg-white/[0.06]">
                     {(["1", "3"] as const).map((v) => (
                       <button
@@ -533,7 +533,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     alt="QPay QR"
                     className="w-36 h-36 mb-3 rounded-xl shadow-lg bg-white border border-slate-100"
                   />
-                  <p className="text-[10px] font-extrabold text-blue-500 dark:text-blue-400 uppercase tracking-widest animate-pulse text-center leading-relaxed">
+                  <p className="text-[10px]  text-blue-500 dark:text-blue-400 uppercase tracking-widest animate-pulse text-center leading-relaxed">
                     Утсаараа уншуулж төлнө үү
                   </p>
                 </div>
@@ -562,7 +562,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     key={num}
                     onClick={() => mungunDunNemekh(num.toString())}
                     disabled={isProcessing}
-                    className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] font-extrabold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                    className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                   >
                     {num}
                   </button>
@@ -570,14 +570,14 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                 <button
                   onClick={handleClear}
                   disabled={isProcessing}
-                  className="h-[52px] rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/[0.08] font-extrabold text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
+                  className="h-[52px] rounded-xl border border-amber-200/60 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/[0.08]  text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/[0.15] active:scale-95 transition-all disabled:opacity-40"
                 >
                   AC
                 </button>
                 <button
                   onClick={() => mungunDunNemekh("0")}
                   disabled={isProcessing}
-                  className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] font-extrabold text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                  className="h-[52px] rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.04]  text-xl text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.07] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                 >
                   0
                 </button>
@@ -594,15 +594,15 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
-                  <span className="font-extrabold text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}₮</span>
+                  <span className=" text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}₮</span>
                 </div>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>
-                  <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}₮</span>
+                  <span className=" text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}₮</span>
                 </div>
                 <div className={`px-4 py-2.5 flex justify-between text-[12px] ${tulukhDun > 0 ? "bg-rose-50/50 dark:bg-rose-500/[0.05]" : "bg-emerald-50/50 dark:bg-emerald-500/[0.05]"}`}>
                   <span className={` uppercase ${tulukhDun > 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>Дутуу</span>
-                  <span className={`font-extrabold ${tulukhDun > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                  <span className={` ${tulukhDun > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {formatNumber(tulukhDun)}₮
                   </span>
                 </div>

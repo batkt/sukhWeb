@@ -5,6 +5,7 @@ import { X, Delete, Camera, Keyboard, Calendar } from "lucide-react";
 import moment from "moment";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import Button from "@/components/ui/Button";
 
 interface VehicleRegistrationModalProps {
   onClose: () => void;
@@ -153,7 +154,7 @@ export default function VehicleRegistrationModal({
             <div className="space-y-1.5 md:col-span-2">
                <label className="text-[9px]  text-slate-600 dark:text-slate-400 uppercase tracking-wider ml-1">Улсын дугаар</label>
                <div className="relative group">
-                  <div className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden group-focus-within:border-blue-500 transition-all shadow-sm">
+                  <div className="relative bg-white rounded-lg border-2 border-slate-200 overflow-hidden group-focus-within:border-blue-500 transition-all shadow-sm" style={{ borderRadius: '0.5rem' }}>
                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400 dark:text-slate-500 select-none">MNG</span>
                      <input
                         type="text"
@@ -208,6 +209,7 @@ export default function VehicleRegistrationModal({
                   value={selectedIP}
                   onChange={(e) => setSelectedIP(e.target.value)}
                   className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10  text-slate-700 dark:text-slate-300 text-xs appearance-none focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none cursor-pointer shadow-sm"
+                  style={{ borderRadius: '0.5rem' }}
                 >
                   {entryCameras.map(cam => (
                     <option key={cam.cameraIP} value={cam.cameraIP}>
@@ -230,6 +232,7 @@ export default function VehicleRegistrationModal({
                   value={regDate}
                   onChange={(e) => setRegDate(e.target.value)}
                   className="w-full h-10 pl-3 pr-9 rounded-lg bg-slate-50 dark:bg-white/5 border-2 border-slate-200 dark:border-white/10  text-slate-700 dark:text-slate-300 text-xs focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 transition-all outline-none shadow-sm [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-9 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  style={{ borderRadius: '0.5rem' }}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500 group-hover:text-blue-500 transition-colors">
                    <Calendar className="w-3.5 h-3.5" />
@@ -286,37 +289,22 @@ export default function VehicleRegistrationModal({
           {/* Footer Actions */}
           <div className="flex items-center justify-end pt-2 border-t border-slate-200/50 dark:border-white/10">
              <div className="flex gap-2">
-               <button
+               <Button
                   onClick={onClose}
-                  className="px-5 py-2 rounded-lg border-2 border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400  text-[10px] uppercase tracking-wide hover:bg-slate-50 dark:hover:bg-white/5 hover:border-slate-300 dark:hover:border-white/20 transition-all shadow-sm"
+                  variant="outline"
+                  size="sm"
                 >
                   Хаах
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleSave}
                   disabled={loading}
-                  className="
-                    relative overflow-hidden
-                    px-6 py-2 rounded-lg 
-                    bg-gradient-to-r from-blue-600 to-indigo-600 
-                    text-white  text-[10px] uppercase tracking-wide 
-                    shadow-lg shadow-blue-500/30 
-                    hover:scale-[1.02] active:scale-[0.98] 
-                    disabled:opacity-70 disabled:cursor-not-allowed
-                    disabled:hover:scale-100
-                    transition-all duration-200
-                  "
+                  isLoading={loading}
+                  variant="primary"
+                  size="sm"
                 >
-                  <div className="absolute inset-0 bg-white/20 translate-y-full hover:translate-y-0 transition-transform duration-300"></div>
-                  <span className="relative flex items-center gap-2">
-                    {loading ? (
-                      <>
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                        <span>Хадгалж байна...</span>
-                      </>
-                    ) : 'Хадгалах'}
-                  </span>
-                </button>
+                  Хадгалах
+                </Button>
              </div>
           </div>
         </div>

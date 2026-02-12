@@ -1431,7 +1431,7 @@ html[data-mode="dark"]:not([data-theme]),
 /* Professional menu font for top navigation/menu items */
 .menu-pro-font {
   font-family: "Roboto",  sans-serif;
-  font-weight: 600; /* keep the menu prominent */
+  font-weight: 400; /* normal weight */
   letter-spacing: 0.2px;
 }
 
