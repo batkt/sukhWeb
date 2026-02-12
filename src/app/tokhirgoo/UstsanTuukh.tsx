@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import DateRangeButton from "@/components/ui/DateRangeButton";
 import {
   Tooltip,
   TooltipContent,
@@ -15,8 +15,7 @@ import {
   ChevronRight,
   Eye,
   X,
-  AlertTriangle,
-  Calendar
+  AlertTriangle
 } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
@@ -75,7 +74,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <div>
-                <h3 className="text-xl font-semibold text-[color:var(--panel-text)]">
+                <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Устгасан дэлгэрэнгүй
                 </h3>
               </div>
@@ -93,7 +92,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         <div className="px-6 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
                 Устгасан ажилтан
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -101,7 +100,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
                 Огноо
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -109,7 +108,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
                 Төрөл
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -129,7 +128,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-[color:var(--panel-text)] mb-3">
+            <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
               Устгасан баримтын мэдээлэл
             </h4>
             <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
@@ -237,7 +236,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                         key={key}
                         className="p-3 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
                       >
-                        <div className="font-medium text-sm text-[color:var(--panel-text)] mb-1">
+                        <div className=" text-sm text-[color:var(--panel-text)] mb-1">
                           {displayLabel}
                         </div>
                         <div className="text-sm text-[color:var(--muted-text)] break-words">
@@ -382,10 +381,8 @@ export default function UstsanTuukh({
   const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (
-    dates: [string | null, string | null] | undefined
-  ) => {
-    setDateRange((dates || [null, null]) as [string | null, string | null]);
+  const handleDateChange = (dates: [string | null, string | null]) => {
+    setDateRange(dates);
     setPage(1);
   };
 
@@ -414,7 +411,7 @@ export default function UstsanTuukh({
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
               <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <h2 className="text-xl font-semibold text-[color:var(--panel-text)]">
+              <h2 className="text-xl  text-[color:var(--panel-text)]">
                 {t("Устгасан түүх")}
               </h2>
             </div>
@@ -425,7 +422,7 @@ export default function UstsanTuukh({
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
                 <select
@@ -447,7 +444,7 @@ export default function UstsanTuukh({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Ажилтан
                 </label>
                 <select
@@ -469,20 +466,14 @@ export default function UstsanTuukh({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Огноо
                 </label>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
-                  <DatePickerInput
-                    type="range"
-                    value={dateRange}
-                    onChange={handleDateChange}
-                    className="text-[color:var(--panel-text)] flex-1"
-                    locale="mn"
-                    valueFormat="YYYY-MM-DD"
-                  />
-                </div>
+                <DateRangeButton
+                  value={dateRange}
+                  onChange={handleDateChange}
+                  placeholder="Огноо сонгох"
+                />
               </div>
             </div>
           </div>
@@ -499,22 +490,22 @@ export default function UstsanTuukh({
                   <table className="w-full text-left">
                     <thead className="bg-[color:var(--surface-hover)] sticky top-0">
                       <tr>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                           #
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
                           Үүссэн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
                           Төрөл
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
                           Ажилтан
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
                           Устгасан огноо
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
                       </tr>

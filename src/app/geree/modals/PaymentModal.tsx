@@ -73,7 +73,7 @@ export default function PaymentModal({
               </div>
               <div className="flex items-center gap-3">
                 <div>
-                  <h3 className="text-base font-semibold text-slate-800">
+                  <h3 className="text-base  text-slate-800">
                     Гүйлгээ хийх
                   </h3>
                 </div>
@@ -84,7 +84,7 @@ export default function PaymentModal({
               <div className="bg-gradient-to-r from-slate-50 to-slate-100 rounded-2xl p-3 border border-slate-200/60">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">
+                    <p className="text-sm  text-slate-700 truncate">
                       {paymentResident?.ovog || ""} {paymentResident?.ner || ""}
                     </p>
                     <p className="text-xs text-slate-500">
@@ -97,7 +97,7 @@ export default function PaymentModal({
 
             <div className="flex-1 px-5 space-y-4">
               <div className="flex items-center justify-between py-3 px-3 rounded-full border border-slate-200/50">
-                <span className="text-sm text-slate-700 font-medium">
+                <span className="text-sm text-slate-700 ">
                   Эхний үлдэгдэл оруулах
                 </span>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -112,7 +112,7 @@ export default function PaymentModal({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-slate-600">Тайлбар</label>
+                <label className="text-xs  text-slate-600">Тайлбар</label>
                 <textarea
                   value={paymentTailbar}
                   onChange={(e) => setPaymentTailbar(e.target.value)}
@@ -128,7 +128,7 @@ export default function PaymentModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium bg-red-500 hover:bg-red-600 text-slate-200 hover:text-slate-800 rounded-full transition-colors disabled:opacity-50"
+                  className="px-4 py-2 text-sm  bg-red-500 hover:bg-red-600 text-slate-200 hover:text-slate-800 rounded-full transition-colors disabled:opacity-50"
                   disabled={isProcessingPayment}
                 >
                   Цуцлах
@@ -137,7 +137,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={onSubmit}
                   disabled={isProcessingPayment}
-                  className="px-5 py-2 text-sm font-medium text-white bg-slate-800 hover:bg-slate-900 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                  className="px-5 py-2 text-sm  text-white bg-slate-800 hover:bg-slate-900 rounded-full transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                   data-modal-primary
                 >
                   {isProcessingPayment ? (

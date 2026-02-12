@@ -69,14 +69,14 @@ const RealTimeDuration = ({ orsonTsag, garsanTsag }: { orsonTsag?: string; garsa
 
   if (!garsanTsag) {
      return (
-        <span className="text-[11px] font-medium font-mono text-slate-800">
+        <span className="text-[11px]  font-mono text-slate-800">
            {String(hours).padStart(2, "0")} : {String(minutes).padStart(2, "0")} : {String(seconds).padStart(2, "0")}
         </span>
      );
   }
 
   return (
-    <span className="text-[10px] font-medium uppercase tracking-wide text-slate-800">
+    <span className="text-[10px]  uppercase tracking-wide text-slate-800">
       {hours > 0 ? `${hours} цаг ${minutes} мин` : `${minutes} мин`}
     </span>
   );
@@ -978,7 +978,7 @@ export default function Camera() {
               </div>
               <div>
                 <h3 className="text-[13px] text-slate-700 dark:text-slate-300 tracking-tight leading-none">Жагсаалт</h3>
-                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
+                <p className="text-[10px]  text-slate-500 dark:text-slate-500 mt-0.5">Зогсоолын бүртгэл</p>
               </div>
             </div>
 
@@ -1198,12 +1198,12 @@ export default function Camera() {
                              </div>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                             <span className=" text-slate-600 dark:text-slate-400 font-medium font-[family-name:var(--font-mono)] text-xs">
+                             <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-xs">
                                {orsonTsag ? moment(orsonTsag).format("MM-DD HH:mm:ss") : "-"}
                              </span>
                           </td>
                           <td className="py-3 px-3 whitespace-nowrap border-r border-slate-200 dark:border-white/5 text-center">
-                             <span className=" text-slate-600 dark:text-slate-400 font-medium font-[family-name:var(--font-mono)] text-xs">
+                             <span className=" text-slate-600 dark:text-slate-400  font-[family-name:var(--font-mono)] text-xs">
                                {garsanTsag ? moment(garsanTsag).format("MM-DD HH:mm:ss") : ""}
                              </span>
                           </td>
@@ -1235,16 +1235,16 @@ export default function Camera() {
                                 );
                              })()}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center font-medium border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-center  border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.turul || transaction.tuukh?.[0]?.turul || "Үйлчлүүлэгч"}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right font-medium border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 text-sm">
                              {transaction.tuukh?.[0]?.khungulult || "0"}
                           </td>
                           <td className="py-3 px-3 text-slate-700 dark:text-slate-300 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
                              {formatNumber(transaction.niitDun || 0)}
                           </td>
-                          <td className="py-3 px-3 text-right font-medium relative border-r border-slate-200 dark:border-white/5 text-sm">
+                          <td className="py-3 px-3 text-right  relative border-r border-slate-200 dark:border-white/5 text-sm">
                              {(() => {
                                 const history = transaction.tuukh?.[0];
                                 const tulsunDun = history?.tulsunDun || 0;
@@ -1318,10 +1318,10 @@ export default function Camera() {
                                               const uniqueKey = `${pi}-${p.turul || 'unknown'}-${p.dun || 0}-${p.ognoo || ''}`;
                                               return (
                                                 <div key={uniqueKey} className="flex items-center justify-between gap-4 py-1">
-                                                  <span className={`text-[10px] font-medium ${textColorMap[p.turul] || 'text-slate-600 dark:text-slate-400'}`}>
+                                                  <span className={`text-[10px]  ${textColorMap[p.turul] || 'text-slate-600 dark:text-slate-400'}`}>
                                                     {labels[p.turul] || p.turul || 'Төлбөр'}
                                                   </span>
-                                                  <span className="text-[11px] text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)] font-semibold">{formatNumber(p.dun || 0)}</span>
+                                                  <span className="text-[11px] text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)] ">{formatNumber(p.dun || 0)}</span>
                                                 </div>
                                               );
                                             })
@@ -1351,7 +1351,7 @@ export default function Camera() {
                                 return <span className="font-[family-name:var(--font-mono)] text-slate-700 dark:text-slate-300 text-sm">{formatNumber(tulsunDun)}</span>;
                              })()}
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right font-medium border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
+                          <td className="py-3 px-3 text-slate-600 dark:text-slate-400 text-right  border-r border-slate-200 dark:border-white/5 font-[family-name:var(--font-mono)] text-sm">
                              {transaction.tuukh?.[0]?.ebarimtId || ""}
                           </td>
                           <td className="py-3 px-3 relative border-r border-slate-200 dark:border-white/5 text-center">
@@ -1510,7 +1510,7 @@ export default function Camera() {
                 <div className="relative" ref={pageSizeRef}>
                   <button
                     onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 font-semibold cursor-pointer hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100/80 dark:bg-white/5 border border-slate-200/50 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300  cursor-pointer hover:bg-slate-200/80 dark:hover:bg-white/10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500/50 shadow-sm"
                   >
                     <span>{pageSize}</span>
                     <ChevronDown className={`w-3.5 h-3.5 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isPageSizeOpen ? 'rotate-180' : ''}`} />
@@ -1525,7 +1525,7 @@ export default function Camera() {
                             setPage(1);
                             setIsPageSizeOpen(false);
                           }}
-                          className={`w-full px-3 py-2 rounded-lg text-xs font-semibold text-left transition-all duration-200 ${
+                          className={`w-full px-3 py-2 rounded-lg text-xs  text-left transition-all duration-200 ${
                             pageSize === size
                               ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400'
                               : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
@@ -1564,11 +1564,11 @@ export default function Camera() {
                   leftIcon={<ChevronLeft className="w-4 h-4" />}
                 />
                 <div className="flex items-center gap-1.5 px-2">
-                  <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs font-semibold text-slate-900 dark:text-white">
+                  <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-xs  text-slate-900 dark:text-white">
                     {page}
                   </span>
                   <span className="text-slate-400 dark:text-slate-500 text-xs">/</span>
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  <span className="text-xs  text-slate-600 dark:text-slate-300">
                     {Math.ceil(total / pageSize)}
                   </span>
                 </div>
@@ -1957,7 +1957,7 @@ const CameraStream = React.memo(({
 
       {/* Camera Info Overlay */}
       {!isFullscreen && (
-        <div className="absolute top-2 left-2 z-20 px-2 py-1 rounded bg-black/60 text-white text-xs font-medium opacity-0 group-hover/stream:opacity-100 transition-opacity duration-200">
+        <div className="absolute top-2 left-2 z-20 px-2 py-1 rounded bg-black/60 text-white text-xs  opacity-0 group-hover/stream:opacity-100 transition-opacity duration-200">
           {gateName && <span className="hidden sm:inline">{gateName} - </span>}
           <span className="font-mono">
             {ip}:{port}

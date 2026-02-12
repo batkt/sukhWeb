@@ -221,7 +221,7 @@ export default function UnitsSection({
                                         }`}
                                       >
                                         <span
-                                          className={`text-[12px] font-bold ${
+                                          className={`text-[12px]  ${
                                             hasActive
                                               ? "text-green-700 dark:text-green-400"
                                               : "text-slate-900 dark:text-slate-100"

@@ -174,7 +174,7 @@ export default function Zogsool({
               </button>
               <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <h2 className="text-xl font-semibold text-[color:var(--panel-text)]">
+                <h2 className="text-xl  text-[color:var(--panel-text)]">
                   {editingItem ? "Зогсоол засах" : "Шинэ зогсоол бүртгэх"}
                 </h2>
                 <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
@@ -229,7 +229,7 @@ export default function Zogsool({
           <div className="flex items-center gap-3">
             <Car className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-xl font-semibold text-[color:var(--panel-text)]">
+              <h2 className="text-xl  text-[color:var(--panel-text)]">
                 Зогсоолын тохиргоо
               </h2>
               <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
@@ -261,22 +261,22 @@ export default function Zogsool({
                 <table className="w-full text-left">
                   <thead className="bg-[color:var(--surface-hover)] sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                         #
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Зогсоолын нэр
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Багтаамж
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Тариф
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Хаалганууд
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                         Үйлдэл
                       </th>
                     </tr>
@@ -293,7 +293,7 @@ export default function Zogsool({
                               <Car className="w-12 h-12" />
                             </div>
                             <div>
-                              <p className="font-semibold text-sm text-[color:var(--panel-text)]">
+                              <p className=" text-sm text-[color:var(--panel-text)]">
                                 Мэдээлэл олдсонгүй
                               </p>
                               <p className="text-xs text-[color:var(--muted-text)] mt-1">
@@ -316,18 +316,18 @@ export default function Zogsool({
                             </td>
                             <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 font-semibold text-xs">
+                                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400  text-xs">
                                   {record.ner?.charAt(0).toUpperCase()}
                                 </div>
-                                <span className="font-medium">{record.ner}</span>
+                                <span className="">{record.ner}</span>
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                              <span className="font-medium">{record.too}</span>
+                              <span className="">{record.too}</span>
                               <span className="text-xs text-[color:var(--muted-text)] ml-1">машин</span>
                             </td>
                             <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                              <span className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs font-medium">
+                              <span className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs ">
                                 {formatNumber(record.undsenUne)} ₮
                               </span>
                             </td>

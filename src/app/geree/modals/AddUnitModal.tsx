@@ -85,7 +85,7 @@ export default function AddUnitModal({
             className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
           >
             <div className="text-center">
-              <h3 className="text-lg font-medium text-slate-900 mb-2">Тоот нэмэх</h3>
+              <h3 className="text-lg  text-slate-900 mb-2">Тоот нэмэх</h3>
               <p className="text-sm text-slate-500 mb-4">
                 {floor ? `${floor}-р давхарт шинэ тоот нэмнэ үү.` : "Давхар сонгоогүй байна."}
               </p>

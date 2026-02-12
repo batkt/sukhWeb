@@ -276,7 +276,7 @@ export default function TaskManagementSystem() {
                   )}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900 text-sm">
+                  <div className=" text-slate-900 text-sm">
                     {group.khariltsagchiinNer}
                   </div>
                   <div className="text-xs text-slate-500">
@@ -379,7 +379,7 @@ export default function TaskManagementSystem() {
                   >
                     {mur.too}
                   </motion.div>
-                  <div className="text-xs text-slate-900 font-medium bg-transparent">
+                  <div className="text-xs text-slate-900  bg-transparent">
                     {mur.utga}
                   </div>
                 </motion.div>
@@ -518,7 +518,7 @@ export default function TaskManagementSystem() {
                       </div>
 
                       {item.title && (
-                        <div className="font-semibold text-slate-700 text-sm mb-1">
+                        <div className=" text-slate-700 text-sm mb-1">
                           {item.title}
                         </div>
                       )}
@@ -549,7 +549,7 @@ export default function TaskManagementSystem() {
                             <motion.div
                               whileHover={{ scale: 1.03 }}
                               whileTap={{ scale: 0.95 }}
-                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs font-semibold cursor-pointer text-center"
+                              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs  cursor-pointer text-center"
                             >
                               ✓ Дуусгах
                             </motion.div>
@@ -557,7 +557,7 @@ export default function TaskManagementSystem() {
                           <motion.div
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.95 }}
-                            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-xs font-semibold cursor-pointer text-center"
+                            className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-red-400 to-rose-500 text-white text-xs  cursor-pointer text-center"
                             onClick={() => {
                               const reason = prompt(
                                 "Цуцлах шалтгааныг бичнэ үү:"

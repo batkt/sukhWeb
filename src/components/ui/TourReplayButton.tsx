@@ -53,7 +53,7 @@ export default function TourReplayButton() {
               onClick={() => setOpen(false)}
             />
             <div className="md:hidden fixed left-3 right-3 bottom-20 z-[1200] menu-surface rounded-2xl shadow-2xl p-3">
-              <div className="px-1 pt-1 pb-2 text-base font-semibold">
+              <div className="px-1 pt-1 pb-2 text-base ">
                 Тусламж
               </div>
               <div className="flex flex-col gap-2">
@@ -103,7 +103,7 @@ export default function TourReplayButton() {
 
             {/* Desktop dropdown */}
             <div className="hidden md:block absolute bottom-14 right-0 w-64 menu-surface rounded-xl shadow-xl p-2">
-              <div className="px-2 pt-2 pb-1 text-sm font-semibold">
+              <div className="px-2 pt-2 pb-1 text-sm ">
                 Тусламж
               </div>
               <div className="flex flex-col gap-1 p-1">

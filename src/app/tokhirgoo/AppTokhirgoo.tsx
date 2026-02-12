@@ -25,7 +25,7 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
     <div className="col-span-12 lg:col-span-6 xxl:col-span-4">
       <div className="bg-transparent dark:bg-gray-800 rounded-2xl shadow overflow-hidden">
         <div className="flex items-center border-b border-amber-200 dark:border-amber-700 px-5 py-3">
-          <h2 className=" text-lg font-semibold dark:text-slate-200">
+          <h2 className=" text-lg  dark:text-slate-200">
             Аппликейшин тохиргоо
           </h2>
         </div>
@@ -33,7 +33,7 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
         <div className="p-5 space-y-5">
           <div className="flex items-center">
             <div className="border-l-2 border-green-500 pl-4">
-              <div className="font-medium">Ашиглаж эхлэх огноо</div>
+              <div className="">Ашиглаж эхлэх огноо</div>
             </div>
             <div className="ml-auto w-1/2 !bg-transparent">
               <DatePickerInput

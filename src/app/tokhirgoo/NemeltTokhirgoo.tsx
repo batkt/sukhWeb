@@ -518,7 +518,7 @@ export default function NemeltTokhirgoo() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-theme">
+                  <span className="text-sm  text-theme">
                     {invoiceActive ? "Идэвхтэй" : "Идэвхгүй"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -540,7 +540,7 @@ export default function NemeltTokhirgoo() {
                 >
                   <div className="flex items-end gap-4">
                     <div className="flex-1">
-                      <label className="text-sm font-semibold text-theme mb-2 block">
+                      <label className="text-sm  text-theme mb-2 block">
                         Илгээх өдөр (сар бүр)
                       </label>
                       <MNumberInput
@@ -556,7 +556,7 @@ export default function NemeltTokhirgoo() {
                     <button
                       id="nemelt-invoice-save"
                       onClick={saveInvoiceSchedule}
-                      className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 dark:from-purple-600 dark:to-pink-700 dark:hover:from-purple-700 dark:hover:to-pink-800 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+                      className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 dark:from-purple-600 dark:to-pink-700 dark:hover:from-purple-700 dark:hover:to-pink-800 text-white  shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
                       style={{ borderRadius: '0.75rem' }}
                     >
                       Хадгалах
@@ -583,7 +583,7 @@ export default function NemeltTokhirgoo() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-theme">
+                  <span className="text-sm  text-theme">
                     {liftEnabled ? "Идэвхтэй" : "Идэвхгүй"}
                   </span>
                   <label className="relative inline-flex items-center cursor-pointer">
@@ -608,7 +608,7 @@ export default function NemeltTokhirgoo() {
               {liftEnabled && (
                 <div className="p-5 bg-gradient-to-br from-amber-50/50 to-orange-50/50 dark:from-amber-900/20 dark:to-orange-900/20 space-y-4">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-theme flex items-center gap-2">
+                    <label className="text-sm  text-theme flex items-center gap-2">
                       <span className="text-lg">🔢</span>
                       Давхар тохиргоо
                     </label>
@@ -630,7 +630,7 @@ export default function NemeltTokhirgoo() {
                       <button
                         id="nemelt-lift-save"
                         onClick={handleSaveFloors}
-                        className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 dark:from-amber-600 dark:to-orange-700 dark:hover:from-amber-700 dark:hover:to-orange-800 text-white font-medium shadow-md hover:shadow-lg transition-all duration-200"
+                        className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 dark:from-amber-600 dark:to-orange-700 dark:hover:from-amber-700 dark:hover:to-orange-800 text-white  shadow-md hover:shadow-lg transition-all duration-200"
                         style={{ borderRadius: '0.75rem' }}
                       >
                         Хадгалах
@@ -648,7 +648,7 @@ export default function NemeltTokhirgoo() {
                   </div>
 
                   <div className="pt-2 border-t border-[color:var(--surface-border)]">
-                    <p className="text-sm font-semibold text-theme mb-3">Тохируулсан давхарууд:</p>
+                    <p className="text-sm  text-theme mb-3">Тохируулсан давхарууд:</p>
                     <div className="flex flex-wrap gap-2">
                       {liftFloors && liftFloors.length > 0 ? (
                         liftFloors.map((f) => (
@@ -656,7 +656,7 @@ export default function NemeltTokhirgoo() {
                             key={f}
                             className="inline-flex items-center px-4 py-2 rounded-xl border-2 border-amber-200 dark:border-amber-700 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/30 dark:to-orange-900/30 shadow-sm"
                           >
-                            <span className="text-theme font-semibold">{f}</span>
+                            <span className="text-theme ">{f}</span>
                           </div>
                         ))
                       ) : (
@@ -690,7 +690,7 @@ export default function NemeltTokhirgoo() {
                     </div>
                  </div>
                  <div className="flex items-center gap-3">
-                   <span className="text-sm font-medium text-theme">
+                   <span className="text-sm  text-theme">
                      {guestConfigEnabled ? "Идэвхтэй" : "Идэвхгүй"}
                    </span>
                    <label className="relative inline-flex items-center cursor-pointer">
@@ -710,7 +710,7 @@ export default function NemeltTokhirgoo() {
                      
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1">
-                           <label className="text-sm font-semibold text-theme">Давтамж</label>
+                           <label className="text-sm  text-theme">Давтамж</label>
                            <select 
                              value={guestFrequencyType}
                              onChange={(e) => setGuestFrequencyType(e.target.value)}
@@ -725,7 +725,7 @@ export default function NemeltTokhirgoo() {
                         
                         {(guestFrequencyType === 'saraar' || guestFrequencyType === 'jileer') && (
                            <div className="space-y-1">
-                              <label className="text-sm font-semibold text-theme">
+                              <label className="text-sm  text-theme">
                                  {guestFrequencyType === 'saraar' ? 'Сар бүрийн хэдэн' : 'Жил бүрийн хэддүгээр сар'}
                               </label>
                               <MNumberInput 
@@ -742,7 +742,7 @@ export default function NemeltTokhirgoo() {
 
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-1">
-                           <label className="text-sm font-semibold text-theme">Эрхийн тоо</label>
+                           <label className="text-sm  text-theme">Эрхийн тоо</label>
                            <MNumberInput 
                               value={guestLimit === "" ? undefined : Number(guestLimit)}
                               onChange={(val) => setGuestLimit(val !== "" ? val : "")}
@@ -752,7 +752,7 @@ export default function NemeltTokhirgoo() {
                            />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-sm font-semibold text-theme">Үнэгүй минут (тус бүр)</label>
+                           <label className="text-sm  text-theme">Үнэгүй минут (тус бүр)</label>
                            <MNumberInput 
                               value={guestFreeMinutes === "" ? undefined : Number(guestFreeMinutes)}
                               onChange={(val) => setGuestFreeMinutes(val !== "" ? val : "")}
@@ -762,7 +762,7 @@ export default function NemeltTokhirgoo() {
                            />
                         </div>
                         <div className="space-y-1">
-                           <label className="text-sm font-semibold text-theme">Нийт үнэгүй минут</label>
+                           <label className="text-sm  text-theme">Нийт үнэгүй минут</label>
                            <MNumberInput 
                               value={guestTotalFreeMinutes === "" ? undefined : Number(guestTotalFreeMinutes)}
                               onChange={(val) => setGuestTotalFreeMinutes(val !== "" ? val : "")}
@@ -774,7 +774,7 @@ export default function NemeltTokhirgoo() {
                      </div>
 
                      <div className="space-y-1">
-                        <label className="text-sm font-semibold text-theme">Тайлбар</label>
+                        <label className="text-sm  text-theme">Тайлбар</label>
                         <MTextInput 
                              value={guestNote}
                              onChange={(e) => setGuestNote(e.currentTarget.value)}
@@ -786,7 +786,7 @@ export default function NemeltTokhirgoo() {
                      <div className="pt-2 flex justify-end">
                         <button
                            onClick={saveGuestSettings}
-                           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-medium shadow-md hover:shadow-lg transition-all rounded-xl"
+                           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white  shadow-md hover:shadow-lg transition-all rounded-xl"
                         >
                            Хадгалах
                         </button>

@@ -216,7 +216,7 @@ export default function TransactionModal({
         >
           {/* Header */}
           <div className="relative px-6 py-4 flex items-center justify-between border-b border-[color:var(--surface-border)]/50 bg-[color:var(--surface-bg)]">
-            <h2 className="text-lg font-semibold text-[color:var(--panel-text)] tracking-tight">
+            <h2 className="text-lg  text-[color:var(--panel-text)] tracking-tight">
               Гүйлгээ хийх
             </h2>
             <button
@@ -235,11 +235,11 @@ export default function TransactionModal({
             {/* Resident Info Card */}
             {resident && (
               <div className="bg-[color:var(--surface-hover)]/50 rounded-2xl p-3 border border-[color:var(--surface-border)] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)] font-semibold text-sm">
+                <div className="w-10 h-10 rounded-full bg-[color:var(--theme)]/10 flex items-center justify-center text-[color:var(--theme)]  text-sm">
                   {resident?.toot || "?"}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[color:var(--panel-text)]">
+                  <p className="text-sm  text-[color:var(--panel-text)]">
                     {resident?.ovog || ""} {resident?.ner}
                   </p>
                   <p className="text-xs text-[color:var(--muted-text)]">
@@ -251,7 +251,7 @@ export default function TransactionModal({
 
             {/* Transaction Type Segmented Control */}
             <div>
-              <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+              <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                 Гүйлгээний төрөл
               </label>
               <div className="grid grid-cols-3 gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
@@ -266,7 +266,7 @@ export default function TransactionModal({
                     onClick={() => setTransactionType(option.value as TransactionData["type"])}
                     disabled={isProcessing}
                     className={`
-                      relative py-1.5 px-3 text-sm font-semibold rounded-2xl transition-all duration-200
+                      relative py-1.5 px-3 text-sm  rounded-2xl transition-all duration-200
                       ${transactionType === option.value
                         ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]"
                         : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
@@ -297,7 +297,7 @@ export default function TransactionModal({
                   />
                   <label
                     htmlFor="ekhniiUldegdel"
-                    className="text-xs font-medium text-rose-700 cursor-pointer select-none"
+                    className="text-xs  text-rose-700 cursor-pointer select-none"
                   >
                     Эхний үлдэгдэл эсэх
                   </label>
@@ -308,7 +308,7 @@ export default function TransactionModal({
             <div className="grid grid-cols-2 gap-4">
               {/* Date Input */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                   Огноо
                 </label>
                 <input
@@ -316,13 +316,13 @@ export default function TransactionModal({
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
                   disabled={isProcessing}
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-medium"
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm "
                 />
               </div>
 
               {/* Amount Input */}
               <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                   Дүн ₮
                 </label>
                 <input
@@ -345,7 +345,7 @@ export default function TransactionModal({
                   }}
                   disabled={isProcessing}
                   placeholder="0.00"
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm font-bold text-right tracking-wide"
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm  text-right tracking-wide"
                 />
               </div>
             </div>
@@ -354,7 +354,7 @@ export default function TransactionModal({
             {transactionType === "ashiglalt" && (
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                  <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                     Ашиглалтын зардал
                   </label>
                   <select
@@ -374,7 +374,7 @@ export default function TransactionModal({
                   <div className="space-y-3">
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                           Цахилгаан кВт
                         </label>
                         <input
@@ -392,7 +392,7 @@ export default function TransactionModal({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                           Гүйдлийн коэффициент
                         </label>
                         <input
@@ -413,7 +413,7 @@ export default function TransactionModal({
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                           Өмнөх заалт
                         </label>
                         <input
@@ -431,7 +431,7 @@ export default function TransactionModal({
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                           Сүүлийн заалт
                         </label>
                         <input
@@ -452,7 +452,7 @@ export default function TransactionModal({
 
                     <div className="flex items-center justify-between gap-4 p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
                       <div className="space-y-0.5 min-w-0">
-                        <p className="text-xs font-medium text-[color:var(--panel-text)]">
+                        <p className="text-xs  text-[color:var(--panel-text)]">
                           Суурь хүраамж нэмэх
                         </p>
                       </div>
@@ -481,7 +481,7 @@ export default function TransactionModal({
                           type="button"
                           onClick={handleTsakhilgaanTootsool}
                           disabled={isProcessing || isCalculatingTsakhilgaan}
-                          className="px-4 py-2 text-sm font-medium bg-[color:var(--theme)] !text-white hover:opacity-90 rounded-2xl transition-all disabled:opacity-50"
+                          className="px-4 py-2 text-sm  bg-[color:var(--theme)] !text-white hover:opacity-90 rounded-2xl transition-all disabled:opacity-50"
                         >
                           {isCalculatingTsakhilgaan ? "Тооцоолж байна..." : "Цахилгаан дүн тооцоолох"}
                         </button>
@@ -490,7 +490,7 @@ export default function TransactionModal({
 
                     <div className="flex items-center justify-between gap-4 mt-1 p-3 rounded-xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
                       <div className="space-y-0.5 min-w-0">
-                        <p className="text-xs font-medium text-[color:var(--panel-text)]">
+                        <p className="text-xs  text-[color:var(--panel-text)]">
                           Нэхэмжлэх дээр харах эсэх
                         </p>
                         
@@ -522,7 +522,7 @@ export default function TransactionModal({
 
             {/* Tailbar Input */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-medium text-[color:var(--panel-text)] mb-1.5">
+              <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                 Тайлбар
               </label>
               <textarea
@@ -542,7 +542,7 @@ export default function TransactionModal({
               type="button"
               onClick={handleClose}
               disabled={isProcessing}
-              className="px-5 py-2.5 text-sm font-medium text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors disabled:opacity-50"
+              className="px-5 py-2.5 text-sm  text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors disabled:opacity-50"
             >
               Хаах
             </button>
@@ -550,7 +550,7 @@ export default function TransactionModal({
               type="button"
               onClick={handleSubmit}
               disabled={isProcessing}
-              className="px-6 py-2.5 text-sm font-bold !text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
+              className="px-6 py-2.5 text-sm  !text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
             >
               {isProcessing ? (
                 <span className="flex items-center gap-2">

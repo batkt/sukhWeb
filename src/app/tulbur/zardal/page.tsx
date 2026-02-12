@@ -89,7 +89,7 @@ export default function Tailan() {
           <h1 className="text-6xl py-14 md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient-x">
             Тун удахгүй
           </h1>
-          <p className="text-xl md:text-2xl text-slate-600 font-medium">
+          <p className="text-xl md:text-2xl text-slate-600 ">
             Зардал авах
           </p>
         </div>

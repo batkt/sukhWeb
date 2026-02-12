@@ -43,7 +43,7 @@ export default function DeleteConfirmModal({
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
-              <h3 className="text-lg font-medium text-slate-900 mb-2">{title}</h3>
+              <h3 className="text-lg  text-slate-900 mb-2">{title}</h3>
               <p className="text-sm text-slate-500 mb-6">{message}</p>
               <div className="flex justify-center gap-3">
                 <button

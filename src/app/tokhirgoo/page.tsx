@@ -52,7 +52,7 @@ class ChunkErrorBoundary extends Component<
 
       return (
         <div className="flex flex-col items-center justify-center p-8 text-theme">
-          <div className="text-lg font-semibold mb-4">
+          <div className="text-lg  mb-4">
             {isChunkError ? "Хуудас ачааллахад алдаа гарлаа" : "Алдаа гарлаа"}
           </div>
           <div className="text-sm opacity-70 mb-4 text-center max-w-md">
@@ -85,7 +85,7 @@ const AdminLayout = ({
 }) => (
   <div className="w-full pb-6 flex flex-col min-h-0" style={{ minHeight: "calc(100vh - 140px)" }}>
     <header className="px-4 pt-3 flex-shrink-0">
-      <h1 className="text-2xl font-semibold mb-2 text-[color:var(--panel-text)] leading-tight">
+      <h1 className="text-2xl  mb-2 text-[color:var(--panel-text)] leading-tight">
         {title}
       </h1>
     </header>
@@ -194,7 +194,7 @@ function Tokhirgoo() {
                   aria-disabled={isSoon}
                   className={`relative btn-minimal flex items-center w-full justify-start gap-3 text-left transition-all duration-200 ${
                     isActive
-                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme font-semibold"
+                      ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme "
                       : "text-theme opacity-80 hover:opacity-100"
                   } ${isSoon ? "cursor-not-allowed pr-24" : ""}`}
                 >
@@ -203,7 +203,7 @@ function Tokhirgoo() {
                     {item.text}
                   </span>
                   {isSoon && (
-                    <span className="text-xs font-semibold text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
+                    <span className="text-xs  text-green-500 whitespace-nowrap flex-shrink-0 overflow-hidden text-ellipsis max-w-20">
                       Тун удахгүй
                     </span>
                   )}
@@ -220,7 +220,7 @@ function Tokhirgoo() {
           {tokhirgoo.length === 0 && ajiltan && (
             <div className="flex flex-col items-center justify-center p-12 text-theme/70">
               <Settings className="w-16 h-16 mb-4 opacity-50" />
-              <p className="text-lg font-medium">Тохиргооны эрх олдсонгүй</p>
+              <p className="text-lg ">Тохиргооны эрх олдсонгүй</p>
               <p className="text-sm mt-2">Админ тань тохиргооны эрх олгоно уу.</p>
             </div>
           )}

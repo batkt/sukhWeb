@@ -327,7 +327,7 @@ export default function SariinTulburPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Төрөл</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Төрөл</label>
             <TusgaiZagvar
               value={formData.turul}
               onChange={(v: string) => setFormData({ ...formData, turul: v })}
@@ -340,7 +340,7 @@ export default function SariinTulburPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Оршин суугч</label>
             <input
               type="text"
               value={filters.orshinSuugch}
@@ -350,7 +350,7 @@ export default function SariinTulburPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
             <input
               type="text"
               value={filters.toot}
@@ -360,7 +360,7 @@ export default function SariinTulburPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
             <input
               type="text"
               value={filters.davkhar}
@@ -370,7 +370,7 @@ export default function SariinTulburPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Гэрээний дугаар</label>
             <input
               type="text"
               value={filters.gereeniiDugaar}
@@ -392,7 +392,7 @@ export default function SariinTulburPage() {
 
       {/* Summary Card */}
       {/* <div className="neu-panel p-4 rounded-xl mb-6">
-        <h3 className="font-semibold mb-2">Нийт төлбөр</h3>
+        <h3 className=" mb-2">Нийт төлбөр</h3>
         <p className="text-2xl  text-blue-600">
           {formatNumber(totalTulbur)} ₮
         </p>
@@ -405,28 +405,28 @@ export default function SariinTulburPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Гэрээний дугаар
                   </th>
-                  {/* <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Байрны нэр
                   </th> */}
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Сар
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Он
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлбөр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлөв
                   </th>
                 </tr>
@@ -474,7 +474,7 @@ export default function SariinTulburPage() {
                               <button
                                 type="button"
                                 onClick={() => handleExpandClick(item)}
-                                className="font-semibold hover:underline cursor-pointer flex items-center justify-center gap-1 ml-auto"
+                                className=" hover:underline cursor-pointer flex items-center justify-center gap-1 ml-auto"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="w-4 h-4" />
@@ -486,7 +486,7 @@ export default function SariinTulburPage() {
                             </td>
                             <td className="p-3 text-center text-theme whitespace-nowrap">
                               <span
-                                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                className={`px-2 py-1 rounded-full text-xs  ${
                                   item.tuluv === "Төлсөн"
                                     ? "badge-paid"
                                     : item.tuluv === "Төлөөгүй"
@@ -514,7 +514,7 @@ export default function SariinTulburPage() {
                                   </div>
                                 ) : expandedData ? (
                                   <div className="space-y-3">
-                                    <h4 className="font-medium text-sm">
+                                    <h4 className=" text-sm">
                                       {formData.turul === "uliral"
                                         ? `${item.gereeniiDugaar} — ${expandedData.label}`
                                         : `${item.gereeniiDugaar} — ${expandedData.label}`}
@@ -556,7 +556,7 @@ export default function SariinTulburPage() {
                                             </tr>
                                           )
                                         )}
-                                        <tr className="border-t-2 font-semibold">
+                                        <tr className="border-t-2 ">
                                           <td colSpan={3} className="p-2">
                                             Нийт
                                           </td>

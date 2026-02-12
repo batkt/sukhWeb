@@ -128,7 +128,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                     onChange={handleSelectAll}
                     className="sr-only"
                   />
-                  <span className="font-semibold text-theme">Бүгдийг сонгох</span>
+                  <span className=" text-theme">Бүгдийг сонгох</span>
                 </label>
               </div>
 
@@ -166,7 +166,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                         />
                         <div className="flex items-center gap-2 flex-1">
                           <span className="text-2xl">{item.icon}</span>
-                          <span className="font-medium text-theme">{item.label}</span>
+                          <span className=" text-theme">{item.label}</span>
                         </div>
                       </label>
                     </motion.div>
@@ -186,14 +186,14 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
             <div className="flex items-center justify-end gap-3 p-6 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30">
               <button
                 onClick={onClose}
-                className="px-6 py-2.5 rounded-xl font-medium text-theme hover:bg-[color:var(--surface-hover)] transition-colors"
+                className="px-6 py-2.5 rounded-xl  text-theme hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 Болих
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-6 py-2.5 rounded-xl font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl  bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isSaving ? (
                   <>

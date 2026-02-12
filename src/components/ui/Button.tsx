@@ -28,7 +28,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-offset-2 border";
+    const baseStyles = "inline-flex items-center justify-center gap-2  transition-all duration-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-offset-2 border";
 
     const variants = {
       primary: "bg-blue-600 !text-white border-blue-700 hover:bg-blue-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",

@@ -1196,7 +1196,7 @@ export default function Khynalt() {
             >
               <div className="h-full flex flex-col justify-between transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
                 <div>
-                  <h3 className="text-sm font-semibold text-[color:var(--panel-text)] mb-2">
+                  <h3 className="text-sm  text-[color:var(--panel-text)] mb-2">
                     {card.title}
                   </h3>
                   <p className="text-2xl  text-[color:var(--panel-text)] mb-1">
@@ -1222,7 +1222,7 @@ export default function Khynalt() {
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
               <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Орлогын тайлан
                 </h3>
               </div>
@@ -1265,7 +1265,7 @@ export default function Khynalt() {
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
               <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Хуримтлагдсан авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
@@ -1312,7 +1312,7 @@ export default function Khynalt() {
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
               <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Цуцлагдсан гэрээний авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
@@ -1358,7 +1358,7 @@ export default function Khynalt() {
           }`}
           style={{ transitionDelay: "800ms" }}
         >
-          <h3 className="text-lg font-semibold text-[color:var(--panel-text)] mb-4">
+          <h3 className="text-lg  text-[color:var(--panel-text)] mb-4">
             Нэмэлт мэдээлэл
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

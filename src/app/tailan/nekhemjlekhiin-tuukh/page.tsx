@@ -179,7 +179,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div>
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Гэрээний дугаар</label>
+            <label className="block  mb-2">Гэрээний дугаар</label>
             <input
               type="text"
               value={formData.gereeniiDugaar}
@@ -191,7 +191,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Байрны нэр</label>
+            <label className="block  mb-2">Байрны нэр</label>
             <TusgaiZagvar
               value={formData.bairNer}
               onChange={(v: string) => setFormData({ ...formData, bairNer: v })}
@@ -207,7 +207,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Барилга</label>
+            <label className="block  mb-2">Барилга</label>
             <TusgaiZagvar
               value={selectedBuildingId || ""}
               onChange={(v: string) => {
@@ -225,7 +225,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Давхар</label>
+            <label className="block  mb-2">Давхар</label>
             <input
               type="text"
               value={formData.davkhar}
@@ -237,7 +237,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div>
           <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Тоот</label>
+            <label className="block  mb-2">Тоот</label>
             <input
               type="text"
               value={formData.toot}
@@ -249,7 +249,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Овог</label>
+            <label className="block  mb-2">Овог</label>
             <input
               type="text"
               value={formData.ovog}
@@ -261,7 +261,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div>
           <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Нэр</label>
+            <label className="block  mb-2">Нэр</label>
             <input
               type="text"
               value={formData.ner}
@@ -273,7 +273,7 @@ export default function NekhemjlekhiinTuukhPage() {
             />
           </div> */}
           {/* <div className="neu-panel p-4 rounded-xl">
-            <label className="block font-semibold mb-2">Хуудасны хэмжээ</label>
+            <label className="block  mb-2">Хуудасны хэмжээ</label>
             <PageSongokh
               value={formData.khuudasniiKhemjee}
               onChange={(v: number) =>
@@ -290,7 +290,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
       {/* Summary Card
       <div className="neu-panel p-4 rounded-xl mb-6">
-        <h3 className="font-semibold mb-2">Нийт төлбөр</h3>
+        <h3 className=" mb-2">Нийт төлбөр</h3>
         <p className="text-2xl  text-blue-600">
           {formatNumber(totalTulbur)} ₮
         </p>
@@ -303,37 +303,37 @@ export default function NekhemjlekhiinTuukhPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Гэрээний дугаар
                   </th>
-                  {/* <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Байрны нэр
                   </th> */}
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Давхар
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Тоот
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Овог
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Огноо
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлбөр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлөв
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Түүх
                   </th>
                 </tr>
@@ -386,13 +386,13 @@ export default function NekhemjlekhiinTuukhPage() {
                             : item.ognoo}
                         </td>
                         <td className="p-3 text-right text-theme whitespace-nowrap">
-                          <span className="font-semibold">
+                          <span className="">
                             {formatNumber(item.tulbur)} ₮
                           </span>
                         </td>
                         <td className="p-3 text-center text-theme whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2 py-1 rounded-full text-xs  ${
                               item.tuluv === "Төлсөн"
                                 ? "badge-paid"
                                 : item.tuluv === "Төлөөгүй"

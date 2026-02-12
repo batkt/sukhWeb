@@ -339,12 +339,12 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                 <div className="flex items-center gap-3 mt-0.5">
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
                     <Car className="w-3.5 h-3.5" />
-                    <span className="font-bold uppercase tracking-wide">{transaction.mashiniiDugaar}</span>
+                    <span className=" uppercase tracking-wide">{transaction.mashiniiDugaar}</span>
                   </div>
                   {duration && (
                     <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
                       <Clock className="w-3 h-3" />
-                      <span className="font-medium">{durationStr}</span>
+                      <span className="">{durationStr}</span>
                     </div>
                   )}
                 </div>
@@ -371,7 +371,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               }}
             />
           </div>
-          <div className="flex justify-between mt-1.5 text-[10px] font-bold uppercase tracking-wider">
+          <div className="flex justify-between mt-1.5 text-[10px]  uppercase tracking-wider">
             <span className="text-slate-400 dark:text-slate-500">Оруулсан: {formatNumber(paidSoFar)}₮</span>
             <span className={`${tulukhDun > 0 ? "text-rose-500" : "text-emerald-500"}`}>
               {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}₮` : "Бүрэн төлсөн ✓"}
@@ -408,7 +408,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                           {isLoading ? <Loader2 className="w-4.5 h-4.5 animate-spin" /> : method.icon}
                         </div>
                         <div className="flex-1 text-left min-w-0">
-                          <span className="text-[13px] font-bold text-slate-700 dark:text-slate-200 block leading-tight">{method.label}</span>
+                          <span className="text-[13px]  text-slate-700 dark:text-slate-200 block leading-tight">{method.label}</span>
                           {isActive && (
                             <span className="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400 block mt-0.5">
                               {formatNumber(value[method.id])}₮
@@ -435,7 +435,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     placeholder="Жишээ: Лояалти, Удирдлагын зөвшөөрөл..."
                     value={discountReason}
                     onChange={(e) => setDiscountReason(e.target.value)}
-                    className="w-full h-10 px-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-white/[0.04] text-[13px] font-semibold text-slate-800 dark:text-white placeholder:text-rose-300 dark:placeholder:text-rose-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/50 outline-none transition-all"
+                    className="w-full h-10 px-4 rounded-xl border border-rose-200 dark:border-rose-500/30 bg-white dark:bg-white/[0.04] text-[13px]  text-slate-800 dark:text-white placeholder:text-rose-300 dark:placeholder:text-rose-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500/50 outline-none transition-all"
                   />
                 </div>
               )}
@@ -454,7 +454,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                         <div key={i} className="flex items-center justify-between py-1.5 px-2 rounded-xl hover:bg-slate-100/50 dark:hover:bg-white/[0.03] transition-colors">
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full bg-${accent}-500`} />
-                            <span className="text-[12px] font-semibold text-slate-600 dark:text-slate-300">{label}</span>
+                            <span className="text-[12px]  text-slate-600 dark:text-slate-300">{label}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-[12px] font-extrabold text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}₮</span>
@@ -486,7 +486,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                       key={val}
                       onClick={() => hylbarNemekh(val)}
                       disabled={isProcessing}
-                      className="px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[12px] font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
+                      className="px-3 py-2 rounded-xl border border-slate-200/60 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[12px]  text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.12] active:scale-95 transition-all disabled:opacity-40"
                     >
                       +{formatNumber(val)}
                     </button>
@@ -503,7 +503,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                       <button
                         key={v}
                         onClick={() => setEbarimtType(v)}
-                        className={`px-3.5 py-1.5 rounded-lg text-[11px] font-bold transition-all duration-200 ${
+                        className={`px-3.5 py-1.5 rounded-lg text-[11px]  transition-all duration-200 ${
                           ebarimtType === v
                             ? "bg-white dark:bg-white/[0.12] shadow-sm text-slate-800 dark:text-white"
                             : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
@@ -520,7 +520,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     placeholder="Байгууллагын регистер"
                     value={register}
                     onChange={(e) => setRegister(e.target.value)}
-                    className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[13px] font-semibold text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
+                    className="w-full h-10 px-4 rounded-xl border border-slate-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] text-[13px]  text-slate-800 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 outline-none transition-all"
                   />
                 )}
               </div>
@@ -544,12 +544,12 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
             <div className="lg:col-span-2 p-6 flex flex-col gap-5 bg-slate-50/30 dark:bg-white/[0.01]">
               {/* Amount display */}
               <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] shadow-sm">
-                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Оруулах дүн</p>
+                <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Оруулах дүн</p>
                 <div className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
                   {formatNumber(tuljBuiDun)}<span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5">₮</span>
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
-                  <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500 font-medium">
+                  <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500 ">
                     Үлдэгдэл: {formatNumber(tulukhDun)}₮
                   </p>
                 )}
@@ -593,15 +593,15 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {/* Summary */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
-                  <span className="font-bold text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
+                  <span className=" text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
                   <span className="font-extrabold text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}₮</span>
                 </div>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
-                  <span className="font-bold text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>
+                  <span className=" text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>
                   <span className="font-extrabold text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}₮</span>
                 </div>
                 <div className={`px-4 py-2.5 flex justify-between text-[12px] ${tulukhDun > 0 ? "bg-rose-50/50 dark:bg-rose-500/[0.05]" : "bg-emerald-50/50 dark:bg-emerald-500/[0.05]"}`}>
-                  <span className={`font-bold uppercase ${tulukhDun > 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>Дутуу</span>
+                  <span className={` uppercase ${tulukhDun > 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>Дутуу</span>
                   <span className={`font-extrabold ${tulukhDun > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
                     {formatNumber(tulukhDun)}₮
                   </span>
@@ -618,14 +618,14 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                     });
                   }}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400 font-bold uppercase text-[10px] tracking-wider hover:bg-amber-50 dark:hover:bg-amber-500/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
+                  className="py-3 rounded-xl border border-amber-200 dark:border-amber-500/20 text-amber-600 dark:text-amber-400  uppercase text-[10px] tracking-wider hover:bg-amber-50 dark:hover:bg-amber-500/[0.08] active:scale-[0.97] transition-all disabled:opacity-40"
                 >
                   Үнэгүй [F7]
                 </button>
                 <button
                   onClick={f4Darsan}
                   disabled={isProcessing}
-                  className="py-3 rounded-xl font-bold uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
+                  className="py-3 rounded-xl  uppercase text-[10px] tracking-wider active:scale-[0.97] transition-all disabled:opacity-40 flex items-center justify-center gap-2 text-white shadow-lg"
                   style={{
                     background: "linear-gradient(135deg, #10b981, #059669)",
                     boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",

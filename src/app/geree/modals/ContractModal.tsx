@@ -107,7 +107,7 @@ export default function ContractModal({
                           key={label}
                           type="button"
                           onClick={() => setCurrentStep(step)}
-                          className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
+                          className={`h-9 w-9 rounded-full flex items-center justify-center text-sm  transition-colors ${
                             active
                               ? "bg-sky-700 text-white"
                               : done
@@ -131,7 +131,7 @@ export default function ContractModal({
                 {currentStep === 1 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm  text-slate-700 mb-1">
                         Гэрээний төрөл
                       </label>
                       <TusgaiZagvar

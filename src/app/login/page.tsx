@@ -150,7 +150,7 @@ export default function LoginPage() {
 
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium text-theme">
+              <label htmlFor="email" className="text-sm  text-theme">
                 Нэвтрэх нэр
               </label>
               <div className="relative">
@@ -195,7 +195,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <label
                 htmlFor="password"
-                className="text-sm font-medium text-theme"
+                className="text-sm  text-theme"
               >
                 Нууц үг
               </label>
@@ -256,7 +256,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-2xl font-semibold transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
+              className="w-full h-12 rounded-2xl  transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-6 relative overflow-hidden"
               style={{
                 background:
                   "linear-gradient(180deg, var(--glass-tint), var(--glass-tint-2))",

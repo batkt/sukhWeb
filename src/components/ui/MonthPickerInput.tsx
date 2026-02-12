@@ -232,7 +232,7 @@ export function MonthPickerInput(
             >
               ‹
             </button>
-            <div className="text-sm font-semibold text-theme">
+            <div className="text-sm  text-theme">
               {displayYear}
             </div>
             <button
@@ -252,7 +252,7 @@ export function MonthPickerInput(
                   type="button"
                   onClick={() => onMonthClick(m)}
                   className={
-                    `h-10 rounded-xl text-sm font-medium transition-colors ` +
+                    `h-10 rounded-xl text-sm  transition-colors ` +
                     `hover:bg-white dark:hover:bg-black ` +
                     (active
                       ? ` bg-primary text-white hover:bg-primary/90`

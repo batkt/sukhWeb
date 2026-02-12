@@ -786,7 +786,7 @@ export default function HistoryModal({
           <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">
+                <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
                   Түүх
                 </h2>
                 <div className="text-xs text-slate-400">
@@ -795,7 +795,7 @@ export default function HistoryModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg font-bold"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg "
               >
                 ✕
               </button>
@@ -810,8 +810,8 @@ export default function HistoryModal({
                 { label: "Утас", value: Array.isArray(contract?.utas) ? contract.utas[0] : contract?.utas || "-" },
               ].map((item, idx) => (
                 <div key={idx} className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{item.label}</span>
-                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate block">{item.value}</span>
+                  <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">{item.label}</span>
+                  <span className="text-xs  text-slate-700 dark:text-slate-200 truncate block">{item.value}</span>
                 </div>
               ))}
             </div>
@@ -829,14 +829,14 @@ export default function HistoryModal({
                   variant="filled"
                   placeholder="Огноо"
                   classNames={{
-                    input: "bg-slate-100 dark:bg-slate-800/50 border-none h-8 text-xs font-medium",
+                    input: "bg-slate-100 dark:bg-slate-800/50 border-none h-8 text-xs ",
                   }}
                 />
               </div>
               {(dateRange?.[0] || dateRange?.[1]) && (
                 <button
                   onClick={() => setDateRange([null, null])}
-                  className="text-[10px] font-bold text-rose-500 hover:underline"
+                  className="text-[10px]  text-rose-500 hover:underline"
                 >
                   Арилгах
                 </button>
@@ -849,15 +849,15 @@ export default function HistoryModal({
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Огноо</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлөх дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Төлсөн дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
-                  <th className="py-2 px-2 text-center text-[9px] font-bold text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
-                  <th className="py-2  text-center text-[9px] font-bold text-slate-400 uppercase w-12">Үйлдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Огноо</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Төлөх дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Төлсөн дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
+                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
+                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-12">Үйлдэл</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -882,19 +882,19 @@ export default function HistoryModal({
                         key={row._id || idx}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                       >
-                        <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                        <td className="py-2 px-2 text-xs  text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
                         <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                           {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
-                        <td className="py-2 px-2 text-xs font-medium text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                        <td className="py-2 px-2 text-xs  text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {Number(row.tulukhDun) !== 0 ? formatNumber(row.tulukhDun, 2) : "-"}
                         </td>
                         <td className="py-2 px-2 text-right whitespace-nowrap text-slate-700 dark:text-slate-200">
                           {row.tulsunDun > 0 ? formatNumber(row.tulsunDun, 2) : "-"}
                         </td>
-                        <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
+                        <td className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
                           {formatNumber(row.uldegdel, 2)}
                         </td>
                         <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
@@ -935,15 +935,15 @@ export default function HistoryModal({
                       const balance = totalCharges - totalPayments;
                       const balanceClass = balance < 0 ? "!text-emerald-600 dark:!text-emerald-400" : balance > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme";
                       return (
-                        <tr className="bg-slate-100 dark:bg-slate-800/50 font-bold border-t-2 border-slate-300 dark:border-slate-600">
-                          <td colSpan={2} className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right">Нийт</td>
-                          <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
+                        <tr className="bg-slate-100 dark:bg-slate-800/50  border-t-2 border-slate-300 dark:border-slate-600">
+                          <td colSpan={2} className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right">Нийт</td>
+                          <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                             {formatNumber(totalCharges, 2)}
                           </td>
-                          <td className="py-2 px-2 text-xs font-bold text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
+                          <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                             {formatNumber(totalPayments, 2)}
                           </td>
-                          <td className={`py-2 px-2 text-xs font-bold text-right whitespace-nowrap ${balanceClass}`}>
+                          <td className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${balanceClass}`}>
                             {formatNumber(balance, 2)}
                           </td>
                           <td colSpan={3}></td>
@@ -960,13 +960,13 @@ export default function HistoryModal({
           <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="h-8 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="h-8 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs  text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
             >
               Хаах
             </button>
             <button
               onClick={handlePrint}
-              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs font-bold !text-white transition-all"
+              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs  !text-white transition-all"
             >
               Хэвлэх
             </button>
@@ -995,20 +995,20 @@ export default function HistoryModal({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Устгах уу?</h3>
+                    <h3 className="text-lg  text-slate-800 dark:text-white mb-2">Устгах уу?</h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
                       Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.
                     </p>
                     <div className="flex gap-3">
                       <button
                         onClick={handleDeleteCancel}
-                        className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm  text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                       >
                         Болих
                       </button>
                       <button
                         onClick={handleDeleteConfirm}
-                        className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-medium text-white transition-colors"
+                        className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm  text-white transition-colors"
                       >
                         Устгах
                       </button>
@@ -1040,7 +1040,7 @@ export default function HistoryModal({
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <p className="text-lg font-bold text-slate-800 dark:text-white">Амжилттай устгалаа!</p>
+                    <p className="text-lg  text-slate-800 dark:text-white">Амжилттай устгалаа!</p>
                   </div>
                 </motion.div>
               </motion.div>

@@ -4,7 +4,7 @@ export default function AccountDeletionPage() {
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10">
       <div className="mx-auto max-w-md rounded-2xl bg-white p-6 shadow-sm">
-        <h1 className="mb-4 text-center text-2xl font-semibold text-gray-900">
+        <h1 className="mb-4 text-center text-2xl  text-gray-900">
           Хэрэглэгчийн бүртгэл устгах заавар
         </h1>
 
@@ -14,7 +14,7 @@ export default function AccountDeletionPage() {
         </p>
 
         <section className="mb-6">
-          <h2 className="mb-3 text-base font-medium text-gray-800">
+          <h2 className="mb-3 text-base  text-gray-800">
             Бүртгэл устгах алхмууд
           </h2>
           <ol className="list-decimal space-y-2 pl-5 text-sm text-gray-700">
@@ -26,7 +26,7 @@ export default function AccountDeletionPage() {
         </section>
 
         <section className="mb-6">
-          <h2 className="mb-3 text-base font-medium text-gray-800">
+          <h2 className="mb-3 text-base  text-gray-800">
             Устгагдах мэдээлэл
           </h2>
           <p className="text-sm text-gray-700">
@@ -44,7 +44,7 @@ export default function AccountDeletionPage() {
             Хэрэв та аппликейшнд нэвтрэх боломжгүй бол бидэнтэй дараах хаягаар
             холбогдоно уу:
           </p>
-          <p className="mt-1 text-sm font-medium text-gray-800">
+          <p className="mt-1 text-sm  text-gray-800">
             📧 info@zevtabs.mn
           </p>
         </section>

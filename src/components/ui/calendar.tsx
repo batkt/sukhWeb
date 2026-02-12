@@ -32,7 +32,7 @@ export function Calendar({
         caption: "order-1 flex flex-col items-center gap-1 pb-1",
         caption_label: isDropdown
           ? "hidden"
-          : "text-sm font-semibold tracking-wide text-theme text-center",
+          : "text-sm  tracking-wide text-theme text-center",
         // Remove default absolute positioning by forcing static, center under caption
         nav: isDropdown
           ? "hidden"
@@ -46,12 +46,12 @@ export function Calendar({
 
         table: "w-full border-collapse mt-2",
         head_row: "text-[11px] sm:text-xs text-subtle",
-        head_cell: "font-medium text-center",
+        head_cell: " text-center",
         row: "",
         cell: "p-0.5 sm:p-1 text-center align-middle",
         day: cn(
           // Base day button - responsive sizing
-          "h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-xs sm:text-sm font-medium",
+          "h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-xs sm:text-sm ",
           // Hover with primary color
           "transition-colors hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary",
           // Ensure selected state stays visible

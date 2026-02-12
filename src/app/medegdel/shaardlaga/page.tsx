@@ -229,7 +229,7 @@ export default function SanalKhuselt() {
                   </div>
 
                   <div className="flex-1">
-                    <div className="font-semibold text-slate-900 text-sm">
+                    <div className=" text-slate-900 text-sm">
                       {mur.ner}
                     </div>
                     <div className="text-xs text-slate-500">{mur.utas}</div>
@@ -265,7 +265,7 @@ export default function SanalKhuselt() {
                     className="rounded-2xl bg-transparent backdrop-blur-xl p-4 border border-gray-200 shadow-xl flex justify-between items-center"
                   >
                     <div>
-                      <div className="font-semibold text-slate-900">
+                      <div className=" text-slate-900">
                         {item.message}
                       </div>
                       <div className="text-xs text-slate-500">

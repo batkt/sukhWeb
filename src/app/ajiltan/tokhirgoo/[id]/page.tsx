@@ -174,7 +174,7 @@ export default function EmployeeSettingsPage() {
               <ArrowLeft className="w-5 h-5 text-theme" />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-theme">Ажилтны тохиргоо</h1>
+              <h1 className="text-2xl  text-theme">Ажилтны тохиргоо</h1>
               <p className="text-sm text-subtle">
                 {employee.ner || employee.nevtrekhNer} - {employee.albanTushaal}
               </p>
@@ -196,7 +196,7 @@ export default function EmployeeSettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-blue-500" />
-                <h2 className="text-lg font-semibold text-theme">
+                <h2 className="text-lg  text-theme">
                   Барилга
                   <span className="ml-2 text-sm font-normal text-subtle">
                     ({selectedBuildings.length})
@@ -206,13 +206,13 @@ export default function EmployeeSettingsPage() {
               <div className="flex gap-1">
                 <button
                   onClick={selectAllBuildings}
-                  className="px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
                 <button
                   onClick={deselectAllBuildings}
-                  className="px-2 py-1 text-xs font-medium text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -245,7 +245,7 @@ export default function EmployeeSettingsPage() {
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="text-sm font-medium text-theme">{building.ner}</span>
+                      <span className="text-sm  text-theme">{building.ner}</span>
                     </div>
                   );
                 })
@@ -258,7 +258,7 @@ export default function EmployeeSettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-500" />
-                <h2 className="text-lg font-semibold text-theme">
+                <h2 className="text-lg  text-theme">
                   Модулиуд
                   <span className="ml-2 text-sm font-normal text-subtle">
                     ({selectedPermissions.length})
@@ -277,13 +277,13 @@ export default function EmployeeSettingsPage() {
                     });
                     setSelectedPermissions(allIds);
                   }}
-                  className="px-2 py-1 text-xs font-medium text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
                 <button
                   onClick={() => setSelectedPermissions([])}
-                  className="px-2 py-1 text-xs font-medium text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -313,7 +313,7 @@ export default function EmployeeSettingsPage() {
                       >
                         {isSelected && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <span className="text-sm font-semibold text-theme">{perm.label}</span>
+                      <span className="text-sm  text-theme">{perm.label}</span>
                     </div>
 
                     {/* Child permissions */}
@@ -340,7 +340,7 @@ export default function EmployeeSettingsPage() {
                               >
                                 {isChildSelected && <Check className="w-2.5 h-2.5 text-white" />}
                               </div>
-                              <span className="text-xs font-medium text-theme">{child.label}</span>
+                              <span className="text-xs  text-theme">{child.label}</span>
                             </div>
                           );
                         })}
@@ -357,7 +357,7 @@ export default function EmployeeSettingsPage() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-500" />
-                <h2 className="text-lg font-semibold text-theme">
+                <h2 className="text-lg  text-theme">
                   Тохиргооны эрх
                   <span className="ml-2 text-sm font-normal text-subtle">
                     ({selectedSettings.length})
@@ -367,13 +367,13 @@ export default function EmployeeSettingsPage() {
               <div className="flex gap-1">
                 <button
                   onClick={() => setSelectedSettings(SETTINGS_PERMISSIONS.map(s => s.id))}
-                  className="px-2 py-1 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
                 <button
                   onClick={() => setSelectedSettings([])}
-                  className="px-2 py-1 text-xs font-medium text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -401,7 +401,7 @@ export default function EmployeeSettingsPage() {
                     >
                       {isSelected && <Check className="w-3 h-3 text-white" />}
                     </div>
-                    <span className="text-sm font-medium text-theme">{setting.label}</span>
+                    <span className="text-sm  text-theme">{setting.label}</span>
                   </div>
                 );
               })}

@@ -199,7 +199,7 @@ export default function ZogsoolTailanPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">
+          <label className="block text-sm  text-theme/80 mb-1.5">
             Оршин суугч
           </label>
           <input
@@ -213,7 +213,7 @@ export default function ZogsoolTailanPage() {
           />
         </div>
         <div className="neu-panel p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">
+          <label className="block text-sm  text-theme/80 mb-1.5">
             Тоот
           </label>
           <input
@@ -232,7 +232,7 @@ export default function ZogsoolTailanPage() {
         <button
           type="button"
           onClick={() => setActiveTab("residentSummary")}
-          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+          className={`px-4 py-2 rounded-xl  transition-all ${
             activeTab === "residentSummary"
               ? "neu-panel bg-white/20 border border-white/20"
               : "hover:menu-surface"
@@ -243,7 +243,7 @@ export default function ZogsoolTailanPage() {
         <button
           type="button"
           onClick={() => setActiveTab("guestDetail")}
-          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+          className={`px-4 py-2 rounded-xl  transition-all ${
             activeTab === "guestDetail"
               ? "neu-panel bg-white/20 border border-white/20"
               : "hover:menu-surface"
@@ -254,7 +254,7 @@ export default function ZogsoolTailanPage() {
         <button
           type="button"
           onClick={() => setActiveTab("guestCarList")}
-          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+          className={`px-4 py-2 rounded-xl  transition-all ${
             activeTab === "guestCarList"
               ? "neu-panel bg-white/20 border border-white/20"
               : "hover:menu-surface"
@@ -266,35 +266,35 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "residentSummary" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 font-semibold text-theme border-b">
+          <h3 className="p-4  text-theme border-b">
             Оршин суугчдын урьсан зочдын машин бүртгэлийн тайлан
           </h3>
           <div className="max-h-[30vh] overflow-y-auto custom-scrollbar">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Тоот
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Урьсан машин тоо
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Нийт төлөх
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Хөнгөлөлт Минут
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлсөн дүн
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Үлдэгдэл төлбөр
                   </th>
                 </tr>
@@ -351,7 +351,7 @@ export default function ZogsoolTailanPage() {
                   ))
                 )}
                 {residentSummary.length > 0 && (
-                  <tr className="border-t-2 font-semibold bg-[color:var(--surface-hover)]/20">
+                  <tr className="border-t-2  bg-[color:var(--surface-hover)]/20">
                     <td className="p-3 text-center" colSpan={3}>
                       Нийт
                     </td>
@@ -378,7 +378,7 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "guestDetail" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4 font-semibold text-theme border-b">
+          <h3 className="p-4  text-theme border-b">
             Зочдын дэлгэрэнгүй тайлан
             {selectedResident && (
               <span className="ml-2 text-sm font-normal text-theme/70">
@@ -390,22 +390,22 @@ export default function ZogsoolTailanPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Машины дугаар
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Зогссон минут
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Хөнгөлсөн минут
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлбөр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Төлөв
                   </th>
                 </tr>
@@ -456,7 +456,7 @@ export default function ZogsoolTailanPage() {
                   ))
                 )}
                 {displayDetail && displayDetail.length > 0 && (
-                  <tr className="border-t-2 font-semibold bg-[color:var(--surface-hover)]/20">
+                  <tr className="border-t-2  bg-[color:var(--surface-hover)]/20">
                     <td className="p-3 text-center" colSpan={2}>
                       Нийт
                     </td>
@@ -483,29 +483,29 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "guestCarList" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-        <h3 className="p-4 font-semibold text-theme border-b">
+        <h3 className="p-4  text-theme border-b">
           Зочдын машины жагсаалт
         </h3>
         <div className="max-h-[30vh] overflow-y-auto custom-scrollbar">
           <table className="table-ui text-sm min-w-full">
             <thead>
               <tr>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                   №
                 </th>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                   Машины дугаар
                 </th>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                   Оршин суугчийн нэр
                 </th>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                   Давхар
                 </th>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                   Тоот
                 </th>
-                <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                   Утасны дугаар
                 </th>
               </tr>

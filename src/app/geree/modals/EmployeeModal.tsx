@@ -84,7 +84,7 @@ export default function EmployeeModal({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     Овог
                   </label>
                   <input
@@ -100,7 +100,7 @@ export default function EmployeeModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     Нэр
                   </label>
                   <input
@@ -116,7 +116,7 @@ export default function EmployeeModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     Утас
                   </label>
                   <input
@@ -134,7 +134,7 @@ export default function EmployeeModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     И-мэйл
                   </label>
                   <input
@@ -146,7 +146,7 @@ export default function EmployeeModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     Албан тушаал
                   </label>
                   <input
@@ -161,7 +161,7 @@ export default function EmployeeModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm  text-slate-700 mb-1">
                     Ажилд орсон огноо
                   </label>
                   <DatePickerInput
@@ -196,7 +196,7 @@ export default function EmployeeModal({
                 {!editingEmployee && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm  text-slate-700 mb-1">
                         Нэвтрэх нэр
                       </label>
                       <input
@@ -211,7 +211,7 @@ export default function EmployeeModal({
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                      <label className="block text-sm  text-slate-700 mb-1">
                         Нууц үг
                       </label>
                       <input

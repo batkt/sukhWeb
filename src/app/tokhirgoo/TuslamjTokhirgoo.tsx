@@ -48,7 +48,7 @@ export default function TuslamjTokhirgoo(props: Props) {
         <div className="flex flex-col flex-1 min-h-0 bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
           <div className="p-5 border-b border-[color:var(--surface-border)] flex-shrink-0">
             
-            <p className="text-md font-semibold text-theme">
+            <p className="text-md  text-theme">
               {currentTsonkh?.ner
                 ? `${currentTsonkh.ner}`
                 : "Одоогийн хуудсанд тусламж байхгүй байна"}

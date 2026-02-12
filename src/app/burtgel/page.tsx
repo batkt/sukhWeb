@@ -85,7 +85,7 @@ export default function Burtgel() {
 //               className="relative w-full max-w-[850px] max-height-[85vh] max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
 //             >
 //               <div className="flex items-center justify-between p-6">
-//                 <h2 className="text-xl font-bold text-slate-900">{title}</h2>
+//                 <h2 className="text-xl  text-slate-900">{title}</h2>
 //                 <button
 //                   onClick={onClose}
 //                   type="button"
@@ -830,7 +830,7 @@ export default function Burtgel() {
 //             initial={{ opacity: 0, y: -16 }}
 //             animate={{ opacity: 1, y: 0 }}
 //             transition={{ duration: 0.4, ease: "easeOut" }}
-//             className="text-3xl font-bold text-theme"
+//             className="text-3xl  text-theme"
 //           >
 //             Бүртгэл
 //           </motion.h1>
@@ -874,7 +874,7 @@ export default function Burtgel() {
 //             setCurrentPage(1);
 //             setSearchTerm("");
 //           }}
-//           className={`tab-btn px-6 py-3 font-semibold text-sm ${
+//           className={`tab-btn px-6 py-3  text-sm ${
 //             activeTab === "ajiltanList" ? "is-active" : ""
 //           }`}
 //         >
@@ -890,7 +890,7 @@ export default function Burtgel() {
 //             setCurrentPage(1);
 //             setSearchTerm("");
 //           }}
-//           className={`tab-btn px-6 py-3 font-semibold text-sm ${
+//           className={`tab-btn px-6 py-3  text-sm ${
 //             activeTab === "suugchList" ? "is-active" : ""
 //           }`}
 //         >
@@ -916,27 +916,27 @@ export default function Burtgel() {
 //                 <table className="table-ui text-sm min-w-full">
 //                   <thead>
 //                     <tr>
-//                       <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+//                       <th className="p-3 text-xs  text-theme text-center w-12">
 //                         №
 //                       </th>
-//                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                       <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                         Нэр
 //                       </th>
-//                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                       <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                         Регистр
 //                       </th>
-//                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                       <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                         Холбоо барих
 //                       </th>
 //                       {activeTab === "ajiltanList" && (
-//                         <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                         <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                           Албан тушаал
 //                         </th>
 //                       )}
-//                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                       <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                         {activeTab === "suugchList" ? "Төлөв" : "Эрх"}
 //                       </th>
-//                       <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                       <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                         Үйлдэл
 //                       </th>
 //                     </tr>
@@ -961,7 +961,7 @@ export default function Burtgel() {
 //                             {(currentPage - 1) * pageSize + index + 1}
 //                           </td>
 //                           <td className="p-3 text-theme whitespace-nowrap text-center">
-//                             <div className="font-semibold text-theme">
+//                             <div className=" text-theme">
 //                               {person.ovog} {person.ner}
 //                             </div>
 //                           </td>
@@ -980,13 +980,13 @@ export default function Burtgel() {
 //                           </td>
 //                           {activeTab === "ajiltanList" && (
 //                             <td className="p-3 text-center">
-//                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+//                               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs ">
 //                                 {person.albanTushaal || "-"}
 //                               </span>
 //                             </td>
 //                           )}
 //                           <td className="p-3 text-center">
-//                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
+//                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs ">
 //                               {activeTab === "suugchList"
 //                                 ? person.tuluv || "Төлсөн"
 //                                 : person.erkh || "-"}
@@ -1067,7 +1067,7 @@ export default function Burtgel() {
 //           >
 //             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-transparent">
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Овог <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1085,7 +1085,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Нэр <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1103,7 +1103,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Регистр <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1127,7 +1127,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Утас <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1145,7 +1145,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   И-мэйл <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1163,7 +1163,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Албан тушаал <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1181,7 +1181,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Ажилд орсон огноо <span className="text-red-500">*</span>
 //                 </label>
 //                 <input
@@ -1195,7 +1195,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Хаяг <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1215,44 +1215,44 @@ export default function Burtgel() {
 
 //             {/* Read-only auto-filled info to satisfy backend required fields */}
 //             <div className="mt-4 p-4 rounded-2xl border border-gray-200 bg-gray-50/60">
-//               <div className="text-sm font-semibold text-slate-800 mb-2">
+//               <div className="text-sm  text-slate-800 mb-2">
 //                 Автоматаар бөглөгдөх мэдээлэл
 //               </div>
 //               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-700">
 //                 <div className="flex items-center justify-between gap-3">
 //                   <span className="text-slate-500">Байгууллага ID</span>
-//                   <span className="font-medium break-all">
+//                   <span className=" break-all">
 //                     {derivedBaiguullagiinId || "-"}
 //                   </span>
 //                 </div>
 //                 <div className="flex items-center justify-between gap-3">
 //                   <span className="text-slate-500">Дүүрэг</span>
-//                   <span className="font-medium">{derivedDuuregStr || "-"}</span>
+//                   <span className="">{derivedDuuregStr || "-"}</span>
 //                 </div>
 //                 <div className="flex items-center justify-between gap-3">
 //                   <span className="text-slate-500">Хороо</span>
-//                   <span className="font-medium">{derivedHorooStr || "-"}</span>
+//                   <span className="">{derivedHorooStr || "-"}</span>
 //                 </div>
 //                 <div className="flex items-center justify-between gap-3">
 //                   <span className="text-slate-500">СӨХ (Байр)</span>
-//                   <span className="font-medium">{derivedSohStr || "-"}</span>
+//                   <span className="">{derivedSohStr || "-"}</span>
 //                 </div>
 //                 {barilgiinId && (
 //                   <div className="flex items-center justify-between gap-3">
 //                     <span className="text-slate-500">Салбар ID</span>
-//                     <span className="font-medium break-all">{barilgiinId}</span>
+//                     <span className=" break-all">{barilgiinId}</span>
 //                   </div>
 //                 )}
 //               </div>
 //             </div>
 
 //             <div className="mt-6 pt-6 border-t border-gray-200/50">
-//               <h3 className="text-lg font-semibold mb-4 text-slate-900">
+//               <h3 className="text-lg  mb-4 text-slate-900">
 //                 Нэвтрэх мэдээлэл
 //               </h3>
 //               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //                 <div>
-//                   <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                   <label className="block text-sm  text-slate-700 mb-2">
 //                     Нэвтрэх нэр <span className="text-red-500">*</span>
 //                   </label>
 //                   <div className="relative">
@@ -1270,7 +1270,7 @@ export default function Burtgel() {
 //                 </div>
 
 //                 <div>
-//                   <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                   <label className="block text-sm  text-slate-700 mb-2">
 //                     Нууц үг <span className="text-red-500">*</span>
 //                   </label>
 //                   <div className="relative">
@@ -1336,7 +1336,7 @@ export default function Burtgel() {
 //           <form onSubmit={handleSubmit} onClick={(e) => e.stopPropagation()}>
 //             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Овог <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1354,7 +1354,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Нэр <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1372,7 +1372,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Регистр <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1396,7 +1396,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Утас <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1414,7 +1414,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   И-мэйл <span className="text-red-500">*</span>
 //                 </label>
 //                 <div className="relative">
@@ -1440,19 +1440,19 @@ export default function Burtgel() {
 //                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 //                     <div className="flex items-center justify-between gap-3">
 //                       <span className="text-slate-500">СӨХ-ийн нэр</span>
-//                       <span className="font-medium text-slate-900 truncate ml-2">
+//                       <span className=" text-slate-900 truncate ml-2">
 //                         {baiguullaga?.ner || "-"}
 //                       </span>
 //                     </div>
 //                     <div className="flex items-center justify-between gap-3">
 //                       <span className="text-slate-500">СӨХ-ийн регистр</span>
-//                       <span className="font-medium text-slate-900 truncate ml-2">
+//                       <span className=" text-slate-900 truncate ml-2">
 //                         {baiguullaga?.register || "-"}
 //                       </span>
 //                     </div>
 //                     <div className="flex items-center justify-between gap-3">
 //                       <span className="text-slate-500">СӨХ-ийн утас</span>
-//                       <span className="font-medium text-slate-900 truncate ml-2">
+//                       <span className=" text-slate-900 truncate ml-2">
 //                         {Array.isArray(baiguullaga?.utas)
 //                           ? (baiguullaga?.utas as unknown as string[]).join(
 //                               ", "
@@ -1462,7 +1462,7 @@ export default function Burtgel() {
 //                     </div>
 //                     <div className="flex items-center justify-between gap-3">
 //                       <span className="text-slate-500">СӨХ-ийн и-мэйл</span>
-//                       <span className="font-medium text-slate-900 truncate ml-2">
+//                       <span className=" text-slate-900 truncate ml-2">
 //                         {baiguullaga?.email || "-"}
 //                       </span>
 //                     </div>
@@ -1472,7 +1472,7 @@ export default function Burtgel() {
 
 //               {/* Structured address selection: Байр(СӨХ) -> Орц -> Тоот */}
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Байр (СӨХ)
 //                 </label>
 //                 <select
@@ -1491,7 +1491,7 @@ export default function Burtgel() {
 //               </div>
 
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Орц
 //                 </label>
 //                 <select
@@ -1512,7 +1512,7 @@ export default function Burtgel() {
 //                 </select>
 //               </div>
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Тоот
 //                 </label>
 //                 <select
@@ -1558,7 +1558,7 @@ export default function Burtgel() {
 
 //               {/* Read-only derived Давхар and optional Тэмдэглэл */}
 //               <div>
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Давхар
 //                 </label>
 //                 <input
@@ -1585,7 +1585,7 @@ export default function Burtgel() {
 //                 />
 //               </div>
 //               <div className="md:col-span-2">
-//                 <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                 <label className="block text-sm  text-slate-700 mb-2">
 //                   Тэмдэглэл
 //                 </label>
 //                 <textarea
@@ -1604,12 +1604,12 @@ export default function Burtgel() {
 //             </div>
 
 //             <div className="mt-6 pt-6 border-t border-gray-200/50">
-//               <h3 className="text-lg font-semibold mb-4 text-slate-900">
+//               <h3 className="text-lg  mb-4 text-slate-900">
 //                 Нэвтрэх мэдээлэл
 //               </h3>
 //               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 //                 <div>
-//                   <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                   <label className="block text-sm  text-slate-700 mb-2">
 //                     Нэвтрэх нэр <span className="text-red-500">*</span>
 //                   </label>
 //                   <div className="relative">
@@ -1627,7 +1627,7 @@ export default function Burtgel() {
 //                 </div>
 
 //                 <div>
-//                   <label className="block text-sm font-semibold text-slate-700 mb-2">
+//                   <label className="block text-sm  text-slate-700 mb-2">
 //                     Нууц үг <span className="text-red-500">*</span>
 //                   </label>
 //                   <div className="relative">
@@ -1682,7 +1682,7 @@ export default function Burtgel() {
 //               onClick={(e) => e.stopPropagation()}
 //             >
 //               <div className="p-4 flex items-center justify-between">
-//                 <h3 className="text-lg font-semibold text-theme">
+//                 <h3 className="text-lg  text-theme">
 //                   Тоот бүртгэл
 //                 </h3>
 //                 <button
@@ -1699,19 +1699,19 @@ export default function Burtgel() {
 //                     <table className="table-ui text-sm min-w-full">
 //                       <thead>
 //                         <tr>
-//                           <th className="p-3 text-xs font-semibold text-theme text-center w-12">
+//                           <th className="p-3 text-xs  text-theme text-center w-12">
 //                             №
 //                           </th>
-//                           <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                           <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                             Нэр
 //                           </th>
-//                           <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                           <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                             Байр
 //                           </th>
-//                           <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                           <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                             Ашиглалтын зардал
 //                           </th>
-//                           <th className="p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+//                           <th className="p-3 text-xs  text-theme text-center whitespace-nowrap">
 //                             Нийт дүн
 //                           </th>
 //                         </tr>
@@ -1749,7 +1749,7 @@ export default function Burtgel() {
 //                                     {index + 1}
 //                                   </td>
 //                                   <td className="p-3 text-center">
-//                                     <div className="font-semibold text-slate-900">
+//                                     <div className=" text-slate-900">
 //                                       {item.ovog} {item.ner}
 //                                     </div>
 //                                     <div className="text-xs text-slate-500">
@@ -1757,7 +1757,7 @@ export default function Burtgel() {
 //                                     </div>
 //                                   </td>
 //                                   <td className="p-3 text-center text-slate-900">
-//                                     <div className="font-medium">
+//                                     <div className="">
 //                                       {item.toot || "-"}
 //                                     </div>
 //                                     <div className="text-xs text-slate-500">
@@ -1770,7 +1770,7 @@ export default function Burtgel() {
 //                                         setSelectedZardalRecord(item);
 //                                         setShowZardalModal(true);
 //                                       }}
-//                                       className="inline-flex items-center gap-2 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl transition-all text-sm font-medium"
+//                                       className="inline-flex items-center gap-2 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-2xl transition-all text-sm "
 //                                     >
 //                                       <span>
 //                                         {ashiglaltiinZardluud.length} зардлын
@@ -1780,7 +1780,7 @@ export default function Burtgel() {
 //                                     </button>
 //                                   </td>
 //                                   <td className="p-3 text-center">
-//                                     <div className="font-bold text-blue-600 text-lg">
+//                                     <div className=" text-blue-600 text-lg">
 //                                       {formatNumber(totalCharges, 0)}₮
 //                                     </div>
 //                                   </td>
@@ -1826,7 +1826,7 @@ export default function Burtgel() {
 //                   onClick={(e) => e.stopPropagation()}
 //                 >
 //                   <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-//                     <h2 className="text-xl font-bold text-slate-800">
+//                     <h2 className="text-xl  text-slate-800">
 //                       Ашиглалтын зардлын дэлгэрэнгүй
 //                     </h2>
 //                     <div className="flex items-center gap-2">
@@ -1857,22 +1857,22 @@ export default function Burtgel() {
 //                       <div className="text-sm text-slate-500 mb-1">
 //                         Оршин суугч
 //                       </div>
-//                       <div className="font-bold text-lg text-slate-900">
+//                       <div className=" text-lg text-slate-900">
 //                         {selectedZardalRecord.ovog} {selectedZardalRecord.ner}
 //                       </div>
 //                       <div className="text-sm text-slate-600 mt-2">
-//                         <span className="font-medium">СӨХ:</span>{" "}
+//                         <span className="">СӨХ:</span>{" "}
 //                         {selectedZardalRecord.soh}
 //                       </div>
 //                       <div className="text-sm text-slate-600">
-//                         <span className="font-medium">Байр:</span>{" "}
+//                         <span className="">Байр:</span>{" "}
 //                         {selectedZardalRecord.toot || "-"} |{" "}
-//                         <span className="font-medium">Давхар:</span>{" "}
+//                         <span className="">Давхар:</span>{" "}
 //                         {selectedZardalRecord.davkhar || "-"}
 //                       </div>
 
 //                       <div>
-//                         <h4 className="font-semibold text-slate-900 mb-3">
+//                         <h4 className=" text-slate-900 mb-3">
 //                           Зардлын жагсаалт
 //                         </h4>
 //                         <div className="space-y-2">
@@ -1900,7 +1900,7 @@ export default function Burtgel() {
 //                                 >
 //                                   <div className="flex items-center gap-3">
 //                                     <div
-//                                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold ${
+//                                       className={`w-8 h-8 rounded-full flex items-center justify-center text-sm  ${
 //                                         isExempted
 //                                           ? "bg-green-100 text-green-600"
 //                                           : "bg-blue-100 text-blue-600"
@@ -1909,11 +1909,11 @@ export default function Burtgel() {
 //                                       {index + 1}
 //                                     </div>
 //                                     <div>
-//                                       <span className="text-slate-700 font-medium">
+//                                       <span className="text-slate-700 ">
 //                                         {zardal.ner}
 //                                       </span>
 //                                       {isExempted && (
-//                                         <div className="text-xs text-green-600 font-medium mt-0.5">
+//                                         <div className="text-xs text-green-600  mt-0.5">
 //                                           Чөлөөлөгдсөн давхар
 //                                         </div>
 //                                       )}
@@ -1922,7 +1922,7 @@ export default function Burtgel() {
 //                                   <div className="text-right">
 //                                     {isExempted ? (
 //                                       <>
-//                                         <div className="font-bold text-green-600">
+//                                         <div className=" text-green-600">
 //                                           0₮
 //                                         </div>
 //                                         <div className="text-xs text-slate-400 line-through">
@@ -1930,7 +1930,7 @@ export default function Burtgel() {
 //                                         </div>
 //                                       </>
 //                                     ) : (
-//                                       <span className="font-bold text-slate-900">
+//                                       <span className=" text-slate-900">
 //                                         {formatNumber(charge, 0)}₮
 //                                       </span>
 //                                     )}
@@ -1944,10 +1944,10 @@ export default function Burtgel() {
 
 //                       <div className="pt-4 border-t border-gray-200">
 //                         <div className="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl shadow-sm">
-//                           <span className="text-lg font-semibold text-slate-900">
+//                           <span className="text-lg  text-slate-900">
 //                             Нийт дүн:
 //                           </span>
-//                           <span className="text-2xl font-bold text-blue-600">
+//                           <span className="text-2xl  text-blue-600">
 //                             {formatNumber(
 //                               calculateTotalChargesForResident(
 //                                 ashiglaltiinZardluud,

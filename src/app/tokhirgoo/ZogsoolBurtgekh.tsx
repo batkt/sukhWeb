@@ -179,7 +179,7 @@ function ZogsoolBurtgekh(
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <h3 className="text-base font-semibold text-[color:var(--panel-text)]">{title}</h3>
+        <h3 className="text-base  text-[color:var(--panel-text)]">{title}</h3>
         {description && <p className="text-xs text-[color:var(--muted-text)] mt-0.5">{description}</p>}
       </div>
     </div>
@@ -192,7 +192,7 @@ function ZogsoolBurtgekh(
         <SectionHeader icon={Info} title="Ерөнхий мэдээлэл" description="Зогсоолын нэр болон багтаамж" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+            <label className="block text-sm  text-[color:var(--panel-text)]">
               Зогсоолын нэр <span className="text-red-500">*</span>
             </label>
             <MTextInput
@@ -205,7 +205,7 @@ function ZogsoolBurtgekh(
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+            <label className="block text-sm  text-[color:var(--panel-text)]">
               Багтаамж <span className="text-red-500">*</span>
             </label>
             <MNumberInput
@@ -219,7 +219,7 @@ function ZogsoolBurtgekh(
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+            <label className="block text-sm  text-[color:var(--panel-text)]">
               Үндсэн тариф (₮) <span className="text-red-500">*</span>
             </label>
             <MNumberInput
@@ -239,7 +239,7 @@ function ZogsoolBurtgekh(
         <SectionHeader icon={CreditCard} title="Санхүүгийн тохиргоо" description="Дансны мэдээлэл" colorClass="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Үндсэн данс</label>
+            <label className="block text-sm  text-[color:var(--panel-text)]">Үндсэн данс</label>
             <MTextInput
               value={formData.zogsooliinDans}
               onChange={(e) => updateField("zogsooliinDans", e.currentTarget.value)}
@@ -249,7 +249,7 @@ function ZogsoolBurtgekh(
             />
           </div>
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Sticker данс (QR)</label>
+            <label className="block text-sm  text-[color:var(--panel-text)]">Sticker данс (QR)</label>
             <MTextInput
               value={formData.zogsooliinDansSticker}
               onChange={(e) => updateField("zogsooliinDansSticker", e.currentTarget.value)}
@@ -262,7 +262,7 @@ function ZogsoolBurtgekh(
         
         {formData.togtmolTulburEsekh && (
           <div className="mt-4 p-4 rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)] mb-2">Тогтмол төлбөрийн дүн</label>
+            <label className="block text-sm  text-[color:var(--panel-text)] mb-2">Тогтмол төлбөрийн дүн</label>
             <MNumberInput
               value={formData.togtmolTulburiinDun as number}
               onChange={(val) => updateField("togtmolTulburiinDun", val)}
@@ -280,7 +280,7 @@ function ZogsoolBurtgekh(
         <SectionHeader icon={Clock} title="Үйл ажиллагааны хугацаа" description="Автомат процесс болон устгах хугацаа" colorClass="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Гарах хугацаа (мин)</label>
+            <label className="block text-sm  text-[color:var(--panel-text)]">Гарах хугацаа (мин)</label>
             <MNumberInput
               value={formData.garakhTsag as number}
               onChange={(val) => updateField("garakhTsag", val)}
@@ -292,7 +292,7 @@ function ZogsoolBurtgekh(
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Авто гаргалт (цаг)</label>
+            <label className="block text-sm  text-[color:var(--panel-text)]">Авто гаргалт (цаг)</label>
             <MNumberInput
               value={formData.mashinGargakhKhugatsaa as number}
               onChange={(val) => updateField("mashinGargakhKhugatsaa", val)}
@@ -304,7 +304,7 @@ function ZogsoolBurtgekh(
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Устгах (хоног)</label>
+            <label className="block text-sm  text-[color:var(--panel-text)]">Устгах (хоног)</label>
             <MNumberInput
               value={formData.mashinUstgakhKhugatsaa as number}
               onChange={(val) => updateField("mashinUstgakhKhugatsaa", val)}
@@ -317,7 +317,7 @@ function ZogsoolBurtgekh(
         </div>
         
         <div className="mt-4 space-y-2">
-          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Гадна зогсоолын сонголт</label>
+          <label className="block text-sm  text-[color:var(--panel-text)]">Гадна зогсоолын сонголт</label>
           <MTextInput
             value={formData.gadnaZogsooliinId || ""}
             onChange={(e) => updateField("gadnaZogsooliinId", e.currentTarget.value || undefined)}
@@ -393,11 +393,11 @@ function ZogsoolBurtgekh(
               
               <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
                 <Activity className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-sm font-semibold text-[color:var(--panel-text)]">Групп #{index + 1}</span>
+                <span className="text-sm  text-[color:var(--panel-text)]">Групп #{index + 1}</span>
               </div>
 
               <div className="mb-4 space-y-2">
-                <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Цаг</label>
+                <label className="block text-sm  text-[color:var(--panel-text)]">Цаг</label>
                 <div className="flex items-center gap-3">
                   <MTextInput
                     type="time"
@@ -433,7 +433,7 @@ function ZogsoolBurtgekh(
                 {tariff.tariff?.map((item: any, itemIndex: number) => (
                   <div key={itemIndex} className="flex items-end gap-3 p-3 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
                     <div className="flex-1 space-y-2">
-                      <label className="block text-xs font-semibold text-[color:var(--panel-text)]">Минут</label>
+                      <label className="block text-xs  text-[color:var(--panel-text)]">Минут</label>
                       <MNumberInput
                         value={item.minut}
                         onChange={(val) => {
@@ -451,7 +451,7 @@ function ZogsoolBurtgekh(
                       <ChevronRight className="w-4 h-4 text-[color:var(--muted-text)]" />
                     </div>
                     <div className="flex-1 space-y-2">
-                      <label className="block text-xs font-semibold text-[color:var(--panel-text)]">Тариф (₮)</label>
+                      <label className="block text-xs  text-[color:var(--panel-text)]">Тариф (₮)</label>
                       <MNumberInput
                         value={item.tulbur}
                         onChange={(val) => {
@@ -501,7 +501,7 @@ function ZogsoolBurtgekh(
         {(!formData.tulburuud || formData.tulburuud.length === 0) && (
           <div className="text-center py-12 border-2 border-dashed border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)]">
             <Layers className="w-12 h-12 mx-auto mb-3 text-[color:var(--muted-text)]" />
-            <p className="text-sm font-semibold text-[color:var(--panel-text)]">Нэмэлт тарифын мэдээлэл хоосон байна</p>
+            <p className="text-sm  text-[color:var(--panel-text)]">Нэмэлт тарифын мэдээлэл хоосон байна</p>
             <p className="text-xs text-[color:var(--muted-text)] mt-1">Тариф нэмэх товчийг дарж шинэ шатлал үүсгэнэ үү</p>
           </div>
         )}
@@ -536,7 +536,7 @@ function ZogsoolBurtgekh(
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 pr-12">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Хаалганы таних нэр</label>
+                  <label className="block text-sm  text-[color:var(--panel-text)]">Хаалганы таних нэр</label>
                   <MTextInput
                     value={gate.ner}
                     onChange={(e) => {
@@ -550,7 +550,7 @@ function ZogsoolBurtgekh(
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Хөдөлгөөний төрөл</label>
+                  <label className="block text-sm  text-[color:var(--panel-text)]">Хөдөлгөөний төрөл</label>
                   <MSelect
                     value={gate.turul}
                     onChange={(val) => {
@@ -571,7 +571,7 @@ function ZogsoolBurtgekh(
                 <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3 pb-3 border-b border-[color:var(--surface-border)]">
                   <div className="flex items-center gap-2">
                     <Camera className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                    <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">Холболттой IP Камерууд</h4>
+                    <h4 className="text-sm  text-[color:var(--panel-text)]">Холболттой IP Камерууд</h4>
                   </div>
                   <Button
                     onClick={() => {
@@ -601,8 +601,8 @@ function ZogsoolBurtgekh(
                     <div key={camIndex} className="p-4 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
                       <div className="flex justify-between items-center mb-4 pb-3 border-b border-[color:var(--surface-border)]">
                         <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-semibold text-blue-600 dark:text-blue-400">#{camIndex + 1}</span>
-                          <span className="text-sm font-semibold text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
+                          <span className="w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs  text-blue-600 dark:text-blue-400">#{camIndex + 1}</span>
+                          <span className="text-sm  text-[color:var(--panel-text)]">Камер #{camIndex + 1}</span>
                         </div>
                         <button
                           onClick={() => {
@@ -619,7 +619,7 @@ function ZogsoolBurtgekh(
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-2">
-                          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">Камерын нэр</label>
+                          <label className="block text-sm  text-[color:var(--panel-text)]">Камерын нэр</label>
                           <MTextInput
                             value={cam.cameraName || ""}
                             onChange={(e) => {
@@ -633,7 +633,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">IP төрөл</label>
+                          <label className="block text-sm  text-[color:var(--panel-text)]">IP төрөл</label>
                           <MSelect
                             value={cam.cameraType || (gate.turul === "Орох" ? "entry" : "exit")}
                             onChange={(val) => {
@@ -647,7 +647,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">IP хаяг (V4)</label>
+                          <label className="block text-sm  text-[color:var(--panel-text)]">IP хаяг (V4)</label>
                           <MTextInput
                             value={cam.cameraIP || ""}
                             onChange={(e) => {
@@ -661,7 +661,7 @@ function ZogsoolBurtgekh(
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-sm font-semibold text-[color:var(--panel-text)]">TCP порт (Stream)</label>
+                          <label className="block text-sm  text-[color:var(--panel-text)]">TCP порт (Stream)</label>
                           <MNumberInput
                             value={cam.cameraPort || 80}
                             onChange={(val) => {
@@ -679,11 +679,11 @@ function ZogsoolBurtgekh(
                       <div className="mt-4 p-4 rounded-lg bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)]">
                         <div className="flex items-center gap-2 mb-4 pb-3 border-b border-[color:var(--surface-border)]">
                           <Settings className="w-4 h-4 text-[color:var(--muted-text)]" />
-                          <h5 className="text-sm font-semibold text-[color:var(--panel-text)]">Нэвтрэх эрх & Configuration</h5>
+                          <h5 className="text-sm  text-[color:var(--panel-text)]">Нэвтрэх эрх & Configuration</h5>
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">USERNAME</label>
+                            <label className="block text-sm  text-[color:var(--panel-text)]">USERNAME</label>
                             <MTextInput
                               value={cam.tokhirgoo?.USER || ""}
                               onChange={(e) => {
@@ -697,7 +697,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">PASSWORD</label>
+                            <label className="block text-sm  text-[color:var(--panel-text)]">PASSWORD</label>
                             <MTextInput
                               type="password"
                               value={cam.tokhirgoo?.PASSWD || ""}
@@ -712,7 +712,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">ROOT STREAM</label>
+                            <label className="block text-sm  text-[color:var(--panel-text)]">ROOT STREAM</label>
                             <MTextInput
                               value={cam.tokhirgoo?.ROOT || ""}
                               onChange={(e) => {
@@ -726,7 +726,7 @@ function ZogsoolBurtgekh(
                             />
                           </div>
                           <div className="space-y-2">
-                            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">HTTP PORT</label>
+                            <label className="block text-sm  text-[color:var(--panel-text)]">HTTP PORT</label>
                             <MNumberInput
                               value={cam.tokhirgoo?.PORT ? Number(cam.tokhirgoo.PORT) : undefined}
                               onChange={(val) => {
@@ -773,7 +773,7 @@ function ZogsoolBurtgekh(
               <div className="w-12 h-12 bg-[color:var(--surface-bg)] rounded-lg flex items-center justify-center mx-auto mb-3 border border-[color:var(--surface-border)]">
                 <DoorOpen className="w-6 h-6 text-[color:var(--muted-text)]" />
               </div>
-              <p className="text-sm font-semibold text-[color:var(--panel-text)]">Gate тохиргоо одоогоор хоосон байна</p>
+              <p className="text-sm  text-[color:var(--panel-text)]">Gate тохиргоо одоогоор хоосон байна</p>
               <p className="text-xs text-[color:var(--muted-text)] mt-1">Хаалга нэмэх товчийг дарж системд бүртгэнэ үү</p>
             </div>
           )}

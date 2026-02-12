@@ -670,7 +670,7 @@ const InvoiceModal = ({
                 </h3>
                 <div className="space-y-2 text-sm text-slate-600">
                   <p className="flex items-center gap-2">
-                    <span className="font-medium">Имэйл:</span>{" "}
+                    <span className="">Имэйл:</span>{" "}
                     {(() => {
                       const mailFromTokhirgoo = Array.isArray(
                         (baiguullaga as any)?.tokhirgoo?.mail,
@@ -689,7 +689,7 @@ const InvoiceModal = ({
                     })()}
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="font-medium">Утас:</span>{" "}
+                    <span className="">Утас:</span>{" "}
                     {(() => {
                       const utasFromTokhirgoo = Array.isArray(
                         (baiguullaga as any)?.tokhirgoo?.utas,
@@ -708,7 +708,7 @@ const InvoiceModal = ({
                     })()}
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="font-medium">Хаяг:</span>{" "}
+                    <span className="">Хаяг:</span>{" "}
                     {baiguullaga?.khayag || "-"}
                   </p>
                 </div>
@@ -716,7 +716,7 @@ const InvoiceModal = ({
               <div className="space-y-2">
                 <div className="inline-block text-left bg-transparent p-3 rounded-xl">
                   <p className="text-sm text-slate-600">
-                    <span className="font-medium">Огноо:</span>{" "}
+                    <span className="">Огноо:</span>{" "}
                     {formatDate(
                       contractData?.ognoo ||
                         nekhemjlekhData?.ognoo ||
@@ -728,7 +728,7 @@ const InvoiceModal = ({
                   {/* {cronData && (
                     <>
                       <p className="text-sm text-slate-600">
-                        <span className="font-medium">
+                        <span className="">
                           Нэхэмжлэх үүсгэх өдөр:
                         </span>{" "}
                         {cronData.nekhemjlekhUusgekhOgnoo || "-"}
@@ -742,7 +742,7 @@ const InvoiceModal = ({
             <div className="border border-blue-400 rounded-xl p-4 print-break">
               <div className="flex items-center gap-3 mb-3">
                 <div>
-                  <h3 className="font-medium text-slate-800">
+                  <h3 className=" text-slate-800">
                     {resident?.ovog} {resident?.ner}
                   </h3>
                 </div>
@@ -788,7 +788,7 @@ const InvoiceModal = ({
                       <td
                         className={`py-2 px-3 ${
                           row.discount
-                            ? "text-green-700 font-medium italic"
+                            ? "text-green-700  italic"
                             : ""
                         }`}
                       >
@@ -797,7 +797,7 @@ const InvoiceModal = ({
                       <td
                         className={`py-2 px-3 text-right ${
                           row.discount
-                            ? "text-green-700 font-semibold line-through"
+                            ? "text-green-700  line-through"
                             : ""
                         }`}
                       >
@@ -809,7 +809,7 @@ const InvoiceModal = ({
                       <td
                         className={`py-2 px-3 text-right ${
                           row.discount
-                            ? "text-green-700 font-semibold line-through"
+                            ? "text-green-700  line-through"
                             : ""
                         }`}
                       >
@@ -820,10 +820,10 @@ const InvoiceModal = ({
                 </tbody>
                 <tfoot className="bg-gray-50">
                   <tr>
-                    <td colSpan={2} className="py-2 px-3 font-medium">
+                    <td colSpan={2} className="py-2 px-3 ">
                       Нийт дүн:
                     </td>
-                    <td className="py-2 px-3 text-right font-medium">
+                    <td className="py-2 px-3 text-right ">
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
@@ -1477,7 +1477,7 @@ export default function InvoicingZardluud() {
                       ? stat.value
                       : String(stat.value)}
                 </div>
-                <div className="text-sm text-gray-600 font-medium leading-tight">
+                <div className="text-sm text-gray-600  leading-tight">
                   {stat.title}
                 </div>
               </div>
@@ -1524,7 +1524,7 @@ export default function InvoicingZardluud() {
                     if (selectedTurul) params.set("turul", selectedTurul);
                     router.push(`/tulbur?${params.toString()}`);
                   }}
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={!selectedTurul}
@@ -1561,7 +1561,7 @@ export default function InvoicingZardluud() {
                     if (selectedDavkhar) params.set("davkhar", selectedDavkhar);
                     router.push(`/tulbur?${params.toString()}`);
                   }}
-                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm  disabled:opacity-50 disabled:cursor-not-allowed"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={!selectedDavkhar}
@@ -1673,7 +1673,7 @@ export default function InvoicingZardluud() {
                               />
                             </svg>
                           </motion.div>
-                          <div className="text-gray-500 font-semibold text-lg">
+                          <div className="text-gray-500  text-lg">
                             Уншиж байна...
                           </div>
                           <div className="text-gray-400 text-sm">
@@ -1713,7 +1713,7 @@ export default function InvoicingZardluud() {
                               />
                             </svg>
                           </motion.div>
-                          <div className="text-gray-500 font-semibold text-lg">
+                          <div className="text-gray-500  text-lg">
                             Хайсан мэдээлэл алга байна
                           </div>
                           <div className="text-gray-400 text-sm">
@@ -1730,20 +1730,20 @@ export default function InvoicingZardluud() {
                         whileHover={{ scale: 1.01 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <td className="py-4 px-4 text-center font-medium">
+                        <td className="py-4 px-4 text-center ">
                           {index + 1}
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap text-left">
                           <div className="flex items-center gap-3">
                             <div className="min-w-0">
-                              <div className="font-semibold text-theme truncate">
+                              <div className=" text-theme truncate">
                                 {resident.ner}
                               </div>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm font-medium">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm ">
                             {resident.toot || "-"}
                           </span>
                         </td>
@@ -1771,7 +1771,7 @@ export default function InvoicingZardluud() {
                                   : "badge-neutral";
                             return (
                               <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${cls}`}
+                                className={`px-3 py-1 rounded-full text-xs  ${cls}`}
                               >
                                 {label}
                               </span>
@@ -1790,7 +1790,7 @@ export default function InvoicingZardluud() {
                                 if (resident.davkhar) params.set("davkhar", resident.davkhar);
                                 router.push(`/tulbur?${params.toString()}`);
                               }}
-                              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm font-medium"
+                              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm "
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               title="Төлбөр хуудас руу шилжих"
@@ -1844,7 +1844,7 @@ export default function InvoicingZardluud() {
               >
                 <div className="p-5 border-b border-gray-100 flex items-center justify-between rounded-t-3xl">
                   <div>
-                    <h3 className="text-xl font-semibold">Түүх</h3>
+                    <h3 className="text-xl ">Түүх</h3>
                     {historyResident && (
                       <p className="text-sm">
                         {historyResident.ovog} {historyResident.ner} —{" "}
@@ -1935,7 +1935,7 @@ export default function InvoicingZardluud() {
                                   <div>
                                     <div className="text-sm">
                                       Огноо:{" "}
-                                      <span className="font-medium">
+                                      <span className="">
                                         {dateStr
                                           ? new Date(
                                               dateStr,
@@ -1951,7 +1951,7 @@ export default function InvoicingZardluud() {
                                     </div>
                                     <div className="mt-1">
                                       <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${
                                           total === 0
                                             ? "badge-paid"
                                             : "badge-unpaid"
@@ -1971,7 +1971,7 @@ export default function InvoicingZardluud() {
                                     <span className="text-slate-500">
                                       Эхний үлдэгдэл:
                                     </span>{" "}
-                                    <span className="font-medium">
+                                    <span className="">
                                       {formatCurrency(
                                         Number(
                                           item?.medeelel?.ekhniiUldegdel ??
@@ -1985,7 +1985,7 @@ export default function InvoicingZardluud() {
                                     <span className="text-slate-500">
                                       Тайлбар:
                                     </span>{" "}
-                                    <span className="font-medium">
+                                    <span className="">
                                       {item?.medeelel?.ekhniiUldegdelUsgeer ||
                                         item?.ekhniiUldegdelUsgeer ||
                                         "-"}
@@ -2018,7 +2018,7 @@ export default function InvoicingZardluud() {
                                           <span className="truncate">
                                             {z.ner || z.name}
                                           </span>
-                                          <span className="font-medium">
+                                          <span className="">
                                             {formatNumber(amount)} ₮
                                           </span>
                                         </div>

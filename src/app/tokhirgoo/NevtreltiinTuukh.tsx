@@ -186,7 +186,7 @@ export default function NevtreltiinTuukh({
         <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl font-semibold text-[color:var(--panel-text)]">
+            <h2 className="text-xl  text-[color:var(--panel-text)]">
               {t("Нэвтрэлтийн түүх")}
             </h2>
           </div>
@@ -238,25 +238,25 @@ export default function NevtreltiinTuukh({
                 <table className="w-full text-left">
                   <thead className="bg-[color:var(--surface-hover)] sticky top-0">
                     <tr>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                         #
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Огноо
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Ажилтны нэр
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         IP хаяг
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Байршил
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
                         Хөтөч
                       </th>
-                      <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] !rounded-tr-lg">
+                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] !rounded-tr-lg">
                         Төхөөрөмж
                       </th>
                     </tr>

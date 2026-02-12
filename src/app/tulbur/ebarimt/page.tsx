@@ -445,25 +445,25 @@ export default function Ebarimt() {
                 <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
                   <thead className="z-10 bg-white dark:bg-gray-800">
                     <tr>
-                      <th className="p-1 text-xs font-semibold text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
                         №
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Огноо
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Гэрээний дугаар
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Төрөл
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         ДДТД
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Дүн
                       </th>
-                      <th className="p-1 text-xs font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit">
                         Үйлчилгээ
                       </th>
                     </tr>
@@ -492,7 +492,7 @@ export default function Ebarimt() {
                           </td>
                           <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              className={`px-2 py-1 rounded-full text-xs  ${
                                 item.type === "B2C_RECEIPT"
                                   ? "bg-green-500 text-green-800"
                                   : item.type === "B2B_RECEIPT"
@@ -510,7 +510,7 @@ export default function Ebarimt() {
                           <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
                             {item.ddtd || item.receiptId || "-"}
                           </td>
-                          <td className="p-1 text-right whitespace-nowrap font-semibold text-theme border-r border-[color:var(--surface-border)]">
+                          <td className="p-1 text-right whitespace-nowrap  text-theme border-r border-[color:var(--surface-border)]">
                             {formatNumber(item.total ?? 0, 0)} ₮
                           </td>
                           <td className="p-1 text-center text-theme whitespace-nowrap">

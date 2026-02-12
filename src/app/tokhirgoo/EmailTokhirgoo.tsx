@@ -140,7 +140,7 @@ const EmailTokhirgoo: React.FC<EmailTokhirgooProps> = ({
             <div className="flex justify-end mt-4">
               <button 
                 type="submit"
-                className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 dark:from-teal-600 dark:to-cyan-600 dark:hover:from-teal-700 dark:hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                className="px-6 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 dark:from-teal-600 dark:to-cyan-600 dark:hover:from-teal-700 dark:hover:to-cyan-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
                 style={{ borderRadius: '0.75rem' }}
               >
                 {t("Хадгалах")}

@@ -363,7 +363,7 @@ function AnketiinZagvar({
             <div
               className={`absolute -bottom-1 right-2 transition-all ${
                 khariult.jagsaalt.length > 0
-                  ? "font-medium text-pink-500"
+                  ? " text-pink-500"
                   : "text-slate-400"
               }`}
             >
@@ -469,7 +469,7 @@ export default function Page() {
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className="font-medium dark:text-slate-100">
+            <span className=" dark:text-slate-100">
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
@@ -514,7 +514,7 @@ export default function Page() {
             data-aos-duration="1000"
             data-aos-delay="300"
           >
-            <span className="font-medium dark:text-slate-100 lg:px-5">
+            <span className=" dark:text-slate-100 lg:px-5">
               {t("Анкетын загвар үүсгэх")}
             </span>
             <Form
@@ -613,10 +613,10 @@ export default function Page() {
             className="relative col-span-5 block h-full overflow-y-auto rounded-2xl pt-3 dark:bg-gray-900 shadow-md backdrop-blur-sm"
             style={{ height: "calc( 100vh - 8rem)" }}
           >
-            <header className="border-b border-gray-300 pb-5 font-medium dark:text-slate-100 lg:px-5">
+            <header className="border-b border-gray-300 pb-5  dark:text-slate-100 lg:px-5">
               {t("Анкет харах хэсэг")}
             </header>
-            <header className="border-b border-gray-300 px-6 py-1 text-xl font-medium uppercase text-slate-400 text-opacity-40 dark:text-white dark:text-opacity-40">
+            <header className="border-b border-gray-300 px-6 py-1 text-xl  uppercase text-slate-400 text-opacity-40 dark:text-white dark:text-opacity-40">
               {(data?.ner as string) || t("Анкетын загварын нэр")}
             </header>
             <Form
@@ -637,7 +637,7 @@ export default function Page() {
                           key={key}
                         >
                           <div className="flex gap-1 text-base">
-                            <p className="font-medium">{name + 1}.</p>
+                            <p className="">{name + 1}.</p>
                             {!!data?.asuultuud &&
                               (data.asuultuud as any)[name]?.asuult}
                           </div>

@@ -384,7 +384,7 @@ export default function OrlogoAvlagaPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
+          <label className="block text-sm  text-theme/80 mb-1.5">Оршин суугч</label>
           <input
             type="text"
             value={filters.orshinSuugch}
@@ -394,7 +394,7 @@ export default function OrlogoAvlagaPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
+          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
           <input
             type="text"
             value={filters.toot}
@@ -404,7 +404,7 @@ export default function OrlogoAvlagaPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
+          <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
           <input
             type="text"
             value={filters.davkhar}
@@ -414,7 +414,7 @@ export default function OrlogoAvlagaPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-          <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
+          <label className="block text-sm  text-theme/80 mb-1.5">Гэрээний дугаар</label>
           <input
             type="text"
             value={filters.gereeniiDugaar}
@@ -434,7 +434,7 @@ export default function OrlogoAvlagaPage() {
             setExpandedData(null);
             setCurrentPage(1);
           }}
-          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+          className={`px-4 py-2 rounded-xl  transition-all ${
             activeTab === "tulult"
               ? "neu-panel bg-white/20 border border-white/20"
               : "hover:menu-surface"
@@ -450,7 +450,7 @@ export default function OrlogoAvlagaPage() {
             setExpandedData(null);
             setCurrentPage(1);
           }}
-          className={`px-4 py-2 rounded-xl font-medium transition-all ${
+          className={`px-4 py-2 rounded-xl  transition-all ${
             activeTab === "avlaga"
               ? "neu-panel bg-white/20 border border-white/20"
               : "hover:menu-surface"
@@ -462,19 +462,19 @@ export default function OrlogoAvlagaPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="font-semibold mb-2">Нийт орлого</h3>
+          <h3 className=" mb-2">Нийт орлого</h3>
           <p className="text-2xl text-green-600">
             {formatNumber(totalOrlogo)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="font-semibold mb-2">Нийт зарлага</h3>
+          <h3 className=" mb-2">Нийт зарлага</h3>
           <p className="text-2xl text-red-600">
             {formatNumber(totalZarlaga)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="font-semibold mb-2">Үлдэгдэл</h3>
+          <h3 className=" mb-2">Үлдэгдэл</h3>
           <p
             className={`text-2xl ${
               totalUldegdel >= 0 ? "text-green-600" : "text-red-600"
@@ -491,31 +491,31 @@ export default function OrlogoAvlagaPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     ГД
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Давхар
                   </th>
-                  <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Тоот
                   </th>
                   {activeTab === "tulult" ? (
-                    <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                    <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                       Төлөлт
                     </th>
                   ) : (
                     <>
-                      <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                         Төлөх дүн
                       </th>
-                      <th className="z-10 p-3 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                      <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                         Төлсөн
                       </th>
                     </>
@@ -564,7 +564,7 @@ export default function OrlogoAvlagaPage() {
                               <button
                                 type="button"
                                 onClick={() => handleAmountClick(gd)}
-                                className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
+                                className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
                               >
                                 {isExpanded ? (
                                   <ChevronDown className="w-4 h-4" />
@@ -580,7 +580,7 @@ export default function OrlogoAvlagaPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
+                                  className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {isExpanded ? (
                                     <ChevronDown className="w-4 h-4" />
@@ -594,7 +594,7 @@ export default function OrlogoAvlagaPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleAmountClick(gd)}
-                                  className="text-theme font-medium hover:underline cursor-pointer inline-flex items-center gap-1"
+                                  className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
                                 >
                                   {formatNumber(getItemTulsun(item))} ₮
                                 </button>
@@ -618,7 +618,7 @@ export default function OrlogoAvlagaPage() {
                                 </div>
                               ) : expandedData ? (
                                 <div className="space-y-3">
-                                  <h4 className="font-medium text-sm">
+                                  <h4 className=" text-sm">
                                     {activeTab === "tulult"
                                       ? "Төлөлтийн дэлгэрэнгүй"
                                       : "Авлагын дэлгэрэнгүй"}{" "}
@@ -659,7 +659,7 @@ export default function OrlogoAvlagaPage() {
                                           </tr>
                                         )
                                       )}
-                                      <tr className="border-t-2 font-semibold">
+                                      <tr className="border-t-2 ">
                                         <td className="p-2" />
                                         <td className="p-2" />
                                         <td className="p-2" />

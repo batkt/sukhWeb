@@ -478,7 +478,7 @@ export default function DansniiKhuulga() {
                                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                               />
                             </svg>
-                            <div className="text-slate-500 font-medium">
+                            <div className="text-slate-500 ">
                               Хайсан мэдээлэл алга байна
                             </div>
                           </div>
@@ -487,7 +487,7 @@ export default function DansniiKhuulga() {
                     )}
                   </tbody>
                   <tfoot className="sticky bottom-0 z-30 bg-slate-50 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
-                    <tr className="text-theme font-bold">
+                    <tr className="text-theme ">
                       <td className="p-1 text-center whitespace-nowrap w-12 border-r border-[color:var(--surface-border)]"></td>
                       <td className="p-1 text-center whitespace-nowrap w-24 border-r border-[color:var(--surface-border)]"></td>
                       <td className="p-1 text-right pr-2 border-r border-[color:var(--surface-border)]">

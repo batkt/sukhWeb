@@ -463,7 +463,7 @@ export default function EbarimtTokhirgoo() {
     <div id="ebarimt-panel" className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 shadow-lg dark:shadow-indigo-900/20 rounded-2xl border border-indigo-200/50 dark:border-indigo-600/50">
       <div className="p-6 h-full">
         {isLoading ? (
-          <div className="p-8 text-center text-theme dark:text-white font-medium">
+          <div className="p-8 text-center text-theme dark:text-white ">
             {t("Ачааллаж байна…")}
           </div>
         ) : (
@@ -472,7 +472,7 @@ export default function EbarimtTokhirgoo() {
             {ebAshiglakh && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-theme mb-1">
+                  <label className="block text-sm  text-theme mb-1">
                     Татвар төлөгчийн дугаар (TIN)
                   </label>
                   <input
@@ -491,7 +491,7 @@ export default function EbarimtTokhirgoo() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label
-                      className="block text-sm font-medium text-theme mb-1"
+                      className="block text-sm  text-theme mb-1"
                       id="ebarimt-duureg"
                     >
                       Дүүрэг
@@ -520,7 +520,7 @@ export default function EbarimtTokhirgoo() {
 
                   <div>
                     <label
-                      className="block text-sm font-medium text-theme mb-1"
+                      className="block text-sm  text-theme mb-1"
                       id="ebarimt-horoo"
                     >
                       Хороо
@@ -551,7 +551,7 @@ export default function EbarimtTokhirgoo() {
             )}
             <div className="flex items-center p-4  rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
-                <div className="text-sm font-medium text-theme">
+                <div className="text-sm  text-theme">
                   И-Баримт ашиглах эсэх
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function EbarimtTokhirgoo() {
 
             {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
-                <div className="text-sm font-medium text-theme">
+                <div className="text-sm  text-theme">
                   И-Баримт 3.0 эсэх
                 </div>
               </div>
@@ -585,7 +585,7 @@ export default function EbarimtTokhirgoo() {
 
             <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
-                <div className="text-sm font-medium text-theme">
+                <div className="text-sm  text-theme">
                   И-Баримт автоматаар илгээх эсэх
                 </div>
               </div>
@@ -605,7 +605,7 @@ export default function EbarimtTokhirgoo() {
 
             {/* <div className="flex items-center p-4   rounded-xl shadow-sm border-l-2 border-l-blue-500">
               <div>
-                <div className="text-sm font-medium text-theme">
+                <div className="text-sm  text-theme">
                   И-Баримт нөат эсэх
                 </div>
               </div>

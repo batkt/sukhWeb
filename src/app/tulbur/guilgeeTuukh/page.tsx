@@ -690,7 +690,7 @@ const InvoiceModal = ({
       >
         <div className="invoice-modal h-full flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
-            <h2 className="text-xl font-bold text-slate-800">
+            <h2 className="text-xl  text-slate-800">
               Үйлчилгээний нэхэмжлэх
             </h2>
             <button
@@ -721,21 +721,21 @@ const InvoiceModal = ({
             {/* Нэхэмжлэгч (left) and Төлөгч (right) - matches nekhemjlekh header layout */}
             <div className="grid grid-cols-2 gap-4 print-break">
               <div className="rounded-xl border border-emerald-200 bg-transparent p-4">
-                <h3 className="text-sm font-semibold text-emerald-500 mb-3 flex items-center gap-2">
+                <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2">
                   <span className="inline-block w-1 h-4 rounded" />
                   Нэхэмжлэгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
-                  <p><span className="font-medium text-slate-500">Нэхэмжлэгч:</span> {baiguullaga?.ner || "-"}</p>
-                  <p><span className="font-medium text-slate-500">Утас:</span>{" "}
+                  <p><span className=" text-slate-500">Нэхэмжлэгч:</span> {baiguullaga?.ner || "-"}</p>
+                  <p><span className=" text-slate-500">Утас:</span>{" "}
                     {Array.isArray((baiguullaga as any)?.tokhirgoo?.utas)
                       ? (baiguullaga as any).tokhirgoo.utas[0]
                       : Array.isArray((baiguullaga as any)?.utas)
                         ? (baiguullaga as any).utas[0]
                         : (baiguullaga as any)?.utas || "-"}
                   </p>
-                  <p><span className="font-medium text-slate-500">Хаяг:</span> {baiguullaga?.khayag || "-"}</p>
-                  <p><span className="font-medium text-slate-500">Данс:</span>{" "}
+                  <p><span className=" text-slate-500">Хаяг:</span> {baiguullaga?.khayag || "-"}</p>
+                  <p><span className=" text-slate-500">Данс:</span>{" "}
                     {latestInvoice?.nekhemjlekhiinDans ||
                       latestInvoice?.dansniiDugaar ||
                       (baiguullaga as any)?.dans ||
@@ -745,24 +745,24 @@ const InvoiceModal = ({
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-transparent p-4">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2">
                   <span className="inline-block w-1 h-4 bg-slate-400 rounded" />
                   Төлөгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
-                  <p><span className="font-medium text-slate-500">Төлөгч:</span> {resident?.ovog} {resident?.ner}</p>
-                  <p><span className="font-medium text-slate-500">Гэрээний дугаар:</span> {contractData?.gereeniiDugaar || "-"}</p>
-                  <p><span className="font-medium text-slate-500">Байр:</span>{" "}
+                  <p><span className=" text-slate-500">Төлөгч:</span> {resident?.ovog} {resident?.ner}</p>
+                  <p><span className=" text-slate-500">Гэрээний дугаар:</span> {contractData?.gereeniiDugaar || "-"}</p>
+                  <p><span className=" text-slate-500">Байр:</span>{" "}
                     {contractData?.khayag ||
                       resident?.toots?.[0]?.bairniiNer ||
                       (resident as any)?.bairniiNer || "-"}
                   </p>
-                  <p><span className="font-medium text-slate-500">Орц:</span>{" "}
+                  <p><span className=" text-slate-500">Орц:</span>{" "}
                     {contractData?.orts ||
                       resident?.toots?.[0]?.orts ||
                       (resident as any)?.orts || "-"}
                   </p>
-                  <p><span className="font-medium text-slate-500">Тоот:</span>{" "}
+                  <p><span className=" text-slate-500">Тоот:</span>{" "}
                     {resident?.toots?.[0]?.toot || resident?.toot || contractData?.medeelel?.toot || "-"}
                   </p>
                 </div>
@@ -772,11 +772,11 @@ const InvoiceModal = ({
             {/* Invoice metadata: дугаар, огноо */}
             <div className="flex flex-wrap gap-4 text-sm text-slate-500 print-break">
               <span>
-                <span className="font-medium">Нэхэмжлэхийн дугаар:</span>{" "}
+                <span className="">Нэхэмжлэхийн дугаар:</span>{" "}
                 {contractData?.nekhemjlekhiinDugaar || latestInvoice?.nekhemjlekhiinDugaar || "-"}
               </span>
               <span>
-                <span className="font-medium">Огноо:</span>{" "}
+                <span className="">Огноо:</span>{" "}
                 {formatDate(contractData?.ognoo || latestInvoice?.ognoo || currentDate)}
               </span>
             </div>
@@ -801,7 +801,7 @@ const InvoiceModal = ({
                     <tr key={row._id}>
                       <td
                         className={`py-2 px-3 ${row.discount
-                          ? "text-green-700 font-medium italic"
+                          ? "text-green-700  italic"
                           : ""
                           }`}
                       >
@@ -809,7 +809,7 @@ const InvoiceModal = ({
                       </td>
                       <td
                         className={`py-2 px-3 text-right ${row.discount
-                          ? "text-green-700 font-semibold line-through"
+                          ? "text-green-700  line-through"
                           : ""
                           }`}
                       >
@@ -817,7 +817,7 @@ const InvoiceModal = ({
                       </td>
                       <td
                         className={`py-2 px-3 text-right ${row.discount
-                          ? "text-green-700 font-semibold line-through"
+                          ? "text-green-700  line-through"
                           : ""
                           }`}
                       >
@@ -828,22 +828,22 @@ const InvoiceModal = ({
                 </tbody>
                 <tfoot className="bg-gray-50 border-t border-gray-100">
                   <tr>
-                    <td className="py-2 px-3 font-medium text-slate-700">
+                    <td className="py-2 px-3  text-slate-700">
                       Нийт дүн:
                     </td>
                     <td className="py-2 px-3"></td>
-                    <td className="py-2 px-3 text-right font-bold text-theme">
+                    <td className="py-2 px-3 text-right  text-theme">
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
                   {/* Үлдэгдэл дүн: only show when user has made payment (balance differs from total) */}
                   {(totalPaidFromApi != null && totalPaidFromApi > 0) || Math.abs(uldegdelDun - totalSum) > 0.01 ? (
                     <tr>
-                      <td className="py-2 px-3 font-medium text-slate-700">
+                      <td className="py-2 px-3  text-slate-700">
                         Үлдэгдэл дүн:
                       </td>
                       <td className="py-2 px-3"></td>
-                      <td className="py-2 px-3 text-right font-bold text-theme">
+                      <td className="py-2 px-3 text-right  text-theme">
                         {formatNumber(uldegdelDun)} ₮
                       </td>
                     </tr>
@@ -2893,7 +2893,7 @@ export default function DansniiKhuulga() {
                       transition={{ duration: 0.2 }}
                       className="absolute top-full right-0 mt-2 w-64 menu-surface p-4 rounded-xl shadow-xl z-50 border border-[color:var(--surface-border)]"
                     >
-                      <h4 className="text-sm font-semibold mb-3 text-theme">
+                      <h4 className="text-sm  mb-3 text-theme">
                         Багана сонгох
                       </h4>
                       <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar">
@@ -3034,7 +3034,7 @@ export default function DansniiKhuulga() {
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                             />
                           </svg>
-                          <div className="text-slate-500 font-medium">
+                          <div className="text-slate-500 ">
                             Хайсан мэдээлэл алга байна
                           </div>
                         </div>
@@ -3274,7 +3274,7 @@ export default function DansniiKhuulga() {
 
                                 return (
                                   <td key={col.key} className={cellClass} style={style}>
-                                    <span className={(remaining < 0 ? "!text-emerald-600 dark:!text-emerald-400" : remaining > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme") + " font-medium"}>
+                                    <span className={(remaining < 0 ? "!text-emerald-600 dark:!text-emerald-400" : remaining > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme") + " "}>
                                       {formatNumber(remaining, 2)} ₮
                                     </span>
                                   </td>
@@ -3286,7 +3286,7 @@ export default function DansniiKhuulga() {
                                     <div className="flex items-center justify-center gap-2">
                                       <span
                                         className={
-                                          "px-2 py-0.5 rounded-full text-sm font-medium " +
+                                          "px-2 py-0.5 rounded-full text-sm  " +
                                           (isPaid
                                             ? "badge-paid"
                                             : tuluvLabel === "Төлөөгүй" ||
@@ -3408,7 +3408,7 @@ export default function DansniiKhuulga() {
                   )}
                 </tbody>
                 <tfoot className="sticky bottom-0 z-30 bg-slate-50 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
-                  <tr className="font-bold">
+                  <tr className="">
                     {visibleColumns.map((col, colIdx) => {
                       const alignClass =
                         col.align === "right" || col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
@@ -3530,7 +3530,7 @@ export default function DansniiKhuulga() {
               ref={khungulultRef}
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
-                <div className="font-semibold"></div>
+                <div className=""></div>
                 <button
                   onClick={() => setIsKhungulultOpen(false)}
                   className="btn-cancel btn-minimal"

@@ -55,7 +55,7 @@ export default function TemplatesModal({
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-slate-900">Гэрээний Загвар</h3>
+              <h3 className="text-xl  text-slate-900">Гэрээний Загвар</h3>
               <div className="flex items-center gap-2">
                 <button onClick={onCreateNew} className="btn-minimal btn-save">
                   Шинэ загвар
@@ -91,7 +91,7 @@ export default function TemplatesModal({
                   className="flex items-center justify-between p-3 rounded-2xl border"
                 >
                   <div>
-                    <div className="font-semibold text-theme">{z.ner}</div>
+                    <div className=" text-theme">{z.ner}</div>
                     <div className="text-sm text-theme">{z.turul}</div>
                   </div>
                   <div className="flex gap-2">

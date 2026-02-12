@@ -348,20 +348,20 @@ export default function PermissionsModal({
             {/* Quick Actions */}
             <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg-dark)] border-b border-[color:var(--surface-border)] flex items-center justify-between gap-2">
               <div className="text-[10px] sm:text-xs text-subtle">
-                <span className="font-semibold text-blue-600 dark:text-blue-400">{selectedPermissions.length}</span> эрх
+                <span className=" text-blue-600 dark:text-blue-400">{selectedPermissions.length}</span> эрх
               </div>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   onClick={selectAll}
-                  className="px-2 py-1 text-[10px] sm:text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                  className="px-2 py-1 text-[10px] sm:text-xs  text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                 >
                   Бүгд
                 </button>
                 <button
                   type="button"
                   onClick={deselectAll}
-                  className="px-2 py-1 text-[10px] sm:text-xs font-medium text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-[10px] sm:text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -439,7 +439,7 @@ export default function PermissionsModal({
                           </div>
                           
                           <div className="min-w-0 flex-1 flex items-center justify-between">
-                            <div className="font-semibold text-theme text-xs sm:text-sm truncate mr-2">
+                            <div className=" text-theme text-xs sm:text-sm truncate mr-2">
                               {item.label}
                             </div>
                             {renderLimitBadge(item.id)}
@@ -480,7 +480,7 @@ export default function PermissionsModal({
                               </div>
                               
                               <div className="flex-1 min-w-0 flex items-center justify-between">
-                                <div className="text-[10px] sm:text-xs font-medium text-theme truncate mr-2">
+                                <div className="text-[10px] sm:text-xs  text-theme truncate mr-2">
                                   {child.label}
                                 </div>
                                 {renderLimitBadge(child.id)}

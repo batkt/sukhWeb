@@ -32,7 +32,7 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
           >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-slate-900">
+              <h3 className="text-xl  text-slate-900">
                 Загварын урьдчилсан харалт
               </h3>
               <button

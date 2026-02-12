@@ -359,7 +359,7 @@ export default function AshiglaltiinZardluud() {
               <h2 className="text-lg font-black text-[color:var(--panel-text)] uppercase tracking-tight leading-none">
                 {editingItem ? "Зардал засах" : "Шинэ зардал нэмэх"}
               </h2>
-              <p className="text-[10px] font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">
+              <p className="text-[10px]  text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">
                 {formData.turul === "Тогтмол" ? "Тогтмол" : "Хувьсах"} зардал
               </p>
             </div>
@@ -369,7 +369,7 @@ export default function AshiglaltiinZardluud() {
               onClick={() => setView("list")}
               variant="subtle"
               size="sm"
-              className="px-6 h-10 text-slate-500 font-bold hover:bg-slate-100/50 rounded-xl"
+              className="px-6 h-10 text-slate-500  hover:bg-slate-100/50 rounded-xl"
             >
               Буцах
             </MButton>
@@ -402,7 +402,7 @@ export default function AshiglaltiinZardluud() {
                   });
                 }}
                 placeholder="Жишээ: Цэвэр ус..."
-                classNames={{ input: "rounded-xl h-11 font-bold text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
+                classNames={{ input: "rounded-xl h-11  text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
                 leftSection={<Activity className="w-4 h-4 text-theme opacity-50" />}
               />
             </div>
@@ -421,7 +421,7 @@ export default function AshiglaltiinZardluud() {
                   ]}
                   placeholder="Сонгох..."
                   searchable={false}
-                  classNames={{ input: "rounded-xl h-11 font-bold text-base" }}
+                  classNames={{ input: "rounded-xl h-11  text-base" }}
                   leftSection={<Layers className="w-4 h-4 text-theme opacity-50" />}
                 />
               </div>
@@ -453,7 +453,7 @@ export default function AshiglaltiinZardluud() {
                   }}
                   placeholder="0.00"
                   classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                  rightSection={<span className="text-slate-400  pr-3 text-xs italic">₮</span>}
                   leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
                 />
                 <p className="text-[9px] text-[color:var(--muted-text)] ml-1">Excel файлаас ирэх суурь дүн (заалтаас авна)</p>
@@ -481,7 +481,7 @@ export default function AshiglaltiinZardluud() {
                   }}
                   placeholder="0.00"
                   classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400 font-bold pr-3 text-xs italic">₮</span>}
+                  rightSection={<span className="text-slate-400  pr-3 text-xs italic">₮</span>}
                   leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
                 />
               </div>
@@ -529,7 +529,7 @@ export default function AshiglaltiinZardluud() {
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-[color:var(--panel-text)] uppercase tracking-tighter leading-none">Ашиглалтын зардал</h1>
-            <p className="text-[10px] sm:text-xs font-bold text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
+            <p className="text-[10px] sm:text-xs  text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
           </div>
         </div>
 
@@ -549,7 +549,7 @@ export default function AshiglaltiinZardluud() {
                 <button
                   id="zardal-add-btn"
                   type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white  text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(false)}
                 >
@@ -563,7 +563,7 @@ export default function AshiglaltiinZardluud() {
                 </div>
               ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length === 0 ? (
                 <div className="p-12 text-center">
-                  <p className="text-theme font-medium">Тогтмол зардал байхгүй байна</p>
+                  <p className="text-theme ">Тогтмол зардал байхгүй байна</p>
                   <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
                 </div>
               ) : (
@@ -571,7 +571,7 @@ export default function AshiglaltiinZardluud() {
                   <div className="overflow-y-auto custom-scrollbar max-h-[50vh]">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
-                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs  uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
                           <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
                           <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
                           <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
@@ -602,7 +602,7 @@ export default function AshiglaltiinZardluud() {
                                 className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
                                 <td className="py-2 px-2 text-theme">
-                                  <div className="font-semibold text-[13px] sm:text-sm max-w-[100px] sm:max-w-[120px] leading-tight break-words">{mur.ner}</div>
+                                  <div className=" text-[13px] sm:text-sm max-w-[100px] sm:max-w-[120px] leading-tight break-words">{mur.ner}</div>
                                 </td>
 
                                 <td className="py-2 px-2">
@@ -611,7 +611,7 @@ export default function AshiglaltiinZardluud() {
                                       {formatNumber(currentValue, 2)} ₮
                                     </div>
                                     {changed && (
-                                      <span className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter whitespace-nowrap">
+                                      <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
                                         Өөрчлөгдсөн
                                       </span>
                                     )}
@@ -703,7 +703,7 @@ export default function AshiglaltiinZardluud() {
                 <button
                   id="zardal-add-variable-btn"
                   type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 !text-white font-medium text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
+                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 !text-white  text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
                   style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(true)}
                 >
@@ -717,7 +717,7 @@ export default function AshiglaltiinZardluud() {
                 </div>
               ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length === 0 ? (
                 <div className="p-12 text-center">
-                  <p className="text-theme font-medium">Хувьсах зардал байхгүй байна</p>
+                  <p className="text-theme ">Хувьсах зардал байхгүй байна</p>
                   <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
                 </div>
               ) : (
@@ -725,7 +725,7 @@ export default function AshiglaltiinZardluud() {
                   <div className="overflow-y-auto custom-scrollbar max-h-[50vh]">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
-                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs font-semibold uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
+                        <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs  uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
                           <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
                           <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
                           <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
@@ -756,7 +756,7 @@ export default function AshiglaltiinZardluud() {
                                 className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
                                 <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                                  <div className="font-semibold text-[13px] sm:text-sm max-w-[120px] sm:max-w-[150px] md:max-w-[200px] leading-tight break-words">{mur.ner}</div>
+                                  <div className=" text-[13px] sm:text-sm max-w-[120px] sm:max-w-[150px] md:max-w-[200px] leading-tight break-words">{mur.ner}</div>
                                 </td>
 
                                 <td className="py-2 sm:py-3 px-2 sm:px-4">
@@ -765,7 +765,7 @@ export default function AshiglaltiinZardluud() {
                                       {formatNumber(currentValue, 0)} ₮
                                     </div>
                                     {changed && (
-                                      <span className="text-[9px] text-amber-600 font-bold uppercase tracking-tighter whitespace-nowrap">
+                                      <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
                                         Өөрчлөгдсөн
                                       </span>
                                     )}
@@ -850,7 +850,7 @@ export default function AshiglaltiinZardluud() {
             content: "modal-surface modal-responsive",
             header:
               "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
-            title: "text-theme font-semibold",
+            title: "text-theme ",
             close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
           }}
           overlayProps={{ opacity: 0.5, blur: 6 }}

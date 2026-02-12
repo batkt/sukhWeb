@@ -71,7 +71,7 @@ export default function SignUpPage() {
             <div className="space-y-2 group">
               <label
                 htmlFor="email"
-                className="text-sm font-medium group-focus-within:text-primary transition-colors"
+                className="text-sm  group-focus-within:text-primary transition-colors"
               >
                 И-мэйл хаяг
               </label>
@@ -89,7 +89,7 @@ export default function SignUpPage() {
             <div className="space-y-2 group">
               <label
                 htmlFor="password"
-                className="text-sm font-medium group-focus-within:text-primary transition-colors"
+                className="text-sm  group-focus-within:text-primary transition-colors"
               >
                 Нууц үг
               </label>
@@ -106,7 +106,7 @@ export default function SignUpPage() {
 
             <button
               type="submit"
-              className="w-full h-14 rounded-full bg-gradient-to-r from-primary to-primary/80 text-white font-semibold shadow-lg
+              className="w-full h-14 rounded-full bg-gradient-to-r from-primary to-primary/80 text-white  shadow-lg
                hover:from-primary/90 hover:to-primary/70 active:scale-95 focus:outline-none focus:ring-4 focus:ring-primary/40
                transition-all duration-300 ease-in-out"
             >
@@ -117,12 +117,12 @@ export default function SignUpPage() {
           <div className="mt-8 text-center">
             <button
               onClick={() => router.push("/login")}
-              className="text-sm text-muted-foreground hover:text-primary font-medium transition-colors duration-300
+              className="text-sm text-muted-foreground hover:text-primary  transition-colors duration-300
                focus:outline-none focus:underline"
             >
               Бүртгэлтэй юу?{" "}
               <span
-                className="text-primary font-semibold relative after:content-[''] after:block after:w-0 after:h-[2px] after:bg-primary
+                className="text-primary  relative after:content-[''] after:block after:w-0 after:h-[2px] after:bg-primary
                        after:transition-all after:duration-300 hover:after:w-full"
               >
                 Нэвтрэх

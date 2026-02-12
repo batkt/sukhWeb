@@ -66,7 +66,7 @@ function Baaz({ token }: BaazProps) {
             </div>
             <div className="p-6 flex items-center justify-between">
               <div>
-                <div className="text-theme dark:text-white font-semibold mb-1">
+                <div className="text-theme dark:text-white  mb-1">
                   {t("Системийн өгөгдөл")}
                 </div>
                 <p className="text-sm text-[color:var(--muted-text)] dark:text-gray-400">
@@ -74,7 +74,7 @@ function Baaz({ token }: BaazProps) {
                 </p>
               </div>
               <button
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
                 style={{ borderRadius: '0.75rem' }}
                 disabled={loading}
                 onClick={backTatya}
@@ -108,10 +108,10 @@ function Baaz({ token }: BaazProps) {
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-purple-200/50 dark:border-purple-600/30">
-                      <th className="px-4 py-3 text-center text-theme dark:text-white font-semibold">№</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white font-semibold">{t("Огноо")}</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white font-semibold">{t("Ажилтан")}</th>
-                      <th className="px-4 py-3 text-center text-theme dark:text-white font-semibold">{t("Хэмжээ")}</th>
+                      <th className="px-4 py-3 text-center text-theme dark:text-white ">№</th>
+                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Огноо")}</th>
+                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Ажилтан")}</th>
+                      <th className="px-4 py-3 text-center text-theme dark:text-white ">{t("Хэмжээ")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -128,7 +128,7 @@ function Baaz({ token }: BaazProps) {
                         </td>
                         <td className="px-4 py-3 text-center text-theme dark:text-gray-300">{row.ajiltniiNer}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          <span className=" text-purple-600 dark:text-purple-400">
                             {formatNumber(row.khemjee)} MB
                           </span>
                         </td>

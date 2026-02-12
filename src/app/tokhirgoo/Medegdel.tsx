@@ -71,7 +71,7 @@ const DugaarTile: React.FC<DugaarTileProps> = ({ baiguullaga }) => {
           key={index}
           className="p-4 hover:bg-gray-50 rounded-xl transition flex items-center justify-between border border-amber-200"
         >
-          <div className="font-medium text-slate-800">{mur}</div>
+          <div className=" text-slate-800">{mur}</div>
           <Popconfirm
             title="Утас устгах уу?"
             okText="Тийм"
@@ -126,7 +126,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-amber-200">
-          <h2 className="text-lg font-semibold text-slate-800">СМС тохиргоо</h2>
+          <h2 className="text-lg  text-slate-800">СМС тохиргоо</h2>
         </div>
         <div className="p-6 space-y-4">
           <FloatingInput
@@ -163,7 +163,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
 
       <div className="bg-transparent rounded-2xl shadow-md overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-amber-200">
-          <h2 className="text-lg font-semibold text-slate-800">
+          <h2 className="text-lg  text-slate-800">
             Мэдэгдэл илгээх дугаар
           </h2>
           <div

@@ -235,7 +235,7 @@ export default function AvlagiinNasjiltPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Оршин суугч</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Оршин суугч</label>
             <input
               type="text"
               value={filters.orshinSuugch}
@@ -245,7 +245,7 @@ export default function AvlagiinNasjiltPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Тоот</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
             <input
               type="text"
               value={filters.toot}
@@ -255,7 +255,7 @@ export default function AvlagiinNasjiltPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Давхар</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
             <input
               type="text"
               value={filters.davkhar}
@@ -265,7 +265,7 @@ export default function AvlagiinNasjiltPage() {
             />
           </div>
           <div className="p-3 rounded-xl">
-            <label className="block text-sm font-medium text-theme/80 mb-1.5">Гэрээний дугаар</label>
+            <label className="block text-sm  text-theme/80 mb-1.5">Гэрээний дугаар</label>
             <input
               type="text"
               value={filters.gereeniiDugaar}
@@ -288,13 +288,13 @@ export default function AvlagiinNasjiltPage() {
       {/* Summary Cards */}
       {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="font-semibold mb-2">Нийт авлага</h3>
+          <h3 className=" mb-2">Нийт авлага</h3>
           <p className="text-2xl  text-red-600">
             {formatNumber(totalAvlaga)} ₮
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="font-semibold mb-2">Нийт хувь</h3>
+          <h3 className=" mb-2">Нийт хувь</h3>
           <p className="text-2xl  text-blue-600">
             {formatNumber(totalKhuvi)}%
           </p>
@@ -308,53 +308,53 @@ export default function AvlagiinNasjiltPage() {
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap w-12">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap w-12">
                     №
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Гэрээний дугаар
                   </th>
                   
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Нэр
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Утас
                   </th>
-                  {/* <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Тоот
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Давхар
                   </th> */}
-                  {/* <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Байр
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Орц
                   </th> */}
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Огноо
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Төлөх огноо
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Нийт төлбөр
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Төлөв
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Хугацаа хэтэрсэн хоног
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Хугацаа хэтэрсэн сар
                   </th>
-                  {/* <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  {/* <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     Насжилтын ангилал
                   </th>
-                  <th className="z-10 p-2 text-xs font-semibold text-theme text-center whitespace-nowrap">
+                  <th className="z-10 p-2 text-xs  text-theme text-center whitespace-nowrap">
                     дугаар
                   </th> */}
                 </tr>
@@ -418,7 +418,7 @@ export default function AvlagiinNasjiltPage() {
                             : item.tulukhOgnoo}
                         </td>
                         <td className="p-2 text-right text-theme whitespace-nowrap">
-                          <span className="font-semibold text-red-600">
+                          <span className=" text-red-600">
                             {formatNumber(item.niitTulbur ?? item.avlaga ?? 0)}{" "}
                             ₮
                           </span>
@@ -434,7 +434,7 @@ export default function AvlagiinNasjiltPage() {
                         </td>
                         {/* <td className="p-2 text-center text-theme whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2 py-1 rounded-full text-xs  ${
                               item.nasjilt === "Шинэ"
                                 ? "badge-paid"
                                 : item.nasjilt === "Хуучин"

@@ -75,7 +75,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-guilgee"
               onClick={() => handleTabChange("guilgee")}
-              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
+              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
                 activeTab === "guilgee"
                   ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
                   : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
@@ -88,7 +88,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-dansKhuulga"
               onClick={() => handleTabChange("dansKhuulga")}
-              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
+              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
                 activeTab === "dansKhuulga"
                   ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
                   : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
@@ -101,7 +101,7 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-ebarimt"
               onClick={() => handleTabChange("ebarimt")}
-              className={`px-5 py-2 text-sm font-semibold rounded-2xl transition-all duration-300 ${
+              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
                 activeTab === "ebarimt"
                   ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
                   : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"

@@ -348,7 +348,7 @@ export default function KhyanaltFrontend() {
           <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-theme" />
         </div>
         <div>
-          <h1 className="text-lg sm:text-xl font-bold text-theme">Мэдэгдэл</h1>
+          <h1 className="text-lg sm:text-xl  text-theme">Мэдэгдэл</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">Харилцагчид руу мэдэгдэл илгээх</p>
         </div>
       </motion.header>
@@ -371,7 +371,7 @@ export default function KhyanaltFrontend() {
                   key={m}
                   type="button"
                   onClick={() => setTurul(m)}
-                  className={`min-w-0 flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs font-medium transition-all duration-200 truncate ${
+                  className={`min-w-0 flex items-center justify-center gap-1 py-2 px-1.5 sm:px-2 rounded-xl text-[11px] sm:text-xs  transition-all duration-200 truncate ${
                     turul === m
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
                       : "hover:bg-white/10"
@@ -385,7 +385,7 @@ export default function KhyanaltFrontend() {
           </div>
 
           <div className="flex items-center justify-between mt-2 mb-2">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+            <span className="text-xs  text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5" />
               Загвар
             </span>
@@ -430,7 +430,7 @@ export default function KhyanaltFrontend() {
           >
             <div className="flex flex-col gap-4 pt-2">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Нэр</label>
+                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Нэр</label>
                 <Input
                   placeholder="Загварын нэр"
                   value={templateName}
@@ -439,7 +439,7 @@ export default function KhyanaltFrontend() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Гарчиг</label>
+                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Гарчиг</label>
                 <Input
                   placeholder="Мэдэгдлийн гарчиг"
                   value={templateTitle}
@@ -448,7 +448,7 @@ export default function KhyanaltFrontend() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Агуулга</label>
+                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Агуулга</label>
                 <Input.TextArea
                   placeholder="Мэдэгдлийн агуулга"
                   value={templateBody}
@@ -458,7 +458,7 @@ export default function KhyanaltFrontend() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
+                <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
                 <input
                   ref={templateImageInputRef}
                   type="file"
@@ -478,7 +478,7 @@ export default function KhyanaltFrontend() {
                   <button
                     type="button"
                     onClick={() => templateImageInputRef.current?.click()}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
                   >
                     <ImagePlus className="w-4 h-4" />
                     Зураг сонгох
@@ -514,7 +514,7 @@ export default function KhyanaltFrontend() {
           className="neu-panel p-4 sm:p-5 flex flex-col min-w-0 lg:flex-1"
         >
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold flex items-center gap-2 text-slate-700 dark:text-white">
+            <h3 className="text-sm  flex items-center gap-2 text-slate-700 dark:text-white">
               <Users className="w-4 h-4 text-theme" />
               Харилцагчид
             </h3>
@@ -539,7 +539,7 @@ export default function KhyanaltFrontend() {
               <span className="text-slate-700 dark:text-slate-200">Бүгд сонгох</span>
             </label>
             {songogdsonKhariltsagch.length > 0 && (
-              <span className="text-xs text-theme font-medium">
+              <span className="text-xs text-theme ">
                 {songogdsonKhariltsagch.length} сонгогдсон
               </span>
             )}
@@ -590,11 +590,11 @@ export default function KhyanaltFrontend() {
                         readOnly
                         className="w-4 h-4 rounded shrink-0 pointer-events-none"
                       />
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-medium shrink-0">
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center text-white text-sm  shrink-0">
                         {mur.ner?.[0] || "?"}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm text-slate-800 dark:text-white truncate">
+                        <div className=" text-sm text-slate-800 dark:text-white truncate">
                           {mur.ner}
                         </div>
                         <div className="text-xs text-slate-500 truncate">
@@ -627,14 +627,14 @@ export default function KhyanaltFrontend() {
                 className="flex flex-col gap-4 flex-1 min-h-0"
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                  <span className="text-sm  text-slate-700 dark:text-slate-200">
                     Сонгогдсон: {songogdsonKhariltsagch.length}
                   </span>
                   <div className="flex flex-wrap gap-1.5 max-h-16 overflow-y-auto">
                     {songogdsonKhariltsagch.map((mur) => (
                       <span
                         key={mur._id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs font-medium"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 border border-white/20 text-xs "
                       >
                         <span className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-[10px]">
                           {mur.ner?.[0] || "?"}
@@ -688,7 +688,7 @@ export default function KhyanaltFrontend() {
                     <button
                       type="button"
                       onClick={() => attachInputRef.current?.click()}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs  bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
                     >
                       <ImagePlus className="w-4 h-4" />
                       Зураг нэмэх
@@ -738,7 +738,7 @@ export default function KhyanaltFrontend() {
                     onClick={send}
                     loading={loading}
                     disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
-                    className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white font-semibold border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
+                    className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white  border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
                   >
                     Илгээх
                   </Button>
@@ -755,7 +755,7 @@ export default function KhyanaltFrontend() {
                 <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
                   <MessageSquare className="w-8 h-8 text-slate-400" />
                 </div>
-                <h3 className="text-sm font-semibold text-slate-600 dark:text-slate-300 mb-1">
+                <h3 className="text-sm  text-slate-600 dark:text-slate-300 mb-1">
                   Харилцагч сонгоно уу
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px]">

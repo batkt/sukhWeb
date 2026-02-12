@@ -99,7 +99,7 @@ export default function TransactionsPage() {
 
   return (
     <div className="min-h-screen">
-      <h1 className="text-2xl font-semibold mb-4">Гүйлгээний түүх</h1>
+      <h1 className="text-2xl  mb-4">Гүйлгээний түүх</h1>
 
       <ReportsControls
         dateRange={dateRange}

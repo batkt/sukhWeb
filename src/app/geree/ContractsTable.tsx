@@ -138,7 +138,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     </th>
                   );
                 })}
-                <th className="p-1 text-sm font-semibold text-theme text-center whitespace-nowrap bg-inherit">
+                <th className="p-1 text-sm  text-theme text-center whitespace-nowrap bg-inherit">
                   Үйлдэл
                 </th>
               </tr>

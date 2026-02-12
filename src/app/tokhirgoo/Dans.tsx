@@ -47,11 +47,11 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
     <div className="flex items-center flex-col justify-between bg-white/50 dark:bg-gray-800/30 rounded-xl shadow-md hover:shadow-lg dark:shadow-gray-900/20 dark:hover:shadow-gray-900/40 p-4 mb-3 transition-all duration-300 border border-gray-200/50 dark:border-gray-700/50">
       <div className="flex justify-between flex-col sm:flex-row w-full gap-3">
         <div>
-          <div className="font-semibold text-theme dark:text-white text-sm mb-1">{t("Данс")}</div>
+          <div className=" text-theme dark:text-white text-sm mb-1">{t("Данс")}</div>
           <div className="text-theme dark:text-gray-300 font-mono">{data.dugaar}</div>
         </div>
         <div className="sm:text-right">
-          <div className="font-semibold text-theme dark:text-white text-sm mb-1">{t("Дансны нэр")}</div>
+          <div className=" text-theme dark:text-white text-sm mb-1">{t("Дансны нэр")}</div>
           <div className="text-theme dark:text-gray-300 mb-3">{data.dansniiNer}</div>
           <div className="flex justify-end gap-2">
             <Popover
@@ -235,7 +235,7 @@ function Dans() {
           <h2 className="text-lg  text-theme dark:text-white">{title}</h2>
           <button
             onClick={() => openAdd(bankKey)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-700 dark:hover:to-cyan-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-700 dark:hover:to-cyan-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
             style={{ borderRadius: '0.75rem' }}
             aria-label={t("Нэмэх")}
           >
@@ -244,7 +244,7 @@ function Dans() {
         </div>
 
         <div className="flex items-center justify-between mb-4 p-3 bg-white/50 dark:bg-gray-800/30 rounded-xl">
-          <span className="font-medium text-theme dark:text-white">{t("Corporate ашиглах эсэх")}</span>
+          <span className=" text-theme dark:text-white">{t("Corporate ашиглах эсэх")}</span>
           <Switch
             checked={corporateState.corporateAshiglakhEsekh || false}
             onChange={(event) =>
@@ -282,12 +282,12 @@ function Dans() {
             />
             <button 
               onClick={checkTdbConnection} 
-              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-700 dark:hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg"
+              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-700 dark:hover:to-teal-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg"
               style={{ borderRadius: '0.75rem' }}
             >
               {loadingCheck ? <Loader size="sm" /> : t("Шалгах")}
             </button>
-            {tdbMessage && <div className="text-green-600 dark:text-green-400 font-medium">{tdbMessage}</div>}
+            {tdbMessage && <div className="text-green-600 dark:text-green-400 ">{tdbMessage}</div>}
           </div>
         )}
 
@@ -310,7 +310,7 @@ function Dans() {
 
         <div className="flex justify-end mt-4">
           <button
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
             style={{ borderRadius: '0.75rem' }}
             onClick={() => saveBank(bankKey)}
           >

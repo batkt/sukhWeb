@@ -866,13 +866,13 @@ const TulburTootsoo: React.FC = () => {
                       <table className="table-ui text-sm min-w-full">
                         <thead>
                           <tr className="text-theme">
-                            <th className="p-3 text-xs font-semibold text-center">
+                            <th className="p-3 text-xs  text-center">
                               #
                             </th>
                             {gereeniiColumn.map((col) => (
                               <th
                                 key={col.title as string}
-                                className="p-3 text-xs font-semibold text-center"
+                                className="p-3 text-xs  text-center"
                               >
                                 {typeof col.title === "function"
                                   ? col.title({})
@@ -957,13 +957,13 @@ const TulburTootsoo: React.FC = () => {
                         <table className="table-ui text-sm min-w-full">
                           <thead>
                             <tr className="text-theme">
-                              <th className="p-3 text-xs font-semibold text-center">
+                              <th className="p-3 text-xs  text-center">
                                 #
                               </th>
                               {gereeniiColumn.map((col) => (
                                 <th
                                   key={col.title as string}
-                                  className="p-3 text-xs font-semibold text-center"
+                                  className="p-3 text-xs  text-center"
                                 >
                                   {typeof col.title === "function"
                                     ? col.title({})

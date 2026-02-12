@@ -109,7 +109,7 @@ const CustomTagComponent = ({ node, deleteNode }: NodeViewProps) => {
   return (
     <NodeViewWrapper
       as="span"
-      className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded border text-xs font-medium cursor-move select-none bg-[color:var(--glass-tint)] text-[color:var(--panel-text)] border-[color:var(--glass-border)]"
+      className="inline-flex items-center gap-1 px-2 py-0.5 mx-0.5 rounded border text-xs  cursor-move select-none bg-[color:var(--glass-tint)] text-[color:var(--panel-text)] border-[color:var(--glass-border)]"
       draggable="true"
       data-drag-handle
     >
@@ -485,7 +485,7 @@ export default function ContractEditor({
       {/* Sidebar */}
       <div className="w-full md:w-80 shrink-0 neu-panel rounded-2xl flex flex-col min-h-0 overflow-hidden">
         <div className="p-4 border-b border-[color:var(--surface-border)]">
-          <h3 className="font-semibold text-[color:var(--panel-text)]">
+          <h3 className=" text-[color:var(--panel-text)]">
             Хувьсагчид
           </h3>
           <p className="text-xs text-[color:var(--muted-text)] mt-1">
@@ -498,7 +498,7 @@ export default function ContractEditor({
             <div key={key} className="mb-2">
               <button
                 onClick={() => toggleCategory(key)}
-                className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-[color:var(--panel-text)] hover:bg-[color:var(--btn-bg-hover)] rounded-2xl"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm  text-[color:var(--panel-text)] hover:bg-[color:var(--btn-bg-hover)] rounded-2xl"
               >
                 <span>{category.label}</span>
                 {openCategories[key] ? (
@@ -535,7 +535,7 @@ export default function ContractEditor({
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-[color:var(--panel-text)]">
+          <h1 className="text-lg  text-[color:var(--panel-text)]">
             {isEditMode ? "Гэрээний загвар засах" : "Гэрээний загвар үүсгэх"}
           </h1>
         </div>
@@ -546,7 +546,7 @@ export default function ContractEditor({
             className="w-full px-4 py-3 flex items-center justify-between hover:bg-[color:var(--btn-bg-hover)] transition-colors"
           >
             <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-[color:var(--panel-text)]">
+              <h3 className="text-sm  text-[color:var(--panel-text)]">
                 Загварын мэдээлэл
               </h3>
               {!isFormOpen && templateName && (
@@ -569,7 +569,7 @@ export default function ContractEditor({
             <div className="px-4 pb-4">
               <div className="max-w-4xl mx-auto space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                  <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                     Загварын нэр *
                   </label>
                   <input
@@ -581,7 +581,7 @@ export default function ContractEditor({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                  <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                     Тайлбар
                   </label>
                   <input
@@ -593,7 +593,7 @@ export default function ContractEditor({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
+                  <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                     Төрөл
                   </label>
                   <input
@@ -719,7 +719,7 @@ export default function ContractEditor({
             {/* Header Section */}
             <div className="flex justify-between items-start gap-8 pb-4 mb-4 border-b border-[color:var(--surface-border)]">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
+                <label className="block text-xs  text-[color:var(--muted-text)] mb-2">
                   Зүүн толгой
                 </label>
                 <div
@@ -733,7 +733,7 @@ export default function ContractEditor({
                 </div>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
+                <label className="block text-xs  text-[color:var(--muted-text)] mb-2">
                   Баруун толгой
                 </label>
                 <div
@@ -762,7 +762,7 @@ export default function ContractEditor({
             {/* Footer Section */}
             <div className="flex justify-between items-start gap-8 pt-4 mt-6 border-t border-[color:var(--surface-border)]">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
+                <label className="block text-xs  text-[color:var(--muted-text)] mb-2">
                   Зүүн хөл
                 </label>
                 <div
@@ -776,7 +776,7 @@ export default function ContractEditor({
                 </div>
               </div>
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-[color:var(--muted-text)] mb-2">
+                <label className="block text-xs  text-[color:var(--muted-text)] mb-2">
                   Баруун хөл
                 </label>
                 <div

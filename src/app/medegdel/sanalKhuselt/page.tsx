@@ -659,7 +659,7 @@ export default function SanalKhuselt() {
                   : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
               }`}
             >
-              <div className="text-lg font-semibold">{dashboardCounts.all}</div>
+              <div className="text-lg ">{dashboardCounts.all}</div>
               <div className="text-[10px] opacity-80">{t("Бүгд")}</div>
             </button>
             <button
@@ -671,7 +671,7 @@ export default function SanalKhuselt() {
                   : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
               }`}
             >
-              <div className="text-lg font-semibold">{dashboardCounts.shiidegdsen}</div>
+              <div className="text-lg ">{dashboardCounts.shiidegdsen}</div>
               <div className="text-[10px] opacity-80">{t("Шийдэгдсэн")}</div>
             </button>
             <button
@@ -683,7 +683,7 @@ export default function SanalKhuselt() {
                   : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
               }`}
             >
-              <div className="text-lg font-semibold">{dashboardCounts.gomdol}</div>
+              <div className="text-lg ">{dashboardCounts.gomdol}</div>
               <div className="text-[10px] opacity-80">{t("Гомдол")}</div>
             </button>
             <button
@@ -695,7 +695,7 @@ export default function SanalKhuselt() {
                   : "border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] hover:bg-[color:var(--surface-hover)] text-theme"
               }`}
             >
-              <div className="text-lg font-semibold">{dashboardCounts.sanal}</div>
+              <div className="text-lg ">{dashboardCounts.sanal}</div>
               <div className="text-[10px] opacity-80">{t("Санал")}</div>
             </button>
           </div>
@@ -775,7 +775,7 @@ export default function SanalKhuselt() {
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px] font-medium tracking-wide border ${
+                          className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${
                             (item.turul?.toLowerCase() || "").includes("sanal") || (item.turul ?? "").includes("санал")
                               ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
                               : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
@@ -784,16 +784,16 @@ export default function SanalKhuselt() {
                           {turulToLabel(item.turul)}
                         </span>
                         <span
-                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-2xl text-[10px] font-medium tracking-wide border ${status.bg} ${status.color} ${status.border} bg-opacity-50`}
+                          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${status.bg} ${status.color} ${status.border} bg-opacity-50`}
                         >
                           {status.label}
                         </span>
                       </div>
-                      <span className="text-[10px] text-theme/50 font-medium">
+                      <span className="text-[10px] text-theme/50 ">
                         {moment(item.createdAt).fromNow()}
                       </span>
                     </div>
-                    <h3 className={`text-sm font-semibold mb-1 line-clamp-1 ${isSelected ? "text-blue-700 dark:text-blue-300" : "text-theme"}`}>
+                    <h3 className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-blue-700 dark:text-blue-300" : "text-theme"}`}>
                       {item.title}
                     </h3>
                     <p className="text-xs text-theme/60 line-clamp-2 leading-relaxed">
@@ -883,7 +883,7 @@ export default function SanalKhuselt() {
                         >
                           {(pendingStatusChange.newStatus === "done" || pendingStatusChange.newStatus === "rejected") && (
                             <div>
-                              <label className="block text-xs font-medium text-theme/70 mb-1.5">
+                              <label className="block text-xs  text-theme/70 mb-1.5">
                                 {t("Хариу тайлбар")} {pendingStatusChange.newStatus === "rejected" && `(${t("Татгалзсан шалтгаан")})`}
                               </label>
                               <textarea
@@ -903,13 +903,13 @@ export default function SanalKhuselt() {
                           <div className="flex gap-2">
                             <button
                               onClick={confirmStatusChange}
-                              className="flex-1 py-1.5 px-3 bg-blue-600 !text-white text-xs font-semibold rounded-2xl shadow-sm hover:bg-blue-700 transition-colors"
+                              className="flex-1 py-1.5 px-3 bg-blue-600 !text-white text-xs  rounded-2xl shadow-sm hover:bg-blue-700 transition-colors"
                             >
                               {t("Батлах")}
                             </button>
                             <button
                               onClick={() => { setPendingStatusChange(null); setTailbarText(""); }}
-                              className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs font-semibold rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
+                              className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs  rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
                             >
                               {t("Болих")}
                             </button>

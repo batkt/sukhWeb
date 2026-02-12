@@ -404,7 +404,7 @@ export function useGereeData(
         
         return React.createElement(
           "span",
-          { className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${statusClass}` },
+          { className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs  ${statusClass}` },
           status || "Идэвхтэй"
         );
       }
@@ -449,8 +449,8 @@ export function useGereeData(
         
         // Apply color based on status with !important to override table styles
         const dateClass = isCancelled 
-          ? "!text-red-600 dark:!text-red-400 font-medium"
-          : "!text-green-600 dark:!text-green-400 font-medium";
+          ? "!text-red-600 dark:!text-red-400 "
+          : "!text-green-600 dark:!text-green-400 ";
         
         if (isCancelled) {
           // Show only cancelled date for cancelled contracts
