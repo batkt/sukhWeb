@@ -30,7 +30,6 @@ export const BuildingProvider = ({
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("selectedBuildingId");
       if (saved && saved !== "null" && saved !== "undefined") {
-        console.log("🚀 Initial state from localStorage:", saved);
         return saved;
       }
     }
@@ -44,11 +43,8 @@ export const BuildingProvider = ({
     // Only initialize once
     if (hasInitializedRef.current) return;
 
-    console.log("🔄 BuildingContext: Initializing building selection...");
-
     // Priority 1: If we already have a value (from localStorage in useState initializer), use it
     if (selectedBuildingId) {
-      console.log("✅ Already have building from initial state:", selectedBuildingId);
       hasInitializedRef.current = true;
       setIsInitialized(true);
       return;
@@ -56,9 +52,7 @@ export const BuildingProvider = ({
 
     // Priority 2: localStorage (user's last selection - persists across pages)
     const savedBuildingId = localStorage.getItem("selectedBuildingId");
-    console.log("📦 localStorage value:", savedBuildingId);
     if (savedBuildingId && savedBuildingId !== "null" && savedBuildingId !== "undefined") {
-      console.log("✅ Using localStorage building:", savedBuildingId);
       setSelectedBuildingIdState(savedBuildingId);
       hasInitializedRef.current = true;
       setIsInitialized(true);
@@ -67,7 +61,6 @@ export const BuildingProvider = ({
 
     // Priority 3: ajiltan's defaultBarilga (from real-time API)
     if (ajiltan?.defaultBarilga) {
-      console.log("✅ Using ajiltan defaultBarilga:", ajiltan.defaultBarilga);
       setSelectedBuildingIdState(ajiltan.defaultBarilga);
       localStorage.setItem("selectedBuildingId", ajiltan.defaultBarilga);
       hasInitializedRef.current = true;
@@ -77,7 +70,6 @@ export const BuildingProvider = ({
 
     // Priority 4: barilgiinId from cookies (already set during login)
     if (barilgiinId) {
-      console.log("✅ Using barilgiinId from cookies:", barilgiinId);
       setSelectedBuildingIdState(barilgiinId);
       localStorage.setItem("selectedBuildingId", barilgiinId);
       hasInitializedRef.current = true;
@@ -90,7 +82,6 @@ export const BuildingProvider = ({
       const firstBuilding = baiguullaga.barilguud[0];
       const bid = String(firstBuilding?._id || "");
       if (bid) {
-        console.log("✅ Using first building from list:", bid);
         setSelectedBuildingIdState(bid);
         localStorage.setItem("selectedBuildingId", bid);
         hasInitializedRef.current = true;
@@ -102,7 +93,6 @@ export const BuildingProvider = ({
     // Fallback: If we have ajiltan loaded (auth complete) but no buildings,
     // still mark as initialized so pages don't wait forever
     if (ajiltan && baiguullaga) {
-      console.log("⚠️ No buildings available, marking as initialized");
       hasInitializedRef.current = true;
       setIsInitialized(true);
     }
@@ -118,17 +108,14 @@ export const BuildingProvider = ({
   const setSelectedBuildingId = (id: string | null) => {
     if (id === selectedBuildingId) return;
 
-    console.log("🏢 BuildingContext: Setting building to:", id);
     setSelectedBuildingIdState(id);
     hasInitializedRef.current = true;
 
     // Save to localStorage immediately for instant persistence across pages
     if (id) {
       localStorage.setItem("selectedBuildingId", id);
-      console.log("💾 Saved to localStorage:", id);
     } else {
       localStorage.removeItem("selectedBuildingId");
-      console.log("🗑️ Removed from localStorage");
     }
 
     if (id) {
@@ -138,17 +125,12 @@ export const BuildingProvider = ({
         ajiltanMutate(updatedAjiltan);
         
         // Persist to backend so it survives page navigation (fire and forget)
-        console.log("📡 Persisting to backend...");
         updateMethod("ajiltan", token, {
           _id: ajiltan._id,
           defaultBarilga: id,
-        })
-          .then(() => {
-            console.log("✅ Successfully persisted to backend");
-          })
-          .catch((error) => {
-            console.error("❌ Failed to persist building selection:", error);
-          });
+        }).catch((error) => {
+          console.error("Failed to persist building selection:", error);
+        });
       }
     } else {
       if (ajiltan && ajiltan.defaultBarilga) {
@@ -161,7 +143,7 @@ export const BuildingProvider = ({
           _id: ajiltan._id,
           defaultBarilga: null,
         }).catch((error) => {
-          console.error("❌ Failed to clear building selection:", error);
+          console.error("Failed to clear building selection:", error);
         });
       }
     }

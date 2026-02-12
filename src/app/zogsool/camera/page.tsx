@@ -416,7 +416,6 @@ export default function Camera() {
     if (!ip) return;
     // Call local .NET service directly as requested
     axios.get(`http://localhost:5000/api/neeye/${ip}`)
-      .then(() => console.log(`Gate opened locally: ${ip}`))
       .catch((err) => {
         console.error("Local gate error, falling back to server:", err);
         if (token) {
@@ -1263,10 +1262,6 @@ export default function Camera() {
                                   payHistory = [];
                                 }
                                 
-                                // Debug: log to see what we're getting
-                                if (payHistory.length > 0 && process.env.NODE_ENV === 'development') {
-                                  console.log('Payment History:', payHistory);
-                                }
                                 // ... (labels logic) ...
                                 const labels: Record<string, string> = { 
                                   belen: "Бэлэн", cash: "Бэлэн",

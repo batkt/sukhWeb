@@ -155,28 +155,26 @@ export function useParkingSocket({
 
     // Connection events
     socketInstance.on('connect', () => {
-      console.log('✅ Parking Socket.IO connected:', socketInstance.id);
       setIsConnected(true);
       setConnectionError(null);
     });
 
     socketInstance.on('disconnect', (reason) => {
-      console.log('❌ Parking Socket.IO disconnected:', reason);
       setIsConnected(false);
     });
 
     socketInstance.on('connect_error', (error) => {
-      console.error('❌ Parking Socket.IO connection error:', error);
+      console.error('Parking Socket.IO connection error:', error);
       setConnectionError(error);
       setIsConnected(false);
     });
 
-    socketInstance.on('reconnect_attempt', (attemptNumber) => {
-      console.log(`🔄 Parking Socket.IO reconnecting... Attempt ${attemptNumber}`);
+    socketInstance.on('reconnect_attempt', () => {
+      // Reconnecting...
     });
 
     socketInstance.on('reconnect_failed', () => {
-      console.error('❌ Parking Socket.IO reconnection failed');
+      console.error('Parking Socket.IO reconnection failed');
       setConnectionError(new Error('Failed to reconnect to parking server'));
     });
 
@@ -198,7 +196,6 @@ export function useParkingSocket({
     // Listen for new parking entries - Organization level (Global)
     const orgEvent = `parkingEntry/${baiguullagiinId}`;
     socketInstance.on(orgEvent, (data: ParkingEntry) => {
-      console.log('📥 New parking entry (global):', data);
       if (data.uilchluulegch) {
         updateEntries(data.uilchluulegch);
       }
@@ -208,7 +205,6 @@ export function useParkingSocket({
     if (barilgiinId) {
       const buildingEvent = `parkingEntry/${baiguullagiinId}/${barilgiinId}`;
       socketInstance.on(buildingEvent, (data: ParkingEntry) => {
-        console.log('📥 New parking entry (building):', data);
         if (data.uilchluulegch) {
           updateEntries(data.uilchluulegch);
         }
@@ -221,8 +217,6 @@ export function useParkingSocket({
             if (cam.cameraType === "entry") {
                 const entryEvent = `zogsoolOroh${baiguullagiinId}${cam.cameraIP}`;
                 socketInstance.on(entryEvent, (data: any) => {
-                    console.log(`📥 Camera Entry [${cam.cameraIP}]:`, data);
-                    // Payload is { ..., uilchluulegch: ... }
                     if (data.uilchluulegch) {
                          updateEntries(data.uilchluulegch);
                     }
@@ -230,15 +224,12 @@ export function useParkingSocket({
             } else if (cam.cameraType === "exit") {
                 const exitEvent = `zogsoolGarah${baiguullagiinId}${cam.cameraIP}`;
                 socketInstance.on(exitEvent, (data: Uilchluulegch) => {
-                    console.log(`📥 Camera Exit [${cam.cameraIP}]:`, data);
-                     // Payload is the record itself
                     updateEntries(data);
                 });
 
                 const tulsunEvent = `zogsoolGarahTulsun${baiguullagiinId}${cam.cameraIP}`;
-                 socketInstance.on(tulsunEvent, (data: any) => {
-                    console.log(`📥 Camera Paid Exit [${cam.cameraIP}]:`, data);
-                    // This event might not carry the full record, but we can log it
+                 socketInstance.on(tulsunEvent, () => {
+                    // Camera paid exit event
                 });
             }
         });

@@ -832,10 +832,8 @@ export function useGereeActions(
   const handleCreateOrUpdateEmployee = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("🚀 [CREATE/UPDATE EMPLOYEE] Starting...");
-    
     if (!token || !ajiltan?.baiguullagiinId) {
-      console.error("❌ [CREATE/UPDATE EMPLOYEE] Missing token or baiguullagiinId");
+      console.error("Missing token or baiguullagiinId");
       openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
       return;
     }
@@ -857,8 +855,6 @@ export function useGereeActions(
       nuutsUg: formElements.nuutsUg?.value || "",
     };
 
-    console.log("📝 [CREATE/UPDATE EMPLOYEE] Form data:", employeeData);
-
     try {
       // Get the effective building ID with fallback logic
       let effectiveBarilgiinId = selectedBuildingId || barilgiinId;
@@ -866,17 +862,11 @@ export function useGereeActions(
       // If no building is selected, try to get the first available building from baiguullaga
       if (!effectiveBarilgiinId && baiguullaga?.barilguud?.length > 0) {
         effectiveBarilgiinId = baiguullaga.barilguud[0]._id;
-        console.log("⚠️ [CREATE/UPDATE EMPLOYEE] No building selected, using first available:", effectiveBarilgiinId);
       }
-      
-      console.log("🏢 [CREATE/UPDATE EMPLOYEE] Building ID:", effectiveBarilgiinId);
-      console.log("🏢 [CREATE/UPDATE EMPLOYEE] selectedBuildingId:", selectedBuildingId);
-      console.log("🏢 [CREATE/UPDATE EMPLOYEE] barilgiinId:", barilgiinId);
-      console.log("🏢 [CREATE/UPDATE EMPLOYEE] Available buildings:", baiguullaga?.barilguud?.map((b: any) => ({ id: b._id, name: b.ner })));
       
       // Validate that we have a building ID
       if (!effectiveBarilgiinId) {
-        console.error("❌ [CREATE/UPDATE EMPLOYEE] No building ID available!");
+        console.error("No building ID available");
         openErrorOverlay("Барилга сонгоно уу эсвэл байгууллагад барилга нэмнэ үү");
         return;
       }
@@ -892,8 +882,6 @@ export function useGereeActions(
         erkh: "Ajiltan",
       };
 
-      console.log("📦 [CREATE/UPDATE EMPLOYEE] Payload:", JSON.stringify(payload, null, 2));
-
       // Check if we're editing (form has _id hidden input)
       const isEditing = formElements._id?.value;
       
@@ -908,16 +896,11 @@ export function useGereeActions(
         delete updatePayload.nevtrekhNer;
         delete updatePayload.nuutsUg;
 
-        console.log("✏️ [CREATE/UPDATE EMPLOYEE] Updating employee:", id);
         await updateMethod("ajiltan", token, updatePayload);
-        
-        console.log("✅ [CREATE/UPDATE EMPLOYEE] Employee updated successfully");
         openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");
       } else {
         // Create new employee
-        console.log("➕ [CREATE/UPDATE EMPLOYEE] Creating new employee");
-        const response = await createMethod("ajiltan", token, payload);
-        console.log("✅ [CREATE/UPDATE EMPLOYEE] Employee created successfully:", response);
+        await createMethod("ajiltan", token, payload);
         openSuccessOverlay("Ажилтан нэмэгдлээ");
       }
       
@@ -935,12 +918,7 @@ export function useGereeActions(
         nuutsUg: "",
       });
     } catch (err) {
-      console.error("❌ [CREATE/UPDATE EMPLOYEE] Error:", err);
-      console.error("❌ [CREATE/UPDATE EMPLOYEE] Error details:", {
-        message: getErrorMessage(err),
-        response: (err as any)?.response?.data,
-        status: (err as any)?.response?.status,
-      });
+      console.error("Error creating/updating employee:", err);
       openErrorOverlay(getErrorMessage(err));
     }
   }, [token, ajiltan, baiguullaga, selectedBuildingId, barilgiinId, setShowEmployeeModal, setEditingEmployee, setNewEmployee]);
