@@ -97,13 +97,31 @@ export default function OrshinSuugch() {
         ]
       : null,
     async ([url, tkn, bId, barId, pg, search]): Promise<any> => {
+      // Build query object with barilgiinId for backend filtering
+      const queryObj: any = {
+        baiguullagiinId: bId,
+      };
+      if (barId) {
+        queryObj.barilgiinId = barId;
+      }
+      if (search) {
+        queryObj.$or = [
+          { ner: { $regex: search, $options: "i" } },
+          { orshinSuugchNer: { $regex: search, $options: "i" } },
+          { utas: { $regex: search, $options: "i" } },
+          { burtgeliinDugaar: { $regex: search, $options: "i" } },
+          { mashiniiDugaar: { $regex: search, $options: "i" } },
+        ];
+      }
+
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
           khuudasniiDugaar: pg,
           khuudasniiKhemjee: pageSize,
-          search: search || undefined,
+          ...(search ? { search: search } : {}),
+          query: JSON.stringify(queryObj),
         },
       });
       return resp.data;
@@ -111,14 +129,25 @@ export default function OrshinSuugch() {
     { revalidateOnFocus: false }
   );
 
-  const residents: ResidentParking[] = useMemo(
-    () => residentsData?.jagsaalt || [],
-    [residentsData]
-  );
+  const residents: ResidentParking[] = useMemo(() => {
+    const list = residentsData?.jagsaalt || [];
+    if (!effectiveBarilgiinId) return list;
+    
+    // Client-side filtering by barilgiinId as fallback if backend doesn't filter
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    const targetBarilgiinId = toStr(effectiveBarilgiinId);
+    
+    return list.filter((item: any) => {
+      const itemBarilgiinId = toStr(item?.barilgiinId);
+      return itemBarilgiinId === targetBarilgiinId;
+    });
+  }, [residentsData, effectiveBarilgiinId]);
 
-  const totalPages = Math.ceil(
-    (residentsData?.niitMur || 0) / pageSize
-  );
+  // Use filtered count if client-side filtering is applied
+  const totalCount = effectiveBarilgiinId 
+    ? residents.length 
+    : (residentsData?.niitMur || 0);
+  const totalPages = Math.ceil(totalCount / pageSize);
   
   const handleDelete = async (r: ResidentParking) => {
     const id = r._id;

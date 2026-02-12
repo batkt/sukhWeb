@@ -1489,13 +1489,13 @@ export default function Camera() {
                       <td colSpan={6} className="py-3 px-3 text-right text-xs uppercase tracking-wider border-r border-slate-200 dark:border-white/5">
                         Нийт Дүн:
                       </td>
-                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
                           {formatNumber(transactions.reduce((sum, t) => sum + (Number(t.tuukh?.[0]?.khungulult) || 0), 0))}
                       </td>
-                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
                           {formatNumber(transactions.reduce((sum, t) => sum + (Number(t.niitDun) || 0), 0))}
                       </td>
-                      <td className="py-3 px-3 text-center border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
+                      <td className="py-3 px-3 text-right border-r border-slate-200 dark:border-white/5 text-sm font-[family-name:var(--font-mono)] whitespace-nowrap">
                           {formatNumber(transactions.reduce((sum, t) => sum + (Number(t.tuukh?.[0]?.tulsunDun) || 0), 0))}
                       </td>
                       <td colSpan={4} className="border-r border-slate-200 dark:border-white/5"></td>
