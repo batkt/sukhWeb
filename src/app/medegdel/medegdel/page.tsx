@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button, Input, Modal, notification } from "antd";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus } from "lucide-react";
-import uilchilgee from "@/lib/uilchilgee";
+import { SearchIcon, Bell, Users, Mail, MessageSquare, Smartphone, FileText, Plus, ImagePlus, X } from "lucide-react";
+import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
@@ -26,6 +26,7 @@ interface MedegdelTemplate {
   name: string;
   title: string;
   body: string;
+  imageDataUrl?: string;
 }
 
 const TEMPLATE_STORAGE_KEY = (orgId: string, turul: string) =>
@@ -72,7 +73,13 @@ export default function KhyanaltFrontend() {
   const [templateName, setTemplateName] = useState("");
   const [templateTitle, setTemplateTitle] = useState("");
   const [templateBody, setTemplateBody] = useState("");
+  const [templateImageDataUrl, setTemplateImageDataUrl] = useState<string | null>(null);
   const [templates, setTemplates] = useState<MedegdelTemplate[]>([]);
+  const [attachImages, setAttachImages] = useState<File[]>([]);
+  const [composerTemplateImage, setComposerTemplateImage] = useState<string | null>(null);
+  const attachInputRef = useRef<HTMLInputElement>(null);
+  const templateImageInputRef = useRef<HTMLInputElement>(null);
+  const attachPreviewUrlsRef = useRef<string[]>([]);
 
   const { orshinSuugchGaralt, isValidating, setOrshinSuugchKhuudaslalt } =
     useOrshinSuugchJagsaalt(
@@ -96,10 +103,21 @@ export default function KhyanaltFrontend() {
     }
   }, [baiguullagiinId, turul]);
 
+  function dataURLtoFile(dataUrl: string, filename: string): File {
+    const arr = dataUrl.split(",");
+    const mime = arr[0].match(/:(.*?);/)?.[1] || "image/png";
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new File([u8arr], filename, { type: mime });
+  }
+
   const handleOpenTemplateModal = () => {
     setTemplateName("");
     setTemplateTitle("");
     setTemplateBody("");
+    setTemplateImageDataUrl(null);
     setTemplateModalOpen(true);
   };
 
@@ -117,17 +135,23 @@ export default function KhyanaltFrontend() {
       name: templateName.trim(),
       title: templateTitle.trim(),
       body: templateBody.trim(),
+      ...(templateImageDataUrl ? { imageDataUrl: templateImageDataUrl } : {}),
     };
     const updated = [...loadTemplates(baiguullagiinId, turul), newTemplate];
     saveTemplates(baiguullagiinId, turul, updated);
     setTemplates(updated);
     setTemplateModalOpen(false);
+    setTemplateImageDataUrl(null);
     notification.success({ message: "Загвар амжилттай хадгалагдлаа", style: { zIndex: 99999 } });
   };
 
   const handleApplyTemplate = (t: MedegdelTemplate) => {
     setTitle(t.title);
     setMsj(t.body);
+    attachPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    attachPreviewUrlsRef.current = [];
+    setAttachImages([]);
+    setComposerTemplateImage(t.imageDataUrl ?? null);
   };
 
   const geree = (orshinSuugchGaralt?.jagsaalt || []) as Geree[];
@@ -145,9 +169,10 @@ export default function KhyanaltFrontend() {
   };
 
   const send = async () => {
-    if (!title || !msj) {
+    const hasImage = attachImages.length > 0 || !!composerTemplateImage;
+    if (!title || (!msj && !hasImage)) {
       notification.warning({
-        message: "Гарчиг болон мессеж оруулна уу",
+        message: "Гарчиг оруулна уу. Мөн агуулга эсвэл зураг нэмнэ үү",
         style: { zIndex: 99999 },
       });
       return;
@@ -205,21 +230,56 @@ export default function KhyanaltFrontend() {
           subject: title,
         });
       } else {
-        // For App, use medegdelIlgeeye endpoint
+        // For App: use FormData when sending image so backend receives multipart zurag
         const orshinSuugchIdArray = songogdsonKhariltsagch.map(
           (user) => user._id
         );
+        const templateAsFile = composerTemplateImage
+          ? dataURLtoFile(composerTemplateImage, "template-image.png")
+          : null;
+        const allFiles: File[] =
+          attachImages.length > 0
+            ? attachImages
+            : templateAsFile
+            ? [templateAsFile]
+            : [];
 
-        await uilchilgee(token).post("/medegdelIlgeeye", {
-          medeelel: {
-            title: title,
-            body: msj,
-          },
-          orshinSuugchId: orshinSuugchIdArray,
-          baiguullagiinId: baiguullagiinId,
-          barilgiinId: barilgiinId,
-          turul: turul,
-        });
+        if (allFiles.length > 0) {
+          const formData = new FormData();
+          formData.append(
+            "medeelel",
+            JSON.stringify({ title, body: msj || "" })
+          );
+          formData.append(
+            "orshinSuugchId",
+            JSON.stringify(orshinSuugchIdArray)
+          );
+          formData.append("baiguullagiinId", baiguullagiinId);
+          formData.append("barilgiinId", barilgiinId);
+          formData.append("turul", turul);
+          allFiles.forEach((file) => formData.append("zurag", file));
+
+          const baseUrl = getApiUrl().replace(/\/$/, "");
+          const res = await fetch(`${baseUrl}/medegdelIlgeeye`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: formData,
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText || `HTTP ${res.status}`);
+          }
+        } else {
+          await uilchilgee(token).post("/medegdelIlgeeye", {
+            medeelel: { title, body: msj },
+            orshinSuugchId: orshinSuugchIdArray,
+            baiguullagiinId: baiguullagiinId,
+            barilgiinId: barilgiinId,
+            turul: turul,
+          });
+        }
       }
 
       // Show different success message based on service type
@@ -232,8 +292,12 @@ export default function KhyanaltFrontend() {
 
       openSuccessOverlay(successMessage);
 
+      attachPreviewUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      attachPreviewUrlsRef.current = [];
       setTitle("");
       setMsj("");
+      setAttachImages([]);
+      setComposerTemplateImage(null);
       setSongogdsonKhariltsagch([]);
       setKhariltsagch(null);
     } catch (err) {
@@ -389,9 +453,54 @@ export default function KhyanaltFrontend() {
                   placeholder="Мэдэгдлийн агуулга"
                   value={templateBody}
                   onChange={(e) => setTemplateBody(e.target.value)}
-                  rows={6}
+                  rows={5}
                   className="rounded-xl"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Зураг (заавал биш)</label>
+                <input
+                  ref={templateImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      const reader = new FileReader();
+                      reader.onload = () => setTemplateImageDataUrl(reader.result as string);
+                      reader.readAsDataURL(f);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => templateImageInputRef.current?.click()}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-white/10"
+                  >
+                    <ImagePlus className="w-4 h-4" />
+                    Зураг сонгох
+                  </button>
+                  {templateImageDataUrl && (
+                    <div className="relative inline-block">
+                      <img
+                        src={templateImageDataUrl}
+                        alt=""
+                        className="w-20 h-20 object-cover rounded-xl border"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setTemplateImageDataUrl(null)}
+                        className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center"
+                        aria-label="Зураг хасах"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </Modal>
@@ -544,17 +653,91 @@ export default function KhyanaltFrontend() {
                     className="!rounded-xl !h-11 text-sm bg-white/20 dark:bg-white/10 border border-white/30"
                   />
                   <Input.TextArea
-                    rows={8}
+                    rows={6}
                     placeholder="Мэдэгдлийн агуулга бичих..."
                     value={msj}
                     onChange={(e) => setMsj(e.target.value)}
-                    className="!rounded-xl text-sm bg-white/20 dark:bg-white/10 border border-white/30 !min-h-[120px] !resize-none"
+                    className="!rounded-xl text-sm bg-white/20 dark:bg-white/10 border border-white/30 !min-h-[100px] !resize-none"
                   />
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      ref={attachInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = e.target.files;
+                        if (files?.length) {
+                          setComposerTemplateImage(null);
+                          const prev = attachImages.length;
+                          const maxAdd = Math.max(0, 10 - prev);
+                          const newFiles = Array.from(files).slice(0, maxAdd);
+                          if (newFiles.length === 0 && files.length > 0) {
+                            notification.warning({ message: "Дээд тал нь 10 зураг нэмнэ", style: { zIndex: 99999 } });
+                            e.target.value = "";
+                            return;
+                          }
+                          const newUrls = newFiles.map((f) => URL.createObjectURL(f));
+                          attachPreviewUrlsRef.current.push(...newUrls);
+                          setAttachImages((p) => [...p, ...newFiles]);
+                        }
+                        e.target.value = "";
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => attachInputRef.current?.click()}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium bg-white/20 dark:bg-white/10 border border-white/30 hover:bg-white/30 transition-colors"
+                    >
+                      <ImagePlus className="w-4 h-4" />
+                      Зураг нэмэх
+                    </button>
+                    {composerTemplateImage && (
+                      <div className="relative inline-block">
+                        <img
+                          src={composerTemplateImage}
+                          alt=""
+                          className="w-16 h-16 object-cover rounded-xl border border-white/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setComposerTemplateImage(null)}
+                          className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                          aria-label="Зураг хасах"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+                    {attachImages.map((file, idx) => (
+                      <div key={`img-${idx}-${file.size}`} className="relative inline-block">
+                        <img
+                          src={attachPreviewUrlsRef.current[idx] ?? ""}
+                          alt=""
+                          className="w-16 h-16 object-cover rounded-xl border border-white/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = attachPreviewUrlsRef.current[idx];
+                            if (url) URL.revokeObjectURL(url);
+                            attachPreviewUrlsRef.current = attachPreviewUrlsRef.current.filter((_, i) => i !== idx);
+                            setAttachImages((prev) => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow hover:bg-red-600"
+                          aria-label="Зураг хасах"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                   <Button
                     type="primary"
                     onClick={send}
                     loading={loading}
-                    disabled={!title || !msj}
+                    disabled={!title || (!msj && attachImages.length === 0 && !composerTemplateImage)}
                     className="w-full h-11 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 !text-white font-semibold border-0 shadow-lg hover:shadow-xl hover:opacity-95 transition-all"
                   >
                     Илгээх

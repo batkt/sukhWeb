@@ -578,6 +578,7 @@ export default function SanalKhuselt() {
     const t = (turul ?? "").toLowerCase().trim();
     if (t === "sanal" || t === "санал") return "Санал";
     if (t === "gomdol" || t === "гомдол") return "Гомдол";
+    if (t === "app" || t === "мессеж" || t === "mail" || t === "мэдэгдэл" || t === "medegdel") return "Мэдэгдэл";
     return turul ?? "";
   };
 
@@ -977,12 +978,19 @@ export default function SanalKhuselt() {
                               }`}
                             >
                               {msg.zurag && (() => {
-                                const path = normalizeMedegdelAssetPath(msg.zurag);
-                                const url = path ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}` : "";
-                                return url ? (
-                                  <a href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden my-1 max-w-[280px]">
-                                    <img src={url} alt="" className="w-full h-auto object-cover" />
-                                  </a>
+                                const paths = String(msg.zurag).split(",").map((p) => normalizeMedegdelAssetPath(p.trim())).filter(Boolean);
+                                const base = getApiUrl().replace(/\/$/, "");
+                                return paths.length ? (
+                                  <div className="flex flex-wrap gap-1 my-1">
+                                    {paths.map((path, i) => {
+                                      const url = `${base}/medegdel/${path}`;
+                                      return (
+                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden max-w-[140px]">
+                                          <img src={url} alt="" className="w-full h-auto object-cover" />
+                                        </a>
+                                      );
+                                    })}
+                                  </div>
                                 ) : null;
                               })()}
                               {msg.duu && (() => {

@@ -111,12 +111,17 @@ export default function GolContent({ children }: GolContentProps) {
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
-    const handler = (payload: { type?: string; data?: { _id?: string } }) => {
+    const handler = (payload: { type?: string; data?: { _id?: string; turul?: string } }) => {
       if (payload?.type === "medegdelNew") {
-        toast("Таны шинэ мэдэгдэл ирлээ", {
-          description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
-          duration: 4000,
-        });
+        // Don't show "you received" when this is an outbound notification we just sent (App/Мессеж/Mail from Мэдэгдэл page)
+        const turul = (payload?.data?.turul ?? "").trim();
+        const isOutboundByMe = ["App", "Мессеж", "Mail"].includes(turul);
+        if (!isOutboundByMe) {
+          toast("Таны шинэ мэдэгдэл ирлээ", {
+            description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
+            duration: 4000,
+          });
+        }
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelUserReply") {
