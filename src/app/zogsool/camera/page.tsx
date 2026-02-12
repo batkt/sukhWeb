@@ -1367,7 +1367,8 @@ export default function Camera() {
                                             : "primary"
                                         }
                                         size="sm"
-                                        className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto !rounded-md uppercase tracking-wide hover:!rounded-lg"
+                                        className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto uppercase tracking-wide overflow-hidden"
+                                        style={{ borderRadius: '6px', overflow: 'hidden' }}
                                       >
                                         {!isCurrentlyIn 
                                           ? (isDebt ? "Төлбөртэй" : "Дууссан") 
