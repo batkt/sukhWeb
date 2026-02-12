@@ -375,8 +375,8 @@ export default function Camera() {
     try {
       const resp = await uilchilgee(token).get("/zogsoolUilchluulegch", {
         params: {
-          khuudasniiDugaar: page,
-          khuudasniiKhemjee: pageSize,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 10000, // Fetch all data for client-side filtering and pagination
           query: JSON.stringify(query),
           order: JSON.stringify(sortObj),
           archiveName: archiveName,
@@ -399,9 +399,7 @@ export default function Camera() {
     statusFilter, 
     activeExitIP, 
     exitCameras, 
-    durationFilter, 
-    page, 
-    pageSize
+    durationFilter
   ]);
 
   // Reset to page 1 when filters change
@@ -412,7 +410,7 @@ export default function Camera() {
   // Initial fetch and fetch on changes
   useEffect(() => {
     fetchList();
-  }, [page, searchTerm, rangeStart, rangeEnd, token, typeFilter, durationFilter, statusFilter, activeExitIP]);
+  }, [fetchList]);
 
   const khaalgaNeey = useCallback((ip: string) => {
     if (!ip) return;
@@ -613,8 +611,7 @@ export default function Camera() {
 
 
 
-  const total = listData?.niitMur || 0;
-  const transactions: Uilchluulegch[] = useMemo(() => {
+  const { transactions, totalFiltered } = useMemo(() => {
     const data = listData;
     let list: Uilchluulegch[] = [];
 
@@ -712,11 +709,18 @@ export default function Camera() {
       }
     });
 
+    // Calculate total BEFORE pagination
+    const totalFiltered = merged.length;
+
     // Paginate
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    return merged.slice(startIndex, endIndex);
+    const transactions = merged.slice(startIndex, endIndex);
+
+    return { transactions, totalFiltered };
   }, [listData, liveUpdates, page, pageSize, durationFilter, typeFilter, statusFilter]);
+
+  const total = totalFiltered;
 
   const stats = useMemo(() => {
     const total = transactions.reduce((sum: number, t: Uilchluulegch) => sum + (t.niitDun || 0), 0);
@@ -736,10 +740,7 @@ export default function Camera() {
     return { total, paid, unpaid, count, paidCount };
   }, [transactions]);
 
-  const totalPages = Math.ceil(
-    (listData?.niitMur ||
-      transactions.length) / pageSize,
-  );
+  const totalPages = Math.ceil(total / pageSize);
 
   // Keyboard Shortcuts (shortcut.md / zogsool.md)
   useEffect(() => {
@@ -1371,7 +1372,7 @@ export default function Camera() {
                                             : "primary"
                                         }
                                         size="sm"
-                                        className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto rounded-md uppercase tracking-wide hover:rounded-lg"
+                                        className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto !rounded-md uppercase tracking-wide hover:!rounded-lg"
                                       >
                                         {!isCurrentlyIn 
                                           ? (isDebt ? "Төлбөртэй" : "Дууссан") 
@@ -1446,30 +1447,30 @@ export default function Camera() {
                                     // Status badges logic
                                     const badgeClass = "flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border";
                                     if (tuluv === 1) return (
-                                      <div className={`${badgeClass} ${(isCurrentlyIn && niitDun === 0) ? "bg-blue-500 text-white border-blue-600 shadow-sm" : "bg-green-500 text-white border-green-600 shadow-sm"}`} style={{ borderRadius: '6px' }}>
+                                      <div className={`${badgeClass} ${(isCurrentlyIn && niitDun === 0) ? "bg-blue-500 !text-white border-blue-600 shadow-sm" : "bg-green-500 !text-white border-green-600 shadow-sm"}`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">
                                           {(isCurrentlyIn && niitDun === 0) ? "Идэвхтэй" : "Төлсөн"}
                                         </span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && (niitDun > 0 || isDebt)) return (
-                                      <div className={`${badgeClass} bg-yellow-500 text-white border-yellow-600 shadow-sm`} style={{ borderRadius: '6px' }}>
+                                      <div className={`${badgeClass} bg-yellow-500 !text-white border-yellow-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Төлбөртэй</span>
                                       </div>
                                     );
                                     if (tuluv === -2 || tuluv === -1) return (
-                                      <div className={`${badgeClass} bg-red-500 text-white border-red-600 shadow-sm`} style={{ borderRadius: '6px' }}>
+                                      <div className={`${badgeClass} bg-red-500 !text-white border-red-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Зөрчилтэй</span>
                                       </div>
                                     );
                                     if (!isCurrentlyIn && niitDun === 0) return (
-                                      <div className={`${badgeClass} bg-gray-500 text-white border-gray-600 shadow-sm`} style={{ borderRadius: '6px' }}>
+                                      <div className={`${badgeClass} bg-gray-500 !text-white border-gray-600 shadow-sm`} style={{ borderRadius: '6px' }}>
                                         <span className="text-[10px] !text-white uppercase whitespace-nowrap">Үнэгүй</span>
                                       </div>
                                     );
                                     return (
-                                      <div className={`${badgeClass} bg-blue-500 text-white border-blue-600 shadow-sm`} style={{ borderRadius: '6px' }}>
-                                        <span className="text-[10px] !text-white uppercase tracking-tight whitespace-nowrap text-center ">Идэвхтэй</span>
+                                      <div className={`${badgeClass} bg-blue-500 !text-white border-blue-600 shadow-sm`} style={{ borderRadius: '6px' }}>
+                                        <span className="text-[10px] !text-white uppercase tracking-tight whitespace-nowrap text-center">Идэвхтэй</span>
                                       </div>
                                     );
                                   })()

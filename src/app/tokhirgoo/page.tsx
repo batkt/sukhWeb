@@ -136,7 +136,7 @@ function Tokhirgoo() {
       { perm: "tokhirgoo.dans", text: "Данс", tsonkh: Dans, comingSoon: false },
       { perm: "tokhirgoo.zogsool", text: "Зогсоол", tsonkh: Zogsool, comingSoon: false },
       { perm: "tokhirgoo.baaz", text: "Бааз", tsonkh: Baaz, comingSoon: true },
-      { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: true },
+      { perm: "tokhirgoo.nevtreltiinTuukh", text: "Нэвтрэлтийн түүх", tsonkh: NevtreltiinTuukh, comingSoon: false },
       { perm: "tokhirgoo.ustsanTuukh", text: "Устгасан түүх", tsonkh: UstgasanTuukh, comingSoon: true },
       { perm: "tokhirgoo.zassanTuukh", text: "Зассан түүх", tsonkh: ZassanTuukh, comingSoon: true },
     ];

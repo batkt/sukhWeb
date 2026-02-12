@@ -12,6 +12,7 @@ import {
   Users,
   Save,
   Home,
+  X,
 } from "lucide-react";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
@@ -22,6 +23,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
+import Button from "@/components/ui/Button";
 
 interface Horoo {
   _id?: string;
@@ -35,7 +37,7 @@ interface Duureg {
   kod: string;
   ded?: Horoo[];
 }
-
+ 
 interface TatvariinAlbaResponse {
   jagsaalt: Duureg[];
 }
@@ -63,8 +65,14 @@ const EditBuildingModal: React.FC<{
   setHasUserEdited: (value: boolean) => void;
   editedBuildingId: string | null;
   baiguullaga: any;
-  handleSaveEditBuilding: () => Promise<void>;
+  handleSaveEditBuilding: (selectedDuureg?: string, selectedHoroo?: string) => Promise<void>;
   isSaving: boolean;
+  districts: Record<string, string[]>;
+  subDistricts: Record<string, string[]>;
+  editSelectedDuureg: string;
+  setEditSelectedDuureg: (value: string) => void;
+  editSelectedHoroo: string;
+  setEditSelectedHoroo: (value: string) => void;
 }> = ({
   open,
   onClose,
@@ -80,6 +88,12 @@ const EditBuildingModal: React.FC<{
   baiguullaga,
   handleSaveEditBuilding,
   isSaving,
+  districts,
+  subDistricts,
+  editSelectedDuureg,
+  setEditSelectedDuureg,
+  editSelectedHoroo,
+  setEditSelectedHoroo,
 }) => {
   // close on ESC
   useEffect(() => {
@@ -101,23 +115,67 @@ const EditBuildingModal: React.FC<{
     };
   }, [open]);
 
+  const handleEditDuuregChange = (duuregName: string) => {
+    setEditSelectedDuureg(duuregName);
+    setEditSelectedHoroo(""); // Reset horoo when duureg changes
+    setHasUserEdited(true);
+  };
+
+  const handleEditHorooChange = (horooName: string) => {
+    if (!editSelectedDuureg) {
+      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
+      return;
+    }
+    setEditSelectedHoroo(horooName);
+    setHasUserEdited(true);
+  };
+
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
-        style={{
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
-        }}
       />
-      <div className="relative w-full max-w-xl">
-        <div className="neu-panel rounded-lg p-6 shadow-lg">
-          <h3 className="font-medium text-theme mb-3">Барилга засах</h3>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+      {/* Modal Container */}
+      <div 
+        className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <h3 className="text-xl font-semibold text-[color:var(--panel-text)]">
+                  Барилга засах
+                </h3>
+                <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                  Барилгын мэдээллийг шинэчлэх
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+          {/* Building Name Section */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+              Барилгын нэр <span className="text-red-500">*</span>
+            </label>
             <input
               id="barilgiin-edit-name"
               type="text"
@@ -127,75 +185,154 @@ const EditBuildingModal: React.FC<{
                 setHasUserEdited(true);
               }}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder="Барилгын нэр"
-              className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Жишээ: А барилга, Б барилга..."
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
             />
           </div>
 
-          <div className="text-xs text-slate-500 mt-2">
-            Тайлбар: Барилгын нэр болон орц/давхар тоог засна.
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Нийт орцын тоо
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={editOrtsCount}
-                onChange={(e) => {
-                  setEditOrtsCount(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  );
-                  setHasUserEdited(true);
-                }}
-                onKeyDown={(e) => e.stopPropagation()}
-                className="w-28 px-3 py-2 border border-blue-500 rounded-2xl focus:outline-none"
-              />
+          {/* Location Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+              <MapPin className="w-4 h-4 text-blue-500" />
+              <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Байршил
+              </h4>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div id="barilgiin-duureg" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Дүүрэг <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <TusgaiZagvar
+                    value={editSelectedDuureg || ""}
+                    onChange={(v) => handleEditDuuregChange(v)}
+                    options={Object.keys(districts).flatMap((city) =>
+                      districts[city].map((district) => ({
+                        value: district,
+                        label: district,
+                      })),
+                    )}
+                    placeholder="Дүүрэг сонгоно уу"
+                    className="w-full"
+                    disabled={false}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Нийт давхарын тоо
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={editDavkharCount}
-                onChange={(e) => {
-                  setEditDavkharCount(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  );
-                  setHasUserEdited(true);
-                }}
-                onKeyDown={(e) => e.stopPropagation()}
-                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-              />
+              <div id="barilgiin-horoo" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Хороо <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <TusgaiZagvar
+                    value={editSelectedHoroo || ""}
+                    onChange={(v) => handleEditHorooChange(v)}
+                    options={
+                      editSelectedDuureg && subDistricts[editSelectedDuureg]
+                        ? subDistricts[editSelectedDuureg].map((horoo) => ({
+                            value: horoo,
+                            label: horoo,
+                          }))
+                        : []
+                    }
+                    placeholder={editSelectedDuureg ? "Хороо сонгоно уу" : "Эхлээд дүүрэг сонгоно уу"}
+                    className="w-full"
+                    disabled={!editSelectedDuureg}
+                  />
+                  {!editSelectedDuureg && (
+                    <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                      Дүүрэг сонгосны дараа хороо сонгох боломжтой
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <button
-              className="btn-minimal btn-cancel"
-              onClick={onClose}
-              type="button"
-            >
-              Болих
-            </button>
-            <button
-              className={`btn-minimal btn-save ${
-                isSaving ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-              onClick={handleSaveEditBuilding}
-              id="barilgiin-edit-save"
-              disabled={isSaving}
-              type="button"
-            >
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-            </button>
+          {/* Building Details Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+              <Home className="w-4 h-4 text-blue-500" />
+              <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Барилгын дэлгэрэнгүй
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Нийт орцын тоо <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editOrtsCount}
+                  onChange={(e) => {
+                    setEditOrtsCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    );
+                    setHasUserEdited(true);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Нийт давхарын тоо <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={editDavkharCount}
+                  onChange={(e) => {
+                    setEditDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    );
+                    setHasUserEdited(true);
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors font-medium text-sm"
+            type="button"
+            disabled={isSaving}
+          >
+            Цуцлах
+          </button>
+          <button
+            className={`px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-lg shadow-blue-500/20 ${
+              isSaving ? "opacity-60 cursor-not-allowed" : "hover:shadow-xl hover:shadow-blue-500/30"
+            }`}
+            onClick={() => handleSaveEditBuilding(editSelectedDuureg, editSelectedHoroo)}
+            id="barilgiin-edit-save"
+            disabled={isSaving}
+            type="button"
+          >
+            {isSaving ? (
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Хадгалж байна...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="w-4 h-4" />
+                Хадгалах
+              </span>
+            )}
+          </button>
         </div>
       </div>
     </div>,
@@ -213,8 +350,10 @@ const NewBuildingModal: React.FC<{
   setOrtsCount: (value: number | "") => void;
   davkharCount: number | "";
   setDavkharCount: (value: number | "") => void;
-  handleSaveSettings: () => Promise<void>;
+  handleSaveSettings: (selectedDuureg?: string, selectedHoroo?: string) => Promise<void>;
   isSaving: boolean;
+  districts: Record<string, string[]>;
+  subDistricts: Record<string, string[]>;
 }> = ({
   open,
   onClose,
@@ -226,7 +365,12 @@ const NewBuildingModal: React.FC<{
   setDavkharCount,
   handleSaveSettings,
   isSaving,
+  districts,
+  subDistricts,
 }) => {
+  const [modalSelectedDuureg, setModalSelectedDuureg] = useState<string>("");
+  const [modalSelectedHoroo, setModalSelectedHoroo] = useState<string>("");
+  
   // close on ESC
   useEffect(() => {
     if (!open) return;
@@ -247,93 +391,224 @@ const NewBuildingModal: React.FC<{
     };
   }, [open]);
 
+  // Reset modal state when opening
+  useEffect(() => {
+    if (open) {
+      setModalSelectedDuureg("");
+      setModalSelectedHoroo("");
+    }
+  }, [open]);
+
+  const handleModalDuuregChange = (duuregName: string) => {
+    setModalSelectedDuureg(duuregName);
+    setModalSelectedHoroo(""); // Reset horoo when duureg changes
+  };
+
+  const handleModalHorooChange = (horooName: string) => {
+    if (!modalSelectedDuureg) {
+      openErrorOverlay("Дүүрэг эхлээд сонгоно уу");
+      return;
+    }
+    setModalSelectedHoroo(horooName);
+  };
+
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+      {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
-        style={{
-          backdropFilter: "blur(6px)",
-          WebkitBackdropFilter: "blur(6px)",
-        }}
       />
 
-      <div className="relative w-full max-w-xl">
-        <div className="neu-panel p-6 shadow-lg">
-          <h3 className="font-medium text-theme mb-3">Шинэ барилга</h3>
+      {/* Modal Container */}
+      <div 
+        className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div>
+                <h3 className="text-xl font-semibold text-[color:var(--panel-text)]">
+                  Шинэ барилга нэмэх
+                </h3>
+                <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
+                  Барилгын мэдээллийг бүрэн бөглөнө үү
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
+              type="button"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+        {/* Body */}
+        <div className="px-6 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto">
+          {/* Building Name Section */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+              Барилгын нэр <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={newBarilgaNer}
               onChange={(e) => setNewBarilgaNer(e.target.value)}
               onKeyDown={(e) => e.stopPropagation()}
-              placeholder="Шинэ барилгын нэр (Хадгалах дарвал нэмэгдэнэ)"
-              className="w-full sm:flex-1 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Жишээ: А барилга, Б барилга..."
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
             />
           </div>
 
-          <div className="text-xs text-slate-500 mt-2">
-            Тайлбар: Шинэ барилга нэмэхдээ доорх Орц/Давхар тоог оруулаад
-            "Хадгалах" товчийг дарна.
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Нийт орцын тоо
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={ortsCount}
-                onChange={(e) =>
-                  setOrtsCount(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
-                onKeyDown={(e) => e.stopPropagation()}
-                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-              />
+          {/* Location Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+              <MapPin className="w-4 h-4 text-blue-500" />
+              <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Байршил
+              </h4>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div id="barilgiin-duureg" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Дүүрэг <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <TusgaiZagvar
+                    value={modalSelectedDuureg || ""}
+                    onChange={(v) => handleModalDuuregChange(v)}
+                    options={Object.keys(districts).flatMap((city) =>
+                      districts[city].map((district) => ({
+                        value: district,
+                        label: district,
+                      })),
+                    )}
+                    placeholder="Дүүрэг сонгоно уу"
+                    className="w-full"
+                    disabled={false}
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-theme mb-1">
-                Нийт давхарын тоо
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={davkharCount}
-                onChange={(e) =>
-                  setDavkharCount(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
-                onKeyDown={(e) => e.stopPropagation()}
-                className="w-28 px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none"
-              />
+              <div id="barilgiin-horoo" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Хороо <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <TusgaiZagvar
+                    value={modalSelectedHoroo || ""}
+                    onChange={(v) => handleModalHorooChange(v)}
+                    options={
+                      modalSelectedDuureg && subDistricts[modalSelectedDuureg]
+                        ? subDistricts[modalSelectedDuureg].map((horoo) => ({
+                            value: horoo,
+                            label: horoo,
+                          }))
+                        : []
+                    }
+                    placeholder={modalSelectedDuureg ? "Хороо сонгоно уу" : "Эхлээд дүүрэг сонгоно уу"}
+                    className="w-full"
+                    disabled={!modalSelectedDuureg}
+                  />
+                  {!modalSelectedDuureg && (
+                    <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                      Дүүрэг сонгосны дараа хороо сонгох боломжтой
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-2">
-            <button className="btn-minimal" onClick={onClose} type="button">
-              Болих
-            </button>
-            <button
-              className={`btn-minimal btn-save ${
-                isSaving ? "opacity-60 cursor-not-allowed" : ""
-              }`}
-              onClick={handleSaveSettings}
-              id="barilgiin-new-save"
-              disabled={isSaving}
-              type="button"
-            >
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-            </button>
+          {/* Building Details Section */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+              <Home className="w-4 h-4 text-blue-500" />
+              <h4 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Барилгын дэлгэрэнгүй
+              </h4>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Нийт орцын тоо <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={ortsCount}
+                  onChange={(e) =>
+                    setOrtsCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Нийт давхарын тоо <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={davkharCount}
+                  onChange={(e) =>
+                    setDavkharCount(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                  onKeyDown={(e) => e.stopPropagation()}
+                  placeholder="0"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors font-medium text-sm"
+            type="button"
+            disabled={isSaving}
+          >
+            Цуцлах
+          </button>
+          <button
+            className={`px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-all shadow-lg shadow-blue-500/20 ${
+              isSaving ? "opacity-60 cursor-not-allowed" : "hover:shadow-xl hover:shadow-blue-500/30"
+            }`}
+            onClick={() => handleSaveSettings(modalSelectedDuureg, modalSelectedHoroo)}
+            id="barilgiin-new-save"
+            disabled={isSaving}
+            type="button"
+          >
+            {isSaving ? (
+              <span className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Хадгалж байна...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="w-4 h-4" />
+                Хадгалах
+              </span>
+            )}
+          </button>
         </div>
       </div>
     </div>,
@@ -723,6 +998,8 @@ export default function BarilgiinTokhirgoo() {
   const [editOrtsCount, setEditOrtsCount] = useState<number | "">(0);
   const [editDavkharCount, setEditDavkharCount] = useState<number | "">(0);
   const [hasUserEdited, setHasUserEdited] = useState<boolean>(false);
+  const [editSelectedDuureg, setEditSelectedDuureg] = useState<string>("");
+  const [editSelectedHoroo, setEditSelectedHoroo] = useState<string>("");
 
   // Initialize basic info only
   useEffect(() => {
@@ -1009,7 +1286,7 @@ export default function BarilgiinTokhirgoo() {
     return res.data;
   };
 
-  const handleSaveEditBuilding = async () => {
+  const handleSaveEditBuilding = async (selectedDuureg?: string, selectedHoroo?: string) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -1052,6 +1329,16 @@ export default function BarilgiinTokhirgoo() {
           ...(b.tokhirgoo || {}),
           orts: String(ortsNum),
           davkhar: Array.from({ length: count }, (_, i) => String(i + 1)),
+          ...(selectedDuureg && {
+            duuregNer: selectedDuureg,
+            districtCode: selectedDuureg + (selectedHoroo || ""),
+          }),
+          ...(selectedHoroo && {
+            horoo: {
+              ner: selectedHoroo,
+              kod: selectedHoroo,
+            },
+          }),
         } as any;
         return { ...b, ner: name, tokhirgoo };
       });
@@ -1075,6 +1362,8 @@ export default function BarilgiinTokhirgoo() {
   const handleEditBuilding = (id: string) => {
     setEditedBuildingId(id);
     setHasUserEdited(false);
+    setEditSelectedDuureg("");
+    setEditSelectedHoroo("");
     setIsEditBuildingModalOpen(true);
   };
 
@@ -1098,6 +1387,12 @@ export default function BarilgiinTokhirgoo() {
         ? davFrom.length
         : Number(davFrom) || 0;
       setEditDavkharCount(davCount);
+      
+      // Load district and horoo if they exist
+      const duuregNer = tok.duuregNer || "";
+      const horooNer = tok.horoo?.ner || "";
+      setEditSelectedDuureg(duuregNer);
+      setEditSelectedHoroo(horooNer);
     }
   }, [isEditBuildingModalOpen, editedBuildingId, baiguullaga, hasUserEdited]);
 
@@ -1168,7 +1463,7 @@ export default function BarilgiinTokhirgoo() {
   };
 
   // Handler for creating a new building (used by NewBuildingModal)
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (selectedDuureg?: string, selectedHoroo?: string) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -1207,6 +1502,16 @@ export default function BarilgiinTokhirgoo() {
         tokhirgoo: {
           orts: String(ortsNum),
           davkhar: Array.from({ length: davCount }, (_, i) => String(i + 1)),
+          ...(selectedDuureg && {
+            duuregNer: selectedDuureg,
+            districtCode: selectedDuureg + (selectedHoroo || ""),
+          }),
+          ...(selectedHoroo && {
+            horoo: {
+              ner: selectedHoroo,
+              kod: selectedHoroo,
+            },
+          }),
         },
       };
 
@@ -1337,7 +1642,7 @@ export default function BarilgiinTokhirgoo() {
       return;
     }
     if (email && !/@/.test(email)) {
-      openErrorOverlay("Email хаяг зөв байх ёстой (@ агуулагдана)");
+      openErrorOverlay("Имэйл хаяг зөв байх ёстой (@ агуулагдана)");
       return;
     }
 
@@ -1634,193 +1939,219 @@ export default function BarilgiinTokhirgoo() {
       id="barilgiin-panel"
       className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[700px]"
     >
-      <div className="neu-panel allow-overflow p-4 md:p-6 space-y-6 h-full overflow-auto custom-scrollbar">
-        <div className="w-full">
-          <label className="block text-sm font-medium text-theme mb-1">
-            СӨХ-ийн нэр
-          </label>
-          <input
-            id="barilgiin-soh-name"
-            type="text"
-            value={sohNer}
-            onChange={(e) => setSohNer(e.target.value)}
-            placeholder="СӨХ-ийн нэрийг оруулна уу"
-            className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled
-          />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div id="barilgiin-phone" className="w-full">
-            <label className="block text-sm font-medium text-theme mb-1">
-              Утас
-            </label>
-            <input
-              type="tel"
-              inputMode="numeric"
-              pattern="\d*"
-              maxLength={8}
-              value={sukhDugaar}
-              onChange={(e) => {
-                // Allow only digits and limit to 8 characters
-                const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
-                setSukhDugaar(digits);
-              }}
-              placeholder="Утас дугаар оруулна уу"
-              className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg allow-overflow p-6 space-y-6 h-full overflow-auto custom-scrollbar">
+        {/* Header Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-[color:var(--surface-border)] rounded-t-lg">
+            <Building2 className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl font-semibold text-[color:var(--panel-text)]">
+              Барилгын тохиргоо
+            </h2>
           </div>
-          {/* Save button appears only when changes exist (placed under Дүүрэг/Хороо) */}
-          <div id="barilgiin-email" className="w-full">
-            <label className="block text-sm font-medium text-theme mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email хаяг оруулна уу"
-              className="w-full px-3 py-2 neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div id="barilgiin-duureg" className="w-full">
-            <label className="block text-sm font-medium text-theme mb-1">
-              Дүүрэг
+          {/* SÖH Name */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-[color:var(--panel-text)]">
+              СӨХ-ийн нэр
             </label>
-            <TusgaiZagvar
-              value={state.selectedDuureg || ""}
-              onChange={(v) => handleDuuregChange(v)}
-              options={Object.keys(districts).flatMap((city) =>
-                districts[city].map((district) => ({
-                  value: district,
-                  label: district,
-                })),
-              )}
-              placeholder="Сонгоно уу"
-              className="w-full"
-              // allow selecting district per-branch as well
-              disabled={false}
+            <input
+              id="barilgiin-soh-name"
+              type="text"
+              value={sohNer}
+              onChange={(e) => setSohNer(e.target.value)}
+              placeholder="СӨХ-ийн нэрийг оруулна уу"
+              className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ borderRadius: '0.5rem' }}
+              disabled
             />
           </div>
 
-          <div id="barilgiin-horoo" className="w-full">
-            <label className="block text-sm font-medium text-theme mb-1">
-              Хороо
-            </label>
-            <TusgaiZagvar
-              value={state.selectedHoroo || ""}
-              onChange={(v) => handleHorooChange(v)}
-              options={
-                state.selectedDuureg && subDistricts[state.selectedDuureg]
-                  ? subDistricts[state.selectedDuureg].map((horoo) => ({
-                      value: horoo,
-                      label: horoo,
-                    }))
-                  : []
-              }
-              placeholder="Сонгоно уу"
-              className="w-full"
-              // enable horoo selection when duureg selected (branch-level editable)
-              disabled={!state.selectedDuureg}
-            />
-          </div>
-        </div>
-        {isDirty && (
-          <div className="mt-2 md:mt-4 flex justify-end">
-            <button
-              onClick={khadgalakh}
-              className={`btn-minimal btn-save ${
-                isSaving ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700"
-              }`}
-              disabled={isSaving}
-              type="button"
-            >
-              {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-            </button>
-          </div>
-        )}
-        {orgBuildings && orgBuildings.length > 0 && (
-          <div className="space-y-2 border-b pb-3">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-theme">
-                Бүртгэлтэй барилгууд (Байр)
+          {/* Contact Information */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 pb-2 border-b border-[color:var(--surface-border)]">
+              <Users className="w-4 h-4 text-blue-500" />
+              <h3 className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Холбоо барих мэдээлэл
               </h3>
-              <button
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div id="barilgiin-phone" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Утас
+                </label>
+                <input
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="\d*"
+                  maxLength={8}
+                  value={sukhDugaar}
+                  onChange={(e) => {
+                    // Allow only digits and limit to 8 characters
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    setSukhDugaar(digits);
+                  }}
+                  placeholder="Утас дугаар оруулна уу"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  style={{ borderRadius: '0.5rem' }}
+                />
+              </div>
+              <div id="barilgiin-email" className="space-y-2">
+                <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                  Имэйл
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Имэйл хаяг оруулна уу"
+                  className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                  style={{ borderRadius: '0.5rem' }}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[color:var(--panel-text)]">
+                Хаяг
+              </label>
+              <input
+                type="text"
+                value={baiguullaga?.khayag || ""}
+                placeholder="Хаяг"
+                className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
+                style={{ borderRadius: '0.5rem' }}
+                disabled
+                readOnly
+              />
+            </div>
+          </div>
+
+          {/* Save Button */}
+          {isDirty && (
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={khadgalakh}
+                variant="primary"
+                size="md"
+                isLoading={isSaving}
+                leftIcon={<Save className="w-4 h-4" />}
+                disabled={isSaving}
+                className="!rounded-lg"
+                style={{ borderRadius: '0.5rem' }}
+              >
+                Хадгалах
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Buildings List Section */}
+        {orgBuildings && orgBuildings.length > 0 && (
+          <div className="space-y-4 pt-4 border-t border-[color:var(--surface-border)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Home className="w-4 h-4 text-blue-500" />
+                <h3 className="text-lg font-semibold text-[color:var(--panel-text)]">
+                  Бүртгэлтэй барилгууд (Байр)
+                </h3>
+              </div>
+              <Button
                 id="barilgiin-new-building-btn"
                 onClick={openNewBuildingModal}
-                className="cssbuttons-io-button"
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-4 h-4" />}
                 title="Шинэ барилга нэмэх"
+                className="!rounded-lg"
+                style={{ borderRadius: '0.5rem' }}
               >
-                +
-              </button>
-              {/* <div className="text-sm text-slate-500">
-                Нийт: {orgBuildings.length}
-              </div> */}
+                Нэмэх
+              </Button>
             </div>
-            <ul
+            <div
               id="barilgiin-buildings-list"
-              className="divide-y max-h-64 overflow-y-auto"
+              className="space-y-0 max-h-64 overflow-y-auto rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
             >
               {orgBuildings.map((b: any, index: number) => {
+                const isFirst = index === 0;
+                const isLast = index === orgBuildings.length - 1;
                 return (
-                  <li
+                  <div
                     key={b._id}
-                    className="py-2 flex items-center justify-between"
+                    className={`p-3 flex items-center justify-between hover:bg-[color:var(--surface-hover)] transition-colors border-b border-[color:var(--surface-border)] relative ${
+                      isFirst ? "rounded-t-lg" : ""
+                    } ${isLast ? "rounded-b-lg border-b-0" : ""}`}
+                    style={{ pointerEvents: 'auto' }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        id={`barilgiin-select-${b._id}`}
-                        onClick={() => setSelectedBuildingId(String(b._id))}
-                        className="cursor-pointer text-left px-2 py-1 hover:underline"
-                      >
-                        {b.ner || "-"}
-                      </div>
-                      <div className="text-xs text-slate-500"></div>
+                    <div
+                      id={`barilgiin-select-${b._id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBuildingId(String(b._id));
+                      }}
+                      className="flex-1 cursor-pointer text-[color:var(--panel-text)] hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium pointer-events-auto"
+                    >
+                      {b.ner || "-"}
                     </div>
-                    {/* Edit/Delete are available for all buildings */}
-                    <div className="flex items-center gap-2">
-                      <button
+                    <div className="flex items-center gap-2 pointer-events-auto">
+                      <Button
                         id={`barilgiin-edit-${b._id}`}
-                        onClick={() => handleEditBuilding(String(b._id))}
-                        className="btn-minimal btn-edit p-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditBuilding(String(b._id));
+                        }}
+                        variant="ghost"
+                        size="sm"
                         title="Засах"
+                        className="!rounded-lg"
+                        style={{ borderRadius: '0.5rem' }}
                       >
-                        <Edit className="w-4 h-4 text-blue-700" />
-                      </button>
-                      <button
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
                         id={`barilgiin-delete-${b._id}`}
-                        onClick={() => handleDeleteBuilding(String(b._id))}
-                        className="btn-minimal btn-delete p-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBuilding(String(b._id));
+                        }}
+                        variant="ghost"
+                        size="sm"
                         title="Устгах"
+                        className="!rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
+                        style={{ borderRadius: '0.5rem' }}
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
                     </div>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           </div>
         )}
 
+        {/* No Building Message */}
         {!barilga && (
-          <div className="p-3 rounded-2xl border border-blue-300 text-blue-700 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              Барилга олдсонгүй. Зөвхөн мэдээллийг харах боломжтой. Барилга
-              сонгох эсвэл шинээр нэмнэ үү.
+          <div className="p-4 rounded-lg border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-2">
+              <Building2 className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium">Барилга олдсонгүй</p>
+                <p className="text-xs mt-1 opacity-80">
+                  Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох эсвэл шинээр нэмнэ үү.
+                </p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {/* Allow adding a building even when none exist */}
-              <button
-                onClick={openNewBuildingModal}
-                className="btn-minimal btn-add p-2"
-                title="Шинэ барилга нэмэх"
-              >
-                <Plus className="w-4 h-4 mr-2 inline" /> Шинэ барилга
-              </button>
-            </div>
+            <Button
+              onClick={openNewBuildingModal}
+              variant="primary"
+              size="sm"
+              leftIcon={<Plus className="w-4 h-4" />}
+              title="Шинэ барилга нэмэх"
+              className="!rounded-lg"
+              style={{ borderRadius: '0.5rem' }}
+            >
+              Шинэ барилга
+            </Button>
           </div>
         )}
 
@@ -1839,6 +2170,8 @@ export default function BarilgiinTokhirgoo() {
           setDavkharCount={setDavkharCount}
           handleSaveSettings={handleSaveSettings}
           isSaving={isSaving}
+          districts={districts}
+          subDistricts={subDistricts}
         />
         {/* Edit building modal (portal) */}
         <EditBuildingModal
@@ -1856,6 +2189,12 @@ export default function BarilgiinTokhirgoo() {
           baiguullaga={baiguullaga}
           handleSaveEditBuilding={handleSaveEditBuilding}
           isSaving={isSaving}
+          districts={districts}
+          subDistricts={subDistricts}
+          editSelectedDuureg={editSelectedDuureg}
+          setEditSelectedDuureg={setEditSelectedDuureg}
+          editSelectedHoroo={editSelectedHoroo}
+          setEditSelectedHoroo={setEditSelectedHoroo}
         />
         <MModal
           title="Баталгаажуулалт"

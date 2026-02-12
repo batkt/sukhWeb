@@ -31,11 +31,11 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = "inline-flex items-center justify-center gap-2 font-semibold transition-all duration-200 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 focus:outline-none focus:ring-2 focus:ring-offset-2 border";
 
     const variants = {
-      primary: "bg-blue-600 text-white border-blue-700 hover:bg-blue-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
-      secondary: "bg-slate-600 text-white border-slate-700 hover:bg-slate-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
-      success: "bg-green-600 text-white border-green-700 hover:bg-green-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
-      warning: "bg-yellow-600 text-white border-yellow-700 hover:bg-yellow-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
-      danger: "bg-red-600 text-white border-red-700 hover:bg-red-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
+      primary: "bg-blue-600 !text-white border-blue-700 hover:bg-blue-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
+      secondary: "bg-slate-600 !text-white border-slate-700 hover:bg-slate-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
+      success: "bg-green-600 !text-white border-green-700 hover:bg-green-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
+      warning: "bg-yellow-600 !text-white border-yellow-700 hover:bg-yellow-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
+      danger: "bg-red-600 !text-white border-red-700 hover:bg-red-700 shadow-md hover:scale-[1.02] active:scale-[0.98]",
       ghost: "bg-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:scale-[1.02] active:scale-[0.98]",
       outline: "bg-transparent text-slate-700 dark:text-slate-300 border-2 border-slate-600 dark:border-slate-400 hover:bg-slate-600 hover:text-white dark:hover:bg-slate-500 hover:scale-[1.02] active:scale-[0.98]",
     };
