@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import {
   Tooltip,
   TooltipContent,
@@ -9,8 +8,6 @@ import {
 } from "@/components/ui/tooltip";
 import { 
   Trash2, 
-  Search, 
-  Calendar,
   User,
   FileText,
   ChevronLeft,
@@ -20,7 +17,6 @@ import {
   AlertTriangle
 } from "lucide-react";
 import moment from "moment";
-import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -79,9 +75,6 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 <h3 className="text-xl font-semibold text-[color:var(--panel-text)]">
                   Устгасан дэлгэрэнгүй
                 </h3>
-                <p className="text-xs text-[color:var(--muted-text)] mt-0.5">
-                  {record.modelName} - {record.documentId}
-                </p>
               </div>
             </div>
             <button
@@ -114,51 +107,29 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                Модель
+                Төрөл
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
-                {record.modelName || "-"}
+                {(() => {
+                  const modelNames: Record<string, string> = {
+                    ajiltan: "Ажилтан",
+                    geree: "Гэрээ",
+                    baiguullaga: "Байгууллага",
+                    barilga: "Барилга",
+                    talbai: "Талбай",
+                    orshinSuugch: "Оршин суугч",
+                  };
+                  return modelNames[record.modelName] || record.modelName || "-";
+                })()}
               </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                Устгах төрөл
-              </label>
-              <p className="text-sm">
-                <span className={`px-2 py-1 rounded-md text-xs ${
-                  record.deletionType === "hard"
-                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                    : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
-                }`}>
-                  {record.deletionType === "hard" ? "Бүрмөсөн устгах" : "Зөөлөн устгах"}
-                </span>
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                Баримтын ID
-              </label>
-              <p className="text-sm text-[color:var(--panel-text)] font-mono">
-                {record.documentId || "-"}
-              </p>
-            </div>
-            {record.ip && (
-              <div>
-                <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                  IP хаяг
-                </label>
-                <p className="text-sm text-[color:var(--panel-text)] font-mono">
-                  {record.ip}
-                </p>
-              </div>
-            )}
           </div>
 
           <div>
             <h4 className="text-sm font-semibold text-[color:var(--panel-text)] mb-3">
               Устгасан баримтын мэдээлэл
             </h4>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
               {(() => {
                 const deletedData = record.deletedDocument || record.deletedData;
                 if (!deletedData) {
@@ -180,22 +151,51 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   davkhar: "Давхар",
                   orts: "Орц",
                   bairniiNer: "Барилгын нэр",
-                  barilgiinId: "Барилгын ID",
-                  baiguullagiinId: "Байгууллагын ID",
                   baiguullagiinNer: "Байгууллагын нэр",
-                  erkh: "Эрх",
-                  nevtrekhNer: "Нэвтрэх нэр",
-                  duureg: "Дүүрэг",
-                  horoo: "Хороо",
-                  soh: "СОХ",
+                  ekhniiUldegdel: "Эхний үлдэгдэл",
+                  tsahilgaaniiZaalt: "Цахилгаан кВт",
                   tailbar: "Тайлбар",
                   createdAt: "Үүсгэсэн огноо",
-                  updatedAt: "Шинэчлэсэн огноо",
+                  updatedAt: "Устгасан огноо",
                 };
                 
-                const formatValue = (value: any): string => {
+                // Fields to exclude from display
+                const excludedFields = [
+                  "taniltsuulgaKharakhEsekh",
+                  "baiguullagiinId",
+                  "barilgiinId",
+                  "erkh",
+                  "nevtrekhNer",
+                  "duureg",
+                  "horoo",
+                  "toots",
+                  "ajiltniiNer",
+                  "_id",
+                  "__v",
+                ];
+                
+                const formatValue = (value: any, key?: string): string => {
                   if (value === null || value === undefined) return "(хоосон)";
                   if (typeof value === "boolean") return value ? "Тийм" : "Үгүй";
+                  
+                  // Format dates in Mongolian format
+                  if (key === "createdAt" || key === "updatedAt") {
+                    try {
+                      return moment(value).format("YYYY-MM-DD HH:mm:ss");
+                    } catch {
+                      return String(value);
+                    }
+                  }
+                  
+                  // Check if value is a date string (ISO format)
+                  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
+                    try {
+                      return moment(value).format("YYYY-MM-DD HH:mm:ss");
+                    } catch {
+                      return String(value);
+                    }
+                  }
+                  
                   if (typeof value === "object" && !Array.isArray(value)) {
                     if (value.ner && value.kod) return `${value.ner} (${value.kod})`;
                     return JSON.stringify(value, null, 2);
@@ -207,21 +207,42 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   return String(value);
                 };
                 
-                return Object.entries(deletedData)
-                  .filter(([key]) => !key.startsWith("_") && key !== "__v")
-                  .map(([key, value]) => (
-                    <div
-                      key={key}
-                      className="p-3 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
-                    >
-                      <div className="font-medium text-sm text-[color:var(--panel-text)] mb-1">
-                        {fieldLabels[key] || key}
+                const filteredEntries = Object.entries(deletedData)
+                  .filter(([key]) => !key.startsWith("_") && key !== "__v" && !excludedFields.includes(key));
+                
+                // Check if createdAt and updatedAt are the same
+                const createdAt = deletedData.createdAt;
+                const updatedAt = deletedData.updatedAt;
+                const datesAreSame = createdAt && updatedAt && 
+                  moment(createdAt).format("YYYY-MM-DD HH:mm:ss") === moment(updatedAt).format("YYYY-MM-DD HH:mm:ss");
+                
+                return filteredEntries
+                  .filter(([key]) => {
+                    if (datesAreSame && key === "updatedAt") {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map(([key, value]) => {
+                    // If dates are the same and this is createdAt, change label to show both
+                    const displayLabel = datesAreSame && key === "createdAt" 
+                      ? "Үүсгэсэн/Устгасан огноо"
+                      : (fieldLabels[key] || key);
+                    
+                    return (
+                      <div
+                        key={key}
+                        className="p-3 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
+                      >
+                        <div className="font-medium text-sm text-[color:var(--panel-text)] mb-1">
+                          {displayLabel}
+                        </div>
+                        <div className="text-sm text-[color:var(--muted-text)] break-words">
+                          {formatValue(value, key)}
+                        </div>
                       </div>
-                      <div className="text-sm text-[color:var(--muted-text)] break-words">
-                        {formatValue(value)}
-                      </div>
-                    </div>
-                  ));
+                    );
+                  });
               })()}
             </div>
           </div>
@@ -251,17 +272,10 @@ export default function UstsanTuukh({
 }: Props) {
   const { t } = useTranslation();
 
-  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
-    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
-    dayjs().format("YYYY-MM-DD"),
-  ]);
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
-  const [deletionType, setDeletionType] = useState<string>("");
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DeleteRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -283,17 +297,13 @@ export default function UstsanTuukh({
           "/audit/ustgakhTuukh",
           token,
           baiguullaga._id,
-          dateRange[0],
-          dateRange[1],
           selectedModel,
           selectedEmployee,
-          deletionType,
-          searchTerm,
           page,
           pageSize,
         ]
       : null,
-    async ([url, tkn, orgId, startDate, endDate, model, employee, delType, search, pg, pgSize]) => {
+    async ([url, tkn, orgId, model, employee, pg, pgSize]) => {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: pg,
@@ -307,18 +317,6 @@ export default function UstsanTuukh({
       if (employee) {
         params.ajiltniiId = employee;
       }
-      
-      if (delType) {
-        params.deletionType = delType;
-      }
-      
-      if (startDate && endDate) {
-        params.ekhlekhOgnoo = `${startDate} 00:00:00`;
-        params.duusakhOgnoo = `${endDate} 23:59:59`;
-      }
-      
-      // Note: documentId search would need to be handled client-side or via query param
-      // if the API supports it directly
       
       const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
@@ -357,21 +355,8 @@ export default function UstsanTuukh({
 
   // Client-side filtering and pagination
   const filteredRecords = useMemo(() => {
-    let filtered = [...allRecords];
-    
-    // Apply search filter (client-side since API may not support regex search)
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.ajiltniiNer?.toLowerCase().includes(term) ||
-          r.documentId?.toLowerCase().includes(term) ||
-          r.modelName?.toLowerCase().includes(term)
-      );
-    }
-    
-    return filtered;
-  }, [allRecords, searchTerm]);
+    return [...allRecords];
+  }, [allRecords]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -381,13 +366,6 @@ export default function UstsanTuukh({
 
   const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
-
-  const handleDateChange = (
-    dates: [string | null, string | null] | undefined
-  ) => {
-    setDateRange((dates || [null, null]) as [string | null, string | null]);
-    setPage(1);
-  };
 
   const handleViewDetails = (record: DeleteRecord) => {
     setSelectedRecord(record);
@@ -422,43 +400,11 @@ export default function UstsanTuukh({
 
           {/* Filters */}
           <div className="flex flex-col gap-4">
-            {/* Search and Date */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <div className="flex-1 w-full sm:max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setPage(1);
-                    }}
-                    placeholder="Хайх (Ажилтны нэр, Модель, ID)..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                    style={{ borderRadius: '0.5rem' }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
-                <DatePickerInput
-                  type="range"
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  className="text-[color:var(--panel-text)]"
-                  locale="mn"
-                  valueFormat="YYYY-MM-DD"
-                />
-              </div>
-            </div>
-
-            {/* Model, Employee, and Deletion Type Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Model and Employee Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
-                  Модель
+                  Төрөл
                 </label>
                 <select
                   value={selectedModel}
@@ -499,25 +445,6 @@ export default function UstsanTuukh({
                   ))}
                 </select>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
-                  Устгах төрөл
-                </label>
-                <select
-                  value={deletionType}
-                  onChange={(e) => {
-                    setDeletionType(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)]"
-                  style={{ borderRadius: '0.5rem' }}
-                >
-                  <option value="">Бүгд</option>
-                  <option value="hard">Бүрмөсөн устгах</option>
-                  <option value="soft">Зөөлөн устгах</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -533,25 +460,22 @@ export default function UstsanTuukh({
                   <table className="w-full text-left">
                     <thead className="bg-[color:var(--surface-hover)] sticky top-0">
                       <tr>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                           #
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Огноо
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                          Үүссэн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Модель
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Баримтын ID
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Устгасан ажилтан
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
                           Төрөл
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                          Ажилтан
+                        </th>
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)]">
+                          Устгасан огноо
+                        </th>
+                        <th className="px-4 py-3 text-xs text-center items-center justify-center font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
                       </tr>
@@ -560,7 +484,7 @@ export default function UstsanTuukh({
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={6}
                             className="px-4 py-12 text-center text-[color:var(--muted-text)]"
                           >
                             Устгасан түүх олдсонгүй
@@ -569,37 +493,30 @@ export default function UstsanTuukh({
                       ) : (
                         paginatedRecords.map((record, index) => {
                           const isLast = index === paginatedRecords.length - 1;
+                          // Get original creation date from deleted document
+                          const originalCreatedAt = record.deletedDocument?.createdAt || record.deletedData?.createdAt || "-";
                           return (
                             <tr
                               key={record._id}
-                              className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
+                              className={`border-b text-center items-center justify-center border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
                             >
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] text-center">
+                              <td className="px-4 text-center items-center justify-center py-3 text-sm text-[color:var(--panel-text)] text-center">
                                 {(page - 1) * pageSize + index + 1}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
+                              <td className="px-4 text-center items-center justify-center py-3 text-sm text-[color:var(--panel-text)]">
+                                {originalCreatedAt !== "-" ? moment(originalCreatedAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                              <td className="px-4 py-3 text-center items-center justify-center text-sm text-[color:var(--panel-text)]">
                                 {modelNames.find((m) => m.value === record.modelName)?.label || record.modelName || "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] font-mono">
-                                {record.documentId || "-"}
-                              </td>
                               <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                <div className="flex items-center gap-2">
+                                <div className="flex text-center items-center justify-center gap-2">
                                   <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                                   {record.ajiltniiNer || "-"}
                                 </div>
                               </td>
                               <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                <span className={`px-2 py-1 rounded-md text-xs ${
-                                  record.deletionType === "hard"
-                                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
-                                    : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300"
-                                }`}>
-                                  {record.deletionType === "hard" ? "Бүрмөсөн" : "Зөөлөн"}
-                                </span>
+                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
                               </td>
                               <td className="px-4 py-3 text-sm text-center">
                                 <Button

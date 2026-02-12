@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import {
   Tooltip,
   TooltipContent,
@@ -9,8 +8,6 @@ import {
 } from "@/components/ui/tooltip";
 import { 
   Edit, 
-  Search, 
-  Calendar,
   User,
   FileText,
   ChevronLeft,
@@ -19,7 +16,6 @@ import {
   X
 } from "lucide-react";
 import moment from "moment";
-import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -118,30 +114,13 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </div>
             <div>
               <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                Модель
+                Төрөл
+
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
                 {record.modelName || "-"}
               </p>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                Баримтын ID
-              </label>
-              <p className="text-sm text-[color:var(--panel-text)] font-mono">
-                {record.documentId || "-"}
-              </p>
-            </div>
-            {record.ip && (
-              <div>
-                <label className="block text-sm font-medium text-[color:var(--muted-text)] mb-1">
-                  IP хаяг
-                </label>
-                <p className="text-sm text-[color:var(--panel-text)] font-mono">
-                  {record.ip}
-                </p>
-              </div>
-            )}
           </div>
 
           <div>
@@ -251,14 +230,8 @@ export default function ZassanTuukh({
 }: Props) {
   const { t } = useTranslation();
 
-  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
-    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
-    dayjs().format("YYYY-MM-DD"),
-  ]);
-
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [searchTerm, setSearchTerm] = useState("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
@@ -282,16 +255,13 @@ export default function ZassanTuukh({
           "/audit/zasakhTuukh",
           token,
           baiguullaga._id,
-          dateRange[0],
-          dateRange[1],
           selectedModel,
           selectedEmployee,
-          searchTerm,
           page,
           pageSize,
         ]
       : null,
-    async ([url, tkn, orgId, startDate, endDate, model, employee, search, pg, pgSize]) => {
+    async ([url, tkn, orgId, model, employee, pg, pgSize]) => {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: pg,
@@ -305,14 +275,6 @@ export default function ZassanTuukh({
       if (employee) {
         params.ajiltniiId = employee;
       }
-      
-      if (startDate && endDate) {
-        params.ekhlekhOgnoo = `${startDate} 00:00:00`;
-        params.duusakhOgnoo = `${endDate} 23:59:59`;
-      }
-      
-      // Note: documentId search would need to be handled client-side or via query param
-      // if the API supports it directly
       
       const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
@@ -331,7 +293,12 @@ export default function ZassanTuukh({
     // Map API response to our interface format
     return records.map((r: any) => ({
       ...r,
-      createdAt: r.ognoo || r.createdAt, // Use ognoo if available
+      createdAt: r.ognoo || r.createdAt, // Use ognoo if available (this is the edit date)
+      // documentCreatedAt: The original creation date of the edited document
+      // NOTE: The API response currently does NOT include documentCreatedAt.
+      // The backend needs to add this field to the audit response.
+      // Until then, this will be null and display as "-" in the table.
+      documentCreatedAt: r.documentCreatedAt || null,
     }));
   }, [data]);
 
@@ -350,21 +317,8 @@ export default function ZassanTuukh({
 
   // Client-side filtering and pagination
   const filteredRecords = useMemo(() => {
-    let filtered = [...allRecords];
-    
-    // Apply search filter (client-side since API may not support regex search)
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.ajiltniiNer?.toLowerCase().includes(term) ||
-          r.documentId?.toLowerCase().includes(term) ||
-          r.modelName?.toLowerCase().includes(term)
-      );
-    }
-    
-    return filtered;
-  }, [allRecords, searchTerm]);
+    return [...allRecords];
+  }, [allRecords]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
@@ -374,13 +328,6 @@ export default function ZassanTuukh({
 
   const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
-
-  const handleDateChange = (
-    dates: [string | null, string | null] | undefined
-  ) => {
-    setDateRange((dates || [null, null]) as [string | null, string | null]);
-    setPage(1);
-  };
 
   const handleViewDetails = (record: EditRecord) => {
     setSelectedRecord(record);
@@ -415,43 +362,11 @@ export default function ZassanTuukh({
 
           {/* Filters */}
           <div className="flex flex-col gap-4">
-            {/* Search and Date */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-              <div className="flex-1 w-full sm:max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setPage(1);
-                    }}
-                    placeholder="Хайх (Ажилтны нэр, Модель, ID)..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                    style={{ borderRadius: '0.5rem' }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
-                <DatePickerInput
-                  type="range"
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  className="text-[color:var(--panel-text)]"
-                  locale="mn"
-                  valueFormat="YYYY-MM-DD"
-                />
-              </div>
-            </div>
-
             {/* Model and Employee Filters */}
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-[color:var(--panel-text)] mb-1">
-                  Модель
+                  Төрөл
                 </label>
                 <select
                   value={selectedModel}
@@ -510,22 +425,19 @@ export default function ZassanTuukh({
                         <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                           #
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Огноо
+                        <th className="px-4 py-3 text-xs text-center  font-semibold text-[color:var(--panel-text)]">
+                          Үүссэн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Модель
+                        <th className="px-4 py-3 text-xs text-center font-semibold text-[color:var(--panel-text)]">
+                          Төрөл
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Баримтын ID
+                        <th className="px-4 py-3 text-xs text-center  font-semibold text-[color:var(--panel-text)]">
+                          Ажилтан
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Зассан ажилтан
+                        <th className="px-4 py-3 text-xs text-center font-semibold text-[color:var(--panel-text)]">
+                          Өөрчилсөн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)]">
-                          Өөрчлөлт
-                        </th>
-                        <th className="px-4 py-3 text-xs font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
+                        <th className="px-4 py-3 text-xs  font-semibold text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
                       </tr>
@@ -534,7 +446,7 @@ export default function ZassanTuukh({
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={6}
                             className="px-4 py-12 text-center text-[color:var(--muted-text)]"
                           >
                             Зассан түүх олдсонгүй
@@ -543,7 +455,8 @@ export default function ZassanTuukh({
                       ) : (
                         paginatedRecords.map((record, index) => {
                           const isLast = index === paginatedRecords.length - 1;
-                          const changeCount = Array.isArray(record.changes) ? record.changes.length : (record.changes ? Object.keys(record.changes).length : 0);
+                          // Get original creation date from documentCreatedAt field
+                          const originalCreatedAt = (record as any).documentCreatedAt || "-";
                           return (
                             <tr
                               key={record._id}
@@ -552,27 +465,22 @@ export default function ZassanTuukh({
                               <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] text-center">
                                 {(page - 1) * pageSize + index + 1}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
+                              <td className="px-4 py-3 text-center text-sm text-[color:var(--panel-text)]">
+                                {originalCreatedAt !== "-" ? moment(originalCreatedAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                              <td className="px-4 py-3 text-sm text-center text-[color:var(--panel-text)]">
                                 {modelNames.find((m) => m.value === record.modelName)?.label || record.modelName || "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] font-mono">
-                                {record.documentId || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                <div className="flex items-center gap-2">
+                              <td className="px-4 py-3 text-sm  text-[color:var(--panel-text)]">
+                                <div className="flex text-center items-center justify-center gap-2">
                                   <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                                   {record.ajiltniiNer || "-"}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                                <span className="px-2 py-1 rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs">
-                                  {changeCount > 0 ? `${changeCount} талбар` : "Өөрчлөлтгүй"}
-                                </span>
+                              <td className="px-4 py-3 text-center text-sm text-[color:var(--panel-text)]">
+                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
                               </td>
-                              <td className="px-4 py-3 text-sm text-center">
+                              <td className="px-4 py-3 text-center text-sm text-center">
                                 <Button
                                   variant="ghost"
                                   size="sm"
