@@ -226,10 +226,9 @@ export default function TransactionModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="relative modal-surface rounded-2xl shadow-2xl w-[500px] !max-h-[80vh] overflow-y-auto border border-[color:var(--surface-border)]"
+          className="relative modal-surface rounded-2xl shadow-2xl w-[700px] !max-h-[80vh] overflow-y-auto border border-[color:var(--surface-border)]"
           onClick={(e) => e.stopPropagation()}
         >
-          
 
           {/* Body */}
           <div className="px-6 py-5 space-y-5 bg-[color:var(--surface-bg)]">
@@ -288,7 +287,7 @@ export default function TransactionModal({
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 p-3 bg-rose-500/5 rounded-2xl border border-rose-500/10 overflow-hidden"
+                  className="flex items-center gap-2 p-3  rounded-2xl overflow-hidden"
                 >
                   <input
                     type="checkbox"
@@ -307,10 +306,12 @@ export default function TransactionModal({
               )}
             </AnimatePresence>
 
+            {/* Date Input */}
+            {/* Grid for Date & (Ashiglalt Type OR Amount) */}
             <div className="grid grid-cols-2 gap-4">
               {/* Date Input */}
               <div className="space-y-1.5">
-                <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
+                <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                   Огноо
                 </label>
                 <input
@@ -318,45 +319,14 @@ export default function TransactionModal({
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
                   disabled={isProcessing}
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm "
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
                 />
               </div>
 
-              {/* Amount Input */}
-              <div className="space-y-1.5">
-                <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                  Дүн ₮
-                </label>
-                <input
-                  type="text"
-                  value={amount}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (/^[0-9.,]*$/.test(val)) {
-                      setAmount(val);
-                    }
-                  }}
-                  onFocus={() => {
-                    setAmount(amount.replace(/,/g, ""));
-                  }}
-                  onBlur={() => {
-                    const val = parseFloat(amount.replace(/,/g, ""));
-                    if (!isNaN(val)) {
-                      setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                    }
-                  }}
-                  disabled={isProcessing}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm  text-right tracking-wide"
-                />
-              </div>
-            </div>
-
-            {/* Ашиглалтын зардал – Цахилгаан кВ (only when type is ashiglalt) */}
-            {transactionType === "ashiglalt" && (
-              <div className="space-y-3">
+              {/* Expenses Type (Only for ashiglalt) OR Amount (Standard for others) */}
+              {transactionType === "ashiglalt" ? (
                 <div className="space-y-1.5">
-                  <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
+                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                     Ашиглалтын зардал
                   </label>
                   <select
@@ -371,106 +341,186 @@ export default function TransactionModal({
                     <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
                   </select>
                 </div>
+              ) : (
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                    Дүн ₮
+                  </label>
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[0-9.,]*$/.test(val)) {
+                        setAmount(val);
+                      }
+                    }}
+                    onFocus={() => {
+                      setAmount(amount.replace(/,/g, ""));
+                    }}
+                    onBlur={() => {
+                      const val = parseFloat(amount.replace(/,/g, ""));
+                      if (!isNaN(val)) {
+                        setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                      }
+                    }}
+                    disabled={isProcessing}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold"
+                  />
+                </div>
+              )}
+            </div>
 
-                {ashiglaltZardal === "tsakhilgaan_kv" && (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                          Өмнөх заалт
-                        </label>
-                        <input
-                          type="text"
-                          value={umnukhZaalt}
-                          readOnly
-                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 text-[color:var(--panel-text)] rounded-2xl focus:outline-none transition-all text-sm text-right font-medium"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                          Одоо заалт
-                        </label>
-                        <input
-                          type="text"
-                          value={suuliinZaalt}
-                          readOnly
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^[0-9.,]*$/.test(val)) {
-                              setSuuliinZaalt(val);
-                            }
-                          }}
-                          disabled={isProcessing}
-                          placeholder="0.00"
-                          className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right font-medium"
-                        />
-                      </div>
-                    </div>
+            {/* Ashiglalt Details (Readings, Toggles) */}
+            {transactionType === "ashiglalt" && ashiglaltZardal === "tsakhilgaan_kv" && (
+              <div className="space-y-3">
 
-                    <div className="flex items-center justify-between gap-4 p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
-                      <div className="space-y-0.5 min-w-0">
-                        <p className="text-xs  text-[color:var(--panel-text)]">
-                          Суурь хүраамж нэмэх
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={includeSuuriKhuraamj}
-                        onClick={() => setIncludeSuuriKhuraamj((v) => !v)}
-                        disabled={isProcessing}
-                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 disabled:opacity-50 ${includeSuuriKhuraamj ? "bg-[color:var(--theme)]" : "bg-gray-400 dark:bg-gray-500"
-                          }`}
-                        style={includeSuuriKhuraamj ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${includeSuuriKhuraamj ? "translate-x-5 border-white/80" : "translate-x-0"
-                            }`}
-                        />
-                      </button>
-                      <div className="space-y-0.5 min-w-0">
-                        <p className="text-xs  text-[color:var(--panel-text)]">
-                          Нэхэмжлэх дээр харах эсэх
-                        </p>
 
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={showUsageOnInvoice}
-                        onClick={() => setShowUsageOnInvoice((v) => !v)}
-                        disabled={isProcessing}
-                        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-bg)] disabled:opacity-50 ${showUsageOnInvoice
-                          ? "bg-[color:var(--theme)]"
-                          : "bg-gray-400 dark:bg-gray-500"
-                          }`}
-                        style={showUsageOnInvoice ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${showUsageOnInvoice ? "translate-x-5 border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.2)]" : "translate-x-0"
-                            }`}
-                        />
-                      </button>
-                    </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
+                      Өмнөх заалт
+                    </label>
+                    <input
+                      type="text"
+                      value={umnukhZaalt}
+                      readOnly
+                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 text-[color:var(--panel-text)] rounded-2xl focus:outline-none transition-all text-sm text-right font-medium"
+                    />
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
+                      Одоо заалт
+                    </label>
+                    <input
+                      type="text"
+                      value={suuliinZaalt}
+                      readOnly
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[0-9.,]*$/.test(val)) {
+                          setSuuliinZaalt(val);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-4 p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="text-xs  text-[color:var(--panel-text)]">
+                      Суурь хүраамж нэмэх
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={includeSuuriKhuraamj}
+                    onClick={() => setIncludeSuuriKhuraamj((v) => !v)}
+                    disabled={isProcessing}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 disabled:opacity-50 ${includeSuuriKhuraamj ? "bg-[color:var(--theme)]" : "bg-gray-400 dark:bg-gray-500"
+                      }`}
+                    style={includeSuuriKhuraamj ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${includeSuuriKhuraamj ? "translate-x-5 border-white/80" : "translate-x-0"
+                        }`}
+                    />
+                  </button>
+                  <div className="space-y-0.5 min-w-0">
+                    <p className="text-xs  text-[color:var(--panel-text)]">
+                      Нэхэмжлэх дээр харах эсэх
+                    </p>
+
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={showUsageOnInvoice}
+                    onClick={() => setShowUsageOnInvoice((v) => !v)}
+                    disabled={isProcessing}
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-bg)] disabled:opacity-50 ${showUsageOnInvoice
+                      ? "bg-[color:var(--theme)]"
+                      : "bg-gray-400 dark:bg-gray-500"
+                      }`}
+                    style={showUsageOnInvoice ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${showUsageOnInvoice ? "translate-x-5 border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.2)]" : "translate-x-0"
+                        }`}
+                    />
+                  </button>
+                </div>
+
               </div>
             )}
 
-            {/* Tailbar Input */}
-            <div className="space-y-1.5">
-              <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                Тайлбар
-              </label>
-              <textarea
-                value={tailbar}
-                onChange={(e) => setTailbar(e.target.value)}
-                disabled={isProcessing}
-                placeholder="Гүйлгээний утга..."
-                rows={3}
-                className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
-              />
-            </div>
+
+            {/* Tailbar & Amount Grid */}
+            {/* Tailbar & Amount (Conditionally Rendered) */}
+            {transactionType === "ashiglalt" ? (
+              <div className="grid grid-cols-2 gap-4 items-start">
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                    Тайлбар
+                  </label>
+                  <textarea
+                    value={tailbar}
+                    onChange={(e) => setTailbar(e.target.value)}
+                    disabled={isProcessing}
+                    placeholder="Гүйлгээний утга..."
+                    rows={2}
+                    className="w-full px-3 py-2 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none h-[40px]"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                    Дүн ₮
+                  </label>
+                  <input
+                    type="text"
+                    value={amount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^[0-9.,]*$/.test(val)) {
+                        setAmount(val);
+                      }
+                    }}
+                    onFocus={() => {
+                      setAmount(amount.replace(/,/g, ""));
+                    }}
+                    onBlur={() => {
+                      const val = parseFloat(amount.replace(/,/g, ""));
+                      if (!isNaN(val)) {
+                        setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                      }
+                    }}
+                    disabled={isProcessing}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold !h-[40px]"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                  Тайлбар
+                </label>
+                <textarea
+                  value={tailbar}
+                  onChange={(e) => setTailbar(e.target.value)}
+                  disabled={isProcessing}
+                  placeholder="Гүйлгээний утга..."
+                  rows={3}
+                  className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none"
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -515,7 +565,7 @@ export default function TransactionModal({
             </button>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+      </div >
+    </AnimatePresence >
   );
 }
