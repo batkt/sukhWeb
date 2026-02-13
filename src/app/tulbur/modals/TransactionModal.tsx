@@ -146,21 +146,7 @@ export default function TransactionModal({
           setSuuliinZaalt(String(res.data.suuliinZaaltNum));
         }
 
-        let calcTailbar = "";
-        if (res.data.suuliinZaaltNum != null && res.data.zoruu != null) {
-          calcTailbar = `Нийт: ${res.data.suuliinZaaltNum}, Зөрүү: ${res.data.zoruu}`;
-        }
 
-        if (calcTailbar) {
-          // Remove any previous calculation tailbar (anything after " | Нийт:" or starting with "Нийт:")
-          const baseTailbar = tailbar.split(" | Нийт:")[0].split(/^Нийт:/)[0].trim();
-          setTailbar(baseTailbar ? `${baseTailbar} | ${calcTailbar}` : calcTailbar);
-        } else if (res.data.tailbar) {
-          // If no specific calc data but we have a general tailbar from server, only set if empty
-          if (!tailbar) setTailbar(res.data.tailbar);
-        }
-        const chargeInfo = res.data.selectedCharge ? ` (${res.data.selectedCharge})` : "";
-        messageApi.success(`Цахилгааны дүн тооцоолсон${chargeInfo}.`);
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Тооцоолол амжилтгүй.";
@@ -170,12 +156,18 @@ export default function TransactionModal({
     }
   };
 
-  // Re-calculate when toggle changes if we already have readings
+  // Auto-calculate when user selects Цахилгаан кВ or when toggle changes
   React.useEffect(() => {
-    if (show && transactionType === "ashiglalt" && ashiglaltZardal === "tsakhilgaan_kv" && suuliinZaalt) {
+    if (
+      show &&
+      transactionType === "ashiglalt" &&
+      ashiglaltZardal === "tsakhilgaan_kv" &&
+      umnukhZaalt &&
+      suuliinZaalt
+    ) {
       handleTsakhilgaanTootsool();
     }
-  }, [includeSuuriKhuraamj, transactionType, ashiglaltZardal]);
+  }, [includeSuuriKhuraamj, transactionType, ashiglaltZardal, umnukhZaalt, suuliinZaalt, show]);
 
   const handleSubmit = async () => {
     // Build tailbar including optional ashiglalt (electricity) details
@@ -237,20 +229,7 @@ export default function TransactionModal({
           className="relative modal-surface rounded-2xl shadow-2xl w-[500px] !max-h-[80vh] overflow-y-auto border border-[color:var(--surface-border)]"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
-          <div className="relative px-6 py-4 flex items-center justify-between border-b border-[color:var(--surface-border)]/50 bg-[color:var(--surface-bg)]">
-            <h2 className="text-lg  text-[color:var(--panel-text)] tracking-tight">
-              Гүйлгээ хийх
-            </h2>
-            <button
-              type="button"
-              onClick={handleClose}
-              className="p-1.5 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              disabled={isProcessing}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          
 
           {/* Body */}
           <div className="px-6 py-5 space-y-5 bg-[color:var(--surface-bg)]">
@@ -409,11 +388,12 @@ export default function TransactionModal({
                       </div>
                       <div className="space-y-1.5">
                         <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                          Нийт (одоо)
+                          Одоо заалт
                         </label>
                         <input
                           type="text"
                           value={suuliinZaalt}
+                          readOnly
                           onChange={(e) => {
                             const val = e.target.value;
                             if (/^[0-9.,]*$/.test(val)) {
@@ -448,22 +428,6 @@ export default function TransactionModal({
                             }`}
                         />
                       </button>
-                    </div>
-
-                    {token && baiguullagiinId && (
-                      <div className="flex justify-end">
-                        <button
-                          type="button"
-                          onClick={handleTsakhilgaanTootsool}
-                          disabled={isProcessing || isCalculatingTsakhilgaan}
-                          className="px-4 py-2 text-sm  bg-[color:var(--theme)] !text-white hover:opacity-90 rounded-2xl transition-all disabled:opacity-50"
-                        >
-                          {isCalculatingTsakhilgaan ? "Тооцоолж байна..." : "Цахилгаан дүн тооцоолох"}
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between gap-4 mt-1 p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
                       <div className="space-y-0.5 min-w-0">
                         <p className="text-xs  text-[color:var(--panel-text)]">
                           Нэхэмжлэх дээр харах эсэх
