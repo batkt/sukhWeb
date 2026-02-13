@@ -2,6 +2,7 @@ import React from "react";
 import { ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import { getPaymentStatusLabel } from "@/lib/utils";
+import { getResidentToot, getResidentDavkhar, getResidentOrts } from "@/lib/residentDataHelper";
 
 type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
 
@@ -175,9 +176,9 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                             : p.ner || "-"}
                         </td>
 
-                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.orts || "-"}</td>
-                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.davkhar || "-"}</td>
-                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{p.toot || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{getResidentOrts(p) || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{getResidentDavkhar(p) || "-"}</td>
+                        <td className="p-1 text-center border-r border-[color:var(--surface-border)]">{getResidentToot(p) || "-"}</td>
                         <td className="p-1 text-center border-r border-[color:var(--surface-border)]">
                           <div className="text-sm text-theme">{p.utas}</div>
                         </td>

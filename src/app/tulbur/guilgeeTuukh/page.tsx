@@ -195,7 +195,11 @@ const InvoiceModal = ({
 
   const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
   const currentDate = new Date().toLocaleDateString("mn-MN");
-  const isLiftExempt = liftFloors?.includes(String(resident?.davkhar));
+  // Get davkhar from toots array first, then fallback to top-level
+  const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0 
+    ? resident.toots[0]?.davkhar 
+    : resident?.davkhar;
+  const isLiftExempt = liftFloors?.includes(String(residentDavkhar));
 
   const isLiftItem = (z: Zardal) =>
     z.zardliinTurul === "Лифт" ||
@@ -2444,7 +2448,12 @@ export default function DansniiKhuulga() {
       const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
       const residentGereeId = String(resident?.gereeniiId || "").trim();
       const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
-      const residentToot = String(resident?.toot || "").trim();
+      // Get toot from toots array first, then fallback to top-level
+      const residentToot = String(
+        (Array.isArray(resident?.toots) && resident.toots.length > 0 
+          ? resident.toots[0]?.toot 
+          : null) ?? resident?.toot ?? ""
+      ).trim();
       const residentNer = String(resident?.ner || "").trim().toLowerCase();
       const residentOvog = String(resident?.ovog || "").trim().toLowerCase();
       const residentUtas = Array.isArray(resident?.utas)
@@ -3079,8 +3088,11 @@ export default function DansniiKhuulga() {
                           .map((v) => (v ? String(v).trim() : ""))
                           .filter(Boolean)
                           .join(" ") || "-";
-                      // Get toot - prioritize contract (geree) data
-                      const toot = String(ct?.toot || resident?.toot || it?.toot || "-");
+                      // Get toot - prioritize toots array, then contract (geree) data
+                      const residentToot = Array.isArray(resident?.toots) && resident.toots.length > 0 
+                        ? resident.toots[0]?.toot 
+                        : resident?.toot;
+                      const toot = String(ct?.toot || residentToot || it?.toot || "-");
 
                       // Get utas - can be string or array
                       // Priority: resident.utas (array or string) > it.utas (array or string)
@@ -3109,11 +3121,15 @@ export default function DansniiKhuulga() {
                         }
                         return "-";
                       })();
-                      // Get orts - prioritize contract (geree) data
+                      // Get orts - prioritize toots array, then contract (geree) data
+                      const residentOrts = Array.isArray(resident?.toots) && resident.toots.length > 0 
+                        ? resident.toots[0]?.orts 
+                        : null;
                       const orts = String(
                         ct?.orts ??
                         ct?.ortsDugaar ??
                         ct?.ortsNer ??
+                        residentOrts ??
                         resident?.orts ??
                         resident?.ortsDugaar ??
                         resident?.ortsNer ??
@@ -3123,7 +3139,11 @@ export default function DansniiKhuulga() {
                         it?.ortsNer ??
                         "-"
                       );
-                      const davkhar = String(resident?.davkhar ?? it?.davkhar ?? "-");
+                      // Get davkhar - prioritize toots array
+                      const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0 
+                        ? resident.toots[0]?.davkhar 
+                        : resident?.davkhar;
+                      const davkhar = String(residentDavkhar ?? it?.davkhar ?? "-");
                       const sentAt =
                         it?.ognoo || it?.nekhemjlekhiinOgnoo || it?.createdAt;
                       const paidAt = it?.tulsunOgnoo || it?.paidAt;

@@ -22,6 +22,7 @@ import moment from "moment";
 import { toast } from "react-hot-toast";
 import ResidentRegistrationModal from "./ResidentRegistrationModal";
 import deleteMethod from "../../../../tools/function/deleteMethod";
+import { getResidentToot } from "@/lib/residentDataHelper";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -255,13 +256,11 @@ export default function OrshinSuugch() {
                 <tr className="whitespace-nowrap">
                    {[
                         { label: "№", width: 'w-12 text-center' },
-                        { label: "Бүртгэсэн" },
                         { label: "Нэр" },
                         { label: "Утас" },
                         { label: "Дугаар" },
                         { label: "Төрөл" },
-                        { label: "Оршин суугч төрөл" },
-                        { label: "Тайлбар" },
+                        { label: "Ажилтан" },
                         { label: "Тоот", align: 'text-right' },
                         { label: "Үйлдэл", width: 'w-24 text-center' }
                       ].map((h, idx) => (
@@ -274,7 +273,7 @@ export default function OrshinSuugch() {
               <tbody>
                 {!residentsData && !residents.length ? (
                    <tr>
-                    <td colSpan={10} className="px-4 py-20 text-center">
+                    <td colSpan={8} className="px-4 py-20 text-center">
                        <div className="flex flex-col items-center gap-4">
                           <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                           <p className="text-xs  text-slate-400 uppercase tracking-widest animate-pulse">Уншиж байна...</p>
@@ -283,7 +282,7 @@ export default function OrshinSuugch() {
                   </tr>
                 ) : residents.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-12 text-center text-slate-400">
+                    <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center gap-2">
                         <User className="w-12 h-12 opacity-50" />
                         <p>Оршин суугчийн мэдээлэл олдсонгүй</p>
@@ -298,16 +297,6 @@ export default function OrshinSuugch() {
                     >
                       <td className="py-4 px-3 text-center text-[10px] text-slate-400 ">
                         {(page - 1) * pageSize + idx + 1}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex flex-col">
-                            <span className="text-[11px]  text-slate-600 dark:text-slate-400">
-                                {resident.burtgesenAjiltaniiNer || "-"}
-                            </span>
-                             <span className="text-[9px] text-slate-400">
-                                {resident.createdAt ? moment(resident.createdAt).format("YYYY-MM-DD") : ""}
-                            </span>
-                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
@@ -358,24 +347,15 @@ export default function OrshinSuugch() {
                             )}
                          </div>
                       </td>
-                       <td className="py-4 px-4">
-                         {resident.orshinSuugchTurul ? (
-                           <span className="px-2.5 py-1 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800/50 text-[10px]  text-green-700 dark:text-green-400">
-                             {resident.orshinSuugchTurul}
-                           </span>
-                         ) : (
-                           <span className="text-[10px] text-slate-400 italic">-</span>
-                         )}
-                      </td>
-                       <td className="py-4 px-4">
-                         <p className="text-[10px] text-slate-500 italic max-w-[150px] truncate">
-                           {resident.zochinTailbar || resident.tailbar || "-"}
-                         </p>
+                      <td className="py-4 px-4">
+                         <div className="text-[11px]  text-slate-600 dark:text-slate-400">
+                            {resident.burtgesenAjiltaniiNer || "-"}
+                         </div>
                       </td>
                       <td className="py-4 px-4 text-right">
                          <div className="flex items-center justify-end gap-2">
                             <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px]  text-emerald-700 dark:text-emerald-400">
-                              {resident.toot ? `${resident.toot} тоот` : "-"}
+                              {resident.ezenToot || getResidentToot(resident) ? `${resident.ezenToot || getResidentToot(resident)} тоот` : "-"}
                             </span>
                          </div>
                       </td>

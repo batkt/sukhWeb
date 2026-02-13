@@ -327,10 +327,42 @@ export function useGereeData(
       case "turul":
         return getStringValue(contract.turul) || "-";
       
-      case "duureg":
+      case "duureg": {
+        // Try to get duureg from linked resident's toots array first
+        const orshinSuugchId = contract.orshinSuugchId;
+        if (orshinSuugchId) {
+          const resident = residentsById[String(orshinSuugchId)];
+          if (resident) {
+            const tootsDuureg = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.duureg 
+              : null;
+            const residentDuureg = tootsDuureg ?? resident.duureg;
+            if (residentDuureg != null && residentDuureg !== '') {
+              return getStringValue(residentDuureg);
+            }
+          }
+        }
         return getStringValue(contract.duureg) || "-";
+      }
       
       case "horoo": {
+        // Try to get horoo from linked resident's toots array first
+        const orshinSuugchId = contract.orshinSuugchId;
+        if (orshinSuugchId) {
+          const resident = residentsById[String(orshinSuugchId)];
+          if (resident) {
+            const tootsHoroo = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.horoo 
+              : null;
+            const residentHoroo = tootsHoroo ?? resident.horoo;
+            if (residentHoroo != null) {
+              if (typeof residentHoroo === "object") {
+                return getStringValue(residentHoroo.ner) || getStringValue(residentHoroo.kod) || "-";
+              }
+              return getStringValue(residentHoroo) || "-";
+            }
+          }
+        }
         const horoo = contract.horoo;
         if (typeof horoo === "object" && horoo != null) {
           return getStringValue(horoo.ner) || getStringValue(horoo.kod) || "-";
@@ -338,16 +370,38 @@ export function useGereeData(
         return getStringValue(horoo) || "-";
       }
       
-      case "bairniiNer":
-        return getStringValue(contract.bairniiNer) || "-";
-      
-      case "orts": {
-        // First try to get orts from the linked resident
+      case "bairniiNer": {
+        // Try to get bairniiNer from linked resident's toots array first
         const orshinSuugchId = contract.orshinSuugchId;
         if (orshinSuugchId) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident?.orts != null) {
-            return String(resident.orts);
+          if (resident) {
+            const tootsBairniiNer = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.bairniiNer 
+              : null;
+            const residentBairniiNer = tootsBairniiNer ?? resident.bairniiNer;
+            if (residentBairniiNer != null && residentBairniiNer !== '') {
+              return getStringValue(residentBairniiNer);
+            }
+          }
+        }
+        return getStringValue(contract.bairniiNer) || "-";
+      }
+      
+      case "orts": {
+        // First try to get orts from the linked resident (prioritize toots array)
+        const orshinSuugchId = contract.orshinSuugchId;
+        if (orshinSuugchId) {
+          const resident = residentsById[String(orshinSuugchId)];
+          if (resident) {
+            // Try toots array first, then top-level
+            const tootsOrts = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.orts 
+              : null;
+            const residentOrts = tootsOrts ?? resident.orts;
+            if (residentOrts != null && residentOrts !== '') {
+              return String(residentOrts);
+            }
           }
         }
         // Fall back to contract's own orts value
@@ -355,12 +409,19 @@ export function useGereeData(
       }
       
       case "davkhar": {
-        // Try to get davkhar from the linked resident
+        // Try to get davkhar from the linked resident (prioritize toots array)
         const orshinSuugchId = contract.orshinSuugchId;
         if (orshinSuugchId) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident?.davkhar != null) {
-            return String(resident.davkhar);
+          if (resident) {
+            // Try toots array first, then top-level
+            const tootsDavkhar = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.davkhar 
+              : null;
+            const residentDavkhar = tootsDavkhar ?? resident.davkhar;
+            if (residentDavkhar != null && residentDavkhar !== '') {
+              return String(residentDavkhar);
+            }
           }
         }
         // Fall back to contract's own davkhar value
@@ -368,12 +429,19 @@ export function useGereeData(
       }
       
       case "toot": {
-        // Try to get toot from the linked resident
+        // Try to get toot from the linked resident (prioritize toots array)
         const orshinSuugchId = contract.orshinSuugchId;
         if (orshinSuugchId) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident?.toot != null) {
-            return String(resident.toot);
+          if (resident) {
+            // Try toots array first, then top-level
+            const tootsToot = Array.isArray(resident.toots) && resident.toots.length > 0 
+              ? resident.toots[0]?.toot 
+              : null;
+            const residentToot = tootsToot ?? resident.toot;
+            if (residentToot != null && residentToot !== '') {
+              return String(residentToot);
+            }
           }
         }
         // Fall back to contract's own toot value

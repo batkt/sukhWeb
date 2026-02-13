@@ -210,6 +210,19 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   return String(value);
                 };
                 
+                // Helper to get value from toots array first, then fallback to top-level
+                const getValueFromToots = (key: string, topLevelValue: any): any => {
+                  // Fields that should prioritize toots array
+                  const tootsFields = ['toot', 'davkhar', 'orts', 'duureg', 'horoo', 'soh', 'bairniiNer'];
+                  if (tootsFields.includes(key) && Array.isArray(deletedData.toots) && deletedData.toots.length > 0) {
+                    const tootsValue = deletedData.toots[0][key];
+                    if (tootsValue != null && tootsValue !== '') {
+                      return tootsValue;
+                    }
+                  }
+                  return topLevelValue;
+                };
+                
                 const filteredEntries = Object.entries(deletedData)
                   .filter(([key]) => !key.startsWith("_") && key !== "__v" && !excludedFields.includes(key));
                 
@@ -227,6 +240,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     return true;
                   })
                   .map(([key, value]) => {
+                    // Prioritize toots array data for specific fields
+                    const displayValue = getValueFromToots(key, value);
+                    
                     // If dates are the same and this is createdAt, change label to show both
                     const displayLabel = datesAreSame && key === "createdAt" 
                       ? "Үүсгэсэн/Устгасан огноо"
@@ -241,7 +257,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                           {displayLabel}
                         </div>
                         <div className="text-sm text-[color:var(--muted-text)] break-words">
-                          {formatValue(value, key)}
+                          {formatValue(displayValue, key)}
                         </div>
                       </div>
                     );
