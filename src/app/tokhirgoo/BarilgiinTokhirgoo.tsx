@@ -13,6 +13,7 @@ import {
   Save,
   Home,
   X,
+  ArrowRight,
 } from "lucide-react";
 import uilchilgee, { aldaaBarigch } from "@/lib/uilchilgee";
 import updateMethod from "../../../tools/function/updateMethod";
@@ -1412,6 +1413,111 @@ export default function BarilgiinTokhirgoo() {
     id: string;
     ner?: string;
   } | null>(null);
+  
+  // Transfer modal state - only for specific baiguullagiinId
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [buildingToTransfer, setBuildingToTransfer] = useState<{
+    id: string;
+    ner?: string;
+  } | null>(null);
+  const [targetOrgId, setTargetOrgId] = useState<string>("");
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [availableOrgs, setAvailableOrgs] = useState<Array<{ _id: string; ner: string }>>([]);
+  
+  // Check if this is the specific baiguullagiinId
+  const isTransferEnabled = useMemo(() => {
+    return String(baiguullaga?._id) === "698e7fd3b6dd386b6c56a808";
+  }, [baiguullaga?._id]);
+
+  // Fetch available organizations when transfer modal opens
+  useEffect(() => {
+    if (transferModalOpen && token) {
+      const fetchOrgs = async () => {
+        try {
+          // Use a different endpoint structure to avoid route conflict
+          // Try using query parameters with a specific action
+          const response = await uilchilgee(token).get("/baiguullaga", {
+            params: {
+              action: "list", // Signal that we want a list
+              getAll: true, // Alternative parameter
+            },
+          });
+          
+          if (response.data) {
+            let orgs: any[] = [];
+            if (Array.isArray(response.data)) {
+              orgs = response.data;
+            } else if (response.data.jagsaalt && Array.isArray(response.data.jagsaalt)) {
+              orgs = response.data.jagsaalt;
+            } else if (response.data.list && Array.isArray(response.data.list)) {
+              orgs = response.data.list;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+              orgs = response.data.data;
+            }
+            
+            // Filter out current organization
+            const filtered = orgs
+              .filter((org: any) => org && org._id && String(org._id) !== String(baiguullaga?._id))
+              .map((org: any) => ({ _id: org._id, ner: org.ner || org.name || "" }));
+            setAvailableOrgs(filtered);
+          } else {
+            // If no data, set empty array (user might not have access to list all orgs)
+            setAvailableOrgs([]);
+          }
+        } catch (error: any) {
+          console.error("Failed to fetch organizations:", error);
+          // Don't show error overlay - just log and set empty array
+          // The user can still manually enter the target org ID if needed
+          setAvailableOrgs([]);
+          // Only show error if it's not a 404 or similar expected error
+          if (error?.response?.status !== 404) {
+            console.warn("Could not fetch organization list. User may need to contact admin for target organization ID.");
+          }
+        }
+      };
+      fetchOrgs();
+    } else {
+      setAvailableOrgs([]);
+    }
+  }, [transferModalOpen, token, baiguullaga?._id]);
+
+  // Handle building transfer
+  const handleTransferBuilding = async () => {
+    if (!buildingToTransfer?.id || !targetOrgId || !token) {
+      if (!targetOrgId) {
+        openErrorOverlay("Байгууллага сонгоно уу");
+      }
+      return;
+    }
+
+    setIsTransferring(true);
+    try {
+      const response = await uilchilgee(token).post("/transformation/transformBarilga", {
+        oldBaiguullagiinId: baiguullaga?._id,
+        newBaiguullagiinId: targetOrgId,
+        barilgiinId: buildingToTransfer.id,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        openSuccessOverlay("Барилга амжилттай шилжүүллээ");
+        setTransferModalOpen(false);
+        setBuildingToTransfer(null);
+        setTargetOrgId("");
+        // Refresh the building list
+        if (baiguullagaMutate) {
+          baiguullagaMutate();
+        }
+      } else {
+        throw new Error("Transfer failed");
+      }
+    } catch (error: any) {
+      console.error("Transfer error:", error);
+      const errorMsg = error?.response?.data?.message || error?.message || "Шилжүүлэх явцад алдаа гарлаа";
+      openErrorOverlay(errorMsg);
+    } finally {
+      setIsTransferring(false);
+    }
+  };
 
   const confirmDeleteBuilding = async () => {
     const id = buildingToDelete?.id;
@@ -2093,6 +2199,23 @@ export default function BarilgiinTokhirgoo() {
                       {b.ner || "-"}
                     </div>
                     <div className="flex items-center gap-2 pointer-events-auto">
+                      {isTransferEnabled && (
+                        <Button
+                          id={`barilgiin-transfer-${b._id}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setBuildingToTransfer({ id: String(b._id), ner: b.ner || "" });
+                            setTransferModalOpen(true);
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          title="Шилжүүлэх"
+                          className="!rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400"
+                          style={{ borderRadius: '0.5rem' }}
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         id={`barilgiin-edit-${b._id}`}
                         onClick={(e) => {
@@ -2236,6 +2359,83 @@ export default function BarilgiinTokhirgoo() {
         </MModal>
         {/* Entrances and Floors moved inside the modal (full-screen) */}
       </div>
+
+      {/* Transfer Modal - only for specific baiguullagiinId */}
+      {isTransferEnabled && transferModalOpen && (
+        <MModal
+          opened={transferModalOpen}
+          onClose={() => {
+            setTransferModalOpen(false);
+            setBuildingToTransfer(null);
+            setTargetOrgId("");
+          }}
+          title="Барилга шилжүүлэх"
+          centered
+          size="lg"
+        >
+          <div className="space-y-4 mt-4">
+            {buildingToTransfer && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                  <label className="block text-sm  text-[color:var(--panel-text)] mb-2">
+                    Шилжүүлэх барилга
+                  </label>
+                  <div className="text-base  text-[color:var(--panel-text)]">
+                    {buildingToTransfer.ner || "-"}
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                  <label className="block text-sm  text-[color:var(--panel-text)] mb-2">
+                    Шинэ байгууллага сонгох <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={targetOrgId}
+                    onChange={(e) => setTargetOrgId(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style={{ borderRadius: '0.5rem' }}
+                  >
+                    <option value="">Байгууллага сонгох...</option>
+                    {availableOrgs.map((org) => (
+                      <option key={org._id} value={org._id}>
+                        {org.ner}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-[color:var(--surface-border)]">
+              <MButton
+                onClick={() => {
+                  setTransferModalOpen(false);
+                  setBuildingToTransfer(null);
+                  setTargetOrgId("");
+                }}
+                className="btn-minimal"
+                disabled={isTransferring}
+              >
+                Болих
+              </MButton>
+              <MButton
+                onClick={handleTransferBuilding}
+                className="btn-primary"
+                disabled={!targetOrgId || isTransferring}
+              >
+                {isTransferring ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Шилжүүлж байна...
+                  </span>
+                ) : (
+                  "Шилжүүлэх"
+                )}
+              </MButton>
+            </div>
+          </div>
+        </MModal>
+      )}
     </div>
   );
 }
