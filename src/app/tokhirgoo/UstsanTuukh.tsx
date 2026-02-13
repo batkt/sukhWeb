@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Eye,
   X,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
@@ -405,6 +406,33 @@ export default function UstsanTuukh({
 
   return (
     <>
+      <style dangerouslySetInnerHTML={{__html: `
+        .ustsan-select-wrapper {
+          border-radius: 0.5rem !important;
+          -webkit-border-radius: 0.5rem !important;
+          -moz-border-radius: 0.5rem !important;
+          overflow: hidden !important;
+          transition: all 0.2s ease !important;
+        }
+        .ustsan-select-wrapper:hover {
+          border-color: rgba(59, 130, 246, 0.5) !important;
+        }
+        .ustsan-select-wrapper:focus-within {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+        }
+        .ustsan-tuukh-select {
+          -webkit-appearance: none !important;
+          -moz-appearance: none !important;
+          appearance: none !important;
+          border-radius: 0 !important;
+        }
+        .ustsan-tuukh-select option {
+          padding: 8px 12px !important;
+          background: var(--surface-bg) !important;
+          color: var(--panel-text) !important;
+        }
+      `}} />
       <div className="h-full overflow-y-auto custom-scrollbar">
         <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
           {/* Header */}
@@ -421,48 +449,60 @@ export default function UstsanTuukh({
           <div className="flex flex-col gap-4">
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
+              <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
-                <select
-                  value={selectedModel}
-                  onChange={(e) => {
-                    setSelectedModel(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)]"
-                  style={{ borderRadius: '0.5rem' }}
+                <div 
+                  className="ustsan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
+                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
                 >
-                  <option value="">Бүгд</option>
-                  {modelNames.map((m) => (
-                    <option key={m.value} value={m.value}>
-                      {m.label}
-                    </option>
-                  ))}
-                </select>
+                  <select
+                    value={selectedModel}
+                    onChange={(e) => {
+                      setSelectedModel(e.target.value);
+                      setPage(1);
+                    }}
+                    className="ustsan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
+                  >
+                    <option value="">Бүгд</option>
+                    {modelNames.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
+                </div>
               </div>
 
-              <div>
+              <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Ажилтан
                 </label>
-                <select
-                  value={selectedEmployee}
-                  onChange={(e) => {
-                    setSelectedEmployee(e.target.value);
-                    setPage(1);
-                  }}
-                  className="w-full px-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)]"
-                  style={{ borderRadius: '0.5rem' }}
+                <div 
+                  className="ustsan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
+                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
                 >
-                  <option value="">Бүгд</option>
-                  {employees.map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name}
-                    </option>
-                  ))}
-                </select>
+                  <select
+                    value={selectedEmployee}
+                    onChange={(e) => {
+                      setSelectedEmployee(e.target.value);
+                      setPage(1);
+                    }}
+                    className="ustsan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
+                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
+                  >
+                    <option value="">Бүгд</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
+                </div>
               </div>
 
               <div>
