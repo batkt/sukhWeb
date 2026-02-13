@@ -58,6 +58,18 @@ export default function HistoryModal({
   const fetchData = async () => {
     if (!token || !baiguullagiinId || !contract) return;
 
+    const contractIdToFetch = contract?.gereeniiId || contract?._id;
+
+    // Silent Auto-Sync: Recalculate global balance on backend before fetching
+    if (contractIdToFetch) {
+      try {
+        uilchilgee(token || undefined).post("/nekhemjlekh/recalculate-balance", {
+          gereeId: contractIdToFetch,
+          baiguullagiinId
+        }).catch(e => console.warn("Silent sync failed:", e.message));
+      } catch (e) { }
+    }
+
     setLoading(true);
     try {
       const commonParams = {
@@ -67,7 +79,6 @@ export default function HistoryModal({
         khuudasniiKhemjee: 5000,
       };
 
-      const contractIdToFetch = contract?.gereeniiId || contract?._id;
 
       // Fetch all necessary data concurrently
       const [historyResp, paymentResp, receivableResp, contractResp] = await Promise.all([
@@ -206,14 +217,14 @@ export default function HistoryModal({
       // Prefer paid invoice when deduping same month
       const contractItemsToProcess = dedupedContractItems.length < contractItems.length
         ? contractItems.filter((item: any) => {
-            const key = monthKey(item);
-            const sameMonth = contractItems.filter((it: any) => monthKey(it) === key);
-            const paid = sameMonth.find((it: any) => it?.tuluv === "Төлсөн");
-            const best = paid || sameMonth.sort((a: any, b: any) =>
-              new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime()
-            )[0];
-            return item._id === best?._id;
-          })
+          const key = monthKey(item);
+          const sameMonth = contractItems.filter((it: any) => monthKey(it) === key);
+          const paid = sameMonth.find((it: any) => it?.tuluv === "Төлсөн");
+          const best = paid || sameMonth.sort((a: any, b: any) =>
+            new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime()
+          )[0];
+          return item._id === best?._id;
+        })
         : contractItems;
 
       // Log first item for debugging
@@ -251,22 +262,22 @@ export default function HistoryModal({
 
         // Track if we found ekhniiUldegdel with value in invoice zardluud
         let foundEkhniiUldegdelInInvoice = false;
-        
+
         zardluud.forEach((z: any) => {
           // Include all zardluud entries including zaalt (electricity) entries
           if (z.ner) {
             let amt = pickAmount(z);
-            const isEkhniiUldegdel = z.isEkhniiUldegdel === true || 
-                                      z.ner === "Эхний үлдэгдэл" || 
-                                      (z.ner && z.ner.includes("Эхний үлдэгдэл"));
-            
+            const isEkhniiUldegdel = z.isEkhniiUldegdel === true ||
+              z.ner === "Эхний үлдэгдэл" ||
+              (z.ner && z.ner.includes("Эхний үлдэгдэл"));
+
             // For "Эхний үлдэгдэл" entries with 0 value, SKIP them entirely
             // We'll use the gereeniiTulukhAvlaga record instead (which has the actual value)
             if (isEkhniiUldegdel && (amt === 0 || amt === undefined)) {
               console.log(`⏭️ [HistoryModal] Skipping 0.00 ekhniiUldegdel from invoice, will use gereeniiTulukhAvlaga`);
               return;
             }
-            
+
             // Include ekhniiUldegdel even when negative (credit); regular charges need amt > 0
             if ((isEkhniiUldegdel && amt !== 0) || amt > 0) {
               // Use composite key: invoiceId-zardalId so entries stay unique when multiple
@@ -288,7 +299,7 @@ export default function HistoryModal({
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
               if (z._id) processedIds.add(z._id.toString());
-              
+
               // Mark ALL ekhniiUldegdel records from gereeniiTulukhAvlaga as processed
               // if this invoice zardal is ekhniiUldegdel WITH value
               // This prevents double-counting
@@ -304,7 +315,7 @@ export default function HistoryModal({
             }
           }
         });
-        
+
         // If we found ekhniiUldegdel in invoice, mark all gereeniiTulukhAvlaga ekhniiUldegdel as processed
         // (Double-check in case the loop missed some)
         if (foundEkhniiUldegdelInInvoice) {
@@ -444,17 +455,17 @@ export default function HistoryModal({
       // Track if we've already added ekhniiUldegdel from invoice zardluud WITH a value > 0
       const hasEkhniiUldegdelInInvoice = flatLedger.some(
         (entry) => {
-          const isEkhniiUldegdelName = entry.ner === "Эхний үлдэгдэл" || 
-                                        (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
+          const isEkhniiUldegdelName = entry.ner === "Эхний үлдэгдэл" ||
+            (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
           const amt = Number(entry.tulukhDun || 0);
-          return isEkhniiUldegdelName && 
-                 entry.sourceCollection === "nekhemjlekhiinTuukh" &&
-                 amt !== 0;
+          return isEkhniiUldegdelName &&
+            entry.sourceCollection === "nekhemjlekhiinTuukh" &&
+            amt !== 0;
         }
       );
-      
+
       console.log(`📊 [HistoryModal] hasEkhniiUldegdelInInvoice: ${hasEkhniiUldegdelInInvoice}, processedIds count: ${processedIds.size}`);
-      
+
       matchedReceivables.forEach((rec: any) => {
         const recId = rec._id?.toString();
         // Skip if already processed in invoice loop
@@ -465,7 +476,7 @@ export default function HistoryModal({
 
         // Skip orphans (has nekhemjlekhId but parent invoice is gone)
         if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString())) return;
-        
+
         // Skip ekhniiUldegdel records if they're already included in the invoice zardluud
         // This prevents duplicate "Эхний үлдэгдэл" entries
         if (rec.ekhniiUldegdelEsekh === true && hasEkhniiUldegdelInInvoice) {
@@ -476,7 +487,7 @@ export default function HistoryModal({
         const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
         const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
         // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
-        const amt = rec.ekhniiUldegdelEsekh === true 
+        const amt = rec.ekhniiUldegdelEsekh === true
           ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
           : Number(rec.tulukhDun || rec.undsenDun || 0);
 
@@ -572,11 +583,11 @@ export default function HistoryModal({
       // Calculate total charges and payments in the ledger
       const totalCharges = flatLedger.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0);
       const totalPayments = flatLedger.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0);
-      
+
       // Check if there's ekhniiUldegdel from gereeniiTulukhAvlaga (not in invoice)
       const hasEkhniiUldegdelFromAvlaga = flatLedger.some(
-        (row) => row.sourceCollection === "gereeniiTulukhAvlaga" && 
-                 (row.ner === "Эхний үлдэгдэл" || (row.ner && row.ner.includes("Эхний үлдэгдэл")))
+        (row) => row.sourceCollection === "gereeniiTulukhAvlaga" &&
+          (row.ner === "Эхний үлдэгдэл" || (row.ner && row.ner.includes("Эхний үлдэгдэл")))
       );
 
       console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
@@ -650,6 +661,7 @@ export default function HistoryModal({
       setLoading(false);
     }
   };
+
 
   const handleDeleteClick = (id: string, type: string) => {
     setDeleteConfirm({ show: true, id, type });

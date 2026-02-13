@@ -379,16 +379,16 @@ const InvoiceModal = ({
         const hasEkhniiUldegdelFromAvlaga = ekhniiUldegdelRows.length > 0;
         const filteredZardluud = hasEkhniiUldegdelFromAvlaga
           ? allZardluud.filter((z: any) => {
-              // Skip "Эхний үлдэгдэл" entries with 0 or no value
-              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
-                const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
-                if (amt === 0) {
-                  console.log(`⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`);
-                  return false;
-                }
+            // Skip "Эхний үлдэгдэл" entries with 0 or no value
+            if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+              const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+              if (amt === 0) {
+                console.log(`⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`);
+                return false;
               }
-              return true;
-            })
+            }
+            return true;
+          })
           : allZardluud;
 
         // Avlaga: prefer tulukhAvlaga; invoice guilgeenuud for non-avlaga (tulult, ashiglalt) only to avoid duplicate
@@ -1485,21 +1485,21 @@ export default function DansniiKhuulga() {
 
     // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
-    
+
     buildingHistoryItems.forEach((it: any) => {
       // Check if this is an invoice (has zardluud or medeelel.zardluud)
       const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud :
-                       Array.isArray(it?.zardluud) ? it.zardluud : [];
+        Array.isArray(it?.zardluud) ? it.zardluud : [];
       const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
-                         Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+        Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
 
       // Check if invoice contains ekhniiUldegdel in its zardluud (include negative)
       const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
         const ner = String(z?.ner || "").toLowerCase();
-        const isEkhUld = z?.isEkhniiUldegdel === true || 
-                         ner.includes("эхний үлдэгдэл") ||
-                         ner.includes("ekhniuldegdel") ||
-                         ner.includes("ekhnii uldegdel");
+        const isEkhUld = z?.isEkhniiUldegdel === true ||
+          ner.includes("эхний үлдэгдэл") ||
+          ner.includes("ekhniuldegdel") ||
+          ner.includes("ekhnii uldegdel");
         const amt = Number(z?.dun || z?.tariff || 0);
         return isEkhUld && amt !== 0;
       });
@@ -1509,7 +1509,7 @@ export default function DansniiKhuulga() {
         const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
         return amt !== 0;
       });
-      
+
       if (hasEkhniiUldegdelInZardluud || hasEkhniiUldegdelInGuilgee) {
         const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
         const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
@@ -1547,15 +1547,15 @@ export default function DansniiKhuulga() {
       // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       const standaloneAmount = Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
-      
+
       // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
       // This prevents double-counting. BUT: never skip NEGATIVE standalone (e.g. Excel-ээр оруулсан эхний үлдэгдэл -87.79)
       // because invoice's ekhniiUldegdel is typically positive - they are different entries.
       if (isStandaloneEkhniiUldegdel) {
-        const contractHasEkhniiUldegdelInInvoice = 
+        const contractHasEkhniiUldegdelInInvoice =
           (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
           (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
-        
+
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) {
           // Skip only when positive - invoice's ekhniiUldegdel covers it
           return;
@@ -1571,7 +1571,7 @@ export default function DansniiKhuulga() {
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
-                           Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+          Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
         const guilgeeNet = guilgeenuud.reduce(
           (sum: number, g: any) => sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)),
           0
@@ -1919,10 +1919,10 @@ export default function DansniiKhuulga() {
 
       // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
       let errorMsg = "Алдаа гарлаа";
-      
+
       try {
         const responseData = err?.response?.data;
-        
+
         if (responseData instanceof Blob) {
           const errorText = await responseData.text();
           const errorJson = JSON.parse(errorText);
@@ -2022,10 +2022,10 @@ export default function DansniiKhuulga() {
 
       // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
       let errorMsg = "Excel загвар татахад алдаа гарлаа";
-      
+
       try {
         const responseData = err?.response?.data;
-        
+
         if (responseData instanceof Blob) {
           const errorText = await responseData.text();
           const errorJson = JSON.parse(errorText);
@@ -2305,21 +2305,21 @@ export default function DansniiKhuulga() {
         }
 
         // Refresh data
-          mutate(
-            (key: any) =>
-              Array.isArray(key) &&
-              (key[0] === "/nekhemjlekhiinTuukh" ||
-                key[0] === "/geree" ||
-                key[0] === "/orshinSuugch" ||
-                key[0] === "/gereeniiTulukhAvlaga"),
-            undefined,
-            { revalidate: true }
-          );
-          setInvoiceRefreshTrigger((t) => t + 1);
-        }
-      } catch (error: any) {
-        const msg = getErrorMessage(error);
-        openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/nekhemjlekhiinTuukh" ||
+              key[0] === "/geree" ||
+              key[0] === "/orshinSuugch" ||
+              key[0] === "/gereeniiTulukhAvlaga"),
+          undefined,
+          { revalidate: true }
+        );
+        setInvoiceRefreshTrigger((t) => t + 1);
+      }
+    } catch (error: any) {
+      const msg = getErrorMessage(error);
+      openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
     } finally {
       setIsSendingInvoices(false);
     }
@@ -3379,34 +3379,35 @@ export default function DansniiKhuulga() {
                                       <button
                                         onClick={() => {
                                           // Create resident-like object from transaction data; include цахилгаан from geree or orshinSuugch
+                                          const residentId = resident?._id || it?.orshinSuugchId || ct?.orshinSuugchId;
                                           const residentData = resident
                                             ? {
-                                                ...resident,
-                                                _id: resident._id ?? it?.orshinSuugchId,
-                                                ovog: resident.ovog ?? it?.ovog,
-                                                ner: ner,
-                                                toot: toot,
-                                                utas: utas,
-                                                gereeniiDugaar: dugaar,
-                                                gereeniiId: it?.gereeniiId || ct?._id,
-                                                tsahilgaaniiZaalt: resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt ?? ct?.umnukhZaalt,
-                                                umnukhZaalt: ct?.umnukhZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt,
-                                                suuliinZaalt: ct?.suuliinZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.umnukhZaalt,
-                                                ...it,
-                                              }
+                                              ...it,
+                                              ...resident,
+                                              _id: residentId,
+                                              ovog: resident.ovog ?? it?.ovog,
+                                              ner: ner,
+                                              toot: toot,
+                                              utas: utas,
+                                              gereeniiDugaar: dugaar,
+                                              gereeniiId: it?.gereeniiId || ct?._id,
+                                              tsahilgaaniiZaalt: resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt ?? ct?.umnukhZaalt,
+                                              umnukhZaalt: ct?.umnukhZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt,
+                                              suuliinZaalt: ct?.suuliinZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.umnukhZaalt,
+                                            }
                                             : {
-                                                _id: it?.orshinSuugchId,
-                                                ovog: it?.ovog,
-                                                ner: ner,
-                                                toot: toot,
-                                                utas: utas,
-                                                gereeniiDugaar: dugaar,
-                                                gereeniiId: it?.gereeniiId || ct?._id,
-                                                tsahilgaaniiZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt ?? it?.tsahilgaaniiZaalt,
-                                                umnukhZaalt: ct?.umnukhZaalt ?? ct?.suuliinZaalt,
-                                                suuliinZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt,
-                                                ...it,
-                                              };
+                                              ...it,
+                                              _id: residentId,
+                                              ovog: it?.ovog,
+                                              ner: ner,
+                                              toot: toot,
+                                              utas: utas,
+                                              gereeniiDugaar: dugaar,
+                                              gereeniiId: it?.gereeniiId || ct?._id,
+                                              tsahilgaaniiZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt ?? it?.tsahilgaaniiZaalt,
+                                              umnukhZaalt: ct?.umnukhZaalt ?? ct?.suuliinZaalt,
+                                              suuliinZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt,
+                                            };
                                           setSelectedTransactionResident(residentData);
                                           setIsTransactionModalOpen(true);
                                         }}
