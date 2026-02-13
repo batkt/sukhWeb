@@ -58,6 +58,10 @@ export default function TransactionModal({
   const [includeSuuriKhuraamj, setIncludeSuuriKhuraamj] = useState(true);
   const [isCalculatingTsakhilgaan, setIsCalculatingTsakhilgaan] = useState(false);
 
+  // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
+  const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
+  const isUmnukhEditable = !initialUmnukhVal || Number(initialUmnukhVal) === 0;
+
   const resetForm = () => {
     setTransactionType("avlaga");
     setTransactionDate(new Date().toISOString().split("T")[0]);
@@ -385,8 +389,17 @@ export default function TransactionModal({
                     <input
                       type="text"
                       value={umnukhZaalt}
-                      readOnly
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 text-[color:var(--panel-text)] rounded-2xl focus:outline-none transition-all text-sm text-right font-medium"
+                      readOnly={!isUmnukhEditable}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (/^[0-9.,]*$/.test(val)) {
+                          setUmnukhZaalt(val);
+                        }
+                      }}
+                      className={`w-full px-3 py-2.5 border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-medium ${isUmnukhEditable
+                        ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)]"
+                        : "bg-[color:var(--surface-hover)]/30 text-[color:var(--panel-text)]"
+                        }`}
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -396,7 +409,6 @@ export default function TransactionModal({
                     <input
                       type="text"
                       value={suuliinZaalt}
-                      readOnly
                       onChange={(e) => {
                         const val = e.target.value;
                         if (/^[0-9.,]*$/.test(val)) {
@@ -410,6 +422,12 @@ export default function TransactionModal({
                   </div>
                 </div>
 
+
+
+
+                {/* Tailbar & Amount Grid */}
+                {/* Tailbar & Amount (Conditionally Rendered) */}
+                {/* Moved out of this block */}
                 <div className="flex items-center justify-between gap-4 p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
                   <div className="space-y-0.5 min-w-0">
                     <p className="text-xs  text-[color:var(--panel-text)]">
@@ -459,8 +477,6 @@ export default function TransactionModal({
               </div>
             )}
 
-
-            {/* Tailbar & Amount Grid */}
             {/* Tailbar & Amount (Conditionally Rendered) */}
             {transactionType === "ashiglalt" ? (
               <div className="grid grid-cols-2 gap-4 items-start">
@@ -522,6 +538,7 @@ export default function TransactionModal({
               </div>
             )}
           </div>
+
 
           {/* Footer */}
           <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
