@@ -323,25 +323,36 @@ const InvoiceModal = ({
         const latest = sortedInvoices[0];
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
-        // Aggregate ALL zardluud and guilgeenuud from the entire history of this resident
-        // to match "HistoryModal" style display within the invoice view.
-        const allZardluud: any[] = [];
-        const allGuilgeenuud: any[] = [];
 
-        residentInvoices.forEach((inv: any) => {
-          const z = Array.isArray(inv?.medeelel?.zardluud)
-            ? inv.medeelel.zardluud
-            : Array.isArray(inv?.zardluud)
-              ? inv.zardluud
-              : [];
-          const g = Array.isArray(inv?.medeelel?.guilgeenuud)
-            ? inv.medeelel.guilgeenuud
-            : Array.isArray(inv?.guilgeenuud)
-              ? inv.guilgeenuud
-              : [];
-          allZardluud.push(...z);
-          allGuilgeenuud.push(...g);
-        });
+        // ✅ IMPORTANT:
+        // For the "Үйлчилгээний нэхэмжлэх" view in transaction history,
+        // we should show ONLY the rows that belong to the latest invoice
+        // (NOT aggregated across all historical invoices).
+        //
+        // Otherwise, when there are multiple nekhemjlekh documents for the
+        // same resident, zardluud get duplicated (one per invoice), which is
+        // exactly what the user is seeing.
+        const latestZardluud: any[] = (() => {
+          if (!latest) return [];
+          if (Array.isArray(latest?.medeelel?.zardluud)) {
+            return latest.medeelel.zardluud;
+          }
+          if (Array.isArray(latest?.zardluud)) {
+            return latest.zardluud;
+          }
+          return [];
+        })();
+
+        const latestGuilgeenuud: any[] = (() => {
+          if (!latest) return [];
+          if (Array.isArray(latest?.medeelel?.guilgeenuud)) {
+            return latest.medeelel.guilgeenuud;
+          }
+          if (Array.isArray(latest?.guilgeenuud)) {
+            return latest.guilgeenuud;
+          }
+          return [];
+        })();
 
         // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
         const ekhniiUldegdelRows = residentTulukhAvlaga
@@ -380,7 +391,7 @@ const InvoiceModal = ({
         // when we have actual ekhniiUldegdel from gereeniiTulukhAvlaga
         const hasEkhniiUldegdelFromAvlaga = ekhniiUldegdelRows.length > 0;
         const filteredZardluud = hasEkhniiUldegdelFromAvlaga
-          ? allZardluud.filter((z: any) => {
+          ? latestZardluud.filter((z: any) => {
             // Skip "Эхний үлдэгдэл" entries with 0 or no value
             if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
               const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
@@ -391,10 +402,10 @@ const InvoiceModal = ({
             }
             return true;
           })
-          : allZardluud;
+          : latestZardluud;
 
         // Avlaga: prefer tulukhAvlaga; invoice guilgeenuud for non-avlaga (tulult, ashiglalt) only to avoid duplicate
-        const guilgeeNonAvlaga = allGuilgeenuud.filter((g: any) => {
+        const guilgeeNonAvlaga = latestGuilgeenuud.filter((g: any) => {
           const gt = String(g?.turul || "").toLowerCase();
           return gt !== "avlaga" && gt !== "авлага";
         });
