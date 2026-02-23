@@ -38,6 +38,7 @@ export default function NemeltTokhirgoo() {
 
   // Guest settings states
   const [guestConfigEnabled, setGuestConfigEnabled] = useState<boolean>(false);
+  const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
   const [guestTotalFreeMinutes, setGuestTotalFreeMinutes] = useState<number | string>("");
@@ -529,7 +530,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-purple-600 peer-checked:bg-purple-600"></div>
                   </label>
                 </div>
               </div>
@@ -600,7 +601,7 @@ export default function NemeltTokhirgoo() {
                       className="sr-only peer"
                       aria-label="Лифт идэвхжүүлэх"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-amber-300 dark:peer-focus:ring-amber-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-amber-600 dark:peer-checked:bg-amber-600"></div>
                   </label>
                 </div>
               </div>
@@ -700,7 +701,7 @@ export default function NemeltTokhirgoo() {
                         onChange={(e) => setGuestConfigEnabled(e.currentTarget.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
                    </label>
                  </div>
                </div>
@@ -786,7 +787,7 @@ export default function NemeltTokhirgoo() {
                      <div className="pt-2 flex justify-end">
                         <button
                            onClick={saveGuestSettings}
-                           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white  shadow-md hover:shadow-lg transition-all rounded-xl"
+                           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 !text-white  shadow-md hover:shadow-lg transition-all rounded-2xl"
                         >
                            Хадгалах
                         </button>
@@ -796,6 +797,7 @@ export default function NemeltTokhirgoo() {
              </div>
         </div>
       </div>
+      
     </div>
   );
 }

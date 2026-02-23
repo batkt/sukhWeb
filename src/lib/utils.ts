@@ -26,34 +26,7 @@ export function getPaymentStatusLabel(
   const now = new Date();
   const due = item.tulukhOgnoo ? new Date(item.tulukhOgnoo) : null;
 
-  const hasPaymentHistory = Array.isArray(item.paymentHistory)
-    ? item.paymentHistory.length > 0
-    : false;
-
-  // Paid signals (backend or derived)
-  const paidSignals = [
-    rawLc === "төлсөн",
-    rawLc === "paid",
-    rawLc === "paid_success",
-    !!item.tulsunOgnoo,
-    hasPaymentHistory,
-    item.payStatus === "PAID",
-    item.paid === true,
-  ];
-  if (paidSignals.some(Boolean)) return "Төлсөн";
-
-  // Respect explicit backend tuluv if present
-  if (rawTuluv === "Төлөөгүй") return "Төлөөгүй";
-  if (rawTuluv === "Хугацаа хэтэрсэн") return "Хугацаа хэтэрсэн";
-
-  // Derive overdue when due date passed and not paid
-  if (due && !Number.isNaN(due.getTime()) && now > due) {
-    return "Хугацаа хэтэрсэн";
-  }
-
-  // Derive unpaid if looks like an issued invoice or has amount
-  const looksIssued =
-    item.ognoo || item.createdAt || item.nekhemjlekhiinOgnoo || item.qpayUrl;
+  const uldegdel = item.uldegdel !== undefined && item.uldegdel !== null ? Number(item.uldegdel) : null;
   const amount = Number(
     item.niitTulbur ??
     item.niitDun ??
@@ -63,6 +36,43 @@ export function getPaymentStatusLabel(
     item.dun ??
     0
   );
+
+  const hasPaymentHistory = Array.isArray(item.paymentHistory)
+    ? item.paymentHistory.length > 0
+    : false;
+
+  const isPartiallyPaidOrUnpaid = uldegdel !== null && uldegdel > 0;
+
+  // Paid signals (backend or derived)
+  const paidSignals = [
+    rawLc === "төлсөн",
+    rawLc === "paid",
+    rawLc === "paid_success",
+    item.payStatus === "PAID",
+    item.paid === true,
+    (uldegdel !== null && uldegdel <= 0) // Explicitly zero balance means paid
+  ];
+
+  // If there are paid signals and it's NOT explicitly returning a >0 uldegdel, it's Paid
+  if (paidSignals.some(Boolean) && !isPartiallyPaidOrUnpaid) return "Төлсөн";
+
+  // If we reach here, it's either Unpaid, Overdue, or Unknown
+  
+  if (due && !Number.isNaN(due.getTime()) && now > due) {
+    return "Хугацаа хэтэрсэн";
+  }
+
+  // If it explicitly has an unpaid balance, it's Unpaid
+  if (isPartiallyPaidOrUnpaid) return "Төлөөгүй";
+
+  // Respect explicit backend tuluv if present
+  if (rawTuluv === "Төлөөгүй") return "Төлөөгүй";
+  if (rawTuluv === "Хугацаа хэтэрсэн") return "Хугацаа хэтэрсэн";
+
+  // Derive unpaid if looks like an issued invoice or has amount
+  const looksIssued =
+    item.ognoo || item.createdAt || item.nekhemjlekhiinOgnoo || item.qpayUrl;
+  
   if (looksIssued || amount > 0) return "Төлөөгүй";
 
   return "Тодорхойгүй";

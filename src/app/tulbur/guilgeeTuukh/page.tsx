@@ -11,7 +11,8 @@ import { useAuth } from "@/lib/useAuth";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
-import { message, Tooltip } from "antd";
+import toast from "react-hot-toast";
+import { Tooltip } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
@@ -196,8 +197,8 @@ const InvoiceModal = ({
   const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
   const currentDate = new Date().toLocaleDateString("mn-MN");
   // Get davkhar from toots array first, then fallback to top-level
-  const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0 
-    ? resident.toots[0]?.davkhar 
+  const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0
+    ? resident.toots[0]?.davkhar
     : resident?.davkhar;
   const isLiftExempt = liftFloors?.includes(String(residentDavkhar));
 
@@ -789,13 +790,13 @@ const InvoiceModal = ({
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="py-2 px-3 text-left text-slate-600">
+                    <th className="py-2 px-3 text-center text-slate-600">
                       Зардал
                     </th>
-                    <th className="py-2 px-3 text-right text-slate-600">
+                    <th className="py-2 px-3 text-center text-slate-600">
                       Дүн
                     </th>
-                    <th className="py-2 px-3 text-right text-slate-600">
+                    <th className="py-2 px-3 text-center text-slate-600">
                       Тайлбар
                     </th>
                   </tr>
@@ -812,7 +813,7 @@ const InvoiceModal = ({
                         {row.ner}
                       </td>
                       <td
-                        className={`py-2 px-3 text-right ${row.discount
+                        className={`py-2 px-4 text-right ${row.discount
                           ? "text-green-700  line-through"
                           : ""
                           }`}
@@ -1863,15 +1864,13 @@ export default function DansniiKhuulga() {
   }, [deduplicatedResidentsAll, cancelledGereesWithUnpaid, paidSummaryByGereeId, contractsByNumber]);
 
   const zaaltOruulakh = async () => {
-    const hide = message.loading({
-      content: "Заалтын Excel файл бэлдэж байна…",
-      duration: 0,
-    });
+    const loadingToastId = toast.loading("Заалтын Excel файл бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
 
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
         hide();
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
 
@@ -1913,7 +1912,7 @@ export default function DansniiKhuulga() {
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      message.success("Заалтын мэдээлэл амжилттай татагдлаа");
+      toast.success("Заалтын мэдээлэл амжилттай татагдлаа");
     } catch (err: any) {
       hide();
 
@@ -1957,15 +1956,13 @@ export default function DansniiKhuulga() {
   };
 
   const exceleerTatya = async () => {
-    const hide = message.loading({
-      content: "Excel загвар бэлдэж байна…",
-      duration: 0,
-    });
+    const loadingToastId = toast.loading("Excel загвар бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
 
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
         hide();
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
 
@@ -2015,7 +2012,7 @@ export default function DansniiKhuulga() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      message.success("Excel загвар татагдлаа");
+      toast.success("Excel загвар татагдлаа");
     } catch (err: any) {
       hide();
       console.error(err);
@@ -2131,7 +2128,7 @@ export default function DansniiKhuulga() {
         });
 
         if (response.data.success || response.status === 200) {
-          message.success("Төлөлт амжилттай бүртгэгдлээ");
+          toast.success("Төлөлт амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
 
@@ -2178,7 +2175,7 @@ export default function DansniiKhuulga() {
         });
 
         if (response.data.success || response.status === 200 || response.status === 201) {
-          message.success("Гүйлгээ амжилттай бүртгэгдлээ");
+          toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
 
@@ -2342,14 +2339,15 @@ export default function DansniiKhuulga() {
       file.name.endsWith(".xls");
 
     if (!isValidType) {
-      message.error("Зөвхөн Excel файл (.xlsx, .xls) оруулна уу");
+      toast.error("Зөвхөн Excel файл (.xlsx, .xls) оруулна уу");
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
+    let importToastId: string | undefined;
     try {
       if (!token || !ajiltan?.baiguullagiinId) {
-        message.warning("Нэвтэрсэн эсэхээ шалгана уу");
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
 
@@ -2366,17 +2364,13 @@ export default function DansniiKhuulga() {
 
       const endpoint = "/zaaltExcelTatya";
 
-      message.loading({
-        content: "Excel импорт хийж байна…",
-        key: "import",
-        duration: 0,
-      });
+      importToastId = toast.loading("Excel импорт хийж байна…");
 
       const resp: any = await uilchilgee(token).post(endpoint, form, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      message.destroy("import");
+      if (importToastId) toast.dismiss(importToastId);
 
       const data = resp?.data;
       const failed = data?.result?.failed;
@@ -2389,12 +2383,12 @@ export default function DansniiKhuulga() {
           data?.message || "Импортын явцад зарим мөр алдаатай байна";
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
-        message.success("Excel импорт амжилттай");
+        toast.success("Excel импорт амжилттай");
         // Refresh the page data by reloading
         window.location.reload();
       }
     } catch (err: any) {
-      message.destroy("import");
+      toast.dismiss(importToastId);
       const errorMsg = getErrorMessage(err);
       openErrorOverlay(errorMsg);
     } finally {
@@ -2450,8 +2444,8 @@ export default function DansniiKhuulga() {
       const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
       // Get toot from toots array first, then fallback to top-level
       const residentToot = String(
-        (Array.isArray(resident?.toots) && resident.toots.length > 0 
-          ? resident.toots[0]?.toot 
+        (Array.isArray(resident?.toots) && resident.toots.length > 0
+          ? resident.toots[0]?.toot
           : null) ?? resident?.toot ?? ""
       ).trim();
       const residentNer = String(resident?.ner || "").trim().toLowerCase();
@@ -3089,8 +3083,8 @@ export default function DansniiKhuulga() {
                           .filter(Boolean)
                           .join(" ") || "-";
                       // Get toot - prioritize toots array, then contract (geree) data
-                      const residentToot = Array.isArray(resident?.toots) && resident.toots.length > 0 
-                        ? resident.toots[0]?.toot 
+                      const residentToot = Array.isArray(resident?.toots) && resident.toots.length > 0
+                        ? resident.toots[0]?.toot
                         : resident?.toot;
                       const toot = String(ct?.toot || residentToot || it?.toot || "-");
 
@@ -3122,8 +3116,8 @@ export default function DansniiKhuulga() {
                         return "-";
                       })();
                       // Get orts - prioritize toots array, then contract (geree) data
-                      const residentOrts = Array.isArray(resident?.toots) && resident.toots.length > 0 
-                        ? resident.toots[0]?.orts 
+                      const residentOrts = Array.isArray(resident?.toots) && resident.toots.length > 0
+                        ? resident.toots[0]?.orts
                         : null;
                       const orts = String(
                         ct?.orts ??
@@ -3140,8 +3134,8 @@ export default function DansniiKhuulga() {
                         "-"
                       );
                       // Get davkhar - prioritize toots array
-                      const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0 
-                        ? resident.toots[0]?.davkhar 
+                      const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0
+                        ? resident.toots[0]?.davkhar
                         : resident?.davkhar;
                       const davkhar = String(residentDavkhar ?? it?.davkhar ?? "-");
                       const sentAt =

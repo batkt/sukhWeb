@@ -304,7 +304,7 @@ const InvoiceModal = ({
             !resident?.utas?.[0] ||
             !item?.utas?.[0] ||
             String(item.utas?.[0] || "").trim() ===
-              String(resident.utas?.[0] || "").trim();
+            String(resident.utas?.[0] || "").trim();
           return ovogMatch && nerMatch && utasMatch;
         });
         const latest = [
@@ -354,8 +354,8 @@ const InvoiceModal = ({
           ner:
             z.turul === "avlaga"
               ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
-                  z.ognoo,
-                )}`
+                z.ognoo,
+              )}`
               : z.ner || z.name || "",
           tariff: Number(z?.tariff) || 0,
           dun: pickAmount(z),
@@ -425,13 +425,13 @@ const InvoiceModal = ({
     };
     return Array.isArray(raw)
       ? raw.map((r: any, idx: number) => ({
-          _id: r._id || `row-${idx}`,
-          ner: r.ner || r.name || "",
-          tariff: Number(r?.tariff) || 0,
-          dun: pickAmount(r),
-          turul: r.turul,
-          zardliinTurul: r.zardliinTurul,
-        }))
+        _id: r._id || `row-${idx}`,
+        ner: r.ner || r.name || "",
+        tariff: Number(r?.tariff) || 0,
+        dun: pickAmount(r),
+        turul: r.turul,
+        zardliinTurul: r.zardliinTurul,
+      }))
       : null;
   }, [contractData]);
 
@@ -445,14 +445,14 @@ const InvoiceModal = ({
       contractData?.medeelel?.guilgeenuud || contractData?.guilgeenuud || [];
     return Array.isArray(raw)
       ? raw.map((g: any, idx: number) => ({
-          _id: g._id || `guilgee-${idx}`,
-          ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
-          tariff: 0,
-          dun: Number(g.tulukhDun) || 0,
-          turul: "avlaga",
-          zardliinTurul: "Авлага",
-          ognoo: g.ognoo,
-        }))
+        _id: g._id || `guilgee-${idx}`,
+        ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
+        tariff: 0,
+        dun: Number(g.tulukhDun) || 0,
+        turul: "avlaga",
+        zardliinTurul: "Авлага",
+        ognoo: g.ognoo,
+      }))
       : [];
   }, [contractData]);
 
@@ -474,15 +474,15 @@ const InvoiceModal = ({
         contractData?.medeelel?.zardluud || contractData?.zardluud || [];
       const liftEntries = Array.isArray(raw)
         ? raw.filter(
-            (r: any) =>
-              r.zardliinTurul === "Лифт" ||
-              String(r.ner || "")
-                .trim()
-                .toLowerCase() === "лифт" ||
-              String(r.turul || "")
-                .trim()
-                .toLowerCase() === "лифт",
-          )
+          (r: any) =>
+            r.zardliinTurul === "Лифт" ||
+            String(r.ner || "")
+              .trim()
+              .toLowerCase() === "лифт" ||
+            String(r.turul || "")
+              .trim()
+              .toLowerCase() === "лифт",
+        )
         : [];
       const pickAmount = (obj: any) => {
         const n = (v: any) => {
@@ -631,9 +631,9 @@ const InvoiceModal = ({
                   Огноо:{" "}
                   {formatDate(
                     contractData?.ognoo ||
-                      nekhemjlekhData?.ognoo ||
-                      latestInvoice?.ognoo ||
-                      "",
+                    nekhemjlekhData?.ognoo ||
+                    latestInvoice?.ognoo ||
+                    "",
                   ) || "-"}
                 </p>
               </div>
@@ -719,9 +719,9 @@ const InvoiceModal = ({
                     <span className="">Огноо:</span>{" "}
                     {formatDate(
                       contractData?.ognoo ||
-                        nekhemjlekhData?.ognoo ||
-                        latestInvoice?.ognoo ||
-                        currentDate,
+                      nekhemjlekhData?.ognoo ||
+                      latestInvoice?.ognoo ||
+                      currentDate,
                     )}
                   </p>
 
@@ -786,20 +786,18 @@ const InvoiceModal = ({
                   {invoiceRows.map((row: any) => (
                     <tr key={row._id}>
                       <td
-                        className={`py-2 px-3 ${
-                          row.discount
+                        className={`py-2 px-3 ${row.discount
                             ? "text-green-700  italic"
                             : ""
-                        }`}
+                          }`}
                       >
                         {row.ner}
                       </td>
                       <td
-                        className={`py-2 px-3 text-right ${
-                          row.discount
+                        className={`py-2 px-3 text-right ${row.discount
                             ? "text-green-700  line-through"
                             : ""
-                        }`}
+                          }`}
                       >
                         {row.tariff == null
                           ? "-"
@@ -807,11 +805,10 @@ const InvoiceModal = ({
                         ₮
                       </td>
                       <td
-                        className={`py-2 px-3 text-right ${
-                          row.discount
+                        className={`py-2 px-3 text-right ${row.discount
                             ? "text-green-700  line-through"
                             : ""
-                        }`}
+                          }`}
                       >
                         {row.tailbar}
                       </td>
@@ -840,14 +837,13 @@ const InvoiceModal = ({
                         Төлбөрийн төлөв:
                       </span>
                       <span
-                        className={`badge-status ${
-                          paymentStatusLabel === "Төлсөн"
+                        className={`badge-status ${paymentStatusLabel === "Төлсөн"
                             ? "badge-paid"
                             : paymentStatusLabel === "Төлөөгүй" ||
-                                paymentStatusLabel === "Хугацаа хэтэрсэн"
+                              paymentStatusLabel === "Хугацаа хэтэрсэн"
                               ? "badge-unpaid"
                               : "badge-unknown"
-                        }`}
+                          }`}
                       >
                         {paymentStatusLabel}
                       </span>
@@ -1037,9 +1033,8 @@ export default function InvoicingZardluud() {
 
     nekhemjlekhList.forEach((invoice: any) => {
       // Create a unique key for each resident
-      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
-        invoice.utas?.[0] || ""
-      }`;
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${invoice.utas?.[0] || ""
+        }`;
 
       // Get existing or create new resident entry
       const existing = residentMap.get(key);
@@ -1050,7 +1045,7 @@ export default function InvoicingZardluud() {
       if (
         !existing ||
         invoiceDate >
-          new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
+        new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
       ) {
         // Use the latest invoice data for this resident
         residentMap.set(key, {
@@ -1086,9 +1081,8 @@ export default function InvoicingZardluud() {
     > = {};
 
     nekhemjlekhList.forEach((invoice: any) => {
-      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
-        invoice.utas?.[0] || ""
-      }`;
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${invoice.utas?.[0] || ""
+        }`;
       const label = getPaymentStatusLabel(invoice);
       const ts = new Date(
         invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
@@ -1119,8 +1113,8 @@ export default function InvoicingZardluud() {
         const label = status.label as any;
         tuluvMap[r._id] =
           label === "Төлсөн" ||
-          label === "Төлөөгүй" ||
-          label === "Хугацаа хэтэрсэн"
+            label === "Төлөөгүй" ||
+            label === "Хугацаа хэтэрсэн"
             ? label
             : "";
         dateMap[r._id] = status.date;
@@ -1318,7 +1312,7 @@ export default function InvoicingZardluud() {
           !resident?.utas?.[0] ||
           !item?.utas?.[0] ||
           String(item.utas?.[0] || "").trim() ===
-            String(resident.utas?.[0] || "").trim();
+          String(resident.utas?.[0] || "").trim();
         return ovogMatch && nerMatch && utasMatch;
       });
 
@@ -1349,8 +1343,8 @@ export default function InvoicingZardluud() {
         const toStr = (v: any) => (v == null ? "" : String(v));
         const branchMatches = barilgiinId
           ? list.filter(
-              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
-            )
+            (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
+          )
           : [];
         const pickLatest = (arr: any[]) =>
           [...arr].sort(
@@ -1371,7 +1365,7 @@ export default function InvoicingZardluud() {
           ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
           : [];
         setLiftFloors(floors);
-      } catch {}
+      } catch { }
     };
     fetchLiftFloors();
   }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
@@ -1766,7 +1760,7 @@ export default function InvoicingZardluud() {
                               label === "Төлсөн"
                                 ? "badge-paid"
                                 : label === "Төлөөгүй" ||
-                                    label === "Хугацаа хэтэрсэн"
+                                  label === "Хугацаа хэтэрсэн"
                                   ? "badge-unpaid"
                                   : "badge-neutral";
                             return (
@@ -1905,8 +1899,8 @@ export default function InvoicingZardluud() {
                             const total = (() => {
                               const ekhniiUldegdel = Number(
                                 item?.medeelel?.ekhniiUldegdel ??
-                                  item?.ekhniiUldegdel ??
-                                  0,
+                                item?.ekhniiUldegdel ??
+                                0,
                               );
 
                               const tariffSum = rows.reduce(
@@ -1938,8 +1932,8 @@ export default function InvoicingZardluud() {
                                       <span className="">
                                         {dateStr
                                           ? new Date(
-                                              dateStr,
-                                            ).toLocaleDateString("mn-MN")
+                                            dateStr,
+                                          ).toLocaleDateString("mn-MN")
                                           : "-"}
                                       </span>
                                     </div>
@@ -1951,11 +1945,10 @@ export default function InvoicingZardluud() {
                                     </div>
                                     <div className="mt-1">
                                       <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${
-                                          total === 0
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${total === 0
                                             ? "badge-paid"
                                             : "badge-unpaid"
-                                        }`}
+                                          }`}
                                       >
                                         {total === 0
                                           ? "Төлөгдсөн"
@@ -1975,8 +1968,8 @@ export default function InvoicingZardluud() {
                                       {formatCurrency(
                                         Number(
                                           item?.medeelel?.ekhniiUldegdel ??
-                                            item?.ekhniiUldegdel ??
-                                            0,
+                                          item?.ekhniiUldegdel ??
+                                          0,
                                         ),
                                       )}
                                     </span>

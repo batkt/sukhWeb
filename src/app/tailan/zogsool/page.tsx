@@ -198,7 +198,7 @@ export default function ZogsoolTailanPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm  text-theme/80 mb-1.5">
             Оршин суугч
           </label>
@@ -212,7 +212,7 @@ export default function ZogsoolTailanPage() {
             placeholder="Нэрээр хайх"
           />
         </div>
-        <div className="neu-panel p-3 rounded-xl">
+        <div className="p-3 rounded-xl">
           <label className="block text-sm  text-theme/80 mb-1.5">
             Тоот
           </label>

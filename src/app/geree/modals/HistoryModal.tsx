@@ -595,61 +595,22 @@ export default function HistoryModal({
       // Compute expected balance from ledger (charges - payments)
       const computedBalance = totalCharges - totalPayments;
 
-      // Determine calculation strategy:
-      // ALWAYS use forward calculation when there's ekhniiUldegdel from gereeniiTulukhAvlaga
-      // because the contract's uldegdel doesn't include it
-      // If we have a valid current balance from the contract, use backward calculation
-      // EXCEPT when overpaid: contract may have stale positive balance while computed is negative - use forward
-      // If no current balance (null/undefined) OR if current balance is 0 but we have charges without payments,
-      // use forward calculation starting from 0
-      const hasValidCurrentBalance = currentBalance !== null && currentBalance !== undefined;
-      const hasUnpaidCharges = totalCharges > 0 && totalPayments === 0;
-      const isOverpaid = computedBalance < 0;
-      const contractStaleOnOverpayment = isOverpaid && (currentBalance ?? 0) >= 0;
-      const useForwardCalc = !hasValidCurrentBalance || (currentBalance === 0 && hasUnpaidCharges) || hasEkhniiUldegdelFromAvlaga || contractStaleOnOverpayment;
+      // ALWAYS use FORWARD calculation for History Modal to ensure the math always adds up correctly
+      // based on the visible transactions, rather than relying on a potentially out-of-sync contract balance
+      console.log(`💰 [HistoryModal] Using FORWARD calculation (starting from 0)`);
+      let runningBalance = 0;
 
-      if (useForwardCalc) {
-        // FORWARD calculation: Start from 0, accumulate balance
-        console.log(`💰 [HistoryModal] Using FORWARD calculation (starting from 0)`);
-        let runningBalance = 0;
+      for (let i = 0; i < flatLedger.length; i++) {
+        const row = flatLedger[i];
+        const charge = Number(row.tulukhDun || 0);
+        const pay = Number(row.tulsunDun || 0);
 
-        for (let i = 0; i < flatLedger.length; i++) {
-          const row = flatLedger[i];
-          const charge = Number(row.tulukhDun || 0);
-          const pay = Number(row.tulsunDun || 0);
-
-          // Balance AFTER this transaction
-          runningBalance = runningBalance + charge - pay;
-          row.uldegdel = runningBalance;
-        }
-
-        console.log(`💰 [HistoryModal] Forward Calc End (Final Balance): ${runningBalance}`);
-      } else {
-        // BACKWARD calculation: Start from current balance, work backwards
-        console.log(`💰 [HistoryModal] Using BACKWARD calculation (starting from ${currentBalance})`);
-        let runningBalance = currentBalance;
-
-        // Iterate from newest to oldest
-        for (let i = flatLedger.length - 1; i >= 0; i--) {
-          const row = flatLedger[i];
-
-          // The row's displayed balance should be the balance AFTER this transaction
-          row.uldegdel = runningBalance;
-
-          // Calculate the balance BEFORE this transaction for the next iteration (going backwards)
-          // Logic: Previous + Charge - Pay = Current
-          // Therefore: Previous = Current - Charge + Pay
-          const charge = Number(row.tulukhDun || 0);
-          const pay = Number(row.tulsunDun || 0);
-
-          runningBalance = runningBalance - charge + pay;
-        }
-
-        console.log(`💰 [HistoryModal] Backward Calc End (Initial Balance): ${runningBalance}`);
+        // Balance AFTER this transaction
+        runningBalance = runningBalance + charge - pay;
+        row.uldegdel = runningBalance;
       }
 
-      // Validating against Contract Current Balance (Optional but good for debug)
-      // console.log("Final Calculated Balance:", runningBalance);
+      console.log(`💰 [HistoryModal] Forward Calc End (Final Balance): ${runningBalance}`);
 
       // Reverse for Display (Newest First)
       flatLedger.reverse();
