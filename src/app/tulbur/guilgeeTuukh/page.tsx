@@ -23,6 +23,7 @@ import {
   Download,
   Upload,
   ChevronDown,
+  ChevronUp,
   FileSpreadsheet,
   Eye,
   History,
@@ -942,7 +943,10 @@ export default function DansniiKhuulga() {
     "all" | "paid" | "unpaid" | "overdue"
   >("all");
   const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
+  const [selectedTootFilter, setSelectedTootFilter] = useState<string>("");
   const [selectedDavkharFilter, setSelectedDavkharFilter] = useState<string>("");
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
   const khungulultRef = useRef<HTMLDivElement | null>(null);
   const [isZaaltDropdownOpen, setIsZaaltDropdownOpen] = useState(false);
@@ -1343,7 +1347,7 @@ export default function DansniiKhuulga() {
       }
 
       // Additional filters: Орц and Давхар
-      if (selectedOrtsFilter || selectedDavkharFilter) {
+      if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
 
         const cId = toStr(
@@ -1370,12 +1374,21 @@ export default function DansniiKhuulga() {
         const davkhar = toStr(
           r?.davkhar ?? c?.davkhar ?? it?.davkhar
         );
+        const currentToot = toStr(
+          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot
+        );
 
         if (selectedOrtsFilter) {
           if (!orts || orts !== toStr(selectedOrtsFilter)) return false;
         }
         if (selectedDavkharFilter) {
           if (!davkhar || davkhar !== toStr(selectedDavkharFilter)) return false;
+        }
+        if (selectedTootFilter) {
+          // Robust case-insensitive partial matching for toot
+          const filterVal = toStr(selectedTootFilter).toLowerCase();
+          const targetToot = currentToot.toLowerCase();
+          if (targetToot !== filterVal && !targetToot.includes(filterVal)) return false;
         }
       }
 
@@ -1394,7 +1407,7 @@ export default function DansniiKhuulga() {
           _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
         };
         if (!matchesSearch(augmented, searchTerm)) return false;
-      }
+      } 
 
       return true;
     });
@@ -1408,6 +1421,7 @@ export default function DansniiKhuulga() {
     residentsById,
     selectedOrtsFilter,
     selectedDavkharFilter,
+    selectedTootFilter,
     paidSummaryByGereeId,
   ]);
 
@@ -1430,7 +1444,7 @@ export default function DansniiKhuulga() {
 
     return buildingHistoryItems.filter((it: any) => {
       // Skip tuluvFilter - include all items for stats
-      if (selectedOrtsFilter || selectedDavkharFilter) {
+      if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
         const cId = toStr(it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId);
         const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
@@ -1438,8 +1452,14 @@ export default function DansniiKhuulga() {
         const r = rId ? (residentsById as any)[rId] : undefined;
         const orts = toStr(c?.orts ?? c?.ortsDugaar ?? c?.ortsNer ?? r?.orts ?? r?.ortsDugaar ?? r?.ortsNer ?? r?.block ?? it?.orts ?? it?.ortsDugaar ?? it?.ortsNer);
         const davkhar = toStr(r?.davkhar ?? c?.davkhar ?? it?.davkhar);
+        const currentToot = toStr(r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot);
         if (selectedOrtsFilter && (!orts || orts !== toStr(selectedOrtsFilter))) return false;
         if (selectedDavkharFilter && (!davkhar || davkhar !== toStr(selectedDavkharFilter))) return false;
+        if (selectedTootFilter) {
+          const filterVal = toStr(selectedTootFilter).toLowerCase();
+          const targetToot = currentToot.toLowerCase();
+          if (targetToot !== filterVal && !targetToot.includes(filterVal)) return false;
+        }
       }
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
@@ -1451,7 +1471,7 @@ export default function DansniiKhuulga() {
       }
       return true;
     });
-  }, [buildingHistoryItems, searchTerm, gereeGaralt?.jagsaalt, contractsById, residentsById, selectedOrtsFilter, selectedDavkharFilter]);
+  }, [buildingHistoryItems, searchTerm, gereeGaralt?.jagsaalt, contractsById, residentsById, selectedOrtsFilter, selectedDavkharFilter, selectedTootFilter]);
 
   const totalSum = useMemo(() => {
     return filteredItems.reduce((s: number, it: any) => {
@@ -1733,17 +1753,79 @@ export default function DansniiKhuulga() {
     return Array.from(map.values());
   }, [filteredItemsAll, buildingHistoryItems, contractsByNumber]);
 
-  const totalPages = Math.max(1, Math.ceil(deduplicatedResidents.length / rowsPerPage));
+  const sortedResidents = useMemo(() => {
+    const result = Array.from(deduplicatedResidents);
+    if (!sortField) return result;
+
+    result.sort((a, b) => {
+      let aVal: any, bVal: any;
+
+      const getGid = (it: any) =>
+        (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?.gereeId && String(it.gereeId)) ||
+        (it?.gereeniiDugaar && String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+        "";
+
+      if (sortField === "uldegdel" || sortField === "paid") {
+        const gidA = getGid(a);
+        const gidB = getGid(b);
+        const paidA = gidA ? paidSummaryByGereeId[gidA] ?? 0 : 0;
+        const paidB = gidB ? paidSummaryByGereeId[gidB] ?? 0 : 0;
+
+        if (sortField === "paid") {
+          aVal = paidA;
+          bVal = paidB;
+        } else {
+          const totalA = Number(a?._totalTulbur ?? a?.niitTulbur ?? a?.niitDun ?? a?.total ?? a?.tulukhDun ?? 0);
+          const totalB = Number(b?._totalTulbur ?? b?.niitTulbur ?? b?.niitDun ?? b?.total ?? b?.tulukhDun ?? 0);
+          aVal = totalA - paidA;
+          bVal = totalB - paidB;
+        }
+      } else if (sortField === "toot") {
+        const getTootVal = (it: any) => {
+          const rid = it.orshinSuugchId ? String(it.orshinSuugchId) : null;
+          const res = rid ? residentsById[rid] : null;
+          const resToot = Array.isArray(res?.toots) && res.toots.length > 0 ? res.toots[0]?.toot : res?.toot;
+          const cid = it.gereeniiId ? String(it.gereeniiId) : null;
+          const con = cid ? contractsById[cid] : (it.gereeniiDugaar ? contractsByNumber[it.gereeniiDugaar] : null);
+          return String(con?.toot || resToot || it.toot || it.medeelel?.toot || "");
+        };
+        aVal = getTootVal(a);
+        bVal = getTootVal(b);
+      } else {
+        aVal = a[sortField];
+        bVal = b[sortField];
+      }
+
+      if (aVal === bVal) return 0;
+      if (aVal == null) return 1;
+      if (bVal == null) return -1;
+
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortOrder === "asc"
+          ? aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' })
+          : bVal.localeCompare(aVal, undefined, { numeric: true, sensitivity: 'base' });
+      }
+
+      return sortOrder === "asc"
+        ? aVal < bVal ? -1 : 1
+        : aVal > bVal ? -1 : 1;
+    });
+
+    return result;
+  }, [deduplicatedResidents, sortField, sortOrder, paidSummaryByGereeId, residentsById, contractsById, contractsByNumber]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedResidents.length / rowsPerPage));
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
   const paginated = useMemo(() => {
-    return deduplicatedResidents.slice(
+    return sortedResidents.slice(
       (page - 1) * rowsPerPage,
       page * rowsPerPage
     );
-  }, [deduplicatedResidents, page, rowsPerPage]);
+  }, [sortedResidents, page, rowsPerPage]);
 
   // Helper to resolve gereeId from resident (used for paidSummary lookup)
   const getGereeId = (it: any) =>
@@ -2744,6 +2826,21 @@ export default function DansniiKhuulga() {
                   </div>
                 </div>
 
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                    Тоот:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="text"
+                      value={selectedTootFilter}
+                      onChange={(e) => setSelectedTootFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+
                 {/* Давхар filter */}
                 <div className="flex items-center gap-1.5">
                   <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
@@ -2970,42 +3067,83 @@ export default function DansniiKhuulga() {
                         ? "sticky z-20 bg-[color:var(--surface-bg)]"
                         : "z-10";
                       const isLastCol = colIdx === visibleColumns.length - 1;
+                      const isSortable = col.key === "uldegdel" || col.key === "paid" || col.key === "toot";
+                      const handleSort = () => {
+                        if (!isSortable) return;
+                        if (sortField === col.key) {
+                          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+                        } else {
+                          setSortField(col.key);
+                          setSortOrder("asc");
+                        }
+                      };
                       return (
-                        <th
-                          key={col.key}
-                          className={`p-1 text-sm font-normal text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
-                          style={{
-                            ...(col.sticky
-                              ? { left: stickyOffsets[col.key] }
-                              : {}),
-                            minWidth: col.minWidth,
-                          }}
-                        >
-                          {col.key === "checkbox" ? (
-                            <div className="flex justify-center items-center h-full">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                onChange={(e) => handleToggleSelectAll(e.target.checked)}
-                                checked={
-                                  paginated.length > 0 &&
-                                  paginated.every((it: any) => {
-                                    const gid =
-                                      (it?.gereeniiId && String(it.gereeniiId)) ||
-                                      (it?.gereeId && String(it.gereeId)) ||
-                                      (it?.gereeniiDugaar &&
-                                        String(
-                                          (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
-                                        ));
-                                    return gid && selectedGereeIds.includes(gid);
-                                  })
-                                }
-                              />
-                            </div>
-                          ) : (
-                            col.label
-                          )}
-                        </th>
+                          <th
+                            key={col.key}
+                            className={`p-0 text-sm font-normal text-theme whitespace-nowrap ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""} ${isSortable ? "cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors" : ""}`}
+                            style={{
+                              ...(col.sticky
+                                ? { left: stickyOffsets[col.key] }
+                                : {}),
+                              minWidth: col.minWidth,
+                            }}
+                          >
+                            {col.key === "checkbox" ? (
+                              <div className="flex justify-center items-center h-full p-1">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                  onChange={(e) => handleToggleSelectAll(e.target.checked)}
+                                  checked={
+                                    paginated.length > 0 &&
+                                    paginated.every((it: any) => {
+                                      const gid =
+                                        (it?.gereeniiId && String(it.gereeniiId)) ||
+                                        (it?.gereeId && String(it.gereeId)) ||
+                                        (it?.gereeniiDugaar &&
+                                          String(
+                                            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+                                          ));
+                                      return gid && selectedGereeIds.includes(gid);
+                                    })
+                                  }
+                                />
+                              </div>
+                            ) : isSortable ? (
+                              <button
+                                type="button"
+                                onClick={handleSort}
+                                className={`w-full h-full p-1 inline-flex items-center gap-2 ${
+                                  alignClass.includes("text-left") ? "justify-start" : 
+                                  alignClass.includes("text-right") ? "justify-end" : 
+                                  "justify-center"
+                                }`}
+                                title={`Эрэмбэлэх: ${col.label}`}
+                              >
+                                <span>{col.label}</span>
+                                <div className="flex flex-col items-center">
+                                  <ChevronUp
+                                    className={`w-3 h-3 ${
+                                      sortField === col.key && sortOrder === "asc"
+                                        ? "text-blue-500"
+                                        : "text-gray-300 dark:text-gray-600"
+                                    }`}
+                                  />
+                                  <ChevronDown
+                                    className={`w-3 h-3 ${
+                                      sortField === col.key && sortOrder === "desc"
+                                        ? "text-blue-500"
+                                        : "text-gray-300 dark:text-gray-600"
+                                    }`}
+                                  />
+                                </div>
+                              </button>
+                            ) : (
+                              <div className={`p-1 ${alignClass}`}>
+                                {col.label}
+                              </div>
+                            )}
+                          </th>
                       );
                     })}
                   </tr>
@@ -3071,7 +3209,10 @@ export default function DansniiKhuulga() {
                       const paidFromSummary = gidForPaid ? paidSummaryByGereeId[gidForPaid] ?? 0 : 0;
                       // Enrich with authoritative paid so getPaymentStatusLabel uses it (not backend tuluv)
                       const itForTuluv = { ...it, _paidFromSummary: paidFromSummary };
-                      const tuluvLabel = getPaymentStatusLabel(itForTuluv);
+                      let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
+                      if (itForTuluv?.tuluv === "Цуцалсан" || itForTuluv?.status === "Цуцалсан") {
+                        tuluvLabel = "Цуцалсан";
+                      }
                       const isPaid = tuluvLabel === "Төлсөн";
                       const ner = resident
                         ? [resident.ner]
@@ -3148,10 +3289,16 @@ export default function DansniiKhuulga() {
                             ? `Илгээсэн • ${formatDate(sentAt)}`
                             : "-";
 
+                        const isItemCancelled = tuluvLabel === "Цуцалсан" ||
+                          String(it.tuluv || "").trim() === "Цуцалсан" ||
+                          String(it.status || "").trim() === "Цуцалсан" ||
+                          String(it.tuluv || "").trim().toLowerCase() === "цуцалсан" ||
+                          String(it.status || "").trim().toLowerCase() === "цуцалсан";
+
                       return (
                         <tr
                           key={it?._id || `${idx}`}
-                          className="transition-colors border-b last:border-b-0"
+                          className={`transition-colors border-b last:border-b-0 ${isItemCancelled ? "!bg-red-100 dark:!bg-red-900/40" : ""}`}
                         >
                           {visibleColumns.map((col, colIdx) => {
                             const alignClass =
@@ -3160,11 +3307,15 @@ export default function DansniiKhuulga() {
                                 : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
                                   ? "text-right pr-2"
                                   : "text-center";
+                            const stickyBg = isItemCancelled 
+                              ? "!bg-red-100 dark:!bg-red-900" 
+                              : "bg-[color:var(--surface-bg)]";
                             const stickyClass = col.sticky
-                              ? "sticky z-10 bg-[color:var(--surface-bg)]"
+                              ? `sticky z-10 ${stickyBg}`
                               : "";
+                            const itemBg = isItemCancelled ? "!bg-red-100 dark:!bg-red-900" : "";
                             const isLastCol = colIdx === visibleColumns.length - 1;
-                            const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`;
+                            const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${itemBg} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`;
                             const style = {
                               ...(col.sticky
                                 ? { left: stickyOffsets[col.key] }
@@ -3303,10 +3454,12 @@ export default function DansniiKhuulga() {
                                           "px-2 py-0.5 rounded-full text-sm  " +
                                           (isPaid
                                             ? "badge-paid"
-                                            : tuluvLabel === "Төлөөгүй" ||
-                                              tuluvLabel === "Хугацаа хэтэрсэн"
-                                              ? "badge-unpaid"
-                                              : "badge-neutral")
+                                            : tuluvLabel === "Цуцалсан"
+                                              ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                                              : tuluvLabel === "Төлөөгүй" ||
+                                                tuluvLabel === "Хугацаа хэтэрсэн"
+                                                ? "badge-unpaid"
+                                                : "badge-neutral")
                                         }
                                       >
                                         {tuluvLabel}
