@@ -201,39 +201,23 @@ export default function HistoryModal({
         matchedReceivables: matchedReceivables.length
       });
 
-      // Deduplicate invoices: when multiple invoices exist for same contract + same month, keep only one
-      // to avoid double-counting charges (374k instead of 309k) and duplicate React keys
-      const monthKey = (it: any) => {
-        const d = new Date(it?.ognoo || it?.createdAt || 0);
-        return `${it?.gereeniiId || ""}-${d.getFullYear()}-${d.getMonth()}`;
-      };
-      const seenMonths = new Set<string>();
-      const dedupedContractItems = contractItems.filter((item: any) => {
-        const key = monthKey(item);
-        if (seenMonths.has(key)) return false;
-        seenMonths.add(key);
+      // 1. Process Invoices and their contents
+      const flatLedger: LedgerEntry[] = [];
+      const processedIds = new Set<string>();
+      
+      // Ensure we only process each unique invoice once, but allow multiple invoices per month
+      const seenInvoiceIds = new Set<string>();
+      const contractItemsToProcess = contractItems.filter((item: any) => {
+        const id = item._id?.toString();
+        if (!id || seenInvoiceIds.has(id)) return false;
+        seenInvoiceIds.add(id);
         return true;
       });
-      // Prefer paid invoice when deduping same month
-      const contractItemsToProcess = dedupedContractItems.length < contractItems.length
-        ? contractItems.filter((item: any) => {
-          const key = monthKey(item);
-          const sameMonth = contractItems.filter((it: any) => monthKey(it) === key);
-          const paid = sameMonth.find((it: any) => it?.tuluv === "Төлсөн");
-          const best = paid || sameMonth.sort((a: any, b: any) =>
-            new Date(b?.updatedAt || 0).getTime() - new Date(a?.updatedAt || 0).getTime()
-          )[0];
-          return item._id === best?._id;
-        })
-        : contractItems;
 
       // Log first item for debugging
       if (contractItemsToProcess.length > 0) {
         console.log("📋 Sample item structure:", JSON.stringify(contractItemsToProcess[0], null, 2));
       }
-
-      const flatLedger: LedgerEntry[] = [];
-      const processedIds = new Set<string>();
       const invoiceIds = new Set(contractItemsToProcess.map((item: any) => item._id?.toString()));
 
       contractItemsToProcess.forEach((item: any) => {
