@@ -49,7 +49,9 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import TransactionModal, { type TransactionData } from "../modals/TransactionModal";
+import TransactionModal, {
+  type TransactionData,
+} from "../modals/TransactionModal";
 import HistoryModal from "../../geree/modals/HistoryModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 
@@ -87,7 +89,7 @@ const PrintStyles = () => (
         background: white !important;
         page-break-after: avoid;
         page-break-before: avoid;
-        page-break-inside: avoid;   
+        page-break-inside: avoid;
       }
 
       .invoice-modal * {
@@ -187,20 +189,25 @@ const InvoiceModal = ({
   });
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
-  const ashiglaltParams = useMemo(() => ({
-    token,
-    baiguullagiinId,
-    barilgiinId: selectedBuildingId || barilgiinId || null,
-  }), [token, baiguullagiinId, selectedBuildingId, barilgiinId]);
+  const ashiglaltParams = useMemo(
+    () => ({
+      token,
+      baiguullagiinId,
+      barilgiinId: selectedBuildingId || barilgiinId || null,
+    }),
+    [token, baiguullagiinId, selectedBuildingId, barilgiinId],
+  );
 
-  const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud(ashiglaltParams);
+  const { zardluud: ashiglaltiinZardluud } =
+    useAshiglaltiinZardluud(ashiglaltParams);
 
   const invoiceNumber = `INV-${Math.random().toString(36).substr(2, 9)}`;
   const currentDate = new Date().toLocaleDateString("mn-MN");
   // Get davkhar from toots array first, then fallback to top-level
-  const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0
-    ? resident.toots[0]?.davkhar
-    : resident?.davkhar;
+  const residentDavkhar =
+    Array.isArray(resident?.toots) && resident.toots.length > 0
+      ? resident.toots[0]?.davkhar
+      : resident?.davkhar;
   const isLiftExempt = liftFloors?.includes(String(residentDavkhar));
 
   const isLiftItem = (z: Zardal) =>
@@ -218,7 +225,9 @@ const InvoiceModal = ({
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
   const [cronData, setCronData] = React.useState<any>(null);
-  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(null);
+  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(
+    null,
+  );
 
   const invValid = React.useMemo(() => {
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
@@ -234,9 +243,13 @@ const InvoiceModal = ({
       try {
         if (!isOpen || !token || !baiguullagiinId || !resident?._id) return;
 
-        const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
+        const residentId = String(
+          resident?._id || resident?.orshinSuugchId || "",
+        ).trim();
         const residentGereeId = String(resident?.gereeniiId || "").trim();
-        const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
+        const residentGereeDugaar = String(
+          resident?.gereeniiDugaar || "",
+        ).trim();
 
         // Fetch both nekhemjlekhiinTuukh and gereeniiTulukhAvlaga in parallel
         const [resp, tulukhAvlagaResp] = await Promise.all([
@@ -249,14 +262,16 @@ const InvoiceModal = ({
               _t: Date.now(),
             },
           }),
-          uilchilgee(token).get(`/gereeniiTulukhAvlaga`, {
-            params: {
-              baiguullagiinId,
-              barilgiinId: selectedBuildingId || barilgiinId || null,
-              khuudasniiDugaar: 1,
-              khuudasniiKhemjee: 2000,
-            },
-          }).catch(() => ({ data: { jagsaalt: [] } })),
+          uilchilgee(token)
+            .get(`/gereeniiTulukhAvlaga`, {
+              params: {
+                baiguullagiinId,
+                barilgiinId: selectedBuildingId || barilgiinId || null,
+                khuudasniiDugaar: 1,
+                khuudasniiKhemjee: 2000,
+              },
+            })
+            .catch(() => ({ data: { jagsaalt: [] } })),
         ]);
 
         const data = resp.data;
@@ -279,34 +294,40 @@ const InvoiceModal = ({
 
           if (residentGereeId && itemGid === residentGereeId) return true;
           if (residentId && itemRid === residentId) return true;
-          if (residentGereeDugaar && itemDugaar === residentGereeDugaar) return true;
+          if (residentGereeDugaar && itemDugaar === residentGereeDugaar)
+            return true;
           return false;
         });
 
         const residentInvoices = list.filter((item: any) => {
-          const itemGid = String(item?.gereeniiId || item?.gereeId || "").trim();
+          const itemGid = String(
+            item?.gereeniiId || item?.gereeId || "",
+          ).trim();
           const itemRid = String(item?.orshinSuugchId || "").trim();
           const itemDugaar = String(item?.gereeniiDugaar || "").trim();
 
           // Strategy 1: Match by IDs
           if (residentGereeId && itemGid === residentGereeId) return true;
           if (residentId && itemRid === residentId) return true;
-          if (residentGereeDugaar && itemDugaar === residentGereeDugaar) return true;
+          if (residentGereeDugaar && itemDugaar === residentGereeDugaar)
+            return true;
 
           // Strategy 2: Match by name/ovog/utas (fallback)
           const ovogMatch =
             !resident?.ovog ||
             !item?.ovog ||
-            String(item.ovog).trim().toLowerCase() === String(resident.ovog).trim().toLowerCase();
+            String(item.ovog).trim().toLowerCase() ===
+              String(resident.ovog).trim().toLowerCase();
           const nerMatch =
             !resident?.ner ||
             !item?.ner ||
-            String(item.ner).trim().toLowerCase() === String(resident.ner).trim().toLowerCase();
+            String(item.ner).trim().toLowerCase() ===
+              String(resident.ner).trim().toLowerCase();
           const utasMatch =
             !resident?.utas?.[0] ||
             !item?.utas?.[0] ||
             String(item.utas?.[0] || "").trim() ===
-            String(resident.utas?.[0] || "").trim();
+              String(resident.utas?.[0] || "").trim();
           return ovogMatch && nerMatch && utasMatch;
         });
         const sortedInvoices = [...residentInvoices].sort((a: any, b: any) => {
@@ -323,36 +344,25 @@ const InvoiceModal = ({
         const latest = sortedInvoices[0];
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
+        // Aggregate ALL zardluud and guilgeenuud from the entire history of this resident
+        // to match "HistoryModal" style display within the invoice view.
+        const allZardluud: any[] = [];
+        const allGuilgeenuud: any[] = [];
 
-        // ✅ IMPORTANT:
-        // For the "Үйлчилгээний нэхэмжлэх" view in transaction history,
-        // we should show ONLY the rows that belong to the latest invoice
-        // (NOT aggregated across all historical invoices).
-        //
-        // Otherwise, when there are multiple nekhemjlekh documents for the
-        // same resident, zardluud get duplicated (one per invoice), which is
-        // exactly what the user is seeing.
-        const latestZardluud: any[] = (() => {
-          if (!latest) return [];
-          if (Array.isArray(latest?.medeelel?.zardluud)) {
-            return latest.medeelel.zardluud;
-          }
-          if (Array.isArray(latest?.zardluud)) {
-            return latest.zardluud;
-          }
-          return [];
-        })();
-
-        const latestGuilgeenuud: any[] = (() => {
-          if (!latest) return [];
-          if (Array.isArray(latest?.medeelel?.guilgeenuud)) {
-            return latest.medeelel.guilgeenuud;
-          }
-          if (Array.isArray(latest?.guilgeenuud)) {
-            return latest.guilgeenuud;
-          }
-          return [];
-        })();
+        residentInvoices.forEach((inv: any) => {
+          const z = Array.isArray(inv?.medeelel?.zardluud)
+            ? inv.medeelel.zardluud
+            : Array.isArray(inv?.zardluud)
+              ? inv.zardluud
+              : [];
+          const g = Array.isArray(inv?.medeelel?.guilgeenuud)
+            ? inv.medeelel.guilgeenuud
+            : Array.isArray(inv?.guilgeenuud)
+              ? inv.guilgeenuud
+              : [];
+          allZardluud.push(...z);
+          allGuilgeenuud.push(...g);
+        });
 
         // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
         const ekhniiUldegdelRows = residentTulukhAvlaga
@@ -360,7 +370,9 @@ const InvoiceModal = ({
           .map((item: any) => ({
             _id: item._id,
             ner: "Эхний үлдэгдэл",
-            tariff: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            tariff: Number(
+              item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0,
+            ),
             dun: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
             turul: "ekhniiUldegdel",
             zardliinTurul: "Авлага",
@@ -379,7 +391,9 @@ const InvoiceModal = ({
           .map((item: any) => ({
             _id: item._id,
             ner: (item.zardliinNer || item.tailbar || "Авлага") + " (авлага)",
-            tariff: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
+            tariff: Number(
+              item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0,
+            ),
             dun: Number(item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0),
             turul: "avlaga",
             zardliinTurul: "Авлага",
@@ -391,25 +405,32 @@ const InvoiceModal = ({
         // when we have actual ekhniiUldegdel from gereeniiTulukhAvlaga
         const hasEkhniiUldegdelFromAvlaga = ekhniiUldegdelRows.length > 0;
         const filteredZardluud = hasEkhniiUldegdelFromAvlaga
-          ? latestZardluud.filter((z: any) => {
-            // Skip "Эхний үлдэгдэл" entries with 0 or no value
-            if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
-              const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
-              if (amt === 0) {
-                console.log(`⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`);
-                return false;
+          ? allZardluud.filter((z: any) => {
+              // Skip "Эхний үлдэгдэл" entries with 0 or no value
+              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+                const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+                if (amt === 0) {
+                  console.log(
+                    `⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`,
+                  );
+                  return false;
+                }
               }
-            }
-            return true;
-          })
-          : latestZardluud;
+              return true;
+            })
+          : allZardluud;
 
         // Avlaga: prefer tulukhAvlaga; invoice guilgeenuud for non-avlaga (tulult, ashiglalt) only to avoid duplicate
-        const guilgeeNonAvlaga = latestGuilgeenuud.filter((g: any) => {
+        const guilgeeNonAvlaga = allGuilgeenuud.filter((g: any) => {
           const gt = String(g?.turul || "").toLowerCase();
           return gt !== "avlaga" && gt !== "авлага";
         });
-        const rows = [...filteredZardluud, ...ekhniiUldegdelRows, ...avlagaRows, ...guilgeeNonAvlaga];
+        const rows = [
+          ...filteredZardluud,
+          ...ekhniiUldegdelRows,
+          ...avlagaRows,
+          ...guilgeeNonAvlaga,
+        ];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -430,8 +451,8 @@ const InvoiceModal = ({
           ner:
             z.turul === "avlaga"
               ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
-                z.ognoo,
-              )}`
+                  z.ognoo,
+                )}`
               : z.turul === "ekhniiUldegdel" || z.isEkhniiUldegdel
                 ? "Эхний үлдэгдэл" // Always show simple name for ekhniiUldegdel
                 : z.ner || z.name || "",
@@ -445,8 +466,13 @@ const InvoiceModal = ({
         setInvRows(rows.map(norm));
 
         // Total = sum of displayed rows (avoids double-count when invoice.niitTulbur already includes avlaga)
-        const rowTotal = rows.reduce((s: number, r: any) => s + pickAmount(r), 0);
-        setInvTotal(Number.isFinite(rowTotal) && rowTotal > 0 ? rowTotal : null);
+        const rowTotal = rows.reduce(
+          (s: number, r: any) => s + pickAmount(r),
+          0,
+        );
+        setInvTotal(
+          Number.isFinite(rowTotal) && rowTotal > 0 ? rowTotal : null,
+        );
 
         try {
           const cronResp = await uilchilgee(token).get(
@@ -467,7 +493,8 @@ const InvoiceModal = ({
         }
 
         // Fetch actual total paid from /tulsunSummary for correct Үлдэгдэл дүн (handles overpayment)
-        const gereeId = residentGereeId || latest?.gereeniiId || latest?.gereeId;
+        const gereeId =
+          residentGereeId || latest?.gereeniiId || latest?.gereeId;
         if (gereeId) {
           uilchilgee(token)
             .post("/tulsunSummary", {
@@ -476,7 +503,11 @@ const InvoiceModal = ({
             })
             .then((paidResp) => {
               const paid =
-                Number(paidResp.data?.totalTulsunDun ?? paidResp.data?.totalInvoicePayment ?? 0) || 0;
+                Number(
+                  paidResp.data?.totalTulsunDun ??
+                    paidResp.data?.totalInvoicePayment ??
+                    0,
+                ) || 0;
               setTotalPaidFromApi(paid);
             })
             .catch(() => setTotalPaidFromApi(null));
@@ -521,13 +552,13 @@ const InvoiceModal = ({
     };
     return Array.isArray(raw)
       ? raw.map((r: any, idx: number) => ({
-        _id: r._id || `row-${idx}`,
-        ner: r.ner || r.name || "",
-        tariff: Number(r?.tariff) || 0,
-        dun: pickAmount(r),
-        turul: r.turul,
-        zardliinTurul: r.zardliinTurul,
-      }))
+          _id: r._id || `row-${idx}`,
+          ner: r.ner || r.name || "",
+          tariff: Number(r?.tariff) || 0,
+          dun: pickAmount(r),
+          turul: r.turul,
+          zardliinTurul: r.zardliinTurul,
+        }))
       : null;
   }, [contractData]);
 
@@ -536,14 +567,14 @@ const InvoiceModal = ({
       contractData?.medeelel?.guilgeenuud || contractData?.guilgeenuud || [];
     return Array.isArray(raw)
       ? raw.map((g: any, idx: number) => ({
-        _id: g._id || `guilgee-${idx}`,
-        ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
-        tariff: 0,
-        dun: Number(g.tulukhDun) || 0,
-        turul: "avlaga",
-        zardliinTurul: "Авлага",
-        ognoo: g.ognoo,
-      }))
+          _id: g._id || `guilgee-${idx}`,
+          ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
+          tariff: 0,
+          dun: Number(g.tulukhDun) || 0,
+          turul: "avlaga",
+          zardliinTurul: "Авлага",
+          ognoo: g.ognoo,
+        }))
       : [];
   }, [contractData]);
 
@@ -559,15 +590,15 @@ const InvoiceModal = ({
         contractData?.medeelel?.zardluud || contractData?.zardluud || [];
       const liftEntries = Array.isArray(raw)
         ? raw.filter(
-          (r: any) =>
-            r.zardliinTurul === "Лифт" ||
-            String(r.ner || "")
-              .trim()
-              .toLowerCase() === "лифт" ||
-            String(r.turul || "")
-              .trim()
-              .toLowerCase() === "лифт",
-        )
+            (r: any) =>
+              r.zardliinTurul === "Лифт" ||
+              String(r.ner || "")
+                .trim()
+                .toLowerCase() === "лифт" ||
+              String(r.turul || "")
+                .trim()
+                .toLowerCase() === "лифт",
+          )
         : [];
       const pickAmount = (obj: any) => {
         const n = (v: any) => {
@@ -683,7 +714,13 @@ const InvoiceModal = ({
     if (inv?.uldegdel != null) return Number(inv.uldegdel);
     const paid = Number(inv?.tulsunDun ?? 0) || 0;
     return total - paid;
-  }, [totalSum, totalPaidFromApi, latestInvoice, nekhemjlekhData, resident?._contractBalance]);
+  }, [
+    totalSum,
+    totalPaidFromApi,
+    latestInvoice,
+    nekhemjlekhData,
+    resident?._contractBalance,
+  ]);
 
   // When balance <= 0 (paid or overpaid), show Төлсөн regardless of invoice tuluv
   const effectivePaymentStatus =
@@ -707,9 +744,7 @@ const InvoiceModal = ({
       >
         <div className="invoice-modal h-full flex flex-col">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
-            <h2 className="text-xl  text-slate-800">
-              Үйлчилгээний нэхэмжлэх
-            </h2>
+            <h2 className="text-xl  text-slate-800">Үйлчилгээний нэхэмжлэх</h2>
             <button
               onClick={() => onClose()}
               className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
@@ -743,20 +778,33 @@ const InvoiceModal = ({
                   Нэхэмжлэгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
-                  <p><span className=" text-slate-500">Нэхэмжлэгч:</span> {baiguullaga?.ner || "-"}</p>
-                  <p><span className=" text-slate-500">Утас:</span>{" "}
+                  <p>
+                    <span className=" text-slate-500">Нэхэмжлэгч:</span>{" "}
+                    {baiguullaga?.ner || "-"}
+                  </p>
+                  <p>
+                    <span className=" text-slate-500">Утас:</span>{" "}
                     {Array.isArray((baiguullaga as any)?.tokhirgoo?.utas)
                       ? (baiguullaga as any).tokhirgoo.utas[0]
                       : Array.isArray((baiguullaga as any)?.utas)
                         ? (baiguullaga as any).utas[0]
                         : (baiguullaga as any)?.utas || "-"}
                   </p>
-                  <p><span className=" text-slate-500">Хаяг:</span> {baiguullaga?.khayag || "-"}</p>
-                  <p><span className=" text-slate-500">Данс:</span>{" "}
+                  <p>
+                    <span className=" text-slate-500">Хаяг:</span>{" "}
+                    {baiguullaga?.khayag || "-"}
+                  </p>
+                  <p>
+                    <span className=" text-slate-500">Данс:</span>{" "}
                     {latestInvoice?.nekhemjlekhiinDans ||
                       latestInvoice?.dansniiDugaar ||
                       (baiguullaga as any)?.dans ||
-                      [((baiguullaga as any)?.bankniiNer), ((baiguullaga as any)?.dans)].filter(Boolean).join(" ") ||
+                      [
+                        (baiguullaga as any)?.bankniiNer,
+                        (baiguullaga as any)?.dans,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") ||
                       "-"}
                   </p>
                 </div>
@@ -767,20 +815,34 @@ const InvoiceModal = ({
                   Төлөгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
-                  <p><span className=" text-slate-500">Төлөгч:</span> {resident?.ovog} {resident?.ner}</p>
-                  <p><span className=" text-slate-500">Гэрээний дугаар:</span> {contractData?.gereeniiDugaar || "-"}</p>
-                  <p><span className=" text-slate-500">Байр:</span>{" "}
+                  <p>
+                    <span className=" text-slate-500">Төлөгч:</span>{" "}
+                    {resident?.ovog} {resident?.ner}
+                  </p>
+                  <p>
+                    <span className=" text-slate-500">Гэрээний дугаар:</span>{" "}
+                    {contractData?.gereeniiDugaar || "-"}
+                  </p>
+                  <p>
+                    <span className=" text-slate-500">Байр:</span>{" "}
                     {contractData?.khayag ||
                       resident?.toots?.[0]?.bairniiNer ||
-                      (resident as any)?.bairniiNer || "-"}
+                      (resident as any)?.bairniiNer ||
+                      "-"}
                   </p>
-                  <p><span className=" text-slate-500">Орц:</span>{" "}
+                  <p>
+                    <span className=" text-slate-500">Орц:</span>{" "}
                     {contractData?.orts ||
                       resident?.toots?.[0]?.orts ||
-                      (resident as any)?.orts || "-"}
+                      (resident as any)?.orts ||
+                      "-"}
                   </p>
-                  <p><span className=" text-slate-500">Тоот:</span>{" "}
-                    {resident?.toots?.[0]?.toot || resident?.toot || contractData?.medeelel?.toot || "-"}
+                  <p>
+                    <span className=" text-slate-500">Тоот:</span>{" "}
+                    {resident?.toots?.[0]?.toot ||
+                      resident?.toot ||
+                      contractData?.medeelel?.toot ||
+                      "-"}
                   </p>
                 </div>
               </div>
@@ -790,11 +852,15 @@ const InvoiceModal = ({
             <div className="flex flex-wrap gap-4 text-sm text-slate-500 print-break">
               <span>
                 <span className="">Нэхэмжлэхийн дугаар:</span>{" "}
-                {contractData?.nekhemjlekhiinDugaar || latestInvoice?.nekhemjlekhiinDugaar || "-"}
+                {contractData?.nekhemjlekhiinDugaar ||
+                  latestInvoice?.nekhemjlekhiinDugaar ||
+                  "-"}
               </span>
               <span>
                 <span className="">Огноо:</span>{" "}
-                {formatDate(contractData?.ognoo || latestInvoice?.ognoo || currentDate)}
+                {formatDate(
+                  contractData?.ognoo || latestInvoice?.ognoo || currentDate,
+                )}
               </span>
             </div>
 
@@ -817,26 +883,23 @@ const InvoiceModal = ({
                   {invoiceRows.map((row: any) => (
                     <tr key={row._id}>
                       <td
-                        className={`py-2 px-3 ${row.discount
-                          ? "text-green-700  italic"
-                          : ""
-                          }`}
+                        className={`py-2 px-3 ${
+                          row.discount ? "text-green-700  italic" : ""
+                        }`}
                       >
                         {row.ner}
                       </td>
                       <td
-                        className={`py-2 px-4 text-right ${row.discount
-                          ? "text-green-700  line-through"
-                          : ""
-                          }`}
+                        className={`py-2 px-4 text-right ${
+                          row.discount ? "text-green-700  line-through" : ""
+                        }`}
                       >
                         {formatNumber(Number(row.dun ?? 0))} ₮
                       </td>
                       <td
-                        className={`py-2 px-3 text-right ${row.discount
-                          ? "text-green-700  line-through"
-                          : ""
-                          }`}
+                        className={`py-2 px-3 text-right ${
+                          row.discount ? "text-green-700  line-through" : ""
+                        }`}
                       >
                         {row.tailbar}
                       </td>
@@ -845,16 +908,15 @@ const InvoiceModal = ({
                 </tbody>
                 <tfoot className="bg-gray-50 border-t border-gray-100">
                   <tr>
-                    <td className="py-2 px-3  text-slate-700">
-                      Нийт дүн:
-                    </td>
+                    <td className="py-2 px-3  text-slate-700">Нийт дүн:</td>
                     <td className="py-2 px-3"></td>
                     <td className="py-2 px-3 text-right  text-theme">
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
                   {/* Үлдэгдэл дүн: only show when user has made payment (balance differs from total) */}
-                  {(totalPaidFromApi != null && totalPaidFromApi > 0) || Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
+                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
                     <tr>
                       <td className="py-2 px-3  text-slate-700">
                         Үлдэгдэл дүн:
@@ -878,13 +940,14 @@ const InvoiceModal = ({
                         Төлбөрийн төлөв:
                       </span>
                       <span
-                        className={`badge-status ${effectivePaymentStatus === "Төлсөн"
-                          ? "badge-paid"
-                          : effectivePaymentStatus === "Төлөөгүй" ||
-                            effectivePaymentStatus === "Хугацаа хэтэрсэн"
-                            ? "badge-unpaid"
-                            : "badge-unknown"
-                          }`}
+                        className={`badge-status ${
+                          effectivePaymentStatus === "Төлсөн"
+                            ? "badge-paid"
+                            : effectivePaymentStatus === "Төлөөгүй" ||
+                                effectivePaymentStatus === "Хугацаа хэтэрсэн"
+                              ? "badge-unpaid"
+                              : "badge-unknown"
+                        }`}
                       >
                         {effectivePaymentStatus}
                       </span>
@@ -897,7 +960,8 @@ const InvoiceModal = ({
                     </span>
                   </span>
                   {/* Үлдэгдэл дүн: only show when user has made payment */}
-                  {(totalPaidFromApi != null && totalPaidFromApi > 0) || Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
+                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
                     <span className="text-sm text-slate-500">
                       Үлдэгдэл дүн:{" "}
                       <span className=" text-slate-900">
@@ -955,7 +1019,8 @@ export default function DansniiKhuulga() {
   >("all");
   const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
   const [selectedTootFilter, setSelectedTootFilter] = useState<string>("");
-  const [selectedDavkharFilter, setSelectedDavkharFilter] = useState<string>("");
+  const [selectedDavkharFilter, setSelectedDavkharFilter] =
+    useState<string>("");
   const [sortField, setSortField] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [isKhungulultOpen, setIsKhungulultOpen] = useState(false);
@@ -966,9 +1031,11 @@ export default function DansniiKhuulga() {
   const [isColumnModalOpen, setIsColumnModalOpen] = useState(false);
   const columnDropdownRef = useRef<HTMLDivElement | null>(null);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
-  const [selectedTransactionResident, setSelectedTransactionResident] = useState<any>(null);
+  const [selectedTransactionResident, setSelectedTransactionResident] =
+    useState<any>(null);
   const [isProcessingTransaction, setIsProcessingTransaction] = useState(false);
-  const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] = useState(false);
+  const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] =
+    useState(false);
   const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
   // Map gereeId -> total paid amount (Төлсөн дүн)
   const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<
@@ -995,7 +1062,7 @@ export default function DansniiKhuulga() {
             key[0] === "/geree" ||
             key[0] === "/orshinSuugch"),
         undefined,
-        { revalidate: true }
+        { revalidate: true },
       );
       setPaidSummaryByGereeId({});
       requestedGereeIdsRef.current.clear();
@@ -1062,7 +1129,12 @@ export default function DansniiKhuulga() {
         minWidth: 140,
       },
       { key: "tulbur", label: "Төлбөр", align: "center", minWidth: 110 },
-      { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл", align: "center", minWidth: 110 },
+      {
+        key: "ekhniiUldegdel",
+        label: "Эхний үлдэгдэл",
+        align: "center",
+        minWidth: 110,
+      },
       { key: "uldegdel", label: "Үлдэгдэл", align: "center", minWidth: 110 },
       { key: "paid", label: "Гүйцэтгэл", align: "center", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
@@ -1074,27 +1146,55 @@ export default function DansniiKhuulga() {
       },
       { key: "action", label: "Үйлдэл", align: "center", minWidth: 130 },
     ],
-    []
+    [],
   );
   const [columnVisibility, setColumnVisibility] = useState<
     Record<string, boolean>
   >(() => {
-    const hiddenByDefault = ["orts", "davkhar", "tulbur", "ekhniiUldegdel", "tuluv", "lastLog"];
-    return columnDefs.reduce((acc, col) => {
-      acc[col.key] = !hiddenByDefault.includes(col.key);
-      return acc;
-    }, {} as Record<string, boolean>);
+    const hiddenByDefault = [
+      "orts",
+      "davkhar",
+      "tulbur",
+      "ekhniiUldegdel",
+      "tuluv",
+      "lastLog",
+    ];
+    return columnDefs.reduce(
+      (acc, col) => {
+        acc[col.key] = !hiddenByDefault.includes(col.key);
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
   });
   const visibleColumns = useMemo(
     () => columnDefs.filter((col) => columnVisibility[col.key] !== false),
-    [columnDefs, columnVisibility]
+    [columnDefs, columnVisibility],
   );
 
   // Columns that appear in "Багана сонгох" modal (exclude structural checkbox, index, action)
-  const selectableColumnKeys = ["ner", "toot", "utas", "orts", "davkhar", "gereeniiDugaar", "tulbur", "ekhniiUldegdel", "uldegdel", "paid", "tuluv", "lastLog"] as const;
+  const selectableColumnKeys = [
+    "ner",
+    "toot",
+    "utas",
+    "orts",
+    "davkhar",
+    "gereeniiDugaar",
+    "tulbur",
+    "ekhniiUldegdel",
+    "uldegdel",
+    "paid",
+    "tuluv",
+    "lastLog",
+  ] as const;
   const selectableColumnDefs = useMemo(
-    () => columnDefs.filter((col) => selectableColumnKeys.includes(col.key as typeof selectableColumnKeys[number])),
-    [columnDefs]
+    () =>
+      columnDefs.filter((col) =>
+        selectableColumnKeys.includes(
+          col.key as (typeof selectableColumnKeys)[number],
+        ),
+      ),
+    [columnDefs],
   );
   const stickyOffsets = useMemo(() => {
     let left = 0;
@@ -1126,17 +1226,17 @@ export default function DansniiKhuulga() {
   const { data: historyData, isLoading: isLoadingHistory } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        "/nekhemjlekhiinTuukh",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId || null,
-      ]
+          "/nekhemjlekhiinTuukh",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+        ]
       : null,
     async ([url, tkn, orgId, branch]: [
       string,
       string,
       string,
-      string | null
+      string | null,
     ]) => {
       const resp = await uilchilgee(tkn).get(url, {
         params: {
@@ -1152,18 +1252,18 @@ export default function DansniiKhuulga() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   // Fetch standalone receivables (manual adjustments not yet invoiced)
   const { data: receivableData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        "/gereeniiTulukhAvlaga",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId || null,
-      ]
+          "/gereeniiTulukhAvlaga",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+        ]
       : null,
     async ([url, tkn, orgId, branch]) => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -1179,7 +1279,7 @@ export default function DansniiKhuulga() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const allHistoryItems = useMemo(() => {
@@ -1195,7 +1295,7 @@ export default function DansniiKhuulga() {
         ? receivableData
         : [];
 
-    // Combine and deduplicate by ID. 
+    // Combine and deduplicate by ID.
     // If an ID exists in both (meaning it was merged into an invoice), the invoice version wins.
     const combined = [...invoices];
 
@@ -1203,8 +1303,11 @@ export default function DansniiKhuulga() {
     // This includes the invoice ID itself AND any merged transaction IDs inside the medeelel.guilgeenuud array
     const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
     invoices.forEach((it: any) => {
-      const gList = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
-        Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
       gList.forEach((g: any) => {
         if (g?._id) trackingIds.add(String(g._id));
       });
@@ -1216,13 +1319,14 @@ export default function DansniiKhuulga() {
       }
     });
 
-    if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1])) return combined;
+    if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1]))
+      return combined;
     const [start, end] = ekhlekhOgnoo;
     const s = start ? new Date(start).getTime() : Number.NEGATIVE_INFINITY;
     const e = end ? new Date(end).getTime() : Number.POSITIVE_INFINITY;
     return combined.filter((it: any) => {
       const d = new Date(
-        it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0
+        it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
       ).getTime();
       return d >= s && d <= e;
     });
@@ -1232,13 +1336,13 @@ export default function DansniiKhuulga() {
     emptyQuery,
     token || undefined,
     ajiltan?.baiguullagiinId,
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
   const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
     emptyQuery,
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
 
   const contractsById = useMemo(() => {
@@ -1276,24 +1380,24 @@ export default function DansniiKhuulga() {
     const toStr = (v: any) => (v == null ? "" : String(v));
     return allHistoryItems.filter((it: any) => {
       const itemBid = toStr(
-        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId,
       );
       if (itemBid) return itemBid === bid;
       // Derive from linked contract or resident if barilgiinId absent
       const cId = toStr(
         it?.gereeId ??
-        it?.gereeniiId ??
-        it?.contractId ??
-        it?.kholbosonGereeniiId
+          it?.gereeniiId ??
+          it?.contractId ??
+          it?.kholbosonGereeniiId,
       );
       const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
       const c = cId ? (contractsById as any)[cId] : undefined;
       const r = rId ? (residentsById as any)[rId] : undefined;
       const cbid = toStr(
-        c?.barilgiinId ?? c?.barilga ?? c?.barilgaId ?? c?.branchId
+        c?.barilgiinId ?? c?.barilga ?? c?.barilgaId ?? c?.branchId,
       );
       const rbid = toStr(
-        r?.barilgiinId ?? r?.barilga ?? r?.barilgaId ?? r?.branchId
+        r?.barilgiinId ?? r?.barilga ?? r?.barilgaId ?? r?.branchId,
       );
       if (cbid) return cbid === bid;
       if (rbid) return rbid === bid;
@@ -1310,13 +1414,18 @@ export default function DansniiKhuulga() {
 
     const cancelledGerees = allGerees.filter((g: any) => {
       const status = String(g?.tuluv || g?.status || "").trim();
-      return status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" ||
-        status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan";
+      return (
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan"
+      );
     });
 
     cancelledGerees.forEach((g: any) => {
       if (g?._id) cancelledGereeIds.add(String(g._id));
-      if (g?.gereeniiDugaar) cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+      if (g?.gereeniiDugaar)
+        cancelledGereeDugaars.add(String(g.gereeniiDugaar));
     });
 
     return buildingHistoryItems.filter((it: any) => {
@@ -1327,7 +1436,9 @@ export default function DansniiKhuulga() {
         const gid =
           String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
           (it?.gereeniiDugaar &&
-            String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+            String(
+              (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+            )) ||
           "";
         const paidAmt = gid ? paidSummaryByGereeId[gid] : undefined;
         if (paidAmt === undefined) return true; // Not fetched yet, rely on isPaidLike
@@ -1339,19 +1450,30 @@ export default function DansniiKhuulga() {
         // Filter for cancelled receivables: items linked to cancelled gerees with unpaid invoices/zardal
         const itGereeId = String(it?.gereeniiId || "");
         const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const isLinkedToCancelledGeree = cancelledGereeIds.has(itGereeId) ||
+        const isLinkedToCancelledGeree =
+          cancelledGereeIds.has(itGereeId) ||
           cancelledGereeDugaars.has(itGereeDugaar);
 
         if (!isLinkedToCancelledGeree) return false;
 
         // Check if invoice has unpaid amount
-        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+        const amount = Number(
+          it?.niitTulbur ??
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
+        );
         const isUnpaid = !isPaidLike(it) && amount > 0;
 
         // Check if invoice has zardal (expenses) that need to be paid
-        const hasZardal = Array.isArray(it?.medeelel?.zardluud) &&
+        const hasZardal =
+          Array.isArray(it?.medeelel?.zardluud) &&
           it.medeelel.zardluud.length > 0;
-        const hasGuilgee = Array.isArray(it?.medeelel?.guilgeenuud) &&
+        const hasGuilgee =
+          Array.isArray(it?.medeelel?.guilgeenuud) &&
           it.medeelel.guilgeenuud.length > 0;
 
         return isUnpaid && (hasZardal || hasGuilgee || amount > 0);
@@ -1362,9 +1484,7 @@ export default function DansniiKhuulga() {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
 
         const cId = toStr(
-          it?.gereeniiId ??
-          it?.gereeId ??
-          it?.kholbosonGereeniiId
+          it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId,
         );
         const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
         const c = cId ? (contractsById as any)[cId] : undefined;
@@ -1372,34 +1492,34 @@ export default function DansniiKhuulga() {
 
         const orts = toStr(
           c?.orts ??
-          c?.ortsDugaar ??
-          c?.ortsNer ??
-          r?.orts ??
-          r?.ortsDugaar ??
-          r?.ortsNer ??
-          r?.block ??
-          it?.orts ??
-          it?.ortsDugaar ??
-          it?.ortsNer
+            c?.ortsDugaar ??
+            c?.ortsNer ??
+            r?.orts ??
+            r?.ortsDugaar ??
+            r?.ortsNer ??
+            r?.block ??
+            it?.orts ??
+            it?.ortsDugaar ??
+            it?.ortsNer,
         );
-        const davkhar = toStr(
-          r?.davkhar ?? c?.davkhar ?? it?.davkhar
-        );
+        const davkhar = toStr(r?.davkhar ?? c?.davkhar ?? it?.davkhar);
         const currentToot = toStr(
-          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot
+          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot,
         );
 
         if (selectedOrtsFilter) {
           if (!orts || orts !== toStr(selectedOrtsFilter)) return false;
         }
         if (selectedDavkharFilter) {
-          if (!davkhar || davkhar !== toStr(selectedDavkharFilter)) return false;
+          if (!davkhar || davkhar !== toStr(selectedDavkharFilter))
+            return false;
         }
         if (selectedTootFilter) {
           // Robust case-insensitive partial matching for toot
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal)) return false;
+          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+            return false;
         }
       }
 
@@ -1408,7 +1528,12 @@ export default function DansniiKhuulga() {
         // they only have orshinSuugchId/gereeniiId (ner/utas come from lookup)
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
         const contract = cId ? (contractsById as any)[cId] : undefined;
-        const rId = String(it?.orshinSuugchId ?? it?.residentId ?? contract?.orshinSuugchId ?? "").trim();
+        const rId = String(
+          it?.orshinSuugchId ??
+            it?.residentId ??
+            contract?.orshinSuugchId ??
+            "",
+        ).trim();
         const resident = rId ? (residentsById as any)[rId] : undefined;
         const augmented = {
           ...it,
@@ -1418,7 +1543,7 @@ export default function DansniiKhuulga() {
           _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
         };
         if (!matchesSearch(augmented, searchTerm)) return false;
-      } 
+      }
 
       return true;
     });
@@ -1444,49 +1569,104 @@ export default function DansniiKhuulga() {
 
     const cancelledGerees = allGerees.filter((g: any) => {
       const status = String(g?.tuluv || g?.status || "").trim();
-      return status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" ||
-        status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan";
+      return (
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan"
+      );
     });
 
     cancelledGerees.forEach((g: any) => {
       if (g?._id) cancelledGereeIds.add(String(g._id));
-      if (g?.gereeniiDugaar) cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+      if (g?.gereeniiDugaar)
+        cancelledGereeDugaars.add(String(g.gereeniiDugaar));
     });
 
     return buildingHistoryItems.filter((it: any) => {
       // Skip tuluvFilter - include all items for stats
       if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
-        const cId = toStr(it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId);
+        const cId = toStr(
+          it?.gereeniiId ?? it?.gereeId ?? it?.kholbosonGereeniiId,
+        );
         const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
         const c = cId ? (contractsById as any)[cId] : undefined;
         const r = rId ? (residentsById as any)[rId] : undefined;
-        const orts = toStr(c?.orts ?? c?.ortsDugaar ?? c?.ortsNer ?? r?.orts ?? r?.ortsDugaar ?? r?.ortsNer ?? r?.block ?? it?.orts ?? it?.ortsDugaar ?? it?.ortsNer);
+        const orts = toStr(
+          c?.orts ??
+            c?.ortsDugaar ??
+            c?.ortsNer ??
+            r?.orts ??
+            r?.ortsDugaar ??
+            r?.ortsNer ??
+            r?.block ??
+            it?.orts ??
+            it?.ortsDugaar ??
+            it?.ortsNer,
+        );
         const davkhar = toStr(r?.davkhar ?? c?.davkhar ?? it?.davkhar);
-        const currentToot = toStr(r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot);
-        if (selectedOrtsFilter && (!orts || orts !== toStr(selectedOrtsFilter))) return false;
-        if (selectedDavkharFilter && (!davkhar || davkhar !== toStr(selectedDavkharFilter))) return false;
+        const currentToot = toStr(
+          r?.toot ?? c?.toot ?? it?.toot ?? it?.medeelel?.toot,
+        );
+        if (selectedOrtsFilter && (!orts || orts !== toStr(selectedOrtsFilter)))
+          return false;
+        if (
+          selectedDavkharFilter &&
+          (!davkhar || davkhar !== toStr(selectedDavkharFilter))
+        )
+          return false;
         if (selectedTootFilter) {
           const filterVal = toStr(selectedTootFilter).toLowerCase();
           const targetToot = currentToot.toLowerCase();
-          if (targetToot !== filterVal && !targetToot.includes(filterVal)) return false;
+          if (targetToot !== filterVal && !targetToot.includes(filterVal))
+            return false;
         }
       }
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
         const contract = cId ? (contractsById as any)[cId] : undefined;
-        const rId = String(it?.orshinSuugchId ?? it?.residentId ?? contract?.orshinSuugchId ?? "").trim();
+        const rId = String(
+          it?.orshinSuugchId ??
+            it?.residentId ??
+            contract?.orshinSuugchId ??
+            "",
+        ).trim();
         const resident = rId ? (residentsById as any)[rId] : undefined;
-        const augmented = { ...it, _searchNer: resident?.ner ?? it?.ner ?? contract?.ner, _searchOvog: resident?.ovog ?? it?.ovog ?? contract?.ovog, _searchUtas: resident?.utas ?? it?.utas ?? contract?.utas, _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar };
+        const augmented = {
+          ...it,
+          _searchNer: resident?.ner ?? it?.ner ?? contract?.ner,
+          _searchOvog: resident?.ovog ?? it?.ovog ?? contract?.ovog,
+          _searchUtas: resident?.utas ?? it?.utas ?? contract?.utas,
+          _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
+        };
         if (!matchesSearch(augmented, searchTerm)) return false;
       }
       return true;
     });
-  }, [buildingHistoryItems, searchTerm, gereeGaralt?.jagsaalt, contractsById, residentsById, selectedOrtsFilter, selectedDavkharFilter, selectedTootFilter]);
+  }, [
+    buildingHistoryItems,
+    searchTerm,
+    gereeGaralt?.jagsaalt,
+    contractsById,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+  ]);
 
   const totalSum = useMemo(() => {
     return filteredItems.reduce((s: number, it: any) => {
-      const v = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+      const v =
+        Number(
+          it?.niitTulbur ??
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
+        ) || 0;
       return s + v;
     }, 0);
   }, [filteredItems]);
@@ -1503,7 +1683,9 @@ export default function DansniiKhuulga() {
       const residentId = String(it?.orshinSuugchId || "").trim();
       const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      const ner = String(it?.ner || "").trim().toLowerCase();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
           return String(it.utas[0] || "").trim();
@@ -1511,7 +1693,8 @@ export default function DansniiKhuulga() {
         return String(it?.utas || "").trim();
       })();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
       if (key && key !== "||") residentKeysFromFiltered.add(key);
     });
 
@@ -1520,15 +1703,22 @@ export default function DansniiKhuulga() {
 
     buildingHistoryItems.forEach((it: any) => {
       // Check if this is an invoice (has zardluud or medeelel.zardluud)
-      const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud :
-        Array.isArray(it?.zardluud) ? it.zardluud : [];
-      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
-        Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+      const zardluud = Array.isArray(it?.medeelel?.zardluud)
+        ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud)
+          ? it.zardluud
+          : [];
+      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
 
       // Check if invoice contains ekhniiUldegdel in its zardluud (include negative)
       const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
         const ner = String(z?.ner || "").toLowerCase();
-        const isEkhUld = z?.isEkhniiUldegdel === true ||
+        const isEkhUld =
+          z?.isEkhniiUldegdel === true ||
           ner.includes("эхний үлдэгдэл") ||
           ner.includes("ekhniuldegdel") ||
           ner.includes("ekhnii uldegdel");
@@ -1558,10 +1748,16 @@ export default function DansniiKhuulga() {
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
       // For receivables, gereeId might be missing - resolve from gereeDugaar via contractsByNumber
-      if (!gereeId && gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id) {
+      if (
+        !gereeId &&
+        gereeDugaar &&
+        (contractsByNumber as any)[gereeDugaar]?._id
+      ) {
         gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
       }
-      const ner = String(it?.ner || "").trim().toLowerCase();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
           return String(it.utas[0] || "").trim();
@@ -1571,14 +1767,16 @@ export default function DansniiKhuulga() {
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
 
       // Priority grouping: GereeId > ResidentId > GereeDugaar > Name+Utas
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return; // Skip if no valid identifier
       if (!residentKeysFromFiltered.has(key)) return; // Only include residents that pass the filter
 
       // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
-      const standaloneAmount = Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+      const standaloneAmount =
+        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
 
       // SKIP this record if it's a standalone ekhniiUldegdel AND the contract already has ekhniiUldegdel in an invoice
       // This prevents double-counting. BUT: never skip NEGATIVE standalone (e.g. Excel-ээр оруулсан эхний үлдэгдэл -87.79)
@@ -1586,7 +1784,8 @@ export default function DansniiKhuulga() {
       if (isStandaloneEkhniiUldegdel) {
         const contractHasEkhniiUldegdelInInvoice =
           (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
-          (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
+          (gereeDugaar &&
+            contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
 
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) {
           // Skip only when positive - invoice's ekhniiUldegdel covers it
@@ -1597,30 +1796,52 @@ export default function DansniiKhuulga() {
       // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
       let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+        : Number(
+            it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
 
       // For invoices: add guilgeenuud net (includes negative ekhniiUldegdel like -87.79 from Excel)
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
-        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud :
-          Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+          ? it.medeelel.guilgeenuud
+          : Array.isArray(it?.guilgeenuud)
+            ? it.guilgeenuud
+            : [];
         const guilgeeNet = guilgeenuud.reduce(
-          (sum: number, g: any) => sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)),
-          0
+          (sum: number, g: any) =>
+            sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)),
+          0,
         );
         itemAmount += guilgeeNet;
         // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
-        const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud : Array.isArray(it?.zardluud) ? it.zardluud : [];
+        const zardluud = Array.isArray(it?.medeelel?.zardluud)
+          ? it.medeelel.zardluud
+          : Array.isArray(it?.zardluud)
+            ? it.zardluud
+            : [];
         const fromZardluud = zardluud.reduce((s: number, z: any) => {
           const ner = String(z?.ner || "").toLowerCase();
-          const isEkh = z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel") || ner.includes("ekhnii uldegdel");
+          const isEkh =
+            z?.isEkhniiUldegdel === true ||
+            ner.includes("эхний үлдэгдэл") ||
+            ner.includes("ekhniuldegdel") ||
+            ner.includes("ekhnii uldegdel");
           if (!isEkh) return s;
           const amt = Number(z?.dun ?? z?.tariff ?? 0);
           return s + (amt !== 0 ? amt : 0);
         }, 0);
         const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
           if (g?.ekhniiUldegdelEsekh !== true) return s;
-          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0) - Number(g?.tulsunDun ?? 0);
+          const amt =
+            Number(g?.tulukhDun ?? g?.undsenDun ?? 0) -
+            Number(g?.tulsunDun ?? 0);
           return s + (amt !== 0 ? amt : 0);
         }, 0);
         ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
@@ -1633,7 +1854,8 @@ export default function DansniiKhuulga() {
           _historyCount: 1,
           _totalTulbur: itemAmount,
           _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
-          _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
+          _hasEkhniiUldegdel:
+            isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
           _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
         });
       } else {
@@ -1644,7 +1866,8 @@ export default function DansniiKhuulga() {
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
         if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
-          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
+          existing._ekhniiUldegdelAmount =
+            (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
         }
       }
     });
@@ -1660,7 +1883,9 @@ export default function DansniiKhuulga() {
       const residentId = String(it?.orshinSuugchId || "").trim();
       const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      const ner = String(it?.ner || "").trim().toLowerCase();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
           return String(it.utas[0] || "").trim();
@@ -1668,17 +1893,30 @@ export default function DansniiKhuulga() {
         return String(it?.utas || "").trim();
       })();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
       if (key && key !== "||") residentKeysFromFiltered.add(key);
     });
 
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
     buildingHistoryItems.forEach((it: any) => {
-      const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud : Array.isArray(it?.zardluud) ? it.zardluud : [];
-      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud : Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+      const zardluud = Array.isArray(it?.medeelel?.zardluud)
+        ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud)
+          ? it.zardluud
+          : [];
+      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
       const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
         const ner = String(z?.ner || "").toLowerCase();
-        const isEkhUld = z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel") || ner.includes("ekhnii uldegdel");
+        const isEkhUld =
+          z?.isEkhniiUldegdel === true ||
+          ner.includes("эхний үлдэгдэл") ||
+          ner.includes("ekhniuldegdel") ||
+          ner.includes("ekhnii uldegdel");
         const amt = Number(z?.dun || z?.tariff || 0);
         return isEkhUld && amt !== 0;
       });
@@ -1699,10 +1937,16 @@ export default function DansniiKhuulga() {
       const residentId = String(it?.orshinSuugchId || "").trim();
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      if (!gereeId && gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id) {
+      if (
+        !gereeId &&
+        gereeDugaar &&
+        (contractsByNumber as any)[gereeDugaar]?._id
+      ) {
         gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
       }
-      const ner = String(it?.ner || "").trim().toLowerCase();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
       const utas = (() => {
         if (Array.isArray(it?.utas) && it.utas.length > 0) {
           return String(it.utas[0] || "").trim();
@@ -1710,46 +1954,83 @@ export default function DansniiKhuulga() {
         return String(it?.utas || "").trim();
       })();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return;
       if (!residentKeysFromFiltered.has(key)) return;
 
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
-      const standaloneAmount = Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+      const standaloneAmount =
+        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
       if (isStandaloneEkhniiUldegdel) {
         const contractHasEkhniiUldegdelInInvoice =
           (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
-          (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
+          (gereeDugaar &&
+            contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) return;
       }
 
       let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0) || 0;
+        : Number(
+            it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
-        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud : Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
-        const guilgeeNet = guilgeenuud.reduce((sum: number, g: any) => sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)), 0);
+        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+          ? it.medeelel.guilgeenuud
+          : Array.isArray(it?.guilgeenuud)
+            ? it.guilgeenuud
+            : [];
+        const guilgeeNet = guilgeenuud.reduce(
+          (sum: number, g: any) =>
+            sum + (Number(g.tulukhDun ?? 0) - Number(g.tulsunDun ?? 0)),
+          0,
+        );
         itemAmount += guilgeeNet;
-        const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud : Array.isArray(it?.zardluud) ? it.zardluud : [];
+        const zardluud = Array.isArray(it?.medeelel?.zardluud)
+          ? it.medeelel.zardluud
+          : Array.isArray(it?.zardluud)
+            ? it.zardluud
+            : [];
         const fromZardluud = zardluud.reduce((s: number, z: any) => {
           const ner = String(z?.ner || "").toLowerCase();
-          const isEkh = z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel") || ner.includes("ekhnii uldegdel");
+          const isEkh =
+            z?.isEkhniiUldegdel === true ||
+            ner.includes("эхний үлдэгдэл") ||
+            ner.includes("ekhniuldegdel") ||
+            ner.includes("ekhnii uldegdel");
           if (!isEkh) return s;
           const amt = Number(z?.dun ?? z?.tariff ?? 0);
           return s + (amt !== 0 ? amt : 0);
         }, 0);
         const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
           if (g?.ekhniiUldegdelEsekh !== true) return s;
-          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0) - Number(g?.tulsunDun ?? 0);
+          const amt =
+            Number(g?.tulukhDun ?? g?.undsenDun ?? 0) -
+            Number(g?.tulsunDun ?? 0);
           return s + (amt !== 0 ? amt : 0);
         }, 0);
         ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
       }
 
       if (!map.has(key)) {
-        map.set(key, { ...it, _historyCount: 1, _totalTulbur: itemAmount, _totalTulsun: Number(it?.tulsunDun ?? 0) || 0, _hasEkhniiUldegdel: isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0, _ekhniiUldegdelAmount: ekhniiUldegdelDelta });
+        map.set(key, {
+          ...it,
+          _historyCount: 1,
+          _totalTulbur: itemAmount,
+          _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
+          _hasEkhniiUldegdel:
+            isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
+          _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
+        });
       } else {
         const existing = map.get(key);
         existing._historyCount += 1;
@@ -1757,7 +2038,8 @@ export default function DansniiKhuulga() {
         existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
         if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
-          existing._ekhniiUldegdelAmount = (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
+          existing._ekhniiUldegdelAmount =
+            (existing._ekhniiUldegdelAmount || 0) + ekhniiUldegdelDelta;
         }
       }
     });
@@ -1774,21 +2056,38 @@ export default function DansniiKhuulga() {
       const getGid = (it: any) =>
         (it?.gereeniiId && String(it.gereeniiId)) ||
         (it?.gereeId && String(it.gereeId)) ||
-        (it?.gereeniiDugaar && String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
         "";
 
       if (sortField === "uldegdel" || sortField === "paid") {
         const gidA = getGid(a);
         const gidB = getGid(b);
-        const paidA = gidA ? paidSummaryByGereeId[gidA] ?? 0 : 0;
-        const paidB = gidB ? paidSummaryByGereeId[gidB] ?? 0 : 0;
+        const paidA = gidA ? (paidSummaryByGereeId[gidA] ?? 0) : 0;
+        const paidB = gidB ? (paidSummaryByGereeId[gidB] ?? 0) : 0;
 
         if (sortField === "paid") {
           aVal = paidA;
           bVal = paidB;
         } else {
-          const totalA = Number(a?._totalTulbur ?? a?.niitTulbur ?? a?.niitDun ?? a?.total ?? a?.tulukhDun ?? 0);
-          const totalB = Number(b?._totalTulbur ?? b?.niitTulbur ?? b?.niitDun ?? b?.total ?? b?.tulukhDun ?? 0);
+          const totalA = Number(
+            a?._totalTulbur ??
+              a?.niitTulbur ??
+              a?.niitDun ??
+              a?.total ??
+              a?.tulukhDun ??
+              0,
+          );
+          const totalB = Number(
+            b?._totalTulbur ??
+              b?.niitTulbur ??
+              b?.niitDun ??
+              b?.total ??
+              b?.tulukhDun ??
+              0,
+          );
           aVal = totalA - paidA;
           bVal = totalB - paidB;
         }
@@ -1796,10 +2095,19 @@ export default function DansniiKhuulga() {
         const getTootVal = (it: any) => {
           const rid = it.orshinSuugchId ? String(it.orshinSuugchId) : null;
           const res = rid ? residentsById[rid] : null;
-          const resToot = Array.isArray(res?.toots) && res.toots.length > 0 ? res.toots[0]?.toot : res?.toot;
+          const resToot =
+            Array.isArray(res?.toots) && res.toots.length > 0
+              ? res.toots[0]?.toot
+              : res?.toot;
           const cid = it.gereeniiId ? String(it.gereeniiId) : null;
-          const con = cid ? contractsById[cid] : (it.gereeniiDugaar ? contractsByNumber[it.gereeniiDugaar] : null);
-          return String(con?.toot || resToot || it.toot || it.medeelel?.toot || "");
+          const con = cid
+            ? contractsById[cid]
+            : it.gereeniiDugaar
+              ? contractsByNumber[it.gereeniiDugaar]
+              : null;
+          return String(
+            con?.toot || resToot || it.toot || it.medeelel?.toot || "",
+          );
         };
         aVal = getTootVal(a);
         bVal = getTootVal(b);
@@ -1814,28 +2122,46 @@ export default function DansniiKhuulga() {
 
       if (typeof aVal === "string" && typeof bVal === "string") {
         return sortOrder === "asc"
-          ? aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' })
-          : bVal.localeCompare(aVal, undefined, { numeric: true, sensitivity: 'base' });
+          ? aVal.localeCompare(bVal, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            })
+          : bVal.localeCompare(aVal, undefined, {
+              numeric: true,
+              sensitivity: "base",
+            });
       }
 
       return sortOrder === "asc"
-        ? aVal < bVal ? -1 : 1
-        : aVal > bVal ? -1 : 1;
+        ? aVal < bVal
+          ? -1
+          : 1
+        : aVal > bVal
+          ? -1
+          : 1;
     });
 
     return result;
-  }, [deduplicatedResidents, sortField, sortOrder, paidSummaryByGereeId, residentsById, contractsById, contractsByNumber]);
+  }, [
+    deduplicatedResidents,
+    sortField,
+    sortOrder,
+    paidSummaryByGereeId,
+    residentsById,
+    contractsById,
+    contractsByNumber,
+  ]);
 
-  const totalPages = Math.max(1, Math.ceil(sortedResidents.length / rowsPerPage));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedResidents.length / rowsPerPage),
+  );
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
   const paginated = useMemo(() => {
-    return sortedResidents.slice(
-      (page - 1) * rowsPerPage,
-      page * rowsPerPage
-    );
+    return sortedResidents.slice((page - 1) * rowsPerPage, page * rowsPerPage);
   }, [sortedResidents, page, rowsPerPage]);
 
   // Helper to resolve gereeId from resident (used for paidSummary lookup)
@@ -1844,7 +2170,7 @@ export default function DansniiKhuulga() {
     (it?.gereeId && String(it.gereeId)) ||
     (it?.gereeniiDugaar &&
       String(
-        (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+        (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
       )) ||
     "";
 
@@ -1852,7 +2178,12 @@ export default function DansniiKhuulga() {
   // Fetch for ALL deduplicatedResidentsAll so stats and footer have correct paid data.
   // Limit to 500 to prevent firing too many requests for very large datasets.
   useEffect(() => {
-    if (!token || !ajiltan?.baiguullagiinId || deduplicatedResidentsAll.length === 0) return;
+    if (
+      !token ||
+      !ajiltan?.baiguullagiinId ||
+      deduplicatedResidentsAll.length === 0
+    )
+      return;
 
     const baiguullagiinId = ajiltan.baiguullagiinId;
     const toFetch = deduplicatedResidentsAll.slice(0, 500);
@@ -1861,7 +2192,10 @@ export default function DansniiKhuulga() {
       const gid = getGereeId(it);
       if (!gid) return;
 
-      if (paidSummaryByGereeId[gid] !== undefined || requestedGereeIdsRef.current.has(gid)) {
+      if (
+        paidSummaryByGereeId[gid] !== undefined ||
+        requestedGereeIdsRef.current.has(gid)
+      ) {
         return;
       }
 
@@ -1874,8 +2208,9 @@ export default function DansniiKhuulga() {
         })
         .then((resp) => {
           const total =
-            Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) ||
-            0;
+            Number(
+              resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0,
+            ) || 0;
           setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
         })
         .catch(() => {
@@ -1897,8 +2232,12 @@ export default function DansniiKhuulga() {
     // Find cancelled gerees
     const cancelledGerees = allGerees.filter((g: any) => {
       const status = String(g?.tuluv || g?.status || "").trim();
-      return status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" ||
-        status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan";
+      return (
+        status === "Цуцалсан" ||
+        status.toLowerCase() === "цуцалсан" ||
+        status === "tsutlsasan" ||
+        status.toLowerCase() === "tsutlsasan"
+      );
     });
 
     // For each cancelled geree, check if it has unpaid invoices/zardal
@@ -1910,19 +2249,30 @@ export default function DansniiKhuulga() {
       const hasUnpaidInvoice = buildingHistoryItems.some((it: any) => {
         const itGereeId = String(it?.gereeniiId || "");
         const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const matchesGeree = (gereeId && itGereeId === gereeId) ||
+        const matchesGeree =
+          (gereeId && itGereeId === gereeId) ||
           (gereeDugaar && itGereeDugaar === gereeDugaar);
 
         if (!matchesGeree) return false;
 
         // Check if invoice has unpaid amount
-        const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
+        const amount = Number(
+          it?.niitTulbur ??
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
+        );
         const isUnpaid = !isPaidLike(it) && amount > 0;
 
         // Check if invoice has zardal (expenses) that need to be paid
-        const hasZardal = Array.isArray(it?.medeelel?.zardluud) &&
+        const hasZardal =
+          Array.isArray(it?.medeelel?.zardluud) &&
           it.medeelel.zardluud.length > 0;
-        const hasGuilgee = Array.isArray(it?.medeelel?.guilgeenuud) &&
+        const hasGuilgee =
+          Array.isArray(it?.medeelel?.guilgeenuud) &&
           it.medeelel.guilgeenuud.length > 0;
 
         return isUnpaid && (hasZardal || hasGuilgee || amount > 0);
@@ -1941,7 +2291,7 @@ export default function DansniiKhuulga() {
     const residentCount = deduplicatedResidentsAll.length;
     const paidCount = deduplicatedResidentsAll.filter((r: any) => {
       const gid = getGereeId(r);
-      const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+      const paid = gid ? (paidSummaryByGereeId[gid] ?? 0) : 0;
       const uldegdel = r._totalTulbur - paid;
       // Paid = balance settled AND has at least one payment record (excludes e.g. negative initial balance with no payments)
       return uldegdel <= 1 && paid > 0;
@@ -1954,7 +2304,12 @@ export default function DansniiKhuulga() {
       { title: "Төлсөн", value: paidCount },
       { title: "Төлөөгүй", value: unpaidCount },
     ];
-  }, [deduplicatedResidentsAll, cancelledGereesWithUnpaid, paidSummaryByGereeId, contractsByNumber]);
+  }, [
+    deduplicatedResidentsAll,
+    cancelledGereesWithUnpaid,
+    paidSummaryByGereeId,
+    contractsByNumber,
+  ]);
 
   const zaaltOruulakh = async () => {
     const loadingToastId = toast.loading("Заалтын Excel файл бэлдэж байна…");
@@ -1975,7 +2330,7 @@ export default function DansniiKhuulga() {
         },
         {
           responseType: "blob" as any,
-        }
+        },
       );
 
       hide();
@@ -1990,7 +2345,7 @@ export default function DansniiKhuulga() {
       let filename = "zaalt_data.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
-          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
         );
       } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
         filename = cd.match(/filename="?([^";]+)"?/i)![1];
@@ -2018,21 +2373,31 @@ export default function DansniiKhuulga() {
         if (responseData instanceof Blob) {
           const errorText = await responseData.text();
           const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
         } else if (responseData instanceof ArrayBuffer) {
           const decoder = new TextDecoder("utf-8");
           const errorText = decoder.decode(responseData);
           const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
         } else if (typeof responseData === "string") {
           try {
             const errorJson = JSON.parse(responseData);
-            errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+            errorMsg =
+              errorJson.aldaa ||
+              errorJson.message ||
+              errorJson.error ||
+              errorMsg;
           } catch {
             errorMsg = responseData || errorMsg;
           }
         } else if (responseData && typeof responseData === "object") {
-          errorMsg = responseData.aldaa || responseData.message || responseData.error || errorMsg;
+          errorMsg =
+            responseData.aldaa ||
+            responseData.message ||
+            responseData.error ||
+            errorMsg;
         } else {
           errorMsg = getErrorMessage(err);
         }
@@ -2075,7 +2440,7 @@ export default function DansniiKhuulga() {
           resp = await uilchilgee(token).post(
             `${window.location.origin}${path}`,
             body,
-            { responseType: "blob" as any, baseURL: undefined as any }
+            { responseType: "blob" as any, baseURL: undefined as any },
           );
         } else {
           throw err;
@@ -2092,7 +2457,7 @@ export default function DansniiKhuulga() {
       let filename = "zaalt_template.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
-          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
         );
       } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
         filename = cd.match(/filename="?([^";]+)"?/i)![1];
@@ -2119,21 +2484,31 @@ export default function DansniiKhuulga() {
         if (responseData instanceof Blob) {
           const errorText = await responseData.text();
           const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
         } else if (responseData instanceof ArrayBuffer) {
           const decoder = new TextDecoder("utf-8");
           const errorText = decoder.decode(responseData);
           const errorJson = JSON.parse(errorText);
-          errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+          errorMsg =
+            errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
         } else if (typeof responseData === "string") {
           try {
             const errorJson = JSON.parse(responseData);
-            errorMsg = errorJson.aldaa || errorJson.message || errorJson.error || errorMsg;
+            errorMsg =
+              errorJson.aldaa ||
+              errorJson.message ||
+              errorJson.error ||
+              errorMsg;
           } catch {
             errorMsg = responseData || errorMsg;
           }
         } else if (responseData && typeof responseData === "object") {
-          errorMsg = responseData.aldaa || responseData.message || responseData.error || errorMsg;
+          errorMsg =
+            responseData.aldaa ||
+            responseData.message ||
+            responseData.error ||
+            errorMsg;
         } else {
           const parsed = getErrorMessage(err);
           if (parsed && parsed !== "Алдаа гарлаа") {
@@ -2213,7 +2588,11 @@ export default function DansniiKhuulga() {
           dun: data.amount,
           orshinSuugchId: data.residentId,
           gereeniiId: data.gereeniiId,
-          tailbar: data.tailbar || (data.ekhniiUldegdel ? `Эхний үлдэгдэл - ${data.date}` : `Төлөлт - ${data.date}`),
+          tailbar:
+            data.tailbar ||
+            (data.ekhniiUldegdel
+              ? `Эхний үлдэгдэл - ${data.date}`
+              : `Төлөлт - ${data.date}`),
           ognoo: data.date,
           ...(data.ekhniiUldegdel && { markEkhniiUldegdel: true }),
           createdBy: ajiltan._id,
@@ -2245,29 +2624,40 @@ export default function DansniiKhuulga() {
                 key[0] === "/orshinSuugch" ||
                 key[0] === "/gereeniiTulukhAvlaga"),
             undefined,
-            { revalidate: true }
+            { revalidate: true },
           );
           setInvoiceRefreshTrigger((t) => t + 1);
         }
       } else {
         // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
-        const response = await uilchilgee(token).post("/gereeniiGuilgeeKhadgalya", {
-          baiguullagiinId: ajiltan.baiguullagiinId,
-          barilgiinId: effectiveBarilgiinId,
-          tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
-          turul: data.type,
-          tulukhDun: data.amount,
-          dun: data.amount,
-          orshinSuugchId: data.residentId,
-          gereeniiId: data.gereeniiId,
-          tailbar: data.tailbar || (data.ekhniiUldegdel ? `Эхний үлдэгдэл - ${data.date}` : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`),
-          ognoo: data.date,
-          ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }), // Only include when checked
-          createdBy: ajiltan._id,
-          createdAt: new Date().toISOString(),
-        });
+        const response = await uilchilgee(token).post(
+          "/gereeniiGuilgeeKhadgalya",
+          {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId,
+            tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
+            turul: data.type,
+            tulukhDun: data.amount,
+            dun: data.amount,
+            orshinSuugchId: data.residentId,
+            gereeniiId: data.gereeniiId,
+            tailbar:
+              data.tailbar ||
+              (data.ekhniiUldegdel
+                ? `Эхний үлдэгдэл - ${data.date}`
+                : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`),
+            ognoo: data.date,
+            ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }), // Only include when checked
+            createdBy: ajiltan._id,
+            createdAt: new Date().toISOString(),
+          },
+        );
 
-        if (response.data.success || response.status === 200 || response.status === 201) {
+        if (
+          response.data.success ||
+          response.status === 200 ||
+          response.status === 201
+        ) {
           toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
@@ -2292,7 +2682,7 @@ export default function DansniiKhuulga() {
                 key[0] === "/orshinSuugch" ||
                 key[0] === "/gereeniiTulukhAvlaga"),
             undefined,
-            { revalidate: true }
+            { revalidate: true },
           );
           setInvoiceRefreshTrigger((t) => t + 1);
         }
@@ -2314,33 +2704,39 @@ export default function DansniiKhuulga() {
             (it?.gereeId && String(it.gereeId)) ||
             (it?.gereeniiDugaar &&
               String(
-                (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+                (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id ||
+                  "",
               ));
           return gid;
         })
         .filter((id) => id && id.length > 5); // Filter out invalid IDs
 
-      // Use Set to ensure uniqueness when adding to existing selection if needed, 
+      // Use Set to ensure uniqueness when adding to existing selection if needed,
       // but "Select All" usually implies "replace selection with all current page" or "add all current page"
       // Let's implement "Add current page to selection" to match Gmail-style behavior if we want multi-page,
-      // but Geree logic was "Select all currentContracts". 
+      // but Geree logic was "Select all currentContracts".
       // Let's assume user wants to select everything on current page.
 
       setSelectedGereeIds((prev) => Array.from(new Set([...prev, ...allIds])));
     } else {
       // Deselect all items on current page
-      const pageIds = new Set(paginated.map((it: any) => {
-        const gid =
-          (it?.gereeniiId && String(it.gereeniiId)) ||
-          (it?.gereeId && String(it.gereeId)) ||
-          (it?.gereeniiDugaar &&
-            String(
-              (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
-            ));
-        return gid;
-      }).filter(id => id));
+      const pageIds = new Set(
+        paginated
+          .map((it: any) => {
+            const gid =
+              (it?.gereeniiId && String(it.gereeniiId)) ||
+              (it?.gereeId && String(it.gereeId)) ||
+              (it?.gereeniiDugaar &&
+                String(
+                  (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id ||
+                    "",
+                ));
+            return gid;
+          })
+          .filter((id) => id),
+      );
 
-      setSelectedGereeIds((prev) => prev.filter(id => !pageIds.has(id)));
+      setSelectedGereeIds((prev) => prev.filter((id) => !pageIds.has(id)));
     }
   };
 
@@ -2382,15 +2778,20 @@ export default function DansniiKhuulga() {
       const response = await uilchilgee(token).post("/manualSend", body);
 
       if (response.data?.success) {
-        const message = response.data.message || `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
+        const message =
+          response.data.message ||
+          `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
         openSuccessOverlay(message);
         setSelectedGereeIds([]); // Clear selection on success
 
         // If there are errors, show them
-        if (response.data.data?.errors > 0 && response.data.data?.errorsList?.length > 0) {
+        if (
+          response.data.data?.errors > 0 &&
+          response.data.data?.errorsList?.length > 0
+        ) {
           const errorMessages = response.data.data.errorsList
-            .map((err: any) => `${err.gereeniiDugaar || 'Гэрээ'}: ${err.error}`)
-            .join('\n');
+            .map((err: any) => `${err.gereeniiDugaar || "Гэрээ"}: ${err.error}`)
+            .join("\n");
           openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
         }
 
@@ -2403,7 +2804,7 @@ export default function DansniiKhuulga() {
               key[0] === "/orshinSuugch" ||
               key[0] === "/gereeniiTulukhAvlaga"),
           undefined,
-          { revalidate: true }
+          { revalidate: true },
         );
         setInvoiceRefreshTrigger((t) => t + 1);
       }
@@ -2469,7 +2870,7 @@ export default function DansniiKhuulga() {
       const failed = data?.result?.failed;
       if (Array.isArray(failed) && failed.length > 0) {
         const detailLines = failed.map(
-          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`
+          (f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
         );
         const details = detailLines.join("\n");
         const topMsg =
@@ -2490,7 +2891,6 @@ export default function DansniiKhuulga() {
   };
 
   const t = (text: string) => text;
-
 
   useEffect(() => {
     const open = isKhungulultOpen;
@@ -2532,17 +2932,25 @@ export default function DansniiKhuulga() {
           : [];
 
       // Extract identifiers from the resident object
-      const residentId = String(resident?._id || resident?.orshinSuugchId || "").trim();
+      const residentId = String(
+        resident?._id || resident?.orshinSuugchId || "",
+      ).trim();
       const residentGereeId = String(resident?.gereeniiId || "").trim();
       const residentGereeDugaar = String(resident?.gereeniiDugaar || "").trim();
       // Get toot from toots array first, then fallback to top-level
       const residentToot = String(
         (Array.isArray(resident?.toots) && resident.toots.length > 0
           ? resident.toots[0]?.toot
-          : null) ?? resident?.toot ?? ""
+          : null) ??
+          resident?.toot ??
+          "",
       ).trim();
-      const residentNer = String(resident?.ner || "").trim().toLowerCase();
-      const residentOvog = String(resident?.ovog || "").trim().toLowerCase();
+      const residentNer = String(resident?.ner || "")
+        .trim()
+        .toLowerCase();
+      const residentOvog = String(resident?.ovog || "")
+        .trim()
+        .toLowerCase();
       const residentUtas = Array.isArray(resident?.utas)
         ? String(resident.utas[0] || "").trim()
         : String(resident?.utas || "").trim();
@@ -2550,24 +2958,37 @@ export default function DansniiKhuulga() {
       // Filter using multiple matching strategies
       const residentInvoices = list.filter((item: any) => {
         // Strategy 1: Match by orshinSuugchId
-        if (residentId && String(item?.orshinSuugchId || "").trim() === residentId) {
+        if (
+          residentId &&
+          String(item?.orshinSuugchId || "").trim() === residentId
+        ) {
           return true;
         }
 
         // Strategy 2: Match by gereeniiId
-        if (residentGereeId && String(item?.gereeniiId || "").trim() === residentGereeId) {
+        if (
+          residentGereeId &&
+          String(item?.gereeniiId || "").trim() === residentGereeId
+        ) {
           return true;
         }
 
         // Strategy 3: Match by gereeniiDugaar
-        if (residentGereeDugaar && String(item?.gereeniiDugaar || "").trim() === residentGereeDugaar) {
+        if (
+          residentGereeDugaar &&
+          String(item?.gereeniiDugaar || "").trim() === residentGereeDugaar
+        ) {
           return true;
         }
 
         // Strategy 4: Match by toot + ner (if both exist)
         if (residentToot && residentNer) {
-          const itemToot = String(item?.toot || item?.medeelel?.toot || "").trim();
-          const itemNer = String(item?.ner || "").trim().toLowerCase();
+          const itemToot = String(
+            item?.toot || item?.medeelel?.toot || "",
+          ).trim();
+          const itemNer = String(item?.ner || "")
+            .trim()
+            .toLowerCase();
           if (itemToot === residentToot && itemNer === residentNer) {
             return true;
           }
@@ -2585,8 +3006,12 @@ export default function DansniiKhuulga() {
 
         // Strategy 6: Match by ovog + ner combination
         if (residentOvog && residentNer) {
-          const itemOvog = String(item?.ovog || "").trim().toLowerCase();
-          const itemNer = String(item?.ner || "").trim().toLowerCase();
+          const itemOvog = String(item?.ovog || "")
+            .trim()
+            .toLowerCase();
+          const itemNer = String(item?.ner || "")
+            .trim()
+            .toLowerCase();
           if (itemOvog === residentOvog && itemNer === residentNer) {
             return true;
           }
@@ -2596,9 +3021,15 @@ export default function DansniiKhuulga() {
       });
 
       console.log("📜 History filter result:", {
-        resident: { id: residentId, gereeId: residentGereeId, gereeDugaar: residentGereeDugaar, toot: residentToot, ner: residentNer },
+        resident: {
+          id: residentId,
+          gereeId: residentGereeId,
+          gereeDugaar: residentGereeDugaar,
+          toot: residentToot,
+          ner: residentNer,
+        },
         totalItems: list.length,
-        matchedItems: residentInvoices.length
+        matchedItems: residentInvoices.length,
       });
 
       setHistoryItems(residentInvoices);
@@ -2609,7 +3040,6 @@ export default function DansniiKhuulga() {
       setHistoryLoading(false);
     }
   };
-
 
   // Fetch lift floors
   useEffect(() => {
@@ -2629,8 +3059,8 @@ export default function DansniiKhuulga() {
         const toStr = (v: any) => (v == null ? "" : String(v));
         const branchMatches = barilgiinId
           ? list.filter(
-            (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
-          )
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
+            )
           : [];
         const pickLatest = (arr: any[]) =>
           [...arr].sort(
@@ -2651,15 +3081,14 @@ export default function DansniiKhuulga() {
           ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
           : [];
         setLiftFloors(floors);
-      } catch { }
+      } catch {}
     };
     fetchLiftFloors();
   }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
 
   // Handle modal body overflow
   useEffect(() => {
-    document.body.style.overflow =
-      isModalOpen || isHistoryOpen ? "hidden" : "";
+    document.body.style.overflow = isModalOpen || isHistoryOpen ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
@@ -2712,7 +3141,7 @@ export default function DansniiKhuulga() {
         },
       },
     ],
-    []
+    [],
   );
   useRegisterTourSteps("/tulbur/guilgeeTuukh", tourSteps);
 
@@ -2740,8 +3169,11 @@ export default function DansniiKhuulga() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
-            const getFilterValue = (title: string): "all" | "paid" | "unpaid" | "overdue" | null => {
-              if (title === "Оршин суугч" || title === "Нийт гүйлгээ") return "all";
+            const getFilterValue = (
+              title: string,
+            ): "all" | "paid" | "unpaid" | "overdue" | null => {
+              if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
+                return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
               if (title === "Цуцласан гэрээний авлага") return "overdue";
@@ -2759,10 +3191,11 @@ export default function DansniiKhuulga() {
                     setTuluvFilter(filterValue);
                   }
                 }}
-                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${isActive
-                  ? "ring-2 ring-blue-500 shadow-lg"
-                  : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
-                  }`}
+                className={`relative group rounded-2xl neu-panel transition-all cursor-pointer ${
+                  isActive
+                    ? "ring-2 ring-blue-500 shadow-lg"
+                    : "hover:bg-[color:var(--surface-hover)] hover:scale-105"
+                }`}
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
                   <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
@@ -2779,7 +3212,10 @@ export default function DansniiKhuulga() {
         <div className="rounded-2xl">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-              <div id="dans-date" className="btn-minimal h-[40px] w-[320px] flex items-center px-3">
+              <div
+                id="dans-date"
+                className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
+              >
                 <DatePickerInput
                   type="range"
                   locale="mn"
@@ -2884,12 +3320,12 @@ export default function DansniiKhuulga() {
                     <FileSpreadsheet className="w-5 h-5" />
                     <span className="hidden">Заалт</span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform ${isZaaltDropdownOpen ? "rotate-180" : ""
-                        }`}
+                      className={`w-4 h-4 transition-transform ${
+                        isZaaltDropdownOpen ? "rotate-180" : ""
+                      }`}
                     />
                   </motion.button>
                 </Tooltip>
-
 
                 {isZaaltDropdownOpen && (
                   <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
@@ -2960,7 +3396,10 @@ export default function DansniiKhuulga() {
                   />
                 </motion.div>
               </Tooltip>
-              <div className="relative flex items-center gap-2" ref={columnDropdownRef}>
+              <div
+                className="relative flex items-center gap-2"
+                ref={columnDropdownRef}
+              >
                 <Tooltip title="Багана">
                   <motion.div
                     id="guilgee-columns-btn"
@@ -2984,13 +3423,24 @@ export default function DansniiKhuulga() {
                     >
                       <IconTextButton
                         onClick={handleSendInvoices}
-                        icon={isSendingInvoices ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                        icon={
+                          isSendingInvoices ? (
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-4 h-4" />
+                          )
+                        }
                         label="Нэхэмжлэх илгээх"
                         showLabelFrom="xl"
-                        disabled={isSendingInvoices || selectedGereeIds.length === 0}
-                        className={selectedGereeIds.length > 0 ? "bg-theme text-white border-transparent hover:bg-theme/90" : ""}
+                        disabled={
+                          isSendingInvoices || selectedGereeIds.length === 0
+                        }
+                        className={
+                          selectedGereeIds.length > 0
+                            ? "bg-theme text-white border-transparent hover:bg-theme/90"
+                            : ""
+                        }
                       />
-
                     </motion.div>
                   </Tooltip>
                 )}
@@ -3020,9 +3470,9 @@ export default function DansniiKhuulga() {
                                 checked={isChecked}
                                 onChange={() =>
                                   setColumnVisibility((prev) => {
-                                    const currentlyVisible = Object.values(prev).filter(
-                                      (v) => v !== false
-                                    ).length;
+                                    const currentlyVisible = Object.values(
+                                      prev,
+                                    ).filter((v) => v !== false).length;
                                     if (isChecked && currentlyVisible <= 1)
                                       return prev;
                                     return {
@@ -3078,7 +3528,10 @@ export default function DansniiKhuulga() {
                         ? "sticky z-20 bg-[color:var(--surface-bg)]"
                         : "z-10";
                       const isLastCol = colIdx === visibleColumns.length - 1;
-                      const isSortable = col.key === "uldegdel" || col.key === "paid" || col.key === "toot";
+                      const isSortable =
+                        col.key === "uldegdel" ||
+                        col.key === "paid" ||
+                        col.key === "toot";
                       const handleSort = () => {
                         if (!isSortable) return;
                         if (sortField === col.key) {
@@ -3089,72 +3542,82 @@ export default function DansniiKhuulga() {
                         }
                       };
                       return (
-                          <th
-                            key={col.key}
-                            className={`p-0 text-sm font-normal text-theme whitespace-nowrap ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""} ${isSortable ? "cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors" : ""}`}
-                            style={{
-                              ...(col.sticky
-                                ? { left: stickyOffsets[col.key] }
-                                : {}),
-                              minWidth: col.minWidth,
-                            }}
-                          >
-                            {col.key === "checkbox" ? (
-                              <div className="flex justify-center items-center h-full p-1">
-                                <input
-                                  type="checkbox"
-                                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                  onChange={(e) => handleToggleSelectAll(e.target.checked)}
-                                  checked={
-                                    paginated.length > 0 &&
-                                    paginated.every((it: any) => {
-                                      const gid =
-                                        (it?.gereeniiId && String(it.gereeniiId)) ||
-                                        (it?.gereeId && String(it.gereeId)) ||
-                                        (it?.gereeniiDugaar &&
-                                          String(
-                                            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
-                                          ));
-                                      return gid && selectedGereeIds.includes(gid);
-                                    })
-                                  }
+                        <th
+                          key={col.key}
+                          className={`p-0 text-sm font-normal text-theme whitespace-nowrap ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""} ${isSortable ? "cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors" : ""}`}
+                          style={{
+                            ...(col.sticky
+                              ? { left: stickyOffsets[col.key] }
+                              : {}),
+                            minWidth: col.minWidth,
+                          }}
+                        >
+                          {col.key === "checkbox" ? (
+                            <div className="flex justify-center items-center h-full p-1">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                onChange={(e) =>
+                                  handleToggleSelectAll(e.target.checked)
+                                }
+                                checked={
+                                  paginated.length > 0 &&
+                                  paginated.every((it: any) => {
+                                    const gid =
+                                      (it?.gereeniiId &&
+                                        String(it.gereeniiId)) ||
+                                      (it?.gereeId && String(it.gereeId)) ||
+                                      (it?.gereeniiDugaar &&
+                                        String(
+                                          (contractsByNumber as any)[
+                                            String(it.gereeniiDugaar)
+                                          ]?._id || "",
+                                        ));
+                                    return (
+                                      gid && selectedGereeIds.includes(gid)
+                                    );
+                                  })
+                                }
+                              />
+                            </div>
+                          ) : isSortable ? (
+                            <button
+                              type="button"
+                              onClick={handleSort}
+                              className={`w-full h-full p-1 inline-flex items-center gap-2 ${
+                                alignClass.includes("text-left")
+                                  ? "justify-start"
+                                  : alignClass.includes("text-right")
+                                    ? "justify-end"
+                                    : "justify-center"
+                              }`}
+                              title={`Эрэмбэлэх: ${col.label}`}
+                            >
+                              <span>{col.label}</span>
+                              <div className="flex flex-col items-center">
+                                <ChevronUp
+                                  className={`w-3 h-3 ${
+                                    sortField === col.key && sortOrder === "asc"
+                                      ? "text-blue-500"
+                                      : "text-gray-300 dark:text-gray-600"
+                                  }`}
+                                />
+                                <ChevronDown
+                                  className={`w-3 h-3 ${
+                                    sortField === col.key &&
+                                    sortOrder === "desc"
+                                      ? "text-blue-500"
+                                      : "text-gray-300 dark:text-gray-600"
+                                  }`}
                                 />
                               </div>
-                            ) : isSortable ? (
-                              <button
-                                type="button"
-                                onClick={handleSort}
-                                className={`w-full h-full p-1 inline-flex items-center gap-2 ${
-                                  alignClass.includes("text-left") ? "justify-start" : 
-                                  alignClass.includes("text-right") ? "justify-end" : 
-                                  "justify-center"
-                                }`}
-                                title={`Эрэмбэлэх: ${col.label}`}
-                              >
-                                <span>{col.label}</span>
-                                <div className="flex flex-col items-center">
-                                  <ChevronUp
-                                    className={`w-3 h-3 ${
-                                      sortField === col.key && sortOrder === "asc"
-                                        ? "text-blue-500"
-                                        : "text-gray-300 dark:text-gray-600"
-                                    }`}
-                                  />
-                                  <ChevronDown
-                                    className={`w-3 h-3 ${
-                                      sortField === col.key && sortOrder === "desc"
-                                        ? "text-blue-500"
-                                        : "text-gray-300 dark:text-gray-600"
-                                    }`}
-                                  />
-                                </div>
-                              </button>
-                            ) : (
-                              <div className={`p-1 ${alignClass}`}>
-                                {col.label}
-                              </div>
-                            )}
-                          </th>
+                            </button>
+                          ) : (
+                            <div className={`p-1 ${alignClass}`}>
+                              {col.label}
+                            </div>
+                          )}
+                        </th>
                       );
                     })}
                   </tr>
@@ -3171,7 +3634,10 @@ export default function DansniiKhuulga() {
                     </tr>
                   ) : deduplicatedResidents.length === 0 ? (
                     <tr>
-                      <td colSpan={visibleColumnCount} className="p-8 text-center">
+                      <td
+                        colSpan={visibleColumnCount}
+                        className="p-8 text-center"
+                      >
                         <div className="flex flex-col items-center justify-center space-y-3">
                           <svg
                             className="w-16 h-16 text-slate-300"
@@ -3205,52 +3671,84 @@ export default function DansniiKhuulga() {
                         (it?.orshinSuugchId &&
                           residentsById[String(it.orshinSuugchId)]) ||
                         // Sometimes resident data might be embedded in the transaction
-                        (it?.orshinSuugch && typeof it.orshinSuugch === 'object' ? it.orshinSuugch : undefined) ||
+                        (it?.orshinSuugch && typeof it.orshinSuugch === "object"
+                          ? it.orshinSuugch
+                          : undefined) ||
                         undefined;
                       const dugaar = String(
-                        it?.gereeniiDugaar || ct?.gereeniiDugaar || "-"
+                        it?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
                       );
                       const total = Number(
-                        it?._totalTulbur ?? it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0
+                        it?._totalTulbur ??
+                          it?.niitTulbur ??
+                          it?.niitDun ??
+                          it?.total ??
+                          it?.tulukhDun ??
+                          it?.undsenDun ??
+                          it?.dun ??
+                          0,
                       );
                       const gidForPaid =
                         (it?.gereeniiId && String(it.gereeniiId)) ||
                         (ct?._id && String(ct._id)) ||
                         "";
-                      const paidFromSummary = gidForPaid ? paidSummaryByGereeId[gidForPaid] ?? 0 : 0;
+                      const paidFromSummary = gidForPaid
+                        ? (paidSummaryByGereeId[gidForPaid] ?? 0)
+                        : 0;
                       // Enrich with authoritative paid so getPaymentStatusLabel uses it (not backend tuluv)
-                      const itForTuluv = { ...it, _paidFromSummary: paidFromSummary };
-                      let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
-                      if (itForTuluv?.tuluv === "Цуцалсан" || itForTuluv?.status === "Цуцалсан") {
+                      const itForTuluv = {
+                        ...it,
+                        _paidFromSummary: paidFromSummary,
+                      };
+                      let tuluvLabel: string =
+                        getPaymentStatusLabel(itForTuluv);
+                      if (
+                        itForTuluv?.tuluv === "Цуцалсан" ||
+                        itForTuluv?.status === "Цуцалсан"
+                      ) {
                         tuluvLabel = "Цуцалсан";
                       }
                       const isPaid = tuluvLabel === "Төлсөн";
                       const ner = resident
                         ? [resident.ner]
-                          .map((v) => (v ? String(v).trim() : ""))
-                          .filter(Boolean)
-                          .join(" ") || "-"
+                            .map((v) => (v ? String(v).trim() : ""))
+                            .filter(Boolean)
+                            .join(" ") || "-"
                         : [it.ner]
-                          .map((v) => (v ? String(v).trim() : ""))
-                          .filter(Boolean)
-                          .join(" ") || "-";
+                            .map((v) => (v ? String(v).trim() : ""))
+                            .filter(Boolean)
+                            .join(" ") || "-";
                       // Get toot - prioritize toots array, then contract (geree) data
-                      const residentToot = Array.isArray(resident?.toots) && resident.toots.length > 0
-                        ? resident.toots[0]?.toot
-                        : resident?.toot;
-                      const toot = String(ct?.toot || residentToot || it?.toot || "-");
+                      const residentToot =
+                        Array.isArray(resident?.toots) &&
+                        resident.toots.length > 0
+                          ? resident.toots[0]?.toot
+                          : resident?.toot;
+                      const toot = String(
+                        ct?.toot || residentToot || it?.toot || "-",
+                      );
 
                       // Get utas - can be string or array
                       // Priority: resident.utas (array or string) > it.utas (array or string)
                       const utas = (() => {
                         // Check resident's utas (array)
                         if (resident?.utas) {
-                          if (Array.isArray(resident.utas) && resident.utas.length > 0) {
+                          if (
+                            Array.isArray(resident.utas) &&
+                            resident.utas.length > 0
+                          ) {
                             const firstUtas = resident.utas[0];
-                            if (firstUtas !== undefined && firstUtas !== null && firstUtas !== "") {
+                            if (
+                              firstUtas !== undefined &&
+                              firstUtas !== null &&
+                              firstUtas !== ""
+                            ) {
                               return String(firstUtas);
                             }
-                          } else if (typeof resident.utas === 'string' && resident.utas.trim() !== "") {
+                          } else if (
+                            typeof resident.utas === "string" &&
+                            resident.utas.trim() !== ""
+                          ) {
                             return String(resident.utas);
                           }
                         }
@@ -3258,38 +3756,51 @@ export default function DansniiKhuulga() {
                         if (it?.utas) {
                           if (Array.isArray(it.utas) && it.utas.length > 0) {
                             const firstUtas = it.utas[0];
-                            if (firstUtas !== undefined && firstUtas !== null && firstUtas !== "") {
+                            if (
+                              firstUtas !== undefined &&
+                              firstUtas !== null &&
+                              firstUtas !== ""
+                            ) {
                               return String(firstUtas);
                             }
-                          } else if (typeof it.utas === 'string' && it.utas.trim() !== "") {
+                          } else if (
+                            typeof it.utas === "string" &&
+                            it.utas.trim() !== ""
+                          ) {
                             return String(it.utas);
                           }
                         }
                         return "-";
                       })();
                       // Get orts - prioritize toots array, then contract (geree) data
-                      const residentOrts = Array.isArray(resident?.toots) && resident.toots.length > 0
-                        ? resident.toots[0]?.orts
-                        : null;
+                      const residentOrts =
+                        Array.isArray(resident?.toots) &&
+                        resident.toots.length > 0
+                          ? resident.toots[0]?.orts
+                          : null;
                       const orts = String(
                         ct?.orts ??
-                        ct?.ortsDugaar ??
-                        ct?.ortsNer ??
-                        residentOrts ??
-                        resident?.orts ??
-                        resident?.ortsDugaar ??
-                        resident?.ortsNer ??
-                        resident?.block ??
-                        it?.orts ??
-                        it?.ortsDugaar ??
-                        it?.ortsNer ??
-                        "-"
+                          ct?.ortsDugaar ??
+                          ct?.ortsNer ??
+                          residentOrts ??
+                          resident?.orts ??
+                          resident?.ortsDugaar ??
+                          resident?.ortsNer ??
+                          resident?.block ??
+                          it?.orts ??
+                          it?.ortsDugaar ??
+                          it?.ortsNer ??
+                          "-",
                       );
                       // Get davkhar - prioritize toots array
-                      const residentDavkhar = Array.isArray(resident?.toots) && resident.toots.length > 0
-                        ? resident.toots[0]?.davkhar
-                        : resident?.davkhar;
-                      const davkhar = String(residentDavkhar ?? it?.davkhar ?? "-");
+                      const residentDavkhar =
+                        Array.isArray(resident?.toots) &&
+                        resident.toots.length > 0
+                          ? resident.toots[0]?.davkhar
+                          : resident?.davkhar;
+                      const davkhar = String(
+                        residentDavkhar ?? it?.davkhar ?? "-",
+                      );
                       const sentAt =
                         it?.ognoo || it?.nekhemjlekhiinOgnoo || it?.createdAt;
                       const paidAt = it?.tulsunOgnoo || it?.paidAt;
@@ -3300,11 +3811,16 @@ export default function DansniiKhuulga() {
                             ? `Илгээсэн • ${formatDate(sentAt)}`
                             : "-";
 
-                        const isItemCancelled = tuluvLabel === "Цуцалсан" ||
-                          String(it.tuluv || "").trim() === "Цуцалсан" ||
-                          String(it.status || "").trim() === "Цуцалсан" ||
-                          String(it.tuluv || "").trim().toLowerCase() === "цуцалсан" ||
-                          String(it.status || "").trim().toLowerCase() === "цуцалсан";
+                      const isItemCancelled =
+                        tuluvLabel === "Цуцалсан" ||
+                        String(it.tuluv || "").trim() === "Цуцалсан" ||
+                        String(it.status || "").trim() === "Цуцалсан" ||
+                        String(it.tuluv || "")
+                          .trim()
+                          .toLowerCase() === "цуцалсан" ||
+                        String(it.status || "")
+                          .trim()
+                          .toLowerCase() === "цуцалсан";
 
                       return (
                         <tr
@@ -3315,17 +3831,23 @@ export default function DansniiKhuulga() {
                             const alignClass =
                               col.align === "left"
                                 ? "text-left pl-2"
-                                : col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
+                                : col.key === "tulbur" ||
+                                    col.key === "paid" ||
+                                    col.key === "uldegdel" ||
+                                    col.key === "ekhniiUldegdel"
                                   ? "text-right pr-2"
                                   : "text-center";
-                            const stickyBg = isItemCancelled 
-                              ? "!bg-red-100 dark:!bg-red-900" 
+                            const stickyBg = isItemCancelled
+                              ? "!bg-red-100 dark:!bg-red-900"
                               : "bg-[color:var(--surface-bg)]";
                             const stickyClass = col.sticky
                               ? `sticky z-10 ${stickyBg}`
                               : "";
-                            const itemBg = isItemCancelled ? "!bg-red-100 dark:!bg-red-900" : "";
-                            const isLastCol = colIdx === visibleColumns.length - 1;
+                            const itemBg = isItemCancelled
+                              ? "!bg-red-100 dark:!bg-red-900"
+                              : "";
+                            const isLastCol =
+                              colIdx === visibleColumns.length - 1;
                             const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${itemBg} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`;
                             const style = {
                               ...(col.sticky
@@ -3341,11 +3863,17 @@ export default function DansniiKhuulga() {
                                   (it?.gereeId && String(it.gereeId)) ||
                                   (it?.gereeniiDugaar &&
                                     String(
-                                      (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || ""
+                                      (contractsByNumber as any)[
+                                        String(it.gereeniiDugaar)
+                                      ]?._id || "",
                                     ));
 
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     <div
                                       className="flex justify-center items-center h-full"
                                       onClick={(e) => e.stopPropagation()}
@@ -3354,8 +3882,15 @@ export default function DansniiKhuulga() {
                                         <input
                                           type="checkbox"
                                           className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                          checked={selectedGereeIds.includes(gid)}
-                                          onChange={(e) => handleToggleRow(gid, e.target.checked)}
+                                          checked={selectedGereeIds.includes(
+                                            gid,
+                                          )}
+                                          onChange={(e) =>
+                                            handleToggleRow(
+                                              gid,
+                                              e.target.checked,
+                                            )
+                                          }
                                         />
                                       ) : (
                                         <span className="text-gray-300">-</span>
@@ -3366,57 +3901,103 @@ export default function DansniiKhuulga() {
                               }
                               case "index":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {(page - 1) * rowsPerPage + idx + 1}
                                   </td>
                                 );
                               case "ner":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {ner}
                                   </td>
                                 );
                               case "toot":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {toot}
                                   </td>
                                 );
                               case "utas":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {utas}
                                   </td>
                                 );
                               case "orts":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {orts}
                                   </td>
                                 );
                               case "davkhar":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {davkhar}
                                   </td>
                                 );
                               case "gereeniiDugaar":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {dugaar}
                                   </td>
                                 );
                               case "tulbur":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {formatNumber(total)} ₮
                                   </td>
                                 );
                               case "ekhniiUldegdel": {
-                                const amt = Number(it?._ekhniiUldegdelAmount ?? 0);
+                                const amt = Number(
+                                  it?._ekhniiUldegdelAmount ?? 0,
+                                );
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
-                                    <span className={amt < 0 ? "!text-emerald-600 dark:!text-emerald-400" : amt > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
+                                    <span
+                                      className={
+                                        amt < 0
+                                          ? "!text-emerald-600 dark:!text-emerald-400"
+                                          : amt > 0
+                                            ? "!text-red-500 dark:!text-red-400"
+                                            : "text-theme"
+                                      }
+                                    >
                                       {formatNumber(amt, 2)} ₮
                                     </span>
                                   </td>
@@ -3427,9 +4008,15 @@ export default function DansniiKhuulga() {
                                   (it?.gereeniiId && String(it.gereeniiId)) ||
                                   (ct?._id && String(ct._id)) ||
                                   "";
-                                const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                const paid = gid
+                                  ? (paidSummaryByGereeId[gid] ?? 0)
+                                  : 0;
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {formatNumber(paid, 2)} ₮
                                   </td>
                                 );
@@ -3441,16 +4028,31 @@ export default function DansniiKhuulga() {
                                   (it?.gereeniiId && String(it.gereeniiId)) ||
                                   (ct?._id && String(ct._id)) ||
                                   "";
-                                const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                const paid = gid
+                                  ? (paidSummaryByGereeId[gid] ?? 0)
+                                  : 0;
                                 const remaining = total - paid;
                                 // Green for negative (overpayment/credit), red for positive (debt)
-                                const colorClass = remaining < 0
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : remaining > 0
+                                const colorClass =
+                                  remaining < 0
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : remaining > 0;
 
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
-                                    <span className={(remaining < 0 ? "!text-emerald-600 dark:!text-emerald-400" : remaining > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme") + " "}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
+                                    <span
+                                      className={
+                                        (remaining < 0
+                                          ? "!text-emerald-600 dark:!text-emerald-400"
+                                          : remaining > 0
+                                            ? "!text-red-500 dark:!text-red-400"
+                                            : "text-theme") + " "
+                                      }
+                                    >
                                       {formatNumber(remaining, 2)} ₮
                                     </span>
                                   </td>
@@ -3458,7 +4060,11 @@ export default function DansniiKhuulga() {
                               }
                               case "tuluv":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     <div className="flex items-center justify-center gap-2">
                                       <span
                                         className={
@@ -3468,7 +4074,8 @@ export default function DansniiKhuulga() {
                                             : tuluvLabel === "Цуцалсан"
                                               ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
                                               : tuluvLabel === "Төлөөгүй" ||
-                                                tuluvLabel === "Хугацаа хэтэрсэн"
+                                                  tuluvLabel ===
+                                                    "Хугацаа хэтэрсэн"
                                                 ? "badge-unpaid"
                                                 : "badge-neutral")
                                         }
@@ -3480,21 +4087,32 @@ export default function DansniiKhuulga() {
                                 );
                               case "lastLog":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     {lastLog}
                                   </td>
                                 );
                               case "action":
                                 return (
-                                  <td key={col.key} className={cellClass} style={style}>
+                                  <td
+                                    key={col.key}
+                                    className={cellClass}
+                                    style={style}
+                                  >
                                     <div className="flex items-center justify-center gap-2">
                                       <button
                                         onClick={() => {
                                           const gid =
-                                            (it?.gereeniiId && String(it.gereeniiId)) ||
+                                            (it?.gereeniiId &&
+                                              String(it.gereeniiId)) ||
                                             (ct?._id && String(ct._id)) ||
                                             "";
-                                          const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
+                                          const paid = gid
+                                            ? (paidSummaryByGereeId[gid] ?? 0)
+                                            : 0;
                                           const contractBalance = total - paid;
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
@@ -3502,7 +4120,8 @@ export default function DansniiKhuulga() {
                                             toot: toot,
                                             utas: utas,
                                             gereeniiDugaar: dugaar,
-                                            gereeniiId: it?.gereeniiId || ct?._id,
+                                            gereeniiId:
+                                              it?.gereeniiId || ct?._id,
                                             ...it,
                                             _contractBalance: contractBalance,
                                           };
@@ -3523,7 +4142,8 @@ export default function DansniiKhuulga() {
                                             toot: toot,
                                             utas: utas,
                                             gereeniiDugaar: dugaar,
-                                            gereeniiId: it?.gereeniiId || ct?._id,
+                                            gereeniiId:
+                                              it?.gereeniiId || ct?._id,
                                             ...it,
                                           };
                                           setHistoryResident(residentData);
@@ -3537,36 +4157,59 @@ export default function DansniiKhuulga() {
                                       <button
                                         onClick={() => {
                                           // Create resident-like object from transaction data; include цахилгаан from geree or orshinSuugch
-                                          const residentId = resident?._id || it?.orshinSuugchId || ct?.orshinSuugchId;
+                                          const residentId =
+                                            resident?._id ||
+                                            it?.orshinSuugchId ||
+                                            ct?.orshinSuugchId;
                                           const residentData = resident
                                             ? {
-                                              ...it,
-                                              ...resident,
-                                              _id: residentId,
-                                              ovog: resident.ovog ?? it?.ovog,
-                                              ner: ner,
-                                              toot: toot,
-                                              utas: utas,
-                                              gereeniiDugaar: dugaar,
-                                              gereeniiId: it?.gereeniiId || ct?._id,
-                                              tsahilgaaniiZaalt: resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt ?? ct?.umnukhZaalt,
-                                              umnukhZaalt: ct?.umnukhZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.suuliinZaalt,
-                                              suuliinZaalt: ct?.suuliinZaalt ?? resident.tsahilgaaniiZaalt ?? ct?.umnukhZaalt,
-                                            }
+                                                ...it,
+                                                ...resident,
+                                                _id: residentId,
+                                                ovog: resident.ovog ?? it?.ovog,
+                                                ner: ner,
+                                                toot: toot,
+                                                utas: utas,
+                                                gereeniiDugaar: dugaar,
+                                                gereeniiId:
+                                                  it?.gereeniiId || ct?._id,
+                                                tsahilgaaniiZaalt:
+                                                  resident.tsahilgaaniiZaalt ??
+                                                  ct?.suuliinZaalt ??
+                                                  ct?.umnukhZaalt,
+                                                umnukhZaalt:
+                                                  ct?.umnukhZaalt ??
+                                                  resident.tsahilgaaniiZaalt ??
+                                                  ct?.suuliinZaalt,
+                                                suuliinZaalt:
+                                                  ct?.suuliinZaalt ??
+                                                  resident.tsahilgaaniiZaalt ??
+                                                  ct?.umnukhZaalt,
+                                              }
                                             : {
-                                              ...it,
-                                              _id: residentId,
-                                              ovog: it?.ovog,
-                                              ner: ner,
-                                              toot: toot,
-                                              utas: utas,
-                                              gereeniiDugaar: dugaar,
-                                              gereeniiId: it?.gereeniiId || ct?._id,
-                                              tsahilgaaniiZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt ?? it?.tsahilgaaniiZaalt,
-                                              umnukhZaalt: ct?.umnukhZaalt ?? ct?.suuliinZaalt,
-                                              suuliinZaalt: ct?.suuliinZaalt ?? ct?.umnukhZaalt,
-                                            };
-                                          setSelectedTransactionResident(residentData);
+                                                ...it,
+                                                _id: residentId,
+                                                ovog: it?.ovog,
+                                                ner: ner,
+                                                toot: toot,
+                                                utas: utas,
+                                                gereeniiDugaar: dugaar,
+                                                gereeniiId:
+                                                  it?.gereeniiId || ct?._id,
+                                                tsahilgaaniiZaalt:
+                                                  ct?.suuliinZaalt ??
+                                                  ct?.umnukhZaalt ??
+                                                  it?.tsahilgaaniiZaalt,
+                                                umnukhZaalt:
+                                                  ct?.umnukhZaalt ??
+                                                  ct?.suuliinZaalt,
+                                                suuliinZaalt:
+                                                  ct?.suuliinZaalt ??
+                                                  ct?.umnukhZaalt,
+                                              };
+                                          setSelectedTransactionResident(
+                                            residentData,
+                                          );
                                           setIsTransactionModalOpen(true);
                                         }}
                                         className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"
@@ -3590,7 +4233,11 @@ export default function DansniiKhuulga() {
                   <tr className="">
                     {visibleColumns.map((col, colIdx) => {
                       const alignClass =
-                        col.align === "right" || col.key === "tulbur" || col.key === "paid" || col.key === "uldegdel" || col.key === "ekhniiUldegdel"
+                        col.align === "right" ||
+                        col.key === "tulbur" ||
+                        col.key === "paid" ||
+                        col.key === "uldegdel" ||
+                        col.key === "ekhniiUldegdel"
                           ? "text-right pr-2"
                           : col.align === "center"
                             ? "text-center"
@@ -3604,34 +4251,81 @@ export default function DansniiKhuulga() {
                       let content: React.ReactNode = "";
 
                       if (col.key === "gereeniiDugaar") {
-
                       } else if (col.key === "tulbur") {
                         // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
-                        const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          return sum + Number(it?._totalTulbur ?? 0);
-                        }, 0);
-                        content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
+                        const total = deduplicatedResidents.reduce(
+                          (sum: number, it: any) => {
+                            return sum + Number(it?._totalTulbur ?? 0);
+                          },
+                          0,
+                        );
+                        content = (
+                          <span className="text-theme">
+                            {formatNumber(total, 2)} ₮
+                          </span>
+                        );
                       } else if (col.key === "ekhniiUldegdel") {
-                        const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
-                        }, 0);
-                        content = <span className={total < 0 ? "!text-emerald-600 dark:!text-emerald-400" : total > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>{formatNumber(total, 2)} ₮</span>;
+                        const total = deduplicatedResidents.reduce(
+                          (sum: number, it: any) => {
+                            return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
+                          },
+                          0,
+                        );
+                        content = (
+                          <span
+                            className={
+                              total < 0
+                                ? "!text-emerald-600 dark:!text-emerald-400"
+                                : total > 0
+                                  ? "!text-red-500 dark:!text-red-400"
+                                  : "text-theme"
+                            }
+                          >
+                            {formatNumber(total, 2)} ₮
+                          </span>
+                        );
                       } else if (col.key === "paid") {
-                        const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const gid = getGereeId(it);
-                          const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
-                          return sum + paid;
-                        }, 0);
-                        content = <span className="text-theme">{formatNumber(total, 2)} ₮</span>;
+                        const total = deduplicatedResidents.reduce(
+                          (sum: number, it: any) => {
+                            const gid = getGereeId(it);
+                            const paid = gid
+                              ? (paidSummaryByGereeId[gid] ?? 0)
+                              : 0;
+                            return sum + paid;
+                          },
+                          0,
+                        );
+                        content = (
+                          <span className="text-theme">
+                            {formatNumber(total, 2)} ₮
+                          </span>
+                        );
                       } else if (col.key === "uldegdel") {
                         // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
-                        const total = deduplicatedResidents.reduce((sum: number, it: any) => {
-                          const tulbur = Number(it?._totalTulbur ?? 0);
-                          const gid = getGereeId(it);
-                          const tulsun = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
-                          return sum + (tulbur - tulsun);
-                        }, 0);
-                        content = <span className={total < 0 ? "!text-emerald-600 dark:!text-emerald-400" : total > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}>{formatNumber(total, 2)} ₮</span>;
+                        const total = deduplicatedResidents.reduce(
+                          (sum: number, it: any) => {
+                            const tulbur = Number(it?._totalTulbur ?? 0);
+                            const gid = getGereeId(it);
+                            const tulsun = gid
+                              ? (paidSummaryByGereeId[gid] ?? 0)
+                              : 0;
+                            return sum + (tulbur - tulsun);
+                          },
+                          0,
+                        );
+                        content = (
+                          <span
+                            className={
+                              total < 0
+                                ? "!text-emerald-600 dark:!text-emerald-400"
+                                : total > 0
+                                  ? "!text-red-500 dark:!text-red-400"
+                                  : "text-theme"
+                            }
+                          >
+                            {formatNumber(total, 2)} ₮
+                          </span>
+                        );
                       }
 
                       return (
@@ -3639,8 +4333,10 @@ export default function DansniiKhuulga() {
                           key={col.key}
                           className={`p-1.5 whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
                           style={{
-                            ...(col.sticky ? { left: stickyOffsets[col.key] } : {}),
-                            minWidth: col.minWidth
+                            ...(col.sticky
+                              ? { left: stickyOffsets[col.key] }
+                              : {}),
+                            minWidth: col.minWidth,
                           }}
                         >
                           {content}
@@ -3653,7 +4349,9 @@ export default function DansniiKhuulga() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 gap-3 text-md">
-            <div className="text-theme/70">Нийт: {deduplicatedResidents.length}</div>
+            <div className="text-theme/70">
+              Нийт: {deduplicatedResidents.length}
+            </div>
 
             <div className="flex items-center gap-3">
               <span id="guilgee-page-size">
@@ -3688,7 +4386,6 @@ export default function DansniiKhuulga() {
           </div>
         </div>
       </div>
-
 
       {isKhungulultOpen && (
         <ModalPortal>
@@ -3726,8 +4423,6 @@ export default function DansniiKhuulga() {
         </ModalPortal>
       )}
 
-
-
       {/* Invoice Modal */}
       {isModalOpen && selectedResident && (
         <InvoiceModal
@@ -3755,10 +4450,29 @@ export default function DansniiKhuulga() {
         barilgiinId={selectedBuildingId || barilgiinId || null}
         onRefresh={() => {
           // Clear cache and revalidate all relevant data
-          mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
-          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulsunAvlaga", undefined, { revalidate: true });
-          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga", undefined, { revalidate: true });
-          mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/gereeniiTulsunAvlaga",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/geree",
+            undefined,
+            { revalidate: true },
+          );
 
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
@@ -3766,7 +4480,6 @@ export default function DansniiKhuulga() {
           setInvoiceRefreshTrigger((t) => t + 1);
         }}
       />
-
 
       {/* Per-resident history modal removed */}
 
@@ -3792,9 +4505,23 @@ export default function DansniiKhuulga() {
         baiguullagiinId={ajiltan?.baiguullagiinId || ""}
         barilgiinId={selectedBuildingId || barilgiinId || undefined}
         onSuccess={() => {
-          mutate((key: any) => Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh", undefined, { revalidate: true });
-          mutate((key: any) => Array.isArray(key) && key[0] === "/geree", undefined, { revalidate: true });
-          mutate((key: any) => Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga", undefined, { revalidate: true });
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/nekhemjlekhiinTuukh",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) => Array.isArray(key) && key[0] === "/geree",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/gereeniiTulukhAvlaga",
+            undefined,
+            { revalidate: true },
+          );
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
           requestedGereeIdsRef.current.clear();
