@@ -365,8 +365,16 @@ const InvoiceModal = ({
         });
 
         // Add ekhniiUldegdel from gereeniiTulukhAvlaga to the rows
+        // Filter out negative values (don't show minus ekhniiUldegdel)
         const ekhniiUldegdelRows = residentTulukhAvlaga
-          .filter((item: any) => item.ekhniiUldegdelEsekh === true)
+          .filter((item: any) => {
+            if (!item.ekhniiUldegdelEsekh) return false;
+            const amt = Number(
+              item.undsenDun ?? item.tulukhDun ?? item.uldegdel ?? 0,
+            );
+            // Don't show if negative, but show if 0 or positive
+            return amt >= 0;
+          })
           .map((item: any) => ({
             _id: item._id,
             ner: "Эхний үлдэгдэл",
@@ -403,12 +411,21 @@ const InvoiceModal = ({
 
         // Filter out 0.00 "Эхний үлдэгдэл" entries from invoice zardluud
         // when we have actual ekhniiUldegdel from gereeniiTulukhAvlaga
+        // Also filter out negative ekhniiUldegdel entries (don't show minus values)
         const hasEkhniiUldegdelFromAvlaga = ekhniiUldegdelRows.length > 0;
         const filteredZardluud = hasEkhniiUldegdelFromAvlaga
           ? allZardluud.filter((z: any) => {
-              // Skip "Эхний үлдэгдэл" entries with 0 or no value
+              // Handle "Эхний үлдэгдэл" entries
               if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
                 const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+                // Don't show if negative
+                if (amt < 0) {
+                  console.log(
+                    `⏭️ Filtering out negative ekhniiUldegdel (${amt}) from invoice zardluud`,
+                  );
+                  return false;
+                }
+                // Skip 0.00 entries when we have ekhniiUldegdel from avlaga
                 if (amt === 0) {
                   console.log(
                     `⏭️ Filtering out 0.00 ekhniiUldegdel from invoice zardluud`,
@@ -418,15 +435,79 @@ const InvoiceModal = ({
               }
               return true;
             })
-          : allZardluud;
+          : allZardluud.filter((z: any) => {
+              // Even without avlaga ekhniiUldegdel, filter out negative ekhniiUldegdel
+              if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+                const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+                if (amt < 0) {
+                  console.log(
+                    `⏭️ Filtering out negative ekhniiUldegdel (${amt}) from invoice zardluud`,
+                  );
+                  return false;
+                }
+              }
+              return true;
+            });
 
         // Avlaga: prefer tulukhAvlaga; invoice guilgeenuud for non-avlaga (tulult, ashiglalt) only to avoid duplicate
         const guilgeeNonAvlaga = allGuilgeenuud.filter((g: any) => {
           const gt = String(g?.turul || "").toLowerCase();
           return gt !== "avlaga" && gt !== "авлага";
         });
+        
+        // Deduplicate zardluud entries by ner (name), keeping the one with the highest non-zero amount
+        // This ensures Цахилгаан with dun: 46288 is shown instead of dun: 0
+        // Use ner as key since entries with same name but different _id should be deduplicated
+        const deduplicatedZardluud = new Map<string, any>();
+        filteredZardluud.forEach((z: any) => {
+          const ner = String(z.ner || z.name || "").trim();
+          // Use ner as key, fallback to _id if ner is empty
+          const key = ner || z._id || `zardal-${Math.random()}`;
+          const existing = deduplicatedZardluud.get(key);
+          const currentAmt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+          
+          if (!existing) {
+            deduplicatedZardluud.set(key, z);
+          } else {
+            const existingAmt = Number(existing.dun ?? existing.tariff ?? existing.tulukhDun ?? 0);
+            // Keep the entry with the higher non-zero amount, or the one with non-zero if the other is zero
+            if (currentAmt > 0 && (existingAmt === 0 || currentAmt > existingAmt)) {
+              deduplicatedZardluud.set(key, z);
+            }
+          }
+        });
+        
+        // Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
+        // Check if exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан") already exists in deduplicated zardluud
+        const hasTsahilgaan = Array.from(deduplicatedZardluud.values()).some(
+          (z: any) => {
+            const ner = String(z.ner || "").trim();
+            // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
+            return ner === "Цахилгаан";
+          }
+        );
+        
+        const tsahilgaanRows: any[] = [];
+        if (!hasTsahilgaan && latest) {
+          // Check for tsahilgaanNekhemjlekh at top level
+          const tsahilgaanAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
+          if (tsahilgaanAmt > 0) {
+            tsahilgaanRows.push({
+              _id: `tsahilgaan-${latest._id}`,
+              ner: "Цахилгаан",
+              tariff: tsahilgaanAmt,
+              dun: tsahilgaanAmt,
+              turul: "Дурын",
+              zardliinTurul: "Энгийн",
+              tailbar: latest?.medeelel?.tailbar || latest?.tailbar || "",
+              zaalt: true,
+            });
+          }
+        }
+        
         const rows = [
-          ...filteredZardluud,
+          ...Array.from(deduplicatedZardluud.values()),
+          ...tsahilgaanRows,
           ...ekhniiUldegdelRows,
           ...avlagaRows,
           ...guilgeeNonAvlaga,

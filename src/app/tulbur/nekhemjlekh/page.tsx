@@ -333,7 +333,34 @@ const InvoiceModal = ({
           : Array.isArray(latest?.guilgeenuud)
             ? latest.guilgeenuud
             : [];
-        const rows = [...zardluudRows, ...guilgeenuudRows];
+        // Check if exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан") already exists in zardluud
+        const hasTsahilgaan = zardluudRows.some(
+          (z: any) => {
+            const ner = String(z.ner || "").trim();
+            // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
+            return ner === "Цахилгаан";
+          }
+        );
+        
+        // Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
+        const tsahilgaanRows: any[] = [];
+        if (!hasTsahilgaan && latest) {
+          const tsahilgaanAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
+          if (tsahilgaanAmt > 0) {
+            tsahilgaanRows.push({
+              _id: `tsahilgaan-${latest._id}`,
+              ner: "Цахилгаан",
+              tariff: tsahilgaanAmt,
+              dun: tsahilgaanAmt,
+              turul: "Дурын",
+              zardliinTurul: "Энгийн",
+              tailbar: latest?.medeelel?.tailbar || latest?.tailbar || "",
+              zaalt: true,
+            });
+          }
+        }
+        
+        const rows = [...zardluudRows, ...tsahilgaanRows, ...guilgeenuudRows];
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -363,7 +390,18 @@ const InvoiceModal = ({
           zardliinTurul: z.zardliinTurul,
           tailbar: invoiceTailbar,
         });
-        setInvRows(rows.map(norm));
+        // Filter out negative "Эхний үлдэгдэл" entries (don't show minus values)
+        const filteredRows = rows.filter((z: any) => {
+          if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
+            const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
+            // Don't show if negative, but show if 0 or positive
+            if (amt < 0) {
+              return false;
+            }
+          }
+          return true;
+        });
+        setInvRows(filteredRows.map(norm));
         const t = Number(
           latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
         );

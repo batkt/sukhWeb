@@ -1117,13 +1117,13 @@ export default function Camera() {
                                    </div>
                                    {h.options.map((opt, idx, arr) => (
                                      <div key={idx}>
-                                       <div 
-                                         onClick={() => (h as any).set?.(opt.value)}
+                                     <div 
+                                       onClick={() => (h as any).set?.(opt.value)}
                                          className={`px-3 py-2.5 rounded-md text-[11px] text-left flex items-center justify-between cursor-pointer transition-all duration-200 border border-transparent ${
-                                            (h as any).current === opt.value 
-                                              ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
-                                              : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                                         }`}
+                                          (h as any).current === opt.value 
+                                            ? 'bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400' 
+                                            : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                       }`}
                                          style={{
                                            borderRadius: '0.375rem',
                                          }}
@@ -1133,10 +1133,10 @@ export default function Camera() {
                                          onMouseLeave={(e) => {
                                            e.currentTarget.style.borderRadius = '0.375rem';
                                          }}
-                                       >
-                                         <span>{opt.label}</span>
-                                         {(h as any).current === opt.value && (
-                                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+                                     >
+                                       <span>{opt.label}</span>
+                                       {(h as any).current === opt.value && (
+                                         <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
                                          )}
                                        </div>
                                        {idx < arr.length - 1 && (
@@ -1229,8 +1229,8 @@ export default function Camera() {
                                 
                                 return (
                                   <div className={`flex items-center justify-center flex-nowrap w-[100px] min-w-[100px] max-w-[100px] mx-auto px-2 py-1.5 rounded-[6px] overflow-hidden border shadow-sm text-xs ${getStatusColor()}`} style={{ borderRadius: '6px' }}>
-                                    <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
-                                  </div>
+                                <RealTimeDuration orsonTsag={orsonTsag} garsanTsag={garsanTsag} />
+                             </div>
                                 );
                              })()}
                           </td>
@@ -1315,9 +1315,9 @@ export default function Camera() {
                                                 <div key={uniqueKey} className="flex items-center justify-between gap-4 py-1">
                                                   <span className={`text-[10px]  ${textColorMap[p.turul] || 'text-slate-600 dark:text-slate-400'}`}>
                                                     {labels[p.turul] || p.turul || 'Төлбөр'}
-                                                  </span>
+                                              </span>
                                                   <span className="text-[11px] text-slate-800 dark:text-gray-200 whitespace-nowrap font-[family-name:var(--font-mono)] ">{formatNumber(p.dun || 0)}</span>
-                                                </div>
+                                            </div>
                                               );
                                             })
                                           ) : (
@@ -1358,11 +1358,11 @@ export default function Camera() {
                                           setConfirmExitId(confirmExitId === transaction._id ? null : transaction._id);
                                         }}
                                         variant={
-                                          (isPaid && niitDun > 0)
+                                           (isPaid && niitDun > 0)
                                             ? "success"
-                                            : (!isCurrentlyIn && isDebt)
+                                           : (!isCurrentlyIn && isDebt)
                                             ? "warning"
-                                            : (tuluv === -1 || tuluv === -2)
+                                           : (tuluv === -1 || tuluv === -2)
                                             ? "danger"
                                             : "primary"
                                         }
@@ -1370,16 +1370,16 @@ export default function Camera() {
                                         className="group/btn w-[100px] min-w-[100px] max-w-[100px] mx-auto uppercase tracking-wide overflow-hidden"
                                         style={{ borderRadius: '6px', overflow: 'hidden' }}
                                       >
-                                        {!isCurrentlyIn 
-                                          ? (isDebt ? "Төлбөртэй" : "Дууссан") 
-                                          : (isPaid && niitDun > 0) 
-                                            ? "Төлсөн" 
-                                            : (tuluv === 2) 
-                                              ? "Төлбөртэй" 
-                                              : (niitDun > 0) 
-                                                ? "Төлбөр" 
-                                                : "Идэвхтэй"
-                                        }
+                                            {!isCurrentlyIn 
+                                              ? (isDebt ? "Төлбөртэй" : "Дууссан") 
+                                              : (isPaid && niitDun > 0) 
+                                                ? "Төлсөн" 
+                                                : (tuluv === 2) 
+                                                  ? "Төлбөртэй" 
+                                                  : (niitDun > 0) 
+                                                    ? "Төлбөр" 
+                                                    : "Идэвхтэй"
+                                            }
                                       </Button>
                                       {/* ... dropdown menu code ... */}
                                       {confirmExitId === transaction._id && (
@@ -1395,8 +1395,8 @@ export default function Camera() {
                                                     { label: "Үнэгүй", icon: Info, color: "slate", action: () => handleManualExit(transaction, "free") }
                                                 ]).map((btn, bi, arr) => (
                                                     <div key={bi}>
-                                                        <button 
-                                                            onClick={btn.action}
+                                                    <button 
+                                                        onClick={btn.action}
                                                             className={`flex items-center justify-between w-full px-3 py-2.5 rounded-md text-[11px] text-slate-700 dark:text-slate-300 transition-all duration-200 group/item ${
                                                                 btn.color === 'amber' 
                                                                     ? 'hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-500/10' 
@@ -1415,8 +1415,8 @@ export default function Camera() {
                                                             onMouseLeave={(e) => {
                                                                 e.currentTarget.style.borderRadius = '0.375rem';
                                                             }}
-                                                        >
-                                                            <div className="flex items-center gap-2">
+                                                    >
+                                                        <div className="flex items-center gap-2">
                                                                 <btn.icon className={`w-3.5 h-3.5 ${
                                                                     btn.color === 'amber' 
                                                                         ? 'text-amber-600 dark:text-amber-400' 
@@ -1426,9 +1426,9 @@ export default function Camera() {
                                                                         ? 'text-emerald-600 dark:text-emerald-400'
                                                                         : 'text-slate-600 dark:text-slate-400'
                                                                 } group-hover/item:scale-110 transition-transform`} />
-                                                                <span>{btn.label}</span>
-                                                            </div>
-                                                        </button>
+                                                             <span>{btn.label}</span>
+                                                        </div>
+                                                    </button>
                                                         {bi < arr.length - 1 && (
                                                             <div className="h-px bg-slate-200 dark:bg-white/10 mx-2 my-1" />
                                                         )}
@@ -1547,8 +1547,8 @@ export default function Camera() {
                   )}
                 </div>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
-                  Нийт {total} бичлэг
-                </span>
+                Нийт {total} бичлэг
+              </span>
               </div>
               <div className="flex items-center gap-2">
                 <Button

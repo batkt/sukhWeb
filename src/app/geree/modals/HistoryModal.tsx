@@ -267,6 +267,9 @@ export default function HistoryModal({
               // Use composite key: invoiceId-zardalId so entries stay unique when multiple
               // invoices share the same zardluud template (same _ids) -> fixes React duplicate key
               const rowId = `${item._id}-${z._id?.toString() || `z-${Math.random()}`}`;
+              // Format tailbar to show expense name first, then tailbar text if it exists
+              const zardalTailbar = z.tailbar || "";
+              const displayTailbar = zardalTailbar ? `${z.ner} - ${zardalTailbar}` : z.ner;
               flatLedger.push({
                 _id: rowId,
                 parentInvoiceId: item._id,
@@ -278,7 +281,7 @@ export default function HistoryModal({
                 isSystem,
                 ajiltan,
                 khelber: "Нэхэмжлэх",
-                tailbar: z.tailbar || z.ner,
+                tailbar: displayTailbar,
                 burtgesenOgnoo: item.createdAt || "-",
                 sourceCollection: "nekhemjlekhiinTuukh"
               });
@@ -308,6 +311,46 @@ export default function HistoryModal({
               processedIds.add(r._id.toString());
             }
           });
+        }
+
+        // 1.5. Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
+        // Check for exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан")
+        const hasTsahilgaanInZardluud = zardluud.some(
+          (z: any) => {
+            const ner = String(z.ner || "").trim();
+            // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
+            return ner === "Цахилгаан";
+          }
+        );
+        if (!hasTsahilgaanInZardluud && item.tsahilgaanNekhemjlekh) {
+          const tsahilgaanAmt = Number(item.tsahilgaanNekhemjlekh);
+          if (tsahilgaanAmt > 0) {
+            const rowId = `${item._id}-tsahilgaan`;
+            // Check multiple possible tailbar locations for consistency
+            const invoiceTailbar = item?.medeelel?.tailbar || 
+                                   item?.medeelel?.temdeglel || 
+                                   item?.tailbar || 
+                                   item?.content?.split('\n')?.[1]?.replace('Тайлбар: ', '') || 
+                                   "";
+            // Always show "Цахилгаан" first, then tailbar if it exists
+            // This ensures consistent formatting across all invoices
+            const displayTailbar = invoiceTailbar ? `Цахилгаан - ${invoiceTailbar}` : "Цахилгаан";
+            flatLedger.push({
+              _id: rowId,
+              parentInvoiceId: item._id,
+              ognoo: itemDate,
+              ner: "Цахилгаан",
+              tulukhDun: tsahilgaanAmt,
+              tulsunDun: 0,
+              uldegdel: 0,
+              isSystem,
+              ajiltan,
+              khelber: "Нэхэмжлэх",
+              tailbar: displayTailbar,
+              burtgesenOgnoo: item.createdAt || "-",
+              sourceCollection: "nekhemjlekhiinTuukh"
+            });
+          }
         }
 
         // 2. Process Manual Transactions (Guilgeenuud - Avlaga/Charges)

@@ -74,7 +74,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <div>
+  <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Устгасан дэлгэрэнгүй
                 </h3>
@@ -126,7 +126,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 })()}
               </p>
             </div>
-          </div>
+  </div>
 
           <div>
             <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
@@ -259,8 +259,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                         <div className="text-sm text-[color:var(--muted-text)] break-words">
                           {formatValue(displayValue, key)}
                         </div>
-                      </div>
-                    );
+  </div>
+);
                   });
               })()}
             </div>
@@ -465,7 +465,7 @@ export default function UstsanTuukh({
           <div className="flex flex-col gap-4">
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="relative">
+    <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
@@ -538,14 +538,14 @@ export default function UstsanTuukh({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader size="md" />
-            </div>
+          </div>
           ) : (
             <>
               <div className="rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-[color:var(--surface-hover)] sticky top-0">
-                      <tr>
+                <tr>
                         <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                           #
                         </th>
@@ -564,9 +564,9 @@ export default function UstsanTuukh({
                         <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                </tr>
+              </thead>
+              <tbody>
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
@@ -574,7 +574,7 @@ export default function UstsanTuukh({
                             className="px-4 py-12 text-center text-[color:var(--muted-text)]"
                           >
                             Устгасан түүх олдсонгүй
-                          </td>
+                    </td>
                         </tr>
                       ) : (
                         paginatedRecords.map((record, index) => {
@@ -603,9 +603,9 @@ export default function UstsanTuukh({
                               </td>
                               <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
                                 {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
-                              </td>
+                    </td>
                               <td className="px-4 py-3 text-sm text-center">
-                                <Button
+                      <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewDetails(record)}
@@ -615,14 +615,14 @@ export default function UstsanTuukh({
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
-                              </td>
-                            </tr>
+                    </td>
+                  </tr>
                           );
                         })
                       )}
-                    </tbody>
-                  </table>
-                </div>
+              </tbody>
+            </table>
+          </div>
               </div>
 
               {/* Pagination */}
@@ -697,8 +697,8 @@ export default function UstsanTuukh({
               </div>
             </>
           )}
-        </div>
-      </div>
+          </div>
+    </div>
 
       {/* Detail Modal */}
       <DetailModal
