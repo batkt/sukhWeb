@@ -217,13 +217,13 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
 
                 {/* Dates */}
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg p-4 border border-gray-200 bg-transparent">
+                  <div className="rounded-2xl p-4 border border-gray-200 bg-transparent">
                     <span className="text-xs text-slate-600 dark:text-slate-400">Үүсгэсэн огноо</span>
                     <p className="text-sm  text-slate-900 dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.ognoo)}
                     </p>
                   </div>
-                  <div className="rounded-lg p-4 border border-gray-200 bg-transparent">
+                  <div className="rounded-2xl p-4 border border-gray-200 bg-transparent">
                     <span className="text-xs text-slate-600 dark:text-slate-400">Төлөх огноо</span>
                     <p className="text-sm  text-slate-900 dark:text-[var(--panel-text)] mt-1">
                       {formatDate(preview.tulukhOgnoo)}

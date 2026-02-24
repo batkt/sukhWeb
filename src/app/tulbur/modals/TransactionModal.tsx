@@ -196,6 +196,23 @@ export default function TransactionModal({
       }
     }
 
+    // If it's an initial balance, format the tailbar as requested
+    if (ekhniiUldegdel) {
+      const dateStr = transactionDate.replace(/-/g, ".");
+      const prefix = "Эхний үлдэгдэл";
+      if (finalTailbar) {
+        // Only prepend if not already there to avoid duplicates
+        if (!finalTailbar.startsWith(prefix)) {
+          finalTailbar = `${prefix} - ${finalTailbar} - ${dateStr}`;
+        } else if (!finalTailbar.includes(dateStr)) {
+          // If prefix exists but date doesn't (maybe manually typed prefix), still append date
+          finalTailbar = `${finalTailbar} - ${dateStr}`;
+        }
+      } else {
+        finalTailbar = `${prefix} - ${dateStr}`;
+      }
+    }
+
     const data: TransactionData = {
       type: transactionType,
       date: transactionDate,

@@ -363,18 +363,33 @@ export default function HistoryModal({
 
           if (amt > 0) {
             const rowId = g._id?.toString() || `g-charge-${Math.random()}`;
+            const isEkhniiUldegdel = g.ekhniiUldegdelEsekh === true;
+            let rowTailbar = g.tailbar || "Гараар нэмсэн авлага";
+            
+            if (isEkhniiUldegdel) {
+              const prefix = "Эхний үлдэгдэл";
+              const dateStr = (g.ognoo || g.guilgeeKhiisenOgnoo || itemDate).split("T")[0].replace(/-/g, ".");
+              if (rowTailbar && !rowTailbar.includes(prefix)) {
+                rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
+              } else if (!rowTailbar) {
+                rowTailbar = `${prefix} - ${dateStr}`;
+              } else if (rowTailbar.includes(prefix) && !rowTailbar.includes(dateStr)) {
+                rowTailbar = `${rowTailbar} - ${dateStr}`;
+              }
+            }
+
             flatLedger.push({
               _id: rowId,
               parentInvoiceId: item._id,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
-              ner: g.ekhniiUldegdelEsekh === true ? "Эхний үлдэгдэл" : "Авлага",
+              ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : "Авлага",
               tulukhDun: amt,
               tulsunDun: 0,
               uldegdel: 0,
               isSystem: false,
               ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
               khelber: "Авлага",
-              tailbar: g.tailbar || "Гараар нэмсэн авлага",
+              tailbar: rowTailbar,
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
               sourceCollection: "nekhemjlekhiinTuukh"
             });
@@ -520,17 +535,32 @@ export default function HistoryModal({
 
         // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
         if ((rec.ekhniiUldegdelEsekh === true && amt !== 0) || amt > 0) {
+          const isEkhniiUldegdel = rec.ekhniiUldegdelEsekh === true;
+          let rowTailbar = rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага";
+          
+          if (isEkhniiUldegdel) {
+            const prefix = "Эхний үлдэгдэл";
+            const dateStr = recDate.split("T")[0].replace(/-/g, ".");
+            if (rowTailbar && !rowTailbar.includes(prefix)) {
+              rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
+            } else if (!rowTailbar) {
+              rowTailbar = `${prefix} - ${dateStr}`;
+            } else if (rowTailbar.includes(prefix) && !rowTailbar.includes(dateStr)) {
+              rowTailbar = `${rowTailbar} - ${dateStr}`;
+            }
+          }
+
           flatLedger.push({
             _id: rec._id,
             ognoo: recDate,
-            ner: rec.ekhniiUldegdelEsekh === true ? "Эхний үлдэгдэл" : (rec.zardliinNer || "Авлага"),
+            ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : (rec.zardliinNer || "Авлага"),
             tulukhDun: amt,
             tulsunDun: 0,
             uldegdel: 0,
             isSystem: false,
             ajiltan,
             khelber: "Авлага",
-            tailbar: rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага",
+            tailbar: rowTailbar,
             burtgesenOgnoo: rec.createdAt || "-",
             sourceCollection: "gereeniiTulukhAvlaga"
           });
