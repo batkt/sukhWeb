@@ -85,7 +85,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
               type="button"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-theme" />
             </button>
           </div>
         </div>
@@ -93,7 +93,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         <div className="px-6 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm font-bold text-theme mb-1">
                 Устгасан ажилтан
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -101,7 +101,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               </p>
             </div>
             <div>
-              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm  text-theme font-bold mb-1">
                 Огноо
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -109,7 +109,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               </p>
             </div>
             <div>
-              <label className="block text-sm  text-[color:var(--muted-text)] mb-1">
+              <label className="block text-sm font-bold text-theme mb-1">
                 Төрөл
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
@@ -253,10 +253,10 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                         key={key}
                         className="p-3 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
                       >
-                        <div className=" text-sm text-[color:var(--panel-text)] mb-1">
+                        <div className=" text-sm text-theme mb-1">
                           {displayLabel}
                         </div>
-                        <div className="text-sm text-[color:var(--muted-text)] break-words">
+                        <div className="text-sm text-theme break-words">
                           {formatValue(displayValue, key)}
                         </div>
   </div>
@@ -272,7 +272,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             onClick={onClose}
             variant="primary"
             size="md"
-            className="!rounded-lg"
+            className="!rounded-2xl"
             style={{ borderRadius: '0.5rem' }}
           >
             Хаах
@@ -541,24 +541,24 @@ export default function UstsanTuukh({
           </div>
           ) : (
             <>
-              <div className="rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
+              <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-[color:var(--surface-hover)] sticky top-0">
-                <tr>
+                      <tr>
                         <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                           #
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
                           Үүссэн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
                           Төрөл
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
                           Ажилтан
                         </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)]">
+                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
                           Устгасан огноо
                         </th>
                         <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
@@ -586,22 +586,22 @@ export default function UstsanTuukh({
                               key={record._id}
                               className={`border-b text-center items-center justify-center border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
                             >
-                              <td className="px-4 text-center items-center justify-center py-3 text-sm text-[color:var(--panel-text)] text-center">
+                              <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)] text-center">
                                 {(page - 1) * pageSize + index + 1}
                               </td>
-                              <td className="px-4 text-center items-center justify-center py-3 text-sm text-[color:var(--panel-text)]">
+                              <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)]">
                                 {originalCreatedAt !== "-" ? moment(originalCreatedAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
                               </td>
                               <td className="px-4 py-3 text-center items-center justify-center text-sm text-[color:var(--panel-text)]">
                                 {modelNames.find((m) => m.value === record.modelName)?.label || record.modelName || "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                              <td className="px-4 py-3 text-sm border-r border-l text-[color:var(--panel-text)]">
                                 <div className="flex text-center items-center justify-center gap-2">
                                   <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                                   {record.ajiltniiNer || "-"}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                              <td className="px-4 py-3 text-sm border-r text-[color:var(--panel-text)]">
                                 {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
                     </td>
                               <td className="px-4 py-3 text-sm text-center">
@@ -609,11 +609,11 @@ export default function UstsanTuukh({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewDetails(record)}
-                                  className="!rounded-lg"
+                                  className="!rounded-2xl"
                                   style={{ borderRadius: '0.5rem' }}
                                   title="Дэлгэрэнгүй үзэх"
                                 >
-                                  <Eye className="w-4 h-4" />
+                                  <Eye className="w-4 h-4 text-blue-600" />
                                 </Button>
                     </td>
                   </tr>
@@ -638,7 +638,7 @@ export default function UstsanTuukh({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-lg"
+                      className="!rounded-2xl"
                       style={{ borderRadius: '0.5rem' }}
                     >
                       {pageSize} / хуудас
@@ -673,7 +673,7 @@ export default function UstsanTuukh({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="!rounded-lg"
+                    className="!rounded-2xl"
                     style={{ borderRadius: '0.5rem' }}
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
@@ -687,7 +687,7 @@ export default function UstsanTuukh({
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="!rounded-lg"
+                    className="!rounded-2xl"
                     style={{ borderRadius: '0.5rem' }}
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >

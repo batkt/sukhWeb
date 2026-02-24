@@ -853,9 +853,9 @@ const InvoiceModal = ({
           <div className="p-6 space-y-6 flex-1 overflow-y-auto overflow-x-auto overscroll-contain custom-scrollbar">
             {/* Нэхэмжлэгч (left) and Төлөгч (right) - matches nekhemjlekh header layout */}
             <div className="grid grid-cols-2 gap-4 print-break">
-              <div className="rounded-xl border border-emerald-200 bg-transparent p-4">
-                <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2">
-                  <span className="inline-block w-1 h-4 rounded" />
+              <div className="rounded-2xl border border-emerald-200 bg-transparent p-4">
+                <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2 border-b">
+                  <span className="text-theme" />
                   Нэхэмжлэгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
@@ -890,9 +890,9 @@ const InvoiceModal = ({
                   </p>
                 </div>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-transparent p-4">
-                <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2">
-                  <span className="inline-block w-1 h-4 bg-slate-400 rounded" />
+              <div className="rounded-2xl border border-gray-200 bg-transparent p-4">
+                <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2 border-b">
+                  <span className="text-theme" />
                   Төлөгч
                 </h3>
                 <div className="space-y-1.5 text-sm text-slate-600">
@@ -930,7 +930,7 @@ const InvoiceModal = ({
             </div>
 
             {/* Invoice metadata: дугаар, огноо */}
-            <div className="flex flex-wrap gap-4 text-sm text-slate-500 print-break">
+            <div className="flex flex-wrap gap-4 text-sm text-slate-500 print-break ml-2">
               <span>
                 <span className="">Нэхэмжлэхийн дугаар:</span>{" "}
                 {contractData?.nekhemjlekhiinDugaar ||
@@ -945,14 +945,14 @@ const InvoiceModal = ({
               </span>
             </div>
 
-            <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
+            <div className="border border-gray-100 rounded-2xl overflow-hidden print-break">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 border-b border-gray-300">
                   <tr>
-                    <th className="py-2 px-3 text-center text-slate-600">
+                    <th className="py-2 border-r px-3 text-center text-slate-600">
                       Зардал
                     </th>
-                    <th className="py-2 px-3 text-center text-slate-600">
+                    <th className="py-2 border-r px-3 text-center text-slate-600">
                       Дүн
                     </th>
                     <th className="py-2 px-3 text-center text-slate-600">
@@ -960,34 +960,37 @@ const InvoiceModal = ({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y">
                   {invoiceRows.map((row: any) => (
                     <tr key={row._id}>
                       <td
-                        className={`py-2 px-3 ${
-                          row.discount ? "text-green-700  italic" : ""
-                        }`}
+                        className={`py-2 px-3 border-r ${row.discount
+                          ? "text-green-700  italic"
+                          : ""
+                          }`}
                       >
                         {row.ner}
                       </td>
                       <td
-                        className={`py-2 px-4 text-right ${
-                          row.discount ? "text-green-700  line-through" : ""
-                        }`}
+                        className={`py-2 px-4 text-right border-r ${row.discount
+                          ? "text-green-700  line-through"
+                          : ""
+                          }`}
                       >
                         {formatNumber(Number(row.dun ?? 0))} ₮
                       </td>
                       <td
-                        className={`py-2 px-3 text-right ${
-                          row.discount ? "text-green-700  line-through" : ""
-                        }`}
+                        className={`py-2 px-3 text-left ${row.discount
+                          ? "text-green-700  line-through"
+                          : ""
+                          }`}
                       >
                         {row.tailbar}
                       </td>
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50 border-t border-gray-100">
+                <tfoot className="bg-gray-50 divide-y border-t border-gray-100">
                   <tr>
                     <td className="py-2 px-3  text-slate-700">Нийт дүн:</td>
                     <td className="py-2 px-3"></td>
@@ -3906,7 +3909,7 @@ export default function DansniiKhuulga() {
                       return (
                         <tr
                           key={it?._id || `${idx}`}
-                          className={`transition-colors border-b last:border-b-0 ${isItemCancelled ? "!bg-red-100 dark:!bg-red-900/40" : ""}`}
+                          className={`transition-colors border-b last:border-b-0 ${isItemCancelled ? "!bg-red-100 dark:!bg-red-500" : ""}`}
                         >
                           {visibleColumns.map((col, colIdx) => {
                             const alignClass =
@@ -4310,7 +4313,7 @@ export default function DansniiKhuulga() {
                     })
                   )}
                 </tbody>
-                <tfoot className="sticky bottom-0 z-30 bg-slate-50 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
+                <tfoot className="sticky bottom-0 z-30 bg-slate-200 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
                   <tr className="">
                     {visibleColumns.map((col, colIdx) => {
                       const alignClass =
@@ -4324,7 +4327,7 @@ export default function DansniiKhuulga() {
                             ? "text-center"
                             : "text-left pl-2";
                       const stickyClass = col.sticky
-                        ? "sticky z-40 bg-slate-50 dark:bg-slate-800"
+                        ? "sticky z-40 bg-slate-200 dark:bg-slate-800"
                         : "";
                       const isLastCol = colIdx === visibleColumns.length - 1;
 

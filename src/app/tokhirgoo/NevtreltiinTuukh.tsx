@@ -206,7 +206,7 @@ export default function NevtreltiinTuukh({
                   setPage(1);
                 }}
                 placeholder="Хайх (Ажилтны нэр, IP, Хөтөч, Төхөөрөмж, Байршил)..."
-                className="w-full pl-10 pr-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
+                className="w-full pl-10 pr-4 py-2.5 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
                 style={{ borderRadius: '0.5rem' }}
               />
             </div>
@@ -214,8 +214,9 @@ export default function NevtreltiinTuukh({
 
           {/* Date Range */}
           <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[color:var(--muted-text)]" />
+            
             <DatePickerInput
+            
               type="range"
               value={dateRange}
               onChange={handleDateChange}
@@ -233,30 +234,30 @@ export default function NevtreltiinTuukh({
           </div>
         ) : (
           <>
-            <div className="rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-[color:var(--surface-hover)] sticky top-0">
+                  <thead className="bg-[color:var(--surface-hover)] sticky top-0 border-b">
                     <tr>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                      <th className="px-4 border-r py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                         #
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 text-center  border-r py-3 text-xs  text-[color:var(--panel-text)]">
                         Огноо
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
                         Ажилтны нэр
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4  text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
                         IP хаяг
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
                         Байршил
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 border-r py-3 text-xs  text-[color:var(--panel-text)]">
                         Хөтөч
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] !rounded-tr-lg">
+                      <th className="px-4 text-center py-3 text-xs  text-[color:var(--panel-text)] !rounded-tr-lg">
                         Төхөөрөмж
                       </th>
                     </tr>
@@ -279,22 +280,22 @@ export default function NevtreltiinTuukh({
                           key={record._id}
                           className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
                         >
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] text-center">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] text-center">
                             {(page - 1) * pageSize + index + 1}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
                             {moment(record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                               {record.ajiltniiNer || "-"}
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] font-mono">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] font-mono">
                             {record.ip || "-"}
                           </td>
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className="flex items-center gap-2 cursor-help">
@@ -318,7 +319,7 @@ export default function NevtreltiinTuukh({
                               </TooltipContent>
                             </Tooltip>
                           </td>
-                          <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                          <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
                             <div className="flex items-center gap-2">
                               <Globe className="w-4 h-4 text-[color:var(--muted-text)]" />
                               {record.browser || "-"}
@@ -352,7 +353,7 @@ export default function NevtreltiinTuukh({
                     variant="ghost"
                     size="sm"
                     onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                    className="!rounded-lg"
+                    className="!rounded-2xl"
                     style={{ borderRadius: '0.5rem' }}
                   >
                     {pageSize} / хуудас
@@ -387,7 +388,7 @@ export default function NevtreltiinTuukh({
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}
-                  className="!rounded-lg"
+                  className="!rounded-2xl"
                   style={{ borderRadius: '0.5rem' }}
                   leftIcon={<ChevronLeft className="w-4 h-4" />}
                 >
@@ -401,7 +402,7 @@ export default function NevtreltiinTuukh({
                   size="sm"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
-                  className="!rounded-lg"
+                  className="!rounded-2xl"
                   style={{ borderRadius: '0.5rem' }}
                   rightIcon={<ChevronRight className="w-4 h-4" />}
                 >

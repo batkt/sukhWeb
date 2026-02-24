@@ -380,17 +380,17 @@ export default function AvlagiinNasjiltPage() {
                         key={item._id || idx}
                         className="transition-colors border-b last:border-b-0"
                       >
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {(currentPage - 1) * pageSize + idx + 1}
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.gereeniiDugaar}
                         </td>
                         
-                        <td className="p-2 text-left text-theme whitespace-nowrap">
+                        <td className="p-2 text-left text-theme whitespace-nowrap border-r">
                           {item.ner || ""}
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {Array.isArray(item.utas)
                             ? item.utas.join(", ")
                             : item.utas || ""}
@@ -407,29 +407,29 @@ export default function AvlagiinNasjiltPage() {
                         <td className="p-2 text-center text-theme whitespace-nowrap">
                           {item.orts || ""}
                         </td> */}
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.ognoo
                             ? item.ognoo.split("T")[0].replace(/-/g, ".")
                             : item.ognoo}
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.tulukhOgnoo
                             ? item.tulukhOgnoo.split("T")[0].replace(/-/g, ".")
                             : item.tulukhOgnoo}
                         </td>
-                        <td className="p-2 text-right text-theme whitespace-nowrap">
+                        <td className="p-2 text-right text-theme whitespace-nowrap border-r">
                           <span className=" text-red-600">
                             {formatNumber(item.niitTulbur ?? item.avlaga ?? 0)}{" "}
                             ₮
                           </span>
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.tuluv || ""}
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.daysOverdue ?? ""}
                         </td>
-                        <td className="p-2 text-center text-theme whitespace-nowrap">
+                        <td className="p-2 text-center text-theme whitespace-nowrap border-r">
                           {item.monthsOverdue ?? ""}
                         </td>
                         {/* <td className="p-2 text-center text-theme whitespace-nowrap">

@@ -242,7 +242,7 @@ export default function Zogsool({
             variant="primary"
             size="md"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="!rounded-lg"
+            className="!rounded-2xl"
             style={{ borderRadius: '0.5rem' }}
           >
             Шинэ зогсоол нэмэх
@@ -256,24 +256,24 @@ export default function Zogsool({
           </div>
         ) : (
           <>
-            <div className="rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
+            <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
-                  <thead className="bg-[color:var(--surface-hover)] sticky top-0">
+                  <thead className="bg-[color:var(--surface-hover)] sticky top-0 border border-b">
                     <tr>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
+                      <th className="px-4 py-3 text-xs border-r  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
                         #
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
                         Зогсоолын нэр
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  border-r text-center text-[color:var(--panel-text)]">
                         Багтаамж
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs  border-r text-center text-[color:var(--panel-text)]">
                         Тариф
                       </th>
-                      <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)]">
+                      <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
                         Хаалганууд
                       </th>
                       <th className="px-4 py-3 text-xs  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
@@ -311,33 +311,33 @@ export default function Zogsool({
                             key={record._id || record.key || index}
                             className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
                           >
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)] text-center">
+                            <td className="px-4 py-3 border-r text-sm text-[color:var(--panel-text)] text-center">
                               {(page - 1) * pageSize + index + 1}
                             </td>
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                            <td className="px-4 py-3  border-r text-sm text-[color:var(--panel-text)]">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400  text-xs">
+                                <div className="w-8 h-8 rounded-2xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400  text-xs">
                                   {record.ner?.charAt(0).toUpperCase()}
                                 </div>
                                 <span className="">{record.ner}</span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                            <td className="px-4 text-center border-r py-3 text-sm text-[color:var(--panel-text)]">
                               <span className="">{record.too}</span>
                               <span className="text-xs text-[color:var(--muted-text)] ml-1">машин</span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                              <span className="px-2 py-1 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs ">
+                            <td className="px-4  border-r py-3 text-sm text-[color:var(--panel-text)]">
+                              <span className="px-2 py-1 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs ">
                                 {formatNumber(record.undsenUne)} ₮
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
+                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
                               <div className="flex flex-wrap gap-1.5">
                                 {record.khaalga && record.khaalga.length > 0 ? (
                                   record.khaalga.map((gate: any, gateIdx: number) => (
                                     <span
                                       key={gateIdx}
-                                      className="px-2 py-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs border border-slate-200 dark:border-white/10"
+                                      className="px-2 py-1 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs border border-slate-200 dark:border-white/10"
                                     >
                                       {gate.ner}
                                     </span>
@@ -355,22 +355,22 @@ export default function Zogsool({
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => openEdit(record)}
-                                  className="!rounded-lg"
+                                  className="!rounded-2xl"
                                   style={{ borderRadius: '0.5rem' }}
                                   title="Засах"
                                 >
-                                  <Edit className="w-4 h-4" />
+                                  <Edit className="w-4 h-4 text-blue-600" />
                                 </Button>
                                 {record._id && (
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => deleteZogsool(record._id!)}
-                                    className="!rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
+                                    className="!rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
                                     style={{ borderRadius: '0.5rem' }}
                                     title="Устгах"
                                   >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-4 h-4 text-red-600" />
                                   </Button>
                                 )}
                               </div>
@@ -398,7 +398,7 @@ export default function Zogsool({
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-lg"
+                      className="!rounded-2xl"
                       style={{ borderRadius: '0.5rem' }}
                     >
                       {pageSize} / хуудас
@@ -433,7 +433,7 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
-                    className="!rounded-lg"
+                    className="!rounded-2xl"
                     style={{ borderRadius: '0.5rem' }}
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
@@ -447,7 +447,7 @@ export default function Zogsool({
                     size="sm"
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
-                    className="!rounded-lg"
+                    className="!rounded-2xl"
                     style={{ borderRadius: '0.5rem' }}
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >

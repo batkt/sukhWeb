@@ -693,12 +693,12 @@ export default function GolContent({ children }: GolContentProps) {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
                             const isSanalItem = isSanal(item.turul);
                             const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
                             const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
-                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
                             const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
                             <li key={item._id}>

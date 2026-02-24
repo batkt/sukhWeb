@@ -462,7 +462,7 @@ export default function GereeHeader({
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Орц:
                     </label>
-                    <div className="w-26">
+                    <div className="w-18">
                       <TusgaiZagvar
                         value={selectedOrts}
                         onChange={(val) => setSelectedOrts(val)}
@@ -481,7 +481,7 @@ export default function GereeHeader({
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Давхар:
                     </label>
-                    <div className="w-26">
+                    <div className="w-18">
                       <TusgaiZagvar
                         value={selectedDawkhar}
                         onChange={(val) => setSelectedDawkhar(val)}
@@ -500,7 +500,7 @@ export default function GereeHeader({
                     <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                       Төлөв:
                     </label>
-                    <div className="w-36">
+                    <div className="w-28">
                       <TusgaiZagvar
                         value={unitStatusFilter}
                         onChange={(val) =>

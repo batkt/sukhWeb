@@ -2167,7 +2167,7 @@ export default function BarilgiinTokhirgoo() {
                 size="sm"
                 leftIcon={<Plus className="w-4 h-4" />}
                 title="Шинэ барилга нэмэх"
-                className="!rounded-lg"
+                className="!rounded-2xl"
                 style={{ borderRadius: '0.5rem' }}
               >
                 Нэмэх

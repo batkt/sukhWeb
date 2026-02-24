@@ -492,7 +492,7 @@ export default function Ebarimt() {
                           </td>
                           <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs  ${
+                              className={`px-2 py-0.5 rounded-full text-xs  ${
                                 item.type === "B2C_RECEIPT"
                                   ? "bg-green-500 text-green-800"
                                   : item.type === "B2B_RECEIPT"
@@ -527,7 +527,7 @@ export default function Ebarimt() {
                     )}
                   </tbody>
                   {displayedData.length > 0 && (
-                    <tfoot className="bg-white dark:bg-gray-800 border-t">
+                    <tfoot className="bg-slate-200 dark:bg-slate-800 border-t">
                       <tr>
                         <td className="p-1 text-center">&nbsp;</td>
                         <td className="p-1 text-center">&nbsp;</td>

@@ -63,7 +63,7 @@ export default function CredentialsModal({
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-0 flex flex-col w-full max-w-md overflow-hidden"
+            className="relative neu-panel rounded-2xl shadow-2xl p-0 flex flex-col w-full max-w-md overflow-hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-xl  text-slate-900 dark:text-white">
@@ -123,7 +123,7 @@ export default function CredentialsModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 text-sm  text-gray-600 bg-transparent hover:bg-gray-100 rounded-full transition-colors"
+                  className="px-6 py-2.5 text-sm  text-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                   disabled={isSaving}
                 >
                   Цуцлах

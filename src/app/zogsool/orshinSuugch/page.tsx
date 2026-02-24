@@ -169,11 +169,11 @@ export default function OrshinSuugch() {
   };
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0f172a]/50">
+    <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
         
         {/* Header */}
-        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+        <div className="relative z-10 px-6 py-4 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
              {/* Left: Title and Stats */}
              <div className="flex items-center gap-4 shrink-0">
@@ -249,19 +249,19 @@ export default function OrshinSuugch() {
         )}
 
         {/* Content Table */}
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-2xl flex-1 mt-2">
+        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800  backdrop-blur-xl shadow-2xl flex-1 mt-2">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1200px]">
-              <thead className="bg-slate-900 dark:bg-black/40 border-b border-white/5">
+              <thead className="border-b border-white/5">
                 <tr className="whitespace-nowrap">
                    {[
                         { label: "№", width: 'w-12 text-center' },
-                        { label: "Нэр" },
-                        { label: "Утас" },
-                        { label: "Дугаар" },
-                        { label: "Төрөл" },
-                        { label: "Ажилтан" },
-                        { label: "Тоот", align: 'text-right' },
+                        { label: "Нэр", align: 'text-center' },
+                        { label: "Утас", align: 'text-center' },
+                        { label: "Дугаар", align: 'text-center' },
+                        { label: "Төрөл", align: 'text-center' },
+                        { label: "Ажилтан", align: 'text-center' },
+                        { label: "Тоот", align: 'text-center' },
                         { label: "Үйлдэл", width: 'w-24 text-center' }
                       ].map((h, idx) => (
                         <th key={idx} className={`py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] ${h.width || 'text-left'} ${h.align || ''}`}>
@@ -322,7 +322,7 @@ export default function OrshinSuugch() {
                        <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-2">
                           {resident.mashiniiDugaar ? (
-                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
+                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
                                 <Car className="w-3 h-3 text-blue-500" />
                                 <span className="text-[10px]  text-slate-700 dark:text-blue-200">
                                   {resident.mashiniiDugaar}
@@ -352,9 +352,9 @@ export default function OrshinSuugch() {
                             {resident.burtgesenAjiltaniiNer || "-"}
                          </div>
                       </td>
-                      <td className="py-4 px-4 text-right">
-                         <div className="flex items-center justify-end gap-2">
-                            <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px]  text-emerald-700 dark:text-emerald-400">
+                      <td className="py-4 px-4 text-center">
+                         <div className="flex items-center justify-center gap-2">
+                            <span className="px-2.5 py-1 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px]  text-emerald-700 dark:text-emerald-400">
                               {resident.ezenToot || getResidentToot(resident) ? `${resident.ezenToot || getResidentToot(resident)} тоот` : "-"}
                             </span>
                          </div>
@@ -366,7 +366,7 @@ export default function OrshinSuugch() {
                                 className="p-2 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                                 title="Засах"
                             >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="w-4 h-4-blue-500" />
                             </button>
                             <button 
                                 onClick={() => handleDelete(resident)}

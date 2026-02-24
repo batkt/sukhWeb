@@ -214,7 +214,7 @@ export default function UnitsSection({
                                     return (
                                       <div
                                         key={String(t)}
-                                        className={`group relative flex items-center justify-center w-[44px] h-[26px] rounded-lg border transition-all duration-150 ${
+                                        className={`group relative flex items-center justify-center w-[44px] h-[26px] rounded-2xl border transition-all duration-150 ${
                                           hasActive
                                             ? "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-600"
                                             : "border-slate-300 bg-white dark:bg-gray-800 dark:border-slate-600 hover:border-blue-400 shadow-sm"

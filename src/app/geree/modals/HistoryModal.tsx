@@ -829,7 +829,7 @@ export default function HistoryModal({
                   variant="filled"
                   placeholder="Огноо"
                   classNames={{
-                    input: "bg-slate-100 dark:bg-slate-800/50 border-none h-8 text-xs ",
+                    input: "border-none h-8 text-xs ",
                   }}
                 />
               </div>
@@ -849,14 +849,14 @@ export default function HistoryModal({
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Огноо</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Төлөх дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Төлсөн дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
-                  <th className="py-2 px-2 text-center text-[9px]  text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Огноо</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Төлөх дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Төлсөн дүн</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Үлдэгдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
+                  <th className="py-2 px-2 text-center text-[9px] !border-r  text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
                   <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-12">Үйлдэл</th>
                 </tr>
               </thead>
@@ -882,28 +882,28 @@ export default function HistoryModal({
                         key={row._id || idx}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                       >
-                        <td className="py-2 px-2 text-xs  text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
+                        <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                           {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
-                        <td className="py-2 px-2 text-xs  text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {Number(row.tulukhDun) !== 0 ? formatNumber(row.tulukhDun, 2) : "-"}
                         </td>
-                        <td className="py-2 px-2 text-right whitespace-nowrap text-slate-700 dark:text-slate-200">
+                        <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
                           {row.tulsunDun > 0 ? formatNumber(row.tulsunDun, 2) : "-"}
                         </td>
-                        <td className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
+                        <td className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
                           {formatNumber(row.uldegdel, 2)}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
+                        <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
                           {row.khelber || "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-600 dark:text-slate-300 hidden md:table-cell">
+                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
                           {row.tailbar || "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                        <td className="py-2 px-2 text-xs border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
                           {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
                             ? new Date(row.burtgesenOgnoo).toLocaleString("mn-MN", { hour12: false })
                             : "-"}

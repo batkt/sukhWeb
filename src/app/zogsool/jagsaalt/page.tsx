@@ -234,9 +234,9 @@ export default function Jagsaalt() {
   );
 
   return (
-    <div className="h-full overflow-y-auto custom-scrollbar bg-slate-50/50 dark:bg-[#0f172a]/50">
+    <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
-        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
+        <div className="relative z-10 px-6 py-4 rounded-[32px] bg-var(--color-bg-primary) border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
              {/* Left: Title and Stats */}
              <div className="flex items-center gap-4 shrink-0">
@@ -256,7 +256,6 @@ export default function Jagsaalt() {
              {/* Right: Integrated Controls Row */}
              <div className="flex   gap-4 flex-1 lg:justify-between">
                 <div className="relative group w-full sm:w-72 max-w-sm">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
                     <input
                       type="text"
                       placeholder="Улсын дугаар хайх..."
@@ -278,7 +277,7 @@ export default function Jagsaalt() {
                         setPage(1);
                       }}
                       valueFormat="YYYY-MM-DD"
-                      leftSection={<Calendar className="w-4 h-4 text-slate-400" />}
+                      
                       className="w-full"
                       classNames={{ input: "h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0  text-[11px] text-slate-700 dark:text-slate-200 shadow-inner px-6" }}
                     />
@@ -291,7 +290,7 @@ export default function Jagsaalt() {
              </div>
           </div>
         </div>
-        <div className="relative overflow-y-auto custom-scrollbar max-h-[65vh] rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 backdrop-blur-xl shadow-2xl flex-1 mt-2">
+        <div className="relative overflow-y-auto custom-scrollbar max-h-[65vh] rounded-[32px] border border-slate-200 dark:border-slate-800 bg-var(--color-bg-primary) backdrop-blur-xl shadow-2xl flex-1 mt-2">
           <div className="overflow-x-auto custom-scrollbar">
             <table className="w-full border-collapse min-w-[1300px]">
               <thead className="bg-slate-900 dark:bg-black/40 border-b border-white/5">

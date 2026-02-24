@@ -455,22 +455,22 @@ export default function SariinTulburPage() {
                           <tr
                             className="transition-colors border-b last:border-b-0"
                           >
-                            <td className="p-3 text-center text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {(currentPage - 1) * pageSize + idx + 1}
                             </td>
-                            <td className="p-3 text-center text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.gereeniiDugaar}
                             </td>
-                            <td className="p-3 text-center text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.ner}
                             </td>
-                            <td className="p-3 text-center text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.sar}
                             </td>
-                            <td className="p-3 text-center text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.on}
                             </td>
-                            <td className="p-3 text-right text-theme whitespace-nowrap">
+                            <td className="p-3 border-r text-right text-theme whitespace-nowrap">
                               <button
                                 type="button"
                                 onClick={() => handleExpandClick(item)}
@@ -522,17 +522,17 @@ export default function SariinTulburPage() {
                                     <table className="min-w-full text-sm">
                                       <thead>
                                         <tr>
-                                          <th className="text-left p-2">№</th>
-                                          <th className="text-left p-2">
+                                          <th className="text-left p-2 border-r">№</th>
+                                          <th className="text-center p-2 border-r">
                                             {formData.turul === "uliral"
                                               ? "Улирал"
                                               : "Сар"}
                                           </th>
-                                          <th className="text-left p-2">Нэр</th>
-                                          <th className="text-right p-2">
+                                          <th className="text-center border-r p-2">Нэр</th>
+                                          <th className="text-center border-r p-2">
                                             Төлбөр
                                           </th>
-                                          <th className="text-left p-2">
+                                          <th className="text-center p-2">
                                             Төлөв
                                           </th>
                                         </tr>
@@ -541,16 +541,16 @@ export default function SariinTulburPage() {
                                         {expandedData.rows.map(
                                           (r: any, ri: number) => (
                                             <tr key={ri} className="border-t">
-                                              <td className="p-2">{ri + 1}</td>
-                                              <td className="p-2">
+                                              <td className="p-2 border-r">{ri + 1}</td>
+                                              <td className="p-2 border-r">
                                                 {r.period}
                                               </td>
                                               <td className="p-2">{r.ner}</td>
-                                              <td className="p-2 text-right">
+                                              <td className="p-2 text-right border-r border-l">
                                                 {formatNumber(r.tulbur || 0)}{" "}
                                                 ₮
                                               </td>
-                                              <td className="p-2">
+                                              <td className="p-2 text-center">
                                                 {r.tuluv}
                                               </td>
                                             </tr>

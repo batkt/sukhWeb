@@ -1029,11 +1029,11 @@ export default function Camera() {
             </div>
           </div>
 
-          <div className="relative rounded-3xl border border-[color:var(--surface-border)] bg-white/40 backdrop-blur-md shadow-xl dark:bg-black/20 min-h-[600px] flex flex-col" style={{ overflow: 'visible' }}>
+          <div className="relative rounded-3xl border border-[color:var(--surface-border)] bg-var(--color-bg-primary) backdrop-blur-md shadow-xl  min-h-[600px] flex flex-col" style={{ overflow: 'visible' }}>
             <div className="overflow-x-auto overflow-y-auto custom-scrollbar flex-1" style={{ maxHeight: `${pageSize * 60}px` }}>
               <table className="w-full text-[11px] border-collapse bg-white dark:bg-slate-950/50">
                 <thead className="sticky top-0 z-20">
-                   <tr className="bg-white dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm">
+                   <tr className="dark:bg-slate-900 border-y border-slate-200 dark:border-white/10 shadow-sm">
                       {[
                         { id: 'no', label: "№", width: 'w-12' },
                         { id: 'dugaar', label: "Дугаар", width: 'w-28' },
@@ -1154,7 +1154,7 @@ export default function Camera() {
                 <tbody className="divide-y divide-gray-50 dark:divide-gray-800">
                   {transactions.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="py-40 text-center bg-slate-50/10 dark:bg-white/5 border border-slate-200 dark:border-white/5 rounded-b-3xl">
+                      <td colSpan={14} className="py-40 text-center rounded-b-3xl">
                         <div className="flex flex-col items-center justify-center gap-4 opacity-40">
                            <div className="p-6 rounded-full bg-slate-100 dark:bg-slate-800/50 shadow-inner">
                               <Calendar className="w-12 h-12 text-slate-400" />

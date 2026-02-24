@@ -93,9 +93,9 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 {/* Contract Info - match Үйлчилгээний нэхэмжлэх layout */}
                 <div className="grid grid-cols-2 gap-4 print-break">
                   {/* Left: Нэхэмжлэгч (Organization) */}
-                  <div className="rounded-xl border border-emerald-200 bg-transparent p-4">
-                    <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2">
-                      <span className="inline-block w-1 h-4 rounded" />
+                  <div className="rounded-2xl border border-emerald-200 bg-transparent p-4">
+                    <h3 className="text-sm  text-emerald-500 mb-3 flex items-center gap-2 border-b">
+                      <span className="text-theme" />
                       Нэхэмжлэгч
                     </h3>
                     <div className="space-y-1.5 text-sm text-slate-600">
@@ -119,9 +119,9 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                   </div>
 
                   {/* Right: Төлөгч (Payer / Resident) */}
-                  <div className="rounded-xl border border-gray-200 bg-transparent p-4">
-                    <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2">
-                      <span className="inline-block w-1 h-4 bg-slate-400 rounded" />
+                  <div className="rounded-2xl border border-gray-200 bg-transparent p-4">
+                    <h3 className="text-sm  text-slate-700 mb-3 flex items-center gap-2 border-b">
+                      <span className="text-theme" />
                       Төлөгч
                     </h3>
                     <div className="space-y-1.5 text-sm text-slate-600">
@@ -165,24 +165,24 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     </svg>
                     Зардлын жагсаалт
                   </h4>
-                  <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white">
+                  <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
                     <table className="w-full text-sm">
-                      <thead className="bg-gray-50">
+                      <thead className="bg-gray-50 border-b">
                         <tr>
-                          <th className="px-4 py-3 text-left  text-slate-700 dark:text-slate-300">№</th>
-                          <th className="px-4 py-3 text-left  text-slate-700 dark:text-slate-300">Зардлын нэр</th>
-                          <th className="px-4 py-3 text-left  text-slate-700 dark:text-slate-300">Төрөл</th>
-                          <th className="px-4 py-3 text-right  text-slate-700 dark:text-slate-300">Тариф</th>
-                          <th className="px-4 py-3 text-right  text-slate-700 dark:text-slate-300">Дүн</th>
+                          <th className="px-4 py-3 text-left border-r  text-slate-700 dark:text-slate-300">№</th>
+                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Зардлын нэр</th>
+                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Төрөл</th>
+                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Тариф</th>
+                          <th className="px-4 py-3 text-center  text-slate-700 dark:text-slate-300">Дүн</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-gray-700">
+                      <tbody className="divide-y">
                         {preview.zardluud?.map((zardal: any, idx: number) => (
                           <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td className="px-4 py-3 text-slate-900 dark:text-[var(--panel-text)]">{idx + 1}</td>
-                            <td className="px-4 py-3 text-slate-900 dark:text-[var(--panel-text)] ">{zardal.ner || "-"}</td>
-                            <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{zardal.turul || "-"}</td>
-                            <td className="px-4 py-3 text-right text-slate-900 dark:text-[var(--panel-text)]">
+                            <td className="px-4 py-3 border-r text-slate-900 dark:text-[var(--panel-text)]">{idx + 1}</td>
+                            <td className="px-4 py-3 border-r text-slate-900 dark:text-[var(--panel-text)] ">{zardal.ner || "-"}</td>
+                            <td className="px-4 py-3 border-r text-center text-slate-600 dark:text-slate-400">{zardal.turul || "-"}</td>
+                            <td className="px-4 py-3 border-r text-right text-slate-900 dark:text-[var(--panel-text)]">
                               {formatNumber(zardal.tariff || 0)} {zardal.tariffUsgeer || "₮"}
                             </td>
                             <td className="px-4 py-3 text-right  text-slate-900 dark:text-[var(--panel-text)]">
@@ -196,7 +196,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                 </div>
 
                 {/* Summary */}
-                <div className="rounded-xl p-5 border border-blue-200 dark:border-blue-800 bg-transparent">
+                <div className="rounded-xl p-5 bg-transparent">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700 dark:text-slate-300">Зардлын нийт дүн:</span>
