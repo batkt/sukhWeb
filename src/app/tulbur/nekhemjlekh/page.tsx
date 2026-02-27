@@ -413,7 +413,14 @@ const InvoiceModal = ({
 
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
 
-        const t = Number(latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0);
+       
+        const t = Number(
+          latest?.niitTulburOriginal ?? 
+          latest?.niitTulbur ?? 
+          latest?.niitDun ?? 
+          latest?.total ?? 
+          0
+        );
         setInvTotal(Number.isFinite(t) ? t : null);
 
         // Fetch cron and paid summary
@@ -433,9 +440,23 @@ const InvoiceModal = ({
     run();
   }, [isOpen, token, baiguullagiinId, resident?._id, selectedBuildingId, barilgiinId]);
 
+  const contractData = latestInvoice || nekhemjlekhData;
   const totalSum = React.useMemo(() => {
+    // Prioritize niitTulburOriginal from invoice data if available
+    if (contractData?.niitTulburOriginal != null) {
+      return Number(contractData.niitTulburOriginal);
+    }
+    // Fallback to niitTulbur
+    if (contractData?.niitTulbur != null) {
+      return Number(contractData.niitTulbur);
+    }
+    // Fallback to invTotal if set
+    if (invTotal != null) {
+      return invTotal;
+    }
+    // Last resort: calculate from expense rows
     return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
-  }, [expenseRows]);
+  }, [expenseRows, contractData, invTotal]);
 
   const uldegdelDun = React.useMemo(() => {
     const total = totalSum;

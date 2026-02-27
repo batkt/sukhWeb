@@ -377,9 +377,25 @@ const InvoiceModal = ({
 
   const contractData = latestInvoice || nekhemjlekhData;
   // Cleaned up redundant memos - logic is now handled in the useEffect run()
+  // Use backend-calculated totals when available to avoid mismatch with shown rows
   const totalSum = React.useMemo(() => {
+    // 1) Prefer niitTulburOriginal from invoice data (exact backend total)
+    if (contractData?.niitTulburOriginal != null) {
+      return Number(contractData.niitTulburOriginal);
+    }
+    // 2) Fallback to niitTulbur/niitDun/total from invoice if present
+    if (contractData?.niitTulbur != null) {
+      return Number(contractData.niitTulbur);
+    }
+    if (contractData?.niitDun != null) {
+      return Number(contractData.niitDun);
+    }
+    if (contractData?.total != null) {
+      return Number(contractData.total);
+    }
+    // 3) Last resort: calculate from visible expense rows
     return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
-  }, [expenseRows]);
+  }, [expenseRows, contractData]);
 
   const uldegdelDun = useMemo(() => {
     const total = totalSum;
