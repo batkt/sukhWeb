@@ -72,7 +72,7 @@ export default function Khynalt() {
   }, [today]);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([defaultStart, defaultEnd]);
+  >(undefined);
 
   useEffect(() => setMounted(true), []);
 

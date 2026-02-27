@@ -65,10 +65,7 @@ export default function SariinTulburPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([
-    new Date().toISOString().split("T")[0],
-    new Date().toISOString().split("T")[0],
-  ]);
+  >(undefined);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedData, setExpandedData] = useState<any>(null);
   const [expandedLoading, setExpandedLoading] = useState(false);

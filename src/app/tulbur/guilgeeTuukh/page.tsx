@@ -607,10 +607,7 @@ export default function DansniiKhuulga() {
   const emptyQuery = useMemo(() => ({}), []);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>([
-    todayStr,
-    todayStr,
-  ]);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
   >("all");

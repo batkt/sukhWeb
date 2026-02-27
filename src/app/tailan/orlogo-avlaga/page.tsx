@@ -39,10 +39,7 @@ export default function OrlogoAvlagaPage() {
   const [unpaidList, setUnpaidList] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([
-    new Date().toISOString().split("T")[0],
-    new Date().toISOString().split("T")[0],
-  ]);
+  >(undefined);
   const [filters, setFilters] = useState({
     orshinSuugch: "",
     toot: "",

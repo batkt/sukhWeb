@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DateRange, SelectRangeEventHandler } from "react-day-picker";
 import { Calendar } from "./calendar";
+import { X } from "lucide-react";
 
 import dayjs from "dayjs";
 import { mn } from "date-fns/locale";
@@ -228,17 +229,18 @@ export function DatePickerInput(
         </span>
 
         {clearable && displayText && (
-          <span
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               if (type === "range") (onChange as any)?.(undefined);
               else (onChange as any)?.(null);
             }}
-            className="text-subtle hover:text-theme cursor-pointer"
+            className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-[color:var(--surface-hover)] text-subtle hover:text-theme transition-all"
             aria-label="Clear date"
           >
-            ×
-          </span>
+            <X className="w-3.5 h-3.5" />
+          </button>
         )}
         {rightSection && <div>{rightSection}</div>}
       </button>
