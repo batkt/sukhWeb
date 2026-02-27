@@ -101,18 +101,47 @@ export default function OrlogoAvlagaPage() {
           ? response.data.unpaid.list
           : [];
         const getPaidAmount = (item: any) => {
-          return Number(
+          let paidSum = 0;
+          // 1. If there's a payment history sum it up
+          if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
+            paidSum += item.paymentHistory.reduce((sum: number, p: any) => sum + Math.abs(Number(p.dun) || 0), 0);
+          }
+
+          // 2. Check for payments within zardluud (expenses)
+          const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
+          if (Array.isArray(zardluud)) {
+            paidSum += zardluud.reduce((sum: number, z: any) => sum + Math.abs(Number(z.tulsunDun) || 0), 0);
+          }
+
+          if (paidSum > 0) return paidSum;
+
+          // 3. Partial payment: OriginalTotal - CurrentRemaining
+          const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
+          const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
+          if (total > current && total > 0) {
+            return total - current;
+          }
+
+          // 4. Fallbacks for explicit paid fields
+          const amt = Number(
             item?.tulsunDun ?? 
             item?.tulsun ?? 
             item?.totalTulsunDun ?? 
             item?.totalPrepayment ?? 
-            item?.niitTulbur ?? 
-            item?.tulbur ?? 
-            item?.paidAmount ?? 0
+            item?.paidAmount ?? 
+            (item?.tuluv === "Төлсөн" ? current : 0)
           ) || 0;
+          return Math.abs(amt);
         };
 
-        const paid = rawPaid.filter((item: any) => item?.tuluv === "Төлсөн" || getPaidAmount(item) > 0);
+        // Combine both lists from the API response
+        const allResidents = [...rawPaid, ...unpaid];
+        // Filter to include anyone who has paid something OR is marked as Fully Paid
+        const paid = allResidents.filter((item: any) => {
+          const paidAmt = getPaidAmount(item);
+          return paidAmt > 0 || item?.tuluv === "Төлсөн";
+        });
+        
         setPaidList(paid);
         setUnpaidList(unpaid);
       } catch (err: any) {
@@ -127,16 +156,33 @@ export default function OrlogoAvlagaPage() {
 
   const totalOrlogo = useMemo(() => {
     return paidList.reduce((sum, item) => {
-      const amt = Number(
-        item?.tulsunDun ?? 
-        item?.tulsun ?? 
-        item?.totalTulsunDun ?? 
-        item?.totalPrepayment ?? 
-        item?.niitTulbur ?? 
-        item?.tulbur ?? 
-        item?.paidAmount ?? 0
-      ) || 0;
-      return sum + amt;
+      let amt = 0;
+      if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
+        amt = item.paymentHistory.reduce((s: number, p: any) => s + Math.abs(Number(p.dun) || 0), 0);
+      } 
+      
+      const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
+      if (Array.isArray(zardluud)) {
+        amt += zardluud.reduce((s: number, z: any) => s + Math.abs(Number(z.tulsunDun) || 0), 0);
+      }
+
+      if (amt === 0) {
+        const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
+        const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
+        if (total > current && total > 0) {
+          amt = total - current;
+        } else {
+          amt = Number(
+            item?.tulsunDun ?? 
+            item?.tulsun ?? 
+            item?.totalTulsunDun ?? 
+            item?.totalPrepayment ?? 
+            item?.paidAmount ?? 
+            (item?.tuluv === "Төлсөн" ? current : 0)
+          ) || 0;
+        }
+      }
+      return sum + Math.abs(amt);
     }, 0);
   }, [paidList]);
   const totalZarlaga = useMemo(
@@ -333,8 +379,23 @@ export default function OrlogoAvlagaPage() {
     activeTab === "tulult" ? paidList : unpaidList;
 
   const getItemAmount = (item: any) => {
-    const amt = item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.niitTulbur ?? item?.tulbur ?? item?.sum ?? item?.amount ?? 0;
-    return Number(amt) || 0;
+    let paidSum = 0;
+    if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
+      paidSum += item.paymentHistory.reduce((sum: number, p: any) => sum + Math.abs(Number(p.dun) || 0), 0);
+    }
+    const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
+    if (Array.isArray(zardluud)) {
+      paidSum += zardluud.reduce((sum: number, z: any) => sum + Math.abs(Number(z.tulsunDun) || 0), 0);
+    }
+    if (paidSum > 0) return paidSum;
+
+    const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
+    const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
+    if (total > current && total > 0) return total - current;
+
+    const amt = item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.paidAmount ?? 
+                (item?.tuluv === "Төлсөн" ? current : 0) ?? 0;
+    return Math.abs(Number(amt) || 0);
   };
 
   const getItemTulukh = (item: any) => {
@@ -342,7 +403,7 @@ export default function OrlogoAvlagaPage() {
   };
 
   const getItemTulsun = (item: any) => {
-    return Number(item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.niitTulbur ?? item?.tulbur ?? 0) || 0;
+    return getItemAmount(item);
   };
 
   const paginatedList = displayList.slice(

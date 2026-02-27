@@ -66,7 +66,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <div 
+      <div
         className="relative w-full max-w-4xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -121,6 +121,11 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     barilga: "Барилга",
                     talbai: "Талбай",
                     orshinSuugch: "Оршин суугч",
+                    nekhemjlekh: "Нэхэмжлэх",
+                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                    medegdel: "Мэдэгдэл",
+                    tusgaaralt: "Тусгаарлалт",
+                    pwa_user: "PWA Хэрэглэгч",
                   };
                   return modelNames[record.modelName] || record.modelName || "-";
                 })()}
@@ -160,10 +165,31 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   tailbar: "Тайлбар",
                   createdAt: "Үүсгэсэн огноо",
                   updatedAt: "Устгасан огноо",
+                  status: "Төлөв",
+                  repliedAt: "Хариулсан огноо",
+                  repliedBy: "Хариулсан ажилтан",
+                  tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
+                  walletUserId: "Wallet ID",
+                  soh: "СӨХ",
+                  nevtrekhNer: "Нэвтрэх нэр",
+                  erkh: "Эрх",
+                  duureg: "Дүүрэг",
+                  horoo: "Хороо",
+                  nuutsUg: "Нууц үг",
+                  baiguullagiinRegister: "Байгууллагын регистр",
+                  niitTulbur: "Нийт нэхэмжилсэн",
+                  tulsunDun: "Нийт төлөн",
+                  uldegdel: "Үлдэгдэл",
+                  uld: "Үлдэгдэл",
+                  paymentHistory: "Төлөлтийн түүх",
+                  medeelel: "Мэдээлэл",
+                  zardluud: "Зардлууд",
+                  guilgeenuud: "Гүйлгээнүүд",
+                  tulsun: "Төлсөн",
                 };
-                
-                // Fields to exclude from display
-                const excludedFields = [
+                  
+                  // Fields to exclude from display
+                  const excludedFields = [
                   "taniltsuulgaKharakhEsekh",
                   "baiguullagiinId",
                   "barilgiinId",
@@ -173,6 +199,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   "horoo",
                   "toots",
                   "ajiltniiNer",
+                  "nuutsUg",
+                  "password",
                   "_id",
                   "__v",
                 ];
@@ -191,20 +219,51 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   }
                   
                   // Check if value is a date string (ISO format)
-                  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value)) {
-                    try {
-                      return moment(value).format("YYYY-MM-DD HH:mm:ss");
-                    } catch {
-                      return String(value);
-                    }
-                  }
+                  if (value === "pending") return "Хүлээгдэж буй";
+                  if (value === "done") return "Дууссан";
                   
+                  const safeStringify = (obj: any): string => {
+                    try {
+                      if (typeof obj !== 'object' || obj === null) return String(obj);
+                      if (Array.isArray(obj)) {
+                        if (obj.length === 0) return "(хоосон)";
+                        return `[${obj.length} бичлэг]`;
+                      }
+                      if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
+                      
+                      // Try to pick some useful keys
+                      const keys = Object.keys(obj).filter(k => !k.startsWith('_'));
+                      if (keys.length === 0) return "{...}";
+                      const summary = keys.slice(0, 3).map(k => {
+                        const v = obj[k];
+                        const valStr = (typeof v === 'object' && v !== null) ? (Array.isArray(v) ? `[${v.length}]` : "{...}") : String(v);
+                        return `${k}: ${valStr}`;
+                      }).join(", ");
+                      return summary + (keys.length > 3 ? "..." : "");
+                    } catch { return "[Объект]"; }
+                  };
+
                   if (typeof value === "object" && !Array.isArray(value)) {
                     if (value.ner && value.kod) return `${value.ner} (${value.kod})`;
-                    return JSON.stringify(value, null, 2);
+                    
+                    // Detailed object formatting to avoid [object Object]
+                    if (key === 'medeelel' || key === 'deletedData' || key === 'deletedDocument') {
+                      const summaryLines: string[] = [];
+                      if (Array.isArray(value.zardluud)) summaryLines.push(`Зардал: ${value.zardluud.length}`);
+                      if (Array.isArray(value.guilgeenuud)) summaryLines.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
+                      if (value.niitTulbur !== undefined) summaryLines.push(`Нийт: ${value.niitTulbur}`);
+                      if (summaryLines.length > 0) return summaryLines.join(", ");
+                    }
+                    
+                    return safeStringify(value);
                   }
                   if (Array.isArray(value)) {
                     if (value.length === 0) return "(хоосон)";
+                    // Format payment history or other arrays
+                    if (key === 'paymentHistory' || key === 'guilgeenuud' || key === 'zardluud') {
+                      return `${value.length} бичлэг`;
+                    }
+                    if (typeof value[0] === 'object') return `${value.length} бичлэг`;
                     return value.join(", ");
                   }
                   return String(value);
@@ -312,6 +371,10 @@ export default function UstsanTuukh({
     { value: "talbai", label: "Талбай" },
     { value: "aldangi", label: "Алданги" },
     { value: "orshinSuugch", label: "Оршин суугч" },
+    { value: "nekhemjlekh", label: "Нэхэмжлэх" },
+    { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
+    { value: "medegdel", label: "Мэдэгдэл" },
+    { value: "tusgaaralt", label: "Тусгаарлалт" },
   ], []);
 
   // Fetch delete history

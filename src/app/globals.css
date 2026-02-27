@@ -428,10 +428,16 @@
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(63.336% 0.27166 337.29);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* Surface variables for dark mode */
+  --surface-bg: #0f172a;
+  --surface-border: rgba(255, 255, 255, 0.1);
+  --surface-hover: rgba(255, 255, 255, 0.05);
+  --panel-text: #f1f5f9;
+  --muted-text: #94a3b8;
 }
 @layer base {
   * {
@@ -3631,27 +3637,73 @@ body .mantine-Month-weekday {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: transparent !important;
+  background: transparent !important;
+}
+
+.rdp-cell {
+  background-color: transparent !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Force transparency on outside/hidden day cells to prevent "big box" shapes */
+.rdp-day_outside,
+.rdp-day_hidden {
+  background-color: transparent !important;
+  background: transparent !important;
+  pointer-events: none;
+}
+
+.rdp-head_cell {
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 0;
+  background: transparent !important;
 }
 
 /* Base day button styling - use theme variables */
 .rdp-day_button {
-  background-color: var(--surface-bg, #ffffff) !important;
-  color: var(--panel-text, #0f172a) !important;
+  background-color: transparent !important;
+  color: var(--panel-text) !important;
   border: none !important;
   border-radius: 0.5rem !important;
   font-weight: 500 !important;
-  transition: background-color 0.15s ease, color 0.15s ease !important;
+  transition: all 0.15s ease !important;
   cursor: pointer !important;
 }
 
+/* Ensure hidden/outside days are truly invisible when not wanted */
+.rdp-day_outside .rdp-day_button,
+.rdp-day_hidden .rdp-day_button {
+  background-color: transparent !important;
+  opacity: 0.3;
+}
+
 /* Light mode: current month weekdays black */
-:not([data-mode="dark"]) .rdp-day_button:not(.rdp-day_outside) {
+:not(.dark) .rdp-day_button:not(.rdp-day_outside) {
   color: #0f172a !important;
 }
 
-/* Dark mode: current month weekdays white */
-[data-mode="dark"] .rdp-day_button:not(.rdp-day_outside) {
+/* Dark mode: all header and day text white by default */
+.dark .rdp-day_button:not(.rdp-day_outside),
+[data-mode="dark"] .rdp-day_button:not(.rdp-day_outside),
+.dark .rdp-head_cell,
+[data-mode="dark"] .rdp-head_cell,
+.dark th,
+[data-mode="dark"] th,
+.dark .rdp-head_cell abbr,
+[data-mode="dark"] .rdp-head_cell abbr,
+.dark .rdp-weekday,
+.dark .rdp-month_caption,
+[data-mode="dark"] .rdp-month_caption,
+.dark .rdp-head,
+[data-mode="dark"] .rdp-head,
+.dark .rdp-nav_button,
+[data-mode="dark"] .rdp-nav_button {
   color: #ffffff !important;
+  opacity: 1 !important;
 }
 
 /* Weekends: red text (both light and dark) */
@@ -3666,6 +3718,7 @@ body .mantine-Month-weekday {
 }
 
 /* Dark mode out-of-month: lighter gray */
+.dark .rdp-day_outside .rdp-day_button,
 [data-mode="dark"] .rdp-day_outside .rdp-day_button {
   color: #64748b !important; /* slate-500 */
 }
@@ -3676,10 +3729,11 @@ body .mantine-Month-weekday {
   color: #dc2626 !important;
 }
 
-/* Selected day: theme accent background, white text */
+/* Selected day: theme accent background, black text */
 .rdp-day_selected .rdp-day_button {
   background-color: var(--tab-accent, #34d399) !important;
-  color: #ffffff !important;
+  background: var(--tab-accent, #34d399) !important;
+  color: #000000 !important;
 }
 
 /* Range selection: in-range with transparent accent */
@@ -3691,24 +3745,20 @@ body .mantine-Month-weekday {
     var(--tab-accent, #34d399),
     transparent 82%
   ) !important;
-  color: var(--panel-text, #0f172a) !important;
+  color: var(--panel-text) !important;
 }
 
-/* Dark mode range: white text */
-[data-mode="dark"] .rdp-day_range_middle .rdp-day_button,
-[data-mode="dark"] .rdp-day_range_start .rdp-day_button,
-[data-mode="dark"] .rdp-day_range_end .rdp-day_button {
+/* Dark mode range: white text for readability against dim accent */
+.dark .rdp-day_range_middle .rdp-day_button,
+[data-mode="dark"] .rdp-day_range_middle .rdp-day_button {
   color: #ffffff !important;
 }
 
-/* Range start/end: stronger accent */
+/* Range start/end: stronger accent, black text (like selected) */
 .rdp-day_range_start .rdp-day_button,
 .rdp-day_range_end .rdp-day_button {
-  background-color: color-mix(
-    in oklch,
-    var(--tab-accent, #34d399),
-    transparent 70%
-  ) !important;
+  background-color: var(--tab-accent, #34d399) !important;
+  color: #000000 !important;
 }
 
 /* Clean toggle switch with green-blue theme */

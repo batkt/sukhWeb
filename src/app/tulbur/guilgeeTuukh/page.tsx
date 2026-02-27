@@ -473,11 +473,11 @@ const InvoiceModal = ({
                   <tbody className="divide-y divide-gray-100">
                     {expenseRows.map((row) => (
                       <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-2.5 px-3 text-center text-slate-800 border-r border-gray-100">{row.ner}</td>
-                        <td className="py-2.5 px-3 text-right text-slate-900 font-bold border-r border-gray-100">
+                        <td className="py-2.5 px-3 text-center text-slate-800 border-r border-gray-100 border-b border-gray-100">{row.ner}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-900 font-bold border-r border-gray-100 border-b border-gray-100">
                           {formatNumber(row.dun)} ₮
                         </td>
-                        <td className="py-2.5 px-3 text-center text-slate-500 italic">{row.tailbar}</td>
+                        <td className="py-2.5 px-3 text-center text-slate-500 italic border-b border-gray-100">{row.tailbar}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -535,8 +535,8 @@ const InvoiceModal = ({
                 <span className="text-sm text-slate-500 font-medium">Төлбөрийн төлөв:</span>
                 <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
                   effectivePaymentStatus === "Төлсөн" 
-                  ? "bg-green-100 text-green-700 border border-green-200" 
-                  : "bg-red-100 text-red-700 border border-red-200"
+                  ? "bg-green-100 text-green-700 border border-green-200 dark:bg-green-500" 
+                  : "bg-red-100 text-red-700 border border-red-200 dark:bg-red-500"
                 }`}>
                   {effectivePaymentStatus}
                 </span>
@@ -1567,6 +1567,12 @@ export default function DansniiKhuulga() {
               it?.dun ??
               0,
           ) || 0;
+
+      // Determine if this item is a CHARGE (increases total) or a PAYMENT (increases paid)
+      // Usually "tulult" (payment) or "tsutlsasan" (cancelled) records are payments/deductions
+      const type = String(it?.turul || it?.type || "").toLowerCase();
+      const isPayment = type === "tulult" || type === "төлбөр" || type === "төлөлт" || (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
+
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
@@ -1574,7 +1580,6 @@ export default function DansniiKhuulga() {
           : Array.isArray(it?.guilgeenuud)
             ? it.guilgeenuud
             : [];
-        // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
         const zardluud = Array.isArray(it?.medeelel?.zardluud)
           ? it.medeelel.zardluud
           : Array.isArray(it?.zardluud)
@@ -1597,27 +1602,18 @@ export default function DansniiKhuulga() {
           return s + (amt !== 0 ? amt : 0);
         }, 0);
         ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
-
-        // Use niitDun/niitTulbur as base (this is the sum of zardluud/expenses)
-        itemAmount = Number(
-          it?.niitTulbur ??
-          it?.niitDun ??
-          it?.total ??
-          it?.tulukhDun ??
-          it?.undsenDun ??
-          it?.dun ??
-          0
-        ) || 0;
-        // Addition of extra receivables if any would go here, 
-        // but we avoid net calculation that subtracts payments.
       }
+
+      const chargeAmt = isPayment ? 0 : Math.abs(itemAmount);
+      // For payments, use Math.abs(itemAmount) because payments are often stored as negative in the history
+      const paidAmt = isPayment ? Math.abs(itemAmount) : (Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0);
 
       if (!map.has(key)) {
         map.set(key, {
           ...it,
           _historyCount: 1,
-          _totalTulbur: itemAmount,
-          _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
+          _totalTulbur: chargeAmt,
+          _totalTulsun: paidAmt,
           _hasEkhniiUldegdel:
             isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
           _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
@@ -1625,8 +1621,8 @@ export default function DansniiKhuulga() {
       } else {
         const existing = map.get(key);
         existing._historyCount += 1;
-        existing._totalTulbur += itemAmount;
-        existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
+        existing._totalTulbur += chargeAmt;
+        existing._totalTulsun += paidAmt;
         if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
           existing._ekhniiUldegdelAmount =

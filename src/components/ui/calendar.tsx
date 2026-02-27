@@ -45,13 +45,13 @@ export function Calendar({
         nav_button_next: "",
 
         table: "w-full border-collapse mt-2",
-        head_row: "text-[11px] sm:text-xs text-subtle",
-        head_cell: " text-center",
+        head_row: "text-[11px] sm:text-xs",
+        head_cell: "dark:text-white text-center font-normal",
         row: "",
         cell: "p-0.5 sm:p-1 text-center align-middle",
         day: cn(
           // Base day button - responsive sizing
-          "h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-xs sm:text-sm ",
+          "h-8 w-8 sm:h-9 sm:w-9 rounded-2xl text-xs sm:text-sm ",
           // Hover with primary color
           "transition-colors hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary",
           // Ensure selected state stays visible
@@ -69,10 +69,12 @@ export function Calendar({
       }}
       modifiers={{
         weekend: { dayOfWeek: [0, 6] },
+        week: { dayOfWeek: [1, 2, 3, 4, 5] },
         ...modifiers,
       }}
       modifiersClassNames={{
         weekend: "text-red-500 dark:text-red-400",
+        week: "dark:text-blue-500",       
         outside: "text-neutral-400 dark:text-neutral-500",
         selected: "bg-primary text-white dark:text-black",
         range_start: "bg-primary text-white dark:text-black",

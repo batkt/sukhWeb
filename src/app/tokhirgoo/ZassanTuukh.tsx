@@ -83,7 +83,22 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   Зассан дэлгэрэнгүй
                 </h3>
                 <p className="text-xs text-theme mt-0.5">
-                  {record.modelName} - {record.documentId}
+                  {(() => {
+                    const modelNames: Record<string, string> = {
+                      ajiltan: "Ажилтан",
+                      geree: "Гэрээ",
+                      baiguullaga: "Байгууллага",
+                      barilga: "Барилга",
+                      talbai: "Талбай",
+                      orshinSuugch: "Оршин суугч",
+                      nekhemjlekh: "Нэхэмжлэх",
+                      nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                      medegdel: "Мэдэгдэл",
+                      tusgaaralt: "Тусгаарлалт",
+                      pwa_user: "PWA Хэрэглэгч",
+                    };
+                    return modelNames[record.modelName] || record.modelName;
+                  })()} - {record.documentId}
                 </p>
               </div>
             </div>
@@ -121,7 +136,22 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
 
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
-                {record.modelName || "-"}
+                {(() => {
+                  const modelNames: Record<string, string> = {
+                    ajiltan: "Ажилтан",
+                    geree: "Гэрээ",
+                    baiguullaga: "Байгууллага",
+                    barilga: "Барилга",
+                    talbai: "Талбай",
+                    orshinSuugch: "Оршин суугч",
+                    nekhemjlekh: "Нэхэмжлэх",
+                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                    medegdel: "Мэдэгдэл",
+                    tusgaaralt: "Тусгаарлалт",
+                    pwa_user: "PWA Хэрэглэгч",
+                  };
+                  return modelNames[record.modelName] || record.modelName || "-";
+                })()}
               </p>
             </div>
           </div>
@@ -137,42 +167,90 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 </p>
               ) : (
                 record.changes.map((change, index) => {
-                  // Field labels in Mongolian
                   const fieldLabels: Record<string, string> = {
-                    utas: "Утас",
-                    mail: "Имэйл",
                     ner: "Нэр",
                     ovog: "Овог",
+                    utas: "Утас",
+                    mail: "Имэйл",
                     register: "Регистр",
                     toot: "Тоот",
                     davkhar: "Давхар",
                     orts: "Орц",
                     bairniiNer: "Барилгын нэр",
-                    barilgiinId: "Барилгын ID",
-                    baiguullagiinId: "Байгууллагын ID",
                     baiguullagiinNer: "Байгууллагын нэр",
-                    erkh: "Эрх",
+                    ekhniiUldegdel: "Эхний үлдэгдэл",
+                    tsahilgaaniiZaalt: "Цахилгаан кВт",
+                    tailbar: "Тайлбар",
+                    createdAt: "Үүсгэсэн огноо",
+                    updatedAt: "Шинэчилсэн огноо",
+                    status: "Төлөв",
+                    repliedAt: "Хариулсан огноо",
+                    repliedBy: "Хариулсан ажилтан",
+                    tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
+                    walletUserId: "Wallet ID",
+                    soh: "СӨХ",
                     nevtrekhNer: "Нэвтрэх нэр",
+                    erkh: "Эрх",
                     duureg: "Дүүрэг",
                     horoo: "Хороо",
-                    soh: "СОХ",
-                    tailbar: "Тайлбар",
+                    nuutsUg: "Нууц үг",
+                    baiguullagiinRegister: "Байгууллагын регистр",
+                    niitTulbur: "Нийт нэхэмжилсэн",
+                    tulsunDun: "Нийт төлөн",
+                    uldegdel: "Үлдэгдэл",
+                    uld: "Үлдэгдэл",
+                    paymentHistory: "Төлөлтийн түүх",
+                    medeelel: "Нэмэлт мэдээлэл",
+                    zardluud: "Зардлууд",
+                    guilgeenuud: "Гүйлгээнүүд",
                   };
+                  
+                  const excludedFields = ["nuutsUg", "password", "token"];
+                  if (excludedFields.includes(change.field)) return null;
                   
                   const formatValue = (value: any): string => {
                     if (value === null || value === undefined) return "(хоосон)";
                     if (typeof value === "boolean") return value ? "Тийм" : "Үгүй";
+                    if (value === "pending") return "Хүлээгдэж буй";
+                    if (value === "done") return "Дууссан";
+                    
+                    const safeStringify = (obj: any): string => {
+                      try {
+                        if (typeof obj !== 'object' || obj === null) return String(obj);
+                        if (Array.isArray(obj)) return `[${obj.length} бичлэг]`;
+                        if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
+                        
+                        const keys = Object.keys(obj).filter(k => !k.startsWith('_'));
+                        if (keys.length === 0) return "{...}";
+                        const summary = keys.slice(0, 3).map(k => {
+                          const v = obj[k];
+                          const vStr = (typeof v === 'object' && v !== null) ? (Array.isArray(v) ? `[${v.length}]` : "{...}") : String(v);
+                          return `${k}: ${vStr}`;
+                        }).join(", ");
+                        return summary + (keys.length > 3 ? "..." : "");
+                      } catch { return "[Объект]"; }
+                    };
+
                     if (typeof value === "object" && !Array.isArray(value)) {
                       if (value.ner && value.kod) return `${value.ner} (${value.kod})`;
-                      // Try to format common objects
-                      const entries = Object.entries(value).slice(0, 3);
-                      if (entries.length > 0) {
-                        return entries.map(([k, v]) => `${k}: ${v}`).join(", ") + (Object.keys(value).length > 3 ? "..." : "");
+                      
+                      // Detailed summary for medeelel to avoid [object Object]
+                      if (change.field === 'medeelel') {
+                        const parts: string[] = [];
+                        if (Array.isArray(value.zardluud)) parts.push(`Зардал: ${value.zardluud.length}`);
+                        if (Array.isArray(value.guilgeenuud)) parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
+                        if (value.niitTulbur !== undefined) parts.push(`Нийт: ${value.niitTulbur}`);
+                        if (parts.length > 0) return parts.join(", ");
                       }
-                      return JSON.stringify(value, null, 2);
+
+                      return safeStringify(value);
                     }
                     if (Array.isArray(value)) {
                       if (value.length === 0) return "(хоосон)";
+                      if (change.field === 'paymentHistory' || change.field === 'guilgeenuud' || change.field === 'zardluud') {
+                         return `${value.length} бичлэг`;
+                      }
+                      if (typeof value[0] === 'object') return `${value.length} бичлэг`;
                       if (value.length <= 5) return value.join(", ");
                       return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
                     }
@@ -254,6 +332,10 @@ export default function ZassanTuukh({
     { value: "talbai", label: "Талбай" },
     { value: "aldangi", label: "Алданги" },
     { value: "orshinSuugch", label: "Оршин суугч" },
+    { value: "nekhemjlekh", label: "Нэхэмжлэх" },
+    { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
+    { value: "medegdel", label: "Мэдэгдэл" },
+    { value: "tusgaaralt", label: "Тусгаарлалт" },
   ], []);
 
   // Fetch edit history

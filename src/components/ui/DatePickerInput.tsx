@@ -208,7 +208,7 @@ export function DatePickerInput(
   return (
     <div
       ref={rootRef}
-      className={classNames?.root || "relative inline-block w-full max-w-full"}
+      className={classNames?.root || "relative inline-block w-64 max-w-full"}
     >
       <button
         type="button"
@@ -285,7 +285,7 @@ export function DatePickerInput(
             : createPortal(
               <div
                 ref={dropdownRef}
-                className="fixed z-[9999] rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 animate-in fade-in zoom-in-95 duration-200"
+                className="fixed z-[9999] !w-150 rounded-2xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-slate-200/50 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.4)] p-3 animate-in fade-in zoom-in-95 duration-200"
                 role="dialog"
                 aria-modal="true"
                 style={{
