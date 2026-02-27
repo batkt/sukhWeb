@@ -30,7 +30,10 @@ interface LedgerEntry {
   burtgesenOgnoo?: string;
   _id?: string;
   parentInvoiceId?: string;
-  sourceCollection?: "nekhemjlekhiinTuukh" | "gereeniiTulsunAvlaga" | "gereeniiTulukhAvlaga";
+  sourceCollection?:
+    | "nekhemjlekhiinTuukh"
+    | "gereeniiTulsunAvlaga"
+    | "gereeniiTulukhAvlaga";
 }
 
 const PrintStyles = () => (
@@ -71,7 +74,7 @@ const PrintStyles = () => (
       }
 
       /* Ensure parent containers don't clip */
-      div[data-radix-portal], 
+      div[data-radix-portal],
       div[role="dialog"],
       .ModalPortal {
         position: static !important;
@@ -93,7 +96,8 @@ const PrintStyles = () => (
         table-layout: auto !important;
       }
 
-      th, td {
+      th,
+      td {
         border: 1px solid #000 !important;
         padding: 3px 5px !important;
         font-size: 8pt !important;
@@ -102,16 +106,21 @@ const PrintStyles = () => (
       }
 
       /* Hide last column (Actions) in print */
-      th:last-child, td:last-child {
+      th:last-child,
+      td:last-child {
         display: none !important;
       }
 
-      .custom-scrollbar, .overflow-auto {
+      .custom-scrollbar,
+      .overflow-auto {
         overflow: visible !important;
         max-height: none !important;
       }
 
-      .history-print-container h2 { font-size: 16pt !important; margin: 0 0 10px 0 !important; }
+      .history-print-container h2 {
+        font-size: 16pt !important;
+        margin: 0 0 10px 0 !important;
+      }
 
       /* Grid adjustments for print */
       .grid-cols-2 {
@@ -142,8 +151,14 @@ export default function HistoryModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LedgerEntry[]>([]);
-  const [dateRange, setDateRange] = useState<[string | null, string | null] | undefined>([null, null]);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string; type: string }>({ show: false, id: "", type: "" });
+  const [dateRange, setDateRange] = useState<
+    [string | null, string | null] | undefined
+  >([null, null]);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    show: boolean;
+    id: string;
+    type: string;
+  }>({ show: false, id: "", type: "" });
   const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   useModalHotkeys({
@@ -160,11 +175,13 @@ export default function HistoryModal({
     // Silent Auto-Sync: Recalculate global balance on backend before fetching
     if (contractIdToFetch) {
       try {
-        uilchilgee(token || undefined).post("/nekhemjlekh/recalculate-balance", {
-          gereeId: contractIdToFetch,
-          baiguullagiinId
-        }).catch(e => console.warn("Silent sync failed:", e.message));
-      } catch (e) { }
+        uilchilgee(token || undefined)
+          .post("/nekhemjlekh/recalculate-balance", {
+            gereeId: contractIdToFetch,
+            baiguullagiinId,
+          })
+          .catch((e) => console.warn("Silent sync failed:", e.message));
+      } catch (e) {}
     }
 
     setLoading(true);
@@ -176,52 +193,72 @@ export default function HistoryModal({
         khuudasniiKhemjee: 5000,
       };
 
-
       // Fetch all necessary data concurrently
-      const [historyResp, paymentResp, receivableResp, contractResp] = await Promise.all([
-        uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
-          params: {
-            ...commonParams,
-            query: {
-              baiguullagiinId: baiguullagiinId || undefined,
+      const [historyResp, paymentResp, receivableResp, contractResp] =
+        await Promise.all([
+          uilchilgee(token || undefined).get("/nekhemjlekhiinTuukh", {
+            params: {
+              ...commonParams,
+              query: {
+                baiguullagiinId: baiguullagiinId || undefined,
+              },
+              _t: Date.now(),
             },
-            _t: Date.now(),
-          },
-        }),
-        uilchilgee(token || undefined).get("/gereeniiTulsunAvlaga", {
-          params: {
-            ...commonParams,
-            _t: Date.now(),
-          },
-        }),
-        uilchilgee(token || undefined).get("/gereeniiTulukhAvlaga", {
-          params: {
-            ...commonParams,
-            _t: Date.now(),
-          },
-        }),
-        // Fetch fresh contract data to get the authoritative balance
-        contractIdToFetch ? uilchilgee(token || undefined).get(`/geree/${contractIdToFetch}`, {
-          params: { _t: Date.now() }
-        }).catch(err => { console.warn("Failed to fetch fresh contract:", err); return { data: null }; })
-          : Promise.resolve({ data: null })
-      ]);
+          }),
+          uilchilgee(token || undefined).get("/gereeniiTulsunAvlaga", {
+            params: {
+              ...commonParams,
+              _t: Date.now(),
+            },
+          }),
+          uilchilgee(token || undefined).get("/gereeniiTulukhAvlaga", {
+            params: {
+              ...commonParams,
+              _t: Date.now(),
+            },
+          }),
+          // Fetch fresh contract data to get the authoritative balance
+          contractIdToFetch
+            ? uilchilgee(token || undefined)
+                .get(`/geree/${contractIdToFetch}`, {
+                  params: { _t: Date.now() },
+                })
+                .catch((err) => {
+                  console.warn("Failed to fetch fresh contract:", err);
+                  return { data: null };
+                })
+            : Promise.resolve({ data: null }),
+        ]);
 
-      const rawList = Array.isArray(historyResp.data?.jagsaalt) ? historyResp.data.jagsaalt : [];
-      const paymentRecords = Array.isArray(paymentResp.data?.jagsaalt) ? paymentResp.data.jagsaalt : [];
-      const receivableRecords = Array.isArray(receivableResp.data?.jagsaalt) ? receivableResp.data.jagsaalt : [];
+      const rawList = Array.isArray(historyResp.data?.jagsaalt)
+        ? historyResp.data.jagsaalt
+        : [];
+      const paymentRecords = Array.isArray(paymentResp.data?.jagsaalt)
+        ? paymentResp.data.jagsaalt
+        : [];
+      const receivableRecords = Array.isArray(receivableResp.data?.jagsaalt)
+        ? receivableResp.data.jagsaalt
+        : [];
       const freshContract = contractResp?.data;
 
-      console.log(`🔍 [HistoryModal] Fetched: ${rawList.length} invoices, ${paymentRecords.length} payments, ${receivableRecords.length} receivables. Fresh Contract Balance: ${freshContract?.uldegdel}`);
+      console.log(
+        `🔍 [HistoryModal] Fetched: ${rawList.length} invoices, ${paymentRecords.length} payments, ${receivableRecords.length} receivables. Fresh Contract Balance: ${freshContract?.uldegdel}`,
+      );
 
       // Extract all possible identifiers from the contract/resident object
       const contractId = String(contract?._id || "").trim();
-      const residentId = String(contract?.orshinSuugchId || contract?._id || "").trim();
+      const residentId = String(
+        contract?.orshinSuugchId || contract?._id || "",
+      ).trim();
       const gereeniiId = String(contract?.gereeniiId || "").trim();
       const gereeDugaar = String(contract?.gereeniiDugaar || "").trim();
       const toot = String(contract?.toot || "").trim();
-      const ner = String(contract?.ner || "").trim().toLowerCase();
-      const ovog = String(contract?.ovog || "").trim().toLowerCase();
+      const ner = String(contract?.ner || "")
+        .trim()
+        .toLowerCase();
+      const ovog = String(contract?.ovog || "")
+        .trim()
+        .toLowerCase();
       const utas = (() => {
         if (Array.isArray(contract?.utas) && contract.utas.length > 0) {
           return String(contract.utas[0] || "").trim();
@@ -229,7 +266,16 @@ export default function HistoryModal({
         return String(contract?.utas || "").trim();
       })();
 
-      console.log("🔍 Filtering history for:", { contractId, residentId, gereeniiId, gereeDugaar, toot, ner, ovog, utas });
+      console.log("🔍 Filtering history for:", {
+        contractId,
+        residentId,
+        gereeniiId,
+        gereeDugaar,
+        toot,
+        ner,
+        ovog,
+        utas,
+      });
 
       // Filter for this specific contract/resident using multiple strategies
       // When gereeniiId is available, REQUIRE it to match - otherwise we'd pull in invoices
@@ -249,20 +295,31 @@ export default function HistoryModal({
         // Fallback: when no gereeniiId/gereeDugaar, use other strategies
         if (!gereeniiId && !gereeDugaar) {
           const itemResidentId = String(item?.orshinSuugchId || "").trim();
-          if (residentId && itemResidentId && itemResidentId === residentId) return true;
+          if (residentId && itemResidentId && itemResidentId === residentId)
+            return true;
           if (toot && ner) {
-            const itemToot = String(item?.toot || item?.medeelel?.toot || "").trim();
-            const itemNer = String(item?.ner || "").trim().toLowerCase();
+            const itemToot = String(
+              item?.toot || item?.medeelel?.toot || "",
+            ).trim();
+            const itemNer = String(item?.ner || "")
+              .trim()
+              .toLowerCase();
             if (itemToot === toot && itemNer === ner) return true;
           }
           if (utas && utas.length >= 8) {
-            const itemUtas = Array.isArray(item?.utas) && item.utas.length > 0
-              ? String(item.utas[0] || "").trim() : String(item?.utas || "").trim();
+            const itemUtas =
+              Array.isArray(item?.utas) && item.utas.length > 0
+                ? String(item.utas[0] || "").trim()
+                : String(item?.utas || "").trim();
             if (itemUtas === utas) return true;
           }
           if (ovog && ner) {
-            const itemOvog = String(item?.ovog || "").trim().toLowerCase();
-            const itemNer2 = String(item?.ner || "").trim().toLowerCase();
+            const itemOvog = String(item?.ovog || "")
+              .trim()
+              .toLowerCase();
+            const itemNer2 = String(item?.ner || "")
+              .trim()
+              .toLowerCase();
             if (itemOvog === ovog && itemNer2 === ner) return true;
           }
         }
@@ -275,8 +332,16 @@ export default function HistoryModal({
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
         if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
-        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
-        if (!gereeniiId && !gereeDugaar && residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
+        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar)
+          return true;
+        if (
+          !gereeniiId &&
+          !gereeDugaar &&
+          residentId &&
+          recOrshinSuugchId &&
+          recOrshinSuugchId === residentId
+        )
+          return true;
         return false;
       });
 
@@ -286,8 +351,16 @@ export default function HistoryModal({
         const recOrshinSuugchId = String(rec?.orshinSuugchId || "").trim();
         const recGereeDugaar = String(rec?.gereeniiDugaar || "").trim();
         if (gereeniiId && recGereeId && recGereeId === gereeniiId) return true;
-        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar) return true;
-        if (!gereeniiId && !gereeDugaar && residentId && recOrshinSuugchId && recOrshinSuugchId === residentId) return true;
+        if (gereeDugaar && recGereeDugaar && recGereeDugaar === gereeDugaar)
+          return true;
+        if (
+          !gereeniiId &&
+          !gereeDugaar &&
+          residentId &&
+          recOrshinSuugchId &&
+          recOrshinSuugchId === residentId
+        )
+          return true;
         return false;
       });
 
@@ -295,13 +368,13 @@ export default function HistoryModal({
         totalInvoices: rawList.length,
         matchedInvoices: contractItems.length,
         matchedPayments: matchedPayments.length,
-        matchedReceivables: matchedReceivables.length
+        matchedReceivables: matchedReceivables.length,
       });
 
       // 1. Process Invoices and their contents
       const flatLedger: LedgerEntry[] = [];
       const processedIds = new Set<string>();
-      
+
       // Ensure we only process each unique invoice once, but allow multiple invoices per month
       const seenInvoiceIds = new Set<string>();
       const contractItemsToProcess = contractItems.filter((item: any) => {
@@ -313,16 +386,34 @@ export default function HistoryModal({
 
       // Log first item for debugging
       if (contractItemsToProcess.length > 0) {
-        console.log("📋 Sample item structure:", JSON.stringify(contractItemsToProcess[0], null, 2));
+        console.log(
+          "📋 Sample item structure:",
+          JSON.stringify(contractItemsToProcess[0], null, 2),
+        );
       }
-      const invoiceIds = new Set(contractItemsToProcess.map((item: any) => item._id?.toString()));
+      const invoiceIds = new Set(
+        contractItemsToProcess.map((item: any) => item._id?.toString()),
+      );
 
       contractItemsToProcess.forEach((item: any) => {
-        const itemDate = item.ognoo || item.nekhemjlekhiinOgnoo || item.createdAt || new Date().toISOString();
+        const itemDate =
+          item.ognoo ||
+          item.nekhemjlekhiinOgnoo ||
+          item.createdAt ||
+          new Date().toISOString();
         // Use only employee fields - never item.ner (resident name) or createdBy?.ner (may be resident)
-        const ajiltan = item.burtgesenAjiltaniiNer || item.guilgeeKhiisenAjiltniiNer || item.maililgeesenAjiltniiNer || item.ajiltan || "Admin";
-        const source = item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
-        const isSystem = source === "automataar" || source === "cron" || !item.maililgeesenAjiltniiId;
+        const ajiltan =
+          item.burtgesenAjiltaniiNer ||
+          item.guilgeeKhiisenAjiltniiNer ||
+          item.maililgeesenAjiltniiNer ||
+          item.ajiltan ||
+          "Admin";
+        const source =
+          item.medeelel?.uusgegsenEsekh || item.uusgegsenEsekh || "garan";
+        const isSystem =
+          source === "automataar" ||
+          source === "cron" ||
+          !item.maililgeesenAjiltniiId;
 
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
@@ -338,8 +429,11 @@ export default function HistoryModal({
         };
 
         // 1. Process Expenses (Zardluud)
-        const zardluud = Array.isArray(item?.medeelel?.zardluud) ? item.medeelel.zardluud :
-          Array.isArray(item?.zardluud) ? item.zardluud : [];
+        const zardluud = Array.isArray(item?.medeelel?.zardluud)
+          ? item.medeelel.zardluud
+          : Array.isArray(item?.zardluud)
+            ? item.zardluud
+            : [];
 
         // Track if we found ekhniiUldegdel with value in invoice zardluud
         let foundEkhniiUldegdelInInvoice = false;
@@ -348,14 +442,17 @@ export default function HistoryModal({
           // Include all zardluud entries including zaalt (electricity) entries
           if (z.ner) {
             let amt = pickAmount(z);
-            const isEkhniiUldegdel = z.isEkhniiUldegdel === true ||
+            const isEkhniiUldegdel =
+              z.isEkhniiUldegdel === true ||
               z.ner === "Эхний үлдэгдэл" ||
               (z.ner && z.ner.includes("Эхний үлдэгдэл"));
 
             // For "Эхний үлдэгдэл" entries with 0 value, SKIP them entirely
             // We'll use the gereeniiTulukhAvlaga record instead (which has the actual value)
             if (isEkhniiUldegdel && (amt === 0 || amt === undefined)) {
-              console.log(`⏭️ [HistoryModal] Skipping 0.00 ekhniiUldegdel from invoice, will use gereeniiTulukhAvlaga`);
+              console.log(
+                `⏭️ [HistoryModal] Skipping 0.00 ekhniiUldegdel from invoice, will use gereeniiTulukhAvlaga`,
+              );
               return;
             }
 
@@ -366,7 +463,9 @@ export default function HistoryModal({
               const rowId = `${item._id}-${z._id?.toString() || `z-${Math.random()}`}`;
               // Format tailbar to show expense name first, then tailbar text if it exists
               const zardalTailbar = z.tailbar || "";
-              const displayTailbar = zardalTailbar ? `${z.ner} - ${zardalTailbar}` : z.ner;
+              const displayTailbar = zardalTailbar
+                ? `${z.ner} - ${zardalTailbar}`
+                : z.ner;
               flatLedger.push({
                 _id: rowId,
                 parentInvoiceId: item._id,
@@ -380,7 +479,7 @@ export default function HistoryModal({
                 khelber: "Нэхэмжлэх",
                 tailbar: displayTailbar,
                 burtgesenOgnoo: item.createdAt || "-",
-                sourceCollection: "nekhemjlekhiinTuukh"
+                sourceCollection: "nekhemjlekhiinTuukh",
               });
               if (z._id) processedIds.add(z._id.toString());
 
@@ -392,7 +491,9 @@ export default function HistoryModal({
                 matchedReceivables.forEach((r: any) => {
                   if (r.ekhniiUldegdelEsekh === true && r._id) {
                     processedIds.add(r._id.toString());
-                    console.log(`✅ [HistoryModal] Marked gereeniiTulukhAvlaga ekhniiUldegdel as processed: ${r._id}`);
+                    console.log(
+                      `✅ [HistoryModal] Marked gereeniiTulukhAvlaga ekhniiUldegdel as processed: ${r._id}`,
+                    );
                   }
                 });
               }
@@ -412,26 +513,27 @@ export default function HistoryModal({
 
         // 1.5. Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
         // Check for exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан")
-        const hasTsahilgaanInZardluud = zardluud.some(
-          (z: any) => {
-            const ner = String(z.ner || "").trim();
-            // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
-            return ner === "Цахилгаан";
-          }
-        );
+        const hasTsahilgaanInZardluud = zardluud.some((z: any) => {
+          const ner = String(z.ner || "").trim();
+          // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
+          return ner === "Цахилгаан";
+        });
         if (!hasTsahilgaanInZardluud && item.tsahilgaanNekhemjlekh) {
           const tsahilgaanAmt = Number(item.tsahilgaanNekhemjlekh);
           if (tsahilgaanAmt > 0) {
             const rowId = `${item._id}-tsahilgaan`;
             // Check multiple possible tailbar locations for consistency
-            const invoiceTailbar = item?.medeelel?.tailbar || 
-                                   item?.medeelel?.temdeglel || 
-                                   item?.tailbar || 
-                                   item?.content?.split('\n')?.[1]?.replace('Тайлбар: ', '') || 
-                                   "";
+            const invoiceTailbar =
+              item?.medeelel?.tailbar ||
+              item?.medeelel?.temdeglel ||
+              item?.tailbar ||
+              item?.content?.split("\n")?.[1]?.replace("Тайлбар: ", "") ||
+              "";
             // Always show "Цахилгаан" first, then tailbar if it exists
             // This ensures consistent formatting across all invoices
-            const displayTailbar = invoiceTailbar ? `Цахилгаан - ${invoiceTailbar}` : "Цахилгаан";
+            const displayTailbar = invoiceTailbar
+              ? `Цахилгаан - ${invoiceTailbar}`
+              : "Цахилгаан";
             flatLedger.push({
               _id: rowId,
               parentInvoiceId: item._id,
@@ -445,14 +547,17 @@ export default function HistoryModal({
               khelber: "Нэхэмжлэх",
               tailbar: displayTailbar,
               burtgesenOgnoo: item.createdAt || "-",
-              sourceCollection: "nekhemjlekhiinTuukh"
+              sourceCollection: "nekhemjlekhiinTuukh",
             });
           }
         }
 
         // 2. Process Manual Transactions (Guilgeenuud - Avlaga/Charges)
-        const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud) ? item.medeelel.guilgeenuud :
-          Array.isArray(item?.guilgeenuud) ? item.guilgeenuud : [];
+        const guilgeenuud = Array.isArray(item?.medeelel?.guilgeenuud)
+          ? item.medeelel.guilgeenuud
+          : Array.isArray(item?.guilgeenuud)
+            ? item.guilgeenuud
+            : [];
 
         guilgeenuud.forEach((g: any) => {
           const amt = Number(g.tulukhDun || 0);
@@ -462,15 +567,20 @@ export default function HistoryModal({
             const rowId = g._id?.toString() || `g-charge-${Math.random()}`;
             const isEkhniiUldegdel = g.ekhniiUldegdelEsekh === true;
             let rowTailbar = g.tailbar || "Гараар нэмсэн авлага";
-            
+
             if (isEkhniiUldegdel) {
               const prefix = "Эхний үлдэгдэл";
-              const dateStr = (g.ognoo || g.guilgeeKhiisenOgnoo || itemDate).split("T")[0].replace(/-/g, ".");
+              const dateStr = (g.ognoo || g.guilgeeKhiisenOgnoo || itemDate)
+                .split("T")[0]
+                .replace(/-/g, ".");
               if (rowTailbar && !rowTailbar.includes(prefix)) {
                 rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
               } else if (!rowTailbar) {
                 rowTailbar = `${prefix} - ${dateStr}`;
-              } else if (rowTailbar.includes(prefix) && !rowTailbar.includes(dateStr)) {
+              } else if (
+                rowTailbar.includes(prefix) &&
+                !rowTailbar.includes(dateStr)
+              ) {
                 rowTailbar = `${rowTailbar} - ${dateStr}`;
               }
             }
@@ -488,7 +598,7 @@ export default function HistoryModal({
               khelber: "Авлага",
               tailbar: rowTailbar,
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
-              sourceCollection: "nekhemjlekhiinTuukh"
+              sourceCollection: "nekhemjlekhiinTuukh",
             });
             if (g._id) processedIds.add(g._id.toString());
           }
@@ -506,7 +616,7 @@ export default function HistoryModal({
               khelber: g.khelber || "Төлбөр",
               tailbar: g.tailbar || "-",
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
-              sourceCollection: "nekhemjlekhiinTuukh"
+              sourceCollection: "nekhemjlekhiinTuukh",
             });
             if (g._id) processedIds.add(g._id.toString());
           }
@@ -515,7 +625,15 @@ export default function HistoryModal({
         // If item has 'turul' and isn't just a container for zardluud/guilgeenuud
         const hasChildren = zardluud.length > 0 || guilgeenuud.length > 0;
 
-        if (!hasChildren && item.turul && (item.turul === "ashiglalt" || item.turul === "avlaga" || item.turul === "tulult" || item.turul === "voucher" || item.turul === "turgul")) {
+        if (
+          !hasChildren &&
+          item.turul &&
+          (item.turul === "ashiglalt" ||
+            item.turul === "avlaga" ||
+            item.turul === "tulult" ||
+            item.turul === "voucher" ||
+            item.turul === "turgul")
+        ) {
           const type = item.turul;
           const amt = Number(item.tulukhDun || item.dun || 0);
           const tulsunAmt = Number(item.tulsunDun || 0);
@@ -536,7 +654,7 @@ export default function HistoryModal({
                 khelber: "Төлбөр",
                 tailbar: item.tailbar || "-",
                 burtgesenOgnoo: item.createdAt || "-",
-                sourceCollection: "nekhemjlekhiinTuukh"
+                sourceCollection: "nekhemjlekhiinTuukh",
               });
               if (item._id) processedIds.add(item._id.toString());
             }
@@ -556,7 +674,7 @@ export default function HistoryModal({
                 khelber: "Төлбөр",
                 tailbar: item.tailbar || "Ашиглалт",
                 burtgesenOgnoo: item.createdAt || "-",
-                sourceCollection: "nekhemjlekhiinTuukh"
+                sourceCollection: "nekhemjlekhiinTuukh",
               });
               if (item._id) processedIds.add(item._id.toString());
             }
@@ -582,7 +700,7 @@ export default function HistoryModal({
                 khelber: "Авлага",
                 tailbar: desc,
                 burtgesenOgnoo: item.createdAt || "-",
-                sourceCollection: "nekhemjlekhiinTuukh"
+                sourceCollection: "nekhemjlekhiinTuukh",
               });
               if (item._id) processedIds.add(item._id.toString());
             }
@@ -592,49 +710,59 @@ export default function HistoryModal({
 
       // Process receivable records from gereeniiTulukhAvlaga
       // Track if we've already added ekhniiUldegdel from invoice zardluud WITH a value > 0
-      const hasEkhniiUldegdelInInvoice = flatLedger.some(
-        (entry) => {
-          const isEkhniiUldegdelName = entry.ner === "Эхний үлдэгдэл" ||
-            (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
-          const amt = Number(entry.tulukhDun || 0);
-          return isEkhniiUldegdelName &&
-            entry.sourceCollection === "nekhemjlekhiinTuukh" &&
-            amt !== 0;
-        }
-      );
+      const hasEkhniiUldegdelInInvoice = flatLedger.some((entry) => {
+        const isEkhniiUldegdelName =
+          entry.ner === "Эхний үлдэгдэл" ||
+          (entry.ner && entry.ner.includes("Эхний үлдэгдэл"));
+        const amt = Number(entry.tulukhDun || 0);
+        return (
+          isEkhniiUldegdelName &&
+          entry.sourceCollection === "nekhemjlekhiinTuukh" &&
+          amt !== 0
+        );
+      });
 
-      console.log(`📊 [HistoryModal] hasEkhniiUldegdelInInvoice: ${hasEkhniiUldegdelInInvoice}, processedIds count: ${processedIds.size}`);
+      console.log(
+        `📊 [HistoryModal] hasEkhniiUldegdelInInvoice: ${hasEkhniiUldegdelInInvoice}, processedIds count: ${processedIds.size}`,
+      );
 
       matchedReceivables.forEach((rec: any) => {
         const recId = rec._id?.toString();
         // Skip if already processed in invoice loop
         if (recId && processedIds.has(recId)) {
-          console.log(`⏭️ [HistoryModal] Skipping already processed receivable: ${recId}`);
+          console.log(
+            `⏭️ [HistoryModal] Skipping already processed receivable: ${recId}`,
+          );
           return;
         }
 
         // Skip orphans (has nekhemjlekhId but parent invoice is gone)
-        if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString())) return;
+        if (rec.nekhemjlekhId && !invoiceIds.has(rec.nekhemjlekhId.toString()))
+          return;
 
         // Skip ekhniiUldegdel records if they're already included in the invoice zardluud
         // This prevents duplicate "Эхний үлдэгдэл" entries
         if (rec.ekhniiUldegdelEsekh === true && hasEkhniiUldegdelInInvoice) {
-          console.log(`⏭️ [HistoryModal] Skipping duplicate ekhniiUldegdel from gereeniiTulukhAvlaga: ${recId}`);
+          console.log(
+            `⏭️ [HistoryModal] Skipping duplicate ekhniiUldegdel from gereeniiTulukhAvlaga: ${recId}`,
+          );
           return;
         }
 
         const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
         const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
         // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
-        const amt = rec.ekhniiUldegdelEsekh === true
-          ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
-          : Number(rec.tulukhDun || rec.undsenDun || 0);
+        const amt =
+          rec.ekhniiUldegdelEsekh === true
+            ? Number(rec.undsenDun ?? rec.tulukhDun ?? rec.uldegdel ?? 0)
+            : Number(rec.tulukhDun || rec.undsenDun || 0);
 
         // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
         if ((rec.ekhniiUldegdelEsekh === true && amt !== 0) || amt > 0) {
           const isEkhniiUldegdel = rec.ekhniiUldegdelEsekh === true;
-          let rowTailbar = rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага";
-          
+          let rowTailbar =
+            rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага";
+
           if (isEkhniiUldegdel) {
             const prefix = "Эхний үлдэгдэл";
             const dateStr = recDate.split("T")[0].replace(/-/g, ".");
@@ -642,7 +770,10 @@ export default function HistoryModal({
               rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
             } else if (!rowTailbar) {
               rowTailbar = `${prefix} - ${dateStr}`;
-            } else if (rowTailbar.includes(prefix) && !rowTailbar.includes(dateStr)) {
+            } else if (
+              rowTailbar.includes(prefix) &&
+              !rowTailbar.includes(dateStr)
+            ) {
               rowTailbar = `${rowTailbar} - ${dateStr}`;
             }
           }
@@ -650,7 +781,9 @@ export default function HistoryModal({
           flatLedger.push({
             _id: rec._id,
             ognoo: recDate,
-            ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : (rec.zardliinNer || "Авлага"),
+            ner: isEkhniiUldegdel
+              ? "Эхний үлдэгдэл"
+              : rec.zardliinNer || "Авлага",
             tulukhDun: amt,
             tulsunDun: 0,
             uldegdel: 0,
@@ -659,7 +792,7 @@ export default function HistoryModal({
             khelber: "Авлага",
             tailbar: rowTailbar,
             burtgesenOgnoo: rec.createdAt || "-",
-            sourceCollection: "gereeniiTulukhAvlaga"
+            sourceCollection: "gereeniiTulukhAvlaga",
           });
         }
       });
@@ -671,9 +804,14 @@ export default function HistoryModal({
         if (pId && processedIds.has(pId)) return;
 
         // Skip orphans (has nekhemjlekhId but parent invoice is gone)
-        if (payment.nekhemjlekhId && !invoiceIds.has(payment.nekhemjlekhId.toString())) return;
+        if (
+          payment.nekhemjlekhId &&
+          !invoiceIds.has(payment.nekhemjlekhId.toString())
+        )
+          return;
 
-        const paymentDate = payment.ognoo || payment.createdAt || new Date().toISOString();
+        const paymentDate =
+          payment.ognoo || payment.createdAt || new Date().toISOString();
         const ajiltan = payment.guilgeeKhiisenAjiltniiNer || "Admin";
         const tulsunDun = Number(payment.tulsunDun || 0);
         const turul = payment.turul || "tulbur";
@@ -684,15 +822,25 @@ export default function HistoryModal({
         if (turul === "ashiglalt" || turul === "Ашиглалт") {
           name = "Ашиглалт";
           khelber = "Төлбөр";
-        } else if (turul === "tulult" || turul === "Төлөлт" || turul === "tulbur") {
+        } else if (
+          turul === "tulult" ||
+          turul === "Төлөлт" ||
+          turul === "tulbur"
+        ) {
           name = "Төлөлт";
           khelber = "Төлбөр";
-        } else if (turul === "prepayment" || turul === "Урьдчилсан төлбөр" || turul === "invoice_payment") {
+        } else if (
+          turul === "prepayment" ||
+          turul === "Урьдчилсан төлбөр" ||
+          turul === "invoice_payment"
+        ) {
           name = "Төлөлт";
           khelber = "Төлбөр";
         }
 
-        console.log(`💰 [HistoryModal] Processing payment: ${payment._id}, turul: ${turul}, amount: ${tulsunDun}, name: ${name}`);
+        console.log(
+          `💰 [HistoryModal] Processing payment: ${payment._id}, turul: ${turul}, amount: ${tulsunDun}, name: ${name}`,
+        );
 
         if (tulsunDun > 0) {
           flatLedger.push({
@@ -707,7 +855,7 @@ export default function HistoryModal({
             khelber,
             tailbar: payment.tailbar || payment.zardliinNer || name,
             burtgesenOgnoo: payment.createdAt || "-",
-            sourceCollection: "gereeniiTulsunAvlaga"
+            sourceCollection: "gereeniiTulsunAvlaga",
           });
         }
       });
@@ -717,58 +865,114 @@ export default function HistoryModal({
         // Compare by transaction date (day start only) to group same-day entries
         const dA = new Date(a.ognoo);
         const dB = new Date(b.ognoo);
-        const dayA = new Date(dA.getFullYear(), dA.getMonth(), dA.getDate()).getTime();
-        const dayB = new Date(dB.getFullYear(), dB.getMonth(), dB.getDate()).getTime();
+        const dayA = new Date(
+          dA.getFullYear(),
+          dA.getMonth(),
+          dA.getDate(),
+        ).getTime();
+        const dayB = new Date(
+          dB.getFullYear(),
+          dB.getMonth(),
+          dB.getDate(),
+        ).getTime();
 
         if (dayA !== dayB) return dayA - dayB;
 
         // If same logical day, sort by actual creation time
-        const createA = a.burtgesenOgnoo && a.burtgesenOgnoo !== "-" ? new Date(a.burtgesenOgnoo).getTime() : dayA;
-        const createB = b.burtgesenOgnoo && b.burtgesenOgnoo !== "-" ? new Date(b.burtgesenOgnoo).getTime() : dayB;
+        const createA =
+          a.burtgesenOgnoo && a.burtgesenOgnoo !== "-"
+            ? new Date(a.burtgesenOgnoo).getTime()
+            : dayA;
+        const createB =
+          b.burtgesenOgnoo && b.burtgesenOgnoo !== "-"
+            ? new Date(b.burtgesenOgnoo).getTime()
+            : dayB;
         return createA - createB;
       });
 
       // Calculate Running Balance
       // Use fresh fetched balance if available, otherwise fallback to prop
-      const currentBalance = freshContract?.uldegdel !== undefined
-        ? Number(freshContract.uldegdel)
-        : (contract?.uldegdel ? Number(contract.uldegdel) : null);
+      const currentBalance =
+        freshContract?.uldegdel !== undefined
+          ? Number(freshContract.uldegdel)
+          : contract?.uldegdel
+            ? Number(contract.uldegdel)
+            : null;
 
       // Calculate total charges and payments in the ledger
-      const totalCharges = flatLedger.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0);
-      const totalPayments = flatLedger.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0);
+      const totalCharges = flatLedger.reduce(
+        (sum, row) => sum + Number(row.tulukhDun || 0),
+        0,
+      );
+      const totalPayments = flatLedger.reduce(
+        (sum, row) => sum + Number(row.tulsunDun || 0),
+        0,
+      );
 
       // Check if there's ekhniiUldegdel from gereeniiTulukhAvlaga (not in invoice)
       const hasEkhniiUldegdelFromAvlaga = flatLedger.some(
-        (row) => row.sourceCollection === "gereeniiTulukhAvlaga" &&
-          (row.ner === "Эхний үлдэгдэл" || (row.ner && row.ner.includes("Эхний үлдэгдэл")))
+        (row) =>
+          row.sourceCollection === "gereeniiTulukhAvlaga" &&
+          (row.ner === "Эхний үлдэгдэл" ||
+            (row.ner && row.ner.includes("Эхний үлдэгдэл"))),
       );
 
-      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
+      console.log(
+        `💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`,
+      );
 
-      // Compute expected balance from ledger (charges - payments)
-      const computedBalance = totalCharges - totalPayments;
+      // Backend calculation: prefer ledger + Үлдэгдэл from external backend (GET)
+      const applyFrontendRunningBalance = (rows: typeof flatLedger) => {
+        let running = 0;
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          running =
+            running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0);
+          row.uldegdel = running;
+        }
+      };
 
-      // ALWAYS use FORWARD calculation for History Modal to ensure the math always adds up correctly
-      // based on the visible transactions, rather than relying on a potentially out-of-sync contract balance
-      console.log(`💰 [HistoryModal] Using FORWARD calculation (starting from 0)`);
-      let runningBalance = 0;
-
-      for (let i = 0; i < flatLedger.length; i++) {
-        const row = flatLedger[i];
-        const charge = Number(row.tulukhDun || 0);
-        const pay = Number(row.tulsunDun || 0);
-
-        // Balance AFTER this transaction
-        runningBalance = runningBalance + charge - pay;
-        row.uldegdel = runningBalance;
+      if (contractIdToFetch) {
+        try {
+          const ledgerResp = await uilchilgee(token || undefined).get(
+            `/geree/${contractIdToFetch}/history-ledger`,
+            {
+              params: {
+                baiguullagiinId: baiguullagiinId || undefined,
+                barilgiinId: barilgiinId || null,
+                _t: Date.now(),
+              },
+            },
+          );
+          const backendLedger = Array.isArray(ledgerResp.data?.jagsaalt)
+            ? ledgerResp.data.jagsaalt
+            : Array.isArray(ledgerResp.data?.ledger)
+              ? ledgerResp.data.ledger
+              : Array.isArray(ledgerResp.data)
+                ? ledgerResp.data
+                : [];
+          const hasUldegdel = backendLedger.some(
+            (r: any) =>
+              r?.uldegdel != null && Number.isFinite(Number(r.uldegdel)),
+          );
+          if (backendLedger.length > 0 && hasUldegdel) {
+            // Use backend ledger (oldest-first = chronological, no reverse)
+            const mapped = backendLedger.map((r: any) => ({
+              ...r,
+              uldegdel: Number(r.uldegdel ?? 0),
+            }));
+            setData(mapped);
+            setLoading(false);
+            return;
+          }
+        } catch (_) {
+          // Backend endpoint not implemented or failed; fall back to frontend
+        }
       }
 
-      console.log(`💰 [HistoryModal] Forward Calc End (Final Balance): ${runningBalance}`);
+      applyFrontendRunningBalance(flatLedger);
 
-      // Reverse for Display (Newest First)
-      flatLedger.reverse();
-
+      // Display chronological order (oldest first)
       setData(flatLedger);
     } catch (err) {
       console.error("Failed to fetch history:", err);
@@ -777,25 +981,25 @@ export default function HistoryModal({
     }
   };
 
-
   const handleDeleteClick = (id: string, type: string) => {
     setDeleteConfirm({ show: true, id, type });
   };
 
   const handleDeleteConfirm = async () => {
     const { id } = deleteConfirm;
-    const entry = data.find(e => e._id === id);
+    const entry = data.find((e) => e._id === id);
     const source = entry?.sourceCollection || "nekhemjlekhiinTuukh";
 
     setDeleteConfirm({ show: false, id: "", type: "" });
 
     try {
       let response;
-      const endpoint = source === "gereeniiTulsunAvlaga"
-        ? "/gereeniiTulsunAvlaga"
-        : source === "gereeniiTulukhAvlaga"
-          ? "/gereeniiTulukhAvlaga"
-          : "/nekhemjlekhiinTuukh";
+      const endpoint =
+        source === "gereeniiTulsunAvlaga"
+          ? "/gereeniiTulsunAvlaga"
+          : source === "gereeniiTulukhAvlaga"
+            ? "/gereeniiTulukhAvlaga"
+            : "/nekhemjlekhiinTuukh";
 
       // If it's a sub-item (zardal or guilgee) in an invoice
       if (entry?.parentInvoiceId && source === "nekhemjlekhiinTuukh") {
@@ -804,40 +1008,54 @@ export default function HistoryModal({
         if (id.includes("-g-paid-")) zardalId = id.split("-g-paid-")[1] || id;
         else if (id.includes("-g-")) zardalId = id.split("-g-")[1] || id;
         else if (id.includes("-")) zardalId = id.substring(id.indexOf("-") + 1);
-        response = await uilchilgee(token || undefined).post(`${endpoint}/deleteZardal`, {
-          invoiceId: entry.parentInvoiceId,
-          zardalId,
-          baiguullagiinId: baiguullagiinId || undefined,
-        });
+        response = await uilchilgee(token || undefined).post(
+          `${endpoint}/deleteZardal`,
+          {
+            invoiceId: entry.parentInvoiceId,
+            zardalId,
+            baiguullagiinId: baiguullagiinId || undefined,
+          },
+        );
       } else {
         // Otherwise use standard delete for full documents
-        response = await uilchilgee(token || undefined).delete(`${endpoint}/${id}`, {
-          params: {
-            baiguullagiinId: baiguullagiinId || undefined,
-          }
-        });
+        response = await uilchilgee(token || undefined).delete(
+          `${endpoint}/${id}`,
+          {
+            params: {
+              baiguullagiinId: baiguullagiinId || undefined,
+            },
+          },
+        );
       }
 
-      if (response.data.success || response.status === 200 || response.status === 204) {
+      if (
+        response.data.success ||
+        response.status === 200 ||
+        response.status === 204
+      ) {
         // Cascade delete related records when deleting from nekhemjlekhiinTuukh
         if (source === "nekhemjlekhiinTuukh" && contract?.gereeniiId) {
           // Delete related records from gereeniiTulsunAvlaga
-          await uilchilgee(token || undefined).delete(`/gereeniiTulsunAvlaga`, {
-            params: {
-              baiguullagiinId: baiguullagiinId || undefined,
-              gereeniiId: contract.gereeniiId,
-              nekhemjlekhiinId: id,
-            }
-          }).catch(() => { }); // Silently ignore if no records exist
+          await uilchilgee(token || undefined)
+            .delete(`/gereeniiTulsunAvlaga`, {
+              params: {
+                baiguullagiinId: baiguullagiinId || undefined,
+                gereeniiId: contract.gereeniiId,
+                nekhemjlekhiinId: id,
+              },
+            })
+            .catch(() => {}); // Silently ignore if no records exist
 
           // Delete related records from gereeniiTulukhAvlaga
-          await uilchilgee(token || undefined).delete(`/gereeniiTulukhAvlaga`, {
-            params: {
-              baiguullagiinId: baiguullagiinId || undefined,
-              gereeniiId: contract.gereeniiId,
-              nekhemjlekhiinId: id,
-            }
-          }).catch(() => { }); // Silently ignore if no records exist
+          await uilchilgee(token || undefined)
+            .delete(`/gereeniiTulukhAvlaga`, {
+              params: {
+                baiguullagiinId: baiguullagiinId || undefined,
+                gereeniiId: contract.gereeniiId,
+                nekhemjlekhiinId: id,
+              },
+            })
+            .catch(() => {}); // Silently ignore if no records exist
         }
 
         // Show success message
@@ -935,11 +1153,23 @@ export default function HistoryModal({
                 { label: "Гэрээ", value: contract?.gereeniiDugaar || "-" },
                 { label: "Тоот", value: contract?.toot || "-" },
                 { label: "Нэр", value: contract?.ner || "-" },
-                { label: "Утас", value: Array.isArray(contract?.utas) ? contract.utas[0] : contract?.utas || "-" },
+                {
+                  label: "Утас",
+                  value: Array.isArray(contract?.utas)
+                    ? contract.utas[0]
+                    : contract?.utas || "-",
+                },
               ].map((item, idx) => (
-                <div key={idx} className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
-                  <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">{item.label}</span>
-                  <span className="text-xs  text-slate-700 dark:text-slate-200 truncate block">{item.value}</span>
+                <div
+                  key={idx}
+                  className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800"
+                >
+                  <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
+                    {item.label}
+                  </span>
+                  <span className="text-xs  text-slate-700 dark:text-slate-200 truncate block">
+                    {item.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -977,15 +1207,33 @@ export default function HistoryModal({
             <table className="w-full text-xs">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Огноо</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell">Ажилтан</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Төлөх дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Төлсөн дүн</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">Үлдэгдэл</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell">Хэлбэр</th>
-                  <th className="py-2 px-2 text-center text-[9px] !border-r  text-slate-400 uppercase hidden md:table-cell">Тайлбар</th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell">Бүртгэсэн огноо</th>
-                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-12">Үйлдэл</th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                    Огноо
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell">
+                    Ажилтан
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                    Төлөх дүн
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                    Төлсөн дүн
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                    Үлдэгдэл
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell">
+                    Хэлбэр
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] !border-r  text-slate-400 uppercase hidden md:table-cell">
+                    Тайлбар
+                  </th>
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell">
+                    Бүртгэсэн огноо
+                  </th>
+                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-12">
+                    Үйлдэл
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
@@ -1000,7 +1248,9 @@ export default function HistoryModal({
                 ) : filteredData.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center">
-                      <span className="text-slate-400 text-xs">Мэдээлэл олдсонгүй</span>
+                      <span className="text-slate-400 text-xs">
+                        Мэдээлэл олдсонгүй
+                      </span>
                     </td>
                   </tr>
                 ) : (
@@ -1017,13 +1267,23 @@ export default function HistoryModal({
                           {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {Number(row.tulukhDun) !== 0 ? formatNumber(row.tulukhDun, 2) : "-"}
+                          {Number(row.tulukhDun) !== 0
+                            ? formatNumber(row.tulukhDun, 2)
+                            : "-"}
                         </td>
                         <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
-                          {row.tulsunDun > 0 ? formatNumber(row.tulsunDun, 2) : "-"}
+                          {row.tulsunDun > 0
+                            ? formatNumber(row.tulsunDun, 2)
+                            : "-"}
                         </td>
-                        <td className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${row.uldegdel < 0 ? "!text-emerald-600 dark:!text-emerald-400" : row.uldegdel > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}>
-                          {formatNumber(row.uldegdel, 2)}
+                        <td
+                          className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0 ? "!text-emerald-600 dark:!text-emerald-400" : (row.uldegdel ?? 0) > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}
+                        >
+                          {typeof row.uldegdel === "number"
+                            ? formatNumber(row.uldegdel, 2)
+                            : row.uldegdel != null
+                              ? formatNumber(Number(row.uldegdel), 2)
+                              : "-"}
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
                           {row.khelber || "-"}
@@ -1033,24 +1293,61 @@ export default function HistoryModal({
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
                           {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
-                            ? new Date(row.burtgesenOgnoo).toLocaleString("mn-MN", { hour12: false })
+                            ? new Date(row.burtgesenOgnoo).toLocaleString(
+                                "mn-MN",
+                                { hour12: false },
+                              )
                             : "-"}
                         </td>
                         <td className="py-2 px-2 text-center">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const canDelete = row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem;
+                              const canDelete =
+                                row._id &&
+                                !row._id.startsWith("z-") &&
+                                !row._id.startsWith("g-") &&
+                                !row._id.includes("-z-") &&
+                                !row.isSystem;
                               if (canDelete && row._id) {
-                                handleDeleteClick(row._id, row.ner || row.khelber || "");
+                                handleDeleteClick(
+                                  row._id,
+                                  row.ner || row.khelber || "",
+                                );
                               }
                             }}
                             className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
-                            title={row.isSystem ? "Системээс үүсгэсэн - устгах боломжгүй" : row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") ? "Устгах" : "Устгах боломжгүй"}
-                            disabled={!row._id || row._id.startsWith("z-") || row._id.startsWith("g-") || row._id.includes("-z-") || row.isSystem}
+                            title={
+                              row.isSystem
+                                ? "Системээс үүсгэсэн - устгах боломжгүй"
+                                : row._id &&
+                                    !row._id.startsWith("z-") &&
+                                    !row._id.startsWith("g-") &&
+                                    !row._id.includes("-z-")
+                                  ? "Устгах"
+                                  : "Устгах боломжгүй"
+                            }
+                            disabled={
+                              !row._id ||
+                              row._id.startsWith("z-") ||
+                              row._id.startsWith("g-") ||
+                              row._id.includes("-z-") ||
+                              row.isSystem
+                            }
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500" : "text-slate-300 dark:text-slate-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className={`h-4 w-4 ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500" : "text-slate-300 dark:text-slate-600"}`}
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
                             </svg>
                           </button>
                         </td>
@@ -1058,20 +1355,38 @@ export default function HistoryModal({
                     ))}
                     {/* Total Summary Row - balance = charges - payments (shows overpayment as negative) */}
                     {(() => {
-                      const totalCharges = filteredData.reduce((sum, row) => sum + (row.tulukhDun || 0), 0);
-                      const totalPayments = filteredData.reduce((sum, row) => sum + (row.tulsunDun || 0), 0);
+                      const totalCharges = filteredData.reduce(
+                        (sum, row) => sum + (row.tulukhDun || 0),
+                        0,
+                      );
+                      const totalPayments = filteredData.reduce(
+                        (sum, row) => sum + (row.tulsunDun || 0),
+                        0,
+                      );
                       const balance = totalCharges - totalPayments;
-                      const balanceClass = balance < 0 ? "!text-emerald-600 dark:!text-emerald-400" : balance > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme";
+                      const balanceClass =
+                        balance < 0
+                          ? "!text-emerald-600 dark:!text-emerald-400"
+                          : balance > 0
+                            ? "!text-red-500 dark:!text-red-400"
+                            : "text-theme";
                       return (
                         <tr className="bg-slate-100 dark:bg-slate-800/50  border-t-2 border-slate-300 dark:border-slate-600">
-                          <td colSpan={2} className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right">Нийт</td>
+                          <td
+                            colSpan={2}
+                            className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right"
+                          >
+                            Нийт
+                          </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                             {formatNumber(totalCharges, 2)}
                           </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
                             {formatNumber(totalPayments, 2)}
                           </td>
-                          <td className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${balanceClass}`}>
+                          <td
+                            className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${balanceClass}`}
+                          >
                             {formatNumber(balance, 2)}
                           </td>
                           <td colSpan={3}></td>
@@ -1119,13 +1434,27 @@ export default function HistoryModal({
                 >
                   <div className="text-center">
                     <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 !text-red-500 dark:!text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 !text-red-500 dark:!text-red-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </div>
-                    <h3 className="text-lg  text-slate-800 dark:text-white mb-2">Устгах уу?</h3>
+                    <h3 className="text-lg  text-slate-800 dark:text-white mb-2">
+                      Устгах уу?
+                    </h3>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                      Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг буцаах боломжгүй.
+                      Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг
+                      буцаах боломжгүй.
                     </p>
                     <div className="flex gap-3">
                       <button
@@ -1164,18 +1493,31 @@ export default function HistoryModal({
                 >
                   <div className="text-center">
                     <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </div>
-                    <p className="text-lg  text-slate-800 dark:text-white">Амжилттай устгалаа!</p>
+                    <p className="text-lg  text-slate-800 dark:text-white">
+                      Амжилттай устгалаа!
+                    </p>
                   </div>
                 </motion.div>
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
-      </div >
-    </AnimatePresence >
+      </div>
+    </AnimatePresence>
   );
 }
