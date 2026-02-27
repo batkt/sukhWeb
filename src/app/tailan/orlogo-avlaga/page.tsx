@@ -471,7 +471,7 @@ export default function OrlogoAvlagaPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className=" mb-2">Нийт орлого</h3>
           <p className="text-2xl text-green-600">
@@ -479,21 +479,12 @@ export default function OrlogoAvlagaPage() {
           </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className=" mb-2">Нийт зарлага</h3>
+          <h3 className=" mb-2">Нийт авлага</h3>
           <p className="text-2xl text-red-600">
             {formatNumber(totalZarlaga)} ₮
           </p>
         </div>
-        <div className="neu-panel p-4 rounded-xl">
-          <h3 className=" mb-2">Үлдэгдэл</h3>
-          <p
-            className={`text-2xl ${
-              totalUldegdel >= 0 ? "text-green-600" : "text-red-600"
-            }`}
-          >
-            {formatNumber(totalUldegdel)} ₮
-          </p>
-        </div>
+        
       </div>
 
       <div className="overflow-hidden rounded-2xl w-full">

@@ -254,7 +254,8 @@ const InvoiceModal = ({
   const baseZardluud = (ashiglaltiinZardluud as Zardal[]) || [];
 
   // Latest invoice rows and total for accurate amounts
-  const [invRows, setInvRows] = React.useState<any[]>([]);
+  const [expenseRows, setExpenseRows] = React.useState<any[]>([]);
+  const [paymentRows, setPaymentRows] = React.useState<any[]>([]);
   const [invTotal, setInvTotal] = React.useState<number | null>(null);
   const [latestInvoice, setLatestInvoice] = React.useState<any>(null);
   const [nekhemjlekhData, setNekhemjlekhData] = React.useState<any>(null);
@@ -264,13 +265,13 @@ const InvoiceModal = ({
   const [cronData, setCronData] = React.useState<any>(null);
   const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(null);
   const invValid = React.useMemo(() => {
-    if (!Array.isArray(invRows) || invRows.length === 0) return false;
-    const invSum = invRows.reduce(
+    if (!Array.isArray(expenseRows) || expenseRows.length === 0) return false;
+    const invSum = expenseRows.reduce(
       (s: number, r: any) => s + (Number(r?.tariff) > 0 ? Number(r.tariff) : 0),
       0,
     );
     return invSum > 0;
-  }, [invRows]);
+  }, [expenseRows]);
   React.useEffect(() => {
     const run = async () => {
       try {
@@ -291,7 +292,6 @@ const InvoiceModal = ({
             ? data
             : [];
         // Filter by resident to get the correct invoice
-        // Match by ovog, ner, and utas (phone number)
         const residentInvoices = list.filter((item: any) => {
           const ovogMatch =
             !resident?.ovog ||
@@ -311,19 +311,19 @@ const InvoiceModal = ({
         const latest = [
           ...(residentInvoices.length > 0 ? residentInvoices : list),
         ].sort((a: any, b: any) => {
-          // Prioritize ognoo field for sorting to get the latest document
           const aOgnoo = a?.ognoo ? new Date(a.ognoo).getTime() : 0;
           const bOgnoo = b?.ognoo ? new Date(b.ognoo).getTime() : 0;
           if (aOgnoo !== bOgnoo) {
             return bOgnoo - aOgnoo;
           }
-          // Fallback to createdAt if ognoo is not available
           const aCreated = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
           const bCreated = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
           return bCreated - aCreated;
         })[0];
+
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
+
         const zardluudRows = Array.isArray(latest?.medeelel?.zardluud)
           ? latest.medeelel.zardluud
           : Array.isArray(latest?.zardluud)
@@ -334,35 +334,9 @@ const InvoiceModal = ({
           : Array.isArray(latest?.guilgeenuud)
             ? latest.guilgeenuud
             : [];
-        // Check if exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан") already exists in zardluud
-        const hasTsahilgaan = zardluudRows.some(
-          (z: any) => {
-            const ner = String(z.ner || "").trim();
-            // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
-            return ner === "Цахилгаан";
-          }
-        );
-        
-        // Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
-        const tsahilgaanRows: any[] = [];
-        if (!hasTsahilgaan && latest) {
-          const tsahilgaanAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
-          if (tsahilgaanAmt > 0) {
-            tsahilgaanRows.push({
-              _id: `tsahilgaan-${latest._id}`,
-              ner: "Цахилгаан",
-              tariff: tsahilgaanAmt,
-              dun: tsahilgaanAmt,
-              turul: "Дурын",
-              zardliinTurul: "Энгийн",
-              tailbar: latest?.medeelel?.tailbar || latest?.tailbar || "",
-              zaalt: true,
-            });
-          }
-        }
-        
-        const rows = [...zardluudRows, ...tsahilgaanRows, ...guilgeenuudRows];
-        setPaymentStatusLabel(getPaymentStatusLabel(latest));
+
+        // Deduplicate Expenses (Zardluud)
+        const expenseMap = new Map<string, any>();
         const pickAmount = (obj: any) => {
           const n = (v: any) => {
             const num = Number(v);
@@ -375,290 +349,93 @@ const InvoiceModal = ({
           const tar = n(obj?.tariff);
           return tar ?? 0;
         };
-        const invoiceTailbar =
-          latest?.medeelel?.tailbar || latest?.tailbar || "";
+
+        const addToExpenseMap = (list: any[]) => {
+          list.forEach((z: any) => {
+            const isEkhnii = z.isEkhniiUldegdel === true || 
+                            String(z.ner || "").startsWith("Эхний үлдэгдэл") || 
+                            String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
+            const amt = pickAmount(z);
+            if (isEkhnii && amt <= 0) return; // Skip zero or negative initial balance
+
+            const ner = isEkhnii ? "Эхний үлдэгдэл" : String(z.ner || z.name || "").trim();
+            const key = ner || z._id || `z-${Math.random()}`;
+            const existing = expenseMap.get(key);
+            if (!existing || amt > pickAmount(existing)) {
+              expenseMap.set(key, { ...z, ner, dun: amt });
+            }
+          });
+        };
+
+        addToExpenseMap(zardluudRows);
+
+        // Add Цахилгаан if missing
+        const hasTsahilgaan = Array.from(expenseMap.values()).some(z => String(z.ner).trim() === "Цахилгаан");
+        if (!hasTsahilgaan && latest) {
+          const tsahAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
+          if (tsahAmt > 0) {
+            expenseMap.set("Цахилгаан", { ner: "Цахилгаан", tariff: tsahAmt, dun: tsahAmt });
+          }
+        }
+
+        // Add manual receivables from guilgeenuud to expenses
+        const manualReceivables = guilgeenuudRows.filter((g: any) => {
+          const t = String(g.turul || "").toLowerCase();
+          return t === "avlaga" || t === "авлага";
+        });
+        addToExpenseMap(manualReceivables);
+
         const norm = (z: any, idx: number) => ({
-          _id: z._id || `inv-${idx}`,
-          ner:
-            z.turul === "avlaga"
-              ? `${z.tailbar || z.ner || z.name || ""}(авлага) ${formatDate(
-                z.ognoo,
-              )}`
-              : z.ner || z.name || "",
+          _id: z._id || `exp-${idx}`,
+          ner: z.ner || z.name || "",
           tariff: Number(z?.tariff) || 0,
           dun: pickAmount(z),
           turul: z.turul,
-          zardliinTurul: z.zardliinTurul,
-          tailbar: invoiceTailbar,
+          tailbar: z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || "",
         });
-        // Filter out negative "Эхний үлдэгдэл" entries (don't show minus values)
-        const filteredRows = rows.filter((z: any) => {
-          if (z.isEkhniiUldegdel === true || z.ner === "Эхний үлдэгдэл") {
-            const amt = Number(z.dun ?? z.tariff ?? z.tulukhDun ?? 0);
-            // Don't show if negative, but show if 0 or positive
-            if (amt < 0) {
-              return false;
-            }
-          }
-          return true;
-        });
-        setInvRows(filteredRows.map(norm));
-        const t = Number(
-          latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0,
-        );
+
+        setExpenseRows(Array.from(expenseMap.values()).map(norm));
+
+        // Process Payments (Guilgeenuud)
+        const payments = guilgeenuudRows.filter((g: any) => {
+          const t = String(g.turul || "").toLowerCase();
+          const isTulsun = Number(g.tulsunDun) > 0 || Number(g.dun) > 0;
+          return t !== "avlaga" && t !== "авлага" && isTulsun;
+        }).map((g: any, idx: number) => ({
+          _id: g._id || `pay-${idx}`,
+          ognoo: g.ognoo || g.tulsunOgnoo,
+          tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
+          dun: Number(g.tulsunDun || g.dun || 0),
+          turul: g.turul || "Төлбөр",
+          ajiltan: g.ajiltanNer || "Систем",
+        }));
+        setPaymentRows(payments);
+
+        setPaymentStatusLabel(getPaymentStatusLabel(latest));
+
+        const t = Number(latest?.niitTulbur ?? latest?.niitDun ?? latest?.total ?? 0);
         setInvTotal(Number.isFinite(t) ? t : null);
 
-        // Fetch cron data
-        try {
-          const cronResp = await uilchilgee(token).get(
-            `/nekhemjlekhCron/${baiguullagiinId}`,
-            {
-              params: {
-                barilgiinId: selectedBuildingId || barilgiinId || null,
-              },
-            },
-          );
-          if (cronResp.data?.success && Array.isArray(cronResp.data?.data)) {
-            setCronData(cronResp.data.data[0] || null);
-          } else {
-            setCronData(null);
-          }
-        } catch (cronError) {
-          // Silently fail for cron data - it's optional
-          setCronData(null);
-        }
-        setCronData(null);
-
-        // Fetch actual total paid from /tulsunSummary for correct Үлдэгдэл дүн
+        // Fetch cron and paid summary
         const gereeId = latest?.gereeniiId || latest?.gereeId;
         if (gereeId) {
-          uilchilgee(token)
-            .post("/tulsunSummary", {
-              baiguullagiinId,
-              gereeniiId: gereeId,
-            })
-            .then((paidResp) => {
-              const paid =
-                Number(
-                  paidResp.data?.totalTulsunDun ??
-                    paidResp.data?.totalInvoicePayment ??
-                    0,
-                ) || 0;
-              setTotalPaidFromApi(paid);
-            })
+          uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
+            .then(r => setTotalPaidFromApi(Number(r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0)))
             .catch(() => setTotalPaidFromApi(null));
-        } else {
-          setTotalPaidFromApi(null);
         }
       } catch (e) {
-        setInvRows([]);
+        setExpenseRows([]);
+        setPaymentRows([]);
         setInvTotal(null);
-        setPaymentStatusLabel("Тодорхойгүй");
-        setLatestInvoice(null);
-        setCronData(null);
         setTotalPaidFromApi(null);
       }
     };
     run();
-  }, [
-    isOpen,
-    token,
-    baiguullagiinId,
-    resident?._id,
-    selectedBuildingId,
-    barilgiinId,
-  ]);
-
-  // Use data from nekhemjlekhiinTuukh response instead of geree service
-  const contractData = latestInvoice || nekhemjlekhData;
-  const backendRows: Zardal[] | null = React.useMemo(() => {
-    const raw =
-      contractData?.medeelel?.zardluud || contractData?.zardluud || [];
-    const pickAmount = (obj: any) => {
-      const n = (v: any) => {
-        const num = Number(v);
-        return Number.isFinite(num) ? num : null;
-      };
-      const dun = n(obj?.dun);
-      if (dun !== null && dun > 0) return dun;
-      const td = n(obj?.tulukhDun);
-      if (td !== null && td > 0) return td;
-      const tar = n(obj?.tariff);
-      return tar ?? 0;
-    };
-    return Array.isArray(raw)
-      ? raw.map((r: any, idx: number) => ({
-        _id: r._id || `row-${idx}`,
-        ner: r.ner || r.name || "",
-        tariff: Number(r?.tariff) || 0,
-        dun: pickAmount(r),
-        turul: r.turul,
-        zardliinTurul: r.zardliinTurul,
-      }))
-      : null;
-  }, [contractData]);
-
-  const backendTotal: number | null =
-    typeof contractData?.niitTulbur === "number"
-      ? Number(contractData.niitTulbur)
-      : null;
-
-  const guilgeeRows = React.useMemo(() => {
-    const raw =
-      contractData?.medeelel?.guilgeenuud || contractData?.guilgeenuud || [];
-    return Array.isArray(raw)
-      ? raw.map((g: any, idx: number) => ({
-        _id: g._id || `guilgee-${idx}`,
-        ner: `${g.tailbar || ""}(авлага) ${formatDate(g.ognoo)}`,
-        tariff: 0,
-        dun: Number(g.tulukhDun) || 0,
-        turul: "avlaga",
-        zardliinTurul: "Авлага",
-        ognoo: g.ognoo,
-      }))
-      : [];
-  }, [contractData]);
-
-  const invoiceRows = React.useMemo(() => {
-    // Prefer guilgeenuudForNekhemjlekh if available
-    if (guilgeeRows.length > 0) {
-      return guilgeeRows;
-    }
-
-    // Prefer invRows from API response if available (most complete and up-to-date)
-    // The API response from /nekhemjlekhiinTuukh has the complete zardluud data
-    if (invRows.length > 0) {
-      return invRows;
-    }
-
-    // Fall back to backendRows from contractData if invRows is not available
-    if (backendRows && backendRows.length > 0) {
-      const raw =
-        contractData?.medeelel?.zardluud || contractData?.zardluud || [];
-      const liftEntries = Array.isArray(raw)
-        ? raw.filter(
-          (r: any) =>
-            r.zardliinTurul === "Лифт" ||
-            String(r.ner || "")
-              .trim()
-              .toLowerCase() === "лифт" ||
-            String(r.turul || "")
-              .trim()
-              .toLowerCase() === "лифт",
-        )
-        : [];
-      const pickAmount = (obj: any) => {
-        const n = (v: any) => {
-          const num = Number(v);
-          return Number.isFinite(num) ? num : null;
-        };
-        const dun = n(obj?.dun);
-        if (dun !== null && dun > 0) return dun;
-        const td = n(obj?.tulukhDun);
-        if (td !== null && td > 0) return td;
-        const tar = n(obj?.tariff);
-        return tar ?? 0;
-      };
-      const liftTariffAbs =
-        liftEntries.length > 0 ? Math.abs(pickAmount(liftEntries[0])) : 0;
-
-      const nonLift = backendRows.filter((z) => !isLiftItem(z));
-
-      // If user is lift-exempt, we show a negative line for the lift discount
-      // (and hide the original lift lines). Otherwise include the lift rows
-      // as normal so their tariffs are visible on the invoice.
-      if (isLiftExempt) {
-        if (liftTariffAbs > 0) {
-          return [
-            ...nonLift,
-            {
-              _id: "lift-discount-display",
-              ner: "Лифт хөнгөлөлт",
-              tariff: 0,
-              dun: -liftTariffAbs,
-              discount: true as const,
-            } as any,
-          ];
-        }
-        return nonLift;
-      }
-
-      // Not exempt: include all backend rows (including lift entries)
-      return backendRows;
-    }
-
-    const parseNum = (v: any) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
-    };
-    const normalize = (z: Zardal) => {
-      const dunVal =
-        parseNum((z as any)?.dun) ?? parseNum((z as any)?.tulukhDun);
-      const tariffVal = parseNum((z as any)?.tariff);
-      const isEmpty = dunVal === null && tariffVal === null;
-      if (isLiftItem(z) && isEmpty) {
-        return { ...z, tariff: null, dun: null };
-      }
-      return {
-        ...z,
-        tariff: tariffVal ?? 0,
-        dun: dunVal ?? tariffVal ?? 0,
-      } as Zardal;
-    };
-
-    const normalized = (baseZardluud as Zardal[]).map(normalize);
-
-    if (!isLiftExempt) return normalized;
-
-    const nonLift = normalized.filter((z) => !isLiftItem(z));
-    const liftDuns = normalized
-      .filter((z) => isLiftItem(z))
-      .map((z) => (z as any)?.dun)
-      .filter(
-        (v) =>
-          v !== null && v !== undefined && v !== "" && !Number.isNaN(Number(v)),
-      )
-      .map((v) => Number(v));
-
-    if (liftDuns.length === 0) {
-      return nonLift;
-    }
-
-    const liftSum = liftDuns.reduce((s, v) => s + v, 0);
-
-    return [
-      ...nonLift,
-      {
-        _id: "lift-discount-fallback",
-        ner: "Лифт хөнгөлөлт",
-        tariff: 0,
-        dun: liftSum === 0 ? 0 : -Math.abs(liftSum),
-        discount: true as const,
-      } as any,
-    ];
-  }, [
-    baseZardluud,
-    isLiftExempt,
-    backendRows,
-    backendTotal,
-    contractData,
-    invRows,
-    invValid,
-    guilgeeRows,
-  ]);
-
-  const useBackendRows = !!(backendRows && backendRows.length > 0);
+  }, [isOpen, token, baiguullagiinId, resident?._id, selectedBuildingId, barilgiinId]);
 
   const totalSum = React.useMemo(() => {
-    if (nekhemjlekhData?.niitTulbur != null) {
-      return Number(nekhemjlekhData.niitTulbur);
-    }
-    if (invValid && invTotal !== null) return invTotal;
-    const rowSum = invoiceRows
-      .filter((item: any) => !item?.discount)
-      .reduce((sum: any, item: any) => sum + Number(item?.dun ?? 0), 0);
-    return rowSum;
-  }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
+    return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
+  }, [expenseRows]);
 
   const uldegdelDun = React.useMemo(() => {
     const total = totalSum;
@@ -696,7 +473,7 @@ const InvoiceModal = ({
                 </h2>
                 <p className="text-sm text-slate-500">
                   Нэхэмжлэхийн дугаар:{" "}
-                  {contractData?.nekhemjlekhiinDugaar ||
+                  {latestInvoice?.nekhemjlekhiinDugaar ||
                     nekhemjlekhData?.nekhemjlekhiinDugaar ||
                     latestInvoice?.nekhemjlekhiinDugaar ||
                     "-"}
@@ -704,7 +481,7 @@ const InvoiceModal = ({
                 <p className="text-sm text-slate-500">
                   Огноо:{" "}
                   {formatDate(
-                    contractData?.ognoo ||
+                    latestInvoice?.ognoo ||
                     nekhemjlekhData?.ognoo ||
                     latestInvoice?.ognoo ||
                     "",
@@ -792,7 +569,7 @@ const InvoiceModal = ({
                   <p className="text-sm text-slate-600">
                     <span className="">Огноо:</span>{" "}
                     {formatDate(
-                      contractData?.ognoo ||
+                      latestInvoice?.ognoo ||
                       nekhemjlekhData?.ognoo ||
                       latestInvoice?.ognoo ||
                       currentDate,
@@ -829,7 +606,7 @@ const InvoiceModal = ({
                   </p>
                   <p>
                     <span className="text-slate-500">Гэрээ №:</span>{" "}
-                    {contractData?.gereeniiDugaar || "-"}
+                    {latestInvoice?.gereeniiDugaar || "-"}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -841,133 +618,107 @@ const InvoiceModal = ({
               </div>
             </div>
 
-            <div className="border border-gray-100 rounded-xl overflow-hidden print-break">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="py-2 px-3 text-left text-slate-600">
-                      Зардал
-                    </th>
-                    <th className="py-2 px-3 text-right text-slate-600">
-                      Тариф
-                    </th>
-                    <th className="py-2 px-3 text-right text-slate-600">
-                      Тайлбар
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {invoiceRows.map((row: any) => (
-                    <tr key={row._id}>
-                      <td
-                        className={`py-2 px-3 ${row.discount
-                            ? "text-green-700  italic"
-                            : ""
-                          }`}
-                      >
-                        {row.ner}
-                      </td>
-                      <td
-                        className={`py-2 px-3 text-right ${row.discount
-                            ? "text-green-700  line-through"
-                            : ""
-                          }`}
-                      >
-                        {row.tariff == null
-                          ? "-"
-                          : formatNumber(Number(row.tariff))}
-                        ₮
-                      </td>
-                      <td
-                        className={`py-2 px-3 text-right ${row.discount
-                            ? "text-green-700  line-through"
-                            : ""
-                          }`}
-                      >
-                        {row.tailbar}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-gray-50 divide-y border-t border-gray-100">
-                  <tr>
-                    <td colSpan={2} className="py-2 px-3 text-slate-700">
-                      Нийт дүн:
-                    </td>
-                    <td className="py-2 px-3 text-right text-slate-900">
-                      {formatNumber(totalSum)} ₮
-                    </td>
-                  </tr>
-                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
+            {/* Expenses Table */}
+            <div>
+              <h4 className="font-bold mb-2 text-slate-700">Зардлын жагсаалт</h4>
+              <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <td colSpan={2} className="py-2 px-3 text-slate-700">
-                        Төлсөн дүн:
-                      </td>
-                      <td className="py-2 px-3 text-right text-slate-900">
-                        {formatNumber(totalPaidFromApi)} ₮
-                      </td>
+                      <th className="py-2 px-3 text-left text-slate-600">Зардал</th>
+                      <th className="py-2 px-3 text-right text-slate-600">Дүн</th>
+                      <th className="py-2 px-3 text-right text-slate-600">Тайлбар</th>
                     </tr>
-                  )}
-                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
-                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {expenseRows.map((row: any) => (
+                      <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="py-2 px-3 text-slate-700">{row.ner}</td>
+                        <td className="py-2 px-3 text-right text-slate-900 font-medium">
+                          {formatNumber(Number(row.dun))} ₮
+                        </td>
+                        <td className="py-2 px-3 text-right text-slate-500">{row.tailbar}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-gray-50 border-t border-gray-100">
                     <tr>
-                      <td colSpan={2} className="py-2 px-3 text-slate-700">
-                        Үлдэгдэл дүн:
-                      </td>
-                      <td className="py-2 px-3 text-right text-blue-600">
-                        {formatNumber(uldegdelDun)} ₮
+                      <td colSpan={2} className="py-2 px-3 text-slate-700 font-bold">Нийт дүн:</td>
+                      <td className="py-2 px-3 text-right text-slate-900 font-bold">
+                        {formatNumber(totalSum)} ₮
                       </td>
                     </tr>
-                  ) : null}
-                </tfoot>
-              </table>
+                  </tfoot>
+                </table>
+              </div>
             </div>
 
-            <div className="border-t border-gray-100 pt-4 print-break">
-              <div className="flex flex-col gap-2">
-                {paymentStatusLabel !== "Тодорхойгүй" && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-500">
-                      Төлбөрийн төлөв:
-                    </span>
-                    <span
-                      className={`badge-status ${
-                        paymentStatusLabel === "Төлсөн"
-                          ? "badge-paid"
-                          : paymentStatusLabel === "Төлөөгүй" ||
-                              paymentStatusLabel === "Хугацаа хэтэрсэн"
-                            ? "badge-unpaid"
-                            : "badge-unknown"
-                      }`}
-                    >
-                      {paymentStatusLabel}
+            {/* Payments Table */}
+            {paymentRows.length > 0 && (
+              <div>
+                <h4 className="font-bold mb-2 text-slate-700">Төлөлтийн мэдээлэл</h4>
+                <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="py-2 px-3 text-left text-slate-600">Огноо</th>
+                        <th className="py-2 px-3 text-left text-slate-600">Тайлбар</th>
+                        <th className="py-2 px-3 text-right text-slate-600">Дүн</th>
+                        <th className="py-2 px-3 text-right text-slate-600">Төрөл</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {paymentRows.map((row: any) => (
+                        <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">{formatDate(row.ognoo)}</td>
+                          <td className="py-2 px-3 text-slate-700">{row.tailbar}</td>
+                          <td className="py-2 px-3 text-right text-green-700 font-bold">-{formatNumber(row.dun)} ₮</td>
+                          <td className="py-2 px-3 text-right text-slate-500">{row.turul}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t font-bold text-green-700">
+                      <tr>
+                        <td colSpan={2} className="py-2 px-3">Төлсөн дүн (энэ удаа):</td>
+                        <td className="py-2 px-3 text-right">
+                          {formatNumber(paymentRows.reduce((s, r) => s + (Number(r.dun) || 0), 0))} ₮
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-gray-100 pt-6 mt-4">
+              <div className="flex flex-col items-end gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-500 font-medium whitespace-nowrap">Төлбөрийн төлөв:</span>
+                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                    paymentStatusLabel === "Төлсөн" 
+                    ? "bg-green-100 text-green-700 border border-green-200" 
+                    : "bg-red-100 text-red-700 border border-red-200"
+                  }`}>
+                    {paymentStatusLabel}
+                  </span>
+                </div>
+                
+                <div className="w-full max-w-[300px] space-y-2 text-right">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
+                    <span className="text-slate-900 font-medium">{formatNumber(totalSum)} ₮</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-slate-500">Нийт төлсөн:</span>
+                    <span className="text-green-700 font-medium">-{formatNumber(totalPaidFromApi || 0)} ₮</span>
+                  </div>
+                  <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
+                    <span className="text-base font-bold text-slate-800">Үлдэгдэл дүн:</span>
+                    <span className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}>
+                      {formatNumber(uldegdelDun)} ₮
                     </span>
                   </div>
-                )}
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-slate-500">
-                    Нийт дүн:{" "}
-                    <span className=" text-slate-900">
-                      {formatNumber(totalSum)} ₮
-                    </span>
-                  </span>
-                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
-                    <span className="text-sm text-slate-500">
-                      Төлсөн дүн:{" "}
-                      <span className=" text-slate-900">
-                        {formatNumber(totalPaidFromApi)} ₮
-                      </span>
-                    </span>
-                  )}
-                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
-                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
-                    <span className="text-sm text-slate-500">
-                      Үлдэгдэл дүн:{" "}
-                      <span className=" text-slate-900">
-                        {formatNumber(uldegdelDun)} ₮
-                      </span>
-                    </span>
-                  ) : null}
                 </div>
               </div>
             </div>
