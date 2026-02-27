@@ -1432,13 +1432,12 @@ export default function DansniiKhuulga() {
       }
 
       // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
-      // For invoices/other items, prefer niitTulburOriginal (full invoice total) when available,
-      // then fall back to niitTulbur/niitDun/total, matching HistoryModal's charge calculation.
+      // For invoices/other items, base on niitTulbur/niitDun/total (sum of zardluud),
+      // matching HistoryModal's charge calculation and avoiding double-counting niitTulburOriginal.
       let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
         : Number(
-            it?.niitTulburOriginal ??
-              it?.niitTulbur ??
+            it?.niitTulbur ??
               it?.niitDun ??
               it?.total ??
               it?.tulukhDun ??
@@ -1449,8 +1448,8 @@ export default function DansniiKhuulga() {
 
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
-        // For invoices: base on full invoice total (prefer niitTulburOriginal),
-        // which is the sum of zardluud/expenses, including electricity and adjustments.
+        // For invoices: base on niitTulbur/niitDun/total (sum of zardluud/expenses),
+        // which matches what HistoryModal derives from zardluud.
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
           ? it.medeelel.guilgeenuud
           : Array.isArray(it?.guilgeenuud)
@@ -1458,8 +1457,7 @@ export default function DansniiKhuulga() {
             : [];
         
         itemAmount = Number(
-          it?.niitTulburOriginal ??
-            it?.niitTulbur ??
+          it?.niitTulbur ??
             it?.niitDun ??
             it?.total ??
             it?.tulukhDun ??
@@ -1620,8 +1618,7 @@ export default function DansniiKhuulga() {
     let itemAmount = isStandaloneEkhniiUldegdel
       ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
       : Number(
-          it?.niitTulburOriginal ??
-            it?.niitTulbur ??
+          it?.niitTulbur ??
             it?.niitDun ??
             it?.total ??
             it?.tulukhDun ??
@@ -1712,33 +1709,15 @@ export default function DansniiKhuulga() {
         "";
 
       if (sortField === "uldegdel" || sortField === "paid") {
-        const gidA = getGid(a);
-        const gidB = getGid(b);
-        const paidA = gidA ? (paidSummaryByGereeId[gidA] ?? 0) : 0;
-        const paidB = gidB ? (paidSummaryByGereeId[gidB] ?? 0) : 0;
-
         if (sortField === "paid") {
-          aVal = paidA;
-          bVal = paidB;
+          const gidA = getGid(a);
+          const gidB = getGid(b);
+          aVal = gidA ? (paidSummaryByGereeId[gidA] ?? 0) : 0;
+          bVal = gidB ? (paidSummaryByGereeId[gidB] ?? 0) : 0;
         } else {
-          const totalA = Number(
-            a?._totalTulbur ??
-              a?.niitTulbur ??
-              a?.niitDun ??
-              a?.total ??
-              a?.tulukhDun ??
-              0,
-          );
-          const totalB = Number(
-            b?._totalTulbur ??
-              b?.niitTulbur ??
-              b?.niitDun ??
-              b?.total ??
-              b?.tulukhDun ??
-              0,
-          );
-          aVal = totalA - paidA;
-          bVal = totalB - paidB;
+          // Just use uldegdel directly from data - NO calculation
+          aVal = Number(a?.uldegdel ?? 0);
+          bVal = Number(b?.uldegdel ?? 0);
         }
       } else if (sortField === "toot") {
         const getTootVal = (it: any) => {
@@ -1939,11 +1918,9 @@ export default function DansniiKhuulga() {
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidentsAll.length;
     const paidCount = deduplicatedResidentsAll.filter((r: any) => {
-      const gid = getGereeId(r);
-      const paid = gid ? (paidSummaryByGereeId[gid] ?? 0) : 0;
-      const uldegdel = r._totalTulbur - paid;
-      // Paid = balance settled AND has at least one payment record (excludes e.g. negative initial balance with no payments)
-      return uldegdel <= 1 && paid > 0;
+      // Use uldegdel directly from data
+      const uldegdel = Number(r?.uldegdel ?? 0);
+      return uldegdel <= 0;
     }).length;
     const unpaidCount = residentCount - paidCount;
 
@@ -3671,21 +3648,8 @@ export default function DansniiKhuulga() {
                                 );
                               }
                               case "uldegdel": {
-                                // Prefer the calculated balance (Total - Paid Summary) for consistency with footer/modal
-                                // matching "nekhemjlekh uldegdel" logic.
-                                const gid =
-                                  (it?.gereeniiId && String(it.gereeniiId)) ||
-                                  (ct?._id && String(ct._id)) ||
-                                  "";
-                                const paid = gid
-                                  ? (paidSummaryByGereeId[gid] ?? 0)
-                                  : 0;
-                                const remaining = total - paid;
-                                // Green for negative (overpayment/credit), red for positive (debt)
-                                const colorClass =
-                                  remaining < 0
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : remaining > 0;
+                                // Just show uldegdel directly from data - NO calculation
+                                const remaining = Number(it?.uldegdel ?? 0);
 
                                 return (
                                   <td
@@ -3754,15 +3718,8 @@ export default function DansniiKhuulga() {
                                     <div className="flex items-center justify-center gap-2">
                                       <button
                                         onClick={() => {
-                                          const gid =
-                                            (it?.gereeniiId &&
-                                              String(it.gereeniiId)) ||
-                                            (ct?._id && String(ct._id)) ||
-                                            "";
-                                          const paid = gid
-                                            ? (paidSummaryByGereeId[gid] ?? 0)
-                                            : 0;
-                                          const contractBalance = total - paid;
+                                          // Use uldegdel directly from data - NO calculation
+                                          const contractBalance = Number(it?.uldegdel ?? 0);
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3950,15 +3907,10 @@ export default function DansniiKhuulga() {
                           </span>
                         );
                       } else if (col.key === "uldegdel") {
-                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
+                        // Just sum uldegdel directly from data - NO calculation
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            const tulbur = Number(it?._totalTulbur ?? 0);
-                            const gid = getGereeId(it);
-                            const tulsun = gid
-                              ? (paidSummaryByGereeId[gid] ?? 0)
-                              : 0;
-                            return sum + (tulbur - tulsun);
+                            return sum + Number(it?.uldegdel ?? 0);
                           },
                           0,
                         );
