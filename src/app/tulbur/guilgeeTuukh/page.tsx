@@ -1334,24 +1334,19 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
+          ekhlekhOgnoo?.[0] || null,
+          ekhlekhOgnoo?.[1] || null,
         ]
       : null,
-    async ([url, tkn, orgId, branch]: [
-      string,
-      string,
-      string,
-      string | null,
-    ]) => {
+    async ([url, tkn, orgId, branch, start, end]) => {
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: orgId,
-          ...(branch ? { barilgiinId: branch } : {}),
+          barilgiinId: branch || undefined,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
-          query: {
-            baiguullagiinId: orgId,
-            ...(branch ? { barilgiinId: branch } : {}),
-          },
         },
       });
       return resp.data;
@@ -1359,7 +1354,6 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-  // Fetch standalone receivables (manual adjustments not yet invoiced)
   const { data: receivableData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
@@ -1367,18 +1361,19 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
+          ekhlekhOgnoo?.[0] || null,
+          ekhlekhOgnoo?.[1] || null,
         ]
       : null,
-    async ([url, tkn, orgId, branch]) => {
+    async ([url, tkn, orgId, branch, start, end]) => {
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: orgId,
+          barilgiinId: branch || undefined,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
-          query: {
-            baiguullagiinId: orgId,
-            ...(branch ? { barilgiinId: branch } : {}),
-          },
         },
       });
       return resp.data;
@@ -1426,8 +1421,14 @@ export default function DansniiKhuulga() {
     if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1]))
       return combined;
     const [start, end] = ekhlekhOgnoo;
-    const s = start ? new Date(start).getTime() : Number.NEGATIVE_INFINITY;
-    const e = end ? new Date(end).getTime() : Number.POSITIVE_INFINITY;
+    const startObj = start ? new Date(start) : null;
+    if (startObj) startObj.setHours(0, 0, 0, 0);
+    const endObj = end ? new Date(end) : null;
+    if (endObj) endObj.setHours(23, 59, 59, 999);
+
+    const s = startObj ? startObj.getTime() : Number.NEGATIVE_INFINITY;
+    const e = endObj ? endObj.getTime() : Number.POSITIVE_INFINITY;
+
     return combined.filter((it: any) => {
       const d = new Date(
         it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
