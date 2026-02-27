@@ -1389,10 +1389,13 @@ export default function DansniiKhuulga() {
       }
 
       // For standalone ekhniiUldegdel records (that don't have an invoice), use undsenDun (original amount)
+      // For invoices/other items, prefer niitTulburOriginal (full invoice total) when available,
+      // then fall back to niitTulbur/niitDun/total, matching HistoryModal's charge calculation.
       let itemAmount = isStandaloneEkhniiUldegdel
         ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
         : Number(
-            it?.niitTulbur ??
+            it?.niitTulburOriginal ??
+              it?.niitTulbur ??
               it?.niitDun ??
               it?.total ??
               it?.tulukhDun ??
@@ -1403,22 +1406,23 @@ export default function DansniiKhuulga() {
 
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
-        // For invoices: sum only the expense components (zardluud and avlaga-type guilgeenuud)
+        // For invoices: base on full invoice total (prefer niitTulburOriginal),
+        // which is the sum of zardluud/expenses, including electricity and adjustments.
         const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
           ? it.medeelel.guilgeenuud
           : Array.isArray(it?.guilgeenuud)
             ? it.guilgeenuud
             : [];
         
-        // Use niitDun/niitTulbur as base (this is the sum of zardluud/expenses)
         itemAmount = Number(
-          it?.niitTulbur ??
-          it?.niitDun ??
-          it?.total ??
-          it?.tulukhDun ??
-          it?.undsenDun ??
-          it?.dun ??
-          0
+          it?.niitTulburOriginal ??
+            it?.niitTulbur ??
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
         ) || 0;
 
         // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
@@ -1570,17 +1574,18 @@ export default function DansniiKhuulga() {
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) return;
       }
 
-      let itemAmount = isStandaloneEkhniiUldegdel
-        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(
+    let itemAmount = isStandaloneEkhniiUldegdel
+      ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+      : Number(
+          it?.niitTulburOriginal ??
             it?.niitTulbur ??
-              it?.niitDun ??
-              it?.total ??
-              it?.tulukhDun ??
-              it?.undsenDun ??
-              it?.dun ??
-              0,
-          ) || 0;
+            it?.niitDun ??
+            it?.total ??
+            it?.tulukhDun ??
+            it?.undsenDun ??
+            it?.dun ??
+            0,
+        ) || 0;
 
       // Determine if this item is a CHARGE (increases total) or a PAYMENT (increases paid)
       // Usually "tulult" (payment) or "tsutlsasan" (cancelled) records are payments/deductions
@@ -3736,17 +3741,7 @@ export default function DansniiKhuulga() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data; include current balance
-                                          const gid =
-                                            (it?.gereeniiId &&
-                                              String(it.gereeniiId)) ||
-                                            (ct?._id && String(ct._id)) ||
-                                            "";
-                                          const paid = gid
-                                            ? (paidSummaryByGereeId[gid] ?? 0)
-                                            : 0;
-                                          const contractBalance = total - paid;
-
+                                          // Create resident-like object from transaction data
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3756,7 +3751,6 @@ export default function DansniiKhuulga() {
                                             gereeniiId:
                                               it?.gereeniiId || ct?._id,
                                             ...it,
-                                            _contractBalance: contractBalance,
                                           };
                                           setHistoryResident(residentData);
                                           setIsHistoryOpen(true);

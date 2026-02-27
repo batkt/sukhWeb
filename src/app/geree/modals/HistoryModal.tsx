@@ -631,6 +631,12 @@ export default function HistoryModal({
         return createA - createB;
       });
 
+      // Calculate Running Balance
+      // Use fresh fetched balance if available, otherwise fallback to prop
+      const currentBalance = freshContract?.uldegdel !== undefined
+        ? Number(freshContract.uldegdel)
+        : (contract?.uldegdel ? Number(contract.uldegdel) : null);
+
       // Calculate total charges and payments in the ledger
       const totalCharges = flatLedger.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0);
       const totalPayments = flatLedger.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0);
@@ -641,24 +647,15 @@ export default function HistoryModal({
           (row.ner === "Эхний үлдэгдэл" || (row.ner && row.ner.includes("Эхний үлдэгдэл")))
       );
 
-      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
+      console.log(`💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`);
 
       // Compute expected balance from ledger (charges - payments)
       const computedBalance = totalCharges - totalPayments;
 
-      // Use the balance from the parent page (contract._contractBalance) when available
-      // so that the latest row's Үлдэгдэл matches the main table's Үлдэгдэл.
-      let startingBalance = 0;
-      if (contract && contract._contractBalance != null) {
-        const target = Number(contract._contractBalance);
-        if (Number.isFinite(target)) {
-          // Offset the running balance so that final balance equals the main page balance
-          startingBalance = target - computedBalance;
-        }
-      }
-
-      console.log(`💰 [HistoryModal] Using FORWARD calculation with startingBalance=${startingBalance}`);
-      let runningBalance = startingBalance;
+      // ALWAYS use FORWARD calculation for History Modal to ensure the math always adds up correctly
+      // based on the visible transactions, rather than relying on a potentially out-of-sync contract balance
+      console.log(`💰 [HistoryModal] Using FORWARD calculation (starting from 0)`);
+      let runningBalance = 0;
 
       for (let i = 0; i < flatLedger.length; i++) {
         const row = flatLedger[i];
