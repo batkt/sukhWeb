@@ -3736,7 +3736,17 @@ export default function DansniiKhuulga() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data
+                                          // Create resident-like object from transaction data; include current balance
+                                          const gid =
+                                            (it?.gereeniiId &&
+                                              String(it.gereeniiId)) ||
+                                            (ct?._id && String(ct._id)) ||
+                                            "";
+                                          const paid = gid
+                                            ? (paidSummaryByGereeId[gid] ?? 0)
+                                            : 0;
+                                          const contractBalance = total - paid;
+
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3746,6 +3756,7 @@ export default function DansniiKhuulga() {
                                             gereeniiId:
                                               it?.gereeniiId || ct?._id,
                                             ...it,
+                                            _contractBalance: contractBalance,
                                           };
                                           setHistoryResident(residentData);
                                           setIsHistoryOpen(true);
