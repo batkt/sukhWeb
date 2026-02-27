@@ -9,6 +9,49 @@ import DatePickerInput from "../../../components/ui/DatePickerInput";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
+import { FileSpreadsheet, Printer, Download } from "lucide-react";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 1cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container, .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 4px !important;
+        font-size: 8pt !important;
+      }
+      .max-h-[45vh] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+    }
+  `}</style>
+);
 
 interface AvlagiinNasjiltItem {
   _id: string;
@@ -206,11 +249,78 @@ export default function AvlagiinNasjiltPage() {
     return data.reduce((sum, item) => sum + (item.khuvi || 0), 0);
   }, [data]);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl">Авлагийн насжилт</h1>
+  const exportToExcel = () => {
+    if (!data.length) return;
+    const headers = [
+      "№",
+      "Гэрээний дугаар",
+      "Нэр",
+      "Утас",
+      "Огнoo",
+      "Төлөх огнoo",
+      "Нийт төлбөр",
+      "Төлөв",
+      "Хугацаа хэтэрсэн хоног",
+      "Хугацаа хэтэрсэн сар",
+    ];
+    const csvContent = [
+      headers.join(","),
+      ...data.map((item, idx) =>
+        [
+          idx + 1,
+          `"${item.gereeniiDugaar || ""}"`,
+          `"${item.ner || ""}"`,
+          `"${Array.isArray(item.utas) ? item.utas.join("; ") : item.utas || ""}"`,
+          `"${item.ognoo?.split("T")[0] || ""}"`,
+          `"${item.tulukhOgnoo?.split("T")[0] || ""}"`,
+          item.niitTulbur ?? item.avlaga ?? 0,
+          `"${item.tuluv || ""}"`,
+          item.daysOverdue ?? 0,
+          item.monthsOverdue ?? 0,
+        ].join(",")
+      ),
+    ].join("\n");
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `avlagiin_nasjilt_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="p-6 print-container h-full flex flex-col">
+      <PrintStyles />
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold text-theme">Авлагийн насжилт</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Excel татах
+          </button>
+          <button
+            onClick={handlePrint}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            Хэвлэх
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print">
         <div className="p-3 rounded-xl mt-6">
           <DatePickerInput
             type="range"
@@ -456,7 +566,7 @@ export default function AvlagiinNasjiltPage() {
               </tbody>
             </table>
           </div>
-          <div className="border-t dark:border-gray-800 border-gray-100">
+          <div className="border-t dark:border-gray-800 border-gray-100 no-print">
             <table className="text-sm min-w-full">
               <tbody>
                 <tr>
@@ -481,7 +591,7 @@ export default function AvlagiinNasjiltPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between no-print">
         <div className="text-sm text-theme/70">
           Нийт: {summary?.count || data.length}
         </div>

@@ -62,83 +62,7 @@ const formatCurrency = (amount: number) => {
   return `${formatNumber(amount)} ₮`;
 };
 
-const PrintStyles = () => (
-  <style jsx global>{`
-    @media print {
-      @page {
-        size: A4;
-        margin: 1.5cm;
-      }
 
-      body * {
-        visibility: hidden;
-      }
-
-      .invoice-modal,
-      .invoice-modal * {
-        visibility: visible !important;
-      }
-
-      .invoice-modal {
-        position: static !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        background: white !important;
-        page-break-after: avoid;
-        page-break-before: avoid;
-        page-break-inside: avoid;
-      }
-
-      .invoice-modal * {
-        color: black !important;
-      }
-
-      .no-print {
-        display: none !important;
-      }
-
-      .print-break {
-        break-inside: avoid;
-      }
-
-      table {
-        page-break-inside: avoid;
-      }
-
-      .invoice-modal h2 {
-        font-size: 18pt !important;
-      }
-      .invoice-modal h3 {
-        font-size: 14pt !important;
-      }
-      .invoice-modal p,
-      .invoice-modal td,
-      .invoice-modal th {
-        font-size: 11pt !important;
-      }
-
-      .invoice-modal table {
-        border-collapse: collapse;
-        width: 100%;
-      }
-
-      .invoice-modal th,
-      .invoice-modal td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: left;
-      }
-
-      .invoice-modal th {
-        background-color: #f0f0f0;
-        font-weight: bold;
-      }
-    }
-  `}</style>
-);
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -170,6 +94,122 @@ const ModalPortal = ({ children }: { children: React.ReactNode }) => {
 };
 
 type DateRangeValue = [string | null, string | null] | undefined;
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      /* Force background and remove gradients */
+      html, body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      /* Hide everything */
+      body * {
+        visibility: hidden !important;
+      }
+
+      /* Show only the print container */
+      .print-modal-container,
+      .print-modal-container * {
+        visibility: visible !important;
+      }
+
+      /* Reset the modal container for print */
+      .print-modal-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 10mm !important;
+        background: white !important;
+        transform: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        display: block !important;
+        z-index: 999999 !important;
+      }
+
+      /* Force child containers to fill width and remove constraints */
+      .invoice-modal {
+        width: 100% !important;
+        height: auto !important;
+        max-width: none !important;
+        border-radius: 0 !important;
+      }
+
+      /* Reset padding and overflow on all containers */
+      .invoice-modal div, 
+      .invoice-modal section,
+      .invoice-modal main {
+        max-height: none !important;
+        overflow: visible !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        height: auto !important;
+        display: block !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      /* Professional table look for print */
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 15px 0 !important;
+        table-layout: auto !important;
+        border: 1px solid #1e293b !important;
+      }
+      
+      th, td {
+        border: 1px solid #1e293b !important;
+        padding: 10px !important;
+        font-size: 10pt !important;
+        word-wrap: break-word !important;
+        text-align: left !important;
+      }
+
+      th {
+        background-color: #f1f5f9 !important;
+        font-weight: bold !important;
+        color: #1e293b !important;
+        text-align: center !important;
+      }
+
+      /* Specific column handles */
+      .expense-table th:nth-child(2),
+      .expense-table td:nth-child(2) {
+        text-align: right !important;
+        width: 100px !important;
+      }
+
+      .payment-table th:nth-child(3),
+      .payment-table td:nth-child(3) {
+        text-align: right !important;
+        width: 100px !important;
+      }
+
+      /* Color overrides for print readability */
+      .text-slate-800, .text-slate-700, .text-slate-900 { color: black !important; }
+      .text-emerald-600 { color: #065f46 !important; }
+      .text-blue-600 { color: #1e40af !important; }
+      .text-green-700 { color: #15803d !important; }
+    }
+  `}</style>
+);
+
 
 const InvoiceModal = ({
   isOpen,
@@ -428,25 +468,25 @@ const InvoiceModal = ({
     <ModalPortal>
       <PrintStyles />
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999]"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] no-print"
         onClick={onClose}
       />
       <div
-        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto"
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden z-[9999] pointer-events-auto print-modal-container"
         onClick={(e) => e.stopPropagation()}
         ref={containerRef}
         role="dialog"
         aria-modal="true"
       >
         <div className="invoice-modal h-full flex flex-col bg-white">
-          <div className="p-6 border-b flex justify-between items-center bg-gray-50 no-print rounded-t-3xl">
+          <div className="p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-3xl">
             <div>
               <h2 className="text-xl text-slate-800 font-bold">Үйлчилгээний нэхэмжлэх</h2>
               <p className="text-sm text-slate-500">
                 № {latestInvoice?.nekhemjlekhiinDugaar || "-"} | {formatDate(latestInvoice?.ognoo)}
               </p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors">
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full transition-colors no-print">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -478,7 +518,7 @@ const InvoiceModal = ({
             <div>
               <h4 className="font-bold mb-2 text-slate-700">Зардлын жагсаалт</h4>
               <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-sm font-noto">
+                <table className="w-full text-sm font-noto expense-table">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="py-2.5 px-3 text-center font-bold text-slate-600 border-r border-gray-100">Зардал</th>
@@ -499,11 +539,11 @@ const InvoiceModal = ({
                   </tbody>
                   <tfoot className="bg-gray-50 border-t border-gray-200">
                     <tr className="font-bold">
-                      <td colSpan={2} className="py-3 px-3 text-slate-700">Нийт дүн:</td>
+                      <td className="py-3 px-3 text-slate-700">Нийт дүн:</td>
                       <td className="py-3 px-3 text-right text-slate-900 text-base">
                         {formatNumber(totalSum)} ₮
                       </td>
-                      
+                      <td className="py-3 px-3"></td>
                     </tr>
                   </tfoot>
                 </table>
@@ -515,7 +555,7 @@ const InvoiceModal = ({
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <h4 className="font-bold mb-2 text-slate-700">Төлөлтийн мэдээлэл</h4>
                 <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm payment-table">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="py-2.5 px-3 text-center font-bold text-slate-600">Огноо</th>
@@ -537,7 +577,7 @@ const InvoiceModal = ({
                     <tfoot className="bg-gray-50 border-t border-gray-200">
                       <tr className="font-bold text-green-700">
                         <td colSpan={2} className="py-3 px-3">Нийт төлсөн дүн:</td>
-                        <td className="py-3 px-3 text-right text-base" colSpan={2}>
+                        <td className="py-3 px-3 text-right text-base">
                           {formatNumber(paymentRows.reduce((s, r) => s + (Number(r.dun) || 0), 0))} ₮
                         </td>
                       </tr>

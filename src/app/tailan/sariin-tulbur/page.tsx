@@ -10,6 +10,50 @@ import DatePickerInput from "../../../components/ui/DatePickerInput";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
+import { FileSpreadsheet, Printer } from "lucide-react";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 1cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container, .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 4px !important;
+        font-size: 8pt !important;
+      }
+      .max-h-[45vh] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+    }
+  `}</style>
+);
 
 interface SariinTulburItem {
   _id: string;
@@ -302,10 +346,62 @@ export default function SariinTulburPage() {
     return data.reduce((sum, item) => sum + (item.tulbur || 0), 0);
   }, [data]);
 
+  const exportToExcel = () => {
+    if (!data.length) return;
+    const headers = ["№", "Гэрээний дугаар", "Нэр", "Тоот", "Сар", "Он", "Төлбөр", "Төлөв"];
+    const csvContent = [
+      headers.join(","),
+      ...data.map((item, idx) =>
+        [
+          idx + 1,
+          `"${item.gereeniiDugaar || ""}"`,
+          `"${item.ner || ""}"`,
+          `"${item.toot || ""}"`,
+          `"${item.sar || ""}"`,
+          item.on || "",
+          item.tulbur || 0,
+          `"${item.tuluv || ""}"`,
+        ].join(",")
+      ),
+    ].join("\n");
+
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `sariin_tulbur_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="p-6">
-      <h1 className="text-2xl">Сарын төлбөр</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6">
+    <div className="p-6 print-container h-full flex flex-col">
+      <PrintStyles />
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold">Сарын төлбөр</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Excel татах
+          </button>
+          <button
+            onClick={handlePrint}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            Хэвлэх
+          </button>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 no-print">
           <div className="p-3 mt-6 rounded-xl">
             <DatePickerInput
               type="range"
@@ -616,7 +712,7 @@ export default function SariinTulburPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between no-print">
         <div className="text-sm text-theme/70">Нийт: {data.length}</div>
         <div className="flex items-center gap-3">
           <PageSongokh

@@ -33,6 +33,102 @@ interface LedgerEntry {
   sourceCollection?: "nekhemjlekhiinTuukh" | "gereeniiTulsunAvlaga" | "gereeniiTulukhAvlaga";
 }
 
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4;
+        margin: 0;
+      }
+
+      /* Hide everything */
+      body * {
+        visibility: hidden !important;
+      }
+
+      /* Show modal and sub-elements */
+      .history-print-container,
+      .history-print-container * {
+        visibility: visible !important;
+      }
+
+      /* Reset modal container for print */
+      .history-print-container {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 210mm !important; /* Force A4 width */
+        height: auto !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 15mm !important;
+        background: white !important;
+        transform: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        display: block !important;
+        z-index: 9999999 !important;
+      }
+
+      /* Ensure parent containers don't clip */
+      div[data-radix-portal], 
+      div[role="dialog"],
+      .ModalPortal {
+        position: static !important;
+        transform: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+      }
+
+      th, td {
+        border: 1px solid #000 !important;
+        padding: 6px !important;
+        font-size: 9pt !important;
+        word-wrap: break-word !important;
+      }
+
+      /* Hide last column (Actions) in print */
+      th:last-child, td:last-child {
+        display: none !important;
+      }
+
+      .custom-scrollbar, .overflow-auto {
+        overflow: visible !important;
+        max-height: none !important;
+      }
+
+      .history-print-container h2 { font-size: 20pt !important; margin: 0 0 15px 0 !important; }
+
+      /* Grid adjustments for print */
+      .grid-cols-2 {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 15px !important;
+      }
+
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color: black !important;
+      }
+    }
+  `}</style>
+);
+
 export default function HistoryModal({
   show,
   onClose,
@@ -795,12 +891,13 @@ export default function HistoryModal({
 
   return (
     <AnimatePresence>
+      <PrintStyles />
       <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-2 sm:p-4 overflow-y-auto custom-scrollbar">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/40 backdrop-blur-sm no-print"
           onClick={onClose}
         />
 
@@ -809,7 +906,7 @@ export default function HistoryModal({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800"
+          className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Section */}
@@ -825,7 +922,7 @@ export default function HistoryModal({
               </div>
               <button
                 onClick={onClose}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg "
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg no-print"
               >
                 ✕
               </button>
@@ -990,13 +1087,13 @@ export default function HistoryModal({
           <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="h-8 px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs  text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="h-8 no-print px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs  text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
             >
               Хаах
             </button>
             <button
               onClick={handlePrint}
-              className="h-8 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs  !text-white transition-all"
+              className="h-8 no-print px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs  !text-white transition-all"
             >
               Хэвлэх
             </button>

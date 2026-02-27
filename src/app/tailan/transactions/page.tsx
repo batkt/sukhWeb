@@ -11,8 +11,51 @@ import { getErrorMessage } from "@/lib/uilchilgee";
 import { DatePickerInput } from "@/components/ui/DatePickerInput";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
-import { Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 1cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container, .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 4px !important;
+        font-size: 8pt !important;
+      }
+      .max-h-[60vh] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+    }
+  `}</style>
+);
 
 export default function TransactionsPage() {
   const { token, ajiltan, barilgiinId } = useAuth();
@@ -97,18 +140,42 @@ export default function TransactionsPage() {
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <div className="min-h-screen">
-      <h1 className="text-2xl  mb-4">Гүйлгээний түүх</h1>
+    <div className="min-h-screen p-6 print-container h-full flex flex-col">
+      <PrintStyles />
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold">Гүйлгээний түүх</h1>
+        <div className="flex gap-3">
+          <IconTextButton
+            onClick={exportCsv}
+            icon={<Download className="w-4 h-4 text-emerald-600" />}
+            label="CSV татах"
+            className="neu-panel px-4 py-2 rounded-xl text-sm"
+          />
+          <button
+            onClick={handlePrint}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            Хэвлэх
+          </button>
+        </div>
+      </div>
 
-      <ReportsControls
-        dateRange={dateRange}
-        setDateRange={setDateRange}
-        filters={filters}
-        setFilters={setFilters}
-      />
+      <div className="no-print">
+        <ReportsControls
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          filters={filters}
+          setFilters={setFilters}
+        />
+      </div>
 
-      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3 no-print">
         <TusgaiZagvar
           value={type}
           onChange={setType}
@@ -155,7 +222,7 @@ export default function TransactionsPage() {
         />
       </div>
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex items-center gap-3 no-print">
         <button
           className="btn-minimal"
           onClick={() => {
@@ -166,11 +233,6 @@ export default function TransactionsPage() {
         >
           {loading ? "Татаж байна..." : "Хайх"}
         </button>
-        <IconTextButton
-          onClick={exportCsv}
-          icon={<Download className="w-5 h-5" />}
-          label="CSV татах"
-        />
         <div className="ml-auto flex items-center gap-2">
           <PageSongokh
             value={pageSize}
@@ -233,7 +295,7 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between mt-4">
+      <div className="flex items-center justify-between mt-4 no-print">
         <div>Нийт: {total}</div>
         <div className="flex items-center gap-2">
           <IconTextButton

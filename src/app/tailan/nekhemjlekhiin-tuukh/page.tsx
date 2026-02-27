@@ -9,6 +9,50 @@ import DatePickerInput from "../../../components/ui/DatePickerInput";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
+import { FileSpreadsheet, Printer } from "lucide-react";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 1cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container, .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 4px !important;
+        font-size: 8pt !important;
+      }
+      .max-h-[48vh] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+    }
+  `}</style>
+);
 
 interface NekhemjlekhiinTuukhItem {
   _id: string;
@@ -135,12 +179,66 @@ export default function NekhemjlekhiinTuukhPage() {
     return data.reduce((sum, item) => sum + (item.tulbur || 0), 0);
   }, [data]);
 
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl  mb-6">Нэхэмжлэхийн түүх</h1>
+  const exportToExcel = () => {
+    if (!data.length) return;
+    const headers = ["№", "Гэрээний дугаар", "Давхар", "Тоот", "Овог", "Нэр", "Огноо", "Төлбөр", "Төлөв", "Түүх"];
+    const csvContent = [
+      headers.join(","),
+      ...data.map((item, idx) =>
+        [
+          idx + 1,
+          `"${item.gereeniiDugaar || ""}"`,
+          `"${item.davkhar || ""}"`,
+          `"${item.toot || ""}"`,
+          `"${item.ovog || ""}"`,
+          `"${item.ner || ""}"`,
+          `"${item.ognoo?.split("T")[0] || ""}"`,
+          item.tulbur || 0,
+          `"${item.tuluv || ""}"`,
+          `"${item.tuukh || ""}"`,
+        ].join(",")
+      ),
+    ].join("\n");
 
-      <form onSubmit={handleSubmit} className="space-y-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `nekhemjlekhiin_tuukh_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <div className="p-6 print-container h-full flex flex-col">
+      <PrintStyles />
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold">Нэхэмжлэхийн түүх</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Excel татах
+          </button>
+          <button
+            onClick={handlePrint}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            Хэвлэх
+          </button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4 mb-6 no-print">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 no-print">
           <div className="p-4 rounded-xl">
             <DatePickerInput
               type="range"
@@ -436,7 +534,7 @@ export default function NekhemjlekhiinTuukhPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between no-print">
         <div className="text-sm text-theme/70">Нийт: {data.length}</div>
         <div className="flex items-center gap-3">
           <PageSongokh

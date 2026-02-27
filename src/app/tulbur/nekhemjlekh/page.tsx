@@ -55,74 +55,80 @@ const PrintStyles = () => (
     @media print {
       @page {
         size: A4;
-        margin: 1.5cm;
+        margin: 0;
       }
 
+      /* Hide everything */
       body * {
-        visibility: hidden;
+        visibility: hidden !important;
       }
 
+      /* Show modal and sub-elements */
       .invoice-modal,
       .invoice-modal * {
         visibility: visible !important;
       }
 
+      /* Reset modal container for print */
       .invoice-modal {
-        position: static !important;
+        position: fixed !important;
         left: 0 !important;
         top: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
+        width: 210mm !important; /* Force A4 width */
+        height: auto !important;
+        min-height: 297mm !important;
         margin: 0 !important;
+        padding: 15mm !important;
         background: white !important;
-        page-break-after: avoid;
-        page-break-before: avoid;
-        page-break-inside: avoid;
+        transform: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        display: block !important;
+        z-index: 9999999 !important;
       }
 
-      .invoice-modal * {
-        color: black !important;
+      /* Ensure parent containers don't clip */
+      div[data-radix-portal], 
+      div[role="dialog"],
+      .ModalPortal {
+        position: static !important;
+        transform: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
       }
 
       .no-print {
         display: none !important;
       }
 
-      .print-break {
-        break-inside: avoid;
-      }
-
       table {
-        page-break-inside: avoid;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important; /* Fixed layout helps with width control */
       }
 
-      .invoice-modal h2 {
-        font-size: 18pt !important;
-      }
-      .invoice-modal h3 {
-        font-size: 14pt !important;
-      }
-      .invoice-modal p,
-      .invoice-modal td,
-      .invoice-modal th {
-        font-size: 11pt !important;
+      th, td {
+        border: 1px solid #000 !important;
+        padding: 6px !important;
+        font-size: 10pt !important;
+        word-wrap: break-word !important;
       }
 
-      .invoice-modal table {
-        border-collapse: collapse;
-        width: 100%;
+      .invoice-modal h2 { font-size: 20pt !important; margin: 0 0 15px 0 !important; }
+      .invoice-modal h3 { font-size: 16pt !important; margin: 0 0 10px 0 !important; }
+      
+      .custom-scrollbar {
+        overflow: visible !important;
       }
 
-      .invoice-modal th,
-      .invoice-modal td {
-        border: 1px solid #000;
-        padding: 8px;
-        text-align: left;
-      }
-
-      .invoice-modal th {
-        background-color: #f0f0f0;
-        font-weight: bold;
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color: black !important;
       }
     }
   `}</style>

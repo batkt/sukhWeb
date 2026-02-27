@@ -7,6 +7,50 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
 import DatePickerInput from "../../../components/ui/DatePickerInput";
 import formatNumber from "../../../../tools/function/formatNumber";
+import { FileSpreadsheet, Printer } from "lucide-react";
+
+const PrintStyles = () => (
+  <style jsx global>{`
+    @media print {
+      @page {
+        size: A4 landscape;
+        margin: 1cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container, .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+      }
+      th, td {
+        border: 1px solid #ddd !important;
+        padding: 4px !important;
+        font-size: 8pt !important;
+      }
+      .max-h-[30vh] {
+        max-height: none !important;
+        overflow: visible !important;
+      }
+      .custom-scrollbar {
+        overflow: visible !important;
+      }
+    }
+  `}</style>
+);
 
 interface ResidentSummaryRow {
   orshinSuugchiinId: string;
@@ -152,6 +196,63 @@ export default function ZogsoolTailanPage() {
     (r) => r.orshinSuugchiinId === selectedResidentId
   );
 
+  const exportToExcel = () => {
+    let headers: string[] = [];
+    let dataToExport: any[] = [];
+    let fileName = "";
+
+    if (activeTab === "residentSummary") {
+      headers = ["№", "Нэр", "Тоот", "Урьсан машин тоо", "Нийт төлөх", "Хөнгөлөлт Минут", "Төлсөн дүн", "Үлдэгдэл төлбөр"];
+      dataToExport = residentSummary.map((row, idx) => [
+        idx + 1,
+        `"${row.ner || ""}"`,
+        `"${row.toot || ""}"`,
+        row.urisanMachinToo,
+        row.niitTulbur,
+        row.khungulultMinut,
+        row.tulsunDun,
+        row.uldegdelTulbur,
+      ]);
+      fileName = "resident_parking_summary";
+    } else if (activeTab === "guestDetail") {
+      headers = ["№", "Машины дугаар", "Зогссон минут", "Хөнгөлсөн минут", "Төлбөр", "Төлөв"];
+      dataToExport = (displayDetail || []).map((row, idx) => [
+        idx + 1,
+        `"${row.mashiniiDugaar || ""}"`,
+        row.zogssonMinut,
+        row.khungulsunMinut,
+        row.tulbur,
+        `"${row.tuluv || ""}"`,
+      ]);
+      fileName = "guest_parking_detail";
+    } else {
+      headers = ["№", "Машины дугаар", "Оршин суугчийн нэр", "Давхар", "Тоот", "Утасны дугаар"];
+      dataToExport = guestCarList.map((row, idx) => [
+        idx + 1,
+        `"${row.mashiniiDugaar || ""}"`,
+        `"${row.orshinSuugchiinNer || ""}"`,
+        `"${row.davkhar || ""}"`,
+        `"${row.toot || ""}"`,
+        `"${row.utas || ""}"`,
+      ]);
+      fileName = "guest_car_list";
+    }
+
+    const csvContent = [headers.join(","), ...dataToExport.map((r) => r.join(","))].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${fileName}_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -169,9 +270,29 @@ export default function ZogsoolTailanPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h1 className="text-2xl">Зогсоолын тайлан</h1>
+    <div className="p-6 print-container h-full flex flex-col">
+      <PrintStyles />
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold">Зогсоолын тайлан</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            Excel татах
+          </button>
+          <button
+            onClick={handlePrint}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4 text-blue-600" />
+            Хэвлэх
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
         <div className="w-full md:w-[320px]">
           <DatePickerInput
             type="range"
@@ -197,7 +318,7 @@ export default function ZogsoolTailanPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 no-print">
         <div className="p-3 rounded-xl">
           <label className="block text-sm  text-theme/80 mb-1.5">
             Оршин суугч
@@ -228,7 +349,7 @@ export default function ZogsoolTailanPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 no-print">
         <button
           type="button"
           onClick={() => setActiveTab("residentSummary")}
