@@ -3261,7 +3261,7 @@ export default function DansniiKhuulga() {
                     </tr>
                   ) : (
                     paginated.map((it: any, idx: number) => {
-                    const ct =
+                      const ct =
                         (it?.gereeniiId &&
                           contractsById[String(it.gereeniiId)]) ||
                         (it?.gereeniiDugaar &&
@@ -3623,7 +3623,8 @@ export default function DansniiKhuulga() {
                                 );
                               }
                               case "uldegdel": {
-                                // Prefer backend-calculated balance when available (globalUldegdel/uldegdel on contract)
+                                // Prefer the calculated balance (Total - Paid Summary) for consistency with footer/modal
+                                // matching "nekhemjlekh uldegdel" logic.
                                 const gid =
                                   (it?.gereeniiId && String(it.gereeniiId)) ||
                                   (ct?._id && String(ct._id)) ||
@@ -3631,23 +3632,12 @@ export default function DansniiKhuulga() {
                                 const paid = gid
                                   ? (paidSummaryByGereeId[gid] ?? 0)
                                   : 0;
-
-                                let remaining: number;
-                                const backendBalance =
-                                  ct && (ct as any).globalUldegdel != null
-                                    ? Number((ct as any).globalUldegdel)
-                                    : ct && (ct as any).uldegdel != null
-                                      ? Number((ct as any).uldegdel)
-                                      : null;
-
-                                if (
-                                  backendBalance !== null &&
-                                  Number.isFinite(backendBalance)
-                                ) {
-                                  remaining = backendBalance;
-                                } else {
-                                  remaining = total - paid;
-                                }
+                                const remaining = total - paid;
+                                // Green for negative (overpayment/credit), red for positive (debt)
+                                const colorClass =
+                                  remaining < 0
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : remaining > 0;
 
                                 return (
                                   <td
@@ -3724,17 +3714,7 @@ export default function DansniiKhuulga() {
                                           const paid = gid
                                             ? (paidSummaryByGereeId[gid] ?? 0)
                                             : 0;
-                                          const backendBalance =
-                                            ct && (ct as any).globalUldegdel != null
-                                              ? Number((ct as any).globalUldegdel)
-                                              : ct && (ct as any).uldegdel != null
-                                                ? Number((ct as any).uldegdel)
-                                                : null;
-                                          const contractBalance =
-                                            backendBalance != null &&
-                                            Number.isFinite(backendBalance)
-                                              ? backendBalance
-                                              : total - paid;
+                                          const contractBalance = total - paid;
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3756,27 +3736,7 @@ export default function DansniiKhuulga() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data and include authoritative balance
-                                          const gid =
-                                            (it?.gereeniiId &&
-                                              String(it.gereeniiId)) ||
-                                            (ct?._id && String(ct._id)) ||
-                                            "";
-                                          const paid = gid
-                                            ? (paidSummaryByGereeId[gid] ?? 0)
-                                            : 0;
-                                          const backendBalance =
-                                            ct && (ct as any).globalUldegdel != null
-                                              ? Number((ct as any).globalUldegdel)
-                                              : ct && (ct as any).uldegdel != null
-                                                ? Number((ct as any).uldegdel)
-                                                : null;
-                                          const contractBalance =
-                                            backendBalance != null &&
-                                            Number.isFinite(backendBalance)
-                                              ? backendBalance
-                                              : total - paid;
-
+                                          // Create resident-like object from transaction data
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3786,7 +3746,6 @@ export default function DansniiKhuulga() {
                                             gereeniiId:
                                               it?.gereeniiId || ct?._id,
                                             ...it,
-                                            _contractBalance: contractBalance,
                                           };
                                           setHistoryResident(residentData);
                                           setIsHistoryOpen(true);
@@ -3943,35 +3902,11 @@ export default function DansniiKhuulga() {
                           </span>
                         );
                       } else if (col.key === "uldegdel") {
-                        // Prefer backend-calculated balance (globalUldegdel/uldegdel on contract) when available
+                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            const gid = getGereeId(it);
-                            const ctForFooter =
-                              (gid && contractsById[gid]) ||
-                              (it?.gereeniiDugaar &&
-                                contractsByNumber[String(it.gereeniiDugaar)]) ||
-                              undefined;
-
-                            const backendBalance =
-                              ctForFooter &&
-                              (ctForFooter as any).globalUldegdel != null
-                                ? Number(
-                                    (ctForFooter as any).globalUldegdel,
-                                  )
-                                : ctForFooter &&
-                                    (ctForFooter as any).uldegdel != null
-                                  ? Number((ctForFooter as any).uldegdel)
-                                  : null;
-
-                            if (
-                              backendBalance !== null &&
-                              Number.isFinite(backendBalance)
-                            ) {
-                              return sum + backendBalance;
-                            }
-
                             const tulbur = Number(it?._totalTulbur ?? 0);
+                            const gid = getGereeId(it);
                             const tulsun = gid
                               ? (paidSummaryByGereeId[gid] ?? 0)
                               : 0;
