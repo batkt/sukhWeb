@@ -38,7 +38,7 @@ const PrintStyles = () => (
     @media print {
       @page {
         size: A4;
-        margin: 0;
+        margin: 0.5cm;
       }
 
       /* Hide everything */
@@ -54,14 +54,13 @@ const PrintStyles = () => (
 
       /* Reset modal container for print */
       .history-print-container {
-        position: fixed !important;
+        position: absolute !important;
         left: 0 !important;
         top: 0 !important;
-        width: 210mm !important; /* Force A4 width */
+        width: 100% !important;
         height: auto !important;
-        min-height: 297mm !important;
         margin: 0 !important;
-        padding: 15mm !important;
+        padding: 5mm !important;
         background: white !important;
         transform: none !important;
         border: none !important;
@@ -91,14 +90,15 @@ const PrintStyles = () => (
       table {
         width: 100% !important;
         border-collapse: collapse !important;
-        table-layout: fixed !important;
+        table-layout: auto !important;
       }
 
       th, td {
         border: 1px solid #000 !important;
-        padding: 6px !important;
-        font-size: 9pt !important;
+        padding: 3px 5px !important;
+        font-size: 8pt !important;
         word-wrap: break-word !important;
+        line-height: 1.1 !important;
       }
 
       /* Hide last column (Actions) in print */
@@ -111,13 +111,14 @@ const PrintStyles = () => (
         max-height: none !important;
       }
 
-      .history-print-container h2 { font-size: 20pt !important; margin: 0 0 15px 0 !important; }
+      .history-print-container h2 { font-size: 16pt !important; margin: 0 0 10px 0 !important; }
 
       /* Grid adjustments for print */
       .grid-cols-2 {
         display: grid !important;
         grid-template-columns: repeat(4, 1fr) !important;
-        gap: 15px !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
       }
 
       * {

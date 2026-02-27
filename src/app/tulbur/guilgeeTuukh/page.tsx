@@ -100,112 +100,115 @@ const PrintStyles = () => (
     @media print {
       @page {
         size: A4;
-        margin: 0;
+        margin: 0.8cm;
       }
 
-      /* Force background and remove gradients */
-      html, body {
-        background: white !important;
+      body {
         margin: 0 !important;
         padding: 0 !important;
-        height: auto !important;
-        overflow: visible !important;
+        background: white !important;
       }
 
-      /* Hide everything */
       body * {
-        visibility: hidden !important;
+        visibility: hidden;
       }
 
-      /* Show only the print container */
-      .print-modal-container,
-      .print-modal-container * {
+      .invoice-modal,
+      .invoice-modal * {
         visibility: visible !important;
       }
 
-      /* Reset the modal container for print */
-      .print-modal-container {
+      .invoice-modal {
         position: absolute !important;
         left: 0 !important;
         top: 0 !important;
         width: 100% !important;
-        height: auto !important;
         margin: 0 !important;
-        padding: 10mm !important;
+        padding: 0 !important;
         background: white !important;
-        transform: none !important;
+        box-shadow: none !important;
         border: none !important;
-        box-shadow: none !important;
-        display: block !important;
-        z-index: 999999 !important;
-      }
-
-      /* Force child containers to fill width and remove constraints */
-      .invoice-modal {
-        width: 100% !important;
         height: auto !important;
-        max-width: none !important;
-        border-radius: 0 !important;
-      }
-
-      /* Reset padding and overflow on all containers */
-      .invoice-modal div, 
-      .invoice-modal section,
-      .invoice-modal main {
-        max-height: none !important;
         overflow: visible !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        height: auto !important;
         display: block !important;
+      }
+
+      .invoice-modal * {
+        color: black !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
       }
 
       .no-print {
         display: none !important;
       }
 
-      /* Professional table look for print */
       table {
+        page-break-inside: auto;
         width: 100% !important;
-        border-collapse: collapse !important;
-        margin: 15px 0 !important;
-        table-layout: auto !important;
-        border: 1px solid #1e293b !important;
+        margin-top: 4pt !important;
       }
-      
-      th, td {
-        border: 1px solid #1e293b !important;
-        padding: 10px !important;
+
+      tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+      }
+
+      .invoice-modal h2 {
+        font-size: 14pt !important;
+        margin-bottom: 2pt !important;
+        margin-top: 0 !important;
+      }
+      .invoice-modal h3 {
         font-size: 10pt !important;
-        word-wrap: break-word !important;
-        text-align: left !important;
+        margin-bottom: 1pt !important;
+        margin-top: 0 !important;
+      }
+      .invoice-modal p,
+      .invoice-modal td,
+      .invoice-modal th {
+        font-size: 8.5pt !important;
+        line-height: 1.1 !important;
+        padding: 3px 5px !important;
       }
 
-      th {
-        background-color: #f1f5f9 !important;
-        font-weight: bold !important;
-        color: #1e293b !important;
-        text-align: center !important;
+      .invoice-modal th {
+        background-color: #f5f5f5 !important;
+        font-weight: bold;
+        border: 1pt solid #000 !important;
       }
 
-      /* Specific column handles */
-      .expense-table th:nth-child(2),
-      .expense-table td:nth-child(2) {
-        text-align: right !important;
-        width: 100px !important;
+      .invoice-modal td {
+        border: 1pt solid #ccc !important;
       }
 
-      .payment-table th:nth-child(3),
-      .payment-table td:nth-child(3) {
-        text-align: right !important;
-        width: 100px !important;
+      /* Compact layouts */
+      .grid-cols-2 {
+        gap: 8pt !important;
+        margin-bottom: 8pt !important;
       }
 
-      /* Color overrides for print readability */
-      .text-slate-800, .text-slate-700, .text-slate-900 { color: black !important; }
-      .text-emerald-600 { color: #065f46 !important; }
-      .text-blue-600 { color: #1e40af !important; }
-      .text-green-700 { color: #15803d !important; }
+      .p-6 {
+        padding: 8pt !important;
+      }
+
+      .space-y-6 > * + * {
+        margin-top: 8pt !important;
+      }
+
+      .pt-6 {
+        padding-top: 6pt !important;
+      }
+
+      .rounded-2xl, .rounded-3xl {
+        border-radius: 4pt !important;
+      }
+
+      /* Force single page if possible */
+      html, body {
+        height: 100%;
+        overflow: hidden !important;
+      }
     }
   `}</style>
 );
