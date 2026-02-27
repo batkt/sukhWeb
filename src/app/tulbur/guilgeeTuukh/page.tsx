@@ -477,7 +477,7 @@ const InvoiceModal = ({
             {/* Expenses Table */}
             <div>
               <h4 className="font-bold mb-2 text-slate-700">Зардлын жагсаалт</h4>
-              <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+              <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm font-noto">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
@@ -489,7 +489,7 @@ const InvoiceModal = ({
                   <tbody className="divide-y divide-gray-100">
                     {expenseRows.map((row) => (
                       <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
-                        <td className="py-2.5 px-3 text-center text-slate-800 border-r border-gray-100 border-b border-gray-100">{row.ner}</td>
+                        <td className="py-2.5 px-3 text-left text-slate-800 border-r border-gray-100 border-b border-gray-100">{row.ner}</td>
                         <td className="py-2.5 px-3 text-right text-slate-900 font-bold border-r border-gray-100 border-b border-gray-100">
                           {formatNumber(row.dun)} ₮
                         </td>
@@ -503,6 +503,7 @@ const InvoiceModal = ({
                       <td className="py-3 px-3 text-right text-slate-900 text-base">
                         {formatNumber(totalSum)} ₮
                       </td>
+                      
                     </tr>
                   </tfoot>
                 </table>
@@ -513,12 +514,12 @@ const InvoiceModal = ({
             {paymentRows.length > 0 && (
               <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <h4 className="font-bold mb-2 text-slate-700">Төлөлтийн мэдээлэл</h4>
-                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                <div className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
                         <th className="py-2.5 px-3 text-center font-bold text-slate-600">Огноо</th>
-                        <th className="py-2.5 px-3 text-center font-bold text-slate-600">Тайлбар</th>
+                        <th className="py-2.5 px-4 text-center font-bold text-slate-600">Тайлбар</th>
                         <th className="py-2.5 px-3 text-center font-bold text-slate-600">Дүн</th>
                         
                       </tr>

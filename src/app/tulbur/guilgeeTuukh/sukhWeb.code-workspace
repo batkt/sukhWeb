@@ -5,6 +5,9 @@
 		},
 		{
 			"path": "../../../../../sukhBack"
+		},
+		{
+			"path": "../../../../../sukhApp"
 		}
 	],
 	"settings": {}
