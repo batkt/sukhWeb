@@ -3756,7 +3756,27 @@ export default function DansniiKhuulga() {
                                       </button>
                                       <button
                                         onClick={() => {
-                                          // Create resident-like object from transaction data
+                                          // Create resident-like object from transaction data and include authoritative balance
+                                          const gid =
+                                            (it?.gereeniiId &&
+                                              String(it.gereeniiId)) ||
+                                            (ct?._id && String(ct._id)) ||
+                                            "";
+                                          const paid = gid
+                                            ? (paidSummaryByGereeId[gid] ?? 0)
+                                            : 0;
+                                          const backendBalance =
+                                            ct && (ct as any).globalUldegdel != null
+                                              ? Number((ct as any).globalUldegdel)
+                                              : ct && (ct as any).uldegdel != null
+                                                ? Number((ct as any).uldegdel)
+                                                : null;
+                                          const contractBalance =
+                                            backendBalance != null &&
+                                            Number.isFinite(backendBalance)
+                                              ? backendBalance
+                                              : total - paid;
+
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
@@ -3766,6 +3786,7 @@ export default function DansniiKhuulga() {
                                             gereeniiId:
                                               it?.gereeniiId || ct?._id,
                                             ...it,
+                                            _contractBalance: contractBalance,
                                           };
                                           setHistoryResident(residentData);
                                           setIsHistoryOpen(true);
