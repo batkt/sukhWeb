@@ -3261,7 +3261,7 @@ export default function DansniiKhuulga() {
                     </tr>
                   ) : (
                     paginated.map((it: any, idx: number) => {
-                      const ct =
+                    const ct =
                         (it?.gereeniiId &&
                           contractsById[String(it.gereeniiId)]) ||
                         (it?.gereeniiDugaar &&
@@ -3623,8 +3623,7 @@ export default function DansniiKhuulga() {
                                 );
                               }
                               case "uldegdel": {
-                                // Prefer the calculated balance (Total - Paid Summary) for consistency with footer/modal
-                                // matching "nekhemjlekh uldegdel" logic.
+                                // Prefer backend-calculated balance when available (globalUldegdel/uldegdel on contract)
                                 const gid =
                                   (it?.gereeniiId && String(it.gereeniiId)) ||
                                   (ct?._id && String(ct._id)) ||
@@ -3632,12 +3631,23 @@ export default function DansniiKhuulga() {
                                 const paid = gid
                                   ? (paidSummaryByGereeId[gid] ?? 0)
                                   : 0;
-                                const remaining = total - paid;
-                                // Green for negative (overpayment/credit), red for positive (debt)
-                                const colorClass =
-                                  remaining < 0
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : remaining > 0;
+
+                                let remaining: number;
+                                const backendBalance =
+                                  ct && (ct as any).globalUldegdel != null
+                                    ? Number((ct as any).globalUldegdel)
+                                    : ct && (ct as any).uldegdel != null
+                                      ? Number((ct as any).uldegdel)
+                                      : null;
+
+                                if (
+                                  backendBalance !== null &&
+                                  Number.isFinite(backendBalance)
+                                ) {
+                                  remaining = backendBalance;
+                                } else {
+                                  remaining = total - paid;
+                                }
 
                                 return (
                                   <td
@@ -3714,7 +3724,17 @@ export default function DansniiKhuulga() {
                                           const paid = gid
                                             ? (paidSummaryByGereeId[gid] ?? 0)
                                             : 0;
-                                          const contractBalance = total - paid;
+                                          const backendBalance =
+                                            ct && (ct as any).globalUldegdel != null
+                                              ? Number((ct as any).globalUldegdel)
+                                              : ct && (ct as any).uldegdel != null
+                                                ? Number((ct as any).uldegdel)
+                                                : null;
+                                          const contractBalance =
+                                            backendBalance != null &&
+                                            Number.isFinite(backendBalance)
+                                              ? backendBalance
+                                              : total - paid;
                                           const residentData = resident || {
                                             _id: it?.orshinSuugchId,
                                             ner: ner,
