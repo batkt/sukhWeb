@@ -19,7 +19,10 @@ export default function TransactionsPage() {
   const { selectedBuildingId } = useBuilding();
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >([
+    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0],
+  ]);
   const [filters, setFilters] = useState<any>({});
 
   const [type, setType] = useState<string>(""); // income / expense

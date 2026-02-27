@@ -998,6 +998,15 @@ const InvoiceModal = ({
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
+                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
+                    <tr>
+                      <td className="py-2 px-3  text-slate-700">Төлсөн дүн:</td>
+                      <td className="py-2 px-3"></td>
+                      <td className="py-2 px-3 text-right  text-theme">
+                        {formatNumber(totalPaidFromApi)} ₮
+                      </td>
+                    </tr>
+                  )}
                   {/* Үлдэгдэл дүн: only show when user has made payment (balance differs from total) */}
                   {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
                   Math.abs(uldegdelDun - totalSum) > 0.01 ? (
@@ -1016,34 +1025,41 @@ const InvoiceModal = ({
             </div>
 
             <div className="border-t border-gray-100 pt-4 print-break">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {effectivePaymentStatus !== "Тодорхойгүй" && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-500">
-                        Төлбөрийн төлөв:
-                      </span>
-                      <span
-                        className={`badge-status ${
-                          effectivePaymentStatus === "Төлсөн"
-                            ? "badge-paid"
-                            : effectivePaymentStatus === "Төлөөгүй" ||
-                                effectivePaymentStatus === "Хугацаа хэтэрсэн"
-                              ? "badge-unpaid"
-                              : "badge-unknown"
-                        }`}
-                      >
-                        {effectivePaymentStatus}
-                      </span>
-                    </div>
-                  )}
+              <div className="flex flex-col gap-2">
+                {effectivePaymentStatus !== "Тодорхойгүй" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500">
+                      Төлбөрийн төлөв:
+                    </span>
+                    <span
+                      className={`badge-status ${
+                        effectivePaymentStatus === "Төлсөн"
+                          ? "badge-paid"
+                          : effectivePaymentStatus === "Төлөөгүй" ||
+                              effectivePaymentStatus === "Хугацаа хэтэрсэн"
+                            ? "badge-unpaid"
+                            : "badge-unknown"
+                      }`}
+                    >
+                      {effectivePaymentStatus}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
                   <span className="text-sm text-slate-500">
                     Нийт дүн:{" "}
                     <span className=" text-slate-900">
                       {formatNumber(totalSum)} ₮
                     </span>
                   </span>
-                  {/* Үлдэгдэл дүн: only show when user has made payment */}
+                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
+                    <span className="text-sm text-slate-500">
+                      Төлсөн дүн:{" "}
+                      <span className=" text-slate-900">
+                        {formatNumber(totalPaidFromApi)} ₮
+                      </span>
+                    </span>
+                  )}
                   {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
                   Math.abs(uldegdelDun - totalSum) > 0.01 ? (
                     <span className="text-sm text-slate-500">
@@ -1097,7 +1113,11 @@ export default function DansniiKhuulga() {
   // Memoize empty objects to prevent infinite SWR re-validation loops
   const emptyQuery = useMemo(() => ({}), []);
 
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>([
+    todayStr,
+    todayStr,
+  ]);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
   >("all");

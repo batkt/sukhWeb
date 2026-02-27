@@ -817,12 +817,12 @@ export default function Khynalt() {
     const top = huurimtlagdsanAvlaga.items
       .slice(0, 10)
       .map((it: any) => ({
-        name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
+        //name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
         amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
       }));
     return {
       labels: top.map((t: { name: string; amount: number }) => {
-        const s = t.name || "-";
+        const s = t.name || "";
         return s.length > 12 ? s.slice(0, 11) + "…" : s;
       }),
       datasets: [

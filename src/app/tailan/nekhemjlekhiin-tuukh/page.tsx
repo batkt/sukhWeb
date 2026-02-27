@@ -62,7 +62,10 @@ export default function NekhemjlekhiinTuukhPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([null, null]);
+  >([
+    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0],
+  ]);
 
   const fetchData = async () => {
     if (!selectedBuildingId || !baiguullaga) return;

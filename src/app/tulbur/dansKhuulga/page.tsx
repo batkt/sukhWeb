@@ -56,7 +56,11 @@ export default function DansniiKhuulga() {
 
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(500);
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>([
+    todayStr,
+    todayStr,
+  ]);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined
   );

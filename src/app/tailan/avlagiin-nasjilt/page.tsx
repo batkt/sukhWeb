@@ -75,7 +75,10 @@ export default function AvlagiinNasjiltPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([null, null]);
+  >([
+    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0],
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

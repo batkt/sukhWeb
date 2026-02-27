@@ -133,7 +133,7 @@ export default function TaskManagementSystem() {
   const [duudlaga, setDuudlaga] = useState<DuudlagaItem | null>(null);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
-  >(null);
+  >([new Date(), new Date()]);
   const [turulFilter, setTurulFilter] = useState<string>("Бүгд");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());

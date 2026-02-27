@@ -50,7 +50,7 @@ export default function Ebarimt() {
   );
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
-  >(null);
+  >([new Date(), new Date()]);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined

@@ -16,6 +16,7 @@ interface SariinTulburItem {
   gereeniiDugaar: string;
   bairNer: string;
   ner: string;
+  toot: string;
   sar: string;
   on: number;
   tulbur: number;
@@ -64,7 +65,10 @@ export default function SariinTulburPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([null, null]);
+  >([
+    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0],
+  ]);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedData, setExpandedData] = useState<any>(null);
   const [expandedLoading, setExpandedLoading] = useState(false);
@@ -140,6 +144,7 @@ export default function SariinTulburPage() {
           period: p,
           gereeniiDugaar: d.gereeniiDugaar || "",
           ner: [d.ovog, d.ner].filter(Boolean).join(" "),
+          toot: d.toot || d.medeelel?.toot || d.nememjlekh?.toot || "-",
           tulbur: d.niitTulbur || 0,
           tuluv: d.tuluv || "Төлөөгүй",
         };
@@ -228,7 +233,8 @@ export default function SariinTulburPage() {
               tulbur: item.niitTulbur || item.tulbur || 0,
               sar: month || item.sar || "",
               on: parseInt(year) || item.on || "",
-              bairNer: item.bairNer || "N/A", // Handle empty bairNer
+              bairNer: item.bairNer || "N/A", 
+              toot: item.toot || item.medeelel?.toot || item.nememjlekh?.toot || "-",
             };
           })
         : [];
@@ -262,35 +268,37 @@ export default function SariinTulburPage() {
 
   // Adjust date range based on selected type
   useEffect(() => {
-    if (dateRange && dateRange[0] && dateRange[1]) {
-      const startDate = new Date(dateRange[0]);
-      const endDate = new Date(dateRange[1]);
+    if (!dateRange || !dateRange[0] || !dateRange[1]) return;
 
-      if (formData.turul === "sar") {
-        // For month selection, ensure range is within the same month
-        const startMonth = startDate.getMonth();
-        const startYear = startDate.getFullYear();
-        const endOfMonth = new Date(startYear, startMonth + 1, 0);
+    const startDate = new Date(dateRange[0]);
+    const endDate = new Date(dateRange[1]);
 
-        if (endDate > endOfMonth) {
-          setDateRange([dateRange[0], endOfMonth.toISOString().split("T")[0]]);
-        }
-      } else if (formData.turul === "uliral") {
-        // For quarter selection, ensure range spans 3 months
-        const startMonth = startDate.getMonth();
-        const startYear = startDate.getFullYear();
-        const quarterEndMonth = startMonth + 3;
-        const endOfQuarter = new Date(startYear, quarterEndMonth, 0);
+    if (formData.turul === "sar") {
+      const startMonth = startDate.getMonth();
+      const startYear = startDate.getFullYear();
+      const endOfMonth = new Date(startYear, startMonth + 1, 0);
 
-        if (endDate.getTime() !== endOfQuarter.getTime()) {
-          setDateRange([
-            dateRange[0],
-            endOfQuarter.toISOString().split("T")[0],
-          ]);
-        }
+      // Only update if current end is outside the selected month
+      if (endDate.getMonth() !== startMonth || endDate.getFullYear() !== startYear) {
+        setDateRange([dateRange[0], endOfMonth.toISOString().split("T")[0]]);
+      }
+    } else if (formData.turul === "uliral") {
+      const startMonth = startDate.getMonth();
+      const startYear = startDate.getFullYear();
+      const quarterEndMonth = startMonth + 3;
+      const endOfQuarter = new Date(startYear, quarterEndMonth, 0);
+
+      const currentDiffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
+      
+      // Only update if range is not approximately 3 months
+      if (currentDiffMonths !== 3) {
+        setDateRange([
+          dateRange[0],
+          endOfQuarter.toISOString().split("T")[0],
+        ]);
       }
     }
-  }, [formData.turul, dateRange]);
+  }, [formData.turul]); // Only run when type changes, or when dateRange changes specifically for correction
 
   const totalTulbur = useMemo(() => {
     if (!Array.isArray(data)) return 0;
@@ -418,6 +426,9 @@ export default function SariinTulburPage() {
                     Нэр
                   </th>
                   <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
+                    Тоот
+                  </th>
+                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
                     Сар
                   </th>
                   <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
@@ -463,6 +474,9 @@ export default function SariinTulburPage() {
                             </td>
                             <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.ner}
+                            </td>
+                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
+                              {item.toot}
                             </td>
                             <td className="p-3 border-r text-center text-theme whitespace-nowrap">
                               {item.sar}
@@ -528,6 +542,7 @@ export default function SariinTulburPage() {
                                               ? "Улирал"
                                               : "Сар"}
                                           </th>
+                                          <th className="text-center border-r p-2">Тоот</th>
                                           <th className="text-center border-r p-2">Нэр</th>
                                           <th className="text-center border-r p-2">
                                             Төлбөр
@@ -541,11 +556,12 @@ export default function SariinTulburPage() {
                                         {expandedData.rows.map(
                                           (r: any, ri: number) => (
                                             <tr key={ri} className="border-t">
-                                              <td className="p-2 border-r">{ri + 1}</td>
-                                              <td className="p-2 border-r">
-                                                {r.period}
-                                              </td>
-                                              <td className="p-2">{r.ner}</td>
+                                                <td className="p-2 border-r">{ri + 1}</td>
+                                                <td className="p-2 border-r">
+                                                  {r.period}
+                                                </td>
+                                                <td className="p-2 border-r text-center">{r.toot}</td>
+                                                <td className="p-2">{r.ner}</td>
                                               <td className="p-2 text-right border-r border-l">
                                                 {formatNumber(r.tulbur || 0)}{" "}
                                                 ₮

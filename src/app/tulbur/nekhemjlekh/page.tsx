@@ -262,6 +262,7 @@ const InvoiceModal = ({
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
   const [cronData, setCronData] = React.useState<any>(null);
+  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(null);
   const invValid = React.useMemo(() => {
     if (!Array.isArray(invRows) || invRows.length === 0) return false;
     const invSum = invRows.reduce(
@@ -426,12 +427,36 @@ const InvoiceModal = ({
           // Silently fail for cron data - it's optional
           setCronData(null);
         }
+        setCronData(null);
+
+        // Fetch actual total paid from /tulsunSummary for correct Үлдэгдэл дүн
+        const gereeId = latest?.gereeniiId || latest?.gereeId;
+        if (gereeId) {
+          uilchilgee(token)
+            .post("/tulsunSummary", {
+              baiguullagiinId,
+              gereeniiId: gereeId,
+            })
+            .then((paidResp) => {
+              const paid =
+                Number(
+                  paidResp.data?.totalTulsunDun ??
+                    paidResp.data?.totalInvoicePayment ??
+                    0,
+                ) || 0;
+              setTotalPaidFromApi(paid);
+            })
+            .catch(() => setTotalPaidFromApi(null));
+        } else {
+          setTotalPaidFromApi(null);
+        }
       } catch (e) {
         setInvRows([]);
         setInvTotal(null);
         setPaymentStatusLabel("Тодорхойгүй");
         setLatestInvoice(null);
         setCronData(null);
+        setTotalPaidFromApi(null);
       }
     };
     run();
@@ -634,6 +659,17 @@ const InvoiceModal = ({
       .reduce((sum: any, item: any) => sum + Number(item?.dun ?? 0), 0);
     return rowSum;
   }, [invoiceRows, invTotal, invValid, nekhemjlekhData]);
+
+  const uldegdelDun = React.useMemo(() => {
+    const total = totalSum;
+    if (totalPaidFromApi !== null) {
+      return total - totalPaidFromApi;
+    }
+    const inv = latestInvoice || nekhemjlekhData;
+    if (inv?.uldegdel != null) return Number(inv.uldegdel);
+    const paid = Number(inv?.tulsunDun ?? 0) || 0;
+    return total - paid;
+  }, [totalSum, totalPaidFromApi, latestInvoice, nekhemjlekhData]);
 
   if (!isOpen) return null;
 
@@ -853,46 +889,85 @@ const InvoiceModal = ({
                     </tr>
                   ))}
                 </tbody>
-                <tfoot className="bg-gray-50">
+                <tfoot className="bg-gray-50 divide-y border-t border-gray-100">
                   <tr>
-                    <td colSpan={2} className="py-2 px-3 ">
+                    <td colSpan={2} className="py-2 px-3 text-slate-700">
                       Нийт дүн:
                     </td>
-                    <td className="py-2 px-3 text-right ">
+                    <td className="py-2 px-3 text-right text-slate-900">
                       {formatNumber(totalSum)} ₮
                     </td>
                   </tr>
+                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-2 px-3 text-slate-700">
+                        Төлсөн дүн:
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-900">
+                        {formatNumber(totalPaidFromApi)} ₮
+                      </td>
+                    </tr>
+                  )}
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
+                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                    <tr>
+                      <td colSpan={2} className="py-2 px-3 text-slate-700">
+                        Үлдэгдэл дүн:
+                      </td>
+                      <td className="py-2 px-3 text-right text-blue-600">
+                        {formatNumber(uldegdelDun)} ₮
+                      </td>
+                    </tr>
+                  ) : null}
                 </tfoot>
               </table>
             </div>
 
             <div className="border-t border-gray-100 pt-4 print-break">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  {paymentStatusLabel !== "Тодорхойгүй" && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-500">
-                        Төлбөрийн төлөв:
-                      </span>
-                      <span
-                        className={`badge-status ${paymentStatusLabel === "Төлсөн"
-                            ? "badge-paid"
-                            : paymentStatusLabel === "Төлөөгүй" ||
+              <div className="flex flex-col gap-2">
+                {paymentStatusLabel !== "Тодорхойгүй" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500">
+                      Төлбөрийн төлөв:
+                    </span>
+                    <span
+                      className={`badge-status ${
+                        paymentStatusLabel === "Төлсөн"
+                          ? "badge-paid"
+                          : paymentStatusLabel === "Төлөөгүй" ||
                               paymentStatusLabel === "Хугацаа хэтэрсэн"
-                              ? "badge-unpaid"
-                              : "badge-unknown"
-                          }`}
-                      >
-                        {paymentStatusLabel}
-                      </span>
-                    </div>
-                  )}
+                            ? "badge-unpaid"
+                            : "badge-unknown"
+                      }`}
+                    >
+                      {paymentStatusLabel}
+                    </span>
+                  </div>
+                )}
+                <div className="flex flex-col gap-1">
                   <span className="text-sm text-slate-500">
                     Нийт дүн:{" "}
                     <span className=" text-slate-900">
                       {formatNumber(totalSum)} ₮
                     </span>
                   </span>
+                  {totalPaidFromApi != null && totalPaidFromApi > 0 && (
+                    <span className="text-sm text-slate-500">
+                      Төлсөн дүн:{" "}
+                      <span className=" text-slate-900">
+                        {formatNumber(totalPaidFromApi)} ₮
+                      </span>
+                    </span>
+                  )}
+                  {(totalPaidFromApi != null && totalPaidFromApi > 0) ||
+                  Math.abs(uldegdelDun - totalSum) > 0.01 ? (
+                    <span className="text-sm text-slate-500">
+                      Үлдэгдэл дүн:{" "}
+                      <span className=" text-slate-900">
+                        {formatNumber(uldegdelDun)} ₮
+                      </span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </div>

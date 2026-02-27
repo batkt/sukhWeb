@@ -39,7 +39,10 @@ export default function OrlogoAvlagaPage() {
   const [unpaidList, setUnpaidList] = useState<any[]>([]);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([null, null]);
+  >([
+    new Date().toISOString().split("T")[0],
+    new Date().toISOString().split("T")[0],
+  ]);
   const [filters, setFilters] = useState({
     orshinSuugch: "",
     toot: "",
@@ -97,11 +100,19 @@ export default function OrlogoAvlagaPage() {
         const unpaid = Array.isArray(response.data?.unpaid?.list)
           ? response.data.unpaid.list
           : [];
-        // Exclude residents with no actual payments from paid list (e.g. only Эхний үлдэгдэл from gereeniiTulukhAvlaga)
-        const paid = rawPaid.filter(
-          (item: any) =>
-            (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0
-        );
+        const getPaidAmount = (item: any) => {
+          return Number(
+            item?.tulsunDun ?? 
+            item?.tulsun ?? 
+            item?.totalTulsunDun ?? 
+            item?.totalPrepayment ?? 
+            item?.niitTulbur ?? 
+            item?.tulbur ?? 
+            item?.paidAmount ?? 0
+          ) || 0;
+        };
+
+        const paid = rawPaid.filter((item: any) => item?.tuluv === "Төлсөн" || getPaidAmount(item) > 0);
         setPaidList(paid);
         setUnpaidList(unpaid);
       } catch (err: any) {
@@ -114,15 +125,20 @@ export default function OrlogoAvlagaPage() {
     fetchData();
   }, [selectedBuildingId, baiguullaga, token, dateRange, debouncedFilters]);
 
-  const totalOrlogo = useMemo(
-    () =>
-      paidList.reduce(
-        (sum, item) =>
-          sum + (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0),
-        0
-      ),
-    [paidList]
-  );
+  const totalOrlogo = useMemo(() => {
+    return paidList.reduce((sum, item) => {
+      const amt = Number(
+        item?.tulsunDun ?? 
+        item?.tulsun ?? 
+        item?.totalTulsunDun ?? 
+        item?.totalPrepayment ?? 
+        item?.niitTulbur ?? 
+        item?.tulbur ?? 
+        item?.paidAmount ?? 0
+      ) || 0;
+      return sum + amt;
+    }, 0);
+  }, [paidList]);
   const totalZarlaga = useMemo(
     () => apiResponse?.unpaid?.sum || 0,
     [apiResponse]
@@ -195,11 +211,7 @@ export default function OrlogoAvlagaPage() {
           : Array.isArray(r?.guilgeenuud) ? r.guilgeenuud : [];
 
         const invoiceTotal = Number(r.niitTulbur ?? r.tulbur ?? r.niitDun ?? 0) || 0;
-        const isEkhniiUldegdelZardal = (z: any) =>
-          z.isEkhniiUldegdel === true ||
-          z.ner === "Эхний үлдэгдэл" ||
-          (z.ner && z.ner.includes("Эхний үлдэгдэл"));
-        const zardalWithNer = zardluud.filter((z: any) => z.ner && !isEkhniiUldegdelZardal(z));
+        const zardalWithNer = zardluud.filter((z: any) => z.ner);
         zardalWithNer.forEach((z: any) => {
           let amt = pickAmount(z);
           if (amt === 0 && invoiceTotal > 0 && zardalWithNer.length > 0) {
@@ -217,7 +229,6 @@ export default function OrlogoAvlagaPage() {
         });
 
         guilgeenuud.forEach((g: any) => {
-          if (g.ekhniiUldegdelEsekh === true) return; // Don't display ekhniiUldegdel
           const amt = Number(g.tulukhDun || 0);
           const paid = Number(g.tulsunDun || 0);
           if (amt > 0) {
@@ -322,7 +333,7 @@ export default function OrlogoAvlagaPage() {
     activeTab === "tulult" ? paidList : unpaidList;
 
   const getItemAmount = (item: any) => {
-    const amt = item?.niitTulbur ?? item?.tulbur ?? item?.sum ?? 0;
+    const amt = item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.niitTulbur ?? item?.tulbur ?? item?.sum ?? item?.amount ?? 0;
     return Number(amt) || 0;
   };
 
@@ -331,7 +342,7 @@ export default function OrlogoAvlagaPage() {
   };
 
   const getItemTulsun = (item: any) => {
-    return Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0;
+    return Number(item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.niitTulbur ?? item?.tulbur ?? 0) || 0;
   };
 
   const paginatedList = displayList.slice(
@@ -557,7 +568,7 @@ export default function OrlogoAvlagaPage() {
                             {item.davkhar || "-"}
                           </td>
                           <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {item.toot || item.nememjlekh?.toot || "-"}
+                            {item.toot || item.medeelel?.toot || item.nememjlekh?.toot || item.gerchigee?.toot || "-"}
                           </td>
                           {activeTab === "tulult" ? (
                             <td className="p-3 text-right whitespace-nowrap">

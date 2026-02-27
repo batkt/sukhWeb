@@ -234,7 +234,7 @@ export function DatePickerInput(
               if (type === "range") (onChange as any)?.(undefined);
               else (onChange as any)?.(null);
             }}
-            className="text-subtle hover:text-theme cursor-pointer ml-2"
+            className="text-subtle hover:text-theme cursor-pointer"
             aria-label="Clear date"
           >
             ×
@@ -274,7 +274,7 @@ export function DatePickerInput(
                     captionLayout="dropdown"
                     hideNavigation={false}
                     weekStartsOn={1}
-                    showOutsideDays
+                    showOutsideDays={false}
                     fixedWeeks
                     locale={mn}
                   />
@@ -308,7 +308,7 @@ export function DatePickerInput(
                   captionLayout="dropdown"
                   hideNavigation
                   weekStartsOn={1}
-                  showOutsideDays
+                  showOutsideDays={false}
                   fixedWeeks
                   locale={mn}
                 />
