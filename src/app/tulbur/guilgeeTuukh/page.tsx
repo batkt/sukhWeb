@@ -3922,11 +3922,35 @@ export default function DansniiKhuulga() {
                           </span>
                         );
                       } else if (col.key === "uldegdel") {
-                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
+                        // Prefer backend-calculated balance (globalUldegdel/uldegdel on contract) when available
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            const tulbur = Number(it?._totalTulbur ?? 0);
                             const gid = getGereeId(it);
+                            const ctForFooter =
+                              (gid && contractsById[gid]) ||
+                              (it?.gereeniiDugaar &&
+                                contractsByNumber[String(it.gereeniiDugaar)]) ||
+                              undefined;
+
+                            const backendBalance =
+                              ctForFooter &&
+                              (ctForFooter as any).globalUldegdel != null
+                                ? Number(
+                                    (ctForFooter as any).globalUldegdel,
+                                  )
+                                : ctForFooter &&
+                                    (ctForFooter as any).uldegdel != null
+                                  ? Number((ctForFooter as any).uldegdel)
+                                  : null;
+
+                            if (
+                              backendBalance !== null &&
+                              Number.isFinite(backendBalance)
+                            ) {
+                              return sum + backendBalance;
+                            }
+
+                            const tulbur = Number(it?._totalTulbur ?? 0);
                             const tulsun = gid
                               ? (paidSummaryByGereeId[gid] ?? 0)
                               : 0;
