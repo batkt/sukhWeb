@@ -151,6 +151,7 @@ export default function HistoryModal({
   const modalRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LedgerEntry[]>([]);
+  const [globalUldegdel, setGlobalUldegdel] = useState<number | null>(null);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >([null, null]);
@@ -172,7 +173,8 @@ export default function HistoryModal({
 
     const contractIdToFetch = contract?.gereeniiId || contract?._id;
 
-    // Silent Auto-Sync: Recalculate global balance on backend before fetching
+    // Silent Auto-Sync: Recalculate global balance on backend before fetching (if endpoint exists)
+    // This is completely silent - no errors logged
     if (contractIdToFetch) {
       try {
         uilchilgee(token || undefined)
@@ -180,8 +182,12 @@ export default function HistoryModal({
             gereeId: contractIdToFetch,
             baiguullagiinId,
           })
-          .catch((e) => console.warn("Silent sync failed:", e.message));
-      } catch (e) {}
+          .catch(() => {
+            // Silently ignore all errors (endpoint may not exist)
+          });
+      } catch (e) {
+        // Silently ignore sync errors
+      }
     }
 
     setLoading(true);
@@ -956,21 +962,45 @@ export default function HistoryModal({
               r?.uldegdel != null && Number.isFinite(Number(r.uldegdel)),
           );
           if (backendLedger.length > 0 && hasUldegdel) {
-            // Use backend ledger (oldest-first = chronological, no reverse)
-            const mapped = backendLedger.map((r: any) => ({
-              ...r,
-              uldegdel: Number(r.uldegdel ?? 0),
-            }));
+            // Use backend ledger with uldegdel from each row - NO calculation, use backend values directly
+            const mapped = backendLedger.map((r: any) => {
+              const entry: LedgerEntry = {
+                ognoo: r.ognoo || "",
+                ner: r.ner || "",
+                tulukhDun: Number(r.tulukhDun ?? 0),
+                tulsunDun: Number(r.tulsunDun ?? 0),
+                uldegdel: Number(r.uldegdel ?? 0), // Use uldegdel directly from backend - NO calculation
+                isSystem: r.isSystem ?? false,
+                ajiltan: r.ajiltan,
+                khelber: r.khelber,
+                tailbar: r.tailbar,
+                burtgesenOgnoo: r.burtgesenOgnoo,
+                _id: r._id,
+                parentInvoiceId: r.parentInvoiceId,
+                sourceCollection: r.sourceCollection,
+              };
+              return entry;
+            });
+            // Store globalUldegdel from backend response for Нийт row
+            const backendGlobalUldegdel = ledgerResp.data?.globalUldegdel;
+            if (backendGlobalUldegdel != null && Number.isFinite(Number(backendGlobalUldegdel))) {
+              setGlobalUldegdel(Number(backendGlobalUldegdel));
+            } else {
+              setGlobalUldegdel(null);
+            }
             setData(mapped);
             setLoading(false);
             return;
           }
-        } catch (_) {
+        } catch (err) {
           // Backend endpoint not implemented or failed; fall back to frontend
         }
       }
 
       applyFrontendRunningBalance(flatLedger);
+
+      // Reset globalUldegdel when using frontend calculation
+      setGlobalUldegdel(null);
 
       // Display chronological order (oldest first)
       setData(flatLedger);
@@ -1087,6 +1117,7 @@ export default function HistoryModal({
   useEffect(() => {
     if (show && contract) {
       setData([]);
+      setGlobalUldegdel(null);
       fetchData();
     }
   }, [show, contract]);
@@ -1367,8 +1398,14 @@ export default function HistoryModal({
                         (sum, row) => sum + (row.tulsunDun || 0),
                         0,
                       );
-                      // Use uldegdel directly from contract data - NO calculation
-                      const balance = Number(contract?.uldegdel ?? 0);
+                      // Use latest row's uldegdel (first row since data is reversed - newest first)
+                      // Fall back to globalUldegdel or contract.uldegdel if no rows
+                      const latestRowUldegdel = filteredData.length > 0 && filteredData[0]?.uldegdel != null
+                        ? Number(filteredData[0].uldegdel)
+                        : globalUldegdel != null
+                          ? globalUldegdel
+                          : Number(contract?.uldegdel ?? 0);
+                      const balance = latestRowUldegdel;
                       const balanceClass =
                         balance < 0
                           ? "!text-emerald-600 dark:!text-emerald-400"

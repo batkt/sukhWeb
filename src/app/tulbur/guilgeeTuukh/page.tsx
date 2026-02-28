@@ -666,6 +666,12 @@ export default function DansniiKhuulga() {
   >({});
   // Use a ref to track what's currently being requested across renders without causing loops
   const requestedGereeIdsRef = useRef<Set<string>>(new Set());
+  
+  // Map gereeId -> latest row uldegdel from history ledger
+  const [latestRowUldegdelByGereeId, setLatestRowUldegdelByGereeId] = useState<
+    Record<string, number | null>
+  >({});
+  const latestRowUldegdelRequestedRef = useRef<Set<string>>(new Set());
 
   // Socket: revalidate data when payment, avlaga, or delete happens (from any tab/source)
   useEffect(() => {
@@ -686,6 +692,8 @@ export default function DansniiKhuulga() {
       );
       setPaidSummaryByGereeId({});
       requestedGereeIdsRef.current.clear();
+      setLatestRowUldegdelByGereeId({});
+      latestRowUldegdelRequestedRef.current.clear();
       setInvoiceRefreshTrigger((t) => t + 1);
     };
     socket.on(event, handler);
@@ -1833,6 +1841,74 @@ export default function DansniiKhuulga() {
     ajiltan?.baiguullagiinId,
     deduplicatedResidentsAll,
     contractsByNumber,
+  ]);
+
+  // Fetch latest row uldegdel from history ledger API for each contract
+  useEffect(() => {
+    if (
+      !token ||
+      !ajiltan?.baiguullagiinId ||
+      deduplicatedResidentsAll.length === 0
+    ) {
+      return;
+    }
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+    const toFetch = deduplicatedResidentsAll.slice(0, 500);
+
+    toFetch.forEach((it: any) => {
+      const gid = getGereeId(it);
+      if (!gid) return;
+
+      // Only skip if we already have a valid number value or if request is in progress
+      const existingValue = latestRowUldegdelByGereeId[gid];
+      if (
+        (existingValue !== undefined && existingValue !== null && Number.isFinite(existingValue)) ||
+        latestRowUldegdelRequestedRef.current.has(gid)
+      ) {
+        return;
+      }
+
+      latestRowUldegdelRequestedRef.current.add(gid);
+
+      uilchilgee(token)
+        .get(`/geree/${gid}/history-ledger`, {
+          params: {
+            baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId || null,
+            _t: Date.now(),
+          },
+        })
+        .then((resp) => {
+          const backendLedger = Array.isArray(resp.data?.jagsaalt)
+            ? resp.data.jagsaalt
+            : Array.isArray(resp.data?.ledger)
+              ? resp.data.ledger
+              : Array.isArray(resp.data)
+                ? resp.data
+                : [];
+          
+          // Get latest row's uldegdel (backend returns oldest-first, so last row is latest)
+          const latestRow = backendLedger.length > 0 
+            ? backendLedger[backendLedger.length - 1]
+            : null;
+          const latestUldegdel = latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
+            ? Number(latestRow.uldegdel)
+            : null;
+          
+          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestUldegdel }));
+        })
+        .catch(() => {
+          latestRowUldegdelRequestedRef.current.delete(gid);
+          // Set to null to indicate fetch failed, but allow retry later
+          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
+        });
+    });
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    deduplicatedResidentsAll,
+    effectiveBarilgiinId,
   ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
@@ -3631,8 +3707,19 @@ export default function DansniiKhuulga() {
                                 );
                               }
                               case "uldegdel": {
-                                // Just show uldegdel directly from data - NO calculation
-                                const remaining = Number(it?.uldegdel ?? 0);
+                                // Use latest row's uldegdel from history ledger if available
+                                // Otherwise fall back to contract's uldegdel, then row's uldegdel
+                                const gid = (it?.gereeniiId && String(it.gereeniiId)) ||
+                                  (ct?._id && String(ct._id)) ||
+                                  "";
+                                const latestRowUldegdel = gid && latestRowUldegdelByGereeId[gid] != null
+                                  ? latestRowUldegdelByGereeId[gid]
+                                  : null;
+                                const remaining = latestRowUldegdel != null
+                                  ? latestRowUldegdel
+                                  : ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))
+                                    ? Number(ct.uldegdel)
+                                    : Number(it?.uldegdel ?? 0);
 
                                 return (
                                   <td
@@ -4061,6 +4148,8 @@ export default function DansniiKhuulga() {
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
           requestedGereeIdsRef.current.clear();
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
           setInvoiceRefreshTrigger((t) => t + 1);
         }}
       />
@@ -4109,6 +4198,8 @@ export default function DansniiKhuulga() {
           // Clear payment summary state to force re-fetch
           setPaidSummaryByGereeId({});
           requestedGereeIdsRef.current.clear();
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
         }}
       />
     </div>
