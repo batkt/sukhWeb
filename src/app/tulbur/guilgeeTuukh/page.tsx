@@ -2099,7 +2099,7 @@ export default function DansniiKhuulga() {
   };
 
   const exceleerTatya = async () => {
-    const loadingToastId = toast.loading("Excel загвар бэлдэж байна…");
+    const loadingToastId = toast.loading("Excel файл бэлдэж байна…");
     const hide = () => toast.dismiss(loadingToastId);
 
     try {
@@ -2109,12 +2109,61 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      const body = {
+      // Build filters object based on current filters
+      const filters: any = {};
+      
+      // Date range filter
+      if (ekhlekhOgnoo && ekhlekhOgnoo[0] && ekhlekhOgnoo[1]) {
+        const startDate = new Date(ekhlekhOgnoo[0]);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(ekhlekhOgnoo[1]);
+        endDate.setHours(23, 59, 59, 999);
+        filters.createdAt = {
+          $gte: startDate.toISOString(),
+          $lte: endDate.toISOString(),
+        };
+      }
+
+      // Payment status filter (tuluv)
+      if (tuluvFilter !== "all") {
+        if (tuluvFilter === "paid") {
+          filters.tuluv = "Төлсөн";
+        } else if (tuluvFilter === "unpaid") {
+          filters.tuluv = "Төлөөгүй";
+        } else if (tuluvFilter === "overdue") {
+          filters.tuluv = "Хугацаа хэтэрсэн";
+        }
+      }
+
+      // Building filters (orts, toot, davkhar)
+      if (selectedOrtsFilter) {
+        filters.orts = selectedOrtsFilter;
+      }
+      if (selectedTootFilter) {
+        filters.toot = selectedTootFilter;
+      }
+      if (selectedDavkharFilter) {
+        filters.davkhar = selectedDavkharFilter;
+      }
+
+      // Search term filter
+      if (searchTerm && searchTerm.trim()) {
+        filters.$or = [
+          { ner: { $regex: searchTerm.trim(), $options: "i" } },
+          { utas: { $regex: searchTerm.trim(), $options: "i" } },
+          { gereeniiDugaar: { $regex: searchTerm.trim(), $options: "i" } },
+          { register: { $regex: searchTerm.trim(), $options: "i" } },
+        ];
+      }
+
+      const body: any = {
+        tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt || null,
         baiguullagiinId: ajiltan.baiguullagiinId,
-        barilgiinId: effectiveBarilgiinId || null,
+        ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+        ...(Object.keys(filters).length > 0 ? { filters } : {}),
       };
 
-      const path = "/zaaltExcelTemplateAvya";
+      const path = "/nekhemjlekhiinTuukhExcelDownload";
       let resp: any;
       try {
         resp = await uilchilgee(token).post(path, body, {
@@ -2139,7 +2188,7 @@ export default function DansniiKhuulga() {
       // Try to infer filename from headers or fallback
       const cd = (resp.headers?.["content-disposition"] ||
         resp.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "zaalt_template.xlsx";
+      let filename = `nekhemjlekhiinTuukh_${new Date().toISOString().split("T")[0]}.xlsx`;
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
@@ -2155,13 +2204,13 @@ export default function DansniiKhuulga() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      toast.success("Excel загвар татагдлаа");
+      toast.success("Excel файл татагдлаа");
     } catch (err: any) {
       hide();
       console.error(err);
 
       // Handle blob error response - when responseType is 'blob', error response may be Blob or ArrayBuffer
-      let errorMsg = "Excel загвар татахад алдаа гарлаа";
+      let errorMsg = "Excel файл татахад алдаа гарлаа";
 
       try {
         const responseData = err?.response?.data;
