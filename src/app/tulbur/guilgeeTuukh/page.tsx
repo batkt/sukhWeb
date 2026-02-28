@@ -3703,16 +3703,25 @@ export default function DansniiKhuulga() {
                                     {dugaar}
                                   </td>
                                 );
-                              case "tulbur":
+                              case "tulbur": {
+                                // Match invoice modal logic: prefer niitTulburOriginal, then niitTulbur/niitDun
+                                const niitDun = Number(
+                                  it?.niitTulburOriginal ??
+                                    it?.niitTulbur ??
+                                    it?.niitDun ??
+                                    it?.total ??
+                                    0,
+                                );
                                 return (
                                   <td
                                     key={col.key}
                                     className={cellClass}
                                     style={style}
                                   >
-                                    {formatNumber(total)} ₮
+                                    {formatNumber(niitDun, 2)} ₮
                                   </td>
                                 );
+                              }
                               case "ekhniiUldegdel": {
                                 const amt = Number(
                                   it?._ekhniiUldegdelAmount ?? 0,
@@ -3977,10 +3986,17 @@ export default function DansniiKhuulga() {
 
                       if (col.key === "gereeniiDugaar") {
                       } else if (col.key === "tulbur") {
-                        // _totalTulbur now includes ekhniiUldegdel from gereeniiTulukhAvlaga
+                        // Match invoice modal logic: prefer niitTulburOriginal, then niitTulbur/niitDun
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            return sum + Number(it?._totalTulbur ?? 0);
+                            const niitDun = Number(
+                              it?.niitTulburOriginal ??
+                                it?.niitTulbur ??
+                                it?.niitDun ??
+                                it?.total ??
+                                0,
+                            );
+                            return sum + niitDun;
                           },
                           0,
                         );
