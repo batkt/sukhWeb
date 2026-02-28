@@ -440,27 +440,10 @@ const InvoiceModal = ({
     return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
   }, [expenseRows, contractData]);
 
+  // Use uldegdel directly from data - NO calculation
   const uldegdelDun = useMemo(() => {
-    const total = totalSum;
-    // Use API-paid amount for correct balance (consistent with summary display)
-    if (totalPaidFromApi !== null) {
-      return total - totalPaidFromApi;
-    }
-    // Fallback to table balance if API summary is unavailable
-    if (resident?._contractBalance != null) {
-      return Number(resident._contractBalance);
-    }
-    const inv = latestInvoice || nekhemjlekhData;
-    if (inv?.uldegdel != null) return Number(inv.uldegdel);
-    const paid = Number(inv?.tulsunDun ?? 0) || 0;
-    return total - paid;
-  }, [
-    totalSum,
-    totalPaidFromApi,
-    latestInvoice,
-    nekhemjlekhData,
-    resident?._contractBalance,
-  ]);
+    return Number(resident?.uldegdel ?? 0);
+  }, [resident?.uldegdel]);
 
   const effectivePaymentStatus =
     uldegdelDun <= 0 ? "Төлсөн" : paymentStatusLabel;

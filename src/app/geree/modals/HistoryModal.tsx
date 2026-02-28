@@ -1092,14 +1092,18 @@ export default function HistoryModal({
   }, [show, contract]);
 
   const filteredData = useMemo(() => {
-    if (!dateRange || (!dateRange[0] && !dateRange[1])) return data;
-    const [start, end] = dateRange;
-    const s = start ? new Date(start).getTime() : -Infinity;
-    const e = end ? new Date(end).getTime() : Infinity;
-    return data.filter((item) => {
-      const d = new Date(item.ognoo).getTime();
-      return d >= s && d <= e;
-    });
+    let result = data;
+    if (dateRange && (dateRange[0] || dateRange[1])) {
+      const [start, end] = dateRange;
+      const s = start ? new Date(start).getTime() : -Infinity;
+      const e = end ? new Date(end).getTime() : Infinity;
+      result = data.filter((item) => {
+        const d = new Date(item.ognoo).getTime();
+        return d >= s && d <= e;
+      });
+    }
+    // Reverse to show newest first (data is stored oldest-first)
+    return [...result].reverse();
   }, [data, dateRange]);
 
   const handlePrint = () => {
@@ -1353,7 +1357,7 @@ export default function HistoryModal({
                         </td>
                       </tr>
                     ))}
-                    {/* Total Summary Row - balance = charges - payments (shows overpayment as negative) */}
+                    {/* Total Summary Row - uldegdel from main page data */}
                     {(() => {
                       const totalCharges = filteredData.reduce(
                         (sum, row) => sum + (row.tulukhDun || 0),
@@ -1363,7 +1367,8 @@ export default function HistoryModal({
                         (sum, row) => sum + (row.tulsunDun || 0),
                         0,
                       );
-                      const balance = totalCharges - totalPayments;
+                      // Use uldegdel directly from contract data - NO calculation
+                      const balance = Number(contract?.uldegdel ?? 0);
                       const balanceClass =
                         balance < 0
                           ? "!text-emerald-600 dark:!text-emerald-400"
