@@ -3977,10 +3977,25 @@ export default function DansniiKhuulga() {
                           </span>
                         );
                       } else if (col.key === "uldegdel") {
-                        // Just sum uldegdel directly from data - NO calculation
+                        // Sum uldegdel using same logic as row display: latest row uldegdel > contract uldegdel > row uldegdel
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            return sum + Number(it?.uldegdel ?? 0);
+                            const gid = getGereeId(it);
+                            const ct = (it?.gereeniiId && contractsById[String(it.gereeniiId)]) ||
+                              (it?.gereeniiDugaar && contractsByNumber[String(it.gereeniiDugaar)]) ||
+                              undefined;
+                            
+                            // Use same logic as row display
+                            const latestRowUldegdel = gid && latestRowUldegdelByGereeId[gid] != null
+                              ? latestRowUldegdelByGereeId[gid]
+                              : null;
+                            const uldegdel = latestRowUldegdel != null
+                              ? latestRowUldegdel
+                              : ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))
+                                ? Number(ct.uldegdel)
+                                : Number(it?.uldegdel ?? 0);
+                            
+                            return sum + (uldegdel ?? 0);
                           },
                           0,
                         );
