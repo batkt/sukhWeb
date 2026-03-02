@@ -10,6 +10,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer, Download } from "lucide-react";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -88,6 +89,12 @@ export default function AvlagiinNasjiltPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(200);
   const [summary, setSummary] = useState<any>(null);
+
+  const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    selectedBuildingId || undefined
+  );
 
   const [formData, setFormData] = useState({
     ekhlekhOgnoo: "",
@@ -168,7 +175,7 @@ export default function AvlagiinNasjiltPage() {
         duusakhOgnoo: dateRange?.[1] || formData.duusakhOgnoo,
         view: formData.view,
         khuudasniiDugaar: formData.khuudasniiDugaar,
-        khuudasniiKhemjee: 1000, // Get all data for client-side pagination
+        khuudasniiKhemjee: 1000, 
         orshinSuugch: debouncedFilters.orshinSuugch || undefined,
         toot: debouncedFilters.toot || undefined,
         davkhar: debouncedFilters.davkhar || undefined,
@@ -182,11 +189,11 @@ export default function AvlagiinNasjiltPage() {
       const fetchedData = response.data?.detailed?.list || [];
       const summaryData = response.data?.summary || null;
 
-      // Map fields to match the expected interface
+     
       const mappedData = Array.isArray(fetchedData)
         ? fetchedData.map((item: any) => {
-            // Map ageBucket to nasjilt (aging category)
-            let nasjilt = "Шинэ"; // Default
+            
+            let nasjilt = "Шинэ"; 
             if (item.ageBucket === "0-30") nasjilt = "Шинэ";
             else if (item.ageBucket === "31-60") nasjilt = "Хуучин";
             else if (item.ageBucket === "61-90" || item.ageBucket === "91-180")
@@ -194,7 +201,7 @@ export default function AvlagiinNasjiltPage() {
             else if (item.ageBucket === "180+") nasjilt = "Маш хуучин";
 
             const avlaga = item.niitTulbur || 0;
-            const totalAmount = summaryData?.total || 1; // Avoid division by zero
+            const totalAmount = summaryData?.total || 1; 
             const khuvi = totalAmount > 0 ? (avlaga / totalAmount) * 100 : 0;
 
             return {
@@ -206,13 +213,13 @@ export default function AvlagiinNasjiltPage() {
               avlaga: avlaga,
               nasjilt: nasjilt,
               khuvi: khuvi,
-              // Keep original fields for potential future use
+              
               ...item,
             };
           })
         : [];
 
-      // Sort newest first: prefer createdAt, then ognoo, then fallback to _id string
+      
       const sortByNewest = (list: any[]) =>
         list.slice().sort((a: any, b: any) => {
           const getTime = (x: any) => {
@@ -239,10 +246,7 @@ export default function AvlagiinNasjiltPage() {
     fetchData();
   }, [selectedBuildingId, baiguullaga, dateRange, formData, debouncedFilters]);
 
-  const totalAvlaga = useMemo(() => {
-    if (!Array.isArray(data)) return 0;
-    return data.reduce((sum, item) => sum + (item.avlaga || 0), 0);
-  }, [data]);
+  const totalAvlaga = summary?.total || 0;
 
   const totalKhuvi = useMemo(() => {
     if (!Array.isArray(data)) return 0;
@@ -395,7 +399,7 @@ export default function AvlagiinNasjiltPage() {
 
       {error && <div className="text-red-500 mb-4">Алдаа: {error}</div>}
 
-      {/* Summary Cards */}
+      
       {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className=" mb-2">Нийт авлага</h3>
@@ -411,7 +415,7 @@ export default function AvlagiinNasjiltPage() {
         </div>
       </div> */}
 
-      {/* Data Table */}
+      
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
           <div className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full">
@@ -574,12 +578,10 @@ export default function AvlagiinNasjiltPage() {
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-
                   <td className="p-3 text-right text-theme whitespace-nowrap ">
                     Нийт: {formatNumber(totalAvlaga)} ₮
                   </td>
                   <td className="p-3 text-right text-theme whitespace-nowrap  text-red-600"></td>
-
                   <td className="p-3 text-right text-theme whitespace-nowrap "></td>
                   <td className="p-3 text-right text-theme whitespace-nowrap ">
                     {formatNumber(totalKhuvi)}%
@@ -590,7 +592,6 @@ export default function AvlagiinNasjiltPage() {
           </div>
         </div>
       </div>
-
       <div className="flex items-center justify-between no-print">
         <div className="text-sm text-theme/70">
           Нийт: {summary?.count || data.length}

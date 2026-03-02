@@ -5,7 +5,11 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
+import { useGereeJagsaalt } from "@/lib/useGeree";
+import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import uilchilgee from "@/lib/uilchilgee";
+import useSWR from "swr";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import DatePickerInput from "../../../components/ui/DatePickerInput";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -14,60 +18,17 @@ import { FileSpreadsheet, Printer } from "lucide-react";
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
-      @page {
-        size: A4 landscape;
-        margin: 1cm;
-      }
-      body * {
-        visibility: hidden !important;
-      }
-      .print-container, .print-container * {
-        visibility: visible !important;
-      }
-      .print-container {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-      }
-      .no-print {
-        display: none !important;
-      }
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-      }
-      th, td {
-        border: 1px solid #ddd !important;
-        padding: 6px !important;
-        font-size: 8pt !important;
-      }
-      .custom-scrollbar {
-        overflow: visible !important;
-      }
-      .max-h-[30vh] {
-        max-height: none !important;
-        overflow: visible !important;
-      }
+      @page { size: A4 landscape; margin: 1cm; }
+      body * { visibility: hidden !important; }
+      .print-container, .print-container * { visibility: visible !important; }
+      .print-container { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; padding: 0 !important; }
+      .no-print { display: none !important; }
+      table { width: 100% !important; border-collapse: collapse !important; }
+      th, td { border: 1px solid #ddd !important; padding: 6px !important; font-size: 8pt !important; }
+      .custom-scrollbar { overflow: visible !important; }
     }
   `}</style>
 );
-
-interface OrlogoAvlagaItem {
-  gereeniiDugaar: string;
-  ovog: string;
-  ner: string;
-  utas: string[];
-  toot: string;
-  davkhar: string;
-  bairNer?: string;
-  orts?: string;
-  niitTulbur?: number;
-  tulbur?: number;
-  uldegdel?: number;
-  tulsunDun?: number;
-}
 
 type TabType = "tulult" | "avlaga";
 
@@ -78,422 +39,356 @@ export default function OrlogoAvlagaPage() {
     token || null,
     ajiltan?.baiguullagiinId || null
   );
+const effectiveBarilgiinId = selectedBuildingId || undefined;
+  
+  const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
+
   const [activeTab, setActiveTab] = useState<TabType>("tulult");
-  const [paidList, setPaidList] = useState<any[]>([]);
-  const [unpaidList, setUnpaidList] = useState<any[]>([]);
-  const [dateRange, setDateRange] = useState<
-    [string | null, string | null] | undefined
-  >(undefined);
-  const [filters, setFilters] = useState({
-    orshinSuugch: "",
-    toot: "",
-    davkhar: "",
-    gereeniiDugaar: "",
-  });
+  const [dateRange, setDateRange] = useState<[string | null, string | null] | undefined>(undefined);
+  const [filters, setFilters] = useState({ orshinSuugch: "", toot: "", davkhar: "", gereeniiDugaar: "" });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      setDebouncedFilters(filters);
-      debounceRef.current = null;
-    }, 400);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [filters]);
-  const [apiResponse, setApiResponse] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(200);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
-  const [expandedData, setExpandedData] = useState<any | null>(null);
+  const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
   const [expandedLoading, setExpandedLoading] = useState(false);
   const [expandedError, setExpandedError] = useState<string | null>(null);
+const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    effectiveBarilgiinId
+  );
+  const [paidByGereeId, setPaidByGereeId] = useState<Record<string, number>>({});
+  const [uldegdelByGereeId, setUldegdelByGereeId] = useState<Record<string, number | null>>({});
+  const paidRequestedRef = useRef<Set<string>>(new Set());
+  const uldegdelRequestedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!selectedBuildingId || !baiguullaga) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => { setDebouncedFilters(filters); debounceRef.current = null; }, 400);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [filters]);
 
-      try {
-        setLoading(true);
-        const response = await uilchilgee(token ?? undefined).post(
-          "/tailan/orlogo-avlaga",
-          {
-            baiguullagiinId: baiguullaga._id,
-            barilgiinId: selectedBuildingId,
-            bairNer: undefined,
-            orts: undefined,
-            davkhar: debouncedFilters.davkhar || undefined,
-            toot: debouncedFilters.toot || undefined,
-            gereeniiDugaar: debouncedFilters.gereeniiDugaar || undefined,
-            orshinSuugch: debouncedFilters.orshinSuugch || undefined,
-            ekhlekhOgnoo: dateRange?.[0] || undefined,
-            duusakhOgnoo: dateRange?.[1] || undefined,
-          }
-        );
-        setApiResponse(response.data);
-        const rawPaid = Array.isArray(response.data?.paid?.list)
-          ? response.data.paid.list
-          : [];
-        const unpaid = Array.isArray(response.data?.unpaid?.list)
-          ? response.data.unpaid.list
-          : [];
-        const getPaidAmount = (item: any) => {
-          let paidSum = 0;
-          // 1. If there's a payment history sum it up
-          if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
-            paidSum += item.paymentHistory.reduce((sum: number, p: any) => sum + Math.abs(Number(p.dun) || 0), 0);
-          }
+  const emptyQuery = useMemo(() => ({}), []);
 
-          // 2. Check for payments within zardluud (expenses)
-          const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
-          if (Array.isArray(zardluud)) {
-            paidSum += zardluud.reduce((sum: number, z: any) => sum + Math.abs(Number(z.tulsunDun) || 0), 0);
-          }
+  const { data: historyData, isLoading: isLoadingHistory } = useSWR(
+    token && baiguullagiinId
+      ? ["/nekhemjlekhiinTuukh-oa", token, baiguullagiinId, selectedBuildingId || null,
+          dateRange?.[0] || null, dateRange?.[1] || null]
+      : null,
+    async ([, tkn, bId, barId, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
-          if (paidSum > 0) return paidSum;
+  const { data: receivableData, isLoading: isLoadingReceivable } = useSWR(
+    token && baiguullagiinId
+      ? ["/gereeniiTulukhAvlaga-oa", token, baiguullagiinId, selectedBuildingId || null,
+          dateRange?.[0] || null, dateRange?.[1] || null]
+      : null,
+    async ([, tkn, bId, barId, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
 
-          // 3. Partial payment: OriginalTotal - CurrentRemaining
-          const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
-          const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
-          if (total > current && total > 0) {
-            return total - current;
-          }
+  const { gereeGaralt } = useGereeJagsaalt(emptyQuery, token || undefined, baiguullagiinId || undefined, selectedBuildingId || undefined);
+  const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(token || "", baiguullagiinId || "", emptyQuery, selectedBuildingId || undefined);
 
-          // 4. Fallbacks for explicit paid fields
-          const amt = Number(
-            item?.tulsunDun ?? 
-            item?.tulsun ?? 
-            item?.totalTulsunDun ?? 
-            item?.totalPrepayment ?? 
-            item?.paidAmount ?? 
-            (item?.tuluv === "Төлсөн" ? current : 0)
-          ) || 0;
-          return Math.abs(amt);
-        };
+  const contractsById = useMemo(() => {
+    const map: Record<string, any> = {};
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => { if (g?._id) map[String(g._id)] = g; });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
 
-        // Combine both lists from the API response
-        const allResidents = [...rawPaid, ...unpaid];
-        // Filter to include anyone who has paid something OR is marked as Fully Paid
-        const paid = allResidents.filter((item: any) => {
-          const paidAmt = getPaidAmount(item);
-          return paidAmt > 0 || item?.tuluv === "Төлсөн";
+  const contractsByNumber = useMemo(() => {
+    const map: Record<string, any> = {};
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => { if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g; });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const residentsById = useMemo(() => {
+    const map: Record<string, any> = {};
+    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => { if (r?._id) map[String(r._id)] = r; });
+    return map;
+  }, [orshinSuugchGaralt?.jagsaalt]);
+
+  const allHistoryItems = useMemo(() => {
+    const invoices = Array.isArray(historyData?.jagsaalt) ? historyData.jagsaalt
+      : Array.isArray(historyData) ? historyData : [];
+    const receivables = Array.isArray(receivableData?.jagsaalt) ? receivableData.jagsaalt
+      : Array.isArray(receivableData) ? receivableData : [];
+
+    const combined = [...invoices];
+    const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
+    invoices.forEach((it: any) => {
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
+      gList.forEach((g: any) => { if (g?._id) trackingIds.add(String(g._id)); });
+    });
+    receivables.forEach((r: any) => { if (!trackingIds.has(String(r._id))) combined.push(r); });
+    return combined;
+  }, [historyData, receivableData]);
+
+  const buildingHistoryItems = useMemo(() => {
+    const bid = String(selectedBuildingId || "");
+    if (!bid) return allHistoryItems;
+    const toStr = (v: any) => (v == null ? "" : String(v));
+    return allHistoryItems.filter((it: any) => {
+      const itemBid = toStr(it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId);
+      if (itemBid) return itemBid === bid;
+      const cId = toStr(it?.gereeId ?? it?.gereeniiId ?? it?.kholbosonGereeniiId);
+      const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
+      const c = cId ? contractsById[cId] : undefined;
+      const r = rId ? residentsById[rId] : undefined;
+      const cbid = toStr(c?.barilgiinId ?? c?.barilga);
+      const rbid = toStr(r?.barilgiinId ?? r?.barilga);
+      if (cbid) return cbid === bid;
+      if (rbid) return rbid === bid;
+      return false;
+    });
+  }, [allHistoryItems, selectedBuildingId, contractsById, residentsById]);
+
+  const deduplicatedResidents = useMemo(() => {
+    const map = new Map<string, any>();
+    const contractsWithEkhniiInInvoice = new Set<string>();
+
+    buildingHistoryItems.forEach((it: any) => {
+      const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud) ? it.zardluud : [];
+      const hasEkhUld = zardluud.some((z: any) => {
+        const ner = String(z?.ner || "").toLowerCase();
+        return (z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel"))
+          && Number(z?.dun || z?.tariff || 0) !== 0;
+      });
+      if (hasEkhUld) {
+        const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
+        const gd = String(it?.gereeniiDugaar || "").trim();
+        if (gid) contractsWithEkhniiInInvoice.add(gid);
+        if (gd) contractsWithEkhniiInInvoice.add(gd);
+      }
+    });
+
+    buildingHistoryItems.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      if (!gereeId && gereeDugaar && contractsByNumber[gereeDugaar]?._id) {
+        gereeId = String(contractsByNumber[gereeDugaar]._id);
+      }
+      const ner = String(it?.ner || "").trim().toLowerCase();
+      const utas = Array.isArray(it?.utas) ? String(it.utas[0] || "").trim() : String(it?.utas || "").trim();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      if (!key || key === "||") return;
+
+      const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
+      if (isStandaloneEkh) {
+        const contractHasIt =
+          (gereeId && contractsWithEkhniiInInvoice.has(gereeId)) ||
+          (gereeDugaar && contractsWithEkhniiInInvoice.has(gereeDugaar));
+        if (contractHasIt) return;
+      }
+
+      const ct = gereeId ? contractsById[gereeId] : (gereeDugaar ? contractsByNumber[gereeDugaar] : undefined);
+      const r = residentId ? residentsById[residentId] : undefined;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          ...it,
+          _gereeId: gereeId,
+          _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || it?.gereeniiDugaar || "",
+          _residentId: residentId,
+          _ner: r?.ner ?? it?.ner ?? ct?.ner ?? "",
+          _ovog: r?.ovog ?? it?.ovog ?? ct?.ovog ?? "",
+          _utas: r?.utas ?? it?.utas ?? ct?.utas ?? "",
+          _toot: r?.toot ?? ct?.toot ?? it?.toot ?? it?.medeelel?.toot ?? "",
+          _davkhar: r?.davkhar ?? ct?.davkhar ?? it?.davkhar ?? "",
         });
-        
-        setPaidList(paid);
-        setUnpaidList(unpaid);
-      } catch (err: any) {
-        setError(err?.response?.data?.aldaa || err.message || "Unknown error");
-      } finally {
-        setLoading(false);
       }
-    };
+    });
 
-    fetchData();
-  }, [selectedBuildingId, baiguullaga, token, dateRange, debouncedFilters]);
+    return Array.from(map.values());
+  }, [buildingHistoryItems, contractsByNumber, contractsById, residentsById]);
 
-  const totalOrlogo = useMemo(() => {
-    return paidList.reduce((sum, item) => {
-      let amt = 0;
-      if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
-        amt = item.paymentHistory.reduce((s: number, p: any) => s + Math.abs(Number(p.dun) || 0), 0);
-      } 
-      
-      const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
-      if (Array.isArray(zardluud)) {
-        amt += zardluud.reduce((s: number, z: any) => s + Math.abs(Number(z.tulsunDun) || 0), 0);
-      }
+  useEffect(() => {
+    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
+    deduplicatedResidents.forEach((it: any) => {
+      const gid = it?._gereeId || "";
+      if (!gid || paidRequestedRef.current.has(gid) || paidByGereeId[gid] !== undefined) return;
+      paidRequestedRef.current.add(gid);
+      uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid })
+        .then((resp) => {
+          const total = Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) || 0;
+          setPaidByGereeId((prev) => ({ ...prev, [gid]: total }));
+        })
+        .catch(() => { paidRequestedRef.current.delete(gid); });
+    });
+  }, [token, baiguullagiinId, deduplicatedResidents]);
 
-      if (amt === 0) {
-        const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
-        const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
-        if (total > current && total > 0) {
-          amt = total - current;
-        } else {
-          amt = Number(
-            item?.tulsunDun ?? 
-            item?.tulsun ?? 
-            item?.totalTulsunDun ?? 
-            item?.totalPrepayment ?? 
-            item?.paidAmount ?? 
-            (item?.tuluv === "Төлсөн" ? current : 0)
-          ) || 0;
-        }
-      }
-      return sum + Math.abs(amt);
-    }, 0);
-  }, [paidList]);
-  const totalZarlaga = useMemo(
-    () => apiResponse?.unpaid?.sum || 0,
-    [apiResponse]
-  );
-  const totalUldegdel = useMemo(
-    () => totalOrlogo - totalZarlaga,
-    [totalOrlogo, totalZarlaga]
-  );
+  useEffect(() => {
+    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
+    deduplicatedResidents.forEach((it: any) => {
+      const gid = it?._gereeId || "";
+      if (!gid || uldegdelRequestedRef.current.has(gid)) return;
+      const existing = uldegdelByGereeId[gid];
+      if (existing !== undefined && existing !== null && Number.isFinite(existing)) return;
+      uldegdelRequestedRef.current.add(gid);
+      uilchilgee(token).get(`/geree/${gid}/history-ledger`, {
+        params: { baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}), _t: Date.now() },
+      })
+        .then((resp) => {
+          const ledger = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt
+            : Array.isArray(resp.data?.ledger) ? resp.data.ledger
+            : Array.isArray(resp.data) ? resp.data : [];
+          const latestRow = ledger.length > 0 ? ledger[ledger.length - 1] : null;
+          const val = latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
+            ? Number(latestRow.uldegdel) : null;
+          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: val }));
+        })
+        .catch(() => {
+          uldegdelRequestedRef.current.delete(gid);
+          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
+        });
+    });
+  }, [token, baiguullagiinId, selectedBuildingId, deduplicatedResidents]);
 
-  const fetchNekhData = async (gereeniiDugaar: string) => {
-    if (!baiguullaga || !selectedBuildingId) return;
-    setExpandedLoading(true);
+  useEffect(() => {
+    setPaidByGereeId({});
+    setUldegdelByGereeId({});
+    paidRequestedRef.current.clear();
+    uldegdelRequestedRef.current.clear();
+  }, [selectedBuildingId, baiguullagiinId, dateRange]);
+
+  const getGereeId = (it: any) => String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
+
+  const getPaid = (it: any): number => {
+    const gid = getGereeId(it);
+    return gid && paidByGereeId[gid] !== undefined ? paidByGereeId[gid] : 0;
+  };
+
+  const getUldegdel = (it: any): number => {
+    const gid = getGereeId(it);
+    if (gid) {
+      const val = uldegdelByGereeId[gid];
+      if (val != null && Number.isFinite(val)) return val;
+      const ct = contractsById[gid];
+      if (ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))) return Number(ct.uldegdel);
+    }
+    return Number(it?.uldegdel ?? 0);
+  };
+
+  const matchesFilters = (it: any): boolean => {
+    const f = debouncedFilters;
+    if (f.toot) {
+      const toot = String(it?._toot || it?.toot || it?.medeelel?.toot || "").toLowerCase();
+      if (!toot.includes(f.toot.toLowerCase())) return false;
+    }
+    if (f.davkhar) {
+      const dv = String(it?._davkhar || it?.davkhar || "").toLowerCase();
+      if (!dv.includes(f.davkhar.toLowerCase())) return false;
+    }
+    if (f.gereeniiDugaar) {
+      const gd = String(it?._gereeDugaar || it?.gereeniiDugaar || "").toLowerCase();
+      if (!gd.includes(f.gereeniiDugaar.toLowerCase())) return false;
+    }
+    if (f.orshinSuugch) {
+      const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
+      if (!name.includes(f.orshinSuugch.toLowerCase())) return false;
+    }
+    return true;
+  };
+  const paidList = useMemo(() =>
+    deduplicatedResidents.filter((it) => matchesFilters(it) && getPaid(it) > 0),
+  [deduplicatedResidents, paidByGereeId, debouncedFilters]);
+  const avlagaList = useMemo(() =>
+    deduplicatedResidents.filter((it) => matchesFilters(it) && getUldegdel(it) > 0),
+  [deduplicatedResidents, uldegdelByGereeId, debouncedFilters]);
+
+  const displayList = activeTab === "tulult" ? paidList : avlagaList;
+ const totalOrlogo = useMemo(() =>
+    deduplicatedResidents.reduce((s, it) => s + getPaid(it), 0),
+  [deduplicatedResidents, paidByGereeId]);
+
+  const totalUldegdel = useMemo(() =>
+    deduplicatedResidents.reduce((s, it) => s + getUldegdel(it), 0),
+  [deduplicatedResidents, uldegdelByGereeId]);
+  const handleRowClick = async (it: any) => {
+    const gid = getGereeId(it);
+    const gd = it?._gereeDugaar || it?.gereeniiDugaar || gid;
+    if (expandedRow === gd) {
+      setExpandedRow(null);
+      setExpandedLedger([]);
+      return;
+    }
+    setExpandedRow(gd);
+    setExpandedLedger([]);
     setExpandedError(null);
+    if (!gid || !baiguullagiinId) return;
+    setExpandedLoading(true);
     try {
-      const resp = await uilchilgee(token ?? undefined).post(
-        "/tailan/nekhemjlekhiin-tuukh",
-        {
-          baiguullagiinId: baiguullaga._id,
-          barilgiinId: selectedBuildingId,
-          gereeniiDugaar,
-          khuudasniiKhemjee: 1000,
-        }
-      );
-      const raw = Array.isArray(resp.data?.list)
-        ? resp.data.list
-        : Array.isArray(resp.data)
-        ? resp.data
-        : [];
-
-      const formatOgnoo = (d: string) =>
-        d
-          ? d.split("T")[0].replace(/-/g, ".") +
-            (d.includes("T") ? " " + (d.split("T")[1]?.slice(0, 8) || "") : "")
-          : "-";
-
-      const pickAmount = (obj: any) => {
-        const n = (v: any) => {
-          const num = Number(v);
-          return Number.isFinite(num) ? num : 0;
-        };
-        const dun = n(obj?.dun);
-        if (dun !== 0) return dun;
-        const td = n(obj?.tulukhDun);
-        if (td !== 0) return td;
-        const tar = n(obj?.tariff);
-        if (tar !== 0) return tar;
-        const amt = n(obj?.amount);
-        if (amt !== 0) return amt;
-        return 0;
-      };
-
-      const detailRows: Array<{
-        ognoo: string;
-        tailbar: string;
-        tulukhDun: number;
-        tulsunDun: number;
-      }> = [];
-
-      raw.forEach((r: any) => {
-        const itemDate = r.ognoo || r.nekhemjlekhiinOgnoo || r.createdAt || "";
-        const ognooStr = formatOgnoo(itemDate);
-
-        const zardluud =
-          Array.isArray(r?.nememjlekh?.zardluud) ? r.nememjlekh.zardluud
-          : Array.isArray(r?.medeelel?.zardluud) ? r.medeelel.zardluud
-          : Array.isArray(r?.zardluud) ? r.zardluud : [];
-        const guilgeenuud =
-          Array.isArray(r?.nememjlekh?.guilgeenuud) ? r.nememjlekh.guilgeenuud
-          : Array.isArray(r?.medeelel?.guilgeenuud) ? r.medeelel.guilgeenuud
-          : Array.isArray(r?.guilgeenuud) ? r.guilgeenuud : [];
-
-        const invoiceTotal = Number(r.niitTulbur ?? r.tulbur ?? r.niitDun ?? 0) || 0;
-        const zardalWithNer = zardluud.filter((z: any) => z.ner);
-        zardalWithNer.forEach((z: any) => {
-          let amt = pickAmount(z);
-          if (amt === 0 && invoiceTotal > 0 && zardalWithNer.length > 0) {
-            amt = Math.round((invoiceTotal / zardalWithNer.length) * 100) / 100;
-          }
-          if (amt > 0) {
-            const isPaid = r.tuluv === "Төлсөн";
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: z.tailbar || z.ner,
-              tulukhDun: amt,
-              tulsunDun: isPaid ? amt : 0,
-            });
-          }
-        });
-
-        guilgeenuud.forEach((g: any) => {
-          const amt = Number(g.tulukhDun || 0);
-          const paid = Number(g.tulsunDun || 0);
-          if (amt > 0) {
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: g.tailbar || "Авлага",
-              tulukhDun: amt,
-              tulsunDun: 0,
-            });
-          }
-          if (paid > 0) {
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: g.tailbar || "Төлөлт",
-              tulukhDun: 0,
-              tulsunDun: paid,
-            });
-          }
-        });
-
-        const hasChildren = zardluud.length > 0 || guilgeenuud.length > 0;
-        if (
-          !hasChildren &&
-          r.turul &&
-          (r.turul === "ashiglalt" || r.turul === "avlaga" || r.turul === "tulult" || r.turul === "voucher" || r.turul === "turgul")
-        ) {
-          const amt = Number(r.tulukhDun || r.dun || 0);
-          const tulsunAmt = Number(r.tulsunDun || 0);
-          if (r.turul === "tulult" && (tulsunAmt > 0 || Math.abs(amt) > 0)) {
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: r.tailbar || "Төлөлт",
-              tulukhDun: 0,
-              tulsunDun: tulsunAmt > 0 ? tulsunAmt : Math.abs(amt),
-            });
-          } else if (r.turul === "ashiglalt" && (tulsunAmt > 0 || Math.abs(amt) > 0)) {
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: r.tailbar || "Ашиглалт",
-              tulukhDun: 0,
-              tulsunDun: tulsunAmt > 0 ? tulsunAmt : Math.abs(amt),
-            });
-          } else if ((r.turul === "avlaga" || r.turul === "turgul" || r.turul === "voucher") && amt > 0) {
-            const name = r.turul === "avlaga" ? "Авлага" : r.turul === "turgul" ? "Торгууль" : "Voucher";
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: r.tailbar || name,
-              tulukhDun: amt,
-              tulsunDun: 0,
-            });
-          }
-        }
-
-        if (zardluud.length === 0 && guilgeenuud.length === 0 && !hasChildren) {
-          const amt = Number(r.niitTulbur ?? r.tulbur ?? r.niitDun ?? 0) || 0;
-          if (amt > 0) {
-            detailRows.push({
-              ognoo: ognooStr,
-              tailbar: r.tailbar || r.dugaalaltDugaar || r.gereeniiDugaar || "Нэхэмжлэх",
-              tulukhDun: amt,
-              tulsunDun: r.tuluv === "Төлсөн" ? amt : 0,
-            });
-          }
-        }
+      const resp = await uilchilgee(token ?? undefined).get(`/geree/${gid}/history-ledger`, {
+        params: { baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}), _t: Date.now() },
       });
-
-      detailRows.sort((a, b) => {
-        const dA = new Date(a.ognoo.replace(/\./g, "-")).getTime();
-        const dB = new Date(b.ognoo.replace(/\./g, "-")).getTime();
-        return dA - dB;
-      });
-
-      const sumTulukh = detailRows.reduce((s: number, row: any) => s + (row.tulukhDun || 0), 0);
-      const sumTulsun = detailRows.reduce((s: number, row: any) => s + (row.tulsunDun || 0), 0);
-      setExpandedData({
-        rows: detailRows,
-        sumTulukh,
-        sumTulsun,
-        raw,
-      });
+      const ledger = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt
+        : Array.isArray(resp.data?.ledger) ? resp.data.ledger
+        : Array.isArray(resp.data) ? resp.data : [];
+      setExpandedLedger(ledger);
     } catch (e: any) {
-      setExpandedError(
-        e?.response?.data?.aldaa || e.message || "Unknown error"
-      );
-      setExpandedData(null);
+      setExpandedError(e?.response?.data?.aldaa || e.message || "Алдаа гарлаа");
     } finally {
       setExpandedLoading(false);
     }
   };
 
-  const handleAmountClick = (gereeniiDugaar: string) => {
-    if (expandedRow === gereeniiDugaar) {
-      setExpandedRow(null);
-      setExpandedData(null);
-      return;
-    }
-    setExpandedRow(gereeniiDugaar);
-    fetchNekhData(gereeniiDugaar);
-  };
-
-  const displayList =
-    activeTab === "tulult" ? paidList : unpaidList;
-
-  const getItemAmount = (item: any) => {
-    let paidSum = 0;
-    if (Array.isArray(item?.paymentHistory) && item.paymentHistory.length > 0) {
-      paidSum += item.paymentHistory.reduce((sum: number, p: any) => sum + Math.abs(Number(p.dun) || 0), 0);
-    }
-    const zardluud = item?.nememjlekh?.zardluud || item?.zardluud;
-    if (Array.isArray(zardluud)) {
-      paidSum += zardluud.reduce((sum: number, z: any) => sum + Math.abs(Number(z.tulsunDun) || 0), 0);
-    }
-    if (paidSum > 0) return paidSum;
-
-    const total = Number(item?.niitOriginalTulbur ?? item?.niitTulburOriginal ?? 0);
-    const current = Number(item?.niitTulbur ?? item?.tulbur ?? 0);
-    if (total > current && total > 0) return total - current;
-
-    const amt = item?.tulsunDun ?? item?.tulsun ?? item?.totalTulsunDun ?? item?.totalPrepayment ?? item?.paidAmount ?? 
-                (item?.tuluv === "Төлсөн" ? current : 0) ?? 0;
-    return Math.abs(Number(amt) || 0);
-  };
-
-  const getItemTulukh = (item: any) => {
-    return Number(item?.uldegdel ?? item?.niitTulbur ?? item?.tulbur ?? 0) || 0;
-  };
-
-  const getItemTulsun = (item: any) => {
-    return getItemAmount(item);
-  };
-
   const exportToExcel = () => {
     if (!displayList.length) return;
-    const headers =
-      activeTab === "tulult"
-        ? ["№", "Гэрээний дугаар", "Нэр", "Давхар", "Тоот", "Төлөлт"]
-        : ["№", "Гэрээний дугаар", "Нэр", "Давхар", "Тоот", "Төлөх дүн", "Төлсөн"];
-
-    const csvContent = [
-      headers.join(","),
-      ...displayList.map((item, idx) => {
-        const row = [
-          idx + 1,
-          `"${item.gereeniiDugaar || ""}"`,
-          `"${[item.ovog, item.ner].filter(Boolean).join(" ") || ""}"`,
-          `"${item.davkhar || ""}"`,
-          `"${item.toot || item.medeelel?.toot || ""}"`,
-        ];
-        if (activeTab === "tulult") {
-          row.push(getItemAmount(item));
-        } else {
-          row.push(getItemTulukh(item));
-          row.push(getItemTulsun(item));
-        }
-        return row.join(",");
-      }),
-    ].join("\n");
-
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const headers = activeTab === "tulult"
+      ? ["№", "ГД", "Нэр", "Давхар", "Тоот", "Төлсөн (₮)"]
+      : ["№", "ГД", "Нэр", "Давхар", "Тоот", "Үлдэгдэл (₮)", "Төлсөн (₮)"];
+    const rows = displayList.map((it, i) => {
+      const base = [i + 1, `"${it._gereeDugaar || ""}"`, `"${[it._ovog, it._ner].filter(Boolean).join(" ") || ""}"`,
+        `"${it._davkhar || ""}"`, `"${it._toot || ""}"`];
+      if (activeTab === "tulult") return [...base, getPaid(it)].join(",");
+      return [...base, getUldegdel(it), getPaid(it)].join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `orlogo_avlaga_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orlogo_avlaga_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const isLoading = isLoadingHistory || isLoadingReceivable;
+  const paginatedList = displayList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const paginatedList = displayList.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString("mn-MN") : "-";
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-lg">Уншиж байна...</div>
@@ -501,187 +396,88 @@ export default function OrlogoAvlagaPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Алдаа: {error}</div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6 print-container">
       <PrintStyles />
+
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
         <div className="flex gap-3">
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Excel татах
+          <button onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
           </button>
-          <button
-            onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4 text-blue-600" />
-            Хэвлэх
+          <button onClick={() => window.print()}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
+            <Printer className="w-4 h-4 text-blue-600" /> Хэвлэх
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print">
-        <div className="p-3 rounded-xl mt-6">
-          <DatePickerInput
-            type="range"
-            locale="mn"
-            value={dateRange}
-            onChange={setDateRange}
-            size="sm"
-            radius="md"
-            variant="filled"
-            dropdownType="popover"
-            popoverProps={{
-              position: "bottom-start",
-              withinPortal: true,
-              width: 320,
-            }}
-            clearable
-            placeholder="Огноо сонгох"
-            classNames={{
-              input:
-                "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden",
-            }}
-          />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print mb-4">
+        <div className="p-3 rounded-xl mt-4">
+          <DatePickerInput type="range" locale="mn" value={dateRange} onChange={setDateRange}
+            size="sm" radius="md" variant="filled" dropdownType="popover"
+            popoverProps={{ position: "bottom-start", withinPortal: true, width: 320 }}
+            clearable placeholder="Огноо сонгох"
+            classNames={{ input: "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden" }} />
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Оршин суугч</label>
-          <input
-            type="text"
-            value={filters.orshinSuugch}
-            onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Овог, нэрээр хайх"
-          />
-        </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
-          <input
-            type="text"
-            value={filters.toot}
-            onChange={(e) => setFilters((p) => ({ ...p, toot: e.target.value }))}
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Тоот"
-          />
-        </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
-          <input
-            type="text"
-            value={filters.davkhar}
-            onChange={(e) => setFilters((p) => ({ ...p, davkhar: e.target.value }))}
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Давхар"
-          />
-        </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Гэрээний дугаар</label>
-          <input
-            type="text"
-            value={filters.gereeniiDugaar}
-            onChange={(e) => setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))}
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="ГД"
-          />
-        </div>
+        {[
+          { key: "orshinSuugch", label: "Оршин суугч", placeholder: "Овог, нэрээр хайх" },
+          { key: "toot", label: "Тоот", placeholder: "Тоот" },
+          { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
+          { key: "gereeniiDugaar", label: "Гэрээний дугаар", placeholder: "ГД" },
+        ].map(({ key, label, placeholder }) => (
+          <div key={key} className="p-3 rounded-xl">
+            <label className="block text-sm text-theme/80 mb-1.5">{label}</label>
+            <input type="text" value={(filters as any)[key]}
+              onChange={(e) => setFilters((p) => ({ ...p, [key]: e.target.value }))}
+              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder={placeholder} />
+          </div>
+        ))}
       </div>
 
-      <div className="flex gap-2 mb-2 no-print">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("tulult");
-            setExpandedRow(null);
-            setExpandedData(null);
-            setCurrentPage(1);
-          }}
-          className={`px-4 py-2 rounded-xl  transition-all ${
-            activeTab === "tulult"
-              ? "neu-panel bg-white/20 border border-white/20"
-              : "hover:menu-surface"
-          }`}
-        >
-          Орлого
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab("avlaga");
-            setExpandedRow(null);
-            setExpandedData(null);
-            setCurrentPage(1);
-          }}
-          className={`px-4 py-2 rounded-xl  transition-all ${
-            activeTab === "avlaga"
-              ? "neu-panel bg-white/20 border border-white/20"
-              : "hover:menu-surface"
-          }`}
-        >
-          Авлага
-        </button>
+      <div className="flex gap-2 mb-4 no-print">
+        {([["tulult", "Орлого"], ["avlaga", "Авлага"]] as [TabType, string][]).map(([tab, label]) => (
+          <button key={tab} type="button"
+            onClick={() => { setActiveTab(tab); setExpandedRow(null); setExpandedLedger([]); setCurrentPage(1); }}
+            className={`px-4 py-2 rounded-xl transition-all ${activeTab === tab ? "neu-panel bg-white/20 border border-white/20" : "hover:menu-surface"}`}>
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className=" mb-2">Нийт орлого</h3>
-          <p className="text-2xl text-green-600">
-            {formatNumber(totalOrlogo)} ₮
-          </p>
+          <h3 className="mb-2">Нийт орлого <span className="text-xs text-theme/50">(Гүйцэтгэл)</span></h3>
+          <p className="text-2xl text-green-600">{formatNumber(totalOrlogo)} ₮</p>
+          <p className="text-xs text-theme/50 mt-1">{paidList.length} оршин суугч</p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className=" mb-2">Нийт авлага</h3>
-          <p className="text-2xl text-red-600">
-            {formatNumber(totalZarlaga)} ₮
-          </p>
+          <h3 className="mb-2">Нийт үлдэгдэл <span className="text-xs text-theme/50">(Үлдэгдэл)</span></h3>
+          <p className={totalUldegdel < 0 ? "text-2xl text-emerald-600" : "text-2xl text-red-600"}>{formatNumber(totalUldegdel)} ₮</p>
+          <p className="text-xs text-theme/50 mt-1">Бүх оршин суугчдын нийт үлдэгдэл</p>
         </div>
-        
       </div>
 
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
+          <div className="!max-h-[30vh] overflow-y-auto custom-scrollbar w-full">
             <table className="table-ui text-sm min-w-full">
               <thead>
                 <tr>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    ГД
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Нэр
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Давхар
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Тоот
-                  </th>
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap w-10">№</th>
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">ГД</th>
+                  <th className="z-10 p-3 text-xs text-theme text-left whitespace-nowrap">Нэр</th>
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">Давхар</th>
+                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">Тоот</th>
                   {activeTab === "tulult" ? (
-                    <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                      Төлөлт
-                    </th>
+                    <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Гүйцэтгэл</th>
                   ) : (
                     <>
-                      <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                        Төлөх дүн
-                      </th>
-                      <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                        Төлсөн
-                      </th>
+                      <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Үлдэгдэл</th>
+                      <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Гүйцэтгэл</th>
                     </>
                   )}
                 </tr>
@@ -689,205 +485,164 @@ export default function OrlogoAvlagaPage() {
               <tbody>
                 {paginatedList.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={activeTab === "tulult" ? 6 : 7}
-                      className="p-8 text-center text-theme/60"
-                    >
+                    <td colSpan={activeTab === "tulult" ? 6 : 7} className="p-8 text-center text-theme/60">
                       Мэдээлэл алга байна
                     </td>
                   </tr>
-                ) : (
-                  paginatedList.map((item, idx) => {
-                    const rowNum = (currentPage - 1) * pageSize + idx + 1;
-                    const gd = item.gereeniiDugaar || "-";
-                    const isExpanded = expandedRow === gd;
+                ) : paginatedList.map((it, idx) => {
+                  const rowNum = (currentPage - 1) * pageSize + idx + 1;
+                  const gd = it?._gereeDugaar || it?.gereeniiDugaar || "-";
+                  const isExpanded = expandedRow === gd;
+                  const paid = getPaid(it);
+                  const uldegdel = getUldegdel(it);
+                  const colSpan = activeTab === "tulult" ? 6 : 7;
 
-                    return (
-                      <React.Fragment key={`${gd}-${idx}`}>
-                        <tr
-                          key={`${gd}-${idx}`}
-                          className="transition-colors border-b last:border-b-0"
-                        >
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {rowNum}
+                  return (
+                    <React.Fragment key={`${gd}-${idx}`}>
+                      <tr className="transition-colors border-b last:border-b-0 hover:bg-[color:var(--surface-hover)]/20">
+                        <td className="p-3 text-center text-theme whitespace-nowrap">{rowNum}</td>
+                        <td className="p-3 text-center text-theme whitespace-nowrap">{gd}</td>
+                        <td className="p-3 text-left text-theme whitespace-nowrap">
+                          {[it._ovog, it._ner].filter(Boolean).join(" ") || "-"}
+                        </td>
+                        <td className="p-3 text-center text-theme whitespace-nowrap">{it._davkhar || "-"}</td>
+                        <td className="p-3 text-center text-theme whitespace-nowrap">{it._toot || "-"}</td>
+
+                        {activeTab === "tulult" ? (
+                          <td className="p-3 text-right whitespace-nowrap">
+                            <button type="button" onClick={() => handleRowClick(it)}
+                              className="text-theme hover:underline cursor-pointer inline-flex items-center gap-1">
+                              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                              <span className="text-green-600 font-medium">{formatNumber(paid)} ₮</span>
+                            </button>
                           </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {gd}
-                          </td>
-                          <td className="p-3 text-left text-theme whitespace-nowrap">
-                            {[item.ovog, item.ner].filter(Boolean).join(" ") || "-"}
-                          </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {item.davkhar || "-"}
-                          </td>
-                          <td className="p-3 text-center text-theme whitespace-nowrap">
-                            {item.toot || item.medeelel?.toot || item.nememjlekh?.toot || item.gerchigee?.toot || "-"}
-                          </td>
-                          {activeTab === "tulult" ? (
+                        ) : (
+                          <>
                             <td className="p-3 text-right whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => handleAmountClick(gd)}
-                                className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
-                              >
-                                {isExpanded ? (
-                                  <ChevronDown className="w-4 h-4" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4" />
-                                )}
-                                {formatNumber(getItemAmount(item))} ₮
+                              <button type="button" onClick={() => handleRowClick(it)}
+                                className="hover:underline cursor-pointer inline-flex items-center gap-1">
+                                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <span className={uldegdel > 0 ? "text-red-500 font-medium" : uldegdel < 0 ? "text-emerald-600 font-medium" : "text-theme"}>
+                                  {formatNumber(uldegdel)} ₮
+                                </span>
                               </button>
                             </td>
-                          ) : (
-                            <>
-                              <td className="p-3 text-right whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => handleAmountClick(gd)}
-                                  className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  {isExpanded ? (
-                                    <ChevronDown className="w-4 h-4" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4" />
-                                  )}
-                                  {formatNumber(getItemTulukh(item))} ₮
-                                </button>
-                              </td>
-                              <td className="p-3 text-right text-theme whitespace-nowrap">
-                                <button
-                                  type="button"
-                                  onClick={() => handleAmountClick(gd)}
-                                  className="text-theme  hover:underline cursor-pointer inline-flex items-center gap-1"
-                                >
-                                  {formatNumber(getItemTulsun(item))} ₮
-                                </button>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                        {isExpanded && (
-                          <tr key={`${gd}-exp-${idx}`}>
-                            <td
-                              colSpan={activeTab === "tulult" ? 6 : 7}
-                              className="p-4 bg-[color:var(--surface-hover)]/30 border-b"
-                            >
-                              {expandedLoading ? (
-                                <div className="py-4 text-center">
-                                  Уншиж байна...
-                                </div>
-                              ) : expandedError ? (
-                                <div className="text-red-500 py-2">
-                                  Алдаа: {expandedError}
-                                </div>
-                              ) : expandedData ? (
-                                <div className="space-y-3">
-                                  <h4 className=" text-sm">
-                                    {activeTab === "tulult"
-                                      ? "Төлөлтийн дэлгэрэнгүй"
-                                      : "Авлагын дэлгэрэнгүй"}{" "}
-                                    — {gd}
-                                  </h4>
-                                  <table className="w-auto text-sm table-fixed">
+                            <td className="p-3 text-right whitespace-nowrap">
+                              <span className="text-green-600">{formatNumber(paid)} ₮</span>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={colSpan} className="p-4 bg-[color:var(--surface-hover)]/20 border-b">
+                            {expandedLoading ? (
+                              <div className="py-4 text-center text-theme/60">Уншиж байна...</div>
+                            ) : expandedError ? (
+                              <div className="text-red-500 py-2">Алдаа: {expandedError}</div>
+                            ) : expandedLedger.length === 0 ? (
+                              <div className="py-4 text-center text-theme/60">Тэмдэглэл алга байна</div>
+                            ) : (
+                              <div className="space-y-2">
+                                <h4 className="text-sm font-semibold mb-2">
+                                  Дэлгэрэнгүй ({gd})
+                                </h4>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-xs border-collapse">
                                     <thead>
-                                      <tr>
-                                        <th className="text-left p-2 w-10">№</th>
-                                        <th className="text-left p-2 w-28">Огноо</th>
-                                        <th className="text-left p-2 w-40">Тайлбар</th>
-                                        {activeTab === "avlaga" && (
-                                          <th className="text-center p-2 w-24">
-                                            Төлөх дүн
-                                          </th>
-                                        )}
-                                        <th className="text-center p-2 w-24">
-                                          Төлсөн дүн
-                                        </th>
+                                      <tr className="border-b">
+                                        <th className="text-left p-2 whitespace-nowrap">№</th>
+                                        <th className="text-left p-2 whitespace-nowrap">Огноо</th>
+                                        <th className="text-left p-2 whitespace-nowrap">Тайлбар</th>
+                                        <th className="text-right p-2 whitespace-nowrap">Авлага</th>
+                                        <th className="text-right p-2 whitespace-nowrap">Төлөлт</th>
+                                        <th className="text-right p-2 whitespace-nowrap font-semibold">Үлдэгдэл</th>
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {expandedData.rows.map(
-                                        (r: any, ri: number) => (
-                                          <tr key={ri} className="border-t">
-                                            <td className="p-2">{ri + 1}</td>
-                                            <td className="p-2">{r.ognoo}</td>
-                                            <td className="p-2 truncate" title={r.tailbar}>{r.tailbar}</td>
-                                            {activeTab === "avlaga" && (
-                                              <td className="p-2 text-right">
-                                                {formatNumber(r.tulukhDun || 0)}{" "}
-                                                ₮
-                                              </td>
-                                            )}
-                                            <td className="p-2 text-right">
-                                              {formatNumber(r.tulsunDun || 0)} ₮
+                                      {expandedLedger.map((row: any, ri: number) => {
+                                        const avlaga = Number(row?.avlagaDun ?? row?.tulukhDun ?? row?.debit ?? 0) || 0;
+                                        const tulult = Number(row?.tulsunDun ?? row?.tulult ?? row?.credit ?? 0) || 0;
+                                        const uldeg = Number(row?.uldegdel ?? 0);
+                                        const tailbar = row?.tailbar || row?.ner || row?.turul || "-";
+                                        const ognoo = fmtDate(row?.ognoo || row?.createdAt);
+                                        return (
+                                          <tr key={ri} className="border-b hover:bg-[color:var(--surface-hover)]/10">
+                                            <td className="p-2 text-theme/60">{ri + 1}</td>
+                                            <td className="p-2 whitespace-nowrap text-theme/70">{ognoo}</td>
+                                            <td className="p-2 text-theme/80 max-w-[180px] truncate" title={tailbar}>{tailbar}</td>
+                                            <td className="p-2 text-right whitespace-nowrap">
+                                              {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} ₮</span> : "-"}
+                                            </td>
+                                            <td className="p-2 text-right whitespace-nowrap">
+                                              {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} ₮</span> : "-"}
+                                            </td>
+                                            <td className="p-2 text-right whitespace-nowrap font-medium">
+                                              <span className={uldeg > 0 ? "text-red-500" : uldeg < 0 ? "text-emerald-600" : "text-theme"}>
+                                                {formatNumber(uldeg)} ₮
+                                              </span>
                                             </td>
                                           </tr>
-                                        )
-                                      )}
-                                      <tr className="border-t-2 ">
-                                        <td className="p-2" />
-                                        <td className="p-2" />
-                                        <td className="p-2" />
-                                        {activeTab === "avlaga" && (
-                                          <td className="p-2 text-right">
-                                            {formatNumber(
-                                              expandedData.sumTulukh
-                                            )}{" "}
-                                            ₮
-                                          </td>
-                                        )}
-                                        <td className="p-2 text-right whitespace-nowrap">
-                                          Нийт {formatNumber(
-                                            expandedData.sumTulsun
-                                          )}{" "}
-                                          ₮
+                                        );
+                                      })}
+                                    </tbody>
+                                    <tfoot>
+                                      <tr className="border-t-2 font-semibold">
+                                        <td colSpan={3} className="p-2 text-right text-xs text-theme/60">Эцсийн үлдэгдэл:</td>
+                                        <td className="p-2 text-right">
+                                          <span className="text-red-500">
+                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0), 0))} ₮
+                                          </span>
+                                        </td>
+                                        <td className="p-2 text-right">
+                                          <span className="text-green-600">
+                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0), 0))} ₮
+                                          </span>
+                                        </td>
+                                        <td className="p-2 text-right">
+                                          {(() => {
+                                            const last = expandedLedger[expandedLedger.length - 1];
+                                            const v = Number(last?.uldegdel ?? 0);
+                                            return (
+                                              <span className={v > 0 ? "text-red-500" : v < 0 ? "text-emerald-600" : "text-theme"}>
+                                                {formatNumber(v)} ₮
+                                              </span>
+                                            );
+                                          })()}
                                         </td>
                                       </tr>
-                                    </tbody>
+                                    </tfoot>
                                   </table>
                                 </div>
-                              ) : null}
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })
-                )}
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between no-print">
+      <div className="flex items-center justify-between no-print mt-3">
         <div className="text-sm text-theme/70">
-          Нийт: {displayList.length}
+          Нийт: {displayList.length} &nbsp;|&nbsp;
+          <span className="text-green-600">Орлого: {paidList.length}</span>&nbsp;
+          <span className="text-red-500">Авлага: {avlagaList.length}</span>
         </div>
         <div className="flex items-center gap-3">
-          <PageSongokh
-            value={pageSize}
-            onChange={(v) => {
-              setPageSize(v);
-              setCurrentPage(1);
-            }}
-            className="text-xs"
-          />
+          <PageSongokh value={pageSize} onChange={(v) => { setPageSize(v); setCurrentPage(1); }} className="text-xs" />
           <div className="flex items-center gap-1">
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              Өмнөх
-            </button>
-            <div className="text-theme/70 px-1">{currentPage}</div>
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage * pageSize >= displayList.length}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Дараах
-            </button>
+            <button className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)}>Өмнөх</button>
+            <div className="text-theme/70 px-2">{currentPage} / {Math.max(1, Math.ceil(displayList.length / pageSize))}</div>
+            <button className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              disabled={currentPage * pageSize >= displayList.length} onClick={() => setCurrentPage(currentPage + 1)}>Дараах</button>
           </div>
         </div>
       </div>

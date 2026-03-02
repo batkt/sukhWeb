@@ -4,13 +4,9 @@ import useSWR from "swr";
 import uilchilgee from "./uilchilgee";
 import useGereeJagsaalt from "./useGeree";
 import { useOrshinSuugchJagsaalt } from "./useOrshinSuugch";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 
-/**
- * Fetches the same totals as the guilgeeTuukh (Төлбөр тооцоо) table footer:
- * - totalPaid = sum of paid amounts (Гүйцэтгэл)
- * - totalUldegdel = sum of balance amounts (Үлдэгдэл)
- */
+ 
 export function useTulburFooterTotals(
   token: string | null,
   baiguullagiinId: string | null,
@@ -35,6 +31,15 @@ export function useTulburFooterTotals(
     const map: Record<string, any> = {};
     list.forEach((g) => {
       if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g;
+    });
+    return map;
+  }, [gereeGaralt?.jagsaalt]);
+
+  const contractsById = useMemo(() => {
+    const list = (gereeGaralt?.jagsaalt || []) as any[];
+    const map: Record<string, any> = {};
+    list.forEach((g) => {
+      if (g?._id) map[String(g._id)] = g;
     });
     return map;
   }, [gereeGaralt?.jagsaalt]);
@@ -137,6 +142,7 @@ export function useTulburFooterTotals(
     });
   }, [allHistoryItems, barilgiinId, contractsByNumber, residentsById]);
 
+  
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
@@ -185,18 +191,6 @@ export function useTulburFooterTotals(
         if (contractHasEkhniiUldegdelInInvoice) return;
       }
 
-      const itemAmount = isStandaloneEkhniiUldegdel
-        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(
-            it?.niitTulbur ??
-              it?.niitDun ??
-              it?.total ??
-              it?.tulukhDun ??
-              it?.undsenDun ??
-              it?.dun ??
-              0
-          ) || 0;
-
       const resolvedGereeId =
         gereeId ||
         (gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id
@@ -206,25 +200,26 @@ export function useTulburFooterTotals(
       if (!map.has(key)) {
         map.set(key, {
           ...it,
-          _totalTulbur: itemAmount,
           _gereeniiId: resolvedGereeId,
         });
-      } else {
-        const existing = map.get(key);
-        existing._totalTulbur += itemAmount;
       }
+      
     });
 
     return Array.from(map.values());
   }, [buildingHistoryItems, contractsByNumber]);
 
   const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<Record<string, number>>({});
-  const requestedRef = useMemo(() => new Set<string>(), []);
+  const paidRequestedRef = useRef<Set<string>>(new Set());
 
-  // Clear paid cache when underlying data changes so we re-fetch
+  const [uldegdelByGereeId, setUldegdelByGereeId] = useState<Record<string, number | null>>({});
+  const uldegdelRequestedRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     setPaidSummaryByGereeId({});
-    requestedRef.clear();
+    paidRequestedRef.current.clear();
+    setUldegdelByGereeId({});
+    uldegdelRequestedRef.current.clear();
   }, [historyData, receivableData]);
 
   useEffect(() => {
@@ -239,29 +234,70 @@ export function useTulburFooterTotals(
           String((contractsByNumber as any)[String(it.gereeniiDugaar)]._id)) ||
         "";
 
-      if (!gid || requestedRef.has(gid)) return;
-      requestedRef.add(gid);
+      if (!gid || paidRequestedRef.current.has(gid)) return;
+      paidRequestedRef.current.add(gid);
 
       uilchilgee(token)
-        .post("/tulsunSummary", {
-          baiguullagiinId,
-          gereeniiId: gid,
-        })
+        .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid })
         .then((resp) => {
           const total =
             Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) || 0;
           setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
         })
         .catch(() => {
-          requestedRef.delete(gid);
+          paidRequestedRef.current.delete(gid);
         });
     });
-  }, [
-    token,
-    baiguullagiinId,
-    deduplicatedResidents,
-    contractsByNumber,
-  ]);
+  }, [token, baiguullagiinId, deduplicatedResidents, contractsByNumber]);
+
+  
+  useEffect(() => {
+    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
+
+    deduplicatedResidents.forEach((it: any) => {
+      const gid =
+        (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?._gereeniiId && String(it._gereeniiId)) ||
+        (it?.gereeniiDugaar &&
+          (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id &&
+          String((contractsByNumber as any)[String(it.gereeniiDugaar)]._id)) ||
+        "";
+
+      if (!gid || uldegdelRequestedRef.current.has(gid)) return;
+      const existing = uldegdelByGereeId[gid];
+      if (existing !== undefined && existing !== null && Number.isFinite(existing)) return;
+
+      uldegdelRequestedRef.current.add(gid);
+
+      uilchilgee(token)
+        .get(`/geree/${gid}/history-ledger`, {
+          params: {
+            baiguullagiinId,
+            ...(barilgiinId ? { barilgiinId } : {}),
+            _t: Date.now(),
+          },
+        })
+        .then((resp) => {
+          const ledger = Array.isArray(resp.data?.jagsaalt)
+            ? resp.data.jagsaalt
+            : Array.isArray(resp.data?.ledger)
+            ? resp.data.ledger
+            : Array.isArray(resp.data)
+            ? resp.data
+            : [];
+          const latestRow = ledger.length > 0 ? ledger[ledger.length - 1] : null;
+          const latestUldegdel =
+            latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
+              ? Number(latestRow.uldegdel)
+              : null;
+          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestUldegdel }));
+        })
+        .catch(() => {
+          uldegdelRequestedRef.current.delete(gid);
+          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
+        });
+    });
+  }, [token, baiguullagiinId, barilgiinId, deduplicatedResidents, contractsByNumber]);
 
   const totals = useMemo(() => {
     let totalPaid = 0;
@@ -270,17 +306,28 @@ export function useTulburFooterTotals(
     deduplicatedResidents.forEach((it: any) => {
       const gid =
         (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?._gereeniiId && String(it._gereeniiId)) ||
         (it?.gereeniiDugaar &&
           String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
         "";
-      const paid = gid ? paidSummaryByGereeId[gid] ?? 0 : 0;
-      const tulbur = Number(it?._totalTulbur ?? 0);
+
+      const paid = gid ? (paidSummaryByGereeId[gid] ?? 0) : 0;
       totalPaid += paid;
-      totalUldegdel += tulbur - paid;
+
+      const ledgerUldegdel = gid != null ? uldegdelByGereeId[gid] : undefined;
+      const ct = gid ? (contractsById[gid] || undefined) : undefined;
+      const uldegdel =
+        ledgerUldegdel != null && Number.isFinite(ledgerUldegdel)
+          ? ledgerUldegdel
+          : ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))
+          ? Number(ct.uldegdel)
+          : Number(it?.uldegdel ?? 0);
+
+      totalUldegdel += uldegdel;
     });
 
     return { totalPaid, totalUldegdel };
-  }, [deduplicatedResidents, contractsByNumber, paidSummaryByGereeId]);
+  }, [deduplicatedResidents, contractsByNumber, contractsById, paidSummaryByGereeId, uldegdelByGereeId]);
 
   return totals;
 }
