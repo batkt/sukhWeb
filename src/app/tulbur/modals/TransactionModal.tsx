@@ -57,6 +57,8 @@ export default function TransactionModal({
   const [showUsageOnInvoice, setShowUsageOnInvoice] = useState(true);
   const [includeSuuriKhuraamj, setIncludeSuuriKhuraamj] = useState(true);
   const [isCalculatingTsakhilgaan, setIsCalculatingTsakhilgaan] = useState(false);
+  const [residentBalance, setResidentBalance] = useState<number | null>(null);
+  const [isFetchingBalance, setIsFetchingBalance] = useState(false);
 
   // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
   const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
@@ -159,6 +161,38 @@ export default function TransactionModal({
       setIsCalculatingTsakhilgaan(false);
     }
   };
+
+  const fetchBalance = async () => {
+    if (!token || !resident?._id) return;
+    setIsFetchingBalance(true);
+    try {
+      const resp = await uilchilgee(token).get(`/orshinSuugch/${resident._id}`, {
+        params: { baiguullagiinId }
+      });
+      const data = resp.data;
+      if (data) {
+        setResidentBalance(Number(data.uldegdel ?? 0));
+        messageApi.success("Үлдэгдэл шинэчлэгдлээ.");
+      }
+    } catch (e: any) {
+      console.error("Balance fetch failed", e);
+    } finally {
+      setIsFetchingBalance(false);
+    }
+  };
+
+  const fillAmountWithBalance = () => {
+    if (residentBalance !== null) {
+      const amountToFill = Math.max(0, residentBalance);
+      setAmount(amountToFill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    }
+  };
+
+  React.useEffect(() => {
+    if (show && resident) {
+      setResidentBalance(Number(resident.uldegdel ?? 0));
+    }
+  }, [show, resident]);
 
   // Auto-calculate when user selects Цахилгаан кВ or when toggle changes
   React.useEffect(() => {
@@ -363,10 +397,27 @@ export default function TransactionModal({
                   </select>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                    Дүн ₮
-                  </label>
+                <div className="space-y-1.5 relative group">
+                  <div className="flex justify-between items-end mb-1.5">
+                    <label className="block text-xs text-[color:var(--panel-text)]">
+                      Дүн ₮
+                    </label>
+                    {residentBalance !== null && transactionType === "tulult" && (
+                      <motion.div 
+                        initial={{ opacity: 0, x: 5 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        onDoubleClick={fillAmountWithBalance}
+                        title="Хоёр товшиж дүнг оруулах"
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border cursor-pointer transition-all select-none
+                          ${isFetchingBalance 
+                            ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse" 
+                            : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
+                          }`}
+                      >
+                        Үлдэгдэл: {residentBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₮
+                      </motion.div>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={amount}
@@ -376,6 +427,7 @@ export default function TransactionModal({
                         setAmount(val);
                       }
                     }}
+                    onDoubleClick={fillAmountWithBalance}
                     onFocus={() => {
                       setAmount(amount.replace(/,/g, ""));
                     }}
@@ -524,6 +576,7 @@ export default function TransactionModal({
                         setAmount(val);
                       }
                     }}
+                    onDoubleClick={fillAmountWithBalance}
                     onFocus={() => {
                       setAmount(amount.replace(/,/g, ""));
                     }}
