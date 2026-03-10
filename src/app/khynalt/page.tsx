@@ -61,7 +61,6 @@ export default function Khynalt() {
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  // Date range (YYYY-MM-DD). Default last 30 days.
   const toISODate = (d: Date) => d.toISOString().slice(0, 10);
   const today = useMemo(() => new Date(), []);
   const defaultEnd = useMemo(() => toISODate(today), [today]);
@@ -75,8 +74,6 @@ export default function Khynalt() {
   >(undefined);
 
   useEffect(() => setMounted(true), []);
-
-  // Wait for building context to be initialized before fetching
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 
   const { data: buildingConfig } = useSWR(
@@ -173,7 +170,6 @@ export default function Khynalt() {
     };
   }, [contracts]);
 
-  // Effective start/end strings based on current selection (fallback to last 30 days)
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
     const end = (dateRange?.[1] as string) || defaultEnd;
     const start =
@@ -318,7 +314,6 @@ export default function Khynalt() {
     { revalidateOnFocus: false }
   );
 
-  // Fetch orlogo-avlaga for correct Нийт орлого and paid/unpaid counts (filters out non-payers)
   const { data: orlogoAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId && effectiveBarilgiinId && rangeStart && rangeEnd
       ? [
@@ -369,8 +364,6 @@ export default function Khynalt() {
     };
   }, [orlogoAvlagaData]);
 
-  // Fetch ekhniiUldegdel from gereeniiTulukhAvlaga
-  // Fetch avlagiin-nasjilt for aging (days/months overdue) to show "how long" on авлага
   const { data: avlagiinNasjiltData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
@@ -420,19 +413,16 @@ export default function Khynalt() {
     { revalidateOnFocus: false }
   );
 
-  // Calculate ekhniiUldegdel total from gereeniiTulukhAvlaga
   const ekhniiUldegdelTotal = useMemo(() => {
     const list = Array.isArray(tulukhAvlagaData?.jagsaalt)
       ? tulukhAvlagaData.jagsaalt
       : [];
     
-    // Sum up uldegdel from all ekhniiUldegdel records
     return list
       .filter((item: any) => item.ekhniiUldegdelEsekh === true)
       .reduce((sum: number, item: any) => sum + Number(item.uldegdel || 0), 0);
   }, [tulukhAvlagaData]);
 
-  // Resolve CSS variable colors for Chart.js (canvas can't use var() directly)
   const [chartColors, setChartColors] = useState({
     text: "#0f172a", // light default
     grid: "rgba(15,23,42,0.2)",
@@ -450,7 +440,6 @@ export default function Khynalt() {
       setChartColors({ text, grid });
     };
     compute();
-    // React to theme switches (data-mode / data-theme changes)
     const obs = new MutationObserver((muts) => {
       for (const m of muts) {
         if (m.type === "attributes") {
@@ -463,7 +452,6 @@ export default function Khynalt() {
       attributes: true,
       attributeFilter: ["data-mode", "data-theme"],
     });
-    // Also listen to storage changes (theme toggled in another tab)
     const onStorage = (e: StorageEvent) => {
       if (e.key === "theme-mode" || e.key === "app-theme") compute();
     };
@@ -521,7 +509,6 @@ export default function Khynalt() {
 
     list.forEach((it) => {
       const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
-      // When backend returns uldegdel=0 for unpaid invoices, use isPaidLike to avoid misclassifying
       const backendUldegdel = it.uldegdel != null ? Number(it.uldegdel) : null;
       const uldegdelInvoice = backendUldegdel !== null
         ? (backendUldegdel > 0 ? backendUldegdel : (isPaidLike(it) ? 0 : amount))
@@ -581,18 +568,15 @@ export default function Khynalt() {
 
     residentInvoiceStats.forEach((stats, osId) => {
       const uldegdel = stats.totalTulbur - stats.totalTulsun;
-      // If resident has ANY debt > 1 tugrug, they are Unpaid
       if (uldegdel > 1) {
         finalUnpaidResidents.add(osId);
       } else {
-        // If they have no debt or have overpaid, they are Paid
         finalPaidResidents.add(osId);
       }
     });
 
     const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
     const totalInvoiceAmount = list.reduce((s, it) => s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0), 0);
-    // Include ekhniiUldegdel from gereeniiTulukhAvlaga in the unpaid total
     const finalUnpaid = (totalInvoiceAmount - finalPaid) + ekhniiUldegdelTotal;
 
     const paidArr: number[] = [];
@@ -626,16 +610,13 @@ export default function Khynalt() {
     profitSeries,
   } = incomeComputed;
 
-  // Use orlogo-avlaga data for Тайлангийн дүгнэлт when available (correct filters)
   const displayResidentsPaidCount = orlogoAvlagaData
     ? residentsPaidCountFromTailan
     : residentsPaidCount;
-  // Unpaid = total - paid (API unpaid list may exclude residents with only Эхний үлдэгдэл)
   const displayResidentsUnpaidCount = orlogoAvlagaData
     ? totalResidents - residentsPaidCountFromTailan
     : residentsUnpaidCount;
 
-  // Use same totals as Төлбөр тооцоо (guilgeeTuukh) table footer for Орлого and Төлбөр дутуу
   const footerTotals = useTulburFooterTotals(
     token,
     ajiltan?.baiguullagiinId ?? null,
@@ -653,7 +634,6 @@ export default function Khynalt() {
     return { count: 0, total: 0, items: [] };
   }, [overdueData]);
 
-  // Map gereeniiDugaar/gereeniiId -> aging info from avlagiin-nasjilt
   const avlagaAgingMap = useMemo(() => {
     const list = avlagiinNasjiltData?.detailed?.list ?? avlagiinNasjiltData?.jagsaalt ?? [];
     const map = new Map<string, { daysOverdue?: number; monthsOverdue?: number; ageBucket?: string }>();
@@ -697,7 +677,6 @@ export default function Khynalt() {
     return it?.gereeniiDugaar ? "Төлбөр дутуу" : "Төлбөр дутуу";
   };
 
-  // Хуримтлагдсан авлага: use orlogo-avlaga unpaid (accumulated receivables for date range) as primary, fallback to udsan-avlaga
   const huurimtlagdsanAvlaga = useMemo(() => {
     const unpaidList = Array.isArray(orlogoAvlagaData?.unpaid?.list)
       ? orlogoAvlagaData.unpaid.list
@@ -733,7 +712,6 @@ export default function Khynalt() {
         items: cancelledData.list || [],
       };
     }
-    // Fallback: derive from gereeniiTulukhAvlaga + cancelled contracts (when tailan API returns no data)
     const isCancelled = (c: any) => {
       const s = String(c?.tuluv ?? c?.status ?? "").toLowerCase();
       return s.includes("цуцлагдсан") || s.includes("цуцалсан") || s.includes("идэвхгүй") || s === "tsutlsasan";
@@ -812,12 +790,10 @@ export default function Khynalt() {
     };
   }, [incomeSeries]);
 
-  // Line chart data for Хуримтлагдсан авлага (top 10 by amount)
   const huurimtlagdsanAvlagaChartData: Dataset = useMemo(() => {
     const top = huurimtlagdsanAvlaga.items
       .slice(0, 10)
       .map((it: any) => ({
-        //name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
         amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
       }));
     return {
@@ -838,7 +814,6 @@ export default function Khynalt() {
     };
   }, [huurimtlagdsanAvlaga.items]);
 
-  // Line chart data for Цуцлагдсан гэрээний авлага (top 10 by amount)
   const cancelledReceivablesChartData: Dataset = useMemo(() => {
     const top = cancelledReceivables.items
       .slice(0, 10)
@@ -895,19 +870,14 @@ export default function Khynalt() {
       String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
-  // Employees should not be time-filtered; show all employees for the selected building
-
-  // Employees: show all employees for the selected building (do not time-filter)
   const filteredEmployees = employees.filter((e: any) => {
     const toStr = (v: any) => (v == null ? "" : String(v));
     const want = toStr(effectiveBarilgiinId);
-    if (!want) return true; // if no building selected, show all
-    // direct fields
+    if (!want) return true;
     const direct = toStr(
       e?.barilgiinId ?? e?.barilga ?? e?.barilgaId ?? e?.branchId,
     );
     if (direct && direct === want) return true;
-    // arrays (assignments)
     const arr: any[] = Array.isArray(e?.barilguud) ? e.barilguud : [];
     for (const el of arr) {
       if (
@@ -924,26 +894,20 @@ export default function Khynalt() {
     return false;
   });
 
-  // Use API totals (niitMur) for exact count from server, same approach for all
   const filteredTotalResidents = totalResidents;
   const filteredTotalContracts = totalContracts;
   const filteredTotalEmployees = totalEmployees;
-  // Building count should always reflect total organization buildings, not the selected filter
   const buildingCount = useMemo(() => {
     const raw = (baiguullaga as any)?.barilguud;
     if (Array.isArray(raw) && raw.length > 0) {
-      // Exclude any entry that appears to be the organisation itself (same name)
       const filtered = raw.filter((b: any) => {
         if (!b) return false;
-        if (!b.ner) return true; // keep entries without a name field
+        if (!b.ner) return true;
         return b.ner !== (baiguullaga as any)?.ner;
       });
-      // If filtered has entries, use its length. If raw had entries but all were
-      // filtered out (e.g. they were org-name duplicates), return 0.
       return filtered.length;
     }
 
-    // Fallback: derive from all resident records if org data not available yet
     const set = new Set<string>();
     (residents || []).forEach((r: any) => {
       const bid = r?.barilgiinId ?? r?.barilga;
@@ -951,7 +915,6 @@ export default function Khynalt() {
     });
     return set.size;
   }, [baiguullaga, residents]);
-  // compute active contracts and expiring percent from filtered contracts
   const filteredActiveContracts = (() => {
     if (!filteredContracts?.length) return 0;
     const now = new Date();
@@ -959,7 +922,6 @@ export default function Khynalt() {
     in30Days.setDate(now.getDate() + 30);
     let active = 0;
     filteredContracts.forEach((g: any) => {
-      // Check if contract is cancelled
       const status = String(g?.tuluv || g?.status || "").trim();
       const isCancelled = status === "Цуцалсан" ||
         status.toLowerCase() === "цуцалсан" ||
@@ -968,14 +930,11 @@ export default function Khynalt() {
         status === "Идэвхгүй" ||
         status.toLowerCase() === "идэвхгүй";
 
-      // Skip cancelled contracts
       if (isCancelled) return;
 
-      // Check if contract is expired
       const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
       const isExpired = end ? end < now : false;
 
-      // Count only active contracts (not cancelled and not expired)
       if (!isExpired) active += 1;
     });
     return active;
@@ -1007,7 +966,6 @@ export default function Khynalt() {
     }).length;
   }, [filteredContracts]);
 
-  // Calculate cancelled gerees
   const cancelledGerees = useMemo(() => {
     return filteredContracts.filter((c: any) => {
       const status = String(c?.tuluv || c?.status || "").trim();
@@ -1020,16 +978,13 @@ export default function Khynalt() {
     });
   }, [filteredContracts]);
 
-  // Count unique "toot" values from baiguullaga that are not signed in orshinSuugch
   const tootWithoutActiveGereeCount = useMemo(() => {
-    // Get all toots from building configuration (davkhariinToonuud)
     const allTootsFromBaiguullaga = new Set<string>();
     if (buildingConfig?.barilguud && Array.isArray(buildingConfig.barilguud)) {
       buildingConfig.barilguud.forEach((building: any) => {
         if (building?._id === effectiveBarilgiinId) {
           const davkhariinToonuud = building?.tokhirgoo?.davkhariinToonuud;
           if (davkhariinToonuud && typeof davkhariinToonuud === "object") {
-            // Extract all toots from davkhariinToonuud (including keys like "1::5")
             Object.values(davkhariinToonuud).forEach((toots: any) => {
               if (Array.isArray(toots)) {
                 toots.forEach((toot: any) => {
@@ -1043,15 +998,11 @@ export default function Khynalt() {
       });
     }
 
-    // Get all unique toot values from orshinSuugch
-    // Include both the main `toot` field and all toots from the `toots` array
     const allTootsFromOrshinSuugch = new Set<string>();
     residents.forEach((r: any) => {
-      // Add main toot field
       const mainToot = String(r?.toot || "").trim();
       if (mainToot) allTootsFromOrshinSuugch.add(mainToot);
 
-      // Add all toots from the toots array
       if (Array.isArray(r?.toots)) {
         r.toots.forEach((tootObj: any) => {
           const toot = String(tootObj?.toot || "").trim();
@@ -1060,7 +1011,6 @@ export default function Khynalt() {
       }
     });
 
-    // Count toots from baiguullaga that are NOT in orshinSuugch
     let count = 0;
     allTootsFromBaiguullaga.forEach((toot) => {
       if (!allTootsFromOrshinSuugch.has(toot)) {
@@ -1071,7 +1021,6 @@ export default function Khynalt() {
     return count;
   }, [buildingConfig, residents, effectiveBarilgiinId]);
 
-  // Calculate totals from chart data
   const totalExpenses = expenseSeries.expenses.reduce(
     (sum, val) => sum + val,
     0,
@@ -1085,7 +1034,6 @@ export default function Khynalt() {
       )
       : 0;
 
-  // Check permissions for cards
   const showContracts = ajiltan && (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
   const showResidents = ajiltan && (hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch"));
   const showTulbur = ajiltan && (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
@@ -1129,9 +1077,9 @@ export default function Khynalt() {
       show: showTulbur,
     },
     {
-      title: "Төлбөр дутуу",
+      title: "Үлдэгдэл",
       value: formatCurrency(footerTotals.totalUldegdel),
-      subtitle: "Төлөөгүй дүн",
+      subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
       onClick: () => router.push("/tulbur"),
       delay: 500,
@@ -1348,46 +1296,6 @@ export default function Khynalt() {
             </div>
           </div>
         </div>
-
-        {/* Summary from Tailan */}
-        
-        {/* Additional Info */}
-        {/* <div
-          className={`mt-6 neu-panel rounded-3xl p-4 transition-all duration-500 ${
-            mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-          }`}
-          style={{ transitionDelay: "800ms" }}
-        >
-          <h3 className="text-lg  text-[color:var(--panel-text)] mb-4">
-            Нэмэлт мэдээлэл
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {residentsUnpaidCount}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Төлөөгүй оршин суугч
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {residentsPaidCount}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Төлсөн оршин суугч
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl  text-[color:var(--theme)]">
-                {filteredTotalResidents}
-              </p>
-              <p className="text-sm text-[color:var(--muted-text)]">
-                Оршин суугч
-              </p>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );
