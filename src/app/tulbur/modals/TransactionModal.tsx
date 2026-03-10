@@ -182,7 +182,7 @@ export default function TransactionModal({
   };
 
   const fillAmountWithBalance = () => {
-    if (residentBalance !== null) {
+    if (residentBalance !== null && transactionType === "tulult") {
       const amountToFill = Math.max(0, residentBalance);
       setAmount(amountToFill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     }
