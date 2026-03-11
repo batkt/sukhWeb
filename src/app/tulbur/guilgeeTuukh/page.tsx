@@ -2137,6 +2137,61 @@ export default function DansniiKhuulga() {
     residentsById,
   ]);
 
+  const zaaltTemplateTatak = async () => {
+    const loadingToastId = toast.loading("Заалтын загвар файл бэлдэж байна…");
+    const hide = () => toast.dismiss(loadingToastId);
+
+    try {
+      if (!token || !ajiltan?.baiguullagiinId) {
+        hide();
+        toast.error("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
+      }
+
+      const response = await uilchilgee(token).post(
+        "/zaaltExcelTemplateAvya",
+        {
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          barilgiinId: effectiveBarilgiinId,
+        },
+        {
+          responseType: "blob" as any,
+        },
+      );
+
+      hide();
+
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+
+      const cd = (response.headers?.["content-disposition"] ||
+        response.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "zaalt_template.xlsx";
+      if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
+        );
+      } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
+        filename = cd.match(/filename="?([^";]+)"?/i)![1];
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Заалтын загвар амжилттай татагдлаа");
+    } catch (err: any) {
+      hide();
+      openErrorOverlay(getErrorMessage(err));
+    }
+  };
+
   const zaaltOruulakh = async () => {
     const loadingToastId = toast.loading("Заалтын Excel файл бэлдэж байна…");
     const hide = () => toast.dismiss(loadingToastId);
@@ -3216,7 +3271,7 @@ export default function DansniiKhuulga() {
                     </button>
                     <button
                       onClick={() => {
-                        exceleerTatya();
+                        zaaltTemplateTatak();
                         setIsZaaltDropdownOpen(false);
                       }}
                       className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
@@ -3875,11 +3930,9 @@ export default function DansniiKhuulga() {
                                   >
                                     <span
                                       className={
-                                        amt < 0
+                                        amt <= 0
                                           ? "!text-emerald-600 dark:!text-emerald-400"
-                                          : amt > 0
-                                            ? "!text-red-500 dark:!text-red-400"
-                                            : "text-theme"
+                                          : "!text-red-500 dark:!text-red-400"
                                       }
                                     >
                                       {formatNumber(amt, 2)} ₮
@@ -3928,11 +3981,9 @@ export default function DansniiKhuulga() {
                                   >
                                     <span
                                       className={
-                                        (remaining < 0
+                                        remaining <= 0
                                           ? "!text-emerald-600 dark:!text-emerald-400"
-                                          : remaining > 0
-                                            ? "!text-red-500 dark:!text-red-400"
-                                            : "text-theme") + " "
+                                          : "!text-red-500 dark:!text-red-400"
                                       }
                                     >
                                       {formatNumber(remaining, 2)} ₮

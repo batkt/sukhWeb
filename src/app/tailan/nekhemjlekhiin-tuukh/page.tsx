@@ -14,43 +14,46 @@ import { FileSpreadsheet, Printer } from "lucide-react";
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
-      @page {
-        size: A4 landscape;
-        margin: 1cm;
+      @page { size: A4 landscape; margin: 0.5cm; }
+      body * { visibility: hidden !important; }
+      .print-container, .print-container * { visibility: visible !important; }
+      .print-container { 
+        position: absolute !important; 
+        left: 0 !important; 
+        top: 0 !important; 
+        width: 100% !important; 
+        padding: 0 !important; 
+        margin: 0 !important;
       }
-      body * {
-        visibility: hidden !important;
+      .no-print { display: none !important; }
+      .print-only { display: block !important; }
+      
+      .max-h-[48vh], .custom-scrollbar { 
+        max-height: none !important; 
+        height: auto !important;
+        overflow: visible !important; 
       }
-      .print-container, .print-container * {
-        visibility: visible !important;
+      .neu-panel, .neu-table {
+        box-shadow: none !important;
+        border: 1px solid #eee !important;
+        background: white !important;
       }
-      .print-container {
-        position: absolute !important;
-        left: 0 !important;
-        top: 0 !important;
-        width: 100% !important;
-        padding: 0 !important;
-      }
-      .no-print {
-        display: none !important;
-      }
-      table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-      }
-      th, td {
-        border: 1px solid #ddd !important;
-        padding: 4px !important;
+      
+      table { 
+        width: 100% !important; 
+        border-collapse: collapse !important; 
+        table-layout: auto !important;
         font-size: 8pt !important;
       }
-      .max-h-[48vh] {
-        max-height: none !important;
-        overflow: visible !important;
+      th, td { 
+        border: 1px solid #ddd !important; 
+        padding: 4px 2px !important; 
+        white-space: normal !important;
       }
-      .custom-scrollbar {
-        overflow: visible !important;
-      }
+      th { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
+      .text-right { text-align: right !important; }
     }
+    .print-only { display: none; }
   `}</style>
 );
 
@@ -181,30 +184,60 @@ export default function NekhemjlekhiinTuukhPage() {
 
   const exportToExcel = () => {
     if (!data.length) return;
+    
+    // 1. Metadata Rows
+    const buildingName = baiguullaga?.ner || "";
+    const dateStr = dateRange?.[0] && dateRange?.[1]
+      ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+      : "Бүх хугацаа";
+
+    const metaRows = [
+      ["Нэхэмжлэхийн түүх тайлан"],
+      [`Байгууллага: ${buildingName}`],
+      [`Төлөв: ${formData.tuluv}`],
+      [`Огноо: ${dateStr}`],
+      [`Тайлан татсан: ${new Date().toLocaleString("mn-MN")}`],
+      [""],
+      ["Нийт төлбөр:", totalTulbur, "₮"],
+      [""]
+    ];
+
+    // 2. Headers
     const headers = ["№", "Гэрээний дугаар", "Давхар", "Тоот", "Овог", "Нэр", "Огноо", "Төлбөр", "Төлөв", "Түүх"];
+
+    // 3. Data Rows
+    const rows = data.map((item, idx) => [
+      idx + 1,
+      item.gereeniiDugaar || "",
+      item.davkhar || "",
+      item.toot || "",
+      item.ovog || "",
+      item.ner || "",
+      item.ognoo?.split("T")[0] || "",
+      item.tulbur || 0,
+      item.tuluv || "",
+      item.tuukh || "",
+    ]);
+
+    const escapeCsv = (val: any) => {
+      const s = String(val);
+      if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
     const csvContent = [
-      headers.join(","),
-      ...data.map((item, idx) =>
-        [
-          idx + 1,
-          `"${item.gereeniiDugaar || ""}"`,
-          `"${item.davkhar || ""}"`,
-          `"${item.toot || ""}"`,
-          `"${item.ovog || ""}"`,
-          `"${item.ner || ""}"`,
-          `"${item.ognoo?.split("T")[0] || ""}"`,
-          item.tulbur || 0,
-          `"${item.tuluv || ""}"`,
-          `"${item.tuukh || ""}"`,
-        ].join(",")
-      ),
+      ...metaRows.map(r => r.map(escapeCsv).join(",")),
+      headers.map(escapeCsv).join(","),
+      ...rows.map(r => r.map(escapeCsv).join(","))
     ].join("\n");
 
     const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `nekhemjlekhiin_tuukh_${new Date().toISOString().split("T")[0]}.csv`);
+    link.download = `nekhemjlekhiin_tuukh_${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -215,8 +248,30 @@ export default function NekhemjlekhiinTuukhPage() {
   };
 
   return (
-    <div className="p-6 print-container h-full flex flex-col">
+    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen h-full flex flex-col">
       <PrintStyles />
+
+      {/* Print-only Header */}
+      <div className="print-only mb-6">
+        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold uppercase">Нэхэмжлэхийн түүх тайлан</h1>
+            <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
+          </div>
+          <div className="text-right text-sm">
+            <p>Огноо: {dateRange?.[0] && dateRange?.[1] 
+              ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+              : "Бүх хугацаа"}</p>
+            <p>Төлөв: {formData.tuluv}</p>
+            <p>Хэвлэсэн: {new Date().toLocaleString("mn-MN")}</p>
+          </div>
+        </div>
+        
+        <div className="mt-6 border p-4 rounded bg-gray-50 flex justify-between items-center">
+          <p className="font-semibold text-gray-700">НИЙТ ТӨЛБӨР:</p>
+          <p className="text-2xl font-bold text-blue-700">{formatNumber(totalTulbur)} ₮</p>
+        </div>
+      </div>
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Нэхэмжлэхийн түүх</h1>
         <div className="flex gap-3">
@@ -227,13 +282,13 @@ export default function NekhemjlekhiinTuukhPage() {
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             Excel татах
           </button>
-          <button
+{/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
             <Printer className="w-4 h-4 text-blue-600" />
             Хэвлэх
-          </button>
+          </button> */}
         </div>
       </div>
 

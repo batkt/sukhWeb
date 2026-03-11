@@ -14,19 +14,111 @@ import DatePickerInput from "../../../components/ui/DatePickerInput";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
+import toast from "react-hot-toast";
 
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
-      @page { size: A4 landscape; margin: 1cm; }
-      body * { visibility: hidden !important; }
-      .print-container, .print-container * { visibility: visible !important; }
-      .print-container { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; padding: 0 !important; }
-      .no-print { display: none !important; }
-      table { width: 100% !important; border-collapse: collapse !important; }
-      th, td { border: 1px solid #ddd !important; padding: 6px !important; font-size: 8pt !important; }
-      .custom-scrollbar { overflow: visible !important; }
+      /* Setup the page for A4 Landscape */
+      @page { 
+        size: A4 landscape; 
+        margin: 10mm; 
+      }
+      
+      /* 1. Hide everything by default but let the table flow */
+      body { 
+        background: white !important; 
+        color: black !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: auto !important;
+      }
+      
+      /* 2. Standard hide UI elements */
+      .no-print, 
+      nav, 
+      header, 
+      .sidebar, 
+      .neu-nav,
+      .fixed,
+      .sticky,
+      button, 
+      footer { 
+        display: none !important; 
+      }
+
+      /* 3. Force the report container to be visible and unconstrained */
+      .print-container { 
+        display: block !important;
+        position: relative !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* 4. CRITICAL: Force all parent layout containers to release their fixed heights/overflows */
+      /* This affects the containers in GolContent.tsx */
+      main, 
+      div[class*="neu-panel"], 
+      div[class*="overflow-y-auto"], 
+      div[class*="md:h-"],
+      div[class*="max-h-"] {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        position: static !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      /* 5. Header Styling */
+      .print-only { 
+        display: block !important; 
+        margin-bottom: 30px;
+        width: 100% !important;
+      }
+
+      /* 6. Table Layout */
+      table { 
+        width: 100% !important; 
+        border-collapse: collapse !important; 
+        table-layout: auto !important;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 9pt !important;
+        color: black !important;
+      }
+
+      th, td { 
+        border: 1px solid #000 !important; 
+        padding: 6px 4px !important;
+        background: transparent !important;
+        color: black !important;
+        text-align: center !important;
+        word-wrap: break-word !important;
+      }
+
+      th { 
+        background-color: #f0f0f0 !important; 
+        font-weight: bold !important;
+        -webkit-print-color-adjust: exact;
+      }
+
+      /* Ensure rows don't split awkwardly */
+      tr { page-break-inside: avoid !important; }
+      thead { display: table-header-group !important; }
+
+      /* Alignment Utility */
+      .text-left { text-align: left !important; }
+      .text-right { text-align: right !important; }
     }
+
+    /* Web view hidden by default */
+    .print-only { display: none; }
   `}</style>
 );
 
@@ -363,24 +455,48 @@ const footerTotals = useTulburFooterTotals(
     }
   };
 
-  const exportToExcel = () => {
-    if (!displayList.length) return;
-    const headers = activeTab === "tulult"
-      ? ["№", "ГД", "Нэр", "Давхар", "Тоот", "Төлсөн (₮)"]
-      : ["№", "ГД", "Нэр", "Давхар", "Тоот", "Үлдэгдэл (₮)", "Төлсөн (₮)"];
-    const rows = displayList.map((it, i) => {
-      const base = [i + 1, `"${it._gereeDugaar || ""}"`, `"${[it._ovog, it._ner].filter(Boolean).join(" ") || ""}"`,
-        `"${it._davkhar || ""}"`, `"${it._toot || ""}"`];
-      if (activeTab === "tulult") return [...base, getPaid(it)].join(",");
-      return [...base, getUldegdel(it), getPaid(it)].join(",");
-    });
-    const csv = [headers.join(","), ...rows].join("\n");
-    const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `orlogo_avlaga_${activeTab}_${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  const exportToExcel = async () => {
+    if (!token || !baiguullagiinId) {
+      toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
+      return;
+    }
+    
+    const toastId = toast.loading("Excel файл бэлтгэж байна...");
+    
+    try {
+      const body = {
+        report: "orlogo-tovchoo",
+        baiguullagiinId,
+        barilgiinId: selectedBuildingId || undefined,
+        ekhlekhOgnoo: dateRange?.[0] || undefined,
+        duusakhOgnoo: dateRange?.[1] || undefined,
+        activeTab: activeTab, // Pass current tab context
+        ...filters
+      };
+
+      const resp = await uilchilgee(token).post("/tailan/export", body, {
+        responseType: "blob" as any,
+      });
+
+      const blob = new Blob([resp.data], { 
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const filename = `${activeTab === "tulult" ? "orlogo" : "avlaga"}_report_${new Date().toISOString().split("T")[0]}.xlsx`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Excel файл амжилттай татагдлаа", { id: toastId });
+    } catch (err) {
+      console.error("Export failed:", err);
+      toast.error("Excel татахад алдаа гарлаа", { id: toastId });
+    }
   };
 
   const isLoading = isLoadingHistory || isLoadingReceivable;
@@ -397,8 +513,37 @@ const footerTotals = useTulburFooterTotals(
   }
 
   return (
-    <div className="p-6 print-container">
+    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen">
       <PrintStyles />
+
+      {/* Print-only Header */}
+      <div className="print-only mb-6">
+        <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
+          <div>
+            <h1 className="text-2xl font-bold uppercase">
+              {activeTab === "tulult" ? "Орлогын товчоо тайлан" : "Авлага тулгалтын тайлан"}
+            </h1>
+            <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
+          </div>
+          <div className="text-right text-sm">
+            <p>Огноо: {dateRange?.[0] && dateRange?.[1] 
+              ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+              : "Бүх хугацаа"}</p>
+            <p>Хэвлэсэн: {new Date().toLocaleString("mn-MN")}</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8 mt-6">
+          <div className="border p-3 rounded">
+            <p className="text-xs text-gray-500 uppercase font-semibold">Нийт орлого</p>
+            <p className="text-xl font-bold text-green-700">{formatNumber(totalOrlogo)} ₮</p>
+          </div>
+          <div className="border p-3 rounded">
+            <p className="text-xs text-gray-500 uppercase font-semibold">Нийт үлдэгдэл</p>
+            <p className="text-xl font-bold text-red-700">{formatNumber(totalUldegdel)} ₮</p>
+          </div>
+        </div>
+      </div>
 
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
@@ -407,10 +552,10 @@ const footerTotals = useTulburFooterTotals(
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
           </button>
-          <button onClick={() => window.print()}
+{/* <button onClick={() => window.print()}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
             <Printer className="w-4 h-4 text-blue-600" /> Хэвлэх
-          </button>
+          </button> */}
         </div>
       </div>
 

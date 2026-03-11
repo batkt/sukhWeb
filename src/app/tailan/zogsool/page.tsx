@@ -282,13 +282,13 @@ export default function ZogsoolTailanPage() {
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             Excel татах
           </button>
-          <button
+{/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
             <Printer className="w-4 h-4 text-blue-600" />
             Хэвлэх
-          </button>
+          </button> */}
         </div>
       </div>
 
