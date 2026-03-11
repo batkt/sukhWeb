@@ -281,6 +281,7 @@ const InvoiceModal = ({
         const residentId = String(resident?._id || "").trim();
         const residentGereeId = String(resident?.gereeniiId || "").trim();
 
+        // 1. Fetch latest invoice for header info (invoice number, date, etc.)
         const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
           params: {
             baiguullagiinId,
@@ -305,111 +306,220 @@ const InvoiceModal = ({
 
         setLatestInvoice(latest || null);
         setNekhemjlekhData(latest || null);
-
-        const zRows = Array.isArray(latest?.medeelel?.zardluud) ? latest.medeelel.zardluud : (Array.isArray(latest?.zardluud) ? latest.zardluud : []);
-        const gRows = Array.isArray(latest?.medeelel?.guilgeenuud) ? latest.medeelel.guilgeenuud : (Array.isArray(latest?.guilgeenuud) ? latest.guilgeenuud : []);
-
-        const pickAmount = (obj: any) => {
-          const n = (v: any) => { const num = Number(v); return Number.isFinite(num) ? num : null; };
-          const dun = n(obj?.dun);
-          if (dun !== null && dun > 0) return dun;
-          const td = n(obj?.tulukhDun);
-          if (td !== null && td > 0) return td;
-          const tar = n(obj?.tariff);
-          return tar ?? 0;
-        };
-
-        // Aggregrate Expenses with deduplication
-        const expenseMap = new Map<string, any>();
-        const addToExpenseMap = (list: any[]) => {
-          list.forEach((z: any) => {
-            const isEkhnii = z.isEkhniiUldegdel === true || 
-                            String(z.ner || "").startsWith("Эхний үлдэгдэл") || 
-                            String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
-            const amt = pickAmount(z);
-            if (isEkhnii && amt <= 0) return;
-            
-            const ner = isEkhnii ? "Эхний үлдэгдэл" : String(z.ner || z.name || "").trim();
-            const key = ner || z._id || `z-${Math.random()}`;
-            const existing = expenseMap.get(key);
-            if (!existing || amt > pickAmount(existing)) {
-              expenseMap.set(key, { ...z, ner, dun: amt });
-            }
-          });
-        };
-
-        addToExpenseMap(zRows);
-        addToExpenseMap(gRows.filter((g: any) => String(g.turul || "").toLowerCase() === "avlaga" || String(g.turul || "").toLowerCase() === "авлага"));
-
-        if (!Array.from(expenseMap.values()).some(z => String(z.ner).trim() === "Цахилгаан")) {
-          const tsahAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
-          if (tsahAmt > 0) expenseMap.set("Цахилгаан", { ner: "Цахилгаан", tariff: tsahAmt, dun: tsahAmt });
-        }
-
-        setExpenseRows(Array.from(expenseMap.values()).map((z, idx) => ({
-          _id: z._id || `exp-${idx}`,
-          ner: z.ner,
-          tariff: Number(z.tariff) || 0,
-          dun: z.dun,
-          tailbar: z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || ""
-        })));
-
-        // Process Payments
-        const pRows = gRows.filter((g: any) => {
-          const t = String(g.turul || "").toLowerCase();
-          const isTulsun = Number(g.tulsunDun) > 0 || (t !== "avlaga" && t !== "авлага" && Number(g.dun) > 0);
-          return t !== "avlaga" && t !== "авлага" && isTulsun;
-        }).map((g: any, idx: number) => ({
-          _id: g._id || `pay-${idx}`,
-          ognoo: g.ognoo || g.tulsunOgnoo,
-          tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
-          dun: Number(g.tulsunDun || g.dun || 0),
-          turul: g.turul || "Төлбөр",
-          ajiltan: g.ajiltanNer || "Систем",
-        }));
-        setPaymentRows(pRows);
-
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
 
-        const gereeId = latest?.gereeniiId || latest?.gereeId;
-        if (gereeId) {
-          // 1. Get Summary
-          uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
-            .then(r => setTotalPaidFromApi(Number(r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0)))
-            .catch(() => setTotalPaidFromApi(null));
+        const gereeId = residentGereeId || latest?.gereeniiId || latest?.gereeId;
 
-          // 2. Fetch actual payment records to show "details like how its displaying on historyModal"
-          uilchilgee(token).get("/gereeniiTulsunAvlaga", {
-            params: {
-              baiguullagiinId,
-              khuudasniiDugaar: 1,
-              khuudasniiKhemjee: 500,
-            }
-          }).then(resp => {
-            const allPayments = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt : [];
-            const matched = allPayments.filter((p: any) => String(p.gereeniiId) === String(gereeId));
-            
-            if (matched.length > 0) {
-              const enriched = matched.map((p: any, idx: number) => ({
-                _id: p._id || `api-pay-${idx}`,
-                ognoo: p.ognoo || p.createdAt,
-                tailbar: p.tailbar || p.zardliinNer || "Төлөлт",
-                dun: Number(p.tulsunDun || p.dun || 0),
-                turul: p.turul || "Төлбөр",
-                ajiltan: p.guilgeeKhiisenAjiltniiNer || "Систем",
-              }));
-              
-              setPaymentRows(prev => {
-                const combined = [...prev, ...enriched];
-                const seen = new Set();
-                return combined.filter(c => {
-                  if (seen.has(c._id)) return false;
-                  seen.add(c._id);
-                  return true;
-                }).sort((a, b) => new Date(b.ognoo).getTime() - new Date(a.ognoo).getTime());
+        // 2. Try fetching from history-ledger API (same source as HistoryModal)
+        let usedLedger = false;
+        if (gereeId) {
+          try {
+            const ledgerResp = await uilchilgee(token).get(
+              `/geree/${gereeId}/history-ledger`,
+              {
+                params: {
+                  baiguullagiinId,
+                  barilgiinId: selectedBuildingId || barilgiinId || null,
+                  _t: Date.now(),
+                },
+              },
+            );
+            const backendLedger = Array.isArray(ledgerResp.data?.jagsaalt)
+              ? ledgerResp.data.jagsaalt
+              : Array.isArray(ledgerResp.data?.ledger)
+                ? ledgerResp.data.ledger
+                : Array.isArray(ledgerResp.data)
+                  ? ledgerResp.data
+                  : [];
+
+            if (backendLedger.length > 0) {
+              usedLedger = true;
+
+              // Split ledger into expense rows (charges) and payment rows
+              const charges: any[] = [];
+              const payments: any[] = [];
+
+              // 1. Process ledger entries into distinct categories
+              backendLedger.forEach((r: any, idx: number) => {
+                const tulukhDun = Number(r.tulukhDun ?? 0);
+                const tulsunDun = Number(r.tulsunDun ?? 0);
+                const rawNer = String(r.ner || "Зардал").trim();
+
+                if (tulukhDun > 0 || (tulukhDun < 0 && (rawNer.includes("Эхний үлдэгдэл") || rawNer.toLowerCase().includes("ekhnii")))) {
+                  charges.push({
+                    _id: r._id || `ledger-charge-${idx}`,
+                    ner: rawNer,
+                    tariff: tulukhDun,
+                    dun: tulukhDun,
+                    tailbar: r.tailbar || rawNer || "",
+                    ognoo: r.ognoo,
+                  });
+                }
+                if (tulsunDun > 0) {
+                  payments.push({
+                    _id: r._id || `ledger-pay-${idx}`,
+                    ognoo: r.ognoo || r.burtgesenOgnoo,
+                    tailbar: r.tailbar || rawNer || "Төлөлт",
+                    dun: tulsunDun,
+                    turul: r.khelber || "Төлбөр",
+                    ajiltan: r.ajiltan || "Систем",
+                  });
+                }
               });
+
+              // 2. Aggregate charges: Group all "Авлага" variations into one, keep others (Electric, etc.) distinct
+              const chargeMap = new Map<string, any>();
+              charges.forEach((c) => {
+                let key = c.ner;
+                // Collapse any variation of "Авлага" into a single key
+                if (key.includes("Авлага") || key.toLowerCase().includes("avlaga")) {
+                  key = "Авлага";
+                }
+                
+                const existing = chargeMap.get(key);
+                if (existing) {
+                  existing.dun += c.dun;
+                  existing.tariff += c.tariff;
+                  // If names were different, just keep the standard key
+                  existing.ner = key;
+                } else {
+                  chargeMap.set(key, { ...c, ner: key, tailbar: key });
+                }
+              });
+              const aggregatedCharges = Array.from(chargeMap.values());
+
+              // 3. Aggregate ALL payments into a single "Төлөлт" row as requested
+              if (payments.length > 0) {
+                const totalPaid = payments.reduce((sum, p) => sum + (p.dun || 0), 0);
+                const latestDate = payments.reduce((max, p) => {
+                  const d = new Date(p.ognoo).getTime();
+                  return d > max ? d : max;
+                }, 0);
+
+                setPaymentRows([{
+                  _id: "aggregated-payments",
+                  ognoo: latestDate > 0 ? new Date(latestDate).toISOString() : new Date().toISOString(),
+                  tailbar: "Төлөлт",
+                  dun: totalPaid,
+                  turul: "Төлбөр",
+                  ajiltan: "Систем",
+                }]);
+              } else {
+                setPaymentRows([]);
+              }
+
+              setExpenseRows(aggregatedCharges);
+
+              // Get summary
+              uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
+                .then(r => setTotalPaidFromApi(Number(r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0)))
+                .catch(() => setTotalPaidFromApi(null));
             }
-          }).catch(err => console.error("Details fetch failed", err));
+          } catch (err) {
+            console.error("History ledger fetch failed, falling back", err);
+          }
+        }
+
+        // 3. Fallback: use old logic if ledger API didn't work
+        if (!usedLedger) {
+          const zRows = Array.isArray(latest?.medeelel?.zardluud) ? latest.medeelel.zardluud : (Array.isArray(latest?.zardluud) ? latest.zardluud : []);
+          const gRows = Array.isArray(latest?.medeelel?.guilgeenuud) ? latest.medeelel.guilgeenuud : (Array.isArray(latest?.guilgeenuud) ? latest.guilgeenuud : []);
+
+          const pickAmount = (obj: any) => {
+            const n = (v: any) => { const num = Number(v); return Number.isFinite(num) ? num : null; };
+            const dun = n(obj?.dun);
+            if (dun !== null && dun > 0) return dun;
+            const td = n(obj?.tulukhDun);
+            if (td !== null && td > 0) return td;
+            const tar = n(obj?.tariff);
+            return tar ?? 0;
+          };
+
+          const expenseMap = new Map<string, any>();
+          const addToExpenseMap = (list: any[]) => {
+            list.forEach((z: any) => {
+              const isEkhnii = z.isEkhniiUldegdel === true || 
+                              String(z.ner || "").startsWith("Эхний үлдэгдэл") || 
+                              String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
+              const amt = pickAmount(z);
+              if (isEkhnii && amt <= 0) return;
+              
+              const ner = isEkhnii ? "Эхний үлдэгдэл" : String(z.ner || z.name || "").trim();
+              const key = ner || z._id || `z-${Math.random()}`;
+              const existing = expenseMap.get(key);
+              if (!existing || amt > pickAmount(existing)) {
+                expenseMap.set(key, { ...z, ner, dun: amt });
+              }
+            });
+          };
+
+          addToExpenseMap(zRows);
+          addToExpenseMap(gRows.filter((g: any) => String(g.turul || "").toLowerCase() === "avlaga" || String(g.turul || "").toLowerCase() === "авлага"));
+
+          if (!Array.from(expenseMap.values()).some(z => String(z.ner).trim() === "Цахилгаан")) {
+            const tsahAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
+            if (tsahAmt > 0) expenseMap.set("Цахилгаан", { ner: "Цахилгаан", tariff: tsahAmt, dun: tsahAmt });
+          }
+
+          setExpenseRows(Array.from(expenseMap.values()).map((z, idx) => ({
+            _id: z._id || `exp-${idx}`,
+            ner: z.ner,
+            tariff: Number(z.tariff) || 0,
+            dun: z.dun,
+            tailbar: z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || ""
+          })));
+
+          const pRows = gRows.filter((g: any) => {
+            const t = String(g.turul || "").toLowerCase();
+            const isTulsun = Number(g.tulsunDun) > 0 || (t !== "avlaga" && t !== "авлага" && Number(g.dun) > 0);
+            return t !== "avlaga" && t !== "авлага" && isTulsun;
+          }).map((g: any, idx: number) => ({
+            _id: g._id || `pay-${idx}`,
+            ognoo: g.ognoo || g.tulsunOgnoo,
+            tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
+            dun: Number(g.tulsunDun || g.dun || 0),
+            turul: g.turul || "Төлбөр",
+            ajiltan: g.ajiltanNer || "Систем",
+          }));
+          setPaymentRows(pRows);
+
+          if (gereeId) {
+            uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
+              .then(r => setTotalPaidFromApi(Number(r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0)))
+              .catch(() => setTotalPaidFromApi(null));
+
+            uilchilgee(token).get("/gereeniiTulsunAvlaga", {
+              params: {
+                baiguullagiinId,
+                khuudasniiDugaar: 1,
+                khuudasniiKhemjee: 500,
+              }
+            }).then(resp => {
+              const allPayments = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt : [];
+              const matched = allPayments.filter((p: any) => String(p.gereeniiId) === String(gereeId));
+              
+              if (matched.length > 0) {
+                const enriched = matched.map((p: any, idx: number) => ({
+                  _id: p._id || `api-pay-${idx}`,
+                  ognoo: p.ognoo || p.createdAt,
+                  tailbar: p.tailbar || p.zardliinNer || "Төлөлт",
+                  dun: Number(p.tulsunDun || p.dun || 0),
+                  turul: p.turul || "Төлбөр",
+                  ajiltan: p.guilgeeKhiisenAjiltniiNer || "Систем",
+                }));
+                
+                setPaymentRows(prev => {
+                  const combined = [...prev, ...enriched];
+                  const seen = new Set();
+                  return combined.filter(c => {
+                    if (seen.has(c._id)) return false;
+                    seen.add(c._id);
+                    return true;
+                  }).sort((a, b) => new Date(b.ognoo).getTime() - new Date(a.ognoo).getTime());
+                });
+              }
+            }).catch(err => console.error("Details fetch failed", err));
+          }
         }
       } catch (e) {
         console.error(e);
@@ -419,26 +529,10 @@ const InvoiceModal = ({
   }, [isOpen, token, baiguullagiinId, resident?._id, selectedBuildingId, barilgiinId, refreshTrigger]);
 
   const contractData = latestInvoice || nekhemjlekhData;
-  // Cleaned up redundant memos - logic is now handled in the useEffect run()
-  // Use backend-calculated totals when available to avoid mismatch with shown rows
+  // Always calculate from visible (aggregated) expense rows so Нийт дүн matches the table
   const totalSum = React.useMemo(() => {
-    // 1) Prefer niitTulburOriginal from invoice data (exact backend total)
-    if (contractData?.niitTulburOriginal != null) {
-      return Number(contractData.niitTulburOriginal);
-    }
-    // 2) Fallback to niitTulbur/niitDun/total from invoice if present
-    if (contractData?.niitTulbur != null) {
-      return Number(contractData.niitTulbur);
-    }
-    if (contractData?.niitDun != null) {
-      return Number(contractData.niitDun);
-    }
-    if (contractData?.total != null) {
-      return Number(contractData.total);
-    }
-    // 3) Last resort: calculate from visible expense rows
     return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
-  }, [expenseRows, contractData]);
+  }, [expenseRows]);
 
   // Use uldegdel directly from data - NO calculation
   const uldegdelDun = useMemo(() => {
@@ -585,24 +679,26 @@ const InvoiceModal = ({
                 </span>
               </div>
               
-              {/* <div className="w-full max-w-[320px] space-y-2 text-right">
+              <div className="w-full max-w-[320px] space-y-2 text-right">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
                   <span className="text-slate-900 font-medium">{formatNumber(totalSum)} ₮</span>
                 </div>
-                {totalPaidFromApi !== null && (
+                {(totalPaidFromApi !== null || paymentRows.length > 0) && (
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-500">Нийт төлсөн:</span>
-                    <span className="text-green-700 font-medium">-{formatNumber(totalPaidFromApi)} ₮</span>
+                    <span className="text-green-700 font-medium">
+                      -{formatNumber(totalPaidFromApi ?? paymentRows.reduce((a, b) => a + (b.dun || 0), 0))} ₮
+                    </span>
                   </div>
                 )}
                 <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
                   <span className="text-base font-bold text-slate-800">Үлдэгдэл дүн:</span>
-                  <span className={`text-xl font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}>
+                  <span className={`text-xl font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-green-600"}`}>
                     {formatNumber(uldegdelDun)} ₮
                   </span>
                 </div>
-              </div> */}
+              </div>
             </div>
           </div>
 
@@ -1071,7 +1167,25 @@ export default function DansniiKhuulga() {
           "";
         const paidAmt = gid ? paidSummaryByGereeId[gid] : undefined;
         if (paidAmt === undefined) return true; // Not fetched yet, rely on isPaidLike
-        return paidAmt > 0;
+        if (paidAmt <= 0) return false;
+
+        // Check if the resident's CURRENT balance is positive (e.g. overpaid then new avlaga added)
+        // If so, they should NOT be in "Төлсөн" anymore
+        if (gid) {
+          const ledgerUldegdel = latestRowUldegdelByGereeId[gid];
+          if (ledgerUldegdel != null && Number.isFinite(ledgerUldegdel) && ledgerUldegdel > 0) {
+            return false; // Has outstanding balance — not fully paid
+          }
+          // Also check resident data for uldegdel
+          const rId = String(it?.orshinSuugchId ?? it?.residentId ?? "").trim();
+          const resident = rId ? (residentsById as any)[rId] : undefined;
+          if (resident) {
+            const resUldegdel = Number(resident.uldegdel ?? 0);
+            if (resUldegdel > 0) return false;
+          }
+        }
+
+        return true;
       }
       if (tuluvFilter === "unpaid")
         return isUnpaidLike(it) && !isOverdueLike(it);
@@ -1188,6 +1302,7 @@ export default function DansniiKhuulga() {
     selectedDavkharFilter,
     selectedTootFilter,
     paidSummaryByGereeId,
+    latestRowUldegdelByGereeId,
   ]);
 
   // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
@@ -1979,7 +2094,31 @@ export default function DansniiKhuulga() {
     const paidCount = deduplicatedResidentsAll.filter((r: any) => {
       // Use uldegdel directly from data
       const uldegdel = Number(r?.uldegdel ?? 0);
-      return uldegdel <= 0;
+      if (uldegdel > 0) return false;
+
+      // Also check ledger uldegdel — if a new avlaga was added after overpayment
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+      if (gid) {
+        const ledgerUldegdel = latestRowUldegdelByGereeId[gid];
+        if (ledgerUldegdel != null && Number.isFinite(ledgerUldegdel) && ledgerUldegdel > 0) {
+          return false;
+        }
+        // Check resident data
+        const rId = String(r?.orshinSuugchId ?? r?.residentId ?? "").trim();
+        const resident = rId ? (residentsById as any)[rId] : undefined;
+        if (resident) {
+          const resUldegdel = Number(resident.uldegdel ?? 0);
+          if (resUldegdel > 0) return false;
+        }
+      }
+
+      return true;
     }).length;
     const unpaidCount = residentCount - paidCount;
 
@@ -1994,6 +2133,8 @@ export default function DansniiKhuulga() {
     cancelledGereesWithUnpaid,
     paidSummaryByGereeId,
     contractsByNumber,
+    latestRowUldegdelByGereeId,
+    residentsById,
   ]);
 
   const zaaltOruulakh = async () => {

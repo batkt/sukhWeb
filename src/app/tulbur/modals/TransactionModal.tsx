@@ -64,6 +64,12 @@ export default function TransactionModal({
   const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
   const isUmnukhEditable = !initialUmnukhVal || Number(initialUmnukhVal) === 0;
 
+  const formatAmount = (val: number | string): string => {
+    const num = typeof val === "string" ? parseFloat(String(val).replace(/,/g, "")) : val;
+    if (isNaN(num)) return "0.00";
+    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
   const resetForm = () => {
     setTransactionType("avlaga");
     setTransactionDate(new Date().toISOString().split("T")[0]);
@@ -147,7 +153,7 @@ export default function TransactionModal({
 
       if (res.data?.success && typeof res.data.niitDun === "number") {
         console.log("[CALC] Received response:", res.data);
-        setAmount(String(res.data.niitDun));
+        setAmount(formatAmount(res.data.niitDun));
         if (res.data.suuliinZaaltNum != null) {
           setSuuliinZaalt(String(res.data.suuliinZaaltNum));
         }
@@ -184,7 +190,7 @@ export default function TransactionModal({
   const fillAmountWithBalance = () => {
     if (residentBalance !== null && transactionType === "tulult") {
       const amountToFill = Math.max(0, residentBalance);
-      setAmount(amountToFill.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      setAmount(formatAmount(amountToFill));
     }
   };
 
@@ -319,7 +325,18 @@ export default function TransactionModal({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setTransactionType(option.value as TransactionData["type"])}
+                    onClick={() => {
+                      const newType = option.value as TransactionData["type"];
+                      if (newType !== transactionType) {
+                        setAmount("0.00");
+                        setTailbar("");
+                        setEkhniiUldegdel(false);
+                        setAshiglaltZardal("");
+                        setUmnukhZaalt("");
+                        setSuuliinZaalt("");
+                      }
+                      setTransactionType(newType);
+                    }}
                     disabled={isProcessing}
                     className={`
                       relative py-1.5 px-3 text-sm  rounded-2xl transition-all duration-200
@@ -432,10 +449,7 @@ export default function TransactionModal({
                       setAmount(amount.replace(/,/g, ""));
                     }}
                     onBlur={() => {
-                      const val = parseFloat(amount.replace(/,/g, ""));
-                      if (!isNaN(val)) {
-                        setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                      }
+                      setAmount(formatAmount(amount));
                     }}
                     disabled={isProcessing}
                     placeholder="0.00"
@@ -581,10 +595,7 @@ export default function TransactionModal({
                       setAmount(amount.replace(/,/g, ""));
                     }}
                     onBlur={() => {
-                      const val = parseFloat(amount.replace(/,/g, ""));
-                      if (!isNaN(val)) {
-                        setAmount(val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
-                      }
+                      setAmount(formatAmount(amount));
                     }}
                     disabled={isProcessing}
                     placeholder="0.00"
