@@ -776,13 +776,20 @@ export default function DansniiKhuulga() {
     const event = `tulburUpdated:${baiguullagiinId}`;
     const handler = () => {
       mutate(
-        (key: any) =>
-          Array.isArray(key) &&
-          (key[0] === "/nekhemjlekhiinTuukh" ||
-            key[0] === "/gereeniiTulukhAvlaga" ||
-            key[0] === "/gereeniiTulsunAvlaga" ||
-            key[0] === "/geree" ||
-            key[0] === "/orshinSuugch"),
+        (key: any) => {
+          if (!Array.isArray(key)) return false;
+          const prefix = String(key[0] || "");
+          return (
+            prefix === "/nekhemjlekhiinTuukh" ||
+            prefix.startsWith("/nekhemjlekhiinTuukh-") ||
+            prefix === "/gereeniiTulukhAvlaga" ||
+            prefix.startsWith("/gereeniiTulukhAvlaga-") ||
+            prefix === "/gereeniiTulsunAvlaga" ||
+            prefix.startsWith("/gereeniiTulsunAvlaga-") ||
+            prefix === "/geree" ||
+            prefix === "/orshinSuugch"
+          );
+        },
         undefined,
         { revalidate: true },
       );
@@ -2545,18 +2552,51 @@ export default function DansniiKhuulga() {
             });
           }
 
-          // Global Revalidation: Refresh history, contracts, and residents
+          // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
           mutate(
-            (key: any) =>
-              Array.isArray(key) &&
-              (key[0] === "/nekhemjlekhiinTuukh" ||
-                key[0] === "/geree" ||
-                key[0] === "/orshinSuugch" ||
-                key[0] === "/gereeniiTulukhAvlaga"),
+            (key: any) => {
+              if (!Array.isArray(key)) return false;
+              const prefix = String(key[0] || "");
+              return (
+                prefix === "/nekhemjlekhiinTuukh" ||
+                prefix.startsWith("/nekhemjlekhiinTuukh-") ||
+                prefix === "/geree" ||
+                prefix === "/orshinSuugch" ||
+                prefix === "/gereeniiTulukhAvlaga" ||
+                prefix.startsWith("/gereeniiTulukhAvlaga-")
+              );
+            },
             undefined,
             { revalidate: true },
           );
           setInvoiceRefreshTrigger((t) => t + 1);
+
+          // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh; ignore errors
+            }
+          }
         }
       } else {
         // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
@@ -2603,18 +2643,51 @@ export default function DansniiKhuulga() {
             });
           }
 
-          // Global Revalidation: Refresh history, contracts, and residents
+          // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
           mutate(
-            (key: any) =>
-              Array.isArray(key) &&
-              (key[0] === "/nekhemjlekhiinTuukh" ||
-                key[0] === "/geree" ||
-                key[0] === "/orshinSuugch" ||
-                key[0] === "/gereeniiTulukhAvlaga"),
+            (key: any) => {
+              if (!Array.isArray(key)) return false;
+              const prefix = String(key[0] || "");
+              return (
+                prefix === "/nekhemjlekhiinTuukh" ||
+                prefix.startsWith("/nekhemjlekhiinTuukh-") ||
+                prefix === "/geree" ||
+                prefix === "/orshinSuugch" ||
+                prefix === "/gereeniiTulukhAvlaga" ||
+                prefix.startsWith("/gereeniiTulukhAvlaga-")
+              );
+            },
             undefined,
             { revalidate: true },
           );
           setInvoiceRefreshTrigger((t) => t + 1);
+
+          // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
+          if (data.residentId) {
+            try {
+              const res = await uilchilgee(token).get(
+                `/orshinSuugch/${data.residentId}`,
+                {
+                  params: { baiguullagiinId: ajiltan.baiguullagiinId },
+                },
+              );
+              const freshResident = res.data;
+              if (freshResident && freshResident._id) {
+                setSelectedResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+                setSelectedTransactionResident((prev: any) =>
+                  prev && String(prev._id) === String(freshResident._id)
+                    ? { ...prev, ...freshResident }
+                    : prev,
+                );
+              }
+            } catch {
+              // best-effort refresh; ignore errors
+            }
+          }
         }
       }
     } catch (error: any) {
