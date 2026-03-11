@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-function formatNumber(num: number | string, fixed = 2): string {
+function formatNumber(num: number | string, fixed = 0): string {
   const parsed = Number(num);
 
   if (_.isNaN(parsed)) {

@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import { useSWRConfig } from "swr";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import uilchilgee, { getErrorMessage } from "@/lib/uilchilgee";
@@ -41,6 +42,8 @@ export function useGereeActions(
   onLoadingChange?: (loading: boolean) => void,
   contracts?: any[]
 ) {
+  const { mutate } = useSWRConfig();
+
   const handleCreateResident = useCallback(async (e: React.FormEvent, newResident: any, editingResident: any) => {
     e.preventDefault();
 
@@ -148,13 +151,26 @@ export function useGereeActions(
       }
 
       openSuccessOverlay(editingResident?._id ? "Оршин суугчийн мэдээлэл засагдлаа" : "Оршин суугч нэмэгдлээ");
-      
+
+      // Ensure all resident-related lists refresh immediately across the app
+      try {
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+          undefined,
+          { revalidate: true }
+        );
+      } catch (_e) {
+        // Best-effort cache refresh; ignore errors here
+      }
+
       return true;
     } catch (err) {
       openErrorOverlay(getErrorMessage(err));
       return false;
     }
-  }, [token, ajiltan, baiguullaga, selectedBuildingIdForActions, barilgiinId, selectedBuildingId, composeKey]);
+  }, [token, ajiltan, baiguullaga, selectedBuildingIdForActions, barilgiinId, selectedBuildingId, composeKey, mutate]);
 
   const handleDeleteResident = useCallback(async (p: any) => {
     if (!token) {

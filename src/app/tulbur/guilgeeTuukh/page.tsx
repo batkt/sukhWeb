@@ -2808,8 +2808,24 @@ export default function DansniiKhuulga() {
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
         toast.success("Excel импорт амжилттай");
-        // Refresh the page data by reloading
-        window.location.reload();
+        // Refresh the page data without reloading
+        mutate(
+          (key: any) =>
+            Array.isArray(key) &&
+            [
+              "/nekhemjlekhiinTuukh",
+              "/geree",
+              "/gereeniiTulukhAvlaga",
+              "/gereeniiTulsunAvlaga",
+            ].includes(key[0]),
+          undefined,
+          { revalidate: true },
+        );
+        // Clear summary states to force re-fetch
+        setPaidSummaryByGereeId({});
+        requestedGereeIdsRef.current.clear();
+        setLatestRowUldegdelByGereeId({});
+        latestRowUldegdelRequestedRef.current.clear();
       }
     } catch (err: any) {
       toast.dismiss(importToastId);

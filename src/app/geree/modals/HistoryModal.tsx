@@ -1303,21 +1303,21 @@ export default function HistoryModal({
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {Number(row.tulukhDun) !== 0
-                            ? formatNumber(row.tulukhDun, 2)
+                            ? formatNumber(row.tulukhDun)
                             : "-"}
                         </td>
                         <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
                           {row.tulsunDun > 0
-                            ? formatNumber(row.tulsunDun, 2)
+                            ? formatNumber(row.tulsunDun)
                             : "-"}
                         </td>
                         <td
                           className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0 ? "!text-emerald-600 dark:!text-emerald-400" : (row.uldegdel ?? 0) > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}
                         >
                           {typeof row.uldegdel === "number"
-                            ? formatNumber(row.uldegdel, 2)
+                            ? formatNumber(row.uldegdel)
                             : row.uldegdel != null
-                              ? formatNumber(Number(row.uldegdel), 2)
+                              ? formatNumber(Number(row.uldegdel))
                               : "-"}
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
@@ -1421,15 +1421,15 @@ export default function HistoryModal({
                             Нийт
                           </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                            {formatNumber(totalCharges, 2)}
+                            {formatNumber(totalCharges)}
                           </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                            {formatNumber(totalPayments, 2)}
+                            {formatNumber(totalPayments)}
                           </td>
                           <td
                             className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${balanceClass}`}
                           >
-                            {formatNumber(balance, 2)}
+                            {formatNumber(balance)}
                           </td>
                           <td colSpan={3}></td>
                         </tr>
