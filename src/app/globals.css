@@ -3516,23 +3516,23 @@ body .mantine-Month-weekday {
 .ant-picker-cell-in-view.ant-picker-cell-week-end .ant-picker-cell-inner {
   color: #dc2626 !important; /* weekend red */
 }
-[data-mode="dark"]
-  .ant-picker-cell-in-view:not(.ant-picker-cell-disabled):not(
-    .ant-picker-cell-selected
-  ):not(.ant-picker-cell-range-start):not(.ant-picker-cell-range-end):not(
-    .ant-picker-cell-in-range
-  )
-  .ant-picker-cell-inner {
-  color: #ffffff !important; /* weekdays on dark */
+[data-mode="dark"] .ant-picker-cell-in-view .ant-picker-cell-inner,
+.dark .ant-picker-cell-in-view .ant-picker-cell-inner {
+  color: #ffffff !important;
 }
-:not([data-mode="dark"])
-  .ant-picker-cell-in-view:not(.ant-picker-cell-disabled):not(
-    .ant-picker-cell-selected
-  ):not(.ant-picker-cell-range-start):not(.ant-picker-cell-range-end):not(
-    .ant-picker-cell-in-range
-  )
-  .ant-picker-cell-inner {
-  color: #0f172a !important; /* weekdays on light */
+[data-mode="dark"] .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
+.dark .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
+  color: #000000 !important;
+}
+[data-mode="dark"] .ant-picker-header,
+.dark .ant-picker-header,
+[data-mode="dark"] .ant-picker-content th,
+.dark .ant-picker-content th,
+[data-mode="dark"] .ant-picker-footer a,
+.dark .ant-picker-footer a,
+[data-mode="dark"] .ant-picker-header button,
+.dark .ant-picker-header button {
+  color: #ffffff !important;
 }
 .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner,
 .ant-picker-cell-in-view.ant-picker-cell-range-start .ant-picker-cell-inner,
