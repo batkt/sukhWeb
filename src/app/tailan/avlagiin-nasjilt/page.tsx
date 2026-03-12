@@ -135,14 +135,21 @@ export default function AvlagiinNasjiltPage() {
     }
   };
 
-  const totals = useMemo(() => {
-    const fields = ["undsenDun", "khungulult", "tulsunDun", "uldegdel", "p0_30", "p31_60", "p61_90", "p91_120", "p120plus"];
-    const results: any = {};
-    fields.forEach(f => {
-      results[f] = data.reduce((acc, curr: any) => acc + (Number(curr[f] ?? curr[f === 'uldegdel' ? 'tulukhDun' : f]) || 0), 0);
-    });
-    return results;
-  }, [data]);
+  const filteredData = useMemo(() => {
+  return data.filter((it: any) => {
+    const uldegdel = Number(it.uldegdel ?? it.tulukhDun ?? 0);
+    return Math.abs(uldegdel) > 0.01;
+  });
+}, [data]);
+
+const totals = useMemo(() => {
+  const fields = ["undsenDun", "khungulult", "tulsunDun", "uldegdel", "p0_30", "p31_60", "p61_90", "p91_120", "p120plus"];
+  const results: any = {};
+  fields.forEach(f => {
+    results[f] = filteredData.reduce((acc, curr: any) => acc + (Number(curr[f] ?? curr[f === 'uldegdel' ? 'tulukhDun' : f]) || 0), 0);
+  });
+  return results;
+}, [filteredData]);
 
   return (
     <ConfigProvider theme={{ algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm, token: { borderRadius: 12, colorPrimary: "#10b981" } }}>
@@ -205,9 +212,9 @@ export default function AvlagiinNasjiltPage() {
               <tbody>
                 {loading ? (
                   <tr><td colSpan={14} className="p-12 text-center"><div className="animate-spin inline-block w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full" /></td></tr>
-                ) : data.length === 0 ? (
+                ) : filteredData.length === 0 ? (
                   <tr><td colSpan={14} className="p-12 text-center text-theme/60 italic">Мэдээлэл олдсонгүй</td></tr>
-                ) : data.map((it, idx) => (
+                ) : filteredData.map((it, idx) => (
                   <tr key={it._id || idx} className="hover:bg-[color:var(--surface-hover)]/20 transition-colors border-b border-slate-100 dark:border-slate-800/50">
                     <td className="p-3 text-center text-theme whitespace-nowrap sticky left-0 z-10 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50">{((currentPage - 1) * pageSize) + idx + 1}</td>
                     <td className="p-3 text-center text-theme whitespace-nowrap font-bold sticky left-12 z-10 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800/50">{it.gereeniiDugaar || "-"}</td>
@@ -246,7 +253,7 @@ export default function AvlagiinNasjiltPage() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0 mt-2">
           <div className="flex gap-4 text-xs font-bold uppercase tracking-widest">
-            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500">Нийт: {summary?.count || data.length}</div>
+            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500">Нийт: {summary?.count || filteredData.length}</div>
             <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 rounded-full text-red-500">Авлага: {formatNumber(totals.uldegdel)} ₮</div>
           </div>
           <div className="flex items-center gap-4">
@@ -254,8 +261,8 @@ export default function AvlagiinNasjiltPage() {
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-2xl">
               <button disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)} 
                 className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300">Өмнөх</button>
-              <div className="px-4 text-sm font-black text-emerald-600">{currentPage} / {Math.max(1, Math.ceil((summary?.count || data.length) / pageSize))}</div>
-              <button disabled={currentPage * pageSize >= (summary?.count || data.length)} onClick={() => setCurrentPage(currentPage + 1)} 
+              <div className="px-4 text-sm font-black text-emerald-600">{currentPage} / {Math.max(1, Math.ceil((summary?.count || filteredData.length) / pageSize))}</div>
+              <button disabled={currentPage * pageSize >= (summary?.count || filteredData.length)} onClick={() => setCurrentPage(currentPage + 1)} 
                 className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300">Дараах</button>
             </div>
           </div>
