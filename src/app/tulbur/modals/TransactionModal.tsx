@@ -57,6 +57,12 @@ export default function TransactionModal({
   const [showUsageOnInvoice, setShowUsageOnInvoice] = useState(true);
   const [includeSuuriKhuraamj, setIncludeSuuriKhuraamj] = useState(true);
   const [isCalculatingTsakhilgaan, setIsCalculatingTsakhilgaan] = useState(false);
+  const [calcBreakdown, setCalcBreakdown] = useState<{
+    usageAmount: number;
+    suuriKhuraamj: number;
+    zoruu: number;
+    selectedCharge?: string;
+  } | null>(null);
   const [residentBalance, setResidentBalance] = useState<number | null>(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
 
@@ -81,6 +87,7 @@ export default function TransactionModal({
     setSuuliinZaalt("");
     setShowUsageOnInvoice(true);
     setIncludeSuuriKhuraamj(true);
+    setCalcBreakdown(null);
   };
 
   const handleClose = () => {
@@ -91,20 +98,17 @@ export default function TransactionModal({
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
-      // Prefill Цахилгаан кВт and readings from resident (orshinSuugch) or geree
-      const umnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
-      const suuliinVal = resident?.suuliinZaalt ?? resident?.umnukhZaalt ?? resident?.tsahilgaaniiZaalt;
-      const hasAny = [umnukhVal, suuliinVal].some(
-        (v) => v != null && v !== "" && String(v).trim() !== ""
-      );
-      if (hasAny) {
+      // Prefill readings strictly
+      const umnukhVal = resident?.umnukhZaalt;
+      const suuliinVal = resident?.suuliinZaalt;
+      
+      const hasReadings = (umnukhVal != null && umnukhVal !== 0) || (suuliinVal != null && suuliinVal !== 0);
+
+      if (hasReadings) {
+        setTransactionType("ashiglalt");
         setAshiglaltZardal("tsakhilgaan_kv");
-        if (umnukhVal != null && umnukhVal !== "") {
-          setUmnukhZaalt(String(umnukhVal).replace(/,/g, ""));
-        }
-        if (suuliinVal != null && suuliinVal !== "") {
-          setSuuliinZaalt(String(suuliinVal).replace(/,/g, ""));
-        }
+        if (umnukhVal != null) setUmnukhZaalt(String(umnukhVal));
+        if (suuliinVal != null) setSuuliinZaalt(String(suuliinVal));
       }
     }
     setLastShow(show);
@@ -143,6 +147,8 @@ export default function TransactionModal({
       const res = await uilchilgee(token).post<{
         success: boolean;
         niitDun?: number;
+        usageAmount?: number;
+        suuriKhuraamj?: number;
         tailbar?: string;
         odorZaaltNum?: number;
         shonoZaaltNum?: number;
@@ -157,8 +163,14 @@ export default function TransactionModal({
         if (res.data.suuliinZaaltNum != null) {
           setSuuliinZaalt(String(res.data.suuliinZaaltNum));
         }
-
-
+        
+        // Save breakdown for UI display
+        setCalcBreakdown({
+          usageAmount: res.data.usageAmount ?? (res.data.niitDun - (res.data.suuriKhuraamj || 0)),
+          suuriKhuraamj: res.data.suuriKhuraamj || 0,
+          zoruu: res.data.zoruu || 0,
+          selectedCharge: res.data.selectedCharge,
+        });
       }
     } catch (e: any) {
       const msg = e?.response?.data?.message || e?.message || "Тооцоолол амжилтгүй.";
@@ -425,7 +437,7 @@ export default function TransactionModal({
                         animate={{ opacity: 1, x: 0 }}
                         onDoubleClick={fillAmountWithBalance}
                         title="Хоёр товшиж дүнг оруулах"
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border cursor-pointer transition-all select-none
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none
                           ${isFetchingBalance 
                             ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse" 
                             : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
@@ -556,6 +568,31 @@ export default function TransactionModal({
                     />
                   </button>
                 </div>
+
+                {/* Calculation Breakdown */}
+                {calcBreakdown && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-3 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2"
+                  >
+                    <div className="flex justify-between text-xs text-blue-700">
+                      <span>Хэрэглээний дүн: ({calcBreakdown.zoruu.toLocaleString()} кВт × {calcBreakdown.selectedCharge ? `${calcBreakdown.selectedCharge} ` : ""}{calcBreakdown.usageAmount / (calcBreakdown.zoruu || 1)}₮)</span>
+                      <span className="font-bold">{calcBreakdown.usageAmount.toLocaleString()} ₮</span>
+                    </div>
+                    {includeSuuriKhuraamj && calcBreakdown.suuriKhuraamj > 0 && (
+                      <div className="flex justify-between text-xs text-blue-700 border-t border-blue-100 pt-1.5">
+                        <span>Суурь хураамж:</span>
+                        <span className="font-bold">{calcBreakdown.suuriKhuraamj.toLocaleString()} ₮</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm text-blue-800 border-t border-blue-200 pt-1.5 font-bold">
+                      <span>Нийт:</span>
+                      <span>{(calcBreakdown.usageAmount + (includeSuuriKhuraamj ? calcBreakdown.suuriKhuraamj : 0)).toLocaleString()} ₮</span>
+                    </div>
+                  </motion.div>
+                )}
+
 
               </div>
             )}

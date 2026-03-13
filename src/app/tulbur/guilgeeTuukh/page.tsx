@@ -2890,6 +2890,7 @@ export default function DansniiKhuulga() {
               "/geree",
               "/gereeniiTulukhAvlaga",
               "/gereeniiTulsunAvlaga",
+              "/orshinSuugch",
             ].includes(key[0]),
           undefined,
           { revalidate: true },
@@ -4188,18 +4189,8 @@ export default function DansniiKhuulga() {
                                                 gereeniiDugaar: dugaar,
                                                 gereeniiId:
                                                   it?.gereeniiId || ct?._id,
-                                                tsahilgaaniiZaalt:
-                                                  resident.tsahilgaaniiZaalt ??
-                                                  ct?.suuliinZaalt ??
-                                                  ct?.umnukhZaalt,
-                                                umnukhZaalt:
-                                                  ct?.umnukhZaalt ??
-                                                  resident.tsahilgaaniiZaalt ??
-                                                  ct?.suuliinZaalt,
-                                                suuliinZaalt:
-                                                  ct?.suuliinZaalt ??
-                                                  resident.tsahilgaaniiZaalt ??
-                                                  ct?.umnukhZaalt,
+                                                umnukhZaalt: ct?.umnukhZaalt,
+                                                suuliinZaalt: ct?.suuliinZaalt,
                                               }
                                             : {
                                                 ...it,
@@ -4211,16 +4202,8 @@ export default function DansniiKhuulga() {
                                                 gereeniiDugaar: dugaar,
                                                 gereeniiId:
                                                   it?.gereeniiId || ct?._id,
-                                                tsahilgaaniiZaalt:
-                                                  ct?.suuliinZaalt ??
-                                                  ct?.umnukhZaalt ??
-                                                  it?.tsahilgaaniiZaalt,
-                                                umnukhZaalt:
-                                                  ct?.umnukhZaalt ??
-                                                  ct?.suuliinZaalt,
-                                                suuliinZaalt:
-                                                  ct?.suuliinZaalt ??
-                                                  ct?.umnukhZaalt,
+                                                umnukhZaalt: ct?.umnukhZaalt,
+                                                suuliinZaalt: ct?.suuliinZaalt,
                                               };
                                           setSelectedTransactionResident(
                                             residentData,
