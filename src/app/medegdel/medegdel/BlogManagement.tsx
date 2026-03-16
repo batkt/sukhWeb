@@ -79,10 +79,10 @@ export default function BlogManagement() {
     
     // If the path already includes the organization ID (contains a slash), don't prepend it again
     if (path.includes("/")) {
-      return `${baseUrl}/api/medegdel/${path}`;
+      return `${baseUrl}/${path}`;
     }
     
-    return `${baseUrl}/api/medegdel/${baiguullagiinId}/${path}`;
+    return `${baseUrl}/medegdel/${baiguullagiinId}/${path}`;
   };
 
   const { data: blogData, mutate: revalidateBlogs, isValidating } = useSWR(
