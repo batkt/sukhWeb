@@ -111,7 +111,7 @@ export default function GolContent({ children }: GolContentProps) {
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
-    const handler = (payload: { type?: string; data?: { _id?: string; turul?: string } }) => {
+    const handler = (payload: any) => {
       if (payload?.type === "medegdelNew") {
         // Don't show "you received" when this is an outbound notification we just sent (App/Мессеж/Mail from Мэдэгдэл page)
         const turul = (payload?.data?.turul ?? "").trim();
@@ -149,6 +149,16 @@ export default function GolContent({ children }: GolContentProps) {
       if (payload?.type === "medegdelSeen") {
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
+      }
+      if (payload?.type === "blogNew") {
+        toast("Шинэ нийтлэл ирлээ", {
+          description: payload.message || "Шинэ мэдээлэл орлоо",
+          duration: 4000,
+        });
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/blog", undefined, { revalidate: true });
+      }
+      if (payload?.type === "blogReactionUpdate") {
+        mutate((k: unknown) => Array.isArray(k) && k[0] === "/blog", undefined, { revalidate: true });
       }
     };
     socket.on(event, handler);

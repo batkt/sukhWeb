@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Button, Input, Modal, notification } from "antd";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +12,8 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import useSWR from "swr"; // Added SWR import if not there
+import BlogManagement from "./BlogManagement";
 interface Geree {
   _id: string;
   ner: string;
@@ -47,15 +50,42 @@ function saveTemplates(orgId: string, turul: string, templates: MedegdelTemplate
   localStorage.setItem(TEMPLATE_STORAGE_KEY(orgId, turul), JSON.stringify(templates));
 }
 
-export default function KhyanaltFrontend() {
+export default function MedegdelPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <MedegdelContent />
+    </Suspense>
+  );
+}
+
+function MedegdelContent() {
   const { barilgiinId, token, ajiltan, baiguullaga } = useAuth();
   const baiguullagiinId = ajiltan?.baiguullagiinId;
   const { selectedBuildingId } = useBuilding();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  const initialTab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
+  const [activeTab, setActiveTab] = useState<"medegdel" | "niitlel">(initialTab);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab") === "niitlel" ? "niitlel" : "medegdel";
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  const handleTabChange = (tab: "medegdel" | "niitlel") => {
+    setActiveTab(tab);
+    router.push(`/medegdel/medegdel?tab=${tab}`);
+  };
+
   const effectiveBarilgiinId: string | undefined =
     selectedBuildingId ?? barilgiinId ?? undefined;
   const selectedBarilga = baiguullaga?.barilguud?.find(
     (b) => b._id === selectedBuildingId
   );
+
   useEffect(() => {
     Aos.init({ once: true });
   }, []);
@@ -69,6 +99,7 @@ export default function KhyanaltFrontend() {
   const [turul, setTurul] = useState<"App" | "Мессеж" | "Mail">("App");
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
   const [templateModalOpen, setTemplateModalOpen] = useState(false);
   const [templateName, setTemplateName] = useState("");
   const [templateTitle, setTemplateTitle] = useState("");
@@ -342,19 +373,53 @@ export default function KhyanaltFrontend() {
       <motion.header
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 mb-4 sm:mb-6"
+        className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4 sm:mb-6"
       >
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-panel flex items-center justify-center shrink-0">
-          <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-theme" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl neu-panel flex items-center justify-center shrink-0">
+            <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-theme" />
+          </div>
+          <div>
+            <h1 className="text-lg sm:text-xl  text-theme">Мэдэгдэл & Нийтлэл</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Хариуцсан хэсгийн мэдээлэл удирдах</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-lg sm:text-xl  text-theme">Мэдэгдэл</h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Харилцагчид руу мэдэгдэл илгээх</p>
+
+        {/* Tabs Control */}
+        <div className="flex p-1 rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
+          <button
+            onClick={() => handleTabChange("medegdel")}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
+              activeTab === "medegdel"
+                ? "bg-theme text-white shadow-lg"
+                : "text-slate-500 hover:text-theme"
+            }`}
+          >
+            Мэдэгдэл
+          </button>
+          <button
+            onClick={() => handleTabChange("niitlel")}
+            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
+              activeTab === "niitlel"
+                ? "bg-theme text-white shadow-lg"
+                : "text-slate-500 hover:text-theme"
+            }`}
+          >
+            Нийтлэл
+          </button>
         </div>
       </motion.header>
 
-      {/* Main content: 3-column layout, flexible height */}
-      <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-12rem)]">
+      <AnimatePresence mode="wait">
+        {activeTab === "medegdel" ? (
+          <motion.div
+            key="medegdel-tab"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 flex-1 min-h-0 lg:max-h-[calc(100vh-16rem)]"
+          >
         {/* Left: Channel & Templates */}
         <motion.section
           initial={{ opacity: 0, x: -16 }}
@@ -425,7 +490,7 @@ export default function KhyanaltFrontend() {
             onCancel={() => setTemplateModalOpen(false)}
             okText="Хадгалах"
             cancelText="Цуцлах"
-            destroyOnClose
+            destroyOnHidden
             className="[&_.ant-modal-content]:rounded-2xl"
           >
             <div className="flex flex-col gap-4 pt-2">
@@ -765,7 +830,19 @@ export default function KhyanaltFrontend() {
             )}
           </AnimatePresence>
         </motion.section>
-      </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="niitlel-tab"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+          >
+            <BlogManagement />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
