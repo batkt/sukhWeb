@@ -415,9 +415,7 @@ export default function TransactionModal({
             </AnimatePresence>
 
             {/* Date Input */}
-            {/* Grid for Date & (Ashiglalt Type OR Amount) */}
             <div className="grid grid-cols-2 gap-4">
-              {/* Date Input */}
               <div className="space-y-1.5">
                 <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                   Огноо
@@ -431,7 +429,6 @@ export default function TransactionModal({
                 />
               </div>
 
-              {/* Expenses Type (Only for ashiglalt) OR Amount (Standard for others) */}
               {transactionType === "ashiglalt" ? (
                 <div className="space-y-1.5">
                   <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
@@ -495,129 +492,75 @@ export default function TransactionModal({
               )}
             </div>
 
-            {/* Ashiglalt Details (Readings, Toggles) */}
+            {/* Ashiglalt Details (Redesigned) */}
             {transactionType === "ashiglalt" && ashiglaltZardal === "tsakhilgaan_kv" && (
-              <div className="space-y-3">
-
+              <div className="bg-[color:var(--surface-hover)]/40 p-3.5 rounded-2xl border border-[color:var(--surface-border)] space-y-3">
+                <div className="flex items-center gap-2">
+                  
+                  <span className="text-xs font-bold text-[color:var(--panel-text)] tracking-tight">Заалт оруулах</span>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                      Өмнөх заалт
-                    </label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">Өмнөх</label>
                     <input
                       type="text"
                       value={umnukhZaalt}
                       readOnly={!isUmnukhEditable}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (/^[0-9.,]*$/.test(val)) {
-                          setUmnukhZaalt(val);
-                        }
+                        if (/^[0-9.,]*$/.test(val)) setUmnukhZaalt(val);
                       }}
-                      className={`w-full px-3 py-2.5 border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-medium ${isUmnukhEditable
-                        ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)]"
-                        : "bg-[color:var(--surface-hover)]/30 text-[color:var(--panel-text)]"
-                        }`}
+                      className={`w-full px-3 py-1.5 border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-bold ${
+                        isUmnukhEditable ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]" : "bg-[color:var(--surface-hover)]/60 text-[color:var(--muted-text)]"
+                      }`}
                     />
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
-                      Одоо заалт
-                    </label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">Одоо</label>
                     <input
                       type="text"
                       value={suuliinZaalt}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (/^[0-9.,]*$/.test(val)) {
-                          setSuuliinZaalt(val);
-                        }
+                        if (/^[0-9.,]*$/.test(val)) setSuuliinZaalt(val);
                       }}
                       disabled={isProcessing}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right font-medium"
+                      className="w-full px-3 py-1.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 transition-all text-sm text-right font-bold"
                     />
                   </div>
                 </div>
 
-
-
-
-                {/* Tailbar & Amount Grid */}
-                {/* Tailbar & Amount (Conditionally Rendered) */}
-                {/* Moved out of this block */}
-                <div className="flex items-center justify-between gap-4 p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/50">
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-xs  text-[color:var(--panel-text)]">
-                      Суурь хүраамж нэмэх
-                    </p>
+                <div className="flex items-center justify-between pt-2.5 border-t border-[color:var(--surface-border)]/60">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-[color:var(--muted-text)]">Суурь хураамж:</span>
+                    <span className="text-xs font-bold text-[color:var(--panel-text)]"> 
+                      {calcBreakdown?.suuriKhuraamj ? calcBreakdown.suuriKhuraamj.toLocaleString() : "0"}₮
+                    </span>
                   </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={includeSuuriKhuraamj}
-                    onClick={() => setIncludeSuuriKhuraamj((v) => !v)}
-                    disabled={isProcessing}
-                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 disabled:opacity-50 ${includeSuuriKhuraamj ? "bg-[color:var(--theme)]" : "bg-gray-400 dark:bg-gray-500"
-                      }`}
-                    style={includeSuuriKhuraamj ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${includeSuuriKhuraamj ? "translate-x-5 border-white/80" : "translate-x-0"
-                        }`}
-                    />
-                  </button>
-                  <div className="space-y-0.5 min-w-0">
-                    <p className="text-xs  text-[color:var(--panel-text)]">
-                      Нэхэмжлэх дээр харах эсэх
-                    </p>
 
-                  </div>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={showUsageOnInvoice}
-                    onClick={() => setShowUsageOnInvoice((v) => !v)}
-                    disabled={isProcessing}
-                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--theme)]/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--surface-bg)] disabled:opacity-50 ${showUsageOnInvoice
-                      ? "bg-[color:var(--theme)]"
-                      : "bg-gray-400 dark:bg-gray-500"
-                      }`}
-                    style={showUsageOnInvoice ? { boxShadow: "0 0 0 3px color-mix(in srgb, var(--theme) 40%, transparent), 0 2px 10px rgba(0,0,0,0.2)" } as React.CSSProperties : undefined}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 rounded-full bg-white border-2 border-gray-200 shadow-lg transition-transform duration-200 ease-out ${showUsageOnInvoice ? "translate-x-5 border-white/80 shadow-[0_2px_8px_rgba(0,0,0,0.2)]" : "translate-x-0"
+                  <label className="flex items-center gap-2 cursor-pointer group ml-auto select-none">
+                    <span className="text-[10px] font-bold text-[color:var(--muted-text)] group-hover:text-[color:var(--theme)] transition-colors">Нэхэмжлэх дээр харах эсэх</span>
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        className="sr-only"
+                        checked={showUsageOnInvoice}
+                        onChange={() => setShowUsageOnInvoice(!showUsageOnInvoice)}
+                      />
+                      <div 
+                        className={`block w-9 h-5 rounded-full transition-colors duration-200 ease-in-out ${
+                          showUsageOnInvoice ? "bg-[color:var(--theme)]" : "bg-zinc-200 dark:bg-zinc-700"
                         }`}
-                    />
-                  </button>
+                      />
+                      <div 
+                        className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out shadow-sm ${
+                          showUsageOnInvoice ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </div>
+                  </label>
                 </div>
-
-                {/* Calculation Breakdown */}
-                {calcBreakdown && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2"
-                  >
-                    <div className="flex justify-between text-xs text-blue-700">
-                      <span>Хэрэглээний дүн: ({calcBreakdown.zoruu.toLocaleString()} кВт × {calcBreakdown.selectedCharge ? `${calcBreakdown.selectedCharge} ` : ""}{calcBreakdown.usageAmount / (calcBreakdown.zoruu || 1)}₮)</span>
-                      <span className="font-bold">{calcBreakdown.usageAmount.toLocaleString()} ₮</span>
-                    </div>
-                    {includeSuuriKhuraamj && calcBreakdown.suuriKhuraamj > 0 && (
-                      <div className="flex justify-between text-xs text-blue-700 border-t border-blue-100 pt-1.5">
-                        <span>Суурь хураамж:</span>
-                        <span className="font-bold">{calcBreakdown.suuriKhuraamj.toLocaleString()} ₮</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm text-blue-800 border-t border-blue-200 pt-1.5 font-bold">
-                      <span>Нийт:</span>
-                      <span>{(calcBreakdown.usageAmount + (includeSuuriKhuraamj ? calcBreakdown.suuriKhuraamj : 0)).toLocaleString()} ₮</span>
-                    </div>
-                  </motion.div>
-                )}
-
-
               </div>
             )}
 
@@ -681,7 +624,6 @@ export default function TransactionModal({
             )}
           </div>
 
-
           {/* Footer */}
           <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
             <button
@@ -724,7 +666,7 @@ export default function TransactionModal({
             </button>
           </div>
         </motion.div>
-      </div >
-    </AnimatePresence >
+      </div>
+    </AnimatePresence>
   );
 }
