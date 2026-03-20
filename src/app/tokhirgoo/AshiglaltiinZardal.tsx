@@ -744,7 +744,7 @@ export default function AshiglaltiinZardluud() {
                                 .includes(filterText.toLowerCase())
                           )
                           .map((mur) => {
-                            const displayValue = mur.tariff;
+                            const nameLower = (mur.ner || "").toLowerCase(); const isVariableElectricity = nameLower.includes("цахилгаан") && !nameLower.includes("дундын") && !nameLower.includes("өмчлөл"); const displayValue = isVariableElectricity ? (mur.suuriKhuraamj || 0) : mur.tariff;
                             const currentValue =
                               editedTariffs[mur._id!] !== undefined
                                 ? editedTariffs[mur._id!]
@@ -820,7 +820,7 @@ export default function AshiglaltiinZardluud() {
                                         .includes(filterText.toLowerCase())
                                   )
                                   .reduce((sum, item) => {
-                                    const displayValue = item.tariff;
+                                    const nameLower = (item.ner || "").toLowerCase(); const isVariableElectricity = nameLower.includes("цахилгаан") && !nameLower.includes("дундын") && !nameLower.includes("өмчлөл"); const displayValue = isVariableElectricity ? (item.suuriKhuraamj || 0) : item.tariff;
                                     const currentValue =
                                       editedTariffs[item._id!] !== undefined
                                         ? editedTariffs[item._id!]

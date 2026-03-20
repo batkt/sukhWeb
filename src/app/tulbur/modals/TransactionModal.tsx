@@ -65,9 +65,10 @@ export default function TransactionModal({
   } | null>(null);
   const [residentBalance, setResidentBalance] = useState<number | null>(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
+  const [isFetchingLatest, setIsFetchingLatest] = useState(false);
 
   // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
-  const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt ?? resident?.tsahilgaaniiZaalt;
+  const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt;
   const isUmnukhEditable = !initialUmnukhVal || Number(initialUmnukhVal) === 0;
 
   const formatAmount = (val: number | string): string => {
@@ -95,24 +96,47 @@ export default function TransactionModal({
     onClose();
   };
 
+  const fetchLatestZaalt = async () => {
+    if (!resident || !show || transactionType !== "ashiglalt" || ashiglaltZardal !== "tsakhilgaan_kv") return;
+    
+    setIsFetchingLatest(true);
+    try {
+      console.log("[LATEST] Fetching latest reading for:", resident._id);
+      const res = await uilchilgee(token!).get("/latestZaaltAvya", {
+        params: {
+          baiguullagiinId,
+          residentId: resident._id,
+          gereeniiId: resident.gereeniiId,
+          gereeniiDugaar: resident.gereeniiDugaar
+        }
+      });
+
+      if (res.data?.success && res.data.data) {
+        const d = res.data.data;
+        console.log("[LATEST] Found:", d);
+        // Pre-fill both to show the current state/calculation immediately
+        if (d.umnukhZaalt != null) setUmnukhZaalt(String(d.umnukhZaalt));
+        if (d.suuliinZaalt != null) setSuuliinZaalt(String(d.suuliinZaalt));
+      }
+    } catch (error) {
+      console.error("[LATEST] Error fetching readings:", error);
+    } finally {
+      setIsFetchingLatest(false);
+    }
+  };
+
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
-      // Prefill readings strictly
-      const umnukhVal = resident?.umnukhZaalt;
-      const suuliinVal = resident?.suuliinZaalt;
-      
-      const hasReadings = (umnukhVal != null && umnukhVal !== 0) || (suuliinVal != null && suuliinVal !== 0);
-
-      if (hasReadings) {
-        setTransactionType("ashiglalt");
-        setAshiglaltZardal("tsakhilgaan_kv");
-        if (umnukhVal != null) setUmnukhZaalt(String(umnukhVal));
-        if (suuliinVal != null) setSuuliinZaalt(String(suuliinVal));
-      }
     }
     setLastShow(show);
   }, [show, lastShow]);
+
+  React.useEffect(() => {
+    if (show && transactionType === "ashiglalt" && ashiglaltZardal === "tsakhilgaan_kv") {
+      fetchLatestZaalt();
+    }
+  }, [show, transactionType, ashiglaltZardal, resident?._id]);
 
   useModalHotkeys({
     isOpen: show,
@@ -160,9 +184,6 @@ export default function TransactionModal({
       if (res.data?.success && typeof res.data.niitDun === "number") {
         console.log("[CALC] Received response:", res.data);
         setAmount(formatAmount(res.data.niitDun));
-        if (res.data.suuliinZaaltNum != null) {
-          setSuuliinZaalt(String(res.data.suuliinZaaltNum));
-        }
         
         // Save breakdown for UI display
         setCalcBreakdown({
@@ -212,7 +233,7 @@ export default function TransactionModal({
     }
   }, [show, resident]);
 
-  // Auto-calculate when user selects Цахилгаан кВ or when toggle changes
+  // Auto-calculate when user finishes typing or changes toggles
   React.useEffect(() => {
     if (
       show &&
@@ -221,7 +242,10 @@ export default function TransactionModal({
       umnukhZaalt &&
       suuliinZaalt
     ) {
-      handleTsakhilgaanTootsool();
+      const timer = setTimeout(() => {
+        handleTsakhilgaanTootsool();
+      }, 600); // Debounce to prevent glitching while typing
+      return () => clearTimeout(timer);
     }
   }, [includeSuuriKhuraamj, transactionType, ashiglaltZardal, umnukhZaalt, suuliinZaalt, show]);
 
