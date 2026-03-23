@@ -3529,8 +3529,7 @@ export default function DansniiKhuulga() {
                                                 toot: toot,
                                                 utas: utas,
                                                 gereeniiDugaar: dugaar,
-                                                gereeniiId:
-                                                  it?.gereeniiId || ct?._id,
+                                                gereeniiId: it?.gereeniiId || ct?._id,
                                                 umnukhZaalt: ct?.umnukhZaalt,
                                                 suuliinZaalt: ct?.suuliinZaalt,
                                               }
@@ -3547,9 +3546,10 @@ export default function DansniiKhuulga() {
                                                 umnukhZaalt: ct?.umnukhZaalt,
                                                 suuliinZaalt: ct?.suuliinZaalt,
                                               };
-                                          setSelectedTransactionResident(
-                                            residentData,
-                                          );
+                                          setSelectedTransactionResident({
+                                            ...residentData,
+                                            uldegdel: remainingValue,
+                                          });
                                           setIsTransactionModalOpen(true);
                                         }}
                                         className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"

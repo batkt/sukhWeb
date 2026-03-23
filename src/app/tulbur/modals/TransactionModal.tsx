@@ -20,7 +20,7 @@ interface TransactionModalProps {
 }
 
 export interface TransactionData {
-  type: "voucher" | "avlaga" | "turgul" | "ashiglalt" | "tulult";
+  type: "voucher" | "avlaga" | "turul" | "ashiglalt" | "tulult";
   date: string;
   amount: number;
   residentId?: string;
@@ -221,7 +221,7 @@ export default function TransactionModal({
   };
 
   const fillAmountWithBalance = () => {
-    if (residentBalance !== null && transactionType === "tulult") {
+    if (residentBalance !== null && (transactionType === "tulult" || transactionType === "avlaga")) {
       const amountToFill = Math.max(0, residentBalance);
       setAmount(formatAmount(amountToFill));
     }
@@ -229,7 +229,8 @@ export default function TransactionModal({
 
   React.useEffect(() => {
     if (show && resident) {
-      setResidentBalance(Number(resident.uldegdel ?? 0));
+      const bal = Number(resident.uldegdel ?? 0);
+      setResidentBalance(bal);
     }
   }, [show, resident]);
 

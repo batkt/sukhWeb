@@ -23,6 +23,7 @@ type TableItem = {
   date?: string;
   month?: string;
   total?: number;
+  toot?: string;
   gereeniiDugaar?: string;
   totalVAT?: number;
   totalCityTax?: number;
@@ -257,6 +258,7 @@ export default function Ebarimt() {
         it.name,
         it.service,
         it.gereeniiDugaar,
+        it.toot,
         it.id,
       ]
         .filter(Boolean)
@@ -451,6 +453,9 @@ export default function Ebarimt() {
                       <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Огноо
                       </th>
+                       <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
+                        Тоот
+                      </th>
                       <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
                         Гэрээний дугаар
                       </th>
@@ -486,6 +491,9 @@ export default function Ebarimt() {
                           </td>
                           <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
                             {item.date}
+                          </td>
+                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                            {item.toot || "-"}
                           </td>
                           <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
                             {item.gereeniiDugaar || "-"}
