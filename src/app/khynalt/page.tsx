@@ -30,7 +30,7 @@ import {
   ArcElement,
 } from "chart.js";
 import useSWR from "swr";
-import formatNumber from "../../../tools/function/formatNumber";
+import formatNumber, { formatCurrency } from "../../../tools/function/formatNumber";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 
 ChartJS.register(
@@ -839,9 +839,7 @@ export default function Khynalt() {
     };
   }, [cancelledReceivables.items]);
 
-  function formatCurrency(n: number) {
-    return `${formatNumber(n)} ₮`;
-  }
+  // formatCurrency is imported from tools/function/formatNumber (always 2 decimal places)
 
   const _startDate = new Date(rangeStart + "T00:00:00Z");
   const _endDate = new Date(rangeEnd + "T23:59:59Z");

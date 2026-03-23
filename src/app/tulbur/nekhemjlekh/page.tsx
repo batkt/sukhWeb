@@ -27,7 +27,7 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
-import formatNumber from "../../../../tools/function/formatNumber";
+import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
 
 import { url as API_URL } from "@/lib/uilchilgee";
 import uilchilgee from "@/lib/uilchilgee";
@@ -36,9 +36,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
 
-const formatCurrency = (amount: number) => {
-  return `${formatNumber(amount)} ₮`;
-};
+
 
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return "-";
@@ -662,7 +660,7 @@ const InvoiceModal = ({
                       <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="py-2 px-3 text-slate-700">{row.ner}</td>
                         <td className="py-2 px-3 text-right text-slate-900 font-medium">
-                          {formatNumber(Number(row.dun))} ₮
+                          {formatCurrency(Number(row.dun))}
                         </td>
                         <td className="py-2 px-3 text-right text-slate-500">{row.tailbar}</td>
                       </tr>
@@ -672,7 +670,7 @@ const InvoiceModal = ({
                     <tr>
                       <td colSpan={2} className="py-2 px-3 text-slate-700 font-bold">Нийт дүн:</td>
                       <td className="py-2 px-3 text-right text-slate-900 font-bold">
-                        {formatNumber(totalSum)} ₮
+                        {formatCurrency(totalSum)}
                       </td>
                     </tr>
                   </tfoot>
@@ -708,7 +706,7 @@ const InvoiceModal = ({
                       <tr>
                         <td colSpan={2} className="py-2 px-3">Төлсөн дүн (энэ удаа):</td>
                         <td className="py-2 px-3 text-right">
-                          {formatNumber(paymentRows.reduce((s, r) => s + (Number(r.dun) || 0), 0))} ₮
+                          {formatCurrency(paymentRows.reduce((s, r) => s + (Number(r.dun) || 0), 0))}
                         </td>
                         <td></td>
                       </tr>
@@ -734,16 +732,16 @@ const InvoiceModal = ({
                 <div className="w-full max-w-[300px] space-y-2 text-right">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
-                    <span className="text-slate-900 font-medium">{formatNumber(totalSum)} ₮</span>
+                    <span className="text-slate-900 font-medium">{formatCurrency(totalSum)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-500">Нийт төлсөн:</span>
-                    <span className="text-green-700 font-medium">-{formatNumber(totalPaidFromApi || 0)} ₮</span>
+                    <span className="text-green-700 font-medium">-{formatCurrency(totalPaidFromApi || 0)}</span>
                   </div>
                   <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
                     <span className="text-base font-bold text-slate-800">Үлдэгдэл дүн:</span>
                     <span className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}>
-                      {formatNumber(uldegdelDun)} ₮
+                      {formatCurrency(uldegdelDun)}
                     </span>
                   </div>
                 </div>
@@ -1335,7 +1333,7 @@ export default function InvoicingZardluud() {
               { title: "Төлөөгүй", value: unpaidCount },
               {
                 title: "Нийт дүн",
-                value: `${formatNumber(totalAmount)} ₮`,
+                value: formatCurrency(totalAmount),
               },
             ];
             return stats;

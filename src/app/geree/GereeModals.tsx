@@ -16,6 +16,7 @@ import InvoicePreviewModal from "./modals/InvoicePreviewModal";
 import AddUnitModal from "./modals/AddUnitModal";
 import PermissionsModal from "./modals/PermissionsModal";
 import CredentialsModal from "./modals/CredentialsModal"; // Import missing modal
+import HistoryModal from "./modals/HistoryModal";
 import uilchilgee from "@/lib/uilchilgee";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -337,6 +338,17 @@ export default function GereeModals() {
               openErrorOverlay(msg);
            }
         }}
+      />
+      
+      {/* History Modal */}
+      <HistoryModal
+        show={state.showHistoryModal}
+        onClose={() => state.setShowHistoryModal(false)}
+        contract={state.historyContract}
+        token={token || null}
+        baiguullagiinId={baiguullaga?._id || null}
+        barilgiinId={data.selectedBarilga?._id || null}
+        onRefresh={() => data.gereeJagsaaltMutate?.()}
       />
     </>
   );

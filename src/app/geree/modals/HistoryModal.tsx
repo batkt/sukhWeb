@@ -1,11 +1,31 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import {
+  Download,
+  Eye,
+  FileText,
+  History,
+  Info,
+  Layers,
+  Layout,
+  LayoutGrid,
+  MoreVertical,
+  Plus,
+  Printer,
+  Search,
+  Settings,
+  Shield,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
-import formatNumber from "../../../../tools/function/formatNumber";
+import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
 import DatePickerInput from "@/components/ui/DatePickerInput";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import InvoiceModal from "./InvoiceModal";
 
 interface HistoryModalProps {
   show: boolean;
@@ -139,6 +159,7 @@ const PrintStyles = () => (
   `}</style>
 );
 
+
 export default function HistoryModal({
   show,
   onClose,
@@ -161,6 +182,8 @@ export default function HistoryModal({
     type: string;
   }>({ show: false, id: "", type: "" });
   const [deleteSuccess, setDeleteSuccess] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceModalResident, setInvoiceModalResident] = useState<any>(null);
 
   useModalHotkeys({
     isOpen: show,
@@ -866,76 +889,43 @@ export default function HistoryModal({
         }
       });
 
-      // Sort Chronologically: Oldest -> Newest
-      flatLedger.sort((a, b) => {
-        // Compare by transaction date (day start only) to group same-day entries
-        const dA = new Date(a.ognoo);
-        const dB = new Date(b.ognoo);
-        const dayA = new Date(
-          dA.getFullYear(),
-          dA.getMonth(),
-          dA.getDate(),
-        ).getTime();
-        const dayB = new Date(
-          dB.getFullYear(),
-          dB.getMonth(),
-          dB.getDate(),
-        ).getTime();
+      // Deterministic Sort Function
+      const sortLedger = (list: any[]) => {
+        return list.sort((a, b) => {
+          const dA = new Date(a.ognoo || a.tulsunOgnoo || a.createdAt || 0);
+          const dB = new Date(b.ognoo || b.tulsunOgnoo || b.createdAt || 0);
+          const dayA = new Date(dA.getFullYear(), dA.getMonth(), dA.getDate()).getTime();
+          const dayB = new Date(dB.getFullYear(), dB.getMonth(), dB.getDate()).getTime();
+          
+          if (dayA !== dayB) return dayA - dayB;
 
-        if (dayA !== dayB) return dayA - dayB;
+          const timeA = new Date(a.burtgesenOgnoo && a.burtgesenOgnoo !== "-" ? a.burtgesenOgnoo : (a.createdAt || a.ognoo)).getTime();
+          const timeB = new Date(b.burtgesenOgnoo && b.burtgesenOgnoo !== "-" ? b.burtgesenOgnoo : (b.createdAt || b.ognoo)).getTime();
+          if (timeA !== timeB) return timeA - timeB;
 
-        // If same logical day, sort by actual creation time
-        const createA =
-          a.burtgesenOgnoo && a.burtgesenOgnoo !== "-"
-            ? new Date(a.burtgesenOgnoo).getTime()
-            : dayA;
-        const createB =
-          b.burtgesenOgnoo && b.burtgesenOgnoo !== "-"
-            ? new Date(b.burtgesenOgnoo).getTime()
-            : dayB;
-        return createA - createB;
-      });
+          return String(a._id || "").localeCompare(String(b._id || ""));
+        });
+      };
 
-      // Calculate Running Balance
-      // Use fresh fetched balance if available, otherwise fallback to prop
-      const currentBalance =
-        freshContract?.uldegdel !== undefined
-          ? Number(freshContract.uldegdel)
-          : contract?.uldegdel
-            ? Number(contract.uldegdel)
-            : null;
+      // Sort chronological Oldest -> Newest
+      sortLedger(flatLedger);
 
-      // Calculate total charges and payments in the ledger
-      const totalCharges = flatLedger.reduce(
-        (sum, row) => sum + Number(row.tulukhDun || 0),
-        0,
-      );
-      const totalPayments = flatLedger.reduce(
-        (sum, row) => sum + Number(row.tulsunDun || 0),
-        0,
-      );
-
-      // Check if there's ekhniiUldegdel from gereeniiTulukhAvlaga (not in invoice)
-      const hasEkhniiUldegdelFromAvlaga = flatLedger.some(
-        (row) =>
-          row.sourceCollection === "gereeniiTulukhAvlaga" &&
-          (row.ner === "Эхний үлдэгдэл" ||
-            (row.ner && row.ner.includes("Эхний үлдэгдэл"))),
-      );
-
-      console.log(
-        `💰 [HistoryModal] Ledger totals - Charges: ${totalCharges}, Payments: ${totalPayments}, Current Balance: ${currentBalance}, hasEkhniiUldegdelFromAvlaga: ${hasEkhniiUldegdelFromAvlaga}`,
-      );
-
-      // Backend calculation: prefer ledger + Үлдэгдэл from external backend (GET)
+      const actualCurrentBalance = Number(freshContract?.uldegdel ?? contract?.uldegdel ?? 0);
+      
       const applyFrontendRunningBalance = (rows: typeof flatLedger) => {
         let running = 0;
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          running =
-            running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0);
+        // First pass: Calculate sum of all changes to find the offset
+        const totalNet = rows.reduce((sum, row) => sum + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0), 0);
+        
+        // If the resident's current global balance is 887k but our ledger only sums to 533k, 
+        // there is a 354k starting balance mismatch. We should account for this.
+        const startBalance = actualCurrentBalance - totalNet;
+        running = startBalance;
+
+        rows.forEach((row: any) => {
+          running = Math.round((running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0)) * 100) / 100;
           row.uldegdel = running;
-        }
+        });
       };
 
       if (contractIdToFetch) {
@@ -1137,6 +1127,13 @@ export default function HistoryModal({
     return [...result].reverse();
   }, [data, dateRange]);
 
+  const handleOpenInvoiceModal = (row: LedgerEntry) => {
+    // We need to pass the resident data to InvoiceModal
+    // HistoryModal already has contract which is usually the resident
+    setInvoiceModalResident(contract);
+    setShowInvoiceModal(true);
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -1168,7 +1165,7 @@ export default function HistoryModal({
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
-                  Түүх
+                  Хуулга
                 </h2>
                 <div className="text-xs text-slate-400">
                   {contract?.ovog} {contract?.ner} • {data.length} бичлэг
@@ -1302,22 +1299,18 @@ export default function HistoryModal({
                           {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {Number(row.tulukhDun) !== 0
-                            ? formatNumber(row.tulukhDun)
-                            : "-"}
+                          {formatCurrency(row.tulukhDun)}
                         </td>
                         <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
-                          {row.tulsunDun > 0
-                            ? formatNumber(row.tulsunDun)
-                            : "-"}
+                          {formatCurrency(row.tulsunDun)}
                         </td>
                         <td
-                          className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0 ? "!text-emerald-600 dark:!text-emerald-400" : (row.uldegdel ?? 0) > 0 ? "!text-red-500 dark:!text-red-400" : "text-theme"}`}
+                          className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
                         >
                           {typeof row.uldegdel === "number"
-                            ? formatNumber(row.uldegdel)
+                            ? formatCurrency(row.uldegdel)
                             : row.uldegdel != null
-                              ? formatNumber(Number(row.uldegdel))
+                              ? formatCurrency(Number(row.uldegdel))
                               : "-"}
                         </td>
                         <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
@@ -1334,7 +1327,17 @@ export default function HistoryModal({
                               )
                             : "-"}
                         </td>
-                        <td className="py-2 px-2 text-center">
+                        <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
+                          {/* Invoice View Button */}
+                          {(row.sourceCollection === "nekhemjlekhiinTuukh" || row.parentInvoiceId) && (
+                            <button
+                              onClick={() => handleOpenInvoiceModal(row)}
+                              className="p-1 text-blue-500 hover:text-blue-600 transition-colors"
+                              title="Үйлчилгээний нэхэмжлэх харах"
+                            >
+                              <Eye size={16} />
+                            </button>
+                          )}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1407,11 +1410,9 @@ export default function HistoryModal({
                           : Number(contract?.uldegdel ?? 0);
                       const balance = latestRowUldegdel;
                       const balanceClass =
-                        balance < 0
+                        balance < 0.01
                           ? "!text-emerald-600 dark:!text-emerald-400"
-                          : balance > 0
-                            ? "!text-red-500 dark:!text-red-400"
-                            : "text-theme";
+                          : "!text-red-500 dark:!text-red-400";
                       return (
                         <tr className="bg-slate-100 dark:bg-slate-800/50  border-t-2 border-slate-300 dark:border-slate-600">
                           <td
@@ -1421,15 +1422,15 @@ export default function HistoryModal({
                             Нийт
                           </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                            {formatNumber(totalCharges)}
+                            {formatCurrency(totalCharges)}
                           </td>
                           <td className="py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap">
-                            {formatNumber(totalPayments)}
+                            {formatCurrency(totalPayments)}
                           </td>
                           <td
                             className={`py-2 px-2 text-xs  text-right whitespace-nowrap ${balanceClass}`}
                           >
-                            {formatNumber(balance)}
+                            {formatCurrency(balance)}
                           </td>
                           <td colSpan={3}></td>
                         </tr>
@@ -1558,6 +1559,15 @@ export default function HistoryModal({
               </motion.div>
             )}
           </AnimatePresence>
+
+          <InvoiceModal
+            isOpen={showInvoiceModal}
+            onClose={() => setShowInvoiceModal(false)}
+            resident={invoiceModalResident}
+            baiguullagiinId={baiguullagiinId || ""}
+            token={token || ""}
+            barilgiinId={barilgiinId}
+          />
         </motion.div>
       </div>
     </AnimatePresence>
