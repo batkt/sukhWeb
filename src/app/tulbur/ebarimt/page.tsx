@@ -227,6 +227,7 @@ export default function Ebarimt() {
         payStatus: pay?.status || "",
         payCode: pay?.code || "",
         service: item0?.name || it?.uilchilgee || it?.service || "-",
+        toot: it?.toot || it?.medeelel?.toot || it?.orshinSuugch?.toot || "-",
         ...it,
       } as TableItem;
     });
@@ -476,59 +477,62 @@ export default function Ebarimt() {
                   <tbody>
                     {isLoading ? (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-subtle">
+                        <td colSpan={8} className="p-8 text-center text-subtle">
                           <Spin size="small" /> Уншиж байна...
                         </td>
                       </tr>
                     ) : displayedData.length > 0 ? (
-                      displayedData.map((item, index) => (
-                        <tr
-                          key={String(item.id)}
-                          className="transition-colors border-b last:border-b-0"
-                        >
-                          <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
-                            {index + 1}
-                          </td>
-                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                            {item.date}
-                          </td>
-                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                            {item.toot || "-"}
-                          </td>
-                          <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                            {item.gereeniiDugaar || "-"}
-                          </td>
-                          <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                            <span
-                              className={`px-2 py-0.5 rounded-full text-xs  ${
-                                item.type === "B2C_RECEIPT"
-                                  ? "bg-green-500 text-green-800"
+                      displayedData.map((item, index) => {
+                        const recToot = item.toot || item.medeelel?.toot || item.orshinSuugch?.toot;
+                        return (
+                          <tr
+                            key={String(item.id)}
+                            className="transition-colors border-b last:border-b-0"
+                          >
+                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
+                              {index + 1}
+                            </td>
+                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                              {item.date}
+                            </td>
+                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                              {recToot || "-"}
+                            </td>
+                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
+                              {item.gereeniiDugaar || "-"}
+                            </td>
+                            <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-xs  ${
+                                  item.type === "B2C_RECEIPT"
+                                    ? "bg-green-500 text-green-800"
+                                    : item.type === "B2B_RECEIPT"
+                                    ? "bg-blue-500 text-blue-800"
+                                    : "bg-gray-500 text-gray-800"
+                                }`}
+                              >
+                                {item.type === "B2C_RECEIPT"
+                                  ? "Иргэн"
                                   : item.type === "B2B_RECEIPT"
-                                  ? "bg-blue-500 text-blue-800"
-                                  : "bg-gray-500 text-gray-800"
-                              }`}
-                            >
-                              {item.type === "B2C_RECEIPT"
-                                ? "Иргэн"
-                                : item.type === "B2B_RECEIPT"
-                                ? "ААН"
-                                : item.type || "-"}
-                            </span>
-                          </td>
-                          <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
-                            {item.ddtd || item.receiptId || "-"}
-                          </td>
-                          <td className="p-1 text-right whitespace-nowrap  text-theme border-r border-[color:var(--surface-border)]">
-                            {formatNumber(item.total ?? 0, 0)} ₮
-                          </td>
-                          <td className="p-1 text-center text-theme whitespace-nowrap">
-                            {item.service}
-                          </td>
-                        </tr>
-                      ))
+                                  ? "ААН"
+                                  : item.type || "-"}
+                              </span>
+                            </td>
+                            <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
+                              {item.ddtd || item.receiptId || "-"}
+                            </td>
+                            <td className="p-1 text-right whitespace-nowrap  text-theme border-r border-[color:var(--surface-border)]">
+                              {formatNumber(item.total ?? 0, 0)} ₮
+                            </td>
+                            <td className="p-1 text-center text-theme whitespace-nowrap">
+                              {item.service}
+                            </td>
+                          </tr>
+                        );
+                      })
                     ) : (
                       <tr>
-                        <td colSpan={7} className="p-8 text-center text-subtle">
+                        <td colSpan={8} className="p-8 text-center text-subtle">
                           Хайсан мэдээлэл алга байна
                         </td>
                       </tr>
@@ -542,7 +546,8 @@ export default function Ebarimt() {
                         <td className="p-1 text-center">&nbsp;</td>
                         <td className="p-1 text-center">&nbsp;</td>
                         <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-right  text-theme">
+                        <td className="p-1 text-center font-bold text-theme">НИЙТ:</td>
+                        <td className="p-1 text-right font-bold text-theme">
                           {formatNumber(
                             displayedData.reduce((s, r) => s + (r.total || 0), 0),
                             0

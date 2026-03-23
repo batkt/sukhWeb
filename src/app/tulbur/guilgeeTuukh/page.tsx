@@ -113,8 +113,21 @@ export default function DansniiKhuulga() {
   const [isInitialBalanceModalOpen, setIsInitialBalanceModalOpen] =
     useState(false);
   const [invoiceRefreshTrigger, setInvoiceRefreshTrigger] = useState(0);
-  // Cached summary and deep-fetch maps removed to fix performance critical loops.
-  // Totals are now derived locally from history rows and database-level contract balances.
+  // Map gereeId -> total paid amount (Төлсөн дүн)
+  const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<
+    Record<string, number>
+  >({});
+  const [paidSummaryRequested, setPaidSummaryRequested] = useState<
+    Record<string, boolean>
+  >({});
+  // Use a ref to track what's currently being requested across renders without causing loops
+  const requestedGereeIdsRef = useRef<Set<string>>(new Set());
+  
+  // Map gereeId -> latest row uldegdel from history ledger
+  const [latestRowUldegdelByGereeId, setLatestRowUldegdelByGereeId] = useState<
+    Record<string, number | null>
+  >({});
+  const latestRowUldegdelRequestedRef = useRef<Set<string>>(new Set());
 
   // Socket: revalidate data when payment, avlaga, or delete happens (from any tab/source)
   useEffect(() => {
@@ -140,6 +153,10 @@ export default function DansniiKhuulga() {
         undefined,
         { revalidate: true },
       );
+      setPaidSummaryByGereeId({});
+      requestedGereeIdsRef.current.clear();
+      setLatestRowUldegdelByGereeId({});
+      latestRowUldegdelRequestedRef.current.clear();
       setInvoiceRefreshTrigger((t) => t + 1);
     };
     socket.on(event, handler);
@@ -508,13 +525,16 @@ export default function DansniiKhuulga() {
       }
     });
 
-    // 3. Rounding check removed to preserve precision for epsilon checks.
+    // 3. Absolute priority: Ledger balances (lazily loaded via deep fetch)
+    Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
+      if (val != null) balances[gid] = val;
+    });
 
     // 4. Removed rounding to preserve precision for the 0.Map (allows small residuals to be visible)
     // Precise epsilon checks will handle status categorization.
     
     return balances;
-  }, [allHistoryItems, contractsById, contractsByNumber]);
+  }, [allHistoryItems, contractsById, contractsByNumber, latestRowUldegdelByGereeId, paidSummaryByGereeId]);
 
   // Filter by paid/unpaid + Орц + Давхар
   const filteredItems = useMemo(() => {
@@ -652,6 +672,7 @@ export default function DansniiKhuulga() {
     selectedOrtsFilter,
     selectedDavkharFilter,
     selectedTootFilter,
+    latestRowUldegdelByGereeId,
     bestKnownBalances,
   ]);
 
@@ -974,7 +995,7 @@ export default function DansniiKhuulga() {
     });
 
     return Array.from(map.values());
-  }, [filteredItems, buildingHistoryItems, contractsByNumber]);
+  }, [filteredItems, buildingHistoryItems, contractsByNumber, bestKnownBalances]);
 
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
   const deduplicatedResidentsAll = useMemo(() => {
@@ -1147,7 +1168,7 @@ export default function DansniiKhuulga() {
       }
     });
     return Array.from(map.values());
-  }, [filteredItemsAll, buildingHistoryItems, contractsByNumber]);
+  }, [filteredItemsAll, buildingHistoryItems, contractsByNumber, bestKnownBalances]);
 
   const sortedResidents = useMemo(() => {
     const result = Array.from(deduplicatedResidents);
@@ -1169,8 +1190,8 @@ export default function DansniiKhuulga() {
         if (sortField === "paid") {
           const gidA = getGid(a);
           const gidB = getGid(b);
-          aVal = Number(a._totalTulsun ?? a.tulsunDun ?? 0);
-          bVal = Number(b._totalTulsun ?? b.tulsunDun ?? 0);
+          aVal = gidA ? (paidSummaryByGereeId[gidA] ?? 0) : 0;
+          bVal = gidB ? (paidSummaryByGereeId[gidB] ?? 0) : 0;
         } else {
           // Use authoritative balance for sorting
           const gidA = getGid(a);
@@ -1232,8 +1253,8 @@ export default function DansniiKhuulga() {
   }, [
     deduplicatedResidents,
     sortField,
-    sortField,
     sortOrder,
+    paidSummaryByGereeId,
     residentsById,
     contractsById,
     contractsByNumber,
@@ -1261,8 +1282,123 @@ export default function DansniiKhuulga() {
       )) ||
     "";
 
-  // Performance critical note: Summary/Ledger loops removed to prevent API saturation.
-  // We now rely on data already present in buildingHistoryItems and contract uldegdel.
+  // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
+  // Fetch for ALL deduplicatedResidentsAll so stats and footer have correct paid data.
+  // Limit to 500 to prevent firing too many requests for very large datasets.
+  useEffect(() => {
+    if (
+      !token ||
+      !ajiltan?.baiguullagiinId ||
+      deduplicatedResidentsAll.length === 0
+    )
+      return;
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+    const toFetch = deduplicatedResidentsAll.slice(0, 500);
+
+    toFetch.forEach((it: any) => {
+      const gid = getGereeId(it);
+      if (!gid) return;
+
+      if (
+        paidSummaryByGereeId[gid] !== undefined ||
+        requestedGereeIdsRef.current.has(gid)
+      ) {
+        return;
+      }
+
+      requestedGereeIdsRef.current.add(gid);
+
+      uilchilgee(token)
+        .post("/tulsunSummary", {
+          baiguullagiinId,
+          gereeniiId: gid,
+        })
+        .then((resp) => {
+          const total =
+            Number(
+              resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0,
+            ) || 0;
+          setPaidSummaryByGereeId((prev) => ({ ...prev, [gid]: total }));
+        })
+        .catch(() => {
+          requestedGereeIdsRef.current.delete(gid);
+        });
+    });
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    deduplicatedResidentsAll,
+    contractsByNumber,
+  ]);
+
+  // Fetch latest row uldegdel from history ledger API for each contract
+  useEffect(() => {
+    if (
+      !token ||
+      !ajiltan?.baiguullagiinId ||
+      deduplicatedResidentsAll.length === 0
+    ) {
+      return;
+    }
+
+    const baiguullagiinId = ajiltan.baiguullagiinId;
+    const toFetch = deduplicatedResidentsAll.slice(0, 500);
+
+    toFetch.forEach((it: any) => {
+      const gid = getGereeId(it);
+      if (!gid) return;
+
+      // Only skip if we already have a valid number value or if request is in progress
+      const existingValue = latestRowUldegdelByGereeId[gid];
+      if (
+        (existingValue !== undefined && existingValue !== null && Number.isFinite(existingValue)) ||
+        latestRowUldegdelRequestedRef.current.has(gid)
+      ) {
+        return;
+      }
+
+      latestRowUldegdelRequestedRef.current.add(gid);
+
+      uilchilgee(token)
+        .get(`/geree/${gid}/history-ledger`, {
+          params: {
+            baiguullagiinId,
+            barilgiinId: effectiveBarilgiinId || null,
+            _t: Date.now(),
+          },
+        })
+        .then((resp) => {
+          const backendLedger = Array.isArray(resp.data?.jagsaalt)
+            ? resp.data.jagsaalt
+            : Array.isArray(resp.data?.ledger)
+              ? resp.data.ledger
+              : Array.isArray(resp.data)
+                ? resp.data
+                : [];
+          
+          // Get latest row's uldegdel (backend returns oldest-first, so last row is latest)
+          const latestRow = backendLedger.length > 0 
+            ? backendLedger[backendLedger.length - 1]
+            : null;
+          const latestUldegdel = latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
+            ? Number(latestRow.uldegdel)
+            : null;
+          
+          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestUldegdel }));
+        })
+        .catch(() => {
+          latestRowUldegdelRequestedRef.current.delete(gid);
+          // Set to null to indicate fetch failed, but allow retry later
+          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
+        });
+    });
+  }, [
+    token,
+    ajiltan?.baiguullagiinId,
+    deduplicatedResidentsAll,
+    effectiveBarilgiinId,
+  ]);
 
   // Count cancelled gerees with unpaid invoices/zardal
   const cancelledGereesWithUnpaid = useMemo(() => {
@@ -1348,7 +1484,9 @@ export default function DansniiKhuulga() {
   }, [
     deduplicatedResidentsAll,
     cancelledGereesWithUnpaid,
+    paidSummaryByGereeId,
     contractsByNumber,
+    latestRowUldegdelByGereeId,
     residentsById,
     bestKnownBalances,
   ]);
@@ -1751,7 +1889,15 @@ export default function DansniiKhuulga() {
           setSelectedTransactionResident(null);
 
           // Instant UI Update: Clear local caches for this contract so they refetch immediately
-
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            requestedGereeIdsRef.current.delete(gid);
+            setPaidSummaryByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
 
           // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
           mutate(
@@ -1834,7 +1980,15 @@ export default function DansniiKhuulga() {
           setSelectedTransactionResident(null);
 
           // Instant UI Update: Clear local caches for this contract so they refetch immediately
-
+          if (data.gereeniiId) {
+            const gid = data.gereeniiId;
+            requestedGereeIdsRef.current.delete(gid);
+            setPaidSummaryByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
+          }
 
           // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
           mutate(
@@ -2088,6 +2242,11 @@ export default function DansniiKhuulga() {
           undefined,
           { revalidate: true },
         );
+        // Clear summary states to force re-fetch
+        setPaidSummaryByGereeId({});
+        requestedGereeIdsRef.current.clear();
+        setLatestRowUldegdelByGereeId({});
+        latestRowUldegdelRequestedRef.current.clear();
       }
     } catch (err: any) {
       toast.dismiss(importToastId);
@@ -2900,8 +3059,15 @@ export default function DansniiKhuulga() {
                         (it?.gereeniiId && String(it.gereeniiId)) ||
                         (ct?._id && String(ct._id)) ||
                         "";
-                      const remainingValue = bestKnownBalances[gid] ?? Number(it?._totalTulbur ?? it?.uldegdel ?? 0);
-                      const paidFromSummary = Number(it?._totalTulsun ?? it?.tulsunDun ?? 0);
+                      
+                      // Use the Unified Definitive Balance Map for consistency across the entire app
+                      // Fallback to history aggregate if mapping is missing
+                      const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
+                      const remainingValue = bestKnownBalances[gid] ?? (historyAggregate || Number(it?.uldegdel ?? 0));
+                      
+                      const paidFromSummary = gid
+                        ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
+                        : Number(it?._totalTulsun ?? 0);
 
                       // Enrich with authoritative total balance and paid summary so getPaymentStatusLabel is accurate
                       const itForTuluv = {
@@ -3466,7 +3632,11 @@ export default function DansniiKhuulga() {
                       } else if (col.key === "paid") {
                         const total = deduplicatedResidents.reduce(
                           (sum: number, it: any) => {
-                            return sum + Number(it?._totalTulsun ?? it?.tulsunDun ?? 0);
+                            const gid = getGereeId(it);
+                            const paid = gid
+                              ? (paidSummaryByGereeId[gid] ?? 0)
+                              : 0;
+                            return sum + paid;
                           },
                           0,
                         );
@@ -3643,6 +3813,11 @@ export default function DansniiKhuulga() {
             { revalidate: true },
           );
 
+          // Clear payment summary state to force re-fetch
+          setPaidSummaryByGereeId({});
+          requestedGereeIdsRef.current.clear();
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
           setInvoiceRefreshTrigger((t) => t + 1);
         }}
       />
@@ -3689,6 +3864,10 @@ export default function DansniiKhuulga() {
             { revalidate: true },
           );
           // Clear payment summary state to force re-fetch
+          setPaidSummaryByGereeId({});
+          requestedGereeIdsRef.current.clear();
+          setLatestRowUldegdelByGereeId({});
+          latestRowUldegdelRequestedRef.current.clear();
         }}
       />
     </div>
