@@ -914,14 +914,6 @@ export default function HistoryModal({
       
       const applyFrontendRunningBalance = (rows: typeof flatLedger) => {
         let running = 0;
-        // First pass: Calculate sum of all changes to find the offset
-        const totalNet = rows.reduce((sum, row) => sum + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0), 0);
-        
-        // If the resident's current global balance is 887k but our ledger only sums to 533k, 
-        // there is a 354k starting balance mismatch. We should account for this.
-        const startBalance = actualCurrentBalance - totalNet;
-        running = startBalance;
-
         rows.forEach((row: any) => {
           running = Math.round((running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0)) * 100) / 100;
           row.uldegdel = running;
