@@ -560,12 +560,15 @@ const footerTotals = useTulburFooterTotals(
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print mb-4">
-        <div className="p-3 rounded-xl mt-4">
-          <StandardDatePicker isRange={true} locale="mn" value={dateRange} onChange={setDateRange}
-            size="sm" radius="md" variant="filled" dropdownType="popover"
-            popoverProps={{ position: "bottom-start", withinPortal: true, width: 320 }}
-            clearable placeholder="Огноо сонгох"
-            classNames={{ input: "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden" }} />
+        <div className="rounded-xl mt-4 sm:mt-8 btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder="Огноо сонгох"
+            className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
+          />
         </div>
         {[
           { key: "orshinSuugch", label: "Оршин суугч", placeholder: "Овог, нэрээр хайх" },

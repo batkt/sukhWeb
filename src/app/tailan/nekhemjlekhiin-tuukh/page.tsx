@@ -293,28 +293,15 @@ export default function NekhemjlekhiinTuukhPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 mb-6 no-print">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 no-print">
-          <div className="p-4 rounded-xl">
+        <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
+          <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
             <StandardDatePicker
               isRange={true}
-              locale="mn"
               value={dateRange}
               onChange={setDateRange}
-              size="sm"
-              radius="md"
-              variant="filled"
-              dropdownType="popover"
-              popoverProps={{
-                position: "bottom-start",
-                withinPortal: true,
-                width: 320,
-              }}
-              clearable
+              allowClear
               placeholder="Огноо сонгох"
-              classNames={{
-                input:
-                  "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full",
-              }}
+              className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
             />
           </div>
           <div className="p-4 rounded-xl">

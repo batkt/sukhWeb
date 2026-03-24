@@ -167,7 +167,7 @@ const totals = useMemo(() => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print flex-shrink-0">
           <h1 className="text-2xl font-bold text-theme tracking-tight">Насжилтын тайлан</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="btn-minimal h-[40px] w-[180px] flex items-center px-3">
+            <div className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
               <StandardDatePicker 
                 value={ognoo} 
                 onChange={setOgnoo} 

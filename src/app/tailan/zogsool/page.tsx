@@ -293,27 +293,14 @@ export default function ZogsoolTailanPage() {
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
-        <div className="w-full md:w-[320px]">
+        <div className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
           <StandardDatePicker
             isRange={true}
-            locale="mn"
             value={dateRange}
             onChange={setDateRange}
-            size="sm"
-            radius="md"
-            variant="filled"
-            dropdownType="popover"
-            popoverProps={{
-              position: "bottom-start",
-              withinPortal: true,
-              width: 320,
-            }}
-            clearable
+            allowClear
             placeholder="Огноо сонгох"
-            classNames={{
-              input:
-                "neu-panel text-theme placeholder:text-theme !h-[40px] !py-2 !w-full",
-            }}
+            className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
           />
         </div>
       </div>

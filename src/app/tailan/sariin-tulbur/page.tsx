@@ -404,30 +404,17 @@ export default function SariinTulburPage() {
           </button> */}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 no-print">
-          <div className="p-3 mt-6 rounded-xl">
+      <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
+          <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
             <StandardDatePicker
               isRange={true}
-              locale="mn"
               value={dateRange}
               onChange={setDateRange}
-              size="sm"
-              radius="md"
-              variant="filled"
-              dropdownType="popover"
-              popoverProps={{
-                position: "bottom-start",
-                withinPortal: true,
-                width: 320,
-              }}
-              clearable
+              allowClear
               placeholder={
                 formData.turul === "sar" ? "Сар сонгох" : "Улирал сонгох"
               }
-              classNames={{
-                input:
-                  "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-full flex items-center justify-between gap-2 whitespace-nowrap overflow-hidden",
-              }}
+              className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
             />
           </div>
           <div className="p-3 rounded-xl">
