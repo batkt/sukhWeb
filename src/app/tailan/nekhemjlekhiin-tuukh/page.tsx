@@ -5,7 +5,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
-import DatePickerInput from "../../../components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -295,8 +295,8 @@ export default function NekhemjlekhiinTuukhPage() {
       <form onSubmit={handleSubmit} className="space-y-4 mb-6 no-print">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 no-print">
           <div className="p-4 rounded-xl">
-            <DatePickerInput
-              type="range"
+            <StandardDatePicker
+              isRange={true}
               locale="mn"
               value={dateRange}
               onChange={setDateRange}

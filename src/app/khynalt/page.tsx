@@ -16,7 +16,7 @@ import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import {
   Chart as ChartJS,
@@ -1113,8 +1113,8 @@ export default function Khynalt() {
               style={{ overflow: "visible" }}
             >
               <div className="min-w-[220px]">
-                <DatePickerInput
-                  type="range"
+                <StandardDatePicker
+                  isRange={true}
                   value={dateRange}
                   onChange={(v: any) => setDateRange(v)}
                   valueFormat="YYYY-MM-DD"

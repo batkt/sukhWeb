@@ -23,7 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
-import DatePickerInput from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
 
@@ -1201,8 +1201,8 @@ export default function HistoryModal({
             {/* Date Filter - Compact */}
             <div className="flex items-center gap-2 flex-wrap">
               <div className="w-full sm:w-[220px]">
-                <DatePickerInput
-                  type="range"
+                <StandardDatePicker
+                  isRange={true}
                   locale="mn"
                   value={dateRange}
                   onChange={setDateRange}

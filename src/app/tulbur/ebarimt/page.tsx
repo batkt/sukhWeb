@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
 import { useRouter } from "next/navigation";
@@ -385,32 +385,18 @@ export default function Ebarimt() {
           <div className="rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <div className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
-                  <DatePickerInput
-                    type="range"
-                    locale="mn"
+                <div className="btn-minimal h-[40px] w-[320px] flex items-center px-3">
+                  <StandardDatePicker
+                    isRange={true}
                     value={ekhlekhOgnoo ?? undefined}
                     onChange={(v) =>
                       setEkhlekhOgnoo(
                         (v || [null, null]) as [Date | null, Date | null]
                       )
                     }
-                    size="sm"
-                    radius="md"
-                    variant="filled"
-                    dropdownType="popover"
-                    popoverProps={{
-                      position: "bottom",
-                      withinPortal: true,
-                      width: 320,
-                    }}
-                    clearable
+                    allowClear
                     placeholder="Огноо сонгох"
-                    classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                  }}
+                    className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
                   />
                 </div>
                 <input

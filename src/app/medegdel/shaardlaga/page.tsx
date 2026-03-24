@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { Tag, notification } from "antd";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
@@ -193,8 +193,8 @@ export default function SanalKhuselt() {
           transition={{ duration: 0.5 }}
           className="flex w-1/3 flex-col space-y-4 bg-transparent"
         >
-          <DatePickerInput
-            type="range"
+          <StandardDatePicker
+            isRange={true}
             locale="mn"
             valueFormat="YYYY-MM-DD"
             placeholder={`${t("Эхлэх")} – ${t("Дуусах")}`}

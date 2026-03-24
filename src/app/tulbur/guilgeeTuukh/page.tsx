@@ -35,7 +35,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
-import DatePickerInput from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   getPaymentStatusLabel,
   isPaidLike,
@@ -2583,8 +2583,8 @@ export default function DansniiKhuulga() {
                 id="dans-date"
                 className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
               >
-                <DatePickerInput
-                  type="range"
+                <StandardDatePicker
+                  isRange={true}
                   locale="mn"
                   value={ekhlekhOgnoo}
                   onChange={setEkhlekhOgnoo}

@@ -173,7 +173,8 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                           <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Зардлын нэр</th>
                           <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Төрөл</th>
                           <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300">Тариф</th>
-                          <th className="px-4 py-3 text-center  text-slate-700 dark:text-slate-300">Дүн</th>
+                          <th className="px-4 py-3 text-center border-r  text-slate-700 dark:text-slate-300 w-24">Дүн</th>
+                          <th className="px-4 py-3 text-center w-20"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y">
@@ -185,9 +186,10 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                             <td className="px-4 py-3 border-r text-right text-slate-900 dark:text-[var(--panel-text)]">
                               {formatNumber(zardal.tariff || 0)} {zardal.tariffUsgeer || "₮"}
                             </td>
-                            <td className="px-4 py-3 text-right  text-slate-900 dark:text-[var(--panel-text)]">
+                            <td className="px-4 py-3 text-right border-r text-slate-900 dark:text-[var(--panel-text)]">
                               {formatNumber(zardal.dun || 0)} ₮
                             </td>
+                            <td className="px-4 py-3"></td>
                           </tr>
                         ))}
                       </tbody>

@@ -6,7 +6,7 @@ import { Tag, Input, Popconfirm, Card, Select } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 const { Option } = Select;
@@ -388,8 +388,8 @@ export default function TaskManagementSystem() {
           </Card>
 
           <div className="grid grid-cols-2 gap-3 bg-transparent">
-            <DatePickerInput
-              type="range"
+            <StandardDatePicker
+              isRange={true}
               placeholder={"Огноо"}
               onChange={(dates) =>
                 setEkhlekhOgnoo(

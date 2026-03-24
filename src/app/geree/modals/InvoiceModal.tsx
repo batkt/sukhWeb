@@ -11,7 +11,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { Search, Calendar, Printer, X, Eye } from "lucide-react";
-import DatePickerInput from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -362,6 +362,76 @@ export default function InvoiceModal({
           }
         }
       });
+
+      // Also include receivable transactions (Авлага) as rows in the expense table
+      gRows.forEach((g: any) => {
+        const t = String(g.turul || "").toLowerCase();
+        if (t === "avlaga" || t === "авлага") {
+          const ner = String(g.tailbar || g.medeelel?.tailbar || "Эхний үлдэгдэл").trim();
+          const amount = Number(g.dun || g.tulsunDun || 0);
+          if (amount !== 0) {
+            const existing = expenseMap.get(ner);
+            if (existing) {
+              existing.dun += amount;
+            } else {
+              expenseMap.set(ner, { ...g, ner, dun: amount });
+            }
+          }
+        }
+      });
+
+
+      // Ensure ekhnii uldegdel is shown if provided but missing from rows
+      const ekhniiVal = Number(selectedInvoice?.ekhniiUldegdel ?? selectedInvoice?.medeelel?.ekhniiUldegdel ?? 0);
+      if (ekhniiVal !== 0 && !expenseMap.has("Эхний үлдэгдэл")) {
+        expenseMap.set("Эхний үлдэгдэл", { ner: "Эхний үлдэгдэл", dun: ekhniiVal, _id: "extra-ekhnii" });
+      }
+      
+      const suulchiinVal = Number(selectedInvoice?.suulchiinUldegdel ?? selectedInvoice?.medeelel?.suulchiinUldegdel ?? 0);
+      if (suulchiinVal !== 0 && !expenseMap.has("Эхний үлдэгдэл") && !expenseMap.has("Сүүлчийн үлдэгдэл")) {
+          // Some invoices might store final balance instead
+      }
+
+      // Fetch historical readings for the specific month of the invoice
+      try {
+        const invDate = selectedInvoice?.ognoo ? new Date(selectedInvoice.ognoo) : new Date();
+        const startOfMonth = new Date(invDate.getFullYear(), invDate.getMonth(), 1).toISOString();
+        const endOfMonth = new Date(invDate.getFullYear(), invDate.getMonth() + 1, 0, 23, 59, 59).toISOString();
+
+        const readingResp = await uilchilgee(token).get("/zaaltJagsaaltAvya", {
+          params: {
+            baiguullagiinId,
+            ekhlekhOgnoo: startOfMonth,
+            duusakhOgnoo: endOfMonth,
+            gereeniiDugaar: selectedInvoice?.gereeniiDugaar || resident?.gereeniiId
+          }
+        });
+
+        if (readingResp.data?.success && Array.isArray(readingResp.data?.data)) {
+          const readings = readingResp.data.data;
+          const match = readings[0]; // Take the most relevant reading for this month
+          
+          if (match) {
+            const keys = Array.from(expenseMap.keys());
+            let tsahKey = keys.find(k => k.trim() === "Цахилгаан");
+            if (!tsahKey) {
+              tsahKey = keys.find(k => k.toLowerCase().includes("цахилгаан") && !k.toLowerCase().includes("дундын"));
+            }
+            
+            if (tsahKey) {
+              const existing = expenseMap.get(tsahKey);
+              expenseMap.set(tsahKey, {
+                ...existing,
+                umnukh: match.umnukhZaalt ?? existing.umnukh,
+                suuliin: match.suuliinZaalt ?? existing.suuliin
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Historical reading fetch error:", err);
+      }
+
       setExpenseRows(Array.from(expenseMap.values()));
       
       const pRows = gRows.filter((g: any) => {
@@ -419,7 +489,7 @@ export default function InvoiceModal({
         ref={containerRef}
       >
         {/* Modal Title Bar */}
-        <div className="px-6 py-4 flex justify-between items-center border-b bg-white no-print">
+        <div className="px-6 py-4 flex justify-between items-center  bg-white no-print">
           <h2 className="text-xl font-bold text-slate-800">Нэхэмжлэлийн түүх</h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
             <X className="w-6 h-6 text-slate-500" />
@@ -430,10 +500,10 @@ export default function InvoiceModal({
           {/* LEFT SIDEBAR - INVOICE LIST */}
           <div className="w-[400px] flex flex-col border-r bg-slate-50/30 no-print">
             {/* Sidebar Filters */}
-            <div className="p-4 space-y-3 bg-white border-b">
+            <div className="p-4 space-y-3 bg-white ">
               <div className="flex gap-2">
-                <DatePickerInput
-                  type="range"
+                <StandardDatePicker
+                  isRange={true}
                   value={dateRange}
                   onChange={setDateRange}
                   placeholder="Эхлэх огноо ... Дуусах огноо"
@@ -505,7 +575,7 @@ export default function InvoiceModal({
             {selectedInvoice ? (
               <div className="invoice-modal flex-1 flex flex-col overflow-hidden">
                 {/* Invoice Header Details */}
-                <div className="p-6 border-b bg-slate-50/50 no-print">
+                <div className="p-6  bg-slate-50/50 no-print">
                   <div className="grid grid-cols-2 gap-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-slate-500">Гэрээний дугаар:</span>
@@ -536,7 +606,7 @@ export default function InvoiceModal({
                     {/* Invoice Title */}
                     <div className="text-center mb-6">
                       <h2 className="text-sm font-bold uppercase">
-                        НЭХЭМЖЛЭХ № {selectedInvoice?.nekhemjlekhiinDugaar || invNumber(selectedInvoice)}
+                         № {selectedInvoice?.nekhemjlekhiinDugaar || invNumber(selectedInvoice)}
                       </h2>
                     </div>
 
@@ -544,7 +614,7 @@ export default function InvoiceModal({
                     <div className="grid grid-cols-2 gap-12 mb-8">
                       {/* Sender (Нэхэмжлэгч) */}
                       <div className="space-y-1">
-                        <div className="font-bold text-[12px] mb-2 text-center border-b pb-1">Нэхэмжлэгч:</div>
+                        <div className="font-bold text-[12px] mb-2 text-center  pb-1">Нэхэмжлэгч:</div>
                         <div className="grid grid-cols-[120px_1fr] gap-x-2">
                           <span className="text-slate-500">Байгууллагын нэр:</span>
                           <span className="font-bold text-right">{baiguullaga?.ner || "Computer Mall"}</span>
@@ -572,7 +642,7 @@ export default function InvoiceModal({
 
                       {/* Payer (Төлөгч) */}
                       <div className="space-y-1">
-                        <div className="font-bold text-[12px] mb-2 text-center border-b pb-1">Төлөгч:</div>
+                        <div className="font-bold text-[12px] mb-2 text-center  pb-1">Төлөгч:</div>
                         <div className="grid grid-cols-[120px_1fr] gap-x-2">
                           <span className="text-slate-500">Оршин суугч:</span>
                           <span className="font-bold text-right">{resident?.ovog} {resident?.ner}</span>
@@ -592,76 +662,58 @@ export default function InvoiceModal({
                     </div>
 
                     {/* Formal Document Table */}
-                    <div className="border border-slate-900 overflow-hidden mb-4">
+                    <div className="border border-slate-200 overflow-hidden mb-4">
                       <table className="w-full border-collapse">
                         <thead>
-                          <tr className="bg-slate-100/50 border-b border-slate-900 font-bold text-center">
-                            <td className="border-r border-slate-900 py-2 px-1 w-8">№</td>
-                            <td className="border-r border-slate-900 py-2 px-2 text-left">Материал</td>
-                            <td className="border-r border-slate-900 py-2 px-1 w-16">Өмнөх заалт</td>
-                            <td className="border-r border-slate-900 py-2 px-1 w-16">Сүүлийн заалт</td>
-                            <td className="border-r border-slate-900 py-2 px-2 text-right w-28">Дүн</td>
-                            <td className="border-r border-slate-900 py-2 px-2 text-right w-24">Хөнгөлөлт</td>
-                            <td className="py-2 px-2 text-right w-32 text-right">Нийт дүн</td>
+                          <tr className="bg-slate-100/50  border-slate-200 font-bold text-center">
+                            <td className="border-r border-slate-200 py-2 px-1 w-8">№</td>
+                            <td className="border-r border-slate-200 py-2 px-2 text-center w-48">Материал</td>
+                            <td className="border-r border-slate-200 py-2 px-1 w-16">Өмнөх заалт</td>
+                            <td className="border-r border-slate-200 py-2 px-1 w-16">Сүүлийн заалт</td>
+                            {/* <td className="border-r border-slate-200 py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
+                            <td className="border-r border-slate-200 py-2 px-2 text-center w-24">Дүн</td>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-400">
                           {expenseRows.map((row, idx) => {
                             const total = Number(row.dun || 0);
-                            const net = total / 1.1;
-                            const vat = total - net;
                             const discount = Number(row.khungulult || 0);
 
                             return (
                               <tr key={row._id} className="text-center">
-                                <td className="border-r border-slate-400 py-1.5 px-1">{idx + 1}</td>
-                                <td className="border-r border-slate-400 py-1.5 px-2 text-left">{row.ner}</td>
-                                <td className="border-r border-slate-400 py-1.5 px-1">{row.umnukh || ""}</td>
-                                <td className="border-r border-slate-400 py-1.5 px-1">{row.suuliin || ""}</td>
-                                <td className="border-r border-slate-400 py-1.5 px-2 text-right">{formatNumber(net, 2)}</td>
-                                <td className="border-r border-slate-400 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td>
-                                <td className="py-1.5 px-2 text-right font-medium text-right">{formatNumber(total, 2)}</td>
+                                <td className="border-r border-slate-200 py-1.5 px-1">{idx + 1}</td>
+                                <td className="border-r border-slate-200 py-1.5 px-2 text-left">{row.ner}</td>
+                                <td className="border-r border-slate-200 py-1.5 px-1">{row.umnukh || row.umnukhZaalt || ""}</td>
+                                <td className="border-r border-slate-200 py-1.5 px-1">{row.suuliin || row.suuliinZaalt || ""}</td>
+                                {/* <td className="border-r border-slate-200 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
+                                <td className="border-r border-slate-200 py-1.5 px-2 text-right font-medium">{formatNumber(total, 2)}</td>
                               </tr>
                             );
                           })}
-                          {/* Filler rows to match documentary style if needed */}
-                          {Array.from({ length: Math.max(0, 5 - expenseRows.length) }).map((_, i) => (
-                            <tr key={`filler-${i}`} className="text-center h-8">
-                              <td className="border-r border-slate-400 py-1.5 px-1">{expenseRows.length + i + 1}</td>
-                              <td className="border-r border-slate-400 py-1.5 px-2"></td>
-                              <td className="border-r border-slate-400 py-1.5 px-1"></td>
-                              <td className="border-r border-slate-400 py-1.5 px-1"></td>
-                              <td className="border-r border-slate-400 py-1.5 px-2"></td>
-                              <td className="border-r border-slate-400 py-1.5 px-2"></td>
-                              <td className="border-r border-slate-400 py-1.5 px-2"></td>
-                              <td className="py-1.5 px-2"></td>
-                            </tr>
-                          ))}
+                          
                         </tbody>
                         <tfoot>
-                          <tr className="border-t border-slate-900 bg-slate-50/50 font-bold">
-                            <td colSpan={7} className="border-r border-slate-900 py-2 px-2 text-right text-xs uppercase">Нийт дүн</td>
-                            <td className="py-2 px-2 text-right text-sm">{formatNumber(totalSum, 2)}</td>
+                          <tr className="border-t border-slate-200 bg-white font-bold">
+                            <td colSpan={2} className="border-r border-slate-200 py-2 px-2 text-center font-normal">{numberToMongolianWords(totalSum)}</td>
+                            <td colSpan={2} className="border-r border-slate-200 py-2 px-2 text-center ">Нийт дүн</td>
+                            <td className="border-r border-slate-200 py-2 px-2 text-right ">{formatNumber(totalSum, 2)}</td>
                           </tr>
                         </tfoot>
                       </table>
                     </div>
 
-                    {/* Amount in Words */}
-                    <div className="italic text-slate-600 mb-8 border-b pb-2">
-                      {numberToMongolianWords(totalSum)}
-                    </div>
+
 
                     {/* Signatures & Stamp Area */}
                     <div className="flex justify-between items-start mt-4">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
                           <span className="w-24">Хүлээн авсан:</span>
-                          <span className="font-bold border-b border-slate-800 min-w-[150px] inline-block text-center">/{resident?.ovog?.charAt(0)}. {resident?.ner}/</span>
+                          <span className="font-bold  border-slate-800 min-w-[150px] inline-block text-center">/{resident?.ovog?.charAt(0)}. {resident?.ner}/</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-24">Нэхэмжлэл бичсэн:</span>
-                          <span className="font-bold border-b border-slate-800 min-w-[150px] inline-block text-center">{selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}</span>
+                          <span className="font-bold  border-slate-800 min-w-[150px] inline-block text-center">{selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}</span>
                         </div>
                       </div>                     
                     </div>

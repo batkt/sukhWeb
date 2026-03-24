@@ -6,7 +6,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
-import DatePickerInput from "../../../components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -406,8 +406,8 @@ export default function SariinTulburPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 no-print">
           <div className="p-3 mt-6 rounded-xl">
-            <DatePickerInput
-              type="range"
+            <StandardDatePicker
+              isRange={true}
               locale="mn"
               value={dateRange}
               onChange={setDateRange}

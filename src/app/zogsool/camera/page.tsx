@@ -30,7 +30,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
 import axios from "axios";
@@ -1000,8 +1000,8 @@ export default function Camera() {
 
               {/* Date picker */}
               <div className="min-w-[220px]">
-                <DatePickerInput
-                  type="range"
+                <StandardDatePicker
+                  isRange={true}
                   value={dateRange}
                   onChange={(v: any) => {
                     setDateRange(v);

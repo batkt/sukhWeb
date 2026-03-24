@@ -8,7 +8,7 @@ import TusgaiZagvar from "components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
 import { Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";

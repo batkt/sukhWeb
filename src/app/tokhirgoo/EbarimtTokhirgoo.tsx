@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";

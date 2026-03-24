@@ -10,7 +10,7 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import uilchilgee from "@/lib/uilchilgee";
 import useSWR from "swr";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
-import DatePickerInput from "../../../components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
@@ -561,7 +561,7 @@ const footerTotals = useTulburFooterTotals(
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print mb-4">
         <div className="p-3 rounded-xl mt-4">
-          <DatePickerInput type="range" locale="mn" value={dateRange} onChange={setDateRange}
+          <StandardDatePicker isRange={true} locale="mn" value={dateRange} onChange={setDateRange}
             size="sm" radius="md" variant="filled" dropdownType="popover"
             popoverProps={{ position: "bottom-start", withinPortal: true, width: 320 }}
             clearable placeholder="Огноо сонгох"

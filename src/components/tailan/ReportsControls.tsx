@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 
 interface Props {
@@ -29,8 +29,8 @@ export default function ReportsControls({
   return (
     <div className="mb-4">
       <div className="flex flex-wrap gap-3 items-center">
-        {/* <DatePickerInput
-          type="range"
+        {/* <StandardDatePicker
+          isRange={true}
           locale="mn"
           value={dateRange}
           onChange={setDateRange}

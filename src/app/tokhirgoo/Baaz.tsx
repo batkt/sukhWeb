@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Download } from "lucide-react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { t } from "i18next";
 import formatNumber from "../../../tools/function/formatNumber";
 
@@ -92,8 +92,8 @@ function Baaz({ token }: BaazProps) {
               <h2 className="text-lg  text-theme dark:text-white">
                 {t("Татсан түүх")}
               </h2>
-              <DatePickerInput
-                type="range"
+              <StandardDatePicker
+                isRange={true}
                 locale="mn"
                 value={ognoo || undefined}
                 onChange={(dates) =>

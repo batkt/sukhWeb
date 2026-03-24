@@ -5,7 +5,7 @@ import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
-import DatePickerInput from "../../../components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { FileSpreadsheet, Printer } from "lucide-react";
 
@@ -294,8 +294,8 @@ export default function ZogsoolTailanPage() {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
         <div className="w-full md:w-[320px]">
-          <DatePickerInput
-            type="range"
+          <StandardDatePicker
+            isRange={true}
             locale="mn"
             value={dateRange}
             onChange={setDateRange}

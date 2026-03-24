@@ -20,7 +20,7 @@ import {
   Select,
 } from "antd";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   CloseCircleOutlined,
   DeleteOutlined,
@@ -473,8 +473,8 @@ export default function Page() {
               {t("Анкетын загварууд")}
             </span>
             <div className="mt-5 w-full px-5">
-              <DatePickerInput
-                type="range"
+              <StandardDatePicker
+                isRange={true}
                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 className="flex w-full rounded-2xl md:w-auto"
                 placeholder={"Огноо"}

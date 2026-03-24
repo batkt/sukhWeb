@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Button, notification } from "antd";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { SolutionOutlined } from "@ant-design/icons";
 import moment from "moment";
 
@@ -36,7 +36,7 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
               <div className="">Ашиглаж эхлэх огноо</div>
             </div>
             <div className="ml-auto w-1/2 !bg-transparent">
-              <DatePickerInput
+              <StandardDatePicker
                 disabled={isLocked}
                 style={{ width: "100%" }}
                 value={startDate ?? undefined}

@@ -19,7 +19,7 @@ import {
   ExternalLink,
   MoreHorizontal
 } from "lucide-react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -269,8 +269,8 @@ export default function Jagsaalt() {
                 </div>
 
                 <div className="w-[100px] sm:w-90 lg:w-[600px]">
-                    <DatePickerInput
-                      type="range"
+                    <StandardDatePicker
+                      isRange={true}
                       value={dateRange}
                       onChange={(v: any) => {
                         setDateRange(v);

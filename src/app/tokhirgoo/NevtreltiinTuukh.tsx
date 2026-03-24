@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   Tooltip,
   TooltipContent,
@@ -215,9 +215,9 @@ export default function NevtreltiinTuukh({
           {/* Date Range */}
           <div className="flex items-center gap-2">
             
-            <DatePickerInput
+            <StandardDatePicker
             
-              type="range"
+              isRange={true}
               value={dateRange}
               onChange={handleDateChange}
               className="text-[color:var(--panel-text)]"

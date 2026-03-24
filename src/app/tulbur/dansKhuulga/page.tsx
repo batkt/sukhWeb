@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useAuth } from "@/lib/useAuth";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
@@ -373,28 +373,14 @@ export default function DansniiKhuulga() {
           <div className="rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <div id="dans-date" className="btn-minimal h-[40px] w-[160px] flex items-center px-3">
-                  <DatePickerInput
-                    type="range"
-                    locale="mn"
+                <div id="dans-date" className="btn-minimal h-[40px] w-[320px] flex items-center px-3">
+                  <StandardDatePicker
+                    isRange={true}
                     value={ekhlekhOgnoo}
                     onChange={setEkhlekhOgnoo}
-                    size="sm"
-                    radius="md"
-                    variant="filled"
-                    dropdownType="popover"
-                    popoverProps={{
-                      position: "bottom",
-                      withinPortal: true,
-                      width: 320,
-                    }}
-                    clearable
+                    allowClear
                     placeholder="Огноо сонгох"
-                    classNames={{
-                    root: "!h-full !w-full",
-                    input:
-                      "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
-                  }}
+                    className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
                   />
                 </div>
                 <div id="dans-account">

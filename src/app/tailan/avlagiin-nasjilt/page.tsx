@@ -10,7 +10,8 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import dayjs from "dayjs";
 import "dayjs/locale/mn";
 import { useSearch } from "@/context/SearchContext";
-import { DatePicker, ConfigProvider, theme as antdTheme } from "antd";
+import { ConfigProvider, theme as antdTheme } from "antd";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 
@@ -166,14 +167,16 @@ const totals = useMemo(() => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print flex-shrink-0">
           <h1 className="text-2xl font-bold text-theme tracking-tight">Насжилтын тайлан</h1>
           <div className="flex flex-wrap items-center gap-3">
-            <DatePicker 
-              value={ognoo} 
-              onChange={setOgnoo} 
-              picker="month"
-              className="neu-panel !h-10 !rounded-xl !border-none !shadow-none !bg-white/20 dark:!bg-black/20"
-              placeholder="Сар сонгох"
-              format="YYYY-MM"
-            />
+            <div className="btn-minimal h-[40px] w-[180px] flex items-center px-3">
+              <StandardDatePicker 
+                value={ognoo} 
+                onChange={setOgnoo} 
+                picker="month"
+                placeholder="Сар сонгох"
+                format="YYYY-MM"
+                className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
+              />
+            </div>
             <button onClick={() => window.print()} 
               className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
               <Printer className="w-4 h-4" /> Хэвлэх

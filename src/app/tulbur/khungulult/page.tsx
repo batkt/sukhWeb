@@ -24,7 +24,7 @@ import {
   Tabs,
   Switch,
 } from "antd";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
 import type { TableColumnsType } from "antd";
 import dayjs from "dayjs";
@@ -626,8 +626,8 @@ const TulburTootsoo: React.FC = () => {
                         },
                       ]}
                     >
-                      <DatePickerInput
-                        type="range"
+                      <StandardDatePicker
+                        isRange={true}
                         className="w-full sm:w-auto !bg-transparent rounded-xl hover:shadow-md transition-all duration-300 z-9999"
                         value={ekhlekhOgnoo}
                         onChange={(v) => {
@@ -936,8 +936,8 @@ const TulburTootsoo: React.FC = () => {
             <div className="grid w-full grid-cols-12 gap-6">
               <div className="box col-span-12 p-5 md:col-span-8 xl:col-span-12">
                 <div className="mt-5 flex w-full flex-row justify-between">
-                  <DatePickerInput
-                    type="range"
+                  <StandardDatePicker
+                    isRange={true}
                     style={{ marginBottom: "20px" }}
                     value={ekhlekhOgnoo}
                     className="text-theme"

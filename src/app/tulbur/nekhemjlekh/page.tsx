@@ -31,7 +31,7 @@ import formatNumber, { formatCurrency } from "../../../../tools/function/formatN
 
 import { url as API_URL } from "@/lib/uilchilgee";
 import uilchilgee from "@/lib/uilchilgee";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
@@ -1376,7 +1376,7 @@ export default function InvoicingZardluud() {
         >
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              <DatePickerInput
+              <StandardDatePicker
                 value={selectedDate}
                 onChange={(v: string | null) => setSelectedDate(v)}
                 placeholder="Огноо сонгох"

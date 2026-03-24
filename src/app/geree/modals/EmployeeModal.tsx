@@ -4,7 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
-import { DatePickerInput } from "@/components/ui/DatePickerInput";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 
 interface EmployeeModalProps {
   show: boolean;
@@ -164,7 +164,7 @@ export default function EmployeeModal({
                   <label className="block text-sm  text-slate-700 mb-1">
                     Ажилд орсон огноо
                   </label>
-                  <DatePickerInput
+                  <StandardDatePicker
                     value={
                       newEmployee.ajildOrsonOgnoo ? new Date(newEmployee.ajildOrsonOgnoo) : null
                     }
