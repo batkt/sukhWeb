@@ -195,8 +195,7 @@ export default function SanalKhuselt() {
         >
           <StandardDatePicker
             isRange={true}
-            locale="mn"
-            valueFormat="YYYY-MM-DD"
+            format="YYYY-MM-DD"
             placeholder={`${t("Эхлэх")} – ${t("Дуусах")}`}
             value={ekhlekhOgnoo}
             onChange={(dates) =>

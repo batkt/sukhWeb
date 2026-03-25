@@ -1203,12 +1203,9 @@ export default function HistoryModal({
               <div className="w-full sm:w-[220px]">
                 <StandardDatePicker
                   isRange={true}
-                  locale="mn"
                   value={dateRange}
                   onChange={setDateRange}
-                  size="xs"
-                  radius="lg"
-                  variant="filled"
+                  size="small"
                   placeholder="Огноо"
                   classNames={{
                     input: "border-none h-8 text-xs ",

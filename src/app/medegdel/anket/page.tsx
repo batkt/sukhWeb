@@ -484,7 +484,6 @@ export default function Page() {
                     (dates || [null, null]) as [Date | null, Date | null]
                   );
                 }}
-                locale="mn"
               />
             </div>
             <div

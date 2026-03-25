@@ -398,7 +398,6 @@ export default function TaskManagementSystem() {
               }
               value={ekhlekhOgnoo ?? undefined}
               className="!h-8 !bg-transparent !backdrop-blur-md !border !border-gray-300 !text-slate-900"
-              locale="mn"
             />
             <Select
               popupClassName="tusgaiZagvar"

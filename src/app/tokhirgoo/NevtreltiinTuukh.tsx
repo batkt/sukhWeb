@@ -221,8 +221,7 @@ export default function NevtreltiinTuukh({
               value={dateRange}
               onChange={handleDateChange}
               className="text-[color:var(--panel-text)]"
-              locale="mn"
-              valueFormat="YYYY-MM-DD"
+              format="YYYY-MM-DD"
             />
           </div>
         </div>

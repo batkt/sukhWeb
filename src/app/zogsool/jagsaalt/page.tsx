@@ -276,7 +276,7 @@ export default function Jagsaalt() {
                         setDateRange(v);
                         setPage(1);
                       }}
-                      valueFormat="YYYY-MM-DD"
+                      format="YYYY-MM-DD"
                       
                       className="w-full"
                       classNames={{ input: "h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0  text-[11px] text-slate-700 dark:text-slate-200 shadow-inner px-6" }}

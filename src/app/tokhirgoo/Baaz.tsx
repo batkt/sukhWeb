@@ -94,7 +94,6 @@ function Baaz({ token }: BaazProps) {
               </h2>
               <StandardDatePicker
                 isRange={true}
-                locale="mn"
                 value={ognoo || undefined}
                 onChange={(dates) =>
                   setOgnoo((dates || null) as [Date | null, Date | null] | null)

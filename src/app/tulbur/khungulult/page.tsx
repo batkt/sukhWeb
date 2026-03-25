@@ -645,7 +645,6 @@ const TulburTootsoo: React.FC = () => {
                             khungulukhDunTootsoolyo();
                           }
                         }}
-                        locale="mn"
                       />
                     </Form.Item>
                   ) : (
@@ -946,7 +945,6 @@ const TulburTootsoo: React.FC = () => {
                         (dates || [null, null]) as [Date | null, Date | null]
                       );
                     }}
-                    locale="mn"
                   />
                 </div>
 

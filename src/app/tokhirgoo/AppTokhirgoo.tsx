@@ -41,7 +41,6 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
                 style={{ width: "100%" }}
                 value={startDate ?? undefined}
                 onChange={(v) => setStartDate((v as Date | null) ?? null)}
-                locale="mn"
               />
             </div>
           </div>
