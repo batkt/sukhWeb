@@ -13,7 +13,10 @@ interface TulburLayoutProps {
   activeTab: "guilgee" | "dansKhuulga" | "ebarimt";
 }
 
-export default function TulburLayout({ children, activeTab }: TulburLayoutProps) {
+export default function TulburLayout({
+  children,
+  activeTab,
+}: TulburLayoutProps) {
   const router = useRouter();
   const { ajiltan } = useAuth();
 
@@ -72,40 +75,43 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
           </div>
           <div className="flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
             {showGuilgee && (
-            <button
-              id="tab-guilgee"
-              onClick={() => handleTabChange("guilgee")}
-              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "guilgee"
-                  ? "bg-theme/15 text-theme font-medium"
-                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+              <button
+                id="tab-guilgee"
+                onClick={() => handleTabChange("guilgee")}
+                className={`px-3 neu-panel md:px-5 py-2.5 md:py-2  text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
+                  activeTab === "guilgee"
+                    ? "bg-theme/15 text-theme font-medium"
+                    : "text-theme/60  hover:text-theme"
                 }`}
-            >
-              Гүйлгээний түүх
-            </button>
+              >
+                Гүйлгээний түүх
+              </button>
             )}
             {showDans && (
-            <button
-              id="tab-dansKhuulga"
-              onClick={() => handleTabChange("dansKhuulga")}
-              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "dansKhuulga"
-                  ? "bg-theme/15 text-theme font-medium"
-                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+              <button
+                id="tab-dansKhuulga"
+                onClick={() => handleTabChange("dansKhuulga")}
+                className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
+                  activeTab === "dansKhuulga"
+                    ? "bg-theme/15 text-theme font-medium"
+                    : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                 }`}
-            >
-              Дансны хуулга
-            </button>
+              >
+                Дансны хуулга
+              </button>
             )}
             {showEbarimt && (
-            <button
-              id="tab-ebarimt"
-              onClick={() => handleTabChange("ebarimt")}
-              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "ebarimt"
-                  ? "bg-theme/15 text-theme font-medium"
-                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+              <button
+                id="tab-ebarimt"
+                onClick={() => handleTabChange("ebarimt")}
+                className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
+                  activeTab === "ebarimt"
+                    ? "bg-theme/15 text-theme font-medium"
+                    : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                 }`}
-            >
-              И-баримт
-            </button>
+              >
+                И-баримт
+              </button>
             )}
           </div>
         </div>

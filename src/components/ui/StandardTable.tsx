@@ -113,7 +113,7 @@ export function StandardTable<T extends object>({
               style: { cursor: onRowClick ? "pointer" : "default" },
             })}
             className="min-w-full"
-            rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors"
+            rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
             scroll={maxHeight ? { y: maxHeight } : undefined}
           />
         </Spin>

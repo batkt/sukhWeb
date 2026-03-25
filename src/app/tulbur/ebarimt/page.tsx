@@ -4,8 +4,8 @@ import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
 import Button from "@/components/ui/Button";
-import { StandardTable } from "@/components/ui/StandardTable";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
 import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
 import { useRouter } from "next/navigation";
@@ -39,7 +39,7 @@ type TableItem = {
 export default function Ebarimt() {
   const router = useRouter();
   const { token, ajiltan, barilgiinId } = useAuth();
-  
+
   useEffect(() => {
     if (ajiltan) {
       if (!hasPermission(ajiltan, "/tulbur/ebarimt")) {
@@ -49,14 +49,14 @@ export default function Ebarimt() {
   }, [ajiltan, router]);
   const { baiguullaga } = useBaiguullaga(
     token || null,
-    ajiltan?.baiguullagiinId || null
+    ajiltan?.baiguullagiinId || null,
   );
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
   >(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [loading, setLoading] = useState(false);
 
@@ -150,7 +150,7 @@ export default function Ebarimt() {
           string,
           string | null,
           string | null,
-          string | null
+          string | null,
         ];
         const resp = await uilchilgee(tkn).get("/ebarimtJagsaaltAvya", {
           baseURL: getApiUrl(),
@@ -172,7 +172,7 @@ export default function Ebarimt() {
         string | null,
         string | null,
         string | null,
-        string | null
+        string | null,
       ];
       const resp = await uilchilgee(tkn).get(url, {
         params: {
@@ -184,7 +184,7 @@ export default function Ebarimt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const tableData: TableItem[] = useMemo(() => {
@@ -192,14 +192,14 @@ export default function Ebarimt() {
     const raw = Array.isArray(container?.jagsaalt)
       ? container.jagsaalt
       : Array.isArray(container?.data)
-      ? container.data
-      : Array.isArray(container?.items)
-      ? container.items
-      : Array.isArray(container?.result)
-      ? container.result
-      : Array.isArray(data)
-      ? (data as any[])
-      : [];
+        ? container.data
+        : Array.isArray(container?.items)
+          ? container.items
+          : Array.isArray(container?.result)
+            ? container.result
+            : Array.isArray(data)
+              ? (data as any[])
+              : [];
     return raw.map((it: any, idx: number) => {
       const rec = Array.isArray(it?.receipts) ? it.receipts[0] : undefined;
       const item0 = Array.isArray(rec?.items) ? rec.items[0] : undefined;
@@ -218,7 +218,7 @@ export default function Ebarimt() {
               rec?.id ||
               it?.id ||
               it?.idId ||
-              ""
+              "",
           ) || undefined,
         date: d ? moment(d).format("YYYY-MM-DD HH:mm") : "",
         month: moment(d || undefined).format("MM"),
@@ -306,7 +306,7 @@ export default function Ebarimt() {
           resp = await uilchilgee(token).post(
             `${window.location.origin}${path}`,
             body,
-            { responseType: "blob" as any, baseURL: undefined as any }
+            { responseType: "blob" as any, baseURL: undefined as any },
           );
         } else {
           throw err;
@@ -322,7 +322,7 @@ export default function Ebarimt() {
       let filename = "ebarimt.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
-          cd.match(/filename\*=UTF-8''([^;]+)/i)![1]
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
         );
       } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
         filename = cd.match(/filename="?([^";]+)"?/i)![1];
@@ -372,7 +372,9 @@ export default function Ebarimt() {
                 className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}>
+                  <div
+                    className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                  >
                     {stat.value}
                   </div>
                   <div className="text-xs text-theme leading-tight">
@@ -393,7 +395,7 @@ export default function Ebarimt() {
                     value={ekhlekhOgnoo ?? undefined}
                     onChange={(v) =>
                       setEkhlekhOgnoo(
-                        (v || [null, null]) as [Date | null, Date | null]
+                        (v || [null, null]) as [Date | null, Date | null],
                       )
                     }
                     allowClear
@@ -429,40 +431,7 @@ export default function Ebarimt() {
           </div>
 
           {/* Table */}
-          <StandardTable
-            columns={[
-              { key: "index", label: "№", width: 50, align: "center", render: (_, __, idx) => idx + 1 },
-              { key: "date", label: "Огноо", align: "center" },
-              { key: "toot", label: "Тоот", align: "center", render: (val, item) => item.toot || item.medeelel?.toot || item.orshinSuugch?.toot || "-" },
-              { key: "gereeniiDugaar", label: "Гэрээний дугаар", align: "center" },
-              { key: "type", label: "Төрөл", align: "center", render: (val) => (
-                <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-                  val === "B2C_RECEIPT" ? "bg-green-500/10 text-green-600 border border-green-500/20" : 
-                  val === "B2B_RECEIPT" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" : 
-                  "bg-gray-500/10 text-gray-600 border border-gray-500/20"
-                }`}>
-                  {val === "B2C_RECEIPT" ? "Иргэн" : val === "B2B_RECEIPT" ? "ААН" : val || "-"}
-                </span>
-              )},
-              { key: "ddtd", label: "ДДТД", align: "center", render: (val, item) => item.ddtd || item.receiptId || "-" },
-              { key: "total", label: "Дүн", align: "right", render: (val) => (
-                <span>{formatNumber(val || 0)} </span>
-              )},
-              { key: "service", label: "Үйлчилгээ", align: "center" },
-            ]}
-            data={displayedData}
-            loading={isLoading}
-            emptyMessage="Хайсан мэдээлэл алга байна"
-            stickyHeader
-            footer={displayedData.length > 0 && (
-              <div className="flex justify-between items-center px-6 py-3 bg-slate-900/5 dark:bg-black/20 rounded-2xl border border-white/5 backdrop-blur-md">
-                <span className="text-xs force-bold text-slate-500 uppercase tracking-widest">Нийт:</span>
-                <span className="text-lg force-bold text-theme">
-                  {formatNumber(displayedData.reduce((s, r) => s + (r.total || 0), 0))} 
-                </span>
-              </div>
-            )}
-          />
+          <EbarimtTable data={displayedData} loading={isLoading} />
         </div>
       </div>
     </TulburLayout>

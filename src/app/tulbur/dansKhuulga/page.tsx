@@ -20,7 +20,8 @@ import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import TulburLayout from "../TulburLayout";
-import { StandardTable, StandardPagination } from "@/components/ui/StandardTable";
+import { DansKhuulgaTable, DansKhuulgaItem } from "./DansKhuulgaTable";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 type TableItem = {
   id: string | number;
@@ -60,7 +61,7 @@ export default function DansniiKhuulga() {
   const todayStr = new Date().toISOString().split("T")[0];
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const [filteredData, setFilteredData] = useState<TableItem[]>([]);
 
@@ -82,9 +83,10 @@ export default function DansniiKhuulga() {
     } else {
       params.delete("dans");
     }
-    router.replace(`/tulbur/dansKhuulga?${params.toString()}`, { scroll: false });
+    router.replace(`/tulbur/dansKhuulga?${params.toString()}`, {
+      scroll: false,
+    });
   }, [selectedDansId, router]);
-
 
   // Include only defined filters to avoid sending { baiguullagiinId: undefined }
   const orgQuery = useMemo(() => {
@@ -103,10 +105,8 @@ export default function DansniiKhuulga() {
 
         label: String(d.dugaar || "-") || "-",
       })),
-    [dansList]
+    [dansList],
   );
-
-
 
   const t = (text: string) => text;
 
@@ -146,7 +146,7 @@ export default function DansniiKhuulga() {
         },
       },
     ],
-    []
+    [],
   );
   useRegisterTourSteps("/tulbur/dansKhuulga", tourSteps);
 
@@ -218,7 +218,7 @@ export default function DansniiKhuulga() {
           : [];
       // bank API uses `dansniiDugaar` or `accNum`/`dugaar` depending on source
       const account = String(
-        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || ""
+        r.dansniiDugaar || r.accNum || r.dugaar || r.accountId || "",
       );
       return {
         id: r._id || `bank-${idx}`,
@@ -236,12 +236,12 @@ export default function DansniiKhuulga() {
       if (!selectedDansId) return undefined;
       // try to find by _id first
       const byId = (dansList || []).find(
-        (d: any) => String(d._id) === String(selectedDansId)
+        (d: any) => String(d._id) === String(selectedDansId),
       );
       if (byId && byId.dugaar) return String(byId.dugaar);
       // fallback: maybe the option stored dugaar directly
       const byDugaar = (dansList || []).find(
-        (d: any) => String(d.dugaar) === String(selectedDansId)
+        (d: any) => String(d.dugaar) === String(selectedDansId),
       );
       if (byDugaar && byDugaar.dugaar) return String(byDugaar.dugaar);
       return String(selectedDansId);
@@ -282,15 +282,15 @@ export default function DansniiKhuulga() {
   const stats = useMemo(() => {
     const totalCount = filteredData.length;
     const uniqueAccounts = new Set(
-      filteredData.map((f) => String(f.account || "")).filter(Boolean)
+      filteredData.map((f) => String(f.account || "")).filter(Boolean),
     ).size;
     const withContracts = filteredData.filter(
-      (f) => (f.contractIds?.length || 0) > 0
+      (f) => (f.contractIds?.length || 0) > 0,
     ).length;
     const withoutContracts = totalCount - withContracts;
     const maxAmount = filteredData.reduce(
       (m, r) => Math.max(m, r.total || 0),
-      0
+      0,
     );
     const latestDate = (() => {
       let latest: Date | null = null;
@@ -316,54 +316,14 @@ export default function DansniiKhuulga() {
     ];
   }, [filteredData]);
 
-  // Calculate total sum for the footer
-  const totalSum = useMemo(() => {
-    return filteredData.reduce((s, r) => s + (r.total || 0), 0);
-  }, [filteredData]);
-
   const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
   useEffect(() => {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
   const paginated = filteredData.slice(
     (page - 1) * rowsPerPage,
-    page * rowsPerPage
+    page * rowsPerPage,
   );
-
-  const columns = useMemo(() => [
-    {
-      key: "no",
-      label: "№",
-      width: "w-12",
-      align: "center" as const,
-      render: (_: any, __: any, index: number) => (page - 1) * rowsPerPage + index + 1
-    },
-    {
-      key: "date",
-      label: "Огноо",
-      width: "w-32",
-      align: "center" as const
-    },
-    {
-      key: "action",
-      label: "Гүйлгээний утга",
-      render: (val: string) => <span title={val}>{val}</span>
-    },
-    {
-      key: "total",
-      label: "Гүйлгээний дүн",
-      width: "w-40",
-      align: "right" as const,
-      render: (val: number) => <span className="text-slate-900 dark:text-white">{formatNumber(val, 0)}</span>
-    },
-    {
-      key: "account",
-      label: "Шилжүүлсэн данс",
-      width: "w-48",
-      align: "center" as const,
-      render: (val: string) => val || "-"
-    }
-  ], [page, rowsPerPage]);
 
   return (
     <TulburLayout activeTab="dansKhuulga">
@@ -394,12 +354,16 @@ export default function DansniiKhuulga() {
                 key={idx}
                 className="relative group rounded-[32px] bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 p-6 backdrop-blur-xl shadow-sm hover:shadow-md transition-all"
               >
-                  <div className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ${(stat.title === "Нийт" || stat.title === "Нийт дүн") ? "force-bold" : ""}`}>
-                    {stat.value}
-                  </div>
-                  <div className={`text-[10px] uppercase tracking-widest text-slate-400 ${(stat.title === "Нийт" || stat.title === "Нийт дүн") ? "force-bold" : ""}`}>
-                    {stat.title}
-                  </div>
+                <div
+                  className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                >
+                  {stat.value}
+                </div>
+                <div
+                  className={`text-[10px] uppercase tracking-widest text-slate-400 ${stat.title === "Нийт" || stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                >
+                  {stat.title}
+                </div>
               </div>
             ))}
           </div>
@@ -407,7 +371,10 @@ export default function DansniiKhuulga() {
           <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50 backdrop-blur-xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                <div id="dans-date" className="h-11 w-full sm:w-[320px] rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 px-2 flex items-center shadow-inner">
+                <div
+                  id="dans-date"
+                  className="h-11 w-full sm:w-[320px] rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 px-2 flex items-center shadow-inner"
+                >
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo}
@@ -430,43 +397,32 @@ export default function DansniiKhuulga() {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <StandardTable
-              columns={columns}
+          <div className="space-y-4" id="dans-table">
+            <DansKhuulgaTable
               data={paginated}
               loading={isLoadingBankRows}
-              emptyMessage="Гүйлгээний мэдээлэл олдсонгүй"
-              rowKey="id"
-              containerClassName="mt-2"
-              footer={
-                <tr className="text-slate-900 dark:text-white force-bold">
-                  <td className="py-4 px-4 text-center"></td>
-                  <td className="py-4 px-4 text-center"></td>
-                  <td className="py-4 px-4 text-right pr-4 uppercase text-[10px] text-slate-400 tracking-widest">
-                    Нийт дүн:
-                  </td>
-                  <td className="py-4 px-4 text-right pr-4 text-xs">
-                    {formatNumber(totalSum, 0)}
-                  </td>
-                  <td className="py-4 px-4"></td>
-                </tr>
-              }
+              page={page}
+              rowsPerPage={rowsPerPage}
             />
 
             <div className="flex flex-col sm:flex-row items-center justify-between w-full px-4 text-sm mt-4">
-              <div className="text-slate-400 text-xs uppercase tracking-widest">Нийт: {filteredData.length}</div>
+              <div className="text-slate-400 text-xs uppercase tracking-widest">
+                Нийт: {filteredData.length}
+              </div>
 
               <div className="flex items-center gap-6">
                 <div id="dans-page-size" className="flex items-center gap-2">
-                   <span className="text-[10px] text-slate-400 uppercase tracking-tighter">Мөр:</span>
-                    <PageSongokh
-                      value={rowsPerPage}
-                      onChange={(v) => {
-                        setRowsPerPage(v);
-                        setPage(1);
-                      }}
-                      className="text-xs bg-transparent border-0 text-slate-700 dark:text-slate-300"
-                    />
+                  <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
+                    Мөр:
+                  </span>
+                  <PageSongokh
+                    value={rowsPerPage}
+                    onChange={(v) => {
+                      setRowsPerPage(v);
+                      setPage(1);
+                    }}
+                    className="text-xs bg-transparent border-0 text-slate-700 dark:text-slate-300"
+                  />
                 </div>
 
                 <StandardPagination
@@ -478,7 +434,6 @@ export default function DansniiKhuulga() {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </TulburLayout>

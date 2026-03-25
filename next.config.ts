@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    optimizePackageImports: ['@mantine/core', 'antd', 'lucide-react', 'lodash']
+  }
 };
 
 // Conditionally apply react-dev-inspector only in development

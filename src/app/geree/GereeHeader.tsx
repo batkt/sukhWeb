@@ -14,10 +14,13 @@ import {
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
+import { ALL_COLUMNS } from "./columns";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units";
-  setActiveTab: (tab: "contracts" | "residents" | "employees" | "units") => void;
+  setActiveTab: (
+    tab: "contracts" | "residents" | "employees" | "units",
+  ) => void;
   ortsOptions: string[];
   selectedOrts: string;
   setSelectedOrts: (val: string) => void;
@@ -74,6 +77,8 @@ export default function GereeHeader({
   ajiltan,
   showColumnSelector,
   setShowColumnSelector,
+  visibleColumns,
+  setVisibleColumns,
   columnMenuRef,
   onShowList2Modal,
   onShowResidentModal,
@@ -102,10 +107,17 @@ export default function GereeHeader({
     }
   }, [ajiltan]);
 
-  const showResidents = hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch");
-  const showContracts = hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
-  const showUnits = hasPermission(ajiltan, "/geree/tootBurtgel") || hasPermission(ajiltan, "geree.tootBurtgel");
-  const showEmployees = hasPermission(ajiltan, "/geree/ajiltan") || hasPermission(ajiltan, "geree.ajiltan");
+  const showResidents =
+    hasPermission(ajiltan, "/geree/orshinSuugch") ||
+    hasPermission(ajiltan, "geree.orshinSuugch");
+  const showContracts =
+    hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
+  const showUnits =
+    hasPermission(ajiltan, "/geree/tootBurtgel") ||
+    hasPermission(ajiltan, "geree.tootBurtgel");
+  const showEmployees =
+    hasPermission(ajiltan, "/geree/ajiltan") ||
+    hasPermission(ajiltan, "geree.ajiltan");
 
   useEffect(() => {
     const handleClickOutsideDesktop = (event: MouseEvent) => {
@@ -157,7 +169,10 @@ export default function GereeHeader({
               >
                 Гэрээ
               </motion.h1>
-              <div style={{ width: 64, height: 64 }} className="flex items-center">
+              <div
+                style={{ width: 64, height: 64 }}
+                className="flex items-center"
+              >
                 <DotLottieReact
                   src="https://lottie.host/97f6cb84-58da-46ef-811a-44e3203445c1/rQ76j6FHd8.lottie"
                   loop
@@ -196,6 +211,42 @@ export default function GereeHeader({
                         Багана
                       </span>
                     </button>
+                    {showColumnSelector && (
+                      <div className="absolute right-0 top-full mt-2 z-[100] min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden p-2">
+                        <div className="text-xs font-medium text-theme/70 px-2 py-1 border-b border-white/10 mb-1">
+                          Баганууд
+                        </div>
+                        {visibleColumns &&
+                          ALL_COLUMNS.map((col) => {
+                            const isVisible = visibleColumns.includes(col.key);
+                            return (
+                              <label
+                                key={col.key}
+                                className="flex items-center gap-2 px-2 py-1.5 hover:bg-white/10 rounded-lg cursor-pointer transition-colors"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isVisible}
+                                  onChange={() => {
+                                    if (isVisible) {
+                                      setVisibleColumns((prev) =>
+                                        prev.filter((k) => k !== col.key),
+                                      );
+                                    } else {
+                                      setVisibleColumns((prev) => [
+                                        ...prev,
+                                        col.key,
+                                      ]);
+                                    }
+                                  }}
+                                  className="w-4 h-4 rounded border border-theme/30 accent-theme"
+                                />
+                                <span className="text-sm">{col.label}</span>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -225,8 +276,9 @@ export default function GereeHeader({
                       <Download className="w-5 h-5" />
                       <span className="hidden sm:inline text-xs">Excel</span>
                       <ChevronDown
-                        className={`w-4 h-4 transition-transform ${isDesktopExcelOpen ? "rotate-180" : ""
-                          }`}
+                        className={`w-4 h-4 transition-transform ${
+                          isDesktopExcelOpen ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     {isDesktopExcelOpen && (
@@ -328,10 +380,11 @@ export default function GereeHeader({
                 <button
                   id="tab-residents"
                   onClick={() => setActiveTab("residents")}
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "residents"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
+                    activeTab === "residents"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
                       : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
-                    }`}
+                  }`}
                 >
                   Оршин суугч
                 </button>
@@ -340,10 +393,11 @@ export default function GereeHeader({
                 <button
                   id="tab-contracts"
                   onClick={() => setActiveTab("contracts")}
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "contracts"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
+                    activeTab === "contracts"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
                       : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
-                    }`}
+                  }`}
                 >
                   Гэрээ
                 </button>
@@ -352,10 +406,11 @@ export default function GereeHeader({
                 <button
                   id="tab-units"
                   onClick={() => setActiveTab("units")}
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "units"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
+                    activeTab === "units"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
                       : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
-                    }`}
+                  }`}
                 >
                   Тоот бүртгэл
                 </button>
@@ -364,10 +419,11 @@ export default function GereeHeader({
                 <button
                   id="tab-employees"
                   onClick={() => setActiveTab("employees")}
-                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "employees"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
+                    activeTab === "employees"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
                       : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
-                    }`}
+                  }`}
                 >
                   Ажилтан
                 </button>
@@ -390,7 +446,10 @@ export default function GereeHeader({
                             onChange={(val) => setSelectedOrtsForContracts(val)}
                             options={[
                               { value: "", label: "Бүгд" },
-                              ...ortsOptions.map((o) => ({ value: o, label: o })),
+                              ...ortsOptions.map((o) => ({
+                                value: o,
+                                label: o,
+                              })),
                             ]}
                             className="w-full z-50 text-sm"
                             placeholder="Сонгох..."
@@ -429,7 +488,7 @@ export default function GereeHeader({
                           value={statusFilter}
                           onChange={(val) =>
                             setStatusFilter(
-                              val as "all" | "active" | "cancelled"
+                              val as "all" | "active" | "cancelled",
                             )
                           }
                           options={[
@@ -490,7 +549,7 @@ export default function GereeHeader({
                           value={unitStatusFilter}
                           onChange={(val) =>
                             setUnitStatusFilter(
-                              (val as "all" | "occupied" | "free") || "all"
+                              (val as "all" | "occupied" | "free") || "all",
                             )
                           }
                           options={[
@@ -607,7 +666,7 @@ export default function GereeHeader({
                     value={unitStatusFilter}
                     onChange={(val) =>
                       setUnitStatusFilter(
-                        (val as "all" | "occupied" | "free") || "all"
+                        (val as "all" | "occupied" | "free") || "all",
                       )
                     }
                     options={[
@@ -652,8 +711,9 @@ export default function GereeHeader({
                   <Download className="w-5 h-5" />
                   <span className="hidden sm:inline text-xs">Excel</span>
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform ${isMobileExcelOpen ? "rotate-180" : ""
-                      }`}
+                    className={`w-4 h-4 transition-transform ${
+                      isMobileExcelOpen ? "rotate-180" : ""
+                    }`}
                   />
                 </button>
                 {isMobileExcelOpen && (
@@ -707,9 +767,7 @@ export default function GereeHeader({
             id="employees-new-btn"
           >
             <UserPlus className="w-5 h-5" />
-            <span className="hidden sm:inline text-xs ml-1">
-              Ажилтан нэмэх
-            </span>
+            <span className="hidden sm:inline text-xs ml-1">Ажилтан нэмэх</span>
           </button>
         )}
         {activeTab === "units" && (

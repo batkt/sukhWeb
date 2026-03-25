@@ -14,7 +14,7 @@ import {
   MoreHorizontal,
   Plus,
   Edit2,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
@@ -23,6 +23,8 @@ import { toast } from "react-hot-toast";
 import ResidentRegistrationModal from "./ResidentRegistrationModal";
 import deleteMethod from "../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
+import Button from "@/components/ui/Button";
+import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -43,7 +45,7 @@ const RealTimeClock = () => {
   );
 };
 
-  /* Updated interface to match /orshinSuugch response */
+/* Updated interface to match /orshinSuugch response */
 interface ResidentParking {
   _id?: string;
   ner?: string;
@@ -60,7 +62,7 @@ interface ResidentParking {
     ulsiinDugaar: string;
     mark?: string;
   }>;
-  
+
   zochinUrikhEsekh?: boolean;
   zochinTurul?: string;
   davtamjiinTurul?: string;
@@ -81,7 +83,8 @@ export default function OrshinSuugch() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  const [editingResident, setEditingResident] = useState<ResidentParking | null>(null);
+  const [editingResident, setEditingResident] =
+    useState<ResidentParking | null>(null);
   const pageSize = 50;
 
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
@@ -94,7 +97,7 @@ export default function OrshinSuugch() {
           ajiltan?.baiguullagiinId,
           effectiveBarilgiinId,
           page,
-          searchTerm
+          searchTerm,
         ]
       : null,
     async ([url, tkn, bId, barId, pg, search]): Promise<any> => {
@@ -127,17 +130,17 @@ export default function OrshinSuugch() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const residents: ResidentParking[] = useMemo(() => {
     const list = residentsData?.jagsaalt || [];
     if (!effectiveBarilgiinId) return list;
-    
+
     // Client-side filtering by barilgiinId as fallback if backend doesn't filter
     const toStr = (v: any) => (v == null ? "" : String(v));
     const targetBarilgiinId = toStr(effectiveBarilgiinId);
-    
+
     return list.filter((item: any) => {
       const itemBarilgiinId = toStr(item?.barilgiinId);
       return itemBarilgiinId === targetBarilgiinId;
@@ -145,271 +148,151 @@ export default function OrshinSuugch() {
   }, [residentsData, effectiveBarilgiinId]);
 
   // Use filtered count if client-side filtering is applied
-  const totalCount = effectiveBarilgiinId 
-    ? residents.length 
-    : (residentsData?.niitMur || 0);
+  const totalCount = effectiveBarilgiinId
+    ? residents.length
+    : residentsData?.niitMur || 0;
   const totalPages = Math.ceil(totalCount / pageSize);
-  
+
   const handleDelete = async (r: ResidentParking) => {
     const id = r._id;
     if (!id || !token) return;
-    if (!window.confirm(`${r.ner || r.orshinSuugchNer || "Энэ хэрэглэгчийг"} устгахдаа итгэлтэй байна уу?`)) return;
-    
+    if (
+      !window.confirm(
+        `${r.ner || r.orshinSuugchNer || "Энэ хэрэглэгчийг"} устгахдаа итгэлтэй байна уу?`,
+      )
+    )
+      return;
+
     try {
-        // Based on save endpoint /zochinHadgalya, we might need a specific delete endpoint
-        // but trying regular deleteMethod first as it's common in this project
-        const res = await deleteMethod("orshinSuugch", token, id);
-        if (res.data) {
-            toast.success("Амжилттай устгагдлаа");
-            mutate();
-        }
+      // Based on save endpoint /zochinHadgalya, we might need a specific delete endpoint
+      // but trying regular deleteMethod first as it's common in this project
+      const res = await deleteMethod("orshinSuugch", token, id);
+      if (res.data) {
+        toast.success("Амжилттай устгагдлаа");
+        mutate();
+      }
     } catch (err) {
-        toast.error("Устгахад алдаа гарлаа");
+      toast.error("Устгахад алдаа гарлаа");
     }
   };
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
       <div className="p-4 sm:p-8 max-w-[1700px] mx-auto min-h-full flex flex-col gap-6">
-        
         {/* Header */}
         <div className="relative z-10 px-6 py-4 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-             {/* Left: Title and Stats */}
-             <div className="flex items-center gap-4 shrink-0">
-                <div className="p-2.5 rounded-2xl bg-slate-900 text-white shadow-lg">
-                  <User className="w-5 h-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-black text-slate-800 dark:text-white tracking-tight leading-none">
-                    Оршин суугч
-                  </h1>
-                  <p className="text-[9px]  text-slate-400 uppercase tracking-widest mt-1">
-                    {residentsData?.niitMur || 0} Бүртгэлтэй
-                  </p>
-                </div>
-             </div>
+            {/* Left: Title and Stats */}
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="p-2.5 rounded-2xl bg-slate-900 text-white shadow-lg">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-lg font-black text-slate-800 dark:text-white tracking-tight leading-none">
+                  Оршин суугч
+                </h1>
+                <p className="text-[9px]  text-slate-400 uppercase tracking-widest mt-1">
+                  {residentsData?.niitMur || 0} Бүртгэлтэй
+                </p>
+              </div>
+            </div>
 
-             {/* Right: Controls */}
-             <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 flex-1 lg:justify-end">
-                <div className="relative group w-full sm:w-72 max-w-sm">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
-                    <input
-                      type="text"
-                      placeholder="Нэр, утас, дугаар хайх..."
-                      value={searchTerm}
-                      onChange={(e) => {
-                        setSearchTerm(e.target.value);
-                        setPage(1);
-                      }}
-                      className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px]  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
-                    />
-                </div>
+            {/* Right: Controls */}
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 flex-1 lg:justify-end">
+              <div className="relative group w-full sm:w-72 max-w-sm">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#4285F4] transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Нэр, утас, дугаар хайх..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setPage(1);
+                  }}
+                  className="w-full pl-11 pr-4 h-11 rounded-[30px] bg-slate-50 dark:bg-slate-800/50 border-0 text-[11px]  text-slate-700 dark:text-slate-200 placeholder:text-slate-400 focus:ring-2 focus:ring-[#4285F4]/20 transition-all shadow-inner"
+                />
+              </div>
 
-                <div className="shrink-0 scale-90 origin-right border-l border-slate-100 dark:border-slate-800 pl-4">
-                   <RealTimeClock />
-                </div>
-
-                <div className="pl-2 border-l border-slate-100 dark:border-slate-800">
-                    <button 
-                        onClick={() => setShowRegistrationModal(true)}
-                        className="flex items-center justify-center gap-2 h-11 px-6 rounded-[30px] bg-[#4285F4] text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-md shadow-blue-500/20 whitespace-nowrap"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Бүртгэх</span>
-                    </button>
-                </div>
-             </div>
+              <Button
+                onClick={() => setShowRegistrationModal(true)}
+                variant="primary"
+                size="sm"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+                className="h-11 px-6 rounded-[30px] uppercase tracking-widest text-[10px] font-black"
+              >
+                <span className="hidden sm:inline">Бүртгэх</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {showRegistrationModal && (
-          <ResidentRegistrationModal 
+          <ResidentRegistrationModal
             onClose={() => setShowRegistrationModal(false)}
             token={token || ""}
             barilgiinId={effectiveBarilgiinId}
             baiguullagiinId={ajiltan?.baiguullagiinId}
             onSuccess={() => {
-                mutate(); // Refresh the list
+              mutate(); // Refresh the list
             }}
           />
         )}
 
         {editingResident && (
-            <ResidentRegistrationModal 
-                onClose={() => setEditingResident(null)}
-                token={token || ""}
-                barilgiinId={effectiveBarilgiinId}
-                baiguullagiinId={ajiltan?.baiguullagiinId}
-                editData={editingResident}
-                onSuccess={() => {
-                    mutate(); // Refresh the list
-                }}
-            />
+          <ResidentRegistrationModal
+            onClose={() => setEditingResident(null)}
+            token={token || ""}
+            barilgiinId={effectiveBarilgiinId}
+            baiguullagiinId={ajiltan?.baiguullagiinId}
+            editData={editingResident}
+            onSuccess={() => {
+              mutate(); // Refresh the list
+            }}
+          />
         )}
 
         {/* Content Table */}
-        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800  backdrop-blur-xl shadow-2xl flex-1 mt-2">
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full border-collapse min-w-[1200px]">
-              <thead className="border-b border-white/5">
-                <tr className="whitespace-nowrap">
-                   {[
-                        { label: "№", width: 'w-12 text-center' },
-                        { label: "Нэр", align: 'text-center' },
-                        { label: "Утас", align: 'text-center' },
-                        { label: "Дугаар", align: 'text-center' },
-                        { label: "Төрөл", align: 'text-center' },
-                        { label: "Ажилтан", align: 'text-center' },
-                        { label: "Тоот", align: 'text-center' },
-                        { label: "Үйлдэл", width: 'w-24 text-center' }
-                      ].map((h, idx) => (
-                        <th key={idx} className={`py-4 px-4 text-slate-400 uppercase tracking-tighter text-[10px] ${h.width || 'text-left'} ${h.align || ''}`}>
-                            {h.label}
-                        </th>
-                      ))}
-                </tr>
-              </thead>
-              <tbody>
-                {!residentsData && !residents.length ? (
-                   <tr>
-                    <td colSpan={8} className="px-4 py-20 text-center">
-                       <div className="flex flex-col items-center gap-4">
-                          <div className="w-10 h-10 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-                          <p className="text-xs  text-slate-400 uppercase tracking-widest animate-pulse">Уншиж байна...</p>
-                       </div>
-                    </td>
-                  </tr>
-                ) : residents.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="px-4 py-12 text-center text-slate-400">
-                      <div className="flex flex-col items-center gap-2">
-                        <User className="w-12 h-12 opacity-50" />
-                        <p>Оршин суугчийн мэдээлэл олдсонгүй</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  residents.map((resident, idx) => (
-                    <tr
-                      key={resident._id || idx}
-                      className="border-b border-slate-100 dark:border-slate-800/50 hover:bg-blue-50/40 dark:hover:bg-blue-900/10 transition-colors group relative"
-                    >
-                      <td className="py-4 px-3 text-center text-[10px] text-slate-400 ">
-                        {(page - 1) * pageSize + idx + 1}
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500">
-                            <User className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="text-[12px] font-black text-slate-700 dark:text-slate-200">
-                                {resident.ner || resident.orshinSuugchNer || "Нэр тодорхойгүй"}
-                            </p>
-                            <p className="text-[10px]  text-slate-400">
-                                {resident.ovog || ""}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-2 text-[11px]  text-slate-600 dark:text-slate-400">
-                          <Phone className="w-3.5 h-3.5 text-slate-400" />
-                          {resident.utas || "-"}
-                        </div>
-                      </td>
-                       <td className="py-4 px-4">
-                        <div className="flex flex-wrap gap-2">
-                          {resident.mashiniiDugaar ? (
-                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50">
-                                <Car className="w-3 h-3 text-blue-500" />
-                                <span className="text-[10px]  text-slate-700 dark:text-blue-200">
-                                  {resident.mashiniiDugaar}
-                                </span>
-                              </div>
-                          ) : (
-                                <span className="text-[10px] text-slate-400 italic">Машин бүртгэлгүй</span>
-                          )}
-                        </div>
-                      </td>
-                       <td className="py-4 px-4">
-                         <div className="flex flex-col gap-1.5">
-                            <span className="px-2 py-1 rounded text-[10px]  bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 w-fit">
-                              {resident.zochinTurul || resident.turul || "-"}
-                            </span>
-                            {resident.zochinErkhiinToo !== undefined && (
-                                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 w-fit">
-                                    <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tighter">
-                                        Хэрэглэсэн {(resident.mashinuud?.length || 0) + (residentsData?.ezenList?.filter((e: any) => e.ezemshigchiinId === resident._id)?.length || 0)}/{resident.zochinErkhiinToo}
-                                    </span>
-                                </div>
-                            )}
-                         </div>
-                      </td>
-                      <td className="py-4 px-4">
-                         <div className="text-[11px]  text-slate-600 dark:text-slate-400">
-                            {resident.burtgesenAjiltaniiNer || "-"}
-                         </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                         <div className="flex items-center justify-center gap-2">
-                            <span className="px-2.5 py-1 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 text-[10px]  text-emerald-700 dark:text-emerald-400">
-                              {resident.ezenToot || getResidentToot(resident) ? `${resident.ezenToot || getResidentToot(resident)} тоот` : "-"}
-                            </span>
-                         </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                         <div className="flex justify-center items-center gap-1">
-                            <button 
-                                onClick={() => setEditingResident(resident)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
-                                title="Засах"
-                            >
-                                <Edit2 className="w-4 h-4-blue-500" />
-                            </button>
-                            <button 
-                                onClick={() => handleDelete(resident)}
-                                className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                                title="Устгах"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                            </button>
-                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="relative overflow-hidden rounded-[32px] border border-slate-200 dark:border-slate-800 backdrop-blur-xl shadow-2xl flex-1 mt-2 p-4">
+          <ZogsoolOrshinSuugchTable
+            data={residents}
+            loading={!residentsData && !residents.length}
+            page={page}
+            pageSize={pageSize}
+            onEdit={(resident) => setEditingResident(resident)}
+            onDelete={(resident) => handleDelete(resident)}
+          />
         </div>
 
-        {/* Pagination - Reuse style */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-2 py-8 mt-auto">
-             <button
-               onClick={() => setPage((p) => Math.max(1, p - 1))}
-               disabled={page === 1}
-               className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-all  text-xs uppercase tracking-widest shadow-sm"
-             >
-               Өмнөх
-             </button>
-             <div className="flex items-center justify-center px-6 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-                <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-tighter">
-                  {page} <span className="text-slate-300 dark:text-slate-600 mx-1">/</span> {totalPages}
-                </span>
-             </div>
-             <button
-               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-               disabled={page >= totalPages}
-               className="px-5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-800 transition-all  text-xs uppercase tracking-widest shadow-sm"
-             >
-               Дараах
-             </button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              Өмнөх
+            </Button>
+            <div className="flex items-center justify-center px-6 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-tighter">
+                {page}{" "}
+                <span className="text-slate-300 dark:text-slate-600 mx-1">
+                  /
+                </span>{" "}
+                {totalPages}
+              </span>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+            >
+              Дараах
+            </Button>
           </div>
         )}
-
       </div>
     </div>
   );

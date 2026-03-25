@@ -12,7 +12,9 @@ export default function TootBurtgelPage() {
 
   useEffect(() => {
     if (ajiltan) {
-      const allowed = hasPermission(ajiltan, "/geree/tootBurtgel") || hasPermission(ajiltan, "geree.tootBurtgel");
+      const allowed =
+        hasPermission(ajiltan, "/geree/tootBurtgel") ||
+        hasPermission(ajiltan, "geree.tootBurtgel");
       if (!allowed) {
         router.push("/geree");
       }
@@ -36,6 +38,7 @@ export default function TootBurtgelPage() {
       setUnitPage={state.setUnitPage}
       setUnitPageSize={state.setUnitPageSize}
       unitStatusFilter={state.unitStatusFilter}
+      getTootOptions={data.getTootOptions}
       isSavingUnits={state.isSavingUnits}
       composeKey={data.composeKey}
       onAddUnit={(floor) => {

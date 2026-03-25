@@ -6,7 +6,11 @@ import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
-import { getResidentToot, getResidentDavkhar, getResidentOrts } from "@/lib/residentDataHelper";
+import {
+  getResidentToot,
+  getResidentDavkhar,
+  getResidentOrts,
+} from "@/lib/residentDataHelper";
 
 interface ResidentModalProps {
   show: boolean;
@@ -48,7 +52,11 @@ export default function ResidentModal({
   const validate = () => {
     const newErrors: string[] = [];
     if (!newResident.ner?.trim()) newErrors.push("ner");
-    if (!newResident.utas || (Array.isArray(newResident.utas) && !newResident.utas[0]?.trim())) newErrors.push("utas");
+    if (
+      !newResident.utas ||
+      (Array.isArray(newResident.utas) && !newResident.utas[0]?.trim())
+    )
+      newErrors.push("utas");
     if (!newResident.orts?.trim()) newErrors.push("orts");
     if (!newResident.davkhar?.trim()) newErrors.push("davkhar");
     if (!newResident.toot?.trim()) newErrors.push("toot");
@@ -61,10 +69,12 @@ export default function ResidentModal({
         utas: "Утас",
         orts: "Орц",
         davkhar: "Давхар",
-        toot: "Тоот"
+        toot: "Тоот",
       };
-      const missingFields = newErrors.map(e => fieldNames[e]).join(", ");
-      openErrorOverlay(`Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`);
+      const missingFields = newErrors.map((e) => fieldNames[e]).join(", ");
+      openErrorOverlay(
+        `Дараах талбарууд бөглөх шаардлагатай: ${missingFields}`,
+      );
       return false;
     }
     return true;
@@ -76,13 +86,13 @@ export default function ResidentModal({
       // Duplicate check: same ovog + ner + phone already registered
       const ovog = (newResident.ovog || "").toString().trim().toLowerCase();
       const ner = (newResident.ner || "").toString().trim().toLowerCase();
-      const phone =
-        (Array.isArray(newResident.utas)
+      const phone = (
+        Array.isArray(newResident.utas)
           ? newResident.utas[0]
           : newResident.utas || ""
-        )
-          .toString()
-          .trim();
+      )
+        .toString()
+        .trim();
 
       if (ovog && ner && phone && Array.isArray(currentResidents)) {
         const duplicates = currentResidents.filter((r: any) => {
@@ -93,7 +103,8 @@ export default function ResidentModal({
             .trim();
           // Ignore the same resident when editing
           const isSameResident =
-            editingResident && String(editingResident._id || "") === String(r._id || "");
+            editingResident &&
+            String(editingResident._id || "") === String(r._id || "");
           if (isSameResident) return false;
           return rOvog === ovog && rNer === ner && rPhone === phone;
         });
@@ -109,7 +120,7 @@ export default function ResidentModal({
             .join("; ");
 
           openErrorOverlay(
-            `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`
+            `Энэ овог, нэр, утасны оршин суугч дараах тоот дээр бүртгэлтэй байна: ${tootList}. Давхардсан бүртгэл үүсгэх боломжгүй.`,
           );
           return;
         }
@@ -118,7 +129,7 @@ export default function ResidentModal({
       onSubmit(e);
     }
   };
-  
+
   // Get sohNer from selectedBarilga or baiguullaga (must be before early return)
   const sohNer = React.useMemo(() => {
     if (selectedBarilga?.tokhirgoo?.sohNer) {
@@ -132,7 +143,7 @@ export default function ResidentModal({
     }
     return "";
   }, [selectedBarilga, baiguullaga]);
-  
+
   useModalHotkeys({
     isOpen: show,
     onClose,
@@ -145,9 +156,13 @@ export default function ResidentModal({
 
   const formatWithCommas = (val: any) => {
     if (val === undefined || val === null || val === "" || val === 0) return "";
-    const num = typeof val === "string" ? parseFloat(val.replace(/,/g, "")) : val;
+    const num =
+      typeof val === "string" ? parseFloat(val.replace(/,/g, "")) : val;
     if (isNaN(num)) return "";
-    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   };
 
   const parseToNumber = (str: string) => {
@@ -166,7 +181,9 @@ export default function ResidentModal({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         /* INPUTS AND TEXTAREAS - IDENTICAL STYLING */
         .modern-input,
         .modern-textarea {
@@ -319,10 +336,7 @@ export default function ResidentModal({
         [data-mode="dark"] div[role="listbox"] > div button {
           color: var(--panel-text) !important;
         }
-        html[data-mode="dark"] div[role="listbox"] > div button:hover,
-        [data-mode="dark"] div[role="listbox"] > div button:hover {
-          background: rgba(255, 255, 255, 0.1) !important;
-        }
+      
         html[data-mode="dark"] div[role="listbox"] > div button[aria-selected="true"],
         [data-mode="dark"] div[role="listbox"] > div button[aria-selected="true"] {
           background: rgba(255, 255, 255, 0.15) !important;
@@ -334,331 +348,424 @@ export default function ResidentModal({
           color: rgba(229, 231, 235, 0.5) !important;
           opacity: 0.5 !important;
         }
-      `}} />
+      `,
+        }}
+      />
       <AnimatePresence>
         <ModalPortal>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
-        >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <motion.div
-            ref={residentRef}
-            initial={{ scale: 0.96, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: 20 }}
-            transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
-            onClick={(e) => e.stopPropagation()}
-            className="relative modal-surface modal-responsive sm:w-full sm:max-w-2xl rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent">
-              <div className="flex items-center gap-3">
-                <svg className="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                <h2 className="text-lg  text-slate-900 dark:text-[var(--panel-text)]">
-                  {editingResident ? "Оршин суугчийн мэдээлэл засах" : "Оршин суугч нэмэх"}
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
-                aria-label="Хаах"
-                title="Хаах"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-slate-500 dark:text-slate-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  aria-hidden="true"
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <motion.div
+              ref={residentRef}
+              initial={{ scale: 0.96, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.96, opacity: 0, y: 20 }}
+              transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative modal-surface modal-responsive sm:w-full sm:max-w-2xl rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                <div className="flex items-center gap-3">
+                  <svg
+                    className="w-5 h-5 text-slate-600 dark:text-slate-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <h2 className="text-lg  text-slate-900 dark:text-[var(--panel-text)]">
+                    {editingResident
+                      ? "Оршин суугчийн мэдээлэл засах"
+                      : "Оршин суугч нэмэх"}
+                  </h2>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-lg transition-all duration-200  active:scale-95"
+                  aria-label="Хаах"
+                  title="Хаах"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleLocalSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {/* Төрөл */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Төрөл
-                    </label>
-                    <div className="tusgai-wrapper w-full flex items-center">
-                      <TusgaiZagvar
-                        value={newResident.turul || "Үндсэн"}
-                        onChange={(val: string) => {
-                          setNewResident((p: any) => ({ ...p, turul: val }));
-                        }}
-                        options={[
-                          { value: "Үндсэн", label: "Үндсэн" },
-                          { value: "Түр", label: "Түр" },
-                        ]}
-                        className="w-full h-full"
-                        placeholder="Төрөл сонгох..."
-                      />
-                    </div>
-                  </div>
-
-                  {/* Овог */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Овог
-                    </label>
-                    <input
-                      type="text"
-                      value={newResident.ovog || ""}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
-                        setNewResident((p: any) => ({ ...p, ovog: value }));
-                      }}
-                      className="modern-input w-full"
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-slate-500 dark:text-slate-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
                     />
-                  </div>
+                  </svg>
+                </button>
+              </div>
 
-                  {/* Нэр */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Нэр
-                    </label>
-                    <input
-                      type="text"
-                      value={newResident.ner || ""}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
-                        setNewResident((p: any) => ({ ...p, ner: value }));
-                      }}
-                      className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
-                    />
-                  </div>
-
-                  {/* Утас */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Утас
-                    </label>
-                    <input
-                      type="tel"
-                      value={Array.isArray(newResident.utas) ? newResident.utas[0] || "" : newResident.utas || ""}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
-                        setNewResident((p: any) => ({ ...p, utas: [value] }));
-                      }}
-                      className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
-                      placeholder="12345678"
-                      maxLength={8}
-                    />
-                  </div>
-
-                  {/* СӨХ нэр, Орц, Давхар, Тоот - One row */}
-                  <div className="md:col-span-2 grid grid-cols-4 gap-2">
-                    {/* СӨХ нэр (Регистр) */}
+              <form
+                onSubmit={handleLocalSubmit}
+                className="flex-1 flex flex-col min-h-0 overflow-hidden"
+              >
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Төрөл */}
                     <div>
                       <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        СӨХ нэр
+                        Төрөл
+                      </label>
+                      <div className="tusgai-wrapper w-full flex items-center">
+                        <TusgaiZagvar
+                          value={newResident.turul || "Үндсэн"}
+                          onChange={(val: string) => {
+                            setNewResident((p: any) => ({ ...p, turul: val }));
+                          }}
+                          options={[
+                            { value: "Үндсэн", label: "Үндсэн" },
+                            { value: "Түр", label: "Түр" },
+                          ]}
+                          className="w-full h-full"
+                          placeholder="Төрөл сонгох..."
+                        />
+                      </div>
+                    </div>
+
+                    {/* Овог */}
+                    <div>
+                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        Овог
                       </label>
                       <input
                         type="text"
-                        value={sohNer || ""}
+                        value={newResident.ovog || ""}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                            "",
+                          );
+                          setNewResident((p: any) => ({ ...p, ovog: value }));
+                        }}
+                        className="modern-input w-full"
+                      />
+                    </div>
+
+                    {/* Нэр */}
+                    <div>
+                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        Нэр
+                      </label>
+                      <input
+                        type="text"
+                        value={newResident.ner || ""}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(
+                            /[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g,
+                            "",
+                          );
+                          setNewResident((p: any) => ({ ...p, ner: value }));
+                        }}
+                        className={`modern-input w-full ${errors.includes("ner") ? "input-error" : ""}`}
+                      />
+                    </div>
+
+                    {/* Утас */}
+                    <div>
+                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        Утас
+                      </label>
+                      <input
+                        type="tel"
+                        value={
+                          Array.isArray(newResident.utas)
+                            ? newResident.utas[0] || ""
+                            : newResident.utas || ""
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value
+                            .replace(/[^0-9]/g, "")
+                            .slice(0, 8);
+                          setNewResident((p: any) => ({ ...p, utas: [value] }));
+                        }}
+                        className={`modern-input w-full ${errors.includes("utas") ? "input-error" : ""}`}
+                        placeholder="12345678"
+                        maxLength={8}
+                      />
+                    </div>
+
+                    {/* СӨХ нэр, Орц, Давхар, Тоот - One row */}
+                    <div className="md:col-span-2 grid grid-cols-4 gap-2">
+                      {/* СӨХ нэр (Регистр) */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          СӨХ нэр
+                        </label>
+                        <input
+                          type="text"
+                          value={sohNer || ""}
+                          className="modern-input w-full"
+                          readOnly
+                          disabled
+                        />
+                      </div>
+
+                      {/* Орц */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Орц
+                        </label>
+                        <div
+                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("orts") ? "input-error" : ""}`}
+                        >
+                          <TusgaiZagvar
+                            value={newResident.orts || ""}
+                            onChange={(val: string) => {
+                              setNewResident((p: any) => ({
+                                ...p,
+                                orts: val,
+                                toot: "",
+                              }));
+                            }}
+                            options={
+                              ortsOptions.length > 0
+                                ? ortsOptions.map((o) => ({
+                                    value: o,
+                                    label: o,
+                                  }))
+                                : [{ value: "", label: "Орц тохируулаагүй" }]
+                            }
+                            className="w-full h-full"
+                            placeholder="Сонгох..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Давхар */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Давхар
+                        </label>
+                        <div
+                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("davkhar") ? "input-error" : ""}`}
+                        >
+                          <TusgaiZagvar
+                            value={newResident.davkhar || ""}
+                            onChange={(val: string) => {
+                              setNewResident((p: any) => ({
+                                ...p,
+                                davkhar: val,
+                                toot: "",
+                              }));
+                            }}
+                            options={
+                              davkharOptions.length > 0
+                                ? davkharOptions.map((d) => ({
+                                    value: d,
+                                    label: d,
+                                  }))
+                                : [{ value: "", label: "Давхар тохируулаагүй" }]
+                            }
+                            className="w-full h-full"
+                            placeholder="Сонгох..."
+                          />
+                        </div>
+                      </div>
+
+                      {/* Тоот */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Тоот
+                        </label>
+                        <div
+                          className={`tusgai-wrapper w-full flex items-center ${errors.includes("toot") ? "input-error" : ""} ${!newResident.orts || !newResident.davkhar ? "disabled" : ""}`}
+                        >
+                          <TusgaiZagvar
+                            value={newResident.toot || ""}
+                            onChange={(val: string) => {
+                              setNewResident((p: any) => ({ ...p, toot: val }));
+                            }}
+                            options={
+                              getTootOptions(
+                                newResident.orts || "",
+                                newResident.davkhar || "",
+                              ).length > 0
+                                ? getTootOptions(
+                                    newResident.orts || "",
+                                    newResident.davkhar || "",
+                                  ).map((t) => {
+                                    const isOccupied = currentResidents?.some(
+                                      (r: any) => {
+                                        const rOrts = String(
+                                          getResidentOrts(r) || "",
+                                        ).trim();
+                                        const rDavkhar = String(
+                                          getResidentDavkhar(r) || "",
+                                        ).trim();
+                                        const rToot = String(
+                                          getResidentToot(r) || "",
+                                        ).trim();
+                                        const isSameUnit =
+                                          rOrts ===
+                                            String(
+                                              newResident.orts || "",
+                                            ).trim() &&
+                                          rDavkhar ===
+                                            String(
+                                              newResident.davkhar || "",
+                                            ).trim() &&
+                                          rToot === String(t || "").trim();
+                                        const isDifferentResident =
+                                          String(r._id || "") !==
+                                          String(editingResident?._id || "");
+                                        return (
+                                          isSameUnit && isDifferentResident
+                                        );
+                                      },
+                                    );
+                                    return { value: t, label: t, isOccupied };
+                                  })
+                                : [{ value: "", label: "Тоотын сонгох" }]
+                            }
+                            className="w-full h-full"
+                            placeholder="Сонгох..."
+                            disabled={!newResident.orts || !newResident.davkhar}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Барилгын нэр */}
+                    <div>
+                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        Барилгын нэр
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedBarilga?.ner || ""}
                         className="modern-input w-full"
                         readOnly
                         disabled
                       />
                     </div>
 
-                    {/* Орц */}
+                    {/* Эхний үлдэгдэл */}
                     <div>
                       <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Орц
+                        Эхний үлдэгдэл
                       </label>
-                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("orts") ? "input-error" : ""}`}>
-                        <TusgaiZagvar
-                          value={newResident.orts || ""}
-                          onChange={(val: string) => {
-                            setNewResident((p: any) => ({ ...p, orts: val, toot: "" }));
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={uldegdelInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setUldegdelInput(val);
+                              // Also update parent state with raw number for submission
+                              const num = parseFloat(val.replace(/,/g, ""));
+                              setNewResident((p: any) => ({
+                                ...p,
+                                ekhniiUldegdel: isNaN(num) ? undefined : num,
+                              }));
+                            }
                           }}
-                          options={ortsOptions.length > 0 ? ortsOptions.map((o) => ({ value: o, label: o })) : [{ value: "", label: "Орц тохируулаагүй" }]}
-                          className="w-full h-full"
-                          placeholder="Сонгох..."
+                          onFocus={() => {
+                            setUldegdelInput(uldegdelInput.replace(/,/g, ""));
+                          }}
+                          onBlur={() => {
+                            setUldegdelInput(formatWithCommas(uldegdelInput));
+                          }}
+                          className="modern-input w-full pr-extra text-right "
+                          placeholder="0.00"
                         />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none"></span>
                       </div>
                     </div>
 
-                    {/* Давхар */}
-                    <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Давхар
-                      </label>
-                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("davkhar") ? "input-error" : ""}`}>
-                        <TusgaiZagvar
-                          value={newResident.davkhar || ""}
-                          onChange={(val: string) => {
-                            setNewResident((p: any) => ({ ...p, davkhar: val, toot: "" }));
+                    {/* Тайлбар and Цахилгааны заалт - One row */}
+                    <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                      {/* Тайлбар */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Тайлбар
+                        </label>
+                        <textarea
+                          value={newResident.tailbar || ""}
+                          onChange={(e) => {
+                            setNewResident((p: any) => ({
+                              ...p,
+                              tailbar: e.target.value,
+                            }));
                           }}
-                          options={davkharOptions.length > 0 ? davkharOptions.map((d) => ({ value: d, label: d })) : [{ value: "", label: "Давхар тохируулаагүй" }]}
-                          className="w-full h-full"
-                          placeholder="Сонгох..."
+                          className="modern-textarea w-full resize-none"
+                          placeholder="Тайлбар..."
                         />
                       </div>
-                    </div>
 
-                    {/* Тоот */}
-                    <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Тоот
-                      </label>
-                      <div className={`tusgai-wrapper w-full flex items-center ${errors.includes("toot") ? "input-error" : "" } ${(!newResident.orts || !newResident.davkhar) ? 'disabled' : ''}`}>
-                        <TusgaiZagvar
-                          value={newResident.toot || ""}
-                          onChange={(val: string) => {
-                            setNewResident((p: any) => ({ ...p, toot: val }));
+                      {/* Цахилгаан кВт */}
+                      <div>
+                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Цахилгаан кВт
+                        </label>
+                        <input
+                          type="text"
+                          value={zaaltInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^[0-9.,]*$/.test(val)) {
+                              setZaaltInput(val);
+                              // Keep string in state as it might be used as string key
+                              setNewResident((p: any) => ({
+                                ...p,
+                                tsahilgaaniiZaalt: val.replace(/,/g, ""),
+                              }));
+                            }
                           }}
-                          options={getTootOptions(newResident.orts || "", newResident.davkhar || "").length > 0 
-                            ? getTootOptions(newResident.orts || "", newResident.davkhar || "").map((t) => {
-                                const isOccupied = currentResidents?.some((r: any) => {
-                                  const rOrts = String(getResidentOrts(r) || "").trim();
-                                  const rDavkhar = String(getResidentDavkhar(r) || "").trim();
-                                  const rToot = String(getResidentToot(r) || "").trim();
-                                  const isSameUnit = rOrts === String(newResident.orts || "").trim() && 
-                                                    rDavkhar === String(newResident.davkhar || "").trim() && 
-                                                    rToot === String(t || "").trim();
-                                  const isDifferentResident = String(r._id || "") !== String(editingResident?._id || "");
-                                  return isSameUnit && isDifferentResident;
-                                });
-                                return { value: t, label: t, isOccupied };
-                              })
-                            : [{ value: "", label: "Тоотын сонгох" }]}
-                          className="w-full h-full"
-                          placeholder="Сонгох..."
-                          disabled={!newResident.orts || !newResident.davkhar}
+                          onFocus={() => {
+                            setZaaltInput(zaaltInput.replace(/,/g, ""));
+                          }}
+                          onBlur={() => {
+                            setZaaltInput(formatWithCommas(zaaltInput));
+                          }}
+                          className="modern-input w-full text-right "
+                          placeholder="0.00"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Барилгын нэр */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Барилгын нэр
-                    </label>
-                    <input
-                      type="text"
-                      value={selectedBarilga?.ner || ""}
-                      className="modern-input w-full"
-                      readOnly
-                      disabled
-                    />
-                  </div>
-
-                  {/* Эхний үлдэгдэл */}
-                  <div>
-                    <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                      Эхний үлдэгдэл
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={uldegdelInput}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^[0-9.,]*$/.test(val)) {
-                            setUldegdelInput(val);
-                            // Also update parent state with raw number for submission
-                            const num = parseFloat(val.replace(/,/g, ""));
-                            setNewResident((p: any) => ({ ...p, ekhniiUldegdel: isNaN(num) ? undefined : num }));
-                          }
-                        }}
-                        onFocus={() => {
-                          setUldegdelInput(uldegdelInput.replace(/,/g, ""));
-                        }}
-                        onBlur={() => {
-                          setUldegdelInput(formatWithCommas(uldegdelInput));
-                        }}
-                        className="modern-input w-full pr-extra text-right "
-                        placeholder="0.00"
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none"></span>
-                    </div>
-                  </div>
-
-                  {/* Тайлбар and Цахилгааны заалт - One row */}
-                  <div className="md:col-span-2 grid grid-cols-2 gap-2">
-                    {/* Тайлбар */}
-                    <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Тайлбар
-                      </label>
-                      <textarea
-                        value={newResident.tailbar || ""}
-                        onChange={(e) => {
-                          setNewResident((p: any) => ({ ...p, tailbar: e.target.value }));
-                        }}
-                        className="modern-textarea w-full resize-none"
-                        placeholder="Тайлбар..."
-                      />
-                    </div>
-
-                    {/* Цахилгаан кВт */}
-                    <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
-                        Цахилгаан кВт
-                      </label>
-                      <input
-                        type="text"
-                        value={zaaltInput}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^[0-9.,]*$/.test(val)) {
-                            setZaaltInput(val);
-                            // Keep string in state as it might be used as string key
-                            setNewResident((p: any) => ({ ...p, tsahilgaaniiZaalt: val.replace(/,/g, "") }));
-                          }
-                        }}
-                        onFocus={() => {
-                          setZaaltInput(zaaltInput.replace(/,/g, ""));
-                        }}
-                        onBlur={() => {
-                          setZaaltInput(formatWithCommas(zaaltInput));
-                        }}
-                        className="modern-input w-full text-right "
-                        placeholder="0.00"
-                      />
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="btn-minimal-ghost btn-cancel min-w-[80px] text-sm py-2 px-4 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95"
-                >
-                  Цуцлах
-                </button>
-                <button
-                  type="submit"
-                  className="btn-minimal btn-save min-w-[80px] text-sm py-2 px-4 rounded-lg transition-all duration-200 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-                  data-modal-primary
-                >
-                  {editingResident ? "Хадгалах" : "Хадгалах"}
-                </button>
-              </div>
-            </form>
+                <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="ant-btn ant-btn-default min-w-[80px] text-sm py-2 px-4 rounded-lg"
+                  >
+                    Цуцлах
+                  </button>
+                  <button
+                    type="submit"
+                    className="ant-btn ant-btn-primary min-w-[80px] text-sm py-2 px-4 rounded-lg"
+                    data-modal-primary
+                  >
+                    {editingResident ? "Хадгалах" : "Хадгалах"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      </ModalPortal>
-    </AnimatePresence>
+        </ModalPortal>
+      </AnimatePresence>
     </>
   );
 }

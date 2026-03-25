@@ -1,4 +1,8 @@
-import React from "react";
+"use client";
+
+import React, { useMemo } from "react";
+import { Table } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { ChevronDown, ChevronUp, Edit, Eye, FileText } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
@@ -13,7 +17,9 @@ interface ContractsTableProps {
   selectAllContracts: boolean;
   setSelectAllContracts: (value: boolean) => void;
   selectedContracts: string[];
-  setSelectedContracts: (value: string[] | ((prev: string[]) => string[])) => void;
+  setSelectedContracts: (
+    value: string[] | ((prev: string[]) => string[]),
+  ) => void;
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
   toggleSortFor: (key: SortKey) => void;
@@ -50,167 +56,163 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   setCurrentPage,
   setRowsPerPage,
 }) => {
+  const columns: ColumnsType<any> = useMemo(() => {
+    const baseColumns: ColumnsType<any> = [
+      {
+        title: "№",
+        key: "index",
+        width: 50,
+        align: "center",
+        render: (_: any, __: any, index: number) => startIndex + index + 1,
+      },
+    ];
+
+    const dynamicColumns: ColumnsType<any> = visibleColumns.map(
+      (columnKey, colIdx) => {
+        const column = ALL_COLUMNS.find((col) => col.key === columnKey);
+        const isSortable =
+          column?.key === "toot" ||
+          column?.key === "orts" ||
+          column?.key === "davkhar" ||
+          column?.key === "ognoo";
+        const isLastCol = colIdx === visibleColumns.length - 1;
+
+        const alignClass =
+          columnKey === "ner" || columnKey === "bairniiNer"
+            ? "left"
+            : columnKey === "sariinTurees" ||
+                columnKey === "baritsaaniiUldegdel"
+              ? "right"
+              : "center";
+
+        if (isSortable) {
+          const keyMap: Record<string, SortKey> = {
+            ognoo: "createdAt",
+            toot: "toot",
+            orts: "orts",
+            davkhar: "davkhar",
+          };
+          const targetKey = keyMap[column?.key || "ognoo"];
+
+          return {
+            title: (
+              <button
+                type="button"
+                onClick={() => toggleSortFor(targetKey)}
+                className={`w-full inline-flex items-center gap-2 ${
+                  alignClass === "left"
+                    ? "justify-start"
+                    : alignClass === "right"
+                      ? "justify-end"
+                      : "justify-center"
+                }`}
+                title={`Эрэмбэлэх: ${column?.label}`}
+              >
+                <span>{column?.label}</span>
+                <span className="flex flex-col items-center">
+                  <ChevronUp
+                    className={`w-3 h-3 ${
+                      sortKey === targetKey && sortOrder === "asc"
+                        ? "text-blue-500"
+                        : "text-subtle"
+                    }`}
+                  />
+                  <ChevronDown
+                    className={`w-3 h-3 ${
+                      sortKey === targetKey && sortOrder === "desc"
+                        ? "text-blue-500"
+                        : "text-subtle"
+                    }`}
+                  />
+                </span>
+              </button>
+            ),
+            dataIndex: columnKey,
+            key: columnKey,
+            align: alignClass as any,
+            render: (_: any, record: any) => renderCellValue(record, columnKey),
+          };
+        }
+
+        return {
+          title: column?.label,
+          dataIndex: columnKey,
+          key: columnKey,
+          align: alignClass as any,
+          render: (_: any, record: any) => renderCellValue(record, columnKey),
+        };
+      },
+    );
+
+    const actionColumn: ColumnsType<any> = [
+      {
+        title: "Үйлдэл",
+        key: "action",
+        align: "center",
+        width: 80,
+        render: (_: any, record: any) => (
+          <div className="flex gap-2 justify-center">
+            <button
+              onClick={() => handlePreviewInvoice(record)}
+              className="p-2 rounded-2xl hover-surface transition-colors"
+              title="Нэхэмжлэх харах"
+            >
+              <FileText className="w-5 h-5" />
+            </button>
+          </div>
+        ),
+      },
+    ];
+
+    return [...baseColumns, ...dynamicColumns, ...actionColumn];
+  }, [
+    visibleColumns,
+    sortKey,
+    sortOrder,
+    toggleSortFor,
+    renderCellValue,
+    handlePreviewInvoice,
+    startIndex,
+  ]);
+
   const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
+
   return (
     <div className="table-surface overflow-hidden rounded-2xl w-full">
-      <div className="rounded-3xl p-6 neu-table allow-overflow">
-        <div
-          className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
-          id="geree-table"
-        >
-          <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
-            <thead className="z-10 bg-white dark:bg-gray-800">
-              <tr>
-                <th className="p-1 text-sm font-normal text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
-                  №
-                </th>
-                {visibleColumns.map((columnKey, colIdx) => {
-                  const column = ALL_COLUMNS.find((col) => col.key === columnKey);
-                  const isSortable =
-                    column?.key === "toot" ||
-                    column?.key === "orts" ||
-                    column?.key === "davkhar" ||
-                    column?.key === "ognoo";
-                  const isLastCol = colIdx === visibleColumns.length - 1;
-
-                  if (isSortable) {
-                    const keyMap: Record<string, SortKey> = {
-                      ognoo: "createdAt",
-                      toot: "toot",
-                      orts: "orts",
-                      davkhar: "davkhar",
-                    };
-                    const targetKey = keyMap[column?.key || "ognoo"];
-                    
-                    const alignClass = 
-                        columnKey === "ner" || columnKey === "bairniiNer" ? "text-left pl-2" :
-                        columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel" ? "text-right pr-2" : 
-                        "text-center";
-
-                    return (
-                      <th
-                        key={columnKey}
-                        className={`p-1 text-sm font-normal text-theme ${alignClass} whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleSortFor(targetKey)}
-                          className={`w-full inline-flex items-center gap-2 ${
-                            alignClass.includes("left") ? "justify-start" : 
-                            alignClass.includes("right") ? "justify-end" : 
-                            "justify-center"
-                          }`}
-                          title={`Эрэмбэлэх: ${column?.label}`}
-                        >
-                          <span>{column?.label}</span>
-                          <span className="flex flex-col items-center">
-                            <ChevronUp
-                              className={`w-3 h-3 ${
-                                sortKey === targetKey && sortOrder === "asc"
-                                  ? "text-blue-500"
-                                  : "text-subtle"
-                              }`}
-                            />
-                            <ChevronDown
-                              className={`w-3 h-3 ${
-                                sortKey === targetKey && sortOrder === "desc"
-                                  ? "text-blue-500"
-                                  : "text-subtle"
-                              }`}
-                            />
-                          </span>
-                        </button>
-                      </th>
-                    );
-                  }
-
-                  const alignClass = 
-                      columnKey === "ner" || columnKey === "bairniiNer" ? "text-left pl-2" :
-                      columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel" ? "text-right pr-2" : 
-                      "text-center";
-
-                  return (
-                    <th
-                      key={columnKey}
-                      className={`p-1 text-sm font-normal text-theme ${alignClass} whitespace-nowrap bg-inherit ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
-                    >
-                      {column?.label}
-                    </th>
+      <div className="rounded-3xl p-3 allow-overflow">
+        <div className="guilgee-table-wrap" id="geree-table">
+          <Table
+            dataSource={currentContracts}
+            columns={columns}
+            rowKey={(record) => record._id || Math.random().toString()}
+            pagination={false}
+            size="small"
+            bordered
+            className="guilgee-table"
+            scroll={{ x: "max-content", y: 480 }}
+            locale={{ emptyText: "Гэрээ олдсонгүй" }}
+            onRow={(record) => ({
+              onClick: () => {
+                if (ajiltan?.erkh === "Admin") {
+                  const id = String(record._id);
+                  setSelectedContracts((prev) =>
+                    prev.includes(id)
+                      ? prev.filter((x) => x !== id)
+                      : [...prev, id],
                   );
-                })}
-                <th className="p-1 text-sm  text-theme text-center whitespace-nowrap bg-inherit">
-                  Үйлдэл
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentContracts.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={visibleColumns.length + 2}
-                    className="p-8 text-center text-subtle"
-                  >
-                    Гэрээ олдсонгүй
-                  </td>
-                </tr>
-              ) : (
-                currentContracts.map((contract: any, idx: number) => {
-                  const isSelected = selectedContracts.includes(String(contract._id));
-                  return (
-                  <tr
-                    key={contract._id || idx}
-                 
-                    className={`transition-colors border-b last:border-b-0 ${
-                      ajiltan?.erkh === "Admin" ? "cursor-pointer hover:bg-[color:var(--surface-hover)]" : ""
-                    } ${isSelected ? "bg-[color:var(--surface-hover)]/50" : ""}`}
-                  >
-        
-                    <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
-                      {startIndex + idx + 1}
-                    </td>
-                    {visibleColumns.map((columnKey, colIdx) => {
-                      const alignClass =
-                        columnKey === "ner" || columnKey === "bairniiNer"
-                          ? "cell-left"
-                          : columnKey === "sariinTurees" ||
-                            columnKey === "baritsaaniiUldegdel"
-                          ? "cell-right"
-                          : "text-center";
-                      const isLastCol = colIdx === visibleColumns.length - 1;
-                      return (
-                        <td
-                          key={columnKey}
-                          className={`p-1 text-theme whitespace-nowrap ${alignClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
-                        >
-                          {renderCellValue(contract, columnKey)}
-                        </td>
-                      );
-                    })}
-                    <td className="p-1 whitespace-nowrap">
-                      <div className="flex gap-2 justify-center">
-                        
-                        
-                        <button
-                          onClick={() => handlePreviewInvoice(contract)}
-                          className="p-2 rounded-2xl hover-surface transition-colors"
-                          title="Нэхэмжлэх харах"
-                        >
-                          <FileText className="w-5 h-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                }
+              },
+              className: `transition-colors cursor-pointer hover:bg-[color:var(--surface-hover)] ${
+                selectedContracts.includes(String(record._id))
+                  ? "bg-[color:var(--surface-hover)]/50"
+                  : ""
+              }`,
+            })}
+          />
         </div>
       </div>
       <div className="flex items-center justify-between px-2 py-1 text-md">
-        <div className="text-theme/70">
-          Нийт: {totalContracts}
-        </div>
+        <div className="text-theme/70">Нийт: {totalContracts}</div>
         <div className="flex items-center gap-3">
           <PageSongokh
             value={rowsPerPage}
@@ -221,10 +223,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             className="text-sm px-2"
           />
 
-          <div
-            id="geree-pagination"
-            className="flex items-center gap-1"
-          >
+          <div id="geree-pagination" className="flex items-center gap-1">
             <button
               className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
               disabled={currentPage <= 1}
@@ -254,4 +253,3 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
 };
 
 export default ContractsTable;
-

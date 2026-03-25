@@ -1718,7 +1718,7 @@ export default function InvoicingZardluud() {
                     rowKey="_id"
                     pagination={{
                       pageSize: rowsPerPage,
-                      total: totalResidents,
+                      total: totalRecords,
                       current: currentPage,
                       position: ["bottomCenter"],
                       onChange: (page) => setCurrentPage(page),
@@ -1726,7 +1726,7 @@ export default function InvoicingZardluud() {
                     size="small"
                     bordered
                     className="guilgee-table"
-                    scroll={{ y: 400 }}
+                    scroll={{ x: "max-content", y: 480 }}
                     loading={isLoading}
                     locale={{ emptyText: "Мэдээлэл алга байна" }}
                   />

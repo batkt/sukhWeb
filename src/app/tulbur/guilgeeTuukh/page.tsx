@@ -2652,23 +2652,6 @@ export default function DansniiKhuulga() {
                 />
               </div>
               <div className="flex flex-wrap gap-3">
-                <div id="guilgee-status-filter">
-                  <TusgaiZagvar
-                    value={tuluvFilter}
-                    onChange={(v: string) =>
-                      setTuluvFilter(v as "all" | "paid" | "unpaid" | "overdue")
-                    }
-                    options={[
-                      { value: "all", label: "Бүгд" },
-                      { value: "paid", label: "Төлсөн" },
-                      { value: "overdue", label: "Цуцласан гэрээний авлага" },
-                      { value: "unpaid", label: "Төлөөгүй" },
-                    ]}
-                    placeholder="Төлөв"
-                    className="h-[40px] w-[140px]"
-                  />
-                </div>
-
                 {/* Орц filter */}
                 <div className="flex items-center gap-1.5">
                   <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
@@ -2882,7 +2865,7 @@ export default function DansniiKhuulga() {
               rowsPerPage={rowsPerPage}
               deduplicatedResidents={deduplicatedResidents}
               getGereeId={getGereeId}
-              maxHeight={350}
+              maxHeight={400}
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);
                 setIsModalOpen(true);

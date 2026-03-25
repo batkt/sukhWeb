@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
-import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
+import formatNumber, {
+  formatCurrency,
+} from "../../../../tools/function/formatNumber";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
@@ -158,7 +160,6 @@ const PrintStyles = () => (
     }
   `}</style>
 );
-
 
 export default function HistoryModal({
   show,
@@ -894,13 +895,29 @@ export default function HistoryModal({
         return list.sort((a, b) => {
           const dA = new Date(a.ognoo || a.tulsunOgnoo || a.createdAt || 0);
           const dB = new Date(b.ognoo || b.tulsunOgnoo || b.createdAt || 0);
-          const dayA = new Date(dA.getFullYear(), dA.getMonth(), dA.getDate()).getTime();
-          const dayB = new Date(dB.getFullYear(), dB.getMonth(), dB.getDate()).getTime();
-          
+          const dayA = new Date(
+            dA.getFullYear(),
+            dA.getMonth(),
+            dA.getDate(),
+          ).getTime();
+          const dayB = new Date(
+            dB.getFullYear(),
+            dB.getMonth(),
+            dB.getDate(),
+          ).getTime();
+
           if (dayA !== dayB) return dayA - dayB;
 
-          const timeA = new Date(a.burtgesenOgnoo && a.burtgesenOgnoo !== "-" ? a.burtgesenOgnoo : (a.createdAt || a.ognoo)).getTime();
-          const timeB = new Date(b.burtgesenOgnoo && b.burtgesenOgnoo !== "-" ? b.burtgesenOgnoo : (b.createdAt || b.ognoo)).getTime();
+          const timeA = new Date(
+            a.burtgesenOgnoo && a.burtgesenOgnoo !== "-"
+              ? a.burtgesenOgnoo
+              : a.createdAt || a.ognoo,
+          ).getTime();
+          const timeB = new Date(
+            b.burtgesenOgnoo && b.burtgesenOgnoo !== "-"
+              ? b.burtgesenOgnoo
+              : b.createdAt || b.ognoo,
+          ).getTime();
           if (timeA !== timeB) return timeA - timeB;
 
           return String(a._id || "").localeCompare(String(b._id || ""));
@@ -910,12 +927,20 @@ export default function HistoryModal({
       // Sort chronological Oldest -> Newest
       sortLedger(flatLedger);
 
-      const actualCurrentBalance = Number(freshContract?.uldegdel ?? contract?.uldegdel ?? 0);
-      
+      const actualCurrentBalance = Number(
+        freshContract?.uldegdel ?? contract?.uldegdel ?? 0,
+      );
+
       const applyFrontendRunningBalance = (rows: typeof flatLedger) => {
         let running = 0;
         rows.forEach((row: any) => {
-          running = Math.round((running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0)) * 100) / 100;
+          running =
+            Math.round(
+              (running +
+                Number(row.tulukhDun || 0) -
+                Number(row.tulsunDun || 0)) *
+                100,
+            ) / 100;
           row.uldegdel = running;
         });
       };
@@ -965,7 +990,10 @@ export default function HistoryModal({
             });
             // Store globalUldegdel from backend response for Нийт row
             const backendGlobalUldegdel = ledgerResp.data?.globalUldegdel;
-            if (backendGlobalUldegdel != null && Number.isFinite(Number(backendGlobalUldegdel))) {
+            if (
+              backendGlobalUldegdel != null &&
+              Number.isFinite(Number(backendGlobalUldegdel))
+            ) {
               setGlobalUldegdel(Number(backendGlobalUldegdel));
             } else {
               setGlobalUldegdel(null);
@@ -1318,7 +1346,8 @@ export default function HistoryModal({
                         </td>
                         <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
                           {/* Invoice View Button */}
-                          {(row.sourceCollection === "nekhemjlekhiinTuukh" || row.parentInvoiceId) && (
+                          {(row.sourceCollection === "nekhemjlekhiinTuukh" ||
+                            row.parentInvoiceId) && (
                             <button
                               onClick={() => handleOpenInvoiceModal(row)}
                               className="p-1 text-blue-500 hover:text-blue-600 transition-colors"
@@ -1392,11 +1421,13 @@ export default function HistoryModal({
                       );
                       // Use latest row's uldegdel (first row since data is reversed - newest first)
                       // Fall back to globalUldegdel or contract.uldegdel if no rows
-                      const latestRowUldegdel = filteredData.length > 0 && filteredData[0]?.uldegdel != null
-                        ? Number(filteredData[0].uldegdel)
-                        : globalUldegdel != null
-                          ? globalUldegdel
-                          : Number(contract?.uldegdel ?? 0);
+                      const latestRowUldegdel =
+                        filteredData.length > 0 &&
+                        filteredData[0]?.uldegdel != null
+                          ? Number(filteredData[0].uldegdel)
+                          : globalUldegdel != null
+                            ? globalUldegdel
+                            : Number(contract?.uldegdel ?? 0);
                       const balance = latestRowUldegdel;
                       const balanceClass =
                         balance < 0.01
@@ -1435,13 +1466,13 @@ export default function HistoryModal({
           <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="h-8 no-print px-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs  text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 transition-all"
+              className="ant-btn ant-btn-default no-print"
             >
               Хаах
             </button>
             <button
               onClick={handlePrint}
-              className="h-8 no-print px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-xs  !text-white transition-all"
+              className="ant-btn ant-btn-primary no-print"
             >
               Хэвлэх
             </button>
@@ -1491,13 +1522,13 @@ export default function HistoryModal({
                     <div className="flex gap-3">
                       <button
                         onClick={handleDeleteCancel}
-                        className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-600 text-sm  text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        className="ant-btn ant-btn-default flex-1"
                       >
                         Болих
                       </button>
                       <button
                         onClick={handleDeleteConfirm}
-                        className="flex-1 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm  text-white transition-colors"
+                        className="ant-btn ant-btn-danger flex-1 bg-rose-600 hover:bg-rose-700 text-white"
                       >
                         Устгах
                       </button>

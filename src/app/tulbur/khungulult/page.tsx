@@ -869,7 +869,7 @@ const TulburTootsoo: React.FC = () => {
                       size="small"
                       bordered
                       className="guilgee-table"
-                      scroll={{ y: 280 }}
+                      scroll={{ x: "max-content", y: 480 }}
                       rowSelection={{
                         type: "checkbox",
                         selectedRowKeys,
@@ -919,7 +919,7 @@ const TulburTootsoo: React.FC = () => {
                         size="small"
                         bordered
                         className="guilgee-table"
-                        scroll={{ y: 280 }}
+                        scroll={{ x: "max-content", y: 480 }}
                         locale={{ emptyText: "Мэдээлэл алга байна" }}
                       />
                     </div>

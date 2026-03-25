@@ -14,42 +14,42 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
-import toast from "react-hot-toast";
+import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
 
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
       /* Setup the page for A4 Landscape */
-      @page { 
-        size: A4 landscape; 
-        margin: 10mm; 
+      @page {
+        size: A4 landscape;
+        margin: 10mm;
       }
-      
+
       /* 1. Hide everything by default but let the table flow */
-      body { 
-        background: white !important; 
+      body {
+        background: white !important;
         color: black !important;
         margin: 0 !important;
         padding: 0 !important;
         height: auto !important;
         min-height: auto !important;
       }
-      
+
       /* 2. Standard hide UI elements */
-      .no-print, 
-      nav, 
-      header, 
-      .sidebar, 
+      .no-print,
+      nav,
+      header,
+      .sidebar,
       .neu-nav,
       .fixed,
       .sticky,
-      button, 
-      footer { 
-        display: none !important; 
+      button,
+      footer {
+        display: none !important;
       }
 
       /* 3. Force the report container to be visible and unconstrained */
-      .print-container { 
+      .print-container {
         display: block !important;
         position: relative !important;
         width: 100% !important;
@@ -61,9 +61,9 @@ const PrintStyles = () => (
 
       /* 4. CRITICAL: Force all parent layout containers to release their fixed heights/overflows */
       /* This affects the containers in GolContent.tsx */
-      main, 
-      div[class*="neu-panel"], 
-      div[class*="overflow-y-auto"], 
+      main,
+      div[class*="neu-panel"],
+      div[class*="overflow-y-auto"],
       div[class*="md:h-"],
       div[class*="max-h-"] {
         height: auto !important;
@@ -77,24 +77,24 @@ const PrintStyles = () => (
       }
 
       /* 5. Header Styling */
-      .print-only { 
-        display: block !important; 
+      .print-only {
+        display: block !important;
         margin-bottom: 30px;
         width: 100% !important;
       }
 
       /* 6. Table Layout */
-      table { 
-        width: 100% !important; 
-        border-collapse: collapse !important; 
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
         table-layout: auto !important;
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
         font-size: 9pt !important;
         color: black !important;
       }
 
-      th, td { 
-        border: 1px solid #000 !important; 
+      th,
+      td {
+        border: 1px solid #000 !important;
         padding: 6px 4px !important;
         background: transparent !important;
         color: black !important;
@@ -102,23 +102,33 @@ const PrintStyles = () => (
         word-wrap: break-word !important;
       }
 
-      th { 
-        background-color: #f0f0f0 !important; 
+      th {
+        background-color: #f0f0f0 !important;
         font-weight: bold !important;
         -webkit-print-color-adjust: exact;
       }
 
       /* Ensure rows don't split awkwardly */
-      tr { page-break-inside: avoid !important; }
-      thead { display: table-header-group !important; }
+      tr {
+        page-break-inside: avoid !important;
+      }
+      thead {
+        display: table-header-group !important;
+      }
 
       /* Alignment Utility */
-      .text-left { text-align: left !important; }
-      .text-right { text-align: right !important; }
+      .text-left {
+        text-align: left !important;
+      }
+      .text-right {
+        text-align: right !important;
+      }
     }
 
     /* Web view hidden by default */
-    .print-only { display: none; }
+    .print-only {
+      display: none;
+    }
   `}</style>
 );
 
@@ -129,15 +139,22 @@ export default function OrlogoAvlagaPage() {
   const { token, ajiltan } = useAuth();
   const { baiguullaga } = useBaiguullaga(
     token || null,
-    ajiltan?.baiguullagiinId || null
+    ajiltan?.baiguullagiinId || null,
   );
-const effectiveBarilgiinId = selectedBuildingId || undefined;
-  
+  const effectiveBarilgiinId = selectedBuildingId || undefined;
+
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
   const [activeTab, setActiveTab] = useState<TabType>("tulult");
-  const [dateRange, setDateRange] = useState<[string | null, string | null] | undefined>(undefined);
-  const [filters, setFilters] = useState({ orshinSuugch: "", toot: "", davkhar: "", gereeniiDugaar: "" });
+  const [dateRange, setDateRange] = useState<
+    [string | null, string | null] | undefined
+  >(undefined);
+  const [filters, setFilters] = useState({
+    orshinSuugch: "",
+    toot: "",
+    davkhar: "",
+    gereeniiDugaar: "",
+  });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -146,28 +163,43 @@ const effectiveBarilgiinId = selectedBuildingId || undefined;
   const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
   const [expandedLoading, setExpandedLoading] = useState(false);
   const [expandedError, setExpandedError] = useState<string | null>(null);
-const footerTotals = useTulburFooterTotals(
+  const footerTotals = useTulburFooterTotals(
     token,
     ajiltan?.baiguullagiinId ?? null,
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
-  const [paidByGereeId, setPaidByGereeId] = useState<Record<string, number>>({});
-  const [uldegdelByGereeId, setUldegdelByGereeId] = useState<Record<string, number | null>>({});
+  const [paidByGereeId, setPaidByGereeId] = useState<Record<string, number>>(
+    {},
+  );
+  const [uldegdelByGereeId, setUldegdelByGereeId] = useState<
+    Record<string, number | null>
+  >({});
   const paidRequestedRef = useRef<Set<string>>(new Set());
   const uldegdelRequestedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => { setDebouncedFilters(filters); debounceRef.current = null; }, 400);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    debounceRef.current = setTimeout(() => {
+      setDebouncedFilters(filters);
+      debounceRef.current = null;
+    }, 400);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [filters]);
 
   const emptyQuery = useMemo(() => ({}), []);
 
   const { data: historyData, isLoading: isLoadingHistory } = useSWR(
     token && baiguullagiinId
-      ? ["/nekhemjlekhiinTuukh-oa", token, baiguullagiinId, selectedBuildingId || null,
-          dateRange?.[0] || null, dateRange?.[1] || null]
+      ? [
+          "/nekhemjlekhiinTuukh-oa",
+          token,
+          baiguullagiinId,
+          selectedBuildingId || null,
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
+        ]
       : null,
     async ([, tkn, bId, barId, start, end]) => {
       const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
@@ -182,13 +214,19 @@ const footerTotals = useTulburFooterTotals(
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: receivableData, isLoading: isLoadingReceivable } = useSWR(
     token && baiguullagiinId
-      ? ["/gereeniiTulukhAvlaga-oa", token, baiguullagiinId, selectedBuildingId || null,
-          dateRange?.[0] || null, dateRange?.[1] || null]
+      ? [
+          "/gereeniiTulukhAvlaga-oa",
+          token,
+          baiguullagiinId,
+          selectedBuildingId || null,
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
+        ]
       : null,
     async ([, tkn, bId, barId, start, end]) => {
       const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
@@ -203,44 +241,73 @@ const footerTotals = useTulburFooterTotals(
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
-  const { gereeGaralt } = useGereeJagsaalt(emptyQuery, token || undefined, baiguullagiinId || undefined, selectedBuildingId || undefined);
-  const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(token || "", baiguullagiinId || "", emptyQuery, selectedBuildingId || undefined);
+  const { gereeGaralt } = useGereeJagsaalt(
+    emptyQuery,
+    token || undefined,
+    baiguullagiinId || undefined,
+    selectedBuildingId || undefined,
+  );
+  const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
+    token || "",
+    baiguullagiinId || "",
+    emptyQuery,
+    selectedBuildingId || undefined,
+  );
 
   const contractsById = useMemo(() => {
     const map: Record<string, any> = {};
-    (gereeGaralt?.jagsaalt || []).forEach((g: any) => { if (g?._id) map[String(g._id)] = g; });
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => {
+      if (g?._id) map[String(g._id)] = g;
+    });
     return map;
   }, [gereeGaralt?.jagsaalt]);
 
   const contractsByNumber = useMemo(() => {
     const map: Record<string, any> = {};
-    (gereeGaralt?.jagsaalt || []).forEach((g: any) => { if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g; });
+    (gereeGaralt?.jagsaalt || []).forEach((g: any) => {
+      if (g?.gereeniiDugaar) map[String(g.gereeniiDugaar)] = g;
+    });
     return map;
   }, [gereeGaralt?.jagsaalt]);
 
   const residentsById = useMemo(() => {
     const map: Record<string, any> = {};
-    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => { if (r?._id) map[String(r._id)] = r; });
+    (orshinSuugchGaralt?.jagsaalt || []).forEach((r: any) => {
+      if (r?._id) map[String(r._id)] = r;
+    });
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
   const allHistoryItems = useMemo(() => {
-    const invoices = Array.isArray(historyData?.jagsaalt) ? historyData.jagsaalt
-      : Array.isArray(historyData) ? historyData : [];
-    const receivables = Array.isArray(receivableData?.jagsaalt) ? receivableData.jagsaalt
-      : Array.isArray(receivableData) ? receivableData : [];
+    const invoices = Array.isArray(historyData?.jagsaalt)
+      ? historyData.jagsaalt
+      : Array.isArray(historyData)
+        ? historyData
+        : [];
+    const receivables = Array.isArray(receivableData?.jagsaalt)
+      ? receivableData.jagsaalt
+      : Array.isArray(receivableData)
+        ? receivableData
+        : [];
 
     const combined = [...invoices];
     const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
     invoices.forEach((it: any) => {
-      const gList = Array.isArray(it?.medeelel?.guilgeenuud) ? it.medeelel.guilgeenuud
-        : Array.isArray(it?.guilgeenuud) ? it.guilgeenuud : [];
-      gList.forEach((g: any) => { if (g?._id) trackingIds.add(String(g._id)); });
+      const gList = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
+      gList.forEach((g: any) => {
+        if (g?._id) trackingIds.add(String(g._id));
+      });
     });
-    receivables.forEach((r: any) => { if (!trackingIds.has(String(r._id))) combined.push(r); });
+    receivables.forEach((r: any) => {
+      if (!trackingIds.has(String(r._id))) combined.push(r);
+    });
     return combined;
   }, [historyData, receivableData]);
 
@@ -249,9 +316,13 @@ const footerTotals = useTulburFooterTotals(
     if (!bid) return allHistoryItems;
     const toStr = (v: any) => (v == null ? "" : String(v));
     return allHistoryItems.filter((it: any) => {
-      const itemBid = toStr(it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId);
+      const itemBid = toStr(
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId,
+      );
       if (itemBid) return itemBid === bid;
-      const cId = toStr(it?.gereeId ?? it?.gereeniiId ?? it?.kholbosonGereeniiId);
+      const cId = toStr(
+        it?.gereeId ?? it?.gereeniiId ?? it?.kholbosonGereeniiId,
+      );
       const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
       const c = cId ? contractsById[cId] : undefined;
       const r = rId ? residentsById[rId] : undefined;
@@ -268,12 +339,19 @@ const footerTotals = useTulburFooterTotals(
     const contractsWithEkhniiInInvoice = new Set<string>();
 
     buildingHistoryItems.forEach((it: any) => {
-      const zardluud = Array.isArray(it?.medeelel?.zardluud) ? it.medeelel.zardluud
-        : Array.isArray(it?.zardluud) ? it.zardluud : [];
+      const zardluud = Array.isArray(it?.medeelel?.zardluud)
+        ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud)
+          ? it.zardluud
+          : [];
       const hasEkhUld = zardluud.some((z: any) => {
         const ner = String(z?.ner || "").toLowerCase();
-        return (z?.isEkhniiUldegdel === true || ner.includes("эхний үлдэгдэл") || ner.includes("ekhniuldegdel"))
-          && Number(z?.dun || z?.tariff || 0) !== 0;
+        return (
+          (z?.isEkhniiUldegdel === true ||
+            ner.includes("эхний үлдэгдэл") ||
+            ner.includes("ekhniuldegdel")) &&
+          Number(z?.dun || z?.tariff || 0) !== 0
+        );
       });
       if (hasEkhUld) {
         const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -290,10 +368,15 @@ const footerTotals = useTulburFooterTotals(
       if (!gereeId && gereeDugaar && contractsByNumber[gereeDugaar]?._id) {
         gereeId = String(contractsByNumber[gereeDugaar]._id);
       }
-      const ner = String(it?.ner || "").trim().toLowerCase();
-      const utas = Array.isArray(it?.utas) ? String(it.utas[0] || "").trim() : String(it?.utas || "").trim();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = Array.isArray(it?.utas)
+        ? String(it.utas[0] || "").trim()
+        : String(it?.utas || "").trim();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
       if (!key || key === "||") return;
 
       const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
@@ -304,14 +387,19 @@ const footerTotals = useTulburFooterTotals(
         if (contractHasIt) return;
       }
 
-      const ct = gereeId ? contractsById[gereeId] : (gereeDugaar ? contractsByNumber[gereeDugaar] : undefined);
+      const ct = gereeId
+        ? contractsById[gereeId]
+        : gereeDugaar
+          ? contractsByNumber[gereeDugaar]
+          : undefined;
       const r = residentId ? residentsById[residentId] : undefined;
 
       if (!map.has(key)) {
         map.set(key, {
           ...it,
           _gereeId: gereeId,
-          _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || it?.gereeniiDugaar || "",
+          _gereeDugaar:
+            gereeDugaar || ct?.gereeniiDugaar || it?.gereeniiDugaar || "",
           _residentId: residentId,
           _ner: r?.ner ?? it?.ner ?? ct?.ner ?? "",
           _ovog: r?.ovog ?? it?.ovog ?? ct?.ovog ?? "",
@@ -326,38 +414,69 @@ const footerTotals = useTulburFooterTotals(
   }, [buildingHistoryItems, contractsByNumber, contractsById, residentsById]);
 
   useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
+    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0)
+      return;
     deduplicatedResidents.forEach((it: any) => {
       const gid = it?._gereeId || "";
-      if (!gid || paidRequestedRef.current.has(gid) || paidByGereeId[gid] !== undefined) return;
+      if (
+        !gid ||
+        paidRequestedRef.current.has(gid) ||
+        paidByGereeId[gid] !== undefined
+      )
+        return;
       paidRequestedRef.current.add(gid);
-      uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid })
+      uilchilgee(token)
+        .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid })
         .then((resp) => {
-          const total = Number(resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0) || 0;
+          const total =
+            Number(
+              resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0,
+            ) || 0;
           setPaidByGereeId((prev) => ({ ...prev, [gid]: total }));
         })
-        .catch(() => { paidRequestedRef.current.delete(gid); });
+        .catch(() => {
+          paidRequestedRef.current.delete(gid);
+        });
     });
   }, [token, baiguullagiinId, deduplicatedResidents]);
 
   useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
+    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0)
+      return;
     deduplicatedResidents.forEach((it: any) => {
       const gid = it?._gereeId || "";
       if (!gid || uldegdelRequestedRef.current.has(gid)) return;
       const existing = uldegdelByGereeId[gid];
-      if (existing !== undefined && existing !== null && Number.isFinite(existing)) return;
+      if (
+        existing !== undefined &&
+        existing !== null &&
+        Number.isFinite(existing)
+      )
+        return;
       uldegdelRequestedRef.current.add(gid);
-      uilchilgee(token).get(`/geree/${gid}/history-ledger`, {
-        params: { baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}), _t: Date.now() },
-      })
+      uilchilgee(token)
+        .get(`/geree/${gid}/history-ledger`, {
+          params: {
+            baiguullagiinId,
+            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+            _t: Date.now(),
+          },
+        })
         .then((resp) => {
-          const ledger = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt
-            : Array.isArray(resp.data?.ledger) ? resp.data.ledger
-            : Array.isArray(resp.data) ? resp.data : [];
-          const latestRow = ledger.length > 0 ? ledger[ledger.length - 1] : null;
-          const val = latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
-            ? Number(latestRow.uldegdel) : null;
+          const ledger = Array.isArray(resp.data?.jagsaalt)
+            ? resp.data.jagsaalt
+            : Array.isArray(resp.data?.ledger)
+              ? resp.data.ledger
+              : Array.isArray(resp.data)
+                ? resp.data
+                : [];
+          const latestRow =
+            ledger.length > 0 ? ledger[ledger.length - 1] : null;
+          const val =
+            latestRow?.uldegdel != null &&
+            Number.isFinite(Number(latestRow.uldegdel))
+              ? Number(latestRow.uldegdel)
+              : null;
           setUldegdelByGereeId((prev) => ({ ...prev, [gid]: val }));
         })
         .catch(() => {
@@ -374,7 +493,8 @@ const footerTotals = useTulburFooterTotals(
     uldegdelRequestedRef.current.clear();
   }, [selectedBuildingId, baiguullagiinId, dateRange]);
 
-  const getGereeId = (it: any) => String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
+  const getGereeId = (it: any) =>
+    String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
 
   const getPaid = (it: any): number => {
     const gid = getGereeId(it);
@@ -387,7 +507,8 @@ const footerTotals = useTulburFooterTotals(
       const val = uldegdelByGereeId[gid];
       if (val != null && Number.isFinite(val)) return val;
       const ct = contractsById[gid];
-      if (ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))) return Number(ct.uldegdel);
+      if (ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel)))
+        return Number(ct.uldegdel);
     }
     return Number(it?.uldegdel ?? 0);
   };
@@ -395,7 +516,9 @@ const footerTotals = useTulburFooterTotals(
   const matchesFilters = (it: any): boolean => {
     const f = debouncedFilters;
     if (f.toot) {
-      const toot = String(it?._toot || it?.toot || it?.medeelel?.toot || "").toLowerCase();
+      const toot = String(
+        it?._toot || it?.toot || it?.medeelel?.toot || "",
+      ).toLowerCase();
       if (!toot.includes(f.toot.toLowerCase())) return false;
     }
     if (f.davkhar) {
@@ -403,7 +526,9 @@ const footerTotals = useTulburFooterTotals(
       if (!dv.includes(f.davkhar.toLowerCase())) return false;
     }
     if (f.gereeniiDugaar) {
-      const gd = String(it?._gereeDugaar || it?.gereeniiDugaar || "").toLowerCase();
+      const gd = String(
+        it?._gereeDugaar || it?.gereeniiDugaar || "",
+      ).toLowerCase();
       if (!gd.includes(f.gereeniiDugaar.toLowerCase())) return false;
     }
     if (f.orshinSuugch) {
@@ -412,21 +537,31 @@ const footerTotals = useTulburFooterTotals(
     }
     return true;
   };
-  const paidList = useMemo(() =>
-    deduplicatedResidents.filter((it) => matchesFilters(it) && getPaid(it) > 0),
-  [deduplicatedResidents, paidByGereeId, debouncedFilters]);
-  const avlagaList = useMemo(() =>
-    deduplicatedResidents.filter((it) => matchesFilters(it) && getUldegdel(it) > 0),
-  [deduplicatedResidents, uldegdelByGereeId, debouncedFilters]);
+  const paidList = useMemo(
+    () =>
+      deduplicatedResidents.filter(
+        (it) => matchesFilters(it) && getPaid(it) > 0,
+      ),
+    [deduplicatedResidents, paidByGereeId, debouncedFilters],
+  );
+  const avlagaList = useMemo(
+    () =>
+      deduplicatedResidents.filter(
+        (it) => matchesFilters(it) && getUldegdel(it) > 0,
+      ),
+    [deduplicatedResidents, uldegdelByGereeId, debouncedFilters],
+  );
 
   const displayList = activeTab === "tulult" ? paidList : avlagaList;
- const totalOrlogo = useMemo(() =>
-    deduplicatedResidents.reduce((s, it) => s + getPaid(it), 0),
-  [deduplicatedResidents, paidByGereeId]);
+  const totalOrlogo = useMemo(
+    () => deduplicatedResidents.reduce((s, it) => s + getPaid(it), 0),
+    [deduplicatedResidents, paidByGereeId],
+  );
 
-  const totalUldegdel = useMemo(() =>
-    deduplicatedResidents.reduce((s, it) => s + getUldegdel(it), 0),
-  [deduplicatedResidents, uldegdelByGereeId]);
+  const totalUldegdel = useMemo(
+    () => deduplicatedResidents.reduce((s, it) => s + getUldegdel(it), 0),
+    [deduplicatedResidents, uldegdelByGereeId],
+  );
   const handleRowClick = async (it: any) => {
     const gid = getGereeId(it);
     const gd = it?._gereeDugaar || it?.gereeniiDugaar || gid;
@@ -441,12 +576,23 @@ const footerTotals = useTulburFooterTotals(
     if (!gid || !baiguullagiinId) return;
     setExpandedLoading(true);
     try {
-      const resp = await uilchilgee(token ?? undefined).get(`/geree/${gid}/history-ledger`, {
-        params: { baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}), _t: Date.now() },
-      });
-      const ledger = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt
-        : Array.isArray(resp.data?.ledger) ? resp.data.ledger
-        : Array.isArray(resp.data) ? resp.data : [];
+      const resp = await uilchilgee(token ?? undefined).get(
+        `/geree/${gid}/history-ledger`,
+        {
+          params: {
+            baiguullagiinId,
+            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+            _t: Date.now(),
+          },
+        },
+      );
+      const ledger = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt
+        : Array.isArray(resp.data?.ledger)
+          ? resp.data.ledger
+          : Array.isArray(resp.data)
+            ? resp.data
+            : [];
       setExpandedLedger(ledger);
     } catch (e: any) {
       setExpandedError(e?.response?.data?.aldaa || e.message || "Алдаа гарлаа");
@@ -460,9 +606,9 @@ const footerTotals = useTulburFooterTotals(
       toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
       return;
     }
-    
+
     const toastId = toast.loading("Excel файл бэлтгэж байна...");
-    
+
     try {
       const body = {
         report: "orlogo-tovchoo",
@@ -471,17 +617,17 @@ const footerTotals = useTulburFooterTotals(
         ekhlekhOgnoo: dateRange?.[0] || undefined,
         duusakhOgnoo: dateRange?.[1] || undefined,
         activeTab: activeTab, // Pass current tab context
-        ...filters
+        ...filters,
       };
 
       const resp = await uilchilgee(token).post("/tailan/export", body, {
         responseType: "blob" as any,
       });
 
-      const blob = new Blob([resp.data], { 
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
+      const blob = new Blob([resp.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -491,7 +637,7 @@ const footerTotals = useTulburFooterTotals(
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      
+
       toast.success("Excel файл амжилттай татагдлаа", { id: toastId });
     } catch (err) {
       console.error("Export failed:", err);
@@ -500,9 +646,13 @@ const footerTotals = useTulburFooterTotals(
   };
 
   const isLoading = isLoadingHistory || isLoadingReceivable;
-  const paginatedList = displayList.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedList = displayList.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
-  const fmtDate = (d?: string) => d ? new Date(d).toLocaleDateString("mn-MN") : "-";
+  const fmtDate = (d?: string) =>
+    d ? new Date(d).toLocaleDateString("mn-MN") : "-";
 
   if (isLoading) {
     return (
@@ -521,26 +671,41 @@ const footerTotals = useTulburFooterTotals(
         <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
           <div>
             <h1 className="text-2xl font-bold uppercase">
-              {activeTab === "tulult" ? "Орлогын товчоо тайлан" : "Авлага тулгалтын тайлан"}
+              {activeTab === "tulult"
+                ? "Орлогын товчоо тайлан"
+                : "Авлага тулгалтын тайлан"}
             </h1>
-            <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
+            <p className="text-sm mt-1">
+              {baiguullaga?.ner || "Байгууллагын нэр"}
+            </p>
           </div>
           <div className="text-right text-sm">
-            <p>Огноо: {dateRange?.[0] && dateRange?.[1] 
-              ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
-              : "Бүх хугацаа"}</p>
+            <p>
+              Огноо:{" "}
+              {dateRange?.[0] && dateRange?.[1]
+                ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+                : "Бүх хугацаа"}
+            </p>
             <p>Хэвлэсэн: {new Date().toLocaleString("mn-MN")}</p>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-8 mt-6">
           <div className="border p-3 rounded">
-            <p className="text-xs text-gray-500 uppercase font-semibold">Нийт орлого</p>
-            <p className="text-xl font-bold text-green-700">{formatNumber(totalOrlogo)} </p>
+            <p className="text-xs text-gray-500 uppercase font-semibold">
+              Нийт орлого
+            </p>
+            <p className="text-xl font-bold text-green-700">
+              {formatNumber(totalOrlogo)}{" "}
+            </p>
           </div>
           <div className="border p-3 rounded">
-            <p className="text-xs text-gray-500 uppercase font-semibold">Нийт үлдэгдэл</p>
-            <p className="text-xl font-bold text-red-700">{formatNumber(totalUldegdel)} </p>
+            <p className="text-xs text-gray-500 uppercase font-semibold">
+              Нийт үлдэгдэл
+            </p>
+            <p className="text-xl font-bold text-red-700">
+              {formatNumber(totalUldegdel)}{" "}
+            </p>
           </div>
         </div>
       </div>
@@ -548,11 +713,13 @@ const footerTotals = useTulburFooterTotals(
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
         <div className="flex gap-3">
-          <button onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
           </button>
-{/* <button onClick={() => window.print()}
+          {/* <button onClick={() => window.print()}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
             <Printer className="w-4 h-4 text-blue-600" /> Хэвлэх
           </button> */}
@@ -571,26 +738,54 @@ const footerTotals = useTulburFooterTotals(
           />
         </div>
         {[
-          { key: "orshinSuugch", label: "Оршин суугч", placeholder: "Овог, нэрээр хайх" },
+          {
+            key: "orshinSuugch",
+            label: "Оршин суугч",
+            placeholder: "Овог, нэрээр хайх",
+          },
           { key: "toot", label: "Тоот", placeholder: "Тоот" },
           { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
-          { key: "gereeniiDugaar", label: "Гэрээний дугаар", placeholder: "ГД" },
+          {
+            key: "gereeniiDugaar",
+            label: "Гэрээний дугаар",
+            placeholder: "ГД",
+          },
         ].map(({ key, label, placeholder }) => (
           <div key={key} className="p-3 rounded-xl">
-            <label className="block text-sm text-theme/80 mb-1.5">{label}</label>
-            <input type="text" value={(filters as any)[key]}
-              onChange={(e) => setFilters((p) => ({ ...p, [key]: e.target.value }))}
+            <label className="block text-sm text-theme/80 mb-1.5">
+              {label}
+            </label>
+            <input
+              type="text"
+              value={(filters as any)[key]}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, [key]: e.target.value }))
+              }
               className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder={placeholder} />
+              placeholder={placeholder}
+            />
           </div>
         ))}
       </div>
 
       <div className="flex gap-2 mb-4 no-print">
-        {([["tulult", "Орлого"], ["avlaga", "Авлага"]] as [TabType, string][]).map(([tab, label]) => (
-          <button key={tab} type="button"
-            onClick={() => { setActiveTab(tab); setExpandedRow(null); setExpandedLedger([]); setCurrentPage(1); }}
-            className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}>
+        {(
+          [
+            ["tulult", "Орлого"],
+            ["avlaga", "Авлага"],
+          ] as [TabType, string][]
+        ).map(([tab, label]) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => {
+              setActiveTab(tab);
+              setExpandedRow(null);
+              setExpandedLedger([]);
+              setCurrentPage(1);
+            }}
+            className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}
+          >
             {label}
           </button>
         ))}
@@ -598,199 +793,92 @@ const footerTotals = useTulburFooterTotals(
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="mb-2">Нийт орлого <span className="text-xs text-theme/50">(Гүйцэтгэл)</span></h3>
-          <p className="text-2xl text-green-600">{formatNumber(totalOrlogo)} </p>
-          <p className="text-xs text-theme/50 mt-1">{paidList.length} оршин суугч</p>
+          <h3 className="mb-2">
+            Нийт орлого{" "}
+            <span className="text-xs text-theme/50">(Гүйцэтгэл)</span>
+          </h3>
+          <p className="text-2xl text-green-600">
+            {formatNumber(totalOrlogo)}{" "}
+          </p>
+          <p className="text-xs text-theme/50 mt-1">
+            {paidList.length} оршин суугч
+          </p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
-          <h3 className="mb-2">Нийт үлдэгдэл <span className="text-xs text-theme/50">(Үлдэгдэл)</span></h3>
-          <p className={totalUldegdel < 0 ? "text-2xl text-emerald-600" : "text-2xl text-red-600"}>{formatNumber(totalUldegdel)} </p>
-          <p className="text-xs text-theme/50 mt-1">Бүх оршин суугчдын нийт үлдэгдэл</p>
+          <h3 className="mb-2">
+            Нийт үлдэгдэл{" "}
+            <span className="text-xs text-theme/50">(Үлдэгдэл)</span>
+          </h3>
+          <p
+            className={
+              totalUldegdel < 0
+                ? "text-2xl text-emerald-600"
+                : "text-2xl text-red-600"
+            }
+          >
+            {formatNumber(totalUldegdel)}{" "}
+          </p>
+          <p className="text-xs text-theme/50 mt-1">
+            Бүх оршин суугчдын нийт үлдэгдэл
+          </p>
         </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl w-full">
-        <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="!max-h-[25vh] overflow-y-auto custom-scrollbar w-full">
-            <table className="table-ui text-sm min-w-full">
-              <thead>
-                <tr>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap w-10">№</th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">ГД</th>
-                  <th className="z-10 p-3 text-xs text-theme text-left whitespace-nowrap">Нэр</th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">Давхар</th>
-                  <th className="z-10 p-3 text-xs text-theme text-center whitespace-nowrap">Тоот</th>
-                  {activeTab === "tulult" ? (
-                    <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Гүйцэтгэл</th>
-                  ) : (
-                    <>
-                      <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Үлдэгдэл</th>
-                      <th className="z-10 p-3 text-xs text-theme text-right whitespace-nowrap">Гүйцэтгэл</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedList.length === 0 ? (
-                  <tr>
-                    <td colSpan={activeTab === "tulult" ? 6 : 7} className="p-8 text-center text-theme/60">
-                      Мэдээлэл алга байна
-                    </td>
-                  </tr>
-                ) : paginatedList.map((it, idx) => {
-                  const rowNum = (currentPage - 1) * pageSize + idx + 1;
-                  const gd = it?._gereeDugaar || it?.gereeniiDugaar || "-";
-                  const isExpanded = expandedRow === gd;
-                  const paid = getPaid(it);
-                  const uldegdel = getUldegdel(it);
-                  const colSpan = activeTab === "tulult" ? 6 : 7;
-
-                  return (
-                    <React.Fragment key={`${gd}-${idx}`}>
-                      <tr className="transition-colors border-b last:border-b-0 hover:bg-[color:var(--surface-hover)]/20">
-                        <td className="p-3 text-center text-theme whitespace-nowrap">{rowNum}</td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">{gd}</td>
-                        <td className="p-3 text-left text-theme whitespace-nowrap">
-                          {[it._ovog, it._ner].filter(Boolean).join(" ") || "-"}
-                        </td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">{it._davkhar || "-"}</td>
-                        <td className="p-3 text-center text-theme whitespace-nowrap">{it._toot || "-"}</td>
-
-                        {activeTab === "tulult" ? (
-                          <td className="p-3 text-right whitespace-nowrap">
-                            <button type="button" onClick={() => handleRowClick(it)}
-                              className="text-theme hover:underline cursor-pointer inline-flex items-center gap-1">
-                              {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                              <span className="text-green-600 font-medium">{formatNumber(paid)} </span>
-                            </button>
-                          </td>
-                        ) : (
-                          <>
-                            <td className="p-3 text-right whitespace-nowrap">
-                              <button type="button" onClick={() => handleRowClick(it)}
-                                className="hover:underline cursor-pointer inline-flex items-center gap-1">
-                                {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                <span className={uldegdel > 0 ? "text-red-500 font-medium" : uldegdel < 0 ? "text-emerald-600 font-medium" : "text-theme"}>
-                                  {formatNumber(uldegdel)} 
-                                </span>
-                              </button>
-                            </td>
-                            <td className="p-3 text-right whitespace-nowrap">
-                              <span className="text-green-600">{formatNumber(paid)} </span>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={colSpan} className="p-4 bg-[color:var(--surface-hover)]/20 border-b">
-                            {expandedLoading ? (
-                              <div className="py-4 text-center text-theme/60">Уншиж байна...</div>
-                            ) : expandedError ? (
-                              <div className="text-red-500 py-2">Алдаа: {expandedError}</div>
-                            ) : expandedLedger.length === 0 ? (
-                              <div className="py-4 text-center text-theme/60">Тэмдэглэл алга байна</div>
-                            ) : (
-                              <div className="space-y-2">
-                                <h4 className="text-sm font-semibold mb-2">
-                                  Дэлгэрэнгүй ({gd})
-                                </h4>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-xs border-collapse">
-                                    <thead>
-                                      <tr className="border-b">
-                                        <th className="text-left p-2 whitespace-nowrap">№</th>
-                                        <th className="text-left p-2 whitespace-nowrap">Огноо</th>
-                                        <th className="text-left p-2 whitespace-nowrap">Тайлбар</th>
-                                        <th className="text-right p-2 whitespace-nowrap">Авлага</th>
-                                        <th className="text-right p-2 whitespace-nowrap">Төлөлт</th>
-                                        <th className="text-right p-2 whitespace-nowrap font-semibold">Үлдэгдэл</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {expandedLedger.map((row: any, ri: number) => {
-                                        const avlaga = Number(row?.avlagaDun ?? row?.tulukhDun ?? row?.debit ?? 0) || 0;
-                                        const tulult = Number(row?.tulsunDun ?? row?.tulult ?? row?.credit ?? 0) || 0;
-                                        const uldeg = Number(row?.uldegdel ?? 0);
-                                        const tailbar = row?.tailbar || row?.ner || row?.turul || "-";
-                                        const ognoo = fmtDate(row?.ognoo || row?.createdAt);
-                                        return (
-                                          <tr key={ri} className="border-b hover:bg-[color:var(--surface-hover)]/10">
-                                            <td className="p-2 text-theme/60">{ri + 1}</td>
-                                            <td className="p-2 whitespace-nowrap text-theme/70">{ognoo}</td>
-                                            <td className="p-2 text-theme/80 max-w-[180px] truncate" title={tailbar}>{tailbar}</td>
-                                            <td className="p-2 text-right whitespace-nowrap">
-                                              {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} </span> : "-"}
-                                            </td>
-                                            <td className="p-2 text-right whitespace-nowrap">
-                                              {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} </span> : "-"}
-                                            </td>
-                                            <td className="p-2 text-right whitespace-nowrap font-medium">
-                                              <span className={uldeg > 0 ? "text-red-500" : uldeg < 0 ? "text-emerald-600" : "text-theme"}>
-                                                {formatNumber(uldeg)} 
-                                              </span>
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                    <tfoot>
-                                      <tr className="border-t-2 font-semibold">
-                                        <td colSpan={3} className="p-2 text-right text-xs text-theme/60">Эцсийн үлдэгдэл:</td>
-                                        <td className="p-2 text-right">
-                                          <span className="text-red-500">
-                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0), 0))} 
-                                          </span>
-                                        </td>
-                                        <td className="p-2 text-right">
-                                          <span className="text-green-600">
-                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0), 0))} 
-                                          </span>
-                                        </td>
-                                        <td className="p-2 text-right">
-                                          {(() => {
-                                            const last = expandedLedger[expandedLedger.length - 1];
-                                            const v = Number(last?.uldegdel ?? 0);
-                                            return (
-                                              <span className={v > 0 ? "text-red-500" : v < 0 ? "text-emerald-600" : "text-theme"}>
-                                                {formatNumber(v)} 
-                                              </span>
-                                            );
-                                          })()}
-                                        </td>
-                                      </tr>
-                                    </tfoot>
-                                  </table>
-                                </div>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+        <div className="rounded-3xl p-3 allow-overflow">
+          <OrlogoAvlagaTable
+            data={paginatedList as OrlogoAvlagaItem[]}
+            loading={isLoading}
+            page={currentPage}
+            pageSize={pageSize}
+            activeTab={activeTab}
+            expandedRow={expandedRow}
+            expandedLedger={expandedLedger}
+            expandedLoading={expandedLoading}
+            expandedError={expandedError}
+            getPaid={getPaid}
+            getUldegdel={getUldegdel}
+            onRowClick={handleRowClick}
+            getGereeId={getGereeId}
+          />
         </div>
       </div>
 
       <div className="flex items-center justify-between no-print mt-3">
         <div className="text-sm text-theme/70">
           Нийт: {displayList.length} &nbsp;|&nbsp;
-          <span className="text-green-600">Орлого: {paidList.length}</span>&nbsp;
+          <span className="text-green-600">Орлого: {paidList.length}</span>
+          &nbsp;
           <span className="text-red-500">Авлага: {avlagaList.length}</span>
         </div>
         <div className="flex items-center gap-3">
-          <PageSongokh value={pageSize} onChange={(v) => { setPageSize(v); setCurrentPage(1); }} className="text-xs" />
+          <PageSongokh
+            value={pageSize}
+            onChange={(v) => {
+              setPageSize(v);
+              setCurrentPage(1);
+            }}
+            className="text-xs"
+          />
           <div className="flex items-center gap-1">
-            <button className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage <= 1} onClick={() => setCurrentPage(currentPage - 1)}>Өмнөх</button>
-            <div className="text-theme/70 px-2">{currentPage} / {Math.max(1, Math.ceil(displayList.length / pageSize))}</div>
-            <button className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage * pageSize >= displayList.length} onClick={() => setCurrentPage(currentPage + 1)}>Дараах</button>
+            <button
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
+            >
+              Өмнөх
+            </button>
+            <div className="text-theme/70 px-2">
+              {currentPage} /{" "}
+              {Math.max(1, Math.ceil(displayList.length / pageSize))}
+            </div>
+            <button
+              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+              disabled={currentPage * pageSize >= displayList.length}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Дараах
+            </button>
           </div>
         </div>
       </div>

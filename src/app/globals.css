@@ -291,7 +291,6 @@
   align-items: center;
   justify-content: center;
   gap: 0.2em;
-  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-weight: 400;
   font-size: 14px; /* slightly smaller */
   padding: 0.35em 1em; /* more compact */
@@ -447,6 +446,9 @@
   --muted-text: #94a3b8;
 }
 @layer base {
+  html {
+    font-size: 14px;
+  }
   * {
     @apply border-border outline-ring/50;
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -455,6 +457,7 @@
   body {
     @apply bg-background text-foreground;
     font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 0.875rem;
   }
 }
 
@@ -4276,8 +4279,8 @@ a:active {
   color: #334155 !important;
 }
 .ant-btn-default:hover {
-  background-color: rgba(226, 232, 240, 0.8) !important;
-  color: #0f172a !important;
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
 }
 .dark .ant-btn-primary {
   background-color: #059669 !important;
@@ -4291,8 +4294,8 @@ a:active {
   color: #94a3b8 !important;
 }
 .dark .ant-btn-default:hover {
-  background-color: #334155 !important;
-  color: #f1f5f9 !important;
+  background-color: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
 }
 .ant-btn-text:hover,
 .ant-btn-ghost:hover {
@@ -4305,6 +4308,13 @@ a:active {
 
 /* ================== GuilgeeTable (Ant Design Table) Styles ================== */
 
+/* ===== TABLE WRAPPER FOR STICKY HEADERS ===== */
+/* Simple wrapper — AntD handles sticky headers via scroll.y internally */
+.guilgee-table-wrap {
+  width: 100%;
+  max-width: 100%;
+}
+
 /* Base table styling */
 .guilgee-table {
   @apply bg-white dark:bg-gray-800;
@@ -4313,33 +4323,34 @@ a:active {
 
 /* Ensure table body scrolls properly when scroll.y is set */
 .guilgee-table .ant-table-container {
-  height: auto;
-  max-height: 100%;
+  overflow: visible;
 }
 
+/* Allow the body to actually scroll — do NOT override height */
 .guilgee-table .ant-table-body {
-  max-height: inherit !important;
   overflow-y: auto !important;
-  height: auto !important;
+  overflow-x: auto !important;
 }
 
 /* Fix for fixed height table scrolling */
-.guilgee-table.ant-table-scroll .ant-table-body {
-  overflow-y: auto !important;
+.guilgee-table .ant-table-wrapper .ant-table {
+  overflow: hidden;
 }
 
-/* Small size table - extra small */
+/* Small size table - match base */
 .guilgee-table .ant-table-small {
-  font-size: 11px;
+  font-size: 14px;
 }
 
+/* All cells - consistent font size */
 .guilgee-table .ant-table-cell {
   padding: 4px 6px !important;
+  font-size: 14px !important;
 }
 
 .guilgee-table .ant-table-thead > tr > th {
   padding: 6px 6px !important;
-  font-size: 11px;
+  font-size: 14px !important;
 }
 
 /* Bordered table */

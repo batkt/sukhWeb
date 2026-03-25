@@ -54,7 +54,7 @@ export default function GuilgeeTable({
   onViewInvoice,
   onViewHistory,
   onTransaction,
-  maxHeight = 1000,
+  maxHeight = 480,
 }: GuilgeeTableProps) {
   // Check if checkbox column is visible
   const isCheckboxVisible = visibleColumns.some(
@@ -558,11 +558,21 @@ export default function GuilgeeTable({
 
   // Calculate summary/footer data
   const getSummary = () => {
-    const visibleCols = visibleColumns.filter((col) => col.key !== "checkbox");
+    // Get visible columns excluding checkbox for alignment with data columns
+    const dataCols = visibleColumns.filter((col) => col.key !== "checkbox");
+    // Calculate index offset for summary cells when checkbox is visible
+    const checkboxOffset = isCheckboxVisible ? 1 : 0;
+
     return (
-      <Table.Summary fixed="bottom">
+      <Table.Summary>
         <Table.Summary.Row>
-          {visibleCols.map((col, colIdx) => {
+          {/* Empty cell for checkbox column alignment */}
+          {isCheckboxVisible && (
+            <Table.Summary.Cell index={0} className="text-center">
+              -
+            </Table.Summary.Cell>
+          )}
+          {dataCols.map((col, colIdx) => {
             let content: React.ReactNode = "";
 
             if (col.key === "tulbur") {
@@ -653,7 +663,7 @@ export default function GuilgeeTable({
             return (
               <Table.Summary.Cell
                 key={col.key}
-                index={colIdx}
+                index={colIdx + checkboxOffset}
                 className={`${
                   col.key === "tulbur" ||
                   col.key === "paid" ||

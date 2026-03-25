@@ -12,7 +12,9 @@ export default function OrshinSuugchPage() {
 
   useEffect(() => {
     if (ajiltan) {
-      const allowed = hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch");
+      const allowed =
+        hasPermission(ajiltan, "/geree/orshinSuugch") ||
+        hasPermission(ajiltan, "geree.orshinSuugch");
       if (!allowed) {
         router.push("/geree");
       }
@@ -26,7 +28,7 @@ export default function OrshinSuugchPage() {
       resPage={state.resPage}
       resPageSize={state.resPageSize}
       resTotalPages={data.resTotalPages}
-      filteredResidents={data.filteredResidents}
+      totalResidents={data.totalResidents}
       sortKey={state.sortKey}
       sortOrder={state.sortOrder}
       toggleSortFor={actions.toggleSortFor}
@@ -36,7 +38,7 @@ export default function OrshinSuugchPage() {
           resident,
           state.setEditingResident,
           state.setNewResident,
-          state.setShowResidentModal
+          state.setShowResidentModal,
         );
       }}
       onRequestDeleteResident={(r) => {

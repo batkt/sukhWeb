@@ -8,7 +8,8 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
-import { FileSpreadsheet, Printer } from "lucide-react";
+import { FileSpreadsheet, Printer, Plus } from "lucide-react";
+import Button from "@/components/ui/Button";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -117,6 +118,8 @@ export default function ZogsoolTailanPage() {
     null,
   );
   const [detailLoading, setDetailLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newToot, setNewToot] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -524,6 +527,14 @@ export default function ZogsoolTailanPage() {
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Зогсоолын тайлан</h1>
         <div className="flex gap-3">
+          <Button
+            variant="primary"
+            size="sm"
+            leftIcon={<Plus className="w-4 h-4" />}
+            onClick={() => setIsModalOpen(true)}
+          >
+            Тоот нэмэх
+          </Button>
           <button
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
@@ -633,7 +644,7 @@ export default function ZogsoolTailanPage() {
               size="small"
               bordered
               className="guilgee-table"
-              scroll={{ y: 240 }}
+              scroll={{ x: "max-content", y: 240 }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
               onRow={(record) => ({
                 onClick: () => {
@@ -689,12 +700,14 @@ export default function ZogsoolTailanPage() {
             <Table
               dataSource={displayDetail || []}
               columns={guestDetailColumns}
-              rowKey={(record, index) => `${record.mashiniiDugaar}-${index}`}
+              rowKey={(record) =>
+                `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
+              }
               pagination={false}
               size="small"
               bordered
               className="guilgee-table"
-              scroll={{ y: 240 }}
+              scroll={{ x: "max-content", y: 240 }}
               loading={detailLoading}
               locale={{
                 emptyText: selectedResidentId
@@ -736,14 +749,66 @@ export default function ZogsoolTailanPage() {
             <Table
               dataSource={guestCarList}
               columns={guestCarListColumns}
-              rowKey={(record, index) => `${record.mashiniiDugaar}-${index}`}
+              rowKey={(record) =>
+                `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
+              }
               pagination={false}
               size="small"
               bordered
               className="guilgee-table"
-              scroll={{ y: 240 }}
+              scroll={{ x: "max-content", y: 240 }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Modal for adding new room */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+              Тоот нэмэх
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              1-р давхарт шинэ тоот нэмнэ үү.
+            </p>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Тоот
+              </label>
+              <input
+                type="text"
+                value={newToot}
+                onChange={(e) => setNewToot(e.target.value)}
+                placeholder="1-9 гэх мэтээр оруулна уу"
+                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+              />
+            </div>
+            <div className="flex gap-3 justify-end">
+              <Button
+                variant="back"
+                size="md"
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setNewToot("");
+                }}
+              >
+                Болих
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  // TODO: Add API call to save the new room
+                  console.log("Adding new room:", newToot);
+                  setIsModalOpen(false);
+                  setNewToot("");
+                }}
+              >
+                Нэмэх
+              </Button>
+            </div>
           </div>
         </div>
       )}

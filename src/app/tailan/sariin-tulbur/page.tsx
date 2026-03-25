@@ -13,51 +13,73 @@ import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { useGereeJagsaalt } from "@/lib/useGeree";
-import OrshinSuugch from "@/app/zogsool/orshinSuugch/page";
+import { SariinTulburTable, SariinTulburItem } from "./SariinTulburTable";
 
 const PrintStyles = () => (
   <style jsx global>{`
     @media print {
-      @page { size: A4 landscape; margin: 0.5cm; }
-      body * { visibility: hidden !important; }
-      .print-container, .print-container * { visibility: visible !important; }
-      .print-container { 
-        position: absolute !important; 
-        left: 0 !important; 
-        top: 0 !important; 
-        width: 100% !important; 
-        padding: 0 !important; 
+      @page {
+        size: A4 landscape;
+        margin: 0.5cm;
+      }
+      body * {
+        visibility: hidden !important;
+      }
+      .print-container,
+      .print-container * {
+        visibility: visible !important;
+      }
+      .print-container {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
         margin: 0 !important;
       }
-      .no-print { display: none !important; }
-      .print-only { display: block !important; }
-      
-      .max-h-[45vh], .custom-scrollbar { 
-        max-height: none !important; 
-        height: auto !important;
-        overflow: visible !important; 
+      .no-print {
+        display: none !important;
       }
-      .neu-panel, .neu-table {
+      .print-only {
+        display: block !important;
+      }
+
+      .max-h-[45vh],
+      .custom-scrollbar {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .neu-panel,
+      .neu-table {
         box-shadow: none !important;
         border: 1px solid #eee !important;
         background: white !important;
       }
-      
-      table { 
-        width: 100% !important; 
-        border-collapse: collapse !important; 
+
+      table {
+        width: 100% !important;
+        border-collapse: collapse !important;
         table-layout: auto !important;
         font-size: 8pt !important;
       }
-      th, td { 
-        border: 1px solid #ddd !important; 
-        padding: 4px 2px !important; 
+      th,
+      td {
+        border: 1px solid #ddd !important;
+        padding: 4px 2px !important;
         white-space: normal !important;
       }
-      th { background-color: #f8f9fa !important; -webkit-print-color-adjust: exact; }
-      .text-right { text-align: right !important; }
+      th {
+        background-color: #f8f9fa !important;
+        -webkit-print-color-adjust: exact;
+      }
+      .text-right {
+        text-align: right !important;
+      }
     }
-    .print-only { display: none; }
+    .print-only {
+      display: none;
+    }
   `}</style>
 );
 
@@ -80,7 +102,7 @@ export default function SariinTulburPage() {
   const { token, ajiltan } = useAuth();
   const { baiguullaga } = useBaiguullaga(
     token || null,
-    ajiltan?.baiguullagiinId || null
+    ajiltan?.baiguullagiinId || null,
   );
   const [data, setData] = useState<SariinTulburItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +113,7 @@ export default function SariinTulburPage() {
   const footerTotals = useTulburFooterTotals(
     token,
     ajiltan?.baiguullagiinId ?? null,
-    selectedBuildingId || undefined
+    selectedBuildingId || undefined,
   );
 
   const emptyQuery = useMemo(() => ({}), []);
@@ -99,7 +121,7 @@ export default function SariinTulburPage() {
     emptyQuery,
     token || undefined,
     ajiltan?.baiguullagiinId ?? undefined,
-    selectedBuildingId || undefined
+    selectedBuildingId || undefined,
   );
 
   const contractsByNumber = useMemo(() => {
@@ -117,12 +139,12 @@ export default function SariinTulburPage() {
     view: "delgerengui",
   });
   const [filters, setFilters] = useState({
-    orshinSuugch:"",
-    gereeniiDugaar:"",
-    ner:"",
-    davkhar:"",
-    ognoo:"",
-    toot:"",
+    orshinSuugch: "",
+    gereeniiDugaar: "",
+    ner: "",
+    davkhar: "",
+    ognoo: "",
+    toot: "",
   });
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -151,25 +173,45 @@ export default function SariinTulburPage() {
     setExpandedLoading(true);
     setExpandedError(null);
     try {
-      const resp = await uilchilgee(token ?? undefined).get(`/geree/${item.gereeniiId}/history-ledger`, {
-        params: { 
-          baiguullagiinId: baiguullaga._id, 
-          ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}), 
-          _t: Date.now() 
+      const resp = await uilchilgee(token ?? undefined).get(
+        `/geree/${item.gereeniiId}/history-ledger`,
+        {
+          params: {
+            baiguullagiinId: baiguullaga._id,
+            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+            _t: Date.now(),
+          },
         },
-      });
-      const ledger = Array.isArray(resp.data?.jagsaalt) ? resp.data.jagsaalt
-        : Array.isArray(resp.data?.ledger) ? resp.data.ledger
-        : Array.isArray(resp.data) ? resp.data : [];
-      
+      );
+      const ledger = Array.isArray(resp.data?.jagsaalt)
+        ? resp.data.jagsaalt
+        : Array.isArray(resp.data?.ledger)
+          ? resp.data.ledger
+          : Array.isArray(resp.data)
+            ? resp.data
+            : [];
+
       setExpandedData({
         rows: ledger,
-        totalAvlaga: ledger.reduce((s: number, r: any) => s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0), 0),
-        totalTulult: ledger.reduce((s: number, r: any) => s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0), 0),
-        lastUldegdel: ledger.length > 0 ? Number(ledger[ledger.length - 1]?.uldegdel ?? 0) : 0
+        totalAvlaga: ledger.reduce(
+          (s: number, r: any) =>
+            s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0),
+          0,
+        ),
+        totalTulult: ledger.reduce(
+          (s: number, r: any) =>
+            s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0),
+          0,
+        ),
+        lastUldegdel:
+          ledger.length > 0
+            ? Number(ledger[ledger.length - 1]?.uldegdel ?? 0)
+            : 0,
       });
     } catch (e: any) {
-      setExpandedError(e?.response?.data?.aldaa || e.message || "Unknown error");
+      setExpandedError(
+        e?.response?.data?.aldaa || e.message || "Unknown error",
+      );
       setExpandedData(null);
     } finally {
       setExpandedLoading(false);
@@ -201,7 +243,7 @@ export default function SariinTulburPage() {
         duusakhOgnoo: dateRange?.[1] || formData.duusakhOgnoo,
         turul: formData.turul,
         view: formData.view,
-        khuudasniiKhemjee: 1000, 
+        khuudasniiKhemjee: 1000,
         orshinSuugch: debouncedFilters.orshinSuugch || undefined,
         toot: debouncedFilters.toot || undefined,
         davkhar: debouncedFilters.davkhar || undefined,
@@ -210,7 +252,7 @@ export default function SariinTulburPage() {
 
       const response = await uilchilgee(token ?? undefined).post(
         "/tailan/sariin-tulbur",
-        payload
+        payload,
       );
       const fetchedData = response.data?.detailed?.list || [];
       const mappedData = Array.isArray(fetchedData)
@@ -222,14 +264,26 @@ export default function SariinTulburPage() {
 
             // Check contract for fallback tooth
             const ct = contractsByNumber[String(item.gereeniiDugaar)];
-            const resolvedToot = item.toot || item.medeelel?.toot || item.nememjlekh?.toot || ct?.toot || item.davkhar || item.medeelel?.davkhar || item.nememjlekh?.davkhar || ct?.davkhar;
-            const resolvedDavkhar = item.davkhar || item.medeelel?.davkhar || item.nememjlekh?.davkhar || ct?.davkhar;
+            const resolvedToot =
+              item.toot ||
+              item.medeelel?.toot ||
+              item.nememjlekh?.toot ||
+              ct?.toot ||
+              item.davkhar ||
+              item.medeelel?.davkhar ||
+              item.nememjlekh?.davkhar ||
+              ct?.davkhar;
+            const resolvedDavkhar =
+              item.davkhar ||
+              item.medeelel?.davkhar ||
+              item.nememjlekh?.davkhar ||
+              ct?.davkhar;
             return {
               ...item,
               tulbur: item.niitTulbur || item.tulbur || 0,
               sar: month || item.sar || "",
               on: parseInt(year) || item.on || "",
-              bairNer: item.bairNer || "N/A", 
+              bairNer: item.bairNer || "N/A",
               toot: resolvedToot,
               davkhar: resolvedDavkhar,
             };
@@ -261,7 +315,14 @@ export default function SariinTulburPage() {
     fetchData();
     setExpandedRow(null);
     setExpandedData(null);
-  }, [selectedBuildingId, baiguullaga, token, formData, dateRange, debouncedFilters]);
+  }, [
+    selectedBuildingId,
+    baiguullaga,
+    token,
+    formData,
+    dateRange,
+    debouncedFilters,
+  ]);
 
   // Adjust date range based on selected type
   useEffect(() => {
@@ -276,7 +337,10 @@ export default function SariinTulburPage() {
       const endOfMonth = new Date(startYear, startMonth + 1, 0);
 
       // Only update if current end is outside the selected month
-      if (endDate.getMonth() !== startMonth || endDate.getFullYear() !== startYear) {
+      if (
+        endDate.getMonth() !== startMonth ||
+        endDate.getFullYear() !== startYear
+      ) {
         setDateRange([dateRange[0], endOfMonth.toISOString().split("T")[0]]);
       }
     } else if (formData.turul === "uliral") {
@@ -285,14 +349,14 @@ export default function SariinTulburPage() {
       const quarterEndMonth = startMonth + 3;
       const endOfQuarter = new Date(startYear, quarterEndMonth, 0);
 
-      const currentDiffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth()) + 1;
-      
+      const currentDiffMonths =
+        (endDate.getFullYear() - startDate.getFullYear()) * 12 +
+        (endDate.getMonth() - startDate.getMonth()) +
+        1;
+
       // Only update if range is not approximately 3 months
       if (currentDiffMonths !== 3) {
-        setDateRange([
-          dateRange[0],
-          endOfQuarter.toISOString().split("T")[0],
-        ]);
+        setDateRange([dateRange[0], endOfQuarter.toISOString().split("T")[0]]);
       }
     }
   }, [formData.turul]); // Only run when type changes, or when dateRange changes specifically for correction
@@ -301,12 +365,13 @@ export default function SariinTulburPage() {
 
   const exportToExcel = () => {
     if (!data.length) return;
-    
+
     // 1. Metadata Rows
     const buildingName = baiguullaga?.ner || "";
-    const dateStr = dateRange?.[0] && dateRange?.[1]
-      ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
-      : "Бүх хугацаа";
+    const dateStr =
+      dateRange?.[0] && dateRange?.[1]
+        ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+        : "Бүх хугацаа";
 
     const metaRows = [
       ["Сарын төлбөрийн тайлан"],
@@ -316,7 +381,7 @@ export default function SariinTulburPage() {
       [`Тайлан татсан: ${new Date().toLocaleString("mn-MN")}`],
       [""],
       ["Нийт үлдэгдэл:", totalTulbur, ""],
-      [""]
+      [""],
     ];
 
     // 2. Headers
@@ -334,19 +399,21 @@ export default function SariinTulburPage() {
 
     const escapeCsv = (val: any) => {
       const s = String(val);
-      if (s.includes(",") || s.includes("\"") || s.includes("\n")) {
+      if (s.includes(",") || s.includes('"') || s.includes("\n")) {
         return `"${s.replace(/"/g, '""')}"`;
       }
       return s;
     };
 
     const csvContent = [
-      ...metaRows.map(r => r.map(escapeCsv).join(",")),
+      ...metaRows.map((r) => r.map(escapeCsv).join(",")),
       headers.map(escapeCsv).join(","),
-      ...rows.map(r => r.map(escapeCsv).join(","))
+      ...rows.map((r) => r.map(escapeCsv).join(",")),
     ].join("\n");
 
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -368,21 +435,30 @@ export default function SariinTulburPage() {
       <div className="print-only mb-6">
         <div className="flex justify-between items-start border-b-2 border-gray-800 pb-4">
           <div>
-            <h1 className="text-2xl font-bold uppercase">Сарын төлбөрийн тайлан</h1>
-            <p className="text-sm mt-1">{baiguullaga?.ner || "Байгууллагын нэр"}</p>
+            <h1 className="text-2xl font-bold uppercase">
+              Сарын төлбөрийн тайлан
+            </h1>
+            <p className="text-sm mt-1">
+              {baiguullaga?.ner || "Байгууллагын нэр"}
+            </p>
           </div>
           <div className="text-right text-sm">
-            <p>Огноо: {dateRange?.[0] && dateRange?.[1] 
-              ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
-              : "Бүх хугацаа"}</p>
+            <p>
+              Огноо:{" "}
+              {dateRange?.[0] && dateRange?.[1]
+                ? `${new Date(dateRange[0]).toLocaleDateString("mn-MN")} - ${new Date(dateRange[1]).toLocaleDateString("mn-MN")}`
+                : "Бүх хугацаа"}
+            </p>
             <p>Төрөл: {formData.turul === "sar" ? "Сар" : "Улирал"}</p>
             <p>Хэвлэсэн: {new Date().toLocaleString("mn-MN")}</p>
           </div>
         </div>
-        
+
         <div className="mt-6 border p-4 rounded bg-gray-50 flex justify-between items-center">
           <p className="font-semibold text-gray-700">НИЙТ ҮЛДЭГДЭЛ:</p>
-          <p className="text-2xl font-bold text-red-600">{formatNumber(totalTulbur)} </p>
+          <p className="text-2xl font-bold text-red-600">
+            {formatNumber(totalTulbur)}{" "}
+          </p>
         </div>
       </div>
       <div className="flex justify-between items-center mb-6 no-print">
@@ -395,7 +471,7 @@ export default function SariinTulburPage() {
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             Excel татах
           </button>
-{/* <button
+          {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
@@ -405,71 +481,83 @@ export default function SariinTulburPage() {
         </div>
       </div>
       <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
-          <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder={
-                formData.turul === "sar" ? "Сар сонгох" : "Улирал сонгох"
-              }
-              className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
-            />
-          </div>
-          <div className="p-3 rounded-xl">
-            <label className="block text-sm  text-theme/80 mb-1.5">Төрөл</label>
-            <TusgaiZagvar
-              value={formData.turul}
-              onChange={(v: string) => setFormData({ ...formData, turul: v })}
-              options={[
-                { value: "sar", label: "Сар" },
-                { value: "uliral", label: "Улирал" },
-              ]}
-              placeholder="Төрөл сонгох"
-              className="h-[40px] w-full"
-            />
-          </div>
-          <div className="p-3 rounded-xl">
-            <label className="block text-sm  text-theme/80 mb-1.5">Оршин суугч</label>
-            <input
-              type="text"
-              value={filters.orshinSuugch}
-              onChange={(e) => setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))}
-              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder="Овог, нэрээр хайх"
-            />
-          </div>
-          <div className="p-3 rounded-xl">
-            <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
-            <input
-              type="text"
-              value={filters.toot}
-              onChange={(e) => setFilters((p) => ({ ...p, toot: e.target.value }))}
-              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder="Тоот"
-            />
-          </div>
-          <div className="p-3 rounded-xl">
-            <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
-            <input
-              type="text"
-              value={filters.davkhar}
-              onChange={(e) => setFilters((p) => ({ ...p, davkhar: e.target.value }))}
-              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder="Давхар"
-            />
-          </div>
-          <div className="p-3 rounded-xl">
-            <label className="block text-sm  text-theme/80 mb-1.5">Гэрээний дугаар</label>
-            <input
-              type="text"
-              value={filters.gereeniiDugaar}
-              onChange={(e) => setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))}
-              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder="ГД"
-            />
-          </div>
+        <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder={
+              formData.turul === "sar" ? "Сар сонгох" : "Улирал сонгох"
+            }
+            className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
+          />
+        </div>
+        <div className="p-3 rounded-xl">
+          <label className="block text-sm  text-theme/80 mb-1.5">Төрөл</label>
+          <TusgaiZagvar
+            value={formData.turul}
+            onChange={(v: string) => setFormData({ ...formData, turul: v })}
+            options={[
+              { value: "sar", label: "Сар" },
+              { value: "uliral", label: "Улирал" },
+            ]}
+            placeholder="Төрөл сонгох"
+            className="h-[40px] w-full"
+          />
+        </div>
+        <div className="p-3 rounded-xl">
+          <label className="block text-sm  text-theme/80 mb-1.5">
+            Оршин суугч
+          </label>
+          <input
+            type="text"
+            value={filters.orshinSuugch}
+            onChange={(e) =>
+              setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))
+            }
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Овог, нэрээр хайх"
+          />
+        </div>
+        <div className="p-3 rounded-xl">
+          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
+          <input
+            type="text"
+            value={filters.toot}
+            onChange={(e) =>
+              setFilters((p) => ({ ...p, toot: e.target.value }))
+            }
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Тоот"
+          />
+        </div>
+        <div className="p-3 rounded-xl">
+          <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
+          <input
+            type="text"
+            value={filters.davkhar}
+            onChange={(e) =>
+              setFilters((p) => ({ ...p, davkhar: e.target.value }))
+            }
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="Давхар"
+          />
+        </div>
+        <div className="p-3 rounded-xl">
+          <label className="block text-sm  text-theme/80 mb-1.5">
+            Гэрээний дугаар
+          </label>
+          <input
+            type="text"
+            value={filters.gereeniiDugaar}
+            onChange={(e) =>
+              setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))
+            }
+            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            placeholder="ГД"
+          />
+        </div>
         {/* <button
           type="submit"
           disabled={loading}
@@ -490,211 +578,23 @@ export default function SariinTulburPage() {
       </div> */}
 
       {/* Data Table */}
-      <div className=" overflow-hidden rounded-2xl w-full">
-        <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-          <div className="max-h-[45vh] overflow-y-auto custom-scrollbar w-full">
-            <table className="table-ui text-sm min-w-full">
-              <thead>
-                <tr>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Гэрээний дугаар
-                  </th>
-                  {/* <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Байрны нэр
-                  </th> */}
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Нэр
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Тоот
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Давхар
-                  </th>
-                  
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Төлбөр
-                  </th>
-                  
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-theme/70">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                    </td>
-                  </tr>
-                ) : data.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="p-8 text-center text-theme/60">
-                      Мэдээлэл алга байна
-                    </td>
-                  </tr>
-                ) : (
-                  data
-                    .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-                    .map((item, idx) => {
-                      const rowKey = `${item.gereeniiDugaar}-${item.period || item.sar}-${item.on}-${item._id}`;
-                      const isExpanded = expandedRow === rowKey;
-                      return (
-                        <React.Fragment key={item._id || rowKey}>
-                          <tr
-                            className="transition-colors border-b last:border-b-0"
-                          >
-                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
-                              {(currentPage - 1) * pageSize + idx + 1}
-                            </td>
-                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
-                              {item.gereeniiDugaar}
-                            </td>
-                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
-                              {item.ner}
-                            </td>
-                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
-                              {item.davkhar}
-                            </td>
-                            <td className="p-3 border-r text-center text-theme whitespace-nowrap">
-                              {item.toot}
-                            </td>
-                            <td className="p-3 border-r text-right text-theme whitespace-nowrap">
-                              <button
-                                type="button"
-                                onClick={() => handleExpandClick(item)}
-                                className=" hover:underline cursor-pointer flex items-center justify-center gap-1 ml-auto"
-                              >
-                                {isExpanded ? (
-                                  <ChevronDown className="w-4 h-4" />
-                                ) : (
-                                  <ChevronRight className="w-4 h-4" />
-                                )}
-                                {formatNumber(item.tulbur)} 
-                              </button>
-                            </td>
-                            {/* <td className="p-3 text-center text-theme whitespace-nowrap">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs  ${
-                                  item.tuluv === "Төлсөн"
-                                    ? "badge-paid"
-                                    : item.tuluv === "Төлөөгүй"
-                                    ? "badge-unpaid"
-                                    : "bg-yellow-100 text-yellow-800"
-                                }`}
-                              >
-                                {item.tuluv}
-                              </span>
-                            </td> */}
-                          </tr>
-                          {isExpanded && (
-                            <tr>
-                              <td
-                                colSpan={7}
-                                className="p-4 bg-[color:var(--surface-hover)]/30 border-b"
-                              >
-                                {expandedLoading ? (
-                                  <div className="py-4 text-center">
-                                    Уншиж байна...
-                                  </div>
-                                ) : expandedError ? (
-                                  <div className="text-red-500 py-2">
-                                    Алдаа: {expandedError}
-                                  </div>
-                                ) : expandedData ? (
-                                  <div className="space-y-3">
-                                    <table className="min-w-full text-sm border-collapse">
-                                      <thead>
-                                        <tr className="border-b">
-                                          <th className="text-left p-2 whitespace-nowrap">№</th>
-                                          <th className="text-left p-2 whitespace-nowrap">Огноо</th>
-                                          <th className="text-left p-2 whitespace-nowrap">Тайлбар</th>
-                                          <th className="text-right p-2 whitespace-nowrap">Авлага</th>
-                                          <th className="text-right p-2 whitespace-nowrap">Төлөлт</th>
-                                          <th className="text-right p-2 whitespace-nowrap font-semibold">Үлдэгдэл</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {expandedData.rows.map((row: any, ri: number) => {
-                                          const avlaga = Number(row?.avlagaDun ?? row?.tulukhDun ?? row?.debit ?? 0) || 0;
-                                          const tulult = Number(row?.tulsunDun ?? row?.tulult ?? row?.credit ?? 0) || 0;
-                                          const uldeg = Number(row?.uldegdel ?? 0);
-                                          const tailbar = row?.tailbar || row?.ner || row?.turul || "-";
-                                          const ognoo = row?.ognoo ? new Date(row.ognoo).toLocaleDateString("mn-MN") : "-";
-                                          return (
-                                            <tr key={ri} className="border-b hover:bg-[color:var(--surface-hover)]/10">
-                                              <td className="p-2 text-theme/60">{ri + 1}</td>
-                                              <td className="p-2 whitespace-nowrap text-theme/70">{ognoo}</td>
-                                              <td className="p-2 text-theme/80 max-w-[180px] truncate" title={tailbar}>{tailbar}</td>
-                                              <td className="p-2 text-right whitespace-nowrap">
-                                                {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} </span> : "-"}
-                                              </td>
-                                              <td className="p-2 text-right whitespace-nowrap">
-                                                {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} </span> : "-"}
-                                              </td>
-                                              <td className="p-2 text-right whitespace-nowrap font-medium">
-                                                <span className={uldeg > 0 ? "text-red-500" : uldeg < 0 ? "text-emerald-600" : "text-theme"}>
-                                                  {formatNumber(uldeg)} 
-                                                </span>
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                      <tfoot>
-                                        <tr className="border-t-2 font-semibold">
-                                          <td colSpan={3} className="p-2 text-right text-xs text-theme/60">Эцсийн үлдэгдэл:</td>
-                                          <td className="p-2 text-right">
-                                            <span className="text-red-500">
-                                              {formatNumber(expandedData.totalAvlaga)} 
-                                            </span>
-                                          </td>
-                                          <td className="p-2 text-right">
-                                            <span className="text-green-600">
-                                              {formatNumber(expandedData.totalTulult)} 
-                                            </span>
-                                          </td>
-                                          <td className="p-2 text-right">
-                                            <span className={expandedData.lastUldegdel > 0 ? "text-red-500" : expandedData.lastUldegdel < 0 ? "text-emerald-600" : "text-theme"}>
-                                              {formatNumber(expandedData.lastUldegdel)} 
-                                            </span>
-                                          </td>
-                                        </tr>
-                                      </tfoot>
-                                    </table>
-                                  </div>
-                                ) : null}
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="border-t dark:border-gray-800 border-gray-100">
-            <table className="text-sm min-w-full">
-              <tbody>
-                <tr>
-                  <td className="p-3 text-center text-theme whitespace-nowrap w-12"></td>
-                  <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  
-                  <td className="p-3 text-right text-theme whitespace-nowrap "></td>
-                  
-                  <td className="p-3 text-center text-theme whitespace-nowrap"></td>
-                  <td className="p-3 text-right text-theme whitespace-nowrap ">
-                    Нийт: {formatNumber(totalTulbur)} 
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      <div className="overflow-hidden rounded-2xl w-full">
+        <div className="rounded-3xl p-3 allow-overflow">
+          <SariinTulburTable
+            data={data.slice(
+              (currentPage - 1) * pageSize,
+              currentPage * pageSize,
+            )}
+            loading={loading}
+            page={currentPage}
+            pageSize={pageSize}
+            expandedRow={expandedRow}
+            expandedData={expandedData}
+            expandedLoading={expandedLoading}
+            expandedError={expandedError}
+            onExpandClick={handleExpandClick}
+            totalTulbur={totalTulbur}
+          />
         </div>
       </div>
 

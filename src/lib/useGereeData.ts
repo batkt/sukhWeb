@@ -26,13 +26,13 @@ export function useGereeData(
   unitPageSize: number,
   selectedDawkhar?: string,
   selectedOrtsForContracts?: string,
-  statusFilter?: "all" | "active" | "cancelled"
+  statusFilter?: "all" | "active" | "cancelled",
 ) {
   // Stick strictly to selectedBuildingId from context to prevent data leakage from cookie-based barilgiinId
   const effectiveBarilgiinId = selectedBuildingId || undefined;
-  
+
   const selectedBarilga = baiguullaga?.barilguud?.find(
-    (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId)
+    (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
   );
 
   const {
@@ -40,7 +40,12 @@ export function useGereeData(
     gereeJagsaaltMutate,
     setGereeKhuudaslalt,
     isValidating: isValidatingGeree,
-  } = useGereeJagsaalt({}, token || undefined, ajiltan?.baiguullagiinId, effectiveBarilgiinId);
+  } = useGereeJagsaalt(
+    {},
+    token || undefined,
+    ajiltan?.baiguullagiinId,
+    effectiveBarilgiinId,
+  );
 
   const {
     orshinSuugchGaralt,
@@ -51,7 +56,7 @@ export function useGereeData(
     token || "",
     ajiltan?.baiguullagiinId || "",
     {},
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
 
   const {
@@ -63,7 +68,7 @@ export function useGereeData(
     token || "",
     ajiltan?.baiguullagiinId || "",
     effectiveBarilgiinId,
-    {}
+    {},
   );
 
   const {
@@ -116,7 +121,8 @@ export function useGereeData(
         const s = tok.trim();
         if (/^\d+$/.test(s)) {
           const n = Number(s);
-          if (n > 0) return Array.from({ length: n }).map((_, i) => String(i + 1));
+          if (n > 0)
+            return Array.from({ length: n }).map((_, i) => String(i + 1));
         }
         const parts = s.split(/[\s,;|]+/).filter(Boolean);
         if (parts.length > 0) return parts.map(String);
@@ -132,25 +138,28 @@ export function useGereeData(
     try {
       const tokhirgoo = (selectedBarilga as any)?.tokhirgoo || {};
       const map = (tokhirgoo as any)?.davkhariinToonuud;
-        if (map && typeof map === "object" && !Array.isArray(map)) {
-          Object.entries(map).forEach(([floor, val]) => {
-            let units: string[] = [];
-            if (Array.isArray(val)) {
-              units = val.flatMap((v) =>
-                String(v).split(/[\s,;|]+/).filter(Boolean)
-              );
-            } else if (typeof val === "string") {
-              units = val.split(/[\s,;|]+/).filter(Boolean);
-            }
-            out[String(floor)] = units;
-          });
-        }
+      if (map && typeof map === "object" && !Array.isArray(map)) {
+        Object.entries(map).forEach(([floor, val]) => {
+          let units: string[] = [];
+          if (Array.isArray(val)) {
+            units = val.flatMap((v) =>
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
+            );
+          } else if (typeof val === "string") {
+            units = val.split(/[\s,;|]+/).filter(Boolean);
+          }
+          out[String(floor)] = units;
+        });
+      }
       const tok = (tokhirgoo as any)?.davkhar;
       if (Array.isArray(tok)) {
         tok.forEach((it: any) => {
           const floor = String(it?.davkhar ?? it);
           const list = Array.isArray(it?.toonuud) ? it.toonuud : [];
-          if (floor && !out[floor]) out[floor] = list.map((x: any) => String(x));
+          if (floor && !out[floor])
+            out[floor] = list.map((x: any) => String(x));
         });
       }
     } catch {}
@@ -171,9 +180,18 @@ export function useGereeData(
         const key = composeKey(o, f);
 
         let candidates: string[] = [];
-        if (tootMap[key] && Array.isArray(tootMap[key]) && tootMap[key].length > 0) {
+        if (
+          tootMap[key] &&
+          Array.isArray(tootMap[key]) &&
+          tootMap[key].length > 0
+        ) {
           candidates = tootMap[key].slice();
-        } else if (f && tootMap[f] && Array.isArray(tootMap[f]) && tootMap[f].length > 0) {
+        } else if (
+          f &&
+          tootMap[f] &&
+          Array.isArray(tootMap[f]) &&
+          tootMap[f].length > 0
+        ) {
           candidates = tootMap[f].slice();
         } else {
           return [];
@@ -185,8 +203,8 @@ export function useGereeData(
               .flatMap((it) => String(it || "").split(/[\s,;|]+/))
               .map((s) => s.trim())
               .map((s) => s.replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, ""))
-              .filter(Boolean)
-          )
+              .filter(Boolean),
+          ),
         );
 
         return normalized;
@@ -194,7 +212,7 @@ export function useGereeData(
         return [];
       }
     },
-    [tootMap, composeKey]
+    [tootMap, composeKey],
   );
 
   const [tuluvByResidentId, setTuluvByResidentId] = useState<
@@ -217,13 +235,16 @@ export function useGereeData(
         const list: any[] = Array.isArray(resp.data?.jagsaalt)
           ? resp.data.jagsaalt
           : Array.isArray(resp.data)
-          ? resp.data
-          : [];
-        
+            ? resp.data
+            : [];
+
         const residents = residentsList;
-        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+        const norm = (v: any) =>
+          String(v ?? "")
+            .trim()
+            .toLowerCase();
         const resIndex = new Map<string, string>();
-        
+
         const makeResKeys = (r: any): string[] => {
           const id = String(r?._id || "");
           const reg = norm(r?.register);
@@ -238,7 +259,7 @@ export function useGereeData(
           if (ovog || ner || toot) keys.push(`name|${ovog}|${ner}|${toot}`);
           return keys;
         };
-        
+
         residents.forEach((r: any) => {
           const id = String(r?._id || "");
           if (!id) return;
@@ -271,15 +292,23 @@ export function useGereeData(
           if (!osId) return;
 
           const label = getPaymentStatusLabel(it);
-          const ts = new Date(it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0).getTime();
+          const ts = new Date(
+            it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
+          ).getTime();
           const cur = byId[osId];
           if (!cur || ts >= cur.ts) byId[osId] = { label, ts };
         });
-        
-        const out: Record<string, "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"> = {};
+
+        const out: Record<
+          string,
+          "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
+        > = {};
         Object.entries(byId).forEach(([k, v]) => {
           const l = v.label as any;
-          out[k] = l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн" ? l : "Тодорхойгүй";
+          out[k] =
+            l === "Төлсөн" || l === "Төлөөгүй" || l === "Хугацаа хэтэрсэн"
+              ? l
+              : "Тодорхойгүй";
         });
         setTuluvByResidentId(out);
       } catch {
@@ -289,269 +318,308 @@ export function useGereeData(
     run();
   }, [token, ajiltan?.baiguullagiinId, effectiveBarilgiinId, residentsList]);
 
-  const renderCellValue = useCallback((contract: any, columnKey: string): React.ReactNode => {
-    if (!contract) return "-";
+  const renderCellValue = useCallback(
+    (contract: any, columnKey: string): React.ReactNode => {
+      if (!contract) return "-";
 
-    // Helper to extract string value from object or primitive
-    const getStringValue = (val: any): string => {
-      if (val == null) return "";
-      if (typeof val === "string") return val;
-      if (typeof val === "number") return String(val);
-      if (typeof val === "boolean") return String(val);
-      if (typeof val === "object") {
-        // Handle objects like {ner: "...", kod: "..."}
-        if (val.ner) return String(val.ner);
-        if (val.kod) return String(val.kod);
-        if (val.label) return String(val.label);
-        if (val.value) return String(val.value);
-        // If it's an array, join it
-        if (Array.isArray(val)) {
-          return val.map((v: any) => getStringValue(v)).filter(Boolean).join(", ");
-        }
-        // Last resort: try to stringify
-        return "";
-      }
-      return String(val);
-    };
-
-    switch (columnKey) {
-      case "ner": {
-        const ovog = getStringValue(contract.ovog);
-        const ner = getStringValue(contract.ner);
-        return ovog || ner ? `${ovog} ${ner}`.trim() : "-";
-      }
-      
-      case "gereeniiDugaar":
-        return getStringValue(contract.gereeniiDugaar) || "-";
-      
-      case "turul":
-        return getStringValue(contract.turul) || "-";
-      
-      case "duureg": {
-        // Try to get duureg from linked resident's toots array first
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            const tootsDuureg = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.duureg 
-              : null;
-            const residentDuureg = tootsDuureg ?? resident.duureg;
-            if (residentDuureg != null && residentDuureg !== '') {
-              return getStringValue(residentDuureg);
-            }
+      // Helper to extract string value from object or primitive
+      const getStringValue = (val: any): string => {
+        if (val == null) return "";
+        if (typeof val === "string") return val;
+        if (typeof val === "number") return String(val);
+        if (typeof val === "boolean") return String(val);
+        if (typeof val === "object") {
+          // Handle objects like {ner: "...", kod: "..."}
+          if (val.ner) return String(val.ner);
+          if (val.kod) return String(val.kod);
+          if (val.label) return String(val.label);
+          if (val.value) return String(val.value);
+          // If it's an array, join it
+          if (Array.isArray(val)) {
+            return val
+              .map((v: any) => getStringValue(v))
+              .filter(Boolean)
+              .join(", ");
           }
+          // Last resort: try to stringify
+          return "";
         }
-        return getStringValue(contract.duureg) || "-";
-      }
-      
-      case "horoo": {
-        // Try to get horoo from linked resident's toots array first
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            const tootsHoroo = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.horoo 
-              : null;
-            const residentHoroo = tootsHoroo ?? resident.horoo;
-            if (residentHoroo != null) {
-              if (typeof residentHoroo === "object") {
-                return getStringValue(residentHoroo.ner) || getStringValue(residentHoroo.kod) || "-";
+        return String(val);
+      };
+
+      switch (columnKey) {
+        case "ner": {
+          const ovog = getStringValue(contract.ovog);
+          const ner = getStringValue(contract.ner);
+          return ovog || ner ? `${ovog} ${ner}`.trim() : "-";
+        }
+
+        case "gereeniiDugaar":
+          return getStringValue(contract.gereeniiDugaar) || "-";
+
+        case "turul":
+          return getStringValue(contract.turul) || "-";
+
+        case "duureg": {
+          // Try to get duureg from linked resident's toots array first
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              const tootsDuureg =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.duureg
+                  : null;
+              const residentDuureg = tootsDuureg ?? resident.duureg;
+              if (residentDuureg != null && residentDuureg !== "") {
+                return getStringValue(residentDuureg);
               }
-              return getStringValue(residentHoroo) || "-";
             }
           }
+          return getStringValue(contract.duureg) || "-";
         }
-        const horoo = contract.horoo;
-        if (typeof horoo === "object" && horoo != null) {
-          return getStringValue(horoo.ner) || getStringValue(horoo.kod) || "-";
-        }
-        return getStringValue(horoo) || "-";
-      }
-      
-      case "bairniiNer": {
-        // Try to get bairniiNer from linked resident's toots array first
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            const tootsBairniiNer = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.bairniiNer 
-              : null;
-            const residentBairniiNer = tootsBairniiNer ?? resident.bairniiNer;
-            if (residentBairniiNer != null && residentBairniiNer !== '') {
-              return getStringValue(residentBairniiNer);
+
+        case "horoo": {
+          // Try to get horoo from linked resident's toots array first
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              const tootsHoroo =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.horoo
+                  : null;
+              const residentHoroo = tootsHoroo ?? resident.horoo;
+              if (residentHoroo != null) {
+                if (typeof residentHoroo === "object") {
+                  return (
+                    getStringValue(residentHoroo.ner) ||
+                    getStringValue(residentHoroo.kod) ||
+                    "-"
+                  );
+                }
+                return getStringValue(residentHoroo) || "-";
+              }
             }
           }
-        }
-        return getStringValue(contract.bairniiNer) || "-";
-      }
-      
-      case "orts": {
-        // First try to get orts from the linked resident (prioritize toots array)
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            // Try toots array first, then top-level
-            const tootsOrts = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.orts 
-              : null;
-            const residentOrts = tootsOrts ?? resident.orts;
-            if (residentOrts != null && residentOrts !== '') {
-              return String(residentOrts);
-            }
-          }
-        }
-        // Fall back to contract's own orts value
-        return contract.orts != null ? String(contract.orts) : "-";
-      }
-      
-      case "davkhar": {
-        // Try to get davkhar from the linked resident (prioritize toots array)
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            // Try toots array first, then top-level
-            const tootsDavkhar = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.davkhar 
-              : null;
-            const residentDavkhar = tootsDavkhar ?? resident.davkhar;
-            if (residentDavkhar != null && residentDavkhar !== '') {
-              return String(residentDavkhar);
-            }
-          }
-        }
-        // Fall back to contract's own davkhar value
-        return contract.davkhar != null ? String(contract.davkhar) : "-";
-      }
-      
-      case "toot": {
-        // Try to get toot from the linked resident (prioritize toots array)
-        const orshinSuugchId = contract.orshinSuugchId;
-        if (orshinSuugchId) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident) {
-            // Try toots array first, then top-level
-            const tootsToot = Array.isArray(resident.toots) && resident.toots.length > 0 
-              ? resident.toots[0]?.toot 
-              : null;
-            const residentToot = tootsToot ?? resident.toot;
-            if (residentToot != null && residentToot !== '') {
-              return String(residentToot);
-            }
-          }
-        }
-        // Fall back to contract's own toot value
-        return contract.toot != null ? String(contract.toot) : "-";
-      }
-      
-      case "utas":
-        if (Array.isArray(contract.utas)) {
-          return contract.utas.map((u: any) => getStringValue(u)).filter(Boolean).join(", ") || "-";
-        }
-        return getStringValue(contract.utas) || "-";
-      
-      case "tuluv": {
-        const status = String(contract.tuluv || contract.status || "Идэвхтэй").trim();
-        const isCancelled = status === "Цуцалсан" || 
-                           status.toLowerCase() === "цуцалсан" || 
-                           status === "tsutlsasan" || 
-                           status.toLowerCase() === "tsutlsasan" ||
-                           status === "Идэвхгүй" ||
-                           status.toLowerCase() === "идэвхгүй";
-        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
-        
-        const statusClass = isCancelled 
-          ? "badge-unpaid bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-          : isActive
-          ? "badge-paid bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-          : "badge-neutral";
-        
-        return React.createElement(
-          "span",
-          { className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs  ${statusClass}` },
-          status || "Идэвхтэй"
-        );
-      }
-      
-      case "ognoo": {
-        const status = String(contract.tuluv || contract.status || "Идэвхтэй").trim();
-        const isCancelled = status === "Цуцалсан" || 
-                           status.toLowerCase() === "цуцалсан" || 
-                           status === "tsutlsasan" || 
-                           status.toLowerCase() === "tsutlsasan" ||
-                           status === "Идэвхгүй" ||
-                           status.toLowerCase() === "идэвхгүй";
-        
-        // Try to get cancelled date from various possible field names
-        const cancelledDate = contract.cancelledAt || 
-                             contract.tsutlsasanOgnoo || 
-                             contract.tsutlsanOgnoo ||
-                             contract.duusakhOgnoo ||
-                             contract.updatedAt; // Fallback to updatedAt if cancelled
-        
-        const createdDate = contract.ognoo || contract.createdAt;
-        
-        const formatDate = (dateValue: any): string => {
-          if (!dateValue) return "";
-          try {
-            const date = new Date(dateValue);
-            if (!isNaN(date.getTime())) {
-              return date.toLocaleDateString("mn-MN", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              });
-            }
-          } catch (e) {
-            // Fall through
-          }
-          return getStringValue(dateValue);
-        };
-        
-        const formattedCreated = formatDate(createdDate);
-        const formattedCancelled = isCancelled ? formatDate(cancelledDate) : "";
-        
-        // Apply color based on status with !important to override table styles
-        const dateClass = isCancelled 
-          ? "!text-red-600 dark:!text-red-400 "
-          : "!text-green-600 dark:!text-green-400 ";
-        
-        if (isCancelled) {
-          // Show only cancelled date for cancelled contracts
-          if (formattedCancelled) {
-            return React.createElement(
-              "span",
-              { className: dateClass, style: { color: '#dc2626' } },
-              formattedCancelled
-            );
-          } else {
-            // If cancelled date not available, show "-"
-            return React.createElement(
-              "span",
-              { className: dateClass, style: { color: '#dc2626' } },
-              "-"
+          const horoo = contract.horoo;
+          if (typeof horoo === "object" && horoo != null) {
+            return (
+              getStringValue(horoo.ner) || getStringValue(horoo.kod) || "-"
             );
           }
-        } else {
-          // Show created date for active contracts
+          return getStringValue(horoo) || "-";
+        }
+
+        case "bairniiNer": {
+          // Try to get bairniiNer from linked resident's toots array first
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              const tootsBairniiNer =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.bairniiNer
+                  : null;
+              const residentBairniiNer = tootsBairniiNer ?? resident.bairniiNer;
+              if (residentBairniiNer != null && residentBairniiNer !== "") {
+                return getStringValue(residentBairniiNer);
+              }
+            }
+          }
+          return getStringValue(contract.bairniiNer) || "-";
+        }
+
+        case "orts": {
+          // First try to get orts from the linked resident (prioritize toots array)
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              // Try toots array first, then top-level
+              const tootsOrts =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.orts
+                  : null;
+              const residentOrts = tootsOrts ?? resident.orts;
+              if (residentOrts != null && residentOrts !== "") {
+                return String(residentOrts);
+              }
+            }
+          }
+          // Fall back to contract's own orts value
+          return contract.orts != null ? String(contract.orts) : "-";
+        }
+
+        case "davkhar": {
+          // Try to get davkhar from the linked resident (prioritize toots array)
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              // Try toots array first, then top-level
+              const tootsDavkhar =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.davkhar
+                  : null;
+              const residentDavkhar = tootsDavkhar ?? resident.davkhar;
+              if (residentDavkhar != null && residentDavkhar !== "") {
+                return String(residentDavkhar);
+              }
+            }
+          }
+          // Fall back to contract's own davkhar value
+          return contract.davkhar != null ? String(contract.davkhar) : "-";
+        }
+
+        case "toot": {
+          // Try to get toot from the linked resident (prioritize toots array)
+          const orshinSuugchId = contract.orshinSuugchId;
+          if (orshinSuugchId) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident) {
+              // Try toots array first, then top-level
+              const tootsToot =
+                Array.isArray(resident.toots) && resident.toots.length > 0
+                  ? resident.toots[0]?.toot
+                  : null;
+              const residentToot = tootsToot ?? resident.toot;
+              if (residentToot != null && residentToot !== "") {
+                return String(residentToot);
+              }
+            }
+          }
+          // Fall back to contract's own toot value
+          return contract.toot != null ? String(contract.toot) : "-";
+        }
+
+        case "utas":
+          if (Array.isArray(contract.utas)) {
+            return (
+              contract.utas
+                .map((u: any) => getStringValue(u))
+                .filter(Boolean)
+                .join(", ") || "-"
+            );
+          }
+          return getStringValue(contract.utas) || "-";
+
+        case "tuluv": {
+          const status = String(
+            contract.tuluv || contract.status || "Идэвхтэй",
+          ).trim();
+          const isCancelled =
+            status === "Цуцалсан" ||
+            status.toLowerCase() === "цуцалсан" ||
+            status === "tsutlsasan" ||
+            status.toLowerCase() === "tsutlsasan" ||
+            status === "Идэвхгүй" ||
+            status.toLowerCase() === "идэвхгүй";
+          const isActive =
+            !isCancelled &&
+            (status === "Идэвхтэй" ||
+              status.toLowerCase() === "идэвхтэй" ||
+              !status ||
+              status === "");
+
+          const statusClass = isCancelled
+            ? "badge-unpaid bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+            : isActive
+              ? "badge-paid bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+              : "badge-neutral";
+
           return React.createElement(
             "span",
-            { className: dateClass, style: { color: '#16a34a' } },
-            formattedCreated || "-"
+            {
+              className: `inline-flex items-center px-2 py-0.5 rounded-full text-xs  ${statusClass}`,
+            },
+            status || "Идэвхтэй",
           );
         }
+
+        case "ognoo": {
+          const status = String(
+            contract.tuluv || contract.status || "Идэвхтэй",
+          ).trim();
+          const isCancelled =
+            status === "Цуцалсан" ||
+            status.toLowerCase() === "цуцалсан" ||
+            status === "tsutlsasan" ||
+            status.toLowerCase() === "tsutlsasan" ||
+            status === "Идэвхгүй" ||
+            status.toLowerCase() === "идэвхгүй";
+
+          // Try to get cancelled date from various possible field names
+          const cancelledDate =
+            contract.cancelledAt ||
+            contract.tsutlsasanOgnoo ||
+            contract.tsutlsanOgnoo ||
+            contract.duusakhOgnoo ||
+            contract.updatedAt; // Fallback to updatedAt if cancelled
+
+          const createdDate = contract.ognoo || contract.createdAt;
+
+          const formatDate = (dateValue: any): string => {
+            if (!dateValue) return "";
+            try {
+              const date = new Date(dateValue);
+              if (!isNaN(date.getTime())) {
+                return date.toLocaleDateString("mn-MN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                });
+              }
+            } catch (e) {
+              // Fall through
+            }
+            return getStringValue(dateValue);
+          };
+
+          const formattedCreated = formatDate(createdDate);
+          const formattedCancelled = isCancelled
+            ? formatDate(cancelledDate)
+            : "";
+
+          // Apply color based on status with !important to override table styles
+          const dateClass = isCancelled
+            ? "!text-red-600 dark:!text-red-400 "
+            : "!text-green-600 dark:!text-green-400 ";
+
+          if (isCancelled) {
+            // Show only cancelled date for cancelled contracts
+            if (formattedCancelled) {
+              return React.createElement(
+                "span",
+                { className: dateClass, style: { color: "#dc2626" } },
+                formattedCancelled,
+              );
+            } else {
+              // If cancelled date not available, show "-"
+              return React.createElement(
+                "span",
+                { className: dateClass, style: { color: "#dc2626" } },
+                "-",
+              );
+            }
+          } else {
+            // Show created date for active contracts
+            return React.createElement(
+              "span",
+              { className: dateClass, style: { color: "#16a34a" } },
+              formattedCreated || "-",
+            );
+          }
+        }
+
+        default: {
+          const value = contract[columnKey];
+          return getStringValue(value) || "-";
+        }
       }
-      
-      default: {
-        const value = contract[columnKey];
-        return getStringValue(value) || "-";
-      }
-    }
-  }, [residentsById]);
+    },
+    [residentsById],
+  );
 
   // Filter and sort residents
   const filteredResidents = useMemo(() => {
@@ -626,9 +694,15 @@ export function useGereeData(
   }, [residentsList, searchTerm, sortKey, sortOrder]);
 
   // Paginate residents
-  const resTotalPages = Math.max(1, Math.ceil(filteredResidents.length / resPageSize));
+  const resTotalPages = Math.max(
+    1,
+    Math.ceil(filteredResidents.length / resPageSize),
+  );
   const startIndex = (resPage - 1) * resPageSize;
-  const currentResidents = filteredResidents.slice(startIndex, startIndex + resPageSize);
+  const currentResidents = filteredResidents.slice(
+    startIndex,
+    startIndex + resPageSize,
+  );
 
   // Filter and sort contracts
   const filteredContracts = useMemo(() => {
@@ -640,7 +714,7 @@ export function useGereeData(
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
         let contractOrts = String(c?.orts || "").trim();
-        
+
         // Get orts from linked resident if available
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
@@ -648,7 +722,7 @@ export function useGereeData(
             contractOrts = String(resident.orts).trim();
           }
         }
-        
+
         return contractOrts === filterOrts;
       });
     }
@@ -659,7 +733,7 @@ export function useGereeData(
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
         let contractDawkhar = String(c?.davkhar || "").trim();
-        
+
         // Get davkhar from linked resident if available
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
@@ -667,7 +741,7 @@ export function useGereeData(
             contractDawkhar = String(resident.davkhar).trim();
           }
         }
-        
+
         return contractDawkhar === filterDawkhar;
       });
     }
@@ -676,14 +750,20 @@ export function useGereeData(
     if (statusFilter && statusFilter !== "all") {
       filtered = filtered.filter((c: any) => {
         const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled = status === "Цуцалсан" ||
-                           status.toLowerCase() === "цуцалсан" ||
-                           status === "tsutlsasan" ||
-                           status.toLowerCase() === "tsutlsasan" ||
-                           status === "Идэвхгүй" ||
-                           status.toLowerCase() === "идэвхгүй";
-        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
-        
+        const isCancelled =
+          status === "Цуцалсан" ||
+          status.toLowerCase() === "цуцалсан" ||
+          status === "tsutlsasan" ||
+          status.toLowerCase() === "tsutlsasan" ||
+          status === "Идэвхгүй" ||
+          status.toLowerCase() === "идэвхгүй";
+        const isActive =
+          !isCancelled &&
+          (status === "Идэвхтэй" ||
+            status.toLowerCase() === "идэвхтэй" ||
+            !status ||
+            status === "");
+
         if (statusFilter === "active") {
           return isActive;
         } else if (statusFilter === "cancelled") {
@@ -699,7 +779,7 @@ export function useGereeData(
       filtered = filtered.filter((c: any) => {
         const ner = String(c?.ner || "").toLowerCase();
         const ovog = String(c?.ovog || "").toLowerCase();
-        const utas = Array.isArray(c?.utas) 
+        const utas = Array.isArray(c?.utas)
           ? c.utas.map((u: any) => String(u).toLowerCase()).join(" ")
           : String(c?.utas || "").toLowerCase();
         const toot = String(c?.toot || "").toLowerCase();
@@ -720,12 +800,20 @@ export function useGereeData(
       let bVal: any;
 
       if (sortKey === "createdAt") {
-        aVal = new Date(a?.createdAt || a?.ognoo || a?.updatedAt || 0).getTime();
-        bVal = new Date(b?.createdAt || b?.ognoo || b?.updatedAt || 0).getTime();
+        aVal = new Date(
+          a?.createdAt || a?.ognoo || a?.updatedAt || 0,
+        ).getTime();
+        bVal = new Date(
+          b?.createdAt || b?.ognoo || b?.updatedAt || 0,
+        ).getTime();
       } else if (sortKey === "toot") {
         // Get toot from linked resident if available
-        const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
-        const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
+        const aResident = a?.orshinSuugchId
+          ? residentsById[String(a.orshinSuugchId)]
+          : null;
+        const bResident = b?.orshinSuugchId
+          ? residentsById[String(b.orshinSuugchId)]
+          : null;
         aVal = String(aResident?.toot ?? a?.toot ?? "").trim();
         bVal = String(bResident?.toot ?? b?.toot ?? "").trim();
         const aNum = parseInt(aVal);
@@ -736,8 +824,12 @@ export function useGereeData(
         }
       } else if (sortKey === "orts") {
         // Get orts from linked resident if available
-        const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
-        const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
+        const aResident = a?.orshinSuugchId
+          ? residentsById[String(a.orshinSuugchId)]
+          : null;
+        const bResident = b?.orshinSuugchId
+          ? residentsById[String(b.orshinSuugchId)]
+          : null;
         aVal = String(aResident?.orts ?? a?.orts ?? "").trim();
         bVal = String(bResident?.orts ?? b?.orts ?? "").trim();
         const aNum = parseInt(aVal);
@@ -748,8 +840,12 @@ export function useGereeData(
         }
       } else if (sortKey === "davkhar") {
         // Get davkhar from linked resident if available
-        const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
-        const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
+        const aResident = a?.orshinSuugchId
+          ? residentsById[String(a.orshinSuugchId)]
+          : null;
+        const bResident = b?.orshinSuugchId
+          ? residentsById[String(b.orshinSuugchId)]
+          : null;
         aVal = String(aResident?.davkhar ?? a?.davkhar ?? "").trim();
         bVal = String(bResident?.davkhar ?? b?.davkhar ?? "").trim();
         const aNum = parseInt(aVal);
@@ -769,11 +865,23 @@ export function useGereeData(
     });
 
     return filtered;
-  }, [contracts, searchTerm, sortKey, sortOrder, residentsById, selectedDawkhar, selectedOrtsForContracts, statusFilter]);
+  }, [
+    contracts,
+    searchTerm,
+    sortKey,
+    sortOrder,
+    residentsById,
+    selectedDawkhar,
+    selectedOrtsForContracts,
+    statusFilter,
+  ]);
 
   // Paginate contracts
   const contractStartIndex = (currentPage - 1) * rowsPerPage;
-  const currentContracts = filteredContracts.slice(contractStartIndex, contractStartIndex + rowsPerPage);
+  const currentContracts = filteredContracts.slice(
+    contractStartIndex,
+    contractStartIndex + rowsPerPage,
+  );
 
   // Filter and sort employees
   const filteredEmployees = useMemo(() => {
@@ -809,9 +917,15 @@ export function useGereeData(
   }, [employeesList, searchTerm]);
 
   // Paginate employees
-  const empTotalPages = Math.max(1, Math.ceil(filteredEmployees.length / empPageSize));
+  const empTotalPages = Math.max(
+    1,
+    Math.ceil(filteredEmployees.length / empPageSize),
+  );
   const empStartIndex = (empPage - 1) * empPageSize;
-  const currentEmployees = filteredEmployees.slice(empStartIndex, empStartIndex + empPageSize);
+  const currentEmployees = filteredEmployees.slice(
+    empStartIndex,
+    empStartIndex + empPageSize,
+  );
 
   // Compute floors list from davkharOptions and selectedDawkhar filter
   const floorsList = useMemo(() => {
@@ -824,9 +938,15 @@ export function useGereeData(
   }, [davkharOptions, selectedDawkhar]);
 
   // Paginate floors
-  const unitTotalPages = Math.max(1, Math.ceil(floorsList.length / unitPageSize));
+  const unitTotalPages = Math.max(
+    1,
+    Math.ceil(floorsList.length / unitPageSize),
+  );
   const unitStartIndex = (unitPage - 1) * unitPageSize;
-  const currentFloors = floorsList.slice(unitStartIndex, unitStartIndex + unitPageSize);
+  const currentFloors = floorsList.slice(
+    unitStartIndex,
+    unitStartIndex + unitPageSize,
+  );
 
   return {
     contracts,
@@ -847,11 +967,11 @@ export function useGereeData(
     ajiltniiJagsaaltMutate,
     zagvarJagsaaltMutate,
     setGereeKhuudaslalt,
-    setOrshinSuugchKhuudaslalt,
-    setAjiltniiKhuudaslalt,
+    residentsById,
     isValidatingGeree,
     isValidatingSuugch,
     isValidatingAjiltan,
+    isValidatingZagvar,
     // Computed data
     currentContracts,
     totalContracts: filteredContracts.length,
@@ -859,12 +979,12 @@ export function useGereeData(
     currentResidents,
     resTotalPages,
     filteredResidents,
+    totalResidents: filteredResidents.length,
     currentEmployees,
     empTotalPages,
     filteredEmployees,
     currentFloors,
     floorsList,
     unitTotalPages,
-    residentsById,
   };
 }

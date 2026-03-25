@@ -24,7 +24,8 @@ const PrintStyles = () => (
       body * {
         visibility: hidden !important;
       }
-      .print-container, .print-container * {
+      .print-container,
+      .print-container * {
         visibility: visible !important;
       }
       .print-container {
@@ -41,7 +42,8 @@ const PrintStyles = () => (
         width: 100% !important;
         border-collapse: collapse !important;
       }
-      th, td {
+      th,
+      td {
         border: 1px solid #ddd !important;
         padding: 4px !important;
         font-size: 8pt !important;
@@ -107,7 +109,7 @@ export default function TransactionsPage() {
       const data = resp?.data ?? resp;
       setRows(data?.jagsaalt || data?.rows || data || []);
       setTotal(
-        data?.totalCount ?? data?.niitMur ?? (data?.jagsaalt || []).length
+        data?.totalCount ?? data?.niitMur ?? (data?.jagsaalt || []).length,
       );
     } catch (e) {
       console.error(e);
@@ -156,7 +158,7 @@ export default function TransactionsPage() {
             label="CSV татах"
             className="neu-panel px-4 py-2 rounded-xl text-sm"
           />
-            {/* <button
+          {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
