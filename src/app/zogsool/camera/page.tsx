@@ -813,7 +813,7 @@ export default function Camera() {
   }, [isPageSizeOpen]);
 
   function formatCurrency(n: number) {
-    return `${formatNumber(n)} ₮`;
+    return `${formatNumber(n)} `;
   }
 
   const copyToClipboard = (text: string) => {

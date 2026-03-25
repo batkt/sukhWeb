@@ -441,7 +441,7 @@ export default function DansniiKhuulga() {
                             {item.action}
                           </td>
                           <td className="p-1 !text-right pr-2 whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                            {formatNumber(item.total ?? 0, 0)} ₮
+                            {formatNumber(item.total ?? 0, 0)} 
                           </td>
                           <td className="p-1 text-center whitespace-nowrap">
                             {item.account || "-"}
@@ -481,7 +481,7 @@ export default function DansniiKhuulga() {
                         Нийт дүн:
                       </td>
                       <td className="p-1 text-right pr-2 border-r border-[color:var(--surface-border)] whitespace-nowrap w-32">
-                        {formatNumber(totalSum, 0)} ₮
+                        {formatNumber(totalSum, 0)} 
                       </td>
                       <td className="p-1"></td>
                     </tr>

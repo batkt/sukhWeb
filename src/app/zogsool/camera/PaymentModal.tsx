@@ -202,7 +202,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     const expected = niitDun - discount;
 
     if (Math.abs(nonDiscount - expected) > 1) {
-      toast.error(`Төлбөрын дүн зөрүүтэй. Нийт: ${formatNumber(niitDun)}₮, Оруулсан: ${formatNumber(nonDiscount)}₮`);
+      toast.error(`Төлбөрын дүн зөрүүтэй. Нийт: ${formatNumber(niitDun)}, Оруулсан: ${formatNumber(nonDiscount)}`);
       return;
     }
 
@@ -372,9 +372,9 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
             />
           </div>
           <div className="flex justify-between mt-1.5 text-[10px]  uppercase tracking-wider">
-            <span className="text-slate-400 dark:text-slate-500">Оруулсан: {formatNumber(paidSoFar)}₮</span>
+            <span className="text-slate-400 dark:text-slate-500">Оруулсан: {formatNumber(paidSoFar)}</span>
             <span className={`${tulukhDun > 0 ? "text-rose-500" : "text-emerald-500"}`}>
-              {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}₮` : "Бүрэн төлсөн ✓"}
+              {tulukhDun > 0 ? `Дутуу: ${formatNumber(tulukhDun)}` : "Бүрэн төлсөн ✓"}
             </span>
           </div>
         </div>
@@ -411,7 +411,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                           <span className="text-[13px]  text-slate-700 dark:text-slate-200 block leading-tight">{method.label}</span>
                           {isActive && (
                             <span className="text-[11px]  text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                              {formatNumber(value[method.id])}₮
+                              {formatNumber(value[method.id])}
                             </span>
                           )}
                         </div>
@@ -457,7 +457,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
                             <span className="text-[12px]  text-slate-600 dark:text-slate-300">{label}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-[12px]  text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}₮</span>
+                            <span className="text-[12px]  text-slate-800 dark:text-slate-100">{formatNumber(t.dun)}</span>
                             {t.khariu && <Check className="w-3.5 h-3.5 text-emerald-500" />}
                             <button
                               onClick={() => {
@@ -546,11 +546,11 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                 <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Оруулах дүн</p>
                 <div className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
-                  {formatNumber(tuljBuiDun)}<span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5">₮</span>
+                  {formatNumber(tuljBuiDun)}<span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5"></span>
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
                   <p className="text-[10px] mt-1 text-slate-400 dark:text-slate-500 ">
-                    Үлдэгдэл: {formatNumber(tulukhDun)}₮
+                    Үлдэгдэл: {formatNumber(tulukhDun)}
                   </p>
                 )}
               </div>
@@ -594,16 +594,16 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
-                  <span className=" text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}₮</span>
+                  <span className=" text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}</span>
                 </div>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>
-                  <span className=" text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}₮</span>
+                  <span className=" text-emerald-600 dark:text-emerald-400">{formatNumber(paidSoFar)}</span>
                 </div>
                 <div className={`px-4 py-2.5 flex justify-between text-[12px] ${tulukhDun > 0 ? "bg-rose-50/50 dark:bg-rose-500/[0.05]" : "bg-emerald-50/50 dark:bg-emerald-500/[0.05]"}`}>
                   <span className={` uppercase ${tulukhDun > 0 ? "text-rose-500" : "text-emerald-600 dark:text-emerald-400"}`}>Дутуу</span>
                   <span className={` ${tulukhDun > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
-                    {formatNumber(tulukhDun)}₮
+                    {formatNumber(tulukhDun)}
                   </span>
                 </div>
               </div>

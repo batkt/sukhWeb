@@ -15,7 +15,7 @@ interface ZardalItem {
   barilgiinId?: string;
   zardliinTurul?: string; // e.g., "Лифт"
   bodokhArga?: string; // e.g., "тогтмол"
-  tariffUsgeer?: string; // e.g., "₮"
+  tariffUsgeer?: string; // e.g., ""
   nuatNemekhEsekh?: boolean; // API expects this
   tsakhilgaanUrjver?: number;
   tsakhilgaanChadal?: number;
@@ -102,7 +102,7 @@ export function useAshiglaltiinZardluud(overrides?: {
       zardliinTurul: zardalData.zardliinTurul ?? "Энгийн",
       bodokhArga: zardalData.bodokhArga ?? "тогтмол",
       tariff: zardalData.tariff ?? 50000,
-      tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
+      tariffUsgeer: zardalData.tariffUsgeer ?? "",
       suuriKhuraamj: zardalData.suuriKhuraamj ?? 0,
       nuatNemekhEsekh:
         zardalData.nuatNemekhEsekh ??
@@ -161,7 +161,7 @@ export function useAshiglaltiinZardluud(overrides?: {
       ...barilga.tokhirgoo.ashiglaltiinZardluud[index],
       ...zardalData,
       bodokhArga: zardalData.bodokhArga ?? "тогтмол",
-      tariffUsgeer: zardalData.tariffUsgeer ?? "₮",
+      tariffUsgeer: zardalData.tariffUsgeer ?? "",
       nuatNemekhEsekh:
         zardalData.nuatNemekhEsekh ??
         (typeof zardalData.nuatBodokhEsekh === "boolean"

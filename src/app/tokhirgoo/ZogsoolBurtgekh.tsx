@@ -220,7 +220,7 @@ function ZogsoolBurtgekh(
 
           <div className="space-y-2">
             <label className="block text-sm  text-[color:var(--panel-text)]">
-              Үндсэн тариф (₮) <span className="text-red-500">*</span>
+              Үндсэн тариф () <span className="text-red-500">*</span>
             </label>
             <MNumberInput
               value={formData.undsenUne as number}
@@ -266,7 +266,7 @@ function ZogsoolBurtgekh(
             <MNumberInput
               value={formData.togtmolTulburiinDun as number}
               onChange={(val) => updateField("togtmolTulburiinDun", val)}
-              placeholder="₮ 0.00"
+              placeholder=" 0.00"
               min={0}
               classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-green-300 dark:border-green-700 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
               style={{ borderRadius: '0.5rem' }}
@@ -451,7 +451,7 @@ function ZogsoolBurtgekh(
                       <ChevronRight className="w-4 h-4 text-[color:var(--muted-text)]" />
                     </div>
                     <div className="flex-1 space-y-2">
-                      <label className="block text-xs  text-[color:var(--panel-text)]">Тариф (₮)</label>
+                      <label className="block text-xs  text-[color:var(--panel-text)]">Тариф ()</label>
                       <MNumberInput
                         value={item.tulbur}
                         onChange={(val) => {
@@ -459,7 +459,7 @@ function ZogsoolBurtgekh(
                           newTulburuud[index].tariff[itemIndex].tulbur = val;
                           setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                         }}
-                        placeholder="₮"
+                        placeholder=""
                         min={0}
                         classNames={{ input: "!rounded-lg h-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]" }}
                         style={{ borderRadius: '0.5rem' }}

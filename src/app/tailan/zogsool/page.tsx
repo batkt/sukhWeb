@@ -444,16 +444,16 @@ export default function ZogsoolTailanPage() {
                         {row.urisanMachinToo}
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.niitTulbur)} ₮
+                        {formatNumber(row.niitTulbur)} 
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
                         {row.khungulultMinut || "-"}
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.tulsunDun)} ₮
+                        {formatNumber(row.tulsunDun)} 
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.uldegdelTulbur)} ₮
+                        {formatNumber(row.uldegdelTulbur)} 
                       </td>
                     </tr>
                   ))
@@ -465,16 +465,16 @@ export default function ZogsoolTailanPage() {
                     </td>
                     <td className="p-3 text-center">{niit.urisanMachinToo}</td>
                     <td className="p-3 text-center">
-                      {formatNumber(niit.niitTulbur)} ₮
+                      {formatNumber(niit.niitTulbur)} 
                     </td>
                     <td className="p-3 text-center">
                       {niit.khungulultMinut || "-"}
                     </td>
                     <td className="p-3 text-center">
-                      {formatNumber(niit.tulsunDun)} ₮
+                      {formatNumber(niit.tulsunDun)} 
                     </td>
                     <td className="p-3 text-center">
-                      {formatNumber(niit.uldegdelTulbur)} ₮
+                      {formatNumber(niit.uldegdelTulbur)} 
                     </td>
                   </tr>
                 )}
@@ -555,7 +555,7 @@ export default function ZogsoolTailanPage() {
                         {row.khungulsunMinut}
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.tulbur > 0 ? `${formatNumber(row.tulbur)} ₮` : "-"}
+                        {row.tulbur > 0 ? `${formatNumber(row.tulbur)} ` : "-"}
                       </td>
                       <td className="p-3 text-center text-theme whitespace-nowrap">
                         {row.tuluv || "-"}
@@ -578,7 +578,7 @@ export default function ZogsoolTailanPage() {
                       {formatNumber(
                         displayDetail.reduce((s, r) => s + r.tulbur, 0)
                       )}{" "}
-                      ₮
+                      
                     </td>
                     <td className="p-3 text-center">-</td>
                   </tr>

@@ -184,10 +184,10 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                             <td className="px-4 py-3 border-r text-slate-900 dark:text-[var(--panel-text)] ">{zardal.ner || "-"}</td>
                             <td className="px-4 py-3 border-r text-center text-slate-600 dark:text-slate-400">{zardal.turul || "-"}</td>
                             <td className="px-4 py-3 border-r text-right text-slate-900 dark:text-[var(--panel-text)]">
-                              {formatNumber(zardal.tariff || 0)} {zardal.tariffUsgeer || "₮"}
+                              {formatNumber(zardal.tariff || 0)} {zardal.tariffUsgeer || ""}
                             </td>
                             <td className="px-4 py-3 text-right border-r text-slate-900 dark:text-[var(--panel-text)]">
-                              {formatNumber(zardal.dun || 0)} ₮
+                              {formatNumber(zardal.dun || 0)} 
                             </td>
                             <td className="px-4 py-3"></td>
                           </tr>
@@ -203,7 +203,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-slate-700 dark:text-slate-300">Зардлын нийт дүн:</span>
                       <span className=" text-slate-900 dark:text-[var(--panel-text)]">
-                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} ₮
+                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} 
                       </span>
                     </div>
                    
@@ -211,7 +211,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
                     <div className="flex justify-between items-center">
                       <span className="text-base  text-slate-800 dark:text-slate-200">Нийт төлбөр:</span>
                       <span className="text-2xl  text-blue-600 dark:text-blue-400">
-                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} ₮
+                        {formatNumber(preview.niitTulbur || preview.zardluud?.reduce((sum: number, z: any) => sum + (z.dun || 0), 0) || 0)} 
                       </span>
                     </div>
                   </div>

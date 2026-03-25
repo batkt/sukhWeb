@@ -257,7 +257,7 @@ const totals = useMemo(() => {
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0 mt-2">
           <div className="flex gap-4 text-xs font-bold uppercase tracking-widest">
             <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500">Нийт: {summary?.count || filteredData.length}</div>
-            <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 rounded-full text-red-500">Авлага: {formatNumber(totals.uldegdel)} ₮</div>
+            <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 rounded-full text-red-500">Авлага: {formatNumber(totals.uldegdel)} </div>
           </div>
           <div className="flex items-center gap-4">
             <PageSongokh value={pageSize} onChange={(v) => { setPageSize(v); setCurrentPage(1); }} className="!h-10 !rounded-2xl" />

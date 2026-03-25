@@ -328,7 +328,7 @@ export default function Zogsool({
                             </td>
                             <td className="px-4  border-r py-3 text-sm text-[color:var(--panel-text)]">
                               <span className="px-2 py-1 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs ">
-                                {formatNumber(record.undsenUne)} ₮
+                                {formatNumber(record.undsenUne)} 
                               </span>
                             </td>
                             <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">

@@ -140,7 +140,7 @@ export default function GereeModals() {
         getTootOptions={data.getTootOptions}
         selectedBarilga={data.selectedBarilga}
         baiguullaga={baiguullaga}
-        currentResidents={data.currentResidents}
+        currentResidents={data.residentsList}
         onSubmit={(e) => {
           actions.handleCreateResident(e, state.newResident, state.editingResident).then((success) => {
             if (success) {

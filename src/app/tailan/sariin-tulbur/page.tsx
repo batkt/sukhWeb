@@ -315,7 +315,7 @@ export default function SariinTulburPage() {
       [`Огноо: ${dateStr}`],
       [`Тайлан татсан: ${new Date().toLocaleString("mn-MN")}`],
       [""],
-      ["Нийт үлдэгдэл:", totalTulbur, "₮"],
+      ["Нийт үлдэгдэл:", totalTulbur, ""],
       [""]
     ];
 
@@ -382,7 +382,7 @@ export default function SariinTulburPage() {
         
         <div className="mt-6 border p-4 rounded bg-gray-50 flex justify-between items-center">
           <p className="font-semibold text-gray-700">НИЙТ ҮЛДЭГДЭЛ:</p>
-          <p className="text-2xl font-bold text-red-600">{formatNumber(totalTulbur)} ₮</p>
+          <p className="text-2xl font-bold text-red-600">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
       <div className="flex justify-between items-center mb-6 no-print">
@@ -485,7 +485,7 @@ export default function SariinTulburPage() {
       {/* <div className="neu-panel p-4 rounded-xl mb-6">
         <h3 className=" mb-2">Нийт төлбөр</h3>
         <p className="text-2xl  text-blue-600">
-          {formatNumber(totalTulbur)} ₮
+          {formatNumber(totalTulbur)} 
         </p>
       </div> */}
 
@@ -571,7 +571,7 @@ export default function SariinTulburPage() {
                                 ) : (
                                   <ChevronRight className="w-4 h-4" />
                                 )}
-                                {formatNumber(item.tulbur)} ₮
+                                {formatNumber(item.tulbur)} 
                               </button>
                             </td>
                             {/* <td className="p-3 text-center text-theme whitespace-nowrap">
@@ -628,14 +628,14 @@ export default function SariinTulburPage() {
                                               <td className="p-2 whitespace-nowrap text-theme/70">{ognoo}</td>
                                               <td className="p-2 text-theme/80 max-w-[180px] truncate" title={tailbar}>{tailbar}</td>
                                               <td className="p-2 text-right whitespace-nowrap">
-                                                {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} ₮</span> : "-"}
+                                                {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} </span> : "-"}
                                               </td>
                                               <td className="p-2 text-right whitespace-nowrap">
-                                                {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} ₮</span> : "-"}
+                                                {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} </span> : "-"}
                                               </td>
                                               <td className="p-2 text-right whitespace-nowrap font-medium">
                                                 <span className={uldeg > 0 ? "text-red-500" : uldeg < 0 ? "text-emerald-600" : "text-theme"}>
-                                                  {formatNumber(uldeg)} ₮
+                                                  {formatNumber(uldeg)} 
                                                 </span>
                                               </td>
                                             </tr>
@@ -647,17 +647,17 @@ export default function SariinTulburPage() {
                                           <td colSpan={3} className="p-2 text-right text-xs text-theme/60">Эцсийн үлдэгдэл:</td>
                                           <td className="p-2 text-right">
                                             <span className="text-red-500">
-                                              {formatNumber(expandedData.totalAvlaga)} ₮
+                                              {formatNumber(expandedData.totalAvlaga)} 
                                             </span>
                                           </td>
                                           <td className="p-2 text-right">
                                             <span className="text-green-600">
-                                              {formatNumber(expandedData.totalTulult)} ₮
+                                              {formatNumber(expandedData.totalTulult)} 
                                             </span>
                                           </td>
                                           <td className="p-2 text-right">
                                             <span className={expandedData.lastUldegdel > 0 ? "text-red-500" : expandedData.lastUldegdel < 0 ? "text-emerald-600" : "text-theme"}>
-                                              {formatNumber(expandedData.lastUldegdel)} ₮
+                                              {formatNumber(expandedData.lastUldegdel)} 
                                             </span>
                                           </td>
                                         </tr>
@@ -689,7 +689,7 @@ export default function SariinTulburPage() {
                   
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-right text-theme whitespace-nowrap ">
-                    Нийт: {formatNumber(totalTulbur)} ₮
+                    Нийт: {formatNumber(totalTulbur)} 
                   </td>
                 </tr>
               </tbody>

@@ -241,11 +241,11 @@ export default function AshiglaltiinZardluud() {
           suuriKhuraamj: formData.suuriKhuraamj, // base fee
         };
       } else if (isFixedElectricity) {
-        // Fixed electricity: zaalt=false, tariffUsgeer="₮", tariff is the fixed amount
+        // Fixed electricity: zaalt=false, tariffUsgeer="", tariff is the fixed amount
         payload = {
           ...payload,
           zaalt: false,
-          tariffUsgeer: "₮",
+          tariffUsgeer: "",
           // Keep tariff as the fixed amount
         };
       }
@@ -433,7 +433,7 @@ export default function AshiglaltiinZardluud() {
              !formData.ner.toLowerCase().includes("өмчлөл") ? (
               <div className="space-y-1.5">
                 <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                  Суурь хураамж (₮)
+                  Суурь хураамж ()
                 </label>
                 <MTextInput
                   value={suuriKhuraamjInput}
@@ -453,7 +453,7 @@ export default function AshiglaltiinZardluud() {
                   }}
                   placeholder="0.00"
                   classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400  pr-3 text-xs italic">₮</span>}
+                  rightSection={<span className="text-slate-400  pr-3 text-xs italic"></span>}
                   leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
                 />
                 <p className="text-[9px] text-[color:var(--muted-text)] ml-1">Excel файлаас ирэх суурь дүн (заалтаас авна)</p>
@@ -461,7 +461,7 @@ export default function AshiglaltiinZardluud() {
             ) : (
               <div className="space-y-1.5">
                 <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
-                  Тарифын дүн (₮)
+                  Тарифын дүн ()
                 </label>
                 <MTextInput
                   value={tariffInputValue}
@@ -481,7 +481,7 @@ export default function AshiglaltiinZardluud() {
                   }}
                   placeholder="0.00"
                   classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400  pr-3 text-xs italic">₮</span>}
+                  rightSection={<span className="text-slate-400  pr-3 text-xs italic"></span>}
                   leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
                 />
               </div>
@@ -608,7 +608,7 @@ export default function AshiglaltiinZardluud() {
                                 <td className="py-2 px-2">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 2)} ₮
+                                      {formatNumber(currentValue, 2)} 
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -673,7 +673,7 @@ export default function AshiglaltiinZardluud() {
                                         : displayValue;
                                     return sum + currentValue;
                                   }, 0)
-                              )} ₮
+                              )} 
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>
@@ -762,7 +762,7 @@ export default function AshiglaltiinZardluud() {
                                 <td className="py-2 sm:py-3 px-2 sm:px-4">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 0)} ₮
+                                      {formatNumber(currentValue, 0)} 
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -827,7 +827,7 @@ export default function AshiglaltiinZardluud() {
                                         : displayValue;
                                     return sum + currentValue;
                                   }, 0)
-                              )} ₮
+                              )} 
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>

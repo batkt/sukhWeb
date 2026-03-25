@@ -508,7 +508,7 @@ export default function Ebarimt() {
                               {item.ddtd || item.receiptId || "-"}
                             </td>
                             <td className="p-1 text-right whitespace-nowrap  text-theme border-r border-[color:var(--surface-border)]">
-                              {formatNumber(item.total ?? 0, 0)} ₮
+                              {formatNumber(item.total ?? 0, 0)} 
                             </td>
                             <td className="p-1 text-center text-theme whitespace-nowrap">
                               {item.service}
@@ -538,7 +538,7 @@ export default function Ebarimt() {
                             displayedData.reduce((s, r) => s + (r.total || 0), 0),
                             0
                           )}{" "}
-                          ₮
+                          
                         </td>
                         <td className="p-1 text-center">&nbsp;</td>
                       </tr>

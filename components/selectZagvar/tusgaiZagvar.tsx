@@ -8,6 +8,7 @@ interface Option {
   label: string;
   disabled?: boolean;
   title?: string;
+  isOccupied?: boolean;
 }
 
 interface CustomSelectProps {
@@ -211,9 +212,11 @@ export default function TusgaiZagvar({
                         onChange(opt.value);
                         setIsOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors truncate ${
+                      className={`w-full text-left px-4 py-2 text-sm transition-all truncate ${
                         opt.disabled
                           ? "opacity-50 cursor-not-allowed text-gray-400"
+                          : opt.isOccupied
+                          ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium hover:bg-emerald-500/20"
                           : tone === "neutral"
                           ? opt.value === value
                             ? " text-slate-900 bg-gray-50"

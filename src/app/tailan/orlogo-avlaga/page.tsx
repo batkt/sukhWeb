@@ -536,11 +536,11 @@ const footerTotals = useTulburFooterTotals(
         <div className="grid grid-cols-2 gap-8 mt-6">
           <div className="border p-3 rounded">
             <p className="text-xs text-gray-500 uppercase font-semibold">Нийт орлого</p>
-            <p className="text-xl font-bold text-green-700">{formatNumber(totalOrlogo)} ₮</p>
+            <p className="text-xl font-bold text-green-700">{formatNumber(totalOrlogo)} </p>
           </div>
           <div className="border p-3 rounded">
             <p className="text-xs text-gray-500 uppercase font-semibold">Нийт үлдэгдэл</p>
-            <p className="text-xl font-bold text-red-700">{formatNumber(totalUldegdel)} ₮</p>
+            <p className="text-xl font-bold text-red-700">{formatNumber(totalUldegdel)} </p>
           </div>
         </div>
       </div>
@@ -599,12 +599,12 @@ const footerTotals = useTulburFooterTotals(
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="mb-2">Нийт орлого <span className="text-xs text-theme/50">(Гүйцэтгэл)</span></h3>
-          <p className="text-2xl text-green-600">{formatNumber(totalOrlogo)} ₮</p>
+          <p className="text-2xl text-green-600">{formatNumber(totalOrlogo)} </p>
           <p className="text-xs text-theme/50 mt-1">{paidList.length} оршин суугч</p>
         </div>
         <div className="neu-panel p-4 rounded-xl">
           <h3 className="mb-2">Нийт үлдэгдэл <span className="text-xs text-theme/50">(Үлдэгдэл)</span></h3>
-          <p className={totalUldegdel < 0 ? "text-2xl text-emerald-600" : "text-2xl text-red-600"}>{formatNumber(totalUldegdel)} ₮</p>
+          <p className={totalUldegdel < 0 ? "text-2xl text-emerald-600" : "text-2xl text-red-600"}>{formatNumber(totalUldegdel)} </p>
           <p className="text-xs text-theme/50 mt-1">Бүх оршин суугчдын нийт үлдэгдэл</p>
         </div>
       </div>
@@ -661,7 +661,7 @@ const footerTotals = useTulburFooterTotals(
                             <button type="button" onClick={() => handleRowClick(it)}
                               className="text-theme hover:underline cursor-pointer inline-flex items-center gap-1">
                               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                              <span className="text-green-600 font-medium">{formatNumber(paid)} ₮</span>
+                              <span className="text-green-600 font-medium">{formatNumber(paid)} </span>
                             </button>
                           </td>
                         ) : (
@@ -671,12 +671,12 @@ const footerTotals = useTulburFooterTotals(
                                 className="hover:underline cursor-pointer inline-flex items-center gap-1">
                                 {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                                 <span className={uldegdel > 0 ? "text-red-500 font-medium" : uldegdel < 0 ? "text-emerald-600 font-medium" : "text-theme"}>
-                                  {formatNumber(uldegdel)} ₮
+                                  {formatNumber(uldegdel)} 
                                 </span>
                               </button>
                             </td>
                             <td className="p-3 text-right whitespace-nowrap">
-                              <span className="text-green-600">{formatNumber(paid)} ₮</span>
+                              <span className="text-green-600">{formatNumber(paid)} </span>
                             </td>
                           </>
                         )}
@@ -721,14 +721,14 @@ const footerTotals = useTulburFooterTotals(
                                             <td className="p-2 whitespace-nowrap text-theme/70">{ognoo}</td>
                                             <td className="p-2 text-theme/80 max-w-[180px] truncate" title={tailbar}>{tailbar}</td>
                                             <td className="p-2 text-right whitespace-nowrap">
-                                              {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} ₮</span> : "-"}
+                                              {avlaga > 0 ? <span className="text-red-500">{formatNumber(avlaga)} </span> : "-"}
                                             </td>
                                             <td className="p-2 text-right whitespace-nowrap">
-                                              {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} ₮</span> : "-"}
+                                              {tulult > 0 ? <span className="text-green-600">{formatNumber(tulult)} </span> : "-"}
                                             </td>
                                             <td className="p-2 text-right whitespace-nowrap font-medium">
                                               <span className={uldeg > 0 ? "text-red-500" : uldeg < 0 ? "text-emerald-600" : "text-theme"}>
-                                                {formatNumber(uldeg)} ₮
+                                                {formatNumber(uldeg)} 
                                               </span>
                                             </td>
                                           </tr>
@@ -740,12 +740,12 @@ const footerTotals = useTulburFooterTotals(
                                         <td colSpan={3} className="p-2 text-right text-xs text-theme/60">Эцсийн үлдэгдэл:</td>
                                         <td className="p-2 text-right">
                                           <span className="text-red-500">
-                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0), 0))} ₮
+                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.avlagaDun ?? r?.tulukhDun ?? r?.debit ?? 0) || 0), 0))} 
                                           </span>
                                         </td>
                                         <td className="p-2 text-right">
                                           <span className="text-green-600">
-                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0), 0))} ₮
+                                            {formatNumber(expandedLedger.reduce((s, r) => s + (Number(r?.tulsunDun ?? r?.tulult ?? r?.credit ?? 0) || 0), 0))} 
                                           </span>
                                         </td>
                                         <td className="p-2 text-right">
@@ -754,7 +754,7 @@ const footerTotals = useTulburFooterTotals(
                                             const v = Number(last?.uldegdel ?? 0);
                                             return (
                                               <span className={v > 0 ? "text-red-500" : v < 0 ? "text-emerald-600" : "text-theme"}>
-                                                {formatNumber(v)} ₮
+                                                {formatNumber(v)} 
                                               </span>
                                             );
                                           })()}

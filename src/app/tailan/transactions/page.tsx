@@ -277,7 +277,7 @@ export default function TransactionsPage() {
                       </td>
                       <td className="p-2 text-center">{r.type || "-"}</td>
                       <td className="p-2 text-center">
-                        {r.amount ? formatNumber(Number(r.amount)) + " ₮" : "-"}
+                        {r.amount ? formatNumber(Number(r.amount)) + " " : "-"}
                       </td>
                       <td className="p-2 text-center">
                         {r.bank || r.account || "-"}

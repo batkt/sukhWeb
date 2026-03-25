@@ -6,6 +6,8 @@ import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { getResidentToot, getResidentDavkhar, getResidentOrts } from "@/lib/residentDataHelper";
+
 interface ResidentModalProps {
   show: boolean;
   onClose: () => void;
@@ -522,7 +524,19 @@ export default function ResidentModal({
                             setNewResident((p: any) => ({ ...p, toot: val }));
                           }}
                           options={getTootOptions(newResident.orts || "", newResident.davkhar || "").length > 0 
-                            ? getTootOptions(newResident.orts || "", newResident.davkhar || "").map((t) => ({ value: t, label: t }))
+                            ? getTootOptions(newResident.orts || "", newResident.davkhar || "").map((t) => {
+                                const isOccupied = currentResidents?.some((r: any) => {
+                                  const rOrts = String(getResidentOrts(r) || "").trim();
+                                  const rDavkhar = String(getResidentDavkhar(r) || "").trim();
+                                  const rToot = String(getResidentToot(r) || "").trim();
+                                  const isSameUnit = rOrts === String(newResident.orts || "").trim() && 
+                                                    rDavkhar === String(newResident.davkhar || "").trim() && 
+                                                    rToot === String(t || "").trim();
+                                  const isDifferentResident = String(r._id || "") !== String(editingResident?._id || "");
+                                  return isSameUnit && isDifferentResident;
+                                });
+                                return { value: t, label: t, isOccupied };
+                              })
                             : [{ value: "", label: "Тоотын сонгох" }]}
                           className="w-full h-full"
                           placeholder="Сонгох..."
@@ -573,7 +587,7 @@ export default function ResidentModal({
                         className="modern-input w-full pr-extra text-right "
                         placeholder="0.00"
                       />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none">₮</span>
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none"></span>
                     </div>
                   </div>
 

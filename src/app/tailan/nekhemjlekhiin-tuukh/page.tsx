@@ -198,7 +198,7 @@ export default function NekhemjlekhiinTuukhPage() {
       [`Огноо: ${dateStr}`],
       [`Тайлан татсан: ${new Date().toLocaleString("mn-MN")}`],
       [""],
-      ["Нийт төлбөр:", totalTulbur, "₮"],
+      ["Нийт төлбөр:", totalTulbur, ""],
       [""]
     ];
 
@@ -269,7 +269,7 @@ export default function NekhemjlekhiinTuukhPage() {
         
         <div className="mt-6 border p-4 rounded bg-gray-50 flex justify-between items-center">
           <p className="font-semibold text-gray-700">НИЙТ ТӨЛБӨР:</p>
-          <p className="text-2xl font-bold text-blue-700">{formatNumber(totalTulbur)} ₮</p>
+          <p className="text-2xl font-bold text-blue-700">{formatNumber(totalTulbur)} </p>
         </div>
       </div>
       <div className="flex justify-between items-center mb-6 no-print">
@@ -432,7 +432,7 @@ export default function NekhemjlekhiinTuukhPage() {
       <div className="neu-panel p-4 rounded-xl mb-6">
         <h3 className=" mb-2">Нийт төлбөр</h3>
         <p className="text-2xl  text-blue-600">
-          {formatNumber(totalTulbur)} ₮
+          {formatNumber(totalTulbur)} 
         </p>
       </div> */}
 
@@ -527,7 +527,7 @@ export default function NekhemjlekhiinTuukhPage() {
                         </td>
                         <td className="p-3 text-right text-theme whitespace-nowrap">
                           <span className="">
-                            {formatNumber(item.tulbur)} ₮
+                            {formatNumber(item.tulbur)} 
                           </span>
                         </td>
                         <td className="p-3 text-center text-theme whitespace-nowrap">
@@ -564,7 +564,7 @@ export default function NekhemjlekhiinTuukhPage() {
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>
                   <td className="p-3 text-center text-theme whitespace-nowrap ">
-                    Нийт: {formatNumber(totalTulbur)} ₮
+                    Нийт: {formatNumber(totalTulbur)} 
                   </td>
 
                   <td className="p-3 text-center text-theme whitespace-nowrap"></td>

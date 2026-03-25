@@ -416,7 +416,7 @@ export default function Jagsaalt() {
                           </td>
                           <td className="py-4 px-3 text-center">
                              <span className="text-xs font-black text-slate-900 dark:text-white">
-                               {formatNumber(niitDun)}₮
+                               {formatNumber(niitDun)}
                              </span>
                           </td>
                           <td className="py-4 px-3 text-center">
@@ -428,11 +428,11 @@ export default function Jagsaalt() {
                                   const labels: any = { cash: "Бэлэн", khaan: "Хаан", qpay: "QPay", transfer: "Дансаар", discount: "Хөнгөлөлт" };
                                   if (tulsunDun > 0) return (
                                     <>
-                                       <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">{formatNumber(tulsunDun)}₮</span>
+                                       <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400">{formatNumber(tulsunDun)}</span>
                                        <span className="text-[9px]  text-slate-400 uppercase tracking-widest">{(method && labels[method]) || "Төлсөн"}</span>
                                     </>
                                   );
-                                  return <span className="text-[11px]  text-slate-300">0.00₮</span>;
+                                  return <span className="text-[11px]  text-slate-300">0.00</span>;
                                })()}
                             </div>
                           </td>

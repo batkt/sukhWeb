@@ -1310,7 +1310,7 @@ html[data-mode="dark"]:not([data-theme]),
 /* iOS 26 Glassy Panel - adaptive across all themes */
 .neu-panel {
   position: relative;
-  border-radius: 2rem;
+  border-radius: 0.5rem;
   overflow: hidden;
   isolation: isolate;
 

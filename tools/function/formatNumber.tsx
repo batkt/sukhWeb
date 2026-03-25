@@ -24,9 +24,9 @@ function formatNumber(num: number | string, fixed = 0): string {
 
 /**
  * Base currency formatter — always 2 decimal places.
- * e.g. formatCurrency(13831460) => "13,831,460.00 ₮"
+ * e.g. formatCurrency(13831460) => "13,831,460.00 "
  */
-export function formatCurrency(num: number | string, symbol = "₮"): string {
+export function formatCurrency(num: number | string, symbol = ""): string {
   return `${formatNumber(num, 2)} ${symbol}`;
 }
 

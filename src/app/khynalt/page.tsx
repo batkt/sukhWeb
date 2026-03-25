@@ -803,7 +803,7 @@ export default function Khynalt() {
       }),
       datasets: [
         {
-          label: "Төлбөр (₮)",
+          label: "Төлбөр ()",
           data: top.map((t: { name: string; amount: number }) => t.amount),
           borderColor: "#ef4444",
           backgroundColor: "rgba(239,68,68,0.2)",
@@ -828,7 +828,7 @@ export default function Khynalt() {
       }),
       datasets: [
         {
-          label: "Төлбөр (₮)",
+          label: "Төлбөр ()",
           data: top.map((t: { name: string; amount: number }) => t.amount),
           borderColor: "#f97316",
           backgroundColor: "rgba(249,115,22,0.2)",
@@ -850,14 +850,7 @@ export default function Khynalt() {
     return d >= _startDate && d <= _endDate;
   };
 
-  const filteredResidents = residents.filter((r: any) => {
-    const timeMatch = _inRange(r?.createdAt || r?.ognoo || r?.date);
-    const buildingField = r?.barilgiinId ?? r?.barilga;
-    const buildingMatch =
-      !effectiveBarilgiinId ||
-      String(buildingField) === String(effectiveBarilgiinId);
-    return timeMatch && buildingMatch;
-  });
+
   const filteredContracts = contracts.filter((c: any) => {
     const timeMatch = _inRange(
       c?.createdAt || c?.ognoo || c?.date || c?.duusakhOgnoo,
@@ -868,33 +861,9 @@ export default function Khynalt() {
       String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
-  const filteredEmployees = employees.filter((e: any) => {
-    const toStr = (v: any) => (v == null ? "" : String(v));
-    const want = toStr(effectiveBarilgiinId);
-    if (!want) return true;
-    const direct = toStr(
-      e?.barilgiinId ?? e?.barilga ?? e?.barilgaId ?? e?.branchId,
-    );
-    if (direct && direct === want) return true;
-    const arr: any[] = Array.isArray(e?.barilguud) ? e.barilguud : [];
-    for (const el of arr) {
-      if (
-        toStr(el) === want ||
-        toStr(el?._id) === want ||
-        toStr(el?.id) === want ||
-        toStr(el?.barilgiinId) === want ||
-        toStr(el?.barilgaId) === want ||
-        toStr(el?.branchId) === want
-      ) {
-        return true;
-      }
-    }
-    return false;
-  });
+
 
   const filteredTotalResidents = totalResidents;
-  const filteredTotalContracts = totalContracts;
-  const filteredTotalEmployees = totalEmployees;
   const buildingCount = useMemo(() => {
     const raw = (baiguullaga as any)?.barilguud;
     if (Array.isArray(raw) && raw.length > 0) {
@@ -937,32 +906,8 @@ export default function Khynalt() {
     });
     return active;
   })();
-  const filteredExpiringSoonPercent = (() => {
-    if (!filteredContracts?.length) return 0;
-    const now = new Date();
-    const in30Days = new Date();
-    in30Days.setDate(now.getDate() + 30);
-    let expiringSoon = 0;
-    filteredContracts.forEach((g: any) => {
-      const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
-      if (end && end >= now && end <= in30Days) expiringSoon += 1;
-    });
-    return Math.round(
-      (expiringSoon / Math.max(1, filteredContracts.length)) * 100,
-    );
-  })();
-
-  const filteredNonAvtiveGereeCount = useMemo(() => {
-    const now = new Date();
-    return filteredContracts.filter((c: any) => {
-      const status = String(c?.tuluv || c?.status || "").trim();
-      const end = c?.duusakhOgnoo ? new Date(c.duusakhOgnoo) : null;
-      const isCancelled =
-        status === "Цуцалсан" || status === "Идэвхгүй" || status === "Идэвхгүй";
-      const isExpired = end ? end < now : false;
-      return isCancelled || isExpired;
-    }).length;
-  }, [filteredContracts]);
+ 
+ 
 
   const cancelledGerees = useMemo(() => {
     return filteredContracts.filter((c: any) => {
@@ -975,62 +920,6 @@ export default function Khynalt() {
         status.toLowerCase() === "идэвхгүй";
     });
   }, [filteredContracts]);
-
-  const tootWithoutActiveGereeCount = useMemo(() => {
-    const allTootsFromBaiguullaga = new Set<string>();
-    if (buildingConfig?.barilguud && Array.isArray(buildingConfig.barilguud)) {
-      buildingConfig.barilguud.forEach((building: any) => {
-        if (building?._id === effectiveBarilgiinId) {
-          const davkhariinToonuud = building?.tokhirgoo?.davkhariinToonuud;
-          if (davkhariinToonuud && typeof davkhariinToonuud === "object") {
-            Object.values(davkhariinToonuud).forEach((toots: any) => {
-              if (Array.isArray(toots)) {
-                toots.forEach((toot: any) => {
-                  const tootStr = String(toot || "").trim();
-                  if (tootStr) allTootsFromBaiguullaga.add(tootStr);
-                });
-              }
-            });
-          }
-        }
-      });
-    }
-
-    const allTootsFromOrshinSuugch = new Set<string>();
-    residents.forEach((r: any) => {
-      const mainToot = String(r?.toot || "").trim();
-      if (mainToot) allTootsFromOrshinSuugch.add(mainToot);
-
-      if (Array.isArray(r?.toots)) {
-        r.toots.forEach((tootObj: any) => {
-          const toot = String(tootObj?.toot || "").trim();
-          if (toot) allTootsFromOrshinSuugch.add(toot);
-        });
-      }
-    });
-
-    let count = 0;
-    allTootsFromBaiguullaga.forEach((toot) => {
-      if (!allTootsFromOrshinSuugch.has(toot)) {
-        count++;
-      }
-    });
-
-    return count;
-  }, [buildingConfig, residents, effectiveBarilgiinId]);
-
-  const totalExpenses = expenseSeries.expenses.reduce(
-    (sum, val) => sum + val,
-    0,
-  );
-  const totalProfit = profitSeries.profits.reduce((sum, val) => sum + val, 0);
-  const totalTransactions =
-    incomeSeries.paid.length > 0
-      ? incomeSeries.paid.reduce(
-        (sum, val, i) => sum + val + (incomeSeries.unpaid[i] || 0),
-        0,
-      )
-      : 0;
 
   const showContracts = ajiltan && (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
   const showResidents = ajiltan && (hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch"));
@@ -1109,7 +998,7 @@ export default function Khynalt() {
               }`}
           >
             <div
-              className="neu-panel rounded-2xl border border-white/10 shadow-lg"
+              className="neu-panel hadow-lg"
               style={{ overflow: "visible" }}
             >
               <div className="min-w-[220px]">
@@ -1140,7 +1029,7 @@ export default function Khynalt() {
                 willChange: "opacity, box-shadow",
               }}
             >
-              <div className="h-full flex flex-col justify-between transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+              <div className="h-full flex flex-col justify-between transition-shadow duration-200">
                 <div>
                   <h3 className="text-sm  text-[color:var(--panel-text)] mb-2">
                     {card.title}
@@ -1166,7 +1055,7 @@ export default function Khynalt() {
               willChange: "opacity, box-shadow",
             }}
           >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Орлогын тайлан
@@ -1209,7 +1098,7 @@ export default function Khynalt() {
               willChange: "opacity, box-shadow",
             }}
           >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Хуримтлагдсан авлага
@@ -1256,7 +1145,7 @@ export default function Khynalt() {
               willChange: "opacity, box-shadow",
             }}
           >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 hover:shadow-[0_12px_30px_rgba(14,165,233,0.4)]">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
                   Цуцлагдсан гэрээний авлага

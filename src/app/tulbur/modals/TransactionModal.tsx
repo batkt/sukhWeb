@@ -451,7 +451,7 @@ export default function TransactionModal({
                 <div className="space-y-1.5 relative group">
                   <div className="flex justify-between items-end mb-1.5">
                     <label className="block text-xs text-[color:var(--panel-text)]">
-                      Дүн ₮
+                      Дүн 
                     </label>
                     {residentBalance !== null && transactionType === "tulult" && (
                       <motion.div 
@@ -465,7 +465,7 @@ export default function TransactionModal({
                             : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
                           }`}
                       >
-                        Үлдэгдэл: {residentBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₮
+                        Үлдэгдэл: {residentBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} 
                       </motion.div>
                     )}
                   </div>
@@ -536,7 +536,7 @@ export default function TransactionModal({
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] font-bold text-[color:var(--muted-text)]">Суурь хураамж:</span>
                     <span className="text-xs font-bold text-[color:var(--panel-text)]"> 
-                      {calcBreakdown?.suuriKhuraamj ? calcBreakdown.suuriKhuraamj.toLocaleString() : "0"}₮
+                      {calcBreakdown?.suuriKhuraamj ? calcBreakdown.suuriKhuraamj.toLocaleString() : "0"}
                     </span>
                   </div>
 
@@ -584,7 +584,7 @@ export default function TransactionModal({
 
                 <div className="space-y-1.5">
                   <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                    Дүн ₮
+                    Дүн 
                   </label>
                   <input
                     type="text"

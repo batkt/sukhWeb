@@ -428,7 +428,7 @@ const TulburTootsoo: React.FC = () => {
         dataIndex: "tulukhDun",
         align: "right",
         render: (data: number) => {
-          return formatNumber(data || 0) + " ₮";
+          return formatNumber(data || 0) + " ";
         },
       },
       {
@@ -437,7 +437,7 @@ const TulburTootsoo: React.FC = () => {
         dataIndex: "khungulultiinDun",
         align: "right",
         render: (data: number) => {
-          return formatNumber(data || 0) + " ₮";
+          return formatNumber(data || 0) + " ";
         },
       },
       {
@@ -446,7 +446,7 @@ const TulburTootsoo: React.FC = () => {
         dataIndex: "khungulsunDun",
         align: "right",
         render: (data: number) => {
-          return formatNumber(data || 0) + " ₮";
+          return formatNumber(data || 0) + " ";
         },
       },
       {

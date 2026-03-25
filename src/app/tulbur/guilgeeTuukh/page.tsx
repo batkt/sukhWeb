@@ -3356,7 +3356,7 @@ export default function DansniiKhuulga() {
                                     className={cellClass}
                                     style={style}
                                   >
-                                    {formatNumber(niitDun, 2)} ₮
+                                    {formatNumber(niitDun, 2)} 
                                   </td>
                                 );
                               }
@@ -3377,7 +3377,7 @@ export default function DansniiKhuulga() {
                                           : "!text-red-500 dark:!text-red-400"
                                       }
                                     >
-                                      {formatNumber(amt, 2)} ₮
+                                      {formatNumber(amt, 2)} 
                                     </span>
                                   </td>
                                 );
@@ -3389,7 +3389,7 @@ export default function DansniiKhuulga() {
                                     className={cellClass}
                                     style={style}
                                   >
-                                    {formatNumber(paidFromSummary, 2)} ₮
+                                    {formatNumber(paidFromSummary, 2)} 
                                   </td>
                                 );
                               }
@@ -3407,7 +3407,7 @@ export default function DansniiKhuulga() {
                                           : "!text-red-500 dark:!text-red-400"
                                       }
                                     >
-                                      {formatNumber(remainingValue, 2)} ₮
+                                      {formatNumber(remainingValue, 2)} 
                                     </span>
                                   </td>
                                 );
@@ -3597,7 +3597,7 @@ export default function DansniiKhuulga() {
                         );
                         content = (
                           <span className="text-theme">
-                            {formatNumber(total, 2)} ₮
+                            {formatNumber(total, 2)} 
                           </span>
                         );
                       } else if (col.key === "ekhniiUldegdel") {
@@ -3617,7 +3617,7 @@ export default function DansniiKhuulga() {
                                   : "text-theme"
                             }
                           >
-                            {formatNumber(total, 2)} ₮
+                            {formatNumber(total, 2)} 
                           </span>
                         );
                       } else if (col.key === "paid") {
@@ -3633,7 +3633,7 @@ export default function DansniiKhuulga() {
                         );
                         content = (
                           <span className="text-theme">
-                            {formatNumber(total, 2)} ₮
+                            {formatNumber(total, 2)} 
                           </span>
                         );
                       } else if (col.key === "uldegdel") {
@@ -3653,7 +3653,7 @@ export default function DansniiKhuulga() {
                                 : "!text-red-500 dark:!text-red-400"
                             }
                           >
-                            {formatNumber(total, 2)} ₮
+                            {formatNumber(total, 2)} 
                           </span>
                         );
                       }

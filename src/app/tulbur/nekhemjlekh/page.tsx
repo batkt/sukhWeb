@@ -697,7 +697,7 @@ const InvoiceModal = ({
                         <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
                           <td className="py-2 px-3 text-slate-600 whitespace-nowrap">{formatDate(row.ognoo)}</td>
                           <td className="py-2 px-3 text-slate-700">{row.tailbar}</td>
-                          <td className="py-2 px-3 text-right text-green-700 font-bold">-{formatNumber(row.dun)} ₮</td>
+                          <td className="py-2 px-3 text-right text-green-700 font-bold">-{formatNumber(row.dun)} </td>
                           <td className="py-2 px-3 text-right text-slate-500">{row.turul}</td>
                         </tr>
                       ))}
@@ -1900,7 +1900,7 @@ export default function InvoicingZardluud() {
                                             {z.ner || z.name}
                                           </span>
                                           <span className="">
-                                            {formatNumber(amount)} ₮
+                                            {formatNumber(amount)} 
                                           </span>
                                         </div>
                                       );
