@@ -1007,13 +1007,11 @@ export default function Camera() {
                     setDateRange(v);
                     setPage(1);
                   }}
-                  valueFormat="YYYY-MM-DD"
-                  leftSection={<Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />}
-                  rightSection={null}
+                  format="YYYY-MM-DD"
                   classNames={{
                     input: "flex items-center gap-2 rounded-full bg-slate-100/60 dark:bg-white/[0.03] border border-slate-200/40 dark:border-white/[0.06] h-9 px-4 text-[11px] text-slate-600 dark:text-slate-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-[family-name:var(--font-mono)]"
                   }}
-                  clearable
+                  allowClear
                 />
               </div>
 

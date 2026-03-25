@@ -1381,9 +1381,8 @@ export default function InvoicingZardluud() {
                 onChange={(v: string | null) => setSelectedDate(v)}
                 placeholder="Огноо сонгох"
                 className="!w-[360px]"
-                clearable
-                locale="mn"
-                valueFormat="YYYY-MM-DD"
+                allowClear
+                format="YYYY-MM-DD"
                 classNames={{
                   input:
                     "text-theme neu-panel placeholder:text-theme !h-[40px] !py-2 !w-[380px]",

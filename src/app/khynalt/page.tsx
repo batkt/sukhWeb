@@ -1117,9 +1117,9 @@ export default function Khynalt() {
                   isRange={true}
                   value={dateRange}
                   onChange={(v: any) => setDateRange(v)}
-                  valueFormat="YYYY-MM-DD"
+                  format="YYYY-MM-DD"
                   className="w-full"
-                  clearable
+                  allowClear
                 />
               </div>
             </div>

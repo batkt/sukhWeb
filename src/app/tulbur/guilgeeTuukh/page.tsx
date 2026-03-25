@@ -2585,19 +2585,10 @@ export default function DansniiKhuulga() {
               >
                 <StandardDatePicker
                   isRange={true}
-                  locale="mn"
                   value={ekhlekhOgnoo}
                   onChange={setEkhlekhOgnoo}
-                  size="sm"
-                  radius="md"
-                  variant="filled"
-                  dropdownType="popover"
-                  popoverProps={{
-                    position: "bottom",
-                    withinPortal: true,
-                    width: 320,
-                  }}
-                  clearable
+                  size="small"
+                  allowClear
                   placeholder="Огноо сонгох"
                   classNames={{
                     root: "!h-full !w-full",

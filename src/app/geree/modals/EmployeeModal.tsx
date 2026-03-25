@@ -184,8 +184,7 @@ export default function EmployeeModal({
                     }
                     placeholder="Огноо сонгох"
                     className="w-full"
-                    required
-                    clearable
+                    allowClear
                     classNames={{
                       input:
                         "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
