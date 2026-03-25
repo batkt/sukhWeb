@@ -15,6 +15,7 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
 import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
+import toast from "react-hot-toast";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -726,8 +727,8 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 no-print mb-4">
-        <div className="rounded-xl mt-4 sm:mt-8 btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-center no-print mb-4">
+        <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
           <StandardDatePicker
             isRange={true}
             value={dateRange}
@@ -745,25 +746,22 @@ export default function OrlogoAvlagaPage() {
           },
           { key: "toot", label: "Тоот", placeholder: "Тоот" },
           { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
-          {
-            key: "gereeniiDugaar",
-            label: "Гэрээний дугаар",
-            placeholder: "ГД",
-          },
         ].map(({ key, label, placeholder }) => (
-          <div key={key} className="p-3 rounded-xl">
-            <label className="block text-sm text-theme/80 mb-1.5">
-              {label}
-            </label>
-            <input
-              type="text"
-              value={(filters as any)[key]}
-              onChange={(e) =>
-                setFilters((p) => ({ ...p, [key]: e.target.value }))
-              }
-              className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder={placeholder}
-            />
+          <div key={key} className="rounded-xl h-[40px] flex items-center px-3">
+            <div className="flex items-center gap-2 w-full min-w-0">
+              <label className="whitespace-nowrap text-sm text-theme/80">
+                {label}
+              </label>
+              <input
+                type="text"
+                value={(filters as any)[key]}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, [key]: e.target.value }))
+                }
+                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+                placeholder={placeholder}
+              />
+            </div>
           </div>
         ))}
       </div>

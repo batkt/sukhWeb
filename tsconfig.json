@@ -28,11 +28,7 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts",
-    "src/app/signup",
-    "../tools/**/*.ts",
-    "../tools/**/*.tsx"
-, "components/streamPlayer/R2Wplayer.js", "src/lib/useGereeState.tss"  ],
+    ".next/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
-
 }

@@ -10,7 +10,10 @@ const nextConfig: NextConfig = {
 // Conditionally apply react-dev-inspector only in development
 let config: NextConfig = nextConfig;
 
-if (process.env.NODE_ENV === "development") {
+if (
+  process.env.NODE_ENV === "development" &&
+  process.env.NEXT_DEV_INSPECTOR === "true"
+) {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const inspectorPlugin = require("react-dev-inspector/plugins/next");

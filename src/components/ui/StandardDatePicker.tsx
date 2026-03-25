@@ -74,7 +74,7 @@ export function StandardDatePicker({
 
   // Combine passed className with standardized ones, removing the harsh default white background
   const combinedClassName =
-    `!border-slate-200 dark:!border-slate-800 !bg-transparent hover:!border-sky-500 focus:!border-sky-500 transition-all font-inter h-[44px] shadow-sm ${className} ${rootClassName} ${inputClassName}`.trim();
+    `w-full !border-slate-200 dark:!border-slate-800 !bg-transparent hover:!border-sky-500 focus:!border-sky-500 transition-all font-inter h-full shadow-sm ${className} ${rootClassName} ${inputClassName}`.trim();
 
   return (
     <ConfigProvider
@@ -85,30 +85,28 @@ export function StandardDatePicker({
         },
       }}
     >
-      <div className="standard-datepicker-wrapper w-full">
-        {isRange ? (
-          <RangePicker
-            value={parsedValue as any}
-            onChange={handleChange as any}
-            format={format}
-            allowClear={allowClear}
-            style={customStyles}
-            className={combinedClassName}
-            {...(props as any)}
-          />
-        ) : (
-          <DatePicker
-            value={parsedValue}
-            onChange={handleChange}
-            placeholder={placeholder}
-            format={format}
-            allowClear={allowClear}
-            style={customStyles}
-            className={combinedClassName}
-            {...(props as any)}
-          />
-        )}
-      </div>
+      {isRange ? (
+        <RangePicker
+          value={parsedValue as any}
+          onChange={handleChange as any}
+          format={format}
+          allowClear={allowClear}
+          style={customStyles}
+          className={combinedClassName}
+          {...(props as any)}
+        />
+      ) : (
+        <DatePicker
+          value={parsedValue}
+          onChange={handleChange}
+          placeholder={placeholder}
+          format={format}
+          allowClear={allowClear}
+          style={customStyles}
+          className={combinedClassName}
+          {...(props as any)}
+        />
+      )}
     </ConfigProvider>
   );
 }

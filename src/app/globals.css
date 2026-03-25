@@ -3622,6 +3622,21 @@ body .mantine-Month-weekday {
   color: var(--panel-text) !important;
   border-color: var(--surface-border) !important;
 }
+
+/* Avoid "double container" look when DatePicker sits inside our glass wrapper */
+.btn-minimal .ant-picker,
+.btn-minimal-ghost .ant-picker,
+.btn-minimal-add .ant-picker,
+.btn-minimal-sm .ant-picker {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.btn-minimal .ant-picker input,
+.btn-minimal .ant-picker-range-separator,
+.btn-minimal .ant-picker-separator {
+  background: transparent !important;
+}
 .ant-picker-cell-in-view.ant-picker-cell-disabled .ant-picker-cell-inner,
 .ant-picker-cell:not(.ant-picker-cell-in-view) .ant-picker-cell-inner {
   color: #94a3b8 !important; /* gray for out-of-month */

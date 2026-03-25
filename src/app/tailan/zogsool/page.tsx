@@ -700,9 +700,9 @@ export default function ZogsoolTailanPage() {
             <Table
               dataSource={displayDetail || []}
               columns={guestDetailColumns}
-              rowKey={(record) =>
-                `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
-              }
+              // rowKey={(record) =>
+              //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
+              // }
               pagination={false}
               size="small"
               bordered
@@ -749,9 +749,9 @@ export default function ZogsoolTailanPage() {
             <Table
               dataSource={guestCarList}
               columns={guestCarListColumns}
-              rowKey={(record) =>
-                `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
-              }
+              // rowKey={(record) =>
+              //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
+              // }
               pagination={false}
               size="small"
               bordered

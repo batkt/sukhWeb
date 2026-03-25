@@ -650,7 +650,7 @@ export default function NemeltTokhirgoo() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={handleBulkLiftDelete}
+                        onClick={handleDeleteAllFloors}
                         title="Бүгдийг устгах"
                       >
                         <Trash2 className="w-5 h-5" />

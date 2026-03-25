@@ -83,20 +83,6 @@ const PrintStyles = () => (
   `}</style>
 );
 
-interface SariinTulburItem {
-  _id: string;
-  gereeniiDugaar: string;
-  bairNer: string;
-  ner: string;
-  toot: string;
-  davkhar: string;
-  sar: string;
-  on: number;
-  tulbur: number;
-  tuluv: string;
-  period?: string;
-}
-
 export default function SariinTulburPage() {
   const { selectedBuildingId } = useBuilding();
   const { token, ajiltan } = useAuth();
@@ -480,7 +466,7 @@ export default function SariinTulburPage() {
           </button> */}
         </div>
       </div>
-      <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-end">
+      <div className="flex flex-col md:flex-row flex-wrap gap-4 no-print items-center">
         <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
           <StandardDatePicker
             isRange={true}
@@ -493,71 +479,72 @@ export default function SariinTulburPage() {
             className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
           />
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Төрөл</label>
-          <TusgaiZagvar
-            value={formData.turul}
-            onChange={(v: string) => setFormData({ ...formData, turul: v })}
-            options={[
-              { value: "sar", label: "Сар" },
-              { value: "uliral", label: "Улирал" },
-            ]}
-            placeholder="Төрөл сонгох"
-            className="h-[40px] w-full"
-          />
+        <div className="rounded-xl h-[40px] flex items-center px-3">
+          <div className="flex items-center gap-2 w-full min-w-0">
+            <label className="whitespace-nowrap text-sm text-theme/80">
+              Төрөл
+            </label>
+            <TusgaiZagvar
+              value={formData.turul}
+              onChange={(v: string) => setFormData({ ...formData, turul: v })}
+              options={[
+                { value: "sar", label: "Сар" },
+                { value: "uliral", label: "Улирал" },
+              ]}
+              placeholder="Төрөл сонгох"
+              className="flex-1 h-[40px] w-full"
+            />
+          </div>
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">
-            Оршин суугч
-          </label>
-          <input
-            type="text"
-            value={filters.orshinSuugch}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Овог, нэрээр хайх"
-          />
+        <div className="rounded-xl h-[40px] flex items-center px-3">
+          <div className="flex items-center gap-2 w-full min-w-0">
+            <label className="whitespace-nowrap text-sm text-theme/80">
+              Оршин суугч
+            </label>
+            <input
+              type="text"
+              value={filters.orshinSuugch}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))
+              }
+              className="flex-1 min-w-0 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Овог, нэрээр хайх"
+            />
+          </div>
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
-          <input
-            type="text"
-            value={filters.toot}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, toot: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Тоот"
-          />
+        <div className="rounded-xl h-[40px] flex items-center px-3">
+          <div className="flex items-center gap-2 w-full min-w-0">
+            <label className="whitespace-nowrap text-sm text-theme/80">
+              Тоот
+            </label>
+            <input
+              type="text"
+              value={filters.toot}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, toot: e.target.value }))
+              }
+              className="flex-1 min-w-0 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Тоот"
+            />
+          </div>
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Давхар</label>
-          <input
-            type="text"
-            value={filters.davkhar}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, davkhar: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Давхар"
-          />
+        <div className="rounded-xl h-[40px] flex items-center px-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <label className="whitespace-nowrap text-sm text-theme/80">
+              Давхар
+            </label>
+            <input
+              type="text"
+              value={filters.davkhar}
+              onChange={(e) =>
+                setFilters((p) => ({ ...p, davkhar: e.target.value }))
+              }
+              className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Давхар"
+            />
+          </div>
         </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">
-            Гэрээний дугаар
-          </label>
-          <input
-            type="text"
-            value={filters.gereeniiDugaar}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, gereeniiDugaar: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="ГД"
-          />
-        </div>
+
         {/* <button
           type="submit"
           disabled={loading}
