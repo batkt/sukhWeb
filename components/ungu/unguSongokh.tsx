@@ -68,12 +68,12 @@ export default function ӨнгөнийЗагварСонгох() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative inline-flex items-center justify-center h-10 w-10 rounded-full neu-panel text-slate-700 hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 hover:text-[#1e3a8a] hover:scale-105 hover:shadow-md transition-all duration-300 overflow-hidden"
+        className="group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-slate-700 hover:text-[#1e3a8a] hover:scale-105 duration-300 "
         title="Өнгөний загварыг солих"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-current/10 to-current/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Palette className="w-5 h-5 relative z-10" />
-        <div className="absolute inset-0 rounded-full ring-2 ring-current/20 group-hover:ring-current/40 transition-all duration-300" />
+       
       </button>
 
       {isOpen && (
