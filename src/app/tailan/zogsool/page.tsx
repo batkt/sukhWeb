@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { Table } from "antd";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -19,7 +20,8 @@ const PrintStyles = () => (
       body * {
         visibility: hidden !important;
       }
-      .print-container, .print-container * {
+      .print-container,
+      .print-container * {
         visibility: visible !important;
       }
       .print-container {
@@ -36,7 +38,8 @@ const PrintStyles = () => (
         width: 100% !important;
         border-collapse: collapse !important;
       }
-      th, td {
+      th,
+      td {
         border: 1px solid #ddd !important;
         padding: 4px !important;
         font-size: 8pt !important;
@@ -84,7 +87,7 @@ export default function ZogsoolTailanPage() {
   const { token, ajiltan } = useAuth();
   const { baiguullaga } = useBaiguullaga(
     token || null,
-    ajiltan?.baiguullagiinId || null
+    ajiltan?.baiguullagiinId || null,
   );
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
@@ -107,8 +110,12 @@ export default function ZogsoolTailanPage() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"residentSummary" | "guestDetail" | "guestCarList">("residentSummary");
-  const [selectedResidentId, setSelectedResidentId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<
+    "residentSummary" | "guestDetail" | "guestCarList"
+  >("residentSummary");
+  const [selectedResidentId, setSelectedResidentId] = useState<string | null>(
+    null,
+  );
   const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -126,13 +133,18 @@ export default function ZogsoolTailanPage() {
             duusakhOgnoo: dateRange?.[1] || undefined,
             orshinSuugch: filters.orshinSuugch || undefined,
             toot: filters.toot || undefined,
-          }
+          },
         );
         setApiResponse(response.data);
         setSelectedResidentId(null);
         setActiveTab("residentSummary");
       } catch (err: any) {
-        setError(err?.response?.data?.aldaa || err?.response?.data?.message || err.message || "Алдаа гарлаа");
+        setError(
+          err?.response?.data?.aldaa ||
+            err?.response?.data?.message ||
+            err.message ||
+            "Алдаа гарлаа",
+        );
       } finally {
         setLoading(false);
       }
@@ -156,12 +168,14 @@ export default function ZogsoolTailanPage() {
     if (selectedResidentId === orshinSuugchiinId) {
       setSelectedResidentId(null);
       setApiResponse((prev) =>
-        prev ? { ...prev, selectedDetail: null } : null
+        prev ? { ...prev, selectedDetail: null } : null,
       );
       return;
     }
     setSelectedResidentId(orshinSuugchiinId);
-    const resident = residentSummary.find((r) => r.orshinSuugchiinId === orshinSuugchiinId);
+    const resident = residentSummary.find(
+      (r) => r.orshinSuugchiinId === orshinSuugchiinId,
+    );
     if (!resident) return;
     setDetailLoading(true);
     try {
@@ -174,10 +188,12 @@ export default function ZogsoolTailanPage() {
           duusakhOgnoo: dateRange?.[1] || undefined,
           orshinSuugch: resident.ner,
           toot: resident.toot,
-        }
+        },
       );
       setApiResponse((prev) =>
-        prev ? { ...prev, selectedDetail: response.data?.selectedDetail || null } : null
+        prev
+          ? { ...prev, selectedDetail: response.data?.selectedDetail || null }
+          : null,
       );
     } catch {
       setSelectedResidentId(null);
@@ -193,7 +209,7 @@ export default function ZogsoolTailanPage() {
   }, [selectedResidentId, selectedDetail, detailLoading]);
 
   const selectedResident = residentSummary.find(
-    (r) => r.orshinSuugchiinId === selectedResidentId
+    (r) => r.orshinSuugchiinId === selectedResidentId,
   );
 
   const exportToExcel = () => {
@@ -202,7 +218,16 @@ export default function ZogsoolTailanPage() {
     let fileName = "";
 
     if (activeTab === "residentSummary") {
-      headers = ["№", "Нэр", "Тоот", "Урьсан машин тоо", "Нийт төлөх", "Хөнгөлөлт Минут", "Төлсөн дүн", "Үлдэгдэл төлбөр"];
+      headers = [
+        "№",
+        "Нэр",
+        "Тоот",
+        "Урьсан машин тоо",
+        "Нийт төлөх",
+        "Хөнгөлөлт Минут",
+        "Төлсөн дүн",
+        "Үлдэгдэл төлбөр",
+      ];
       dataToExport = residentSummary.map((row, idx) => [
         idx + 1,
         `"${row.ner || ""}"`,
@@ -215,7 +240,14 @@ export default function ZogsoolTailanPage() {
       ]);
       fileName = "resident_parking_summary";
     } else if (activeTab === "guestDetail") {
-      headers = ["№", "Машины дугаар", "Зогссон минут", "Хөнгөлсөн минут", "Төлбөр", "Төлөв"];
+      headers = [
+        "№",
+        "Машины дугаар",
+        "Зогссон минут",
+        "Хөнгөлсөн минут",
+        "Төлбөр",
+        "Төлөв",
+      ];
       dataToExport = (displayDetail || []).map((row, idx) => [
         idx + 1,
         `"${row.mashiniiDugaar || ""}"`,
@@ -226,7 +258,14 @@ export default function ZogsoolTailanPage() {
       ]);
       fileName = "guest_parking_detail";
     } else {
-      headers = ["№", "Машины дугаар", "Оршин суугчийн нэр", "Давхар", "Тоот", "Утасны дугаар"];
+      headers = [
+        "№",
+        "Машины дугаар",
+        "Оршин суугчийн нэр",
+        "Давхар",
+        "Тоот",
+        "Утасны дугаар",
+      ];
       dataToExport = guestCarList.map((row, idx) => [
         idx + 1,
         `"${row.mashiniiDugaar || ""}"`,
@@ -238,12 +277,20 @@ export default function ZogsoolTailanPage() {
       fileName = "guest_car_list";
     }
 
-    const csvContent = [headers.join(","), ...dataToExport.map((r) => r.join(","))].join("\n");
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const csvContent = [
+      headers.join(","),
+      ...dataToExport.map((r) => r.join(",")),
+    ].join("\n");
+    const blob = new Blob(["\ufeff" + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${fileName}_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `${fileName}_${new Date().toISOString().split("T")[0]}.csv`,
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -252,6 +299,208 @@ export default function ZogsoolTailanPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  // Define columns for Ant Design Tables
+  const residentSummaryColumns = useMemo(
+    () => [
+      {
+        title: "№",
+        dataIndex: "index",
+        key: "index",
+        width: 50,
+        align: "center" as const,
+        render: (_: any, __: any, index: number) => index + 1,
+      },
+      {
+        title: "Нэр",
+        dataIndex: "ner",
+        key: "ner",
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Урьсан машин тоо",
+        dataIndex: "urisanMachinToo",
+        key: "urisanMachinToo",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">{val}</span>
+        ),
+      },
+      {
+        title: "Нийт төлөх",
+        dataIndex: "niitTulbur",
+        key: "niitTulbur",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">
+            {formatNumber(val)}
+          </span>
+        ),
+      },
+      {
+        title: "Хөнгөлөлт Минут",
+        dataIndex: "khungulultMinut",
+        key: "khungulultMinut",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+        ),
+      },
+      {
+        title: "Төлсөн дүн",
+        dataIndex: "tulsunDun",
+        key: "tulsunDun",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">
+            {formatNumber(val)}
+          </span>
+        ),
+      },
+      {
+        title: "Үлдэгдэл төлбөр",
+        dataIndex: "uldegdelTulbur",
+        key: "uldegdelTulbur",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">
+            {formatNumber(val)}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const guestDetailColumns = useMemo(
+    () => [
+      {
+        title: "№",
+        dataIndex: "index",
+        key: "index",
+        width: 50,
+        align: "center" as const,
+        render: (_: any, __: any, index: number) => index + 1,
+      },
+      {
+        title: "Машины дугаар",
+        dataIndex: "mashiniiDugaar",
+        key: "mashiniiDugaar",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Зогссон минут",
+        dataIndex: "zogssonMinut",
+        key: "zogssonMinut",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">{val}</span>
+        ),
+      },
+      {
+        title: "Хөнгөлсөн минут",
+        dataIndex: "khungulsunMinut",
+        key: "khungulsunMinut",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">{val}</span>
+        ),
+      },
+      {
+        title: "Төлбөр",
+        dataIndex: "tulbur",
+        key: "tulbur",
+        align: "center" as const,
+        render: (val: number) => (
+          <span className="text-theme whitespace-nowrap">
+            {val > 0 ? formatNumber(val) : "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Төлөв",
+        dataIndex: "tuluv",
+        key: "tuluv",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  const guestCarListColumns = useMemo(
+    () => [
+      {
+        title: "№",
+        dataIndex: "index",
+        key: "index",
+        width: 50,
+        align: "center" as const,
+        render: (_: any, __: any, index: number) => index + 1,
+      },
+      {
+        title: "Машины дугаар",
+        dataIndex: "mashiniiDugaar",
+        key: "mashiniiDugaar",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Оршин суугчийн нэр",
+        dataIndex: "orshinSuugchiinNer",
+        key: "orshinSuugchiinNer",
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Давхар",
+        dataIndex: "davkhar",
+        key: "davkhar",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Утасны дугаар",
+        dataIndex: "utas",
+        key: "utas",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+        ),
+      },
+    ],
+    [],
+  );
 
   if (loading) {
     return (
@@ -282,7 +531,7 @@ export default function ZogsoolTailanPage() {
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             Excel татах
           </button>
-{/* <button
+          {/* <button
             onClick={handlePrint}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
@@ -321,9 +570,7 @@ export default function ZogsoolTailanPage() {
           />
         </div>
         <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">
-            Тоот
-          </label>
+          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
           <input
             type="text"
             value={filters.toot}
@@ -374,119 +621,63 @@ export default function ZogsoolTailanPage() {
 
       {activeTab === "residentSummary" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4  text-theme border-b">
+          <h3 className="p-4 text-theme border-b">
             Оршин суугчдын урьсан зочдын машин бүртгэлийн тайлан
           </h3>
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar">
-            <table className="table-ui text-sm min-w-full">
-              <thead>
-                <tr>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Нэр
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Тоот
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Урьсан машин тоо
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Нийт төлөх
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Хөнгөлөлт Минут
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Төлсөн дүн
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Үлдэгдэл төлбөр
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {residentSummary.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="p-8 text-center text-theme/60"
-                    >
-                      Мэдээлэл алга байна
-                    </td>
-                  </tr>
-                ) : (
-                  residentSummary.map((row, idx) => (
-                    <tr
-                      key={row.orshinSuugchiinId}
-                      className={`transition-colors border-b last:border-b-0 cursor-pointer hover:bg-[color:var(--surface-hover)]/30 ${
-                        selectedResidentId === row.orshinSuugchiinId
-                          ? "bg-[color:var(--surface-hover)]/50"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        handleResidentClick(row.orshinSuugchiinId);
-                        setActiveTab("guestDetail");
-                      }}
-                    >
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {idx + 1}
-                      </td>
-                      <td className="p-3 text-left text-theme whitespace-nowrap">
-                        {row.ner || "-"}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.toot || "-"}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.urisanMachinToo}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.niitTulbur)} 
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.khungulultMinut || "-"}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.tulsunDun)} 
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {formatNumber(row.uldegdelTulbur)} 
-                      </td>
-                    </tr>
-                  ))
-                )}
-                {residentSummary.length > 0 && (
-                  <tr className="border-t-2  bg-[color:var(--surface-hover)]/20">
-                    <td className="p-3 text-center" colSpan={3}>
-                      Нийт
-                    </td>
-                    <td className="p-3 text-center">{niit.urisanMachinToo}</td>
-                    <td className="p-3 text-center">
-                      {formatNumber(niit.niitTulbur)} 
-                    </td>
-                    <td className="p-3 text-center">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+            <Table
+              dataSource={residentSummary}
+              columns={residentSummaryColumns}
+              rowKey="orshinSuugchiinId"
+              pagination={false}
+              size="small"
+              bordered
+              className="guilgee-table"
+              scroll={{ y: 240 }}
+              locale={{ emptyText: "Мэдээлэл алга байна" }}
+              onRow={(record) => ({
+                onClick: () => {
+                  handleResidentClick(record.orshinSuugchiinId);
+                  setActiveTab("guestDetail");
+                },
+                className: `cursor-pointer hover:bg-[color:var(--surface-hover)]/30 ${
+                  selectedResidentId === record.orshinSuugchiinId
+                    ? "bg-[color:var(--surface-hover)]/50"
+                    : ""
+                }`,
+              })}
+              summary={() =>
+                residentSummary.length > 0 ? (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell index={0} colSpan={3} align="center">
+                      <strong>Нийт</strong>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="center">
+                      {niit.urisanMachinToo}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} align="center">
+                      {formatNumber(niit.niitTulbur)}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="center">
                       {niit.khungulultMinut || "-"}
-                    </td>
-                    <td className="p-3 text-center">
-                      {formatNumber(niit.tulsunDun)} 
-                    </td>
-                    <td className="p-3 text-center">
-                      {formatNumber(niit.uldegdelTulbur)} 
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="center">
+                      {formatNumber(niit.tulsunDun)}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="center">
+                      {formatNumber(niit.uldegdelTulbur)}
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                ) : null
+              }
+            />
           </div>
         </div>
       )}
 
       {activeTab === "guestDetail" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-          <h3 className="p-4  text-theme border-b">
+          <h3 className="p-4 text-theme border-b">
             Зочдын дэлгэрэнгүй тайлан
             {selectedResident && (
               <span className="ml-2 text-sm font-normal text-theme/70">
@@ -494,170 +685,66 @@ export default function ZogsoolTailanPage() {
               </span>
             )}
           </h3>
-          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar">
-            <table className="table-ui text-sm min-w-full">
-              <thead>
-                <tr>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
-                    №
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Машины дугаар
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Зогссон минут
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Хөнгөлсөн минут
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Төлбөр
-                  </th>
-                  <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                    Төлөв
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {detailLoading ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-theme/60">
-                      Уншиж байна...
-                    </td>
-                  </tr>
-                ) : !displayDetail || displayDetail.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-theme/60"
-                    >
-                      {selectedResidentId
-                        ? "Дэлгэрэнгүй мэдээлэл алга"
-                        : "Эхний таб дээр оршин суугч сонгоно уу"}
-                    </td>
-                  </tr>
-                ) : (
-                  displayDetail.map((row, idx) => (
-                    <tr
-                      key={`${row.mashiniiDugaar}-${idx}`}
-                      className="transition-colors border-b last:border-b-0"
-                    >
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {idx + 1}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.mashiniiDugaar || "-"}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.zogssonMinut}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.khungulsunMinut}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.tulbur > 0 ? `${formatNumber(row.tulbur)} ` : "-"}
-                      </td>
-                      <td className="p-3 text-center text-theme whitespace-nowrap">
-                        {row.tuluv || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-                {displayDetail && displayDetail.length > 0 && (
-                  <tr className="border-t-2  bg-[color:var(--surface-hover)]/20">
-                    <td className="p-3 text-center" colSpan={2}>
-                      Нийт
-                    </td>
-                    <td className="p-3 text-center">
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+            <Table
+              dataSource={displayDetail || []}
+              columns={guestDetailColumns}
+              rowKey={(record, index) => `${record.mashiniiDugaar}-${index}`}
+              pagination={false}
+              size="small"
+              bordered
+              className="guilgee-table"
+              scroll={{ y: 240 }}
+              loading={detailLoading}
+              locale={{
+                emptyText: selectedResidentId
+                  ? "Дэлгэрэнгүй мэдээлэл алга"
+                  : "Эхний таб дээр оршин суугч сонгоно уу",
+              }}
+              summary={() =>
+                displayDetail && displayDetail.length > 0 ? (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell index={0} colSpan={2} align="center">
+                      <strong>Нийт</strong>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="center">
                       {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
-                    </td>
-                    <td className="p-3 text-center">
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} align="center">
                       {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
-                    </td>
-                    <td className="p-3 text-center">
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="center">
                       {formatNumber(
-                        displayDetail.reduce((s, r) => s + r.tulbur, 0)
-                      )}{" "}
-                      
-                    </td>
-                    <td className="p-3 text-center">-</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                        displayDetail.reduce((s, r) => s + r.tulbur, 0),
+                      )}
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="center">
+                      -
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                ) : null
+              }
+            />
           </div>
         </div>
       )}
 
       {activeTab === "guestCarList" && (
         <div className="overflow-hidden rounded-2xl neu-table allow-overflow">
-        <h3 className="p-4  text-theme border-b">
-          Зочдын машины жагсаалт
-        </h3>
-        <div className="max-h-[30vh] overflow-y-auto custom-scrollbar">
-          <table className="table-ui text-sm min-w-full">
-            <thead>
-              <tr>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap w-12">
-                  №
-                </th>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                  Машины дугаар
-                </th>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                  Оршин суугчийн нэр
-                </th>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                  Давхар
-                </th>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                  Тоот
-                </th>
-                <th className="z-10 p-3 text-xs  text-theme text-center whitespace-nowrap">
-                  Утасны дугаар
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {guestCarList.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-8 text-center text-theme/60"
-                  >
-                    Мэдээлэл алга байна
-                  </td>
-                </tr>
-              ) : (
-                guestCarList.map((row, idx) => (
-                  <tr
-                    key={`${row.mashiniiDugaar}-${idx}`}
-                    className="transition-colors border-b last:border-b-0"
-                  >
-                    <td className="p-3 text-center text-theme whitespace-nowrap">
-                      {idx + 1}
-                    </td>
-                    <td className="p-3 text-center text-theme whitespace-nowrap">
-                      {row.mashiniiDugaar || "-"}
-                    </td>
-                    <td className="p-3 text-left text-theme whitespace-nowrap">
-                      {row.orshinSuugchiinNer || "-"}
-                    </td>
-                    <td className="p-3 text-center text-theme whitespace-nowrap">
-                      {row.davkhar || "-"}
-                    </td>
-                    <td className="p-3 text-center text-theme whitespace-nowrap">
-                      {row.toot || "-"}
-                    </td>
-                    <td className="p-3 text-center text-theme whitespace-nowrap">
-                      {row.utas || "-"}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+          <h3 className="p-4 text-theme border-b">Зочдын машины жагсаалт</h3>
+          <div className="max-h-[30vh] overflow-y-auto custom-scrollbar p-4">
+            <Table
+              dataSource={guestCarList}
+              columns={guestCarListColumns}
+              rowKey={(record, index) => `${record.mashiniiDugaar}-${index}`}
+              pagination={false}
+              size="small"
+              bordered
+              className="guilgee-table"
+              scroll={{ y: 240 }}
+              locale={{ emptyText: "Мэдээлэл алга байна" }}
+            />
+          </div>
         </div>
       )}
     </div>

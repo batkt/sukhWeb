@@ -305,35 +305,24 @@ const EditBuildingModal: React.FC<{
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-end gap-3">
-          <button
+          <Button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors  text-sm"
-            type="button"
+            variant="secondary"
+            className="px-5 py-2.5"
             disabled={isSaving}
           >
             Цуцлах
-          </button>
-          <button
-            className={`px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white  text-sm transition-all shadow-lg shadow-blue-500/20 ${
-              isSaving ? "opacity-60 cursor-not-allowed" : "hover:shadow-xl hover:shadow-blue-500/30"
-            }`}
+          </Button>
+          <Button
+            variant="primary"
+            className="px-5 py-2.5"
             onClick={() => handleSaveEditBuilding(editSelectedDuureg, editSelectedHoroo)}
             id="barilgiin-edit-save"
-            disabled={isSaving}
-            type="button"
+            isLoading={isSaving}
+            leftIcon={<Save className="w-4 h-4" />}
           >
-            {isSaving ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Хадгалж байна...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                Хадгалах
-              </span>
-            )}
-          </button>
+            Хадгалах
+          </Button>
         </div>
       </div>
     </div>,
@@ -581,35 +570,24 @@ const NewBuildingModal: React.FC<{
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-end gap-3">
-          <button
+          <Button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-lg border border-[color:var(--surface-border)] text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] transition-colors  text-sm"
-            type="button"
+            variant="secondary"
+            size="sm"
             disabled={isSaving}
           >
             Цуцлах
-          </button>
-          <button
-            className={`px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white  text-sm transition-all shadow-lg shadow-blue-500/20 ${
-              isSaving ? "opacity-60 cursor-not-allowed" : "hover:shadow-xl hover:shadow-blue-500/30"
-            }`}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => handleSaveSettings(modalSelectedDuureg, modalSelectedHoroo)}
             id="barilgiin-new-save"
-            disabled={isSaving}
-            type="button"
+            isLoading={isSaving}
+            leftIcon={<Save className="w-4 h-4" />}
           >
-            {isSaving ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Хадгалж байна...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <Save className="w-4 h-4" />
-                Хадгалах
-              </span>
-            )}
-          </button>
+            Хадгалах
+          </Button>
         </div>
       </div>
     </div>,

@@ -9,12 +9,10 @@ import {
   LayoutTemplate,
   UserPlus,
   Columns3Cog,
-  Send,
   ChevronDown,
 } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
-import { ALL_COLUMNS } from "./columns";
 import { hasPermission } from "@/lib/permissionUtils";
 
 interface GereeHeaderProps {
@@ -74,16 +72,10 @@ export default function GereeHeader({
   unitStatusFilter,
   setUnitStatusFilter,
   ajiltan,
-  selectedContracts,
   showColumnSelector,
   setShowColumnSelector,
-  visibleColumns,
-  setVisibleColumns,
   columnMenuRef,
-  DEFAULT_HIDDEN,
-  onShowAvlagaModal,
   onShowList2Modal,
-  onSendInvoices,
   onShowResidentModal,
   onExportResidentsExcel,
   onDownloadResidentsTemplate,
@@ -107,8 +99,6 @@ export default function GereeHeader({
   useEffect(() => {
     if (ajiltan) {
       console.log("👤 GereeHeader received ajiltan:", ajiltan);
-      console.log("🛡️ Admin Check:", ajiltan.erkh === "Admin" || ajiltan.erkh === "admin");
-      console.log("🔑 Permissions:", ajiltan.tsonkhniiErkhuud);
     }
   }, [ajiltan]);
 
@@ -152,6 +142,7 @@ export default function GereeHeader({
       };
     }
   }, [isMobileExcelOpen]);
+
   return (
     <div className="w-full">
       <div className="flex items-start justify-between p-4 gap-4 mb-4 w-full">
@@ -330,16 +321,16 @@ export default function GereeHeader({
             Гэрээ, Оршин суугч, Ажилтны жагсаалтуудыг удирдах
           </p>
 
-          {/* Tabs - Responsive Grid Layout */}
-          <div className="mt-3 w-full">
-            <div className="grid grid-cols-2 md:flex md:flex-row gap-2 tabbar">
+          {/* Tabs & Filters - Desktop Row */}
+          <div className="mt-3 w-full flex flex-col md:flex-row md:items-center gap-4 md:gap-12">
+            <div className="grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
               {showResidents && (
                 <button
                   id="tab-residents"
                   onClick={() => setActiveTab("residents")}
-                  className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === "residents"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                      : "hover:scale-105"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "residents"
+                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
+                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
                     }`}
                 >
                   Оршин суугч
@@ -349,9 +340,9 @@ export default function GereeHeader({
                 <button
                   id="tab-contracts"
                   onClick={() => setActiveTab("contracts")}
-                  className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === "contracts"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                      : "hover:scale-105"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "contracts"
+                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
+                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
                     }`}
                 >
                   Гэрээ
@@ -361,9 +352,9 @@ export default function GereeHeader({
                 <button
                   id="tab-units"
                   onClick={() => setActiveTab("units")}
-                  className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === "units"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                      : "hover:scale-105"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "units"
+                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
+                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
                     }`}
                 >
                   Тоот бүртгэл
@@ -373,154 +364,149 @@ export default function GereeHeader({
                 <button
                   id="tab-employees"
                   onClick={() => setActiveTab("employees")}
-                  className={`neu-btn px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === "employees"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm"
-                      : "hover:scale-105"
+                  className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${activeTab === "employees"
+                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
+                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
                     }`}
                 >
                   Ажилтан
                 </button>
               )}
             </div>
-          </div>
 
-          {/* Filters - Desktop only */}
-          {(activeTab === "contracts" || activeTab === "units") && (
-            <div className="hidden md:flex items-center gap-2 flex-wrap mt-3">
-              {activeTab === "contracts" && (
-                <>
-                  {ortsOptions.length > 0 && (
+            {/* Filters - Moved next to tabs on desktop */}
+            {(activeTab === "contracts" || activeTab === "units") && (
+              <div className="hidden md:flex items-center gap-8 flex-wrap md:ml-auto py-1">
+                {activeTab === "contracts" && (
+                  <>
+                    {ortsOptions.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                          Орц:
+                        </label>
+                        <div className="w-26">
+                          <TusgaiZagvar
+                            value={selectedOrtsForContracts}
+                            onChange={(val) => setSelectedOrtsForContracts(val)}
+                            options={[
+                              { value: "", label: "Бүгд" },
+                              ...ortsOptions.map((o) => ({ value: o, label: o })),
+                            ]}
+                            className="w-full z-50 text-sm"
+                            placeholder="Сонгох..."
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {davkharOptions.length > 0 && (
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                          Давхар:
+                        </label>
+                        <div className="w-26">
+                          <TusgaiZagvar
+                            value={selectedDawkhar}
+                            onChange={(val) => setSelectedDawkhar(val)}
+                            options={[
+                              { value: "", label: "Бүгд" },
+                              ...davkharOptions.map((d) => ({
+                                value: d,
+                                label: d,
+                              })),
+                            ]}
+                            className="w-full z-50 text-sm"
+                            placeholder="Сонгох..."
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                        Орц:
+                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                        Төлөв:
                       </label>
-                      <div className="w-26">
+                      <div className="w-38">
                         <TusgaiZagvar
-                          value={selectedOrtsForContracts}
-                          onChange={(val) => setSelectedOrtsForContracts(val)}
+                          value={statusFilter}
+                          onChange={(val) =>
+                            setStatusFilter(
+                              val as "all" | "active" | "cancelled"
+                            )
+                          }
                           options={[
-                            { value: "", label: "Бүгд" },
-                            ...ortsOptions.map((o) => ({ value: o, label: o })),
+                            { value: "all", label: "Бүгд" },
+                            { value: "active", label: "Идэвхтэй" },
+                            { value: "cancelled", label: "Цуцлагдсан" },
                           ]}
                           className="w-full z-50 text-sm"
                           placeholder="Сонгох..."
                         />
                       </div>
                     </div>
-                  )}
-                  {davkharOptions.length > 0 && (
+                  </>
+                )}
+
+                {activeTab === "units" && (
+                  <>
                     <div className="flex items-center gap-1.5">
-                      <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                        Орц:
+                      </label>
+                      <div className="w-18">
+                        <TusgaiZagvar
+                          value={selectedOrts}
+                          onChange={(val) => setSelectedOrts(val)}
+                          options={ortsOptions.map((o) => ({
+                            value: o,
+                            label: o,
+                          }))}
+                          className="w-full z-50 text-sm rounded-2xl"
+                          placeholder="1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
                         Давхар:
                       </label>
-                      <div className="w-26">
+                      <div className="w-18">
                         <TusgaiZagvar
                           value={selectedDawkhar}
                           onChange={(val) => setSelectedDawkhar(val)}
-                          options={[
-                            { value: "", label: "Бүгд" },
-                            ...davkharOptions.map((d) => ({
-                              value: d,
-                              label: d,
-                            })),
-                          ]}
-                          className="w-full z-50 text-sm"
-                          placeholder="Сонгох..."
+                          options={davkharOptions.map((d) => ({
+                            value: String(d),
+                            label: String(d),
+                          }))}
+                          className="w-full z-50 text-sm rounded-2xl"
+                          placeholder="1"
                         />
                       </div>
                     </div>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Төлөв:
-                    </label>
-                    <div className="w-38">
-                      <TusgaiZagvar
-                        value={statusFilter}
-                        onChange={(val) =>
-                          setStatusFilter(
-                            val as "all" | "active" | "cancelled"
-                          )
-                        }
-                        options={[
-                          { value: "all", label: "Бүгд" },
-                          { value: "active", label: "Идэвхтэй" },
-                          { value: "cancelled", label: "Цуцлагдсан" },
-                        ]}
-                        className="w-full z-50 text-sm"
-                        placeholder="Сонгох..."
-                      />
+                    <div className="flex items-center gap-1.5">
+                      <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
+                        Төлөв:
+                      </label>
+                      <div className="w-28">
+                        <TusgaiZagvar
+                          value={unitStatusFilter}
+                          onChange={(val) =>
+                            setUnitStatusFilter(
+                              (val as "all" | "occupied" | "free") || "all"
+                            )
+                          }
+                          options={[
+                            { value: "occupied", label: "Идэвхтэй" },
+                            { value: "free", label: "Идэвхгүй" },
+                          ]}
+                          className="w-full z-50 text-sm rounded-2xl"
+                          placeholder="Төлөв"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "units" && (
-                <>
-                  {/* Орц */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Орц:
-                    </label>
-                    <div className="w-18">
-                      <TusgaiZagvar
-                        value={selectedOrts}
-                        onChange={(val) => setSelectedOrts(val)}
-                        options={ortsOptions.map((o) => ({
-                          value: o,
-                          label: o,
-                        }))}
-                        className="w-full z-50 text-sm rounded-2xl"
-                        placeholder="1"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Давхар: styled dropdown, no Бүгд */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Давхар:
-                    </label>
-                    <div className="w-18">
-                      <TusgaiZagvar
-                        value={selectedDawkhar}
-                        onChange={(val) => setSelectedDawkhar(val)}
-                        options={davkharOptions.map((d) => ({
-                          value: String(d),
-                          label: String(d),
-                        }))}
-                        className="w-full z-50 text-sm rounded-2xl"
-                        placeholder="1"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Төлөв: only occupied / free, same card-like style */}
-                  <div className="flex items-center gap-1.5">
-                    <label className="text-sm text-theme/60 whitespace-nowrap  tracking-wider font-normal">
-                      Төлөв:
-                    </label>
-                    <div className="w-28">
-                      <TusgaiZagvar
-                        value={unitStatusFilter}
-                        onChange={(val) =>
-                          setUnitStatusFilter(
-                            (val as "all" | "occupied" | "free") || "all",
-                          )
-                        }
-                        options={[
-                          { value: "occupied", label: "Идэвхтэй" },
-                          { value: "free", label: "Идэвхгүй" },
-                        ]}
-                        className="w-full z-50 text-sm rounded-2xl"
-                        placeholder="Төлөв"
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Mobile: filters in grid layout */}
@@ -621,7 +607,7 @@ export default function GereeHeader({
                     value={unitStatusFilter}
                     onChange={(val) =>
                       setUnitStatusFilter(
-                        (val as "all" | "occupied" | "free") || "all",
+                        (val as "all" | "occupied" | "free") || "all"
                       )
                     }
                     options={[
@@ -710,7 +696,6 @@ export default function GereeHeader({
                 )}
               </div>
             </div>
-
           </>
         )}
         {activeTab === "employees" && (
@@ -754,11 +739,9 @@ export default function GereeHeader({
                 Загвар оруулах
               </span>
             </button>
-
           </>
         )}
       </div>
-
 
       {/* Hidden inputs for excel operations - always rendered */}
       <input

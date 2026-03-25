@@ -32,7 +32,7 @@ function parseJwt(token: string) {
       atob(base64)
         .split("")
         .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-        .join("")
+        .join(""),
     );
     return JSON.parse(jsonPayload);
   } catch (err) {
@@ -63,15 +63,17 @@ function isTokenValid(token: string): boolean {
 }
 
 const theme = createTheme({
-  fontFamily: "var(--font-inter), sans-serif",
+  fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
 });
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+
   return (
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: "var(--font-inter), sans-serif",
+          fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
         },
       }}
     >
@@ -108,16 +110,26 @@ function LayoutContent({ children }: { children: ReactNode }) {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       const link = target.closest("a");
-      if (link && link.href && !link.target && !link.hasAttribute("download") && !e.ctrlKey && !e.metaKey) {
+      if (
+        link &&
+        link.href &&
+        !link.target &&
+        !link.hasAttribute("download") &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
         const url = new URL(link.href);
-        if (url.origin === window.location.origin && url.pathname !== pathname) {
+        if (
+          url.origin === window.location.origin &&
+          url.pathname !== pathname
+        ) {
           setIsNavigating(true);
         }
       }
     };
 
     document.addEventListener("click", handleClick);
-    
+
     return () => {
       document.removeEventListener("click", handleClick);
     };
@@ -202,7 +214,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
         // Revalidate any SWR keys that start with "/orshinSuugch" and "/geree"
         try {
           mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
+            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch",
           );
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
         } catch (err) {
@@ -214,7 +226,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
       const onResidentChanged = (data: any) => {
         try {
           mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch"
+            (key: any) => Array.isArray(key) && key[0] === "/orshinSuugch",
           );
           mutate((key: any) => Array.isArray(key) && key[0] === "/geree");
         } catch (err) {
@@ -232,7 +244,8 @@ function LayoutContent({ children }: { children: ReactNode }) {
         try {
           mutate((key: any) => Array.isArray(key) && key[0] === "/ajiltan");
           mutate(
-            (key: any) => Array.isArray(key) && key[0] === "/tokenoorAjiltanAvya"
+            (key: any) =>
+              Array.isArray(key) && key[0] === "/tokenoorAjiltanAvya",
           );
         } catch (_) {}
       };
@@ -299,7 +312,7 @@ function LayoutContent({ children }: { children: ReactNode }) {
           <Toaster position="top-right" richColors closeButton />
           <SuccessOverlayHost />
           <ErrorOverlayHost />
-          
+
           {/* Global loading overlay */}
           {(spinnerLoading || isNavigating) && (
             <div

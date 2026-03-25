@@ -545,7 +545,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {/* Amount display */}
               <div className="text-center py-3 px-4 rounded-2xl bg-white dark:bg-white/[0.04] border border-slate-100 dark:border-white/[0.06] shadow-sm">
                 <p className="text-[10px]  text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">Оруулах дүн</p>
-                <div className="text-3xl font-black tracking-tight text-slate-800 dark:text-white">
+                <div className="text-3xl tracking-tight text-slate-800 dark:text-white">
                   {formatNumber(tuljBuiDun)}<span className="text-lg text-slate-300 dark:text-slate-600 ml-0.5"></span>
                 </div>
                 {tulukhDun !== tuljBuiDun && tulukhDun > 0 && (
@@ -593,8 +593,8 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
               {/* Summary */}
               <div className="rounded-2xl border border-slate-100 dark:border-white/[0.06] bg-white dark:bg-white/[0.03] overflow-hidden">
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
-                  <span className=" text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
-                  <span className=" text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}</span>
+                  <span className="force-bold text-slate-400 dark:text-slate-500 uppercase">Нийт</span>
+                  <span className="force-bold text-slate-700 dark:text-slate-200">{formatNumber(niitDun)}</span>
                 </div>
                 <div className="px-4 py-2.5 flex justify-between text-[11px] border-b border-slate-50 dark:border-white/[0.04]">
                   <span className=" text-slate-400 dark:text-slate-500 uppercase">Оруулсан</span>

@@ -6,7 +6,8 @@ import React, {
   ForwardRefRenderFunction,
   useState,
 } from "react";
-import { Form, InputNumber, Button, Select, Space, Switch, Modal } from "antd";
+import { Form, InputNumber, Select, Space, Switch, Modal } from "antd";
+import Button from "@/components/ui/Button";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useTranslation } from "react-i18next";

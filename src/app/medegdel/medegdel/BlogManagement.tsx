@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Button, Input, Modal, notification, Card, Popconfirm } from "antd";
+import { Input, Modal, notification, Card, Popconfirm } from "antd";
+import Button from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchIcon, Plus, ImagePlus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
 import uilchilgee, { getApiUrl, getMedegdelAssetUrl } from "@/lib/uilchilgee";

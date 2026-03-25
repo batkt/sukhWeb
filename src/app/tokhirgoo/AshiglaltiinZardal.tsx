@@ -25,6 +25,7 @@ import { useSpinner } from "@/context/SpinnerContext";
 import { Edit, Trash2, Activity, Layers, CreditCard, ChevronRight, Settings } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
+import Button from "@/components/ui/Button";
 
 interface ZardalItem {
   _id?: string;
@@ -546,15 +547,15 @@ export default function AshiglaltiinZardluud() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   id="zardal-add-btn"
-                  type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 !text-white  text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                  style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(false)}
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<PlusOutlined />}
                 >
-                  <span>Нэмэх</span>
-                </button>
+                  Нэмэх
+                </Button>
               </div>
 
               {isLoadingAshiglaltiin ? (
@@ -650,10 +651,10 @@ export default function AshiglaltiinZardluud() {
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
                         <tr className="bg-white/50 dark:bg-black/20">
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                            <div className="text-[11px] sm:text-xs font-black uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
+                            <div className="text-[11px] sm:text-xs force-bold uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
                           </td>
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                            <div className="text-sm sm:text-lg font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                            <div className="text-sm sm:text-lg force-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)
@@ -700,15 +701,16 @@ export default function AshiglaltiinZardluud() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   id="zardal-add-variable-btn"
-                  type="button"
-                  className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 !text-white  text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2"
-                  style={{ borderRadius: "0.75rem" }}
                   onClick={() => openAddModal(true)}
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<PlusOutlined />}
+                  style={{ backgroundColor: '#10b981', borderColor: '#10b981' }} 
                 >
-                  <span>Нэмэх</span>
-                </button>
+                  Нэмэх
+                </Button>
               </div>
 
               {isLoadingAshiglaltiin ? (
@@ -804,10 +806,10 @@ export default function AshiglaltiinZardluud() {
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                         <tr className="bg-white/50 dark:bg-black/20">
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                            <div className="text-[11px] sm:text-xs font-black uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
+                            <div className="text-[11px] sm:text-xs force-bold uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
                           </td>
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                            <div className="text-sm sm:text-lg font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            <div className="text-sm sm:text-lg force-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)

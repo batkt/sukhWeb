@@ -3,6 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
+import Button from "@/components/ui/Button";
+import { StandardTable } from "@/components/ui/StandardTable";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
 import { useAuth } from "@/lib/useAuth";
@@ -370,7 +372,7 @@ export default function Ebarimt() {
                 className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
+                  <div className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}>
                     {stat.value}
                   </div>
                   <div className="text-xs text-theme leading-tight">
@@ -414,140 +416,53 @@ export default function Ebarimt() {
                   icon={<Download className="w-4 h-4" />}
                   label="Excel татах"
                 />
-                <button
+                <Button
                   onClick={ebarimtIlgeeye}
-                  className="btn-minimal px-4 py-2 rounded-xl"
+                  isLoading={loading}
+                  variant="primary"
+                  className="rounded-xl"
                 >
-                  {loading ? <Spin size="small" /> : "Татварт илгээх"}
-                </button>
+                  Татварт илгээх
+                </Button>
               </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="table-surface overflow-hidden rounded-2xl w-full">
-            <div className="rounded-3xl p-6 neu-table allow-overflow">
-              <div
-                className="max-h-[50vh] overflow-y-auto custom-scrollbar w-full"
-                id="ebarimt-table"
-              >
-                <table className="table-ui text-xs min-w-full border border-[color:var(--surface-border)]">
-                  <thead className="z-10 bg-white dark:bg-gray-800">
-                    <tr>
-                      <th className="p-1 text-xs  text-theme text-center w-12 bg-inherit border-r border-[color:var(--surface-border)]">
-                        №
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        Огноо
-                      </th>
-                       <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        Тоот
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        Гэрээний дугаар
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        Төрөл
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        ДДТД
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit border-r border-[color:var(--surface-border)]">
-                        Дүн
-                      </th>
-                      <th className="p-1 text-xs  text-theme text-center whitespace-nowrap bg-inherit">
-                        Үйлчилгээ
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan={8} className="p-8 text-center text-subtle">
-                          <Spin size="small" /> Уншиж байна...
-                        </td>
-                      </tr>
-                    ) : displayedData.length > 0 ? (
-                      displayedData.map((item, index) => {
-                        const recToot = item.toot || item.medeelel?.toot || item.orshinSuugch?.toot;
-                        return (
-                          <tr
-                            key={String(item.id)}
-                            className="transition-colors border-b last:border-b-0"
-                          >
-                            <td className="p-1 text-center text-theme border-r border-[color:var(--surface-border)]">
-                              {index + 1}
-                            </td>
-                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                              {item.date}
-                            </td>
-                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                              {recToot || "-"}
-                            </td>
-                            <td className="p-1 text-center whitespace-nowrap text-theme border-r border-[color:var(--surface-border)]">
-                              {item.gereeniiDugaar || "-"}
-                            </td>
-                            <td className="p-1 text-center whitespace-nowrap border-r border-[color:var(--surface-border)]">
-                              <span
-                                className={`px-2 py-0.5 rounded-full text-xs  ${
-                                  item.type === "B2C_RECEIPT"
-                                    ? "bg-green-500 text-green-800"
-                                    : item.type === "B2B_RECEIPT"
-                                    ? "bg-blue-500 text-blue-800"
-                                    : "bg-gray-500 text-gray-800"
-                                }`}
-                              >
-                                {item.type === "B2C_RECEIPT"
-                                  ? "Иргэн"
-                                  : item.type === "B2B_RECEIPT"
-                                  ? "ААН"
-                                  : item.type || "-"}
-                              </span>
-                            </td>
-                            <td className="p-1 text-center whitespace-nowrap text-theme font-mono border-r border-[color:var(--surface-border)]">
-                              {item.ddtd || item.receiptId || "-"}
-                            </td>
-                            <td className="p-1 text-right whitespace-nowrap  text-theme border-r border-[color:var(--surface-border)]">
-                              {formatNumber(item.total ?? 0, 0)} 
-                            </td>
-                            <td className="p-1 text-center text-theme whitespace-nowrap">
-                              {item.service}
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td colSpan={8} className="p-8 text-center text-subtle">
-                          Хайсан мэдээлэл алга байна
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                  {displayedData.length > 0 && (
-                    <tfoot className="bg-slate-200 dark:bg-slate-800 border-t">
-                      <tr>
-                        <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-center">&nbsp;</td>
-                        <td className="p-1 text-center font-bold text-theme">НИЙТ:</td>
-                        <td className="p-1 text-right font-bold text-theme">
-                          {formatNumber(
-                            displayedData.reduce((s, r) => s + (r.total || 0), 0),
-                            0
-                          )}{" "}
-                          
-                        </td>
-                        <td className="p-1 text-center">&nbsp;</td>
-                      </tr>
-                    </tfoot>
-                  )}
-                </table>
+          <StandardTable
+            columns={[
+              { key: "index", label: "№", width: 50, align: "center", render: (_, __, idx) => idx + 1 },
+              { key: "date", label: "Огноо", align: "center" },
+              { key: "toot", label: "Тоот", align: "center", render: (val, item) => item.toot || item.medeelel?.toot || item.orshinSuugch?.toot || "-" },
+              { key: "gereeniiDugaar", label: "Гэрээний дугаар", align: "center" },
+              { key: "type", label: "Төрөл", align: "center", render: (val) => (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                  val === "B2C_RECEIPT" ? "bg-green-500/10 text-green-600 border border-green-500/20" : 
+                  val === "B2B_RECEIPT" ? "bg-blue-500/10 text-blue-600 border border-blue-500/20" : 
+                  "bg-gray-500/10 text-gray-600 border border-gray-500/20"
+                }`}>
+                  {val === "B2C_RECEIPT" ? "Иргэн" : val === "B2B_RECEIPT" ? "ААН" : val || "-"}
+                </span>
+              )},
+              { key: "ddtd", label: "ДДТД", align: "center", render: (val, item) => item.ddtd || item.receiptId || "-" },
+              { key: "total", label: "Дүн", align: "right", render: (val) => (
+                <span>{formatNumber(val || 0)} </span>
+              )},
+              { key: "service", label: "Үйлчилгээ", align: "center" },
+            ]}
+            data={displayedData}
+            loading={isLoading}
+            emptyMessage="Хайсан мэдээлэл алга байна"
+            stickyHeader
+            footer={displayedData.length > 0 && (
+              <div className="flex justify-between items-center px-6 py-3 bg-slate-900/5 dark:bg-black/20 rounded-2xl border border-white/5 backdrop-blur-md">
+                <span className="text-xs force-bold text-slate-500 uppercase tracking-widest">Нийт:</span>
+                <span className="text-lg force-bold text-theme">
+                  {formatNumber(displayedData.reduce((s, r) => s + (r.total || 0), 0))} 
+                </span>
               </div>
-            </div>
-          </div>
+            )}
+          />
         </div>
       </div>
     </TulburLayout>

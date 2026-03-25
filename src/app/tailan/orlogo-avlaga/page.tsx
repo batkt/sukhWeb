@@ -88,7 +88,7 @@ const PrintStyles = () => (
         width: 100% !important; 
         border-collapse: collapse !important; 
         table-layout: auto !important;
-        font-family: 'Inter', sans-serif !important;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
         font-size: 9pt !important;
         color: black !important;
       }
@@ -590,7 +590,7 @@ const footerTotals = useTulburFooterTotals(
         {([["tulult", "Орлого"], ["avlaga", "Авлага"]] as [TabType, string][]).map(([tab, label]) => (
           <button key={tab} type="button"
             onClick={() => { setActiveTab(tab); setExpandedRow(null); setExpandedLedger([]); setCurrentPage(1); }}
-            className={`px-4 py-2 rounded-xl transition-all ${activeTab === tab ? "neu-panel bg-white/20 border border-white/20" : "hover:menu-surface"}`}>
+            className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}>
             {label}
           </button>
         ))}

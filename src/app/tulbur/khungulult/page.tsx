@@ -14,7 +14,6 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import {
-  Button,
   Form,
   Input,
   Popconfirm,
@@ -24,6 +23,7 @@ import {
   Tabs,
   Switch,
 } from "antd";
+import Button from "@/components/ui/Button";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
 import type { TableColumnsType } from "antd";
@@ -75,10 +75,10 @@ const TulburTootsoo: React.FC = () => {
   ]);
   const formRef = useRef<any>(null);
   const [songogdsonGereenuud, setSongogdsonGereenuud] = useState<GereeData[]>(
-    []
+    [],
   );
   const [ognoonuud, setOgnoonuud] = useState<[Date | null, Date | null] | null>(
-    null
+    null,
   );
   const [khonogTootsokhEsekh, setKhonogTootsokhEsekh] =
     useState<boolean>(false);
@@ -506,12 +506,12 @@ const TulburTootsoo: React.FC = () => {
         // Handle focus logic
       }
     },
-    []
+    [],
   );
 
   function onSelectChange(
     selectedRowKeys: React.Key[],
-    selectedRows: GereeData[]
+    selectedRows: GereeData[],
   ) {
     setRowKeys(selectedRowKeys);
     setSongogdsonGereenuud(selectedRows);
@@ -523,7 +523,7 @@ const TulburTootsoo: React.FC = () => {
     // Calculate based on selected contracts
     const niitSariinTurees = songogdsonGereenuud.reduce(
       (sum, item) => sum + (item.sariinTurees || 0),
-      0
+      0,
     );
 
     let khunglugdsunDun = 0;
@@ -633,14 +633,14 @@ const TulburTootsoo: React.FC = () => {
                         onChange={(v) => {
                           const dates = (v || [null, null]) as [
                             Date | null,
-                            Date | null
+                            Date | null,
                           ];
                           setEkhlekhOgnoo(dates);
                           if (dates[0] && dates[1]) {
                             setOgnoonuud([dates[0], dates[1]]);
                             form.setFieldValue(
                               "khungulultKhonog",
-                              dayjs(dates[1]).diff(dayjs(dates[0]), "d") + 1
+                              dayjs(dates[1]).diff(dayjs(dates[0]), "d") + 1,
                             );
                             khungulukhDunTootsoolyo();
                           }
@@ -667,7 +667,7 @@ const TulburTootsoo: React.FC = () => {
                         onChange={(v) => {
                           const dates = (v || [null, null]) as [
                             Date | null,
-                            Date | null
+                            Date | null,
                           ];
                           setOgnoonuud(dates);
                         }}
@@ -861,70 +861,25 @@ const TulburTootsoo: React.FC = () => {
               <div className="col-span-12 md:col-span-8 xl:col-span-9">
                 <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
                   <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-                    <div className="max-h-[280px] overflow-y-auto custom-scrollbar w-full">
-                      <table className="table-ui text-sm min-w-full">
-                        <thead>
-                          <tr className="text-theme">
-                            <th className="p-3 text-xs  text-center">
-                              #
-                            </th>
-                            {gereeniiColumn.map((col) => (
-                              <th
-                                key={col.title as string}
-                                className="p-3 text-xs  text-center"
-                              >
-                                {typeof col.title === "function"
-                                  ? col.title({})
-                                  : col.title}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {gereeniiMedeelel.jagsaalt.map((row, index) => (
-                            <tr
-                              key={row._id}
-                              className={`transition-colors border-b last:border-b-0 ${
-                                selectedRowKeys.includes(row._id)
-                                  ? "bg-white/20"
-                                  : ""
-                              }`}
-                              onClick={() => {
-                                const selected = [...selectedRowKeys];
-                                const idx = selected.indexOf(row._id);
-                                if (idx > -1) selected.splice(idx, 1);
-                                else selected.push(row._id);
-                                setRowKeys(selected);
-                                setSongogdsonGereenuud(
-                                  selected.map(
-                                    (key) =>
-                                      gereeniiMedeelel.jagsaalt.find(
-                                        (r) => r._id === key
-                                      )!
-                                  )
-                                );
-                              }}
-                            >
-                              <td className="p-3 text-center">{index + 1}</td>
-                              <td className="p-3 text-center">{row.ner}</td>
-                              <td className="p-3 text-center">
-                                {row.gereeniiDugaar}
-                              </td>
-                              <td className="p-3 text-center">
-                                {row.talbainDugaar}
-                              </td>
-                              <td className="p-3 text-center">{row.davkhar}</td>
-                              <td className="p-3 text-center">
-                                {row.talbainKhemjee} м2
-                              </td>
-                              <td className="p-3 text-center">
-                                {formatNumber(row.sariinTurees || 0)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                    <Table
+                      dataSource={gereeniiMedeelel.jagsaalt}
+                      columns={gereeniiColumn}
+                      rowKey="_id"
+                      pagination={false}
+                      size="small"
+                      bordered
+                      className="guilgee-table"
+                      scroll={{ y: 280 }}
+                      rowSelection={{
+                        type: "checkbox",
+                        selectedRowKeys,
+                        onChange: (keys, rows) => {
+                          setRowKeys(keys);
+                          setSongogdsonGereenuud(rows);
+                        },
+                      }}
+                      locale={{ emptyText: "Мэдээлэл алга байна" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -942,7 +897,7 @@ const TulburTootsoo: React.FC = () => {
                     className="text-theme"
                     onChange={(dates) => {
                       setEkhlekhOgnoo(
-                        (dates || [null, null]) as [Date | null, Date | null]
+                        (dates || [null, null]) as [Date | null, Date | null],
                       );
                     }}
                   />
@@ -951,72 +906,22 @@ const TulburTootsoo: React.FC = () => {
                 <div className="col-span-12 md:col-span-8 xl:col-span-9">
                   <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
                     <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
-                      <div className="max-h-[280px] overflow-y-auto custom-scrollbar w-full">
-                        <table className="table-ui text-sm min-w-full">
-                          <thead>
-                            <tr className="text-theme">
-                              <th className="p-3 text-xs  text-center">
-                                #
-                              </th>
-                              {gereeniiColumn.map((col) => (
-                                <th
-                                  key={col.title as string}
-                                  className="p-3 text-xs  text-center"
-                                >
-                                  {typeof col.title === "function"
-                                    ? col.title({})
-                                    : col.title}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {gereeniiMedeelel.jagsaalt.map((row, index) => (
-                              <tr
-                                key={row._id}
-                                className={`transition-colors border-b last:border-b-0 ${
-                                  selectedRowKeys.includes(row._id)
-                                    ? "bg-white/20"
-                                    : ""
-                                }`}
-                                onClick={() => {
-                                  const selected = [...selectedRowKeys];
-                                  const idx = selected.indexOf(row._id);
-                                  if (idx > -1) selected.splice(idx, 1);
-                                  else selected.push(row._id);
-                                  setRowKeys(selected);
-                                  setSongogdsonGereenuud(
-                                    selected.map(
-                                      (key) =>
-                                        gereeniiMedeelel.jagsaalt.find(
-                                          (r) => r._id === key
-                                        )!
-                                    )
-                                  );
-                                }}
-                              >
-                                <td className="p-3 text-center">{index + 1}</td>
-                                <td className="p-3 text-center">{row.ner}</td>
-                                <td className="p-3 text-center">
-                                  {row.gereeniiDugaar}
-                                </td>
-                                <td className="p-3 text-center">
-                                  {row.talbainDugaar}
-                                </td>
-                                <td className="p-3 text-center">
-                                  {row.davkhar}
-                                </td>
-                                <td className="p-3 text-center">
-                                  {row.talbainKhemjee} м2
-                                </td>
-                                <td className="p-3 text-center">
-                                  {formatNumber(row.sariinTurees || 0)}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <Table
+                        dataSource={khungulultTuukh.jagsaalt}
+                        columns={columns}
+                        rowKey="_id"
+                        pagination={{
+                          pageSize: 10,
+                          total: khungulultTuukh.niitMur,
+                          current: khungulultTuukh.khuudasniiDugaar,
+                          position: ["bottomCenter"],
+                        }}
+                        size="small"
+                        bordered
+                        className="guilgee-table"
+                        scroll={{ y: 280 }}
+                        locale={{ emptyText: "Мэдээлэл алга байна" }}
+                      />
                     </div>
                   </div>
                 </div>

@@ -70,16 +70,15 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
               </div>
             )}
           </div>
-          <div className="grid grid-cols-3 flex-wrap items-center gap-2 tabbar">
+          <div className="flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
             {showGuilgee && (
             <button
               id="tab-guilgee"
               onClick={() => handleTabChange("guilgee")}
-              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
-                activeTab === "guilgee"
-                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
-                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-              }`}
+              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "guilgee"
+                  ? "bg-theme/15 text-theme font-medium"
+                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                }`}
             >
               Гүйлгээний түүх
             </button>
@@ -88,11 +87,10 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-dansKhuulga"
               onClick={() => handleTabChange("dansKhuulga")}
-              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
-                activeTab === "dansKhuulga"
-                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
-                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-              }`}
+              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "dansKhuulga"
+                  ? "bg-theme/15 text-theme font-medium"
+                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                }`}
             >
               Дансны хуулга
             </button>
@@ -101,11 +99,10 @@ export default function TulburLayout({ children, activeTab }: TulburLayoutProps)
             <button
               id="tab-ebarimt"
               onClick={() => handleTabChange("ebarimt")}
-              className={`px-5 py-2 text-sm  rounded-2xl transition-all duration-300 ${
-                activeTab === "ebarimt"
-                  ? "bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 scale-105"
-                  : "text-[color:var(--panel-text)]/60 hover:text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)]"
-              }`}
+              className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${activeTab === "ebarimt"
+                  ? "bg-theme/15 text-theme font-medium"
+                  : "text-theme/60 hover:bg-theme/10 hover:text-theme"
+                }`}
             >
               И-баримт
             </button>

@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
+import Button from "@/components/ui/Button";
 
 interface TransactionModalProps {
   show: boolean;
@@ -627,44 +628,22 @@ export default function TransactionModal({
 
           {/* Footer */}
           <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
-            <button
-              type="button"
+            <Button
               onClick={handleClose}
               disabled={isProcessing}
-              className="px-5 py-2.5 text-sm  text-[color:var(--panel-text)] bg-transparent hover:bg-[color:var(--surface-hover)] rounded-2xl transition-colors disabled:opacity-50"
+              variant="secondary"
+              className="px-5 py-2.5"
             >
               Хаах
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
               onClick={handleSubmit}
-              disabled={isProcessing}
-              className="px-6 py-2.5 text-sm  !text-white bg-[color:var(--theme)] hover:opacity-90 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-[color:var(--theme)]/20 active:scale-95"
+              isLoading={isProcessing}
+              variant="primary"
+              className="px-6 py-2.5"
             >
-              {isProcessing ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                    />
-                  </svg>
-                  <span>Уншиж байна...</span>
-                </span>
-              ) : (
-                "Хадгалах"
-              )}
-            </button>
+              Хадгалах
+            </Button>
           </div>
         </motion.div>
       </div>

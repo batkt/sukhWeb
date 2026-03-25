@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import Button from "@/components/ui/Button";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
@@ -619,7 +620,7 @@ export default function EbarimtTokhirgoo() {
             </div> */}
 
             <div className="flex justify-end">
-              <button
+              <Button
                 onClick={async () => {
                   if (!token) return openErrorOverlay("Нэвтрэх токен байхгүй");
                   if (!baiguullaga?._id)
@@ -733,10 +734,11 @@ export default function EbarimtTokhirgoo() {
                   }
                 }}
                 id="ebarimt-save-btn"
-                className="btn-minimal btn-save"
+                variant="primary"
+                size="sm"
               >
                 {t("Хадгалах")}
-              </button>
+              </Button>
             </div>
           </div>
         )}

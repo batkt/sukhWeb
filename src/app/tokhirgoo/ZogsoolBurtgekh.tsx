@@ -486,7 +486,7 @@ function ZogsoolBurtgekh(
                     newTulburuud[index].tariff.push({ minut: "", tulbur: "" });
                     setFormData((prev) => ({ ...prev, tulburuud: newTulburuud }));
                   }}
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   leftIcon={<Plus className="w-4 h-4" />}
                   className="w-full !rounded-lg"
@@ -586,7 +586,7 @@ function ZogsoolBurtgekh(
                       });
                       setFormData((prev) => ({ ...prev, khaalga: newKhaalga }));
                     }}
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     leftIcon={<Plus className="w-4 h-4" />}
                     className="!rounded-lg"

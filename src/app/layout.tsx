@@ -3,12 +3,7 @@ import type { Metadata } from "next";
 import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
 import Script from "next/script";
-import { Inter, JetBrains_Mono } from "next/font/google";
-
-const inter = Inter({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-inter",
-});
+import { JetBrains_Mono } from "next/font/google";
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin", "cyrillic"],
@@ -43,7 +38,7 @@ var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('da
         </Script>
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} ${inter.className} min-h-screen bg-card text-foreground font-sans`}
+        className={`${jetbrainsMono.variable} min-h-screen bg-card text-foreground font-sans`}
         suppressHydrationWarning
       >
         <AuthProvider>

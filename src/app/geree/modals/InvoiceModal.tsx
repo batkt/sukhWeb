@@ -693,7 +693,7 @@ export default function InvoiceModal({
                           
                         </tbody>
                         <tfoot>
-                          <tr className="border-t border-slate-200 bg-white font-bold">
+                          <tr className="border-t border-slate-200 bg-white force-bold">
                             <td colSpan={2} className="border-r border-slate-200 py-2 px-2 text-center font-normal">{numberToMongolianWords(totalSum)}</td>
                             <td colSpan={2} className="border-r border-slate-200 py-2 px-2 text-center ">Нийт дүн</td>
                             <td className="border-r border-slate-200 py-2 px-2 text-right ">{formatNumber(totalSum, 2)}</td>

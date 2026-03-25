@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Button, Input, Popconfirm, Tooltip, notification, Modal } from "antd";
+import { Input, Popconfirm, Tooltip, notification, Modal } from "antd";
+import Button from "@/components/ui/Button";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import UtasBurtgel, { UtasBurtgelRef } from "./UtasBurtgel";
 

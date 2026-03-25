@@ -26,7 +26,7 @@ const PrintStyles = () => (
       main, div[class*="neu-panel"], div[class*="overflow-y-auto"], div[class*="md:h-"], div[class*="max-h-"] {
         height: auto !important; max-height: none !important; overflow: visible !important; position: static !important; box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important;
       }
-      table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; font-family: 'Inter', sans-serif !important; font-size: 8pt !important; color: black !important; }
+      table { width: 100% !important; border-collapse: collapse !important; table-layout: auto !important; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important; font-size: 8pt !important; color: black !important; }
       th, td { border: 1px solid #000 !important; padding: 4px 2px !important; background: transparent !important; color: black !important; text-align: center !important; word-wrap: break-word !important; }
       th { background-color: #f0f0f0 !important; font-weight: bold !important; -webkit-print-color-adjust: exact; }
       tr { page-break-inside: avoid !important; }

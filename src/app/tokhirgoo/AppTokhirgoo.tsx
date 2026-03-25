@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, notification } from "antd";
+import { notification } from "antd";
+import Button from "@/components/ui/Button";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { SolutionOutlined } from "@ant-design/icons";
 import moment from "moment";
@@ -56,7 +57,7 @@ function AppTokhirgoo({ baiguullaga }: { baiguullaga?: any }) {
         </div>
 
         <div className="flex justify-end border-t border-amber-200 dark:border-amber-700 px-5 py-3">
-          <Button type="primary" disabled={isLocked} onClick={saveConfig}>
+          <Button variant="primary" disabled={isLocked} onClick={saveConfig}>
             Хадгалах
           </Button>
         </div>

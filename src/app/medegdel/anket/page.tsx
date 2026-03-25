@@ -10,7 +10,6 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Button,
   Form,
   FormInstance,
   Input,
@@ -19,6 +18,7 @@ import {
   Radio,
   Select,
 } from "antd";
+import Button from "@/components/ui/Button";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {

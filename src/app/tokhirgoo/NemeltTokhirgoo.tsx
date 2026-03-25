@@ -16,6 +16,7 @@ import { Trash2 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import createMethod from "../../../tools/function/createMethod";
+import Button from "@/components/ui/Button";
 
 export default function NemeltTokhirgoo() {
   const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } = useAuth();
@@ -554,14 +555,15 @@ export default function NemeltTokhirgoo() {
                         size="md"
                       />
                     </div>
-                    <button
+                    <Button
                       id="nemelt-invoice-save"
                       onClick={saveInvoiceSchedule}
-                      className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 dark:from-purple-600 dark:to-pink-700 dark:hover:from-purple-700 dark:hover:to-pink-800 text-white  shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
-                      style={{ borderRadius: '0.75rem' }}
+                      variant="primary"
+                      size="sm"
+                      className="whitespace-nowrap"
                     >
                       Хадгалах
-                    </button>
+                    </Button>
                   </div>
                   <p className="text-xs text-[color:var(--muted-text)] mt-2">
                     Сар бүрийн хэдний өдөр нэхэмжлэх илгээх
@@ -628,23 +630,24 @@ export default function NemeltTokhirgoo() {
                         size="md"
                       />
 
-                      <button
+                      <Button
                         id="nemelt-lift-save"
                         onClick={handleSaveFloors}
-                        className="px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 dark:from-amber-600 dark:to-orange-700 dark:hover:from-amber-700 dark:hover:to-orange-800 text-white  shadow-md hover:shadow-lg transition-all duration-200"
-                        style={{ borderRadius: '0.75rem' }}
+                        variant="warning"
+                        size="sm"
                       >
                         Хадгалах
-                      </button>
+                      </Button>
 
-                      <button
+                      <Button
                         onClick={handleDeleteAllFloors}
-                        className="p-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/30 dark:hover:bg-red-950/50 text-red-600 dark:text-red-400 transition-colors"
-                        style={{ borderRadius: '0.75rem' }}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
                         title="Бүгдийг устгах"
                       >
                         <Trash2 className="w-5 h-5" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -785,12 +788,14 @@ export default function NemeltTokhirgoo() {
                      </div>
 
                      <div className="pt-2 flex justify-end">
-                        <button
+                        <Button
                            onClick={saveGuestSettings}
-                           className="px-6 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 !text-white  shadow-md hover:shadow-lg transition-all rounded-2xl"
+                           variant="primary"
+                           size="sm"
+                           className="!rounded-2xl"
                         >
                            Хадгалах
-                        </button>
+                        </Button>
                      </div>
                   </div>
                )}

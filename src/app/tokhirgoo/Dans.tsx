@@ -20,6 +20,7 @@ import deleteMethod from "../../../tools/function/deleteMethod";
 import { aldaaBarigch } from "@/lib/uilchilgee";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useSpinner } from "@/context/SpinnerContext";
+import Button from "@/components/ui/Button";
 
 interface DansItem {
   _id: string;
@@ -62,51 +63,55 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
             >
               <Popover.Target>
                 <Tooltip label={t("Устгах")} withArrow>
-                  <button
+                  <Button
                     onClick={() => setDeleteOpened(true)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
-                    style={{ borderRadius: '0.75rem' }}
+                    variant="primary"
+                    className="flex h-9 w-9 items-center justify-center text-white transition-all duration-200 !rounded-xl"
+                    style={{ borderRadius: '0.75rem', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
                     aria-label={t("Устгах")}
                   >
                     ×
-                  </button>
+                  </Button>
                 </Tooltip>
               </Popover.Target>
               <Popover.Dropdown>
                 <div className="text-sm text-theme dark:text-white">
                   <p className="mb-3">{data.dugaar} данс устгах уу?</p>
                   <div className="flex gap-2 justify-end">
-                    <button
-                      className="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 transition-all duration-200"
+                    <Button
+                      variant="secondary"
+                      className="px-3 py-1.5"
                       style={{ borderRadius: '0.5rem' }}
                       onClick={() => setDeleteOpened(false)}
                     >
                       {t("Болих")}
-                    </button>
-                    <button
-                      className="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white transition-all duration-200"
-                      style={{ borderRadius: '0.5rem' }}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      className="px-3 py-1.5"
+                      style={{ borderRadius: '0.5rem', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
                       onClick={() => {
                         onDelete(data._id);
                         setDeleteOpened(false);
                       }}
                     >
                       {t("Устгах")}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </Popover.Dropdown>
             </Popover>
 
             <Tooltip label={t("Засах")} withArrow>
-              <button
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500 hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-700 text-white transition-all duration-200 hover:scale-110 active:scale-95 shadow-md hover:shadow-lg"
+              <Button
+                variant="warning"
+                className="flex h-9 w-9 items-center justify-center text-white transition-all duration-200 !rounded-xl"
                 style={{ borderRadius: '0.75rem' }}
                 onClick={() => onEdit(data)}
                 aria-label={t("Засах")}
               >
                 ✎
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -233,14 +238,14 @@ function Dans() {
       <div className={`bg-gradient-to-br ${colors} shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl p-5 mb-6 border`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg  text-theme dark:text-white">{title}</h2>
-          <button
+          <Button
             onClick={() => openAdd(bankKey)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 dark:from-blue-600 dark:to-cyan-600 dark:hover:from-blue-700 dark:hover:to-cyan-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+            variant="primary"
+            size="sm"
             style={{ borderRadius: '0.75rem' }}
-            aria-label={t("Нэмэх")}
           >
             + {t("Нэмэх")}
-          </button>
+          </Button>
         </div>
 
         <div className="flex items-center justify-between mb-4 p-3 bg-white/50 dark:bg-gray-800/30 rounded-xl">
@@ -280,13 +285,15 @@ function Dans() {
               }
               className="text-theme"
             />
-            <button 
+            <Button 
               onClick={checkTdbConnection} 
-              className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 dark:from-emerald-600 dark:to-teal-600 dark:hover:from-emerald-700 dark:hover:to-teal-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg"
-              style={{ borderRadius: '0.75rem' }}
+              variant="primary"
+              size="sm"
+              style={{ borderRadius: '0.75rem', backgroundColor: '#10b981', borderColor: '#10b981' }}
+              isLoading={loadingCheck}
             >
-              {loadingCheck ? <Loader size="sm" /> : t("Шалгах")}
-            </button>
+              {t("Шалгах")}
+            </Button>
             {tdbMessage && <div className="text-green-600 dark:text-green-400 ">{tdbMessage}</div>}
           </div>
         )}
@@ -309,13 +316,14 @@ function Dans() {
           ))}
 
         <div className="flex justify-end mt-4">
-          <button
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+          <Button
+            size="sm"
             style={{ borderRadius: '0.75rem' }}
             onClick={() => saveBank(bankKey)}
+            variant="primary"
           >
             {t("Хадгалах")}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -395,18 +403,20 @@ function Dans() {
               </div>
 
               <div className="flex justify-end gap-2 mt-2">
-                <button
+                <Button
                   className="btn-minimal btn-cancel"
                   onClick={() => {
                     setModalOpen(false);
                     setEditing(null);
                   }}
+                  variant="secondary"
+                  size="sm"
                 >
                   {t("Болих")}
-                </button>
-                <button className="btn-minimal btn-save" onClick={saveDans}>
+                </Button>
+                <Button variant="primary" className="btn-minimal btn-save" size="sm" onClick={saveDans}>
                   {t("Хадгалах")}
-                </button>
+                </Button>
               </div>
             </div>
           </Modal>

@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { t } from "i18next";
 import formatNumber from "../../../tools/function/formatNumber";
+import Button from "@/components/ui/Button";
 
 interface BackItem {
   _id: number;
@@ -73,15 +74,17 @@ function Baaz({ token }: BaazProps) {
                   {t("Сүүлд шинэчилсэн")} {new Date().toLocaleDateString()}
                 </p>
               </div>
-              <button
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 dark:from-blue-600 dark:to-indigo-600 dark:hover:from-blue-700 dark:hover:to-indigo-700 text-white rounded-xl  transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+              <Button
+                variant="primary"
+                size="sm"
+                className="text-white transition-all duration-200"
                 style={{ borderRadius: '0.75rem' }}
-                disabled={loading}
+                isLoading={loading}
                 onClick={backTatya}
+                leftIcon={<Download className="w-4 h-4" />}
               >
-                <Download className="w-4 h-4" />
                 {t("Татах")}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

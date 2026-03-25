@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, lazy, Suspense, Component, ReactNode } fr
 import { useAuth } from "@/lib/useAuth";
 import { Settings } from "lucide-react";
 import { hasPermission } from "@/lib/permissionUtils";
+import Button from "@/components/ui/Button";
 
 // Dynamic imports for better code splitting
 const AppTokhirgoo = lazy(() => import("./AppTokhirgoo"));
@@ -60,14 +61,15 @@ class ChunkErrorBoundary extends Component<
               ? "Хуудас шинэчлэгдсэн байна. Дахин ачааллах товчийг дарна уу."
               : this.state.error?.message || "Тодорхой бус алдаа гарлаа"}
           </div>
-          <button
+          <Button
             onClick={() => {
               window.location.reload();
             }}
-            className="px-4 py-2 bg-theme text-white rounded-lg hover:opacity-90 transition-opacity"
+            variant="primary"
+            size="sm"
           >
             Дахин ачааллах
-          </button>
+          </Button>
         </div>
       );
     }
@@ -196,7 +198,7 @@ function Tokhirgoo() {
                     isActive
                       ? "bg-[var(--btn-bg-hover)] border border-[var(--btn-border)] text-theme "
                       : "text-theme opacity-80 hover:opacity-100"
-                  } ${isSoon ? "cursor-not-allowed pr-24" : ""}`}
+                  } ${isSoon ? "cursor-not-allowed pr-24" : ""} px-4 py-2.5 rounded-2xl`}
                 >
                   {item.icon}
                   <span className="flex-1 min-w-0 overflow-hidden whitespace-nowrap text-left">

@@ -330,8 +330,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
           <Button
             onClick={onClose}
             variant="primary"
-            size="md"
-            className="!rounded-2xl"
+            size="sm"
             style={{ borderRadius: '0.5rem' }}
           >
             Хаах

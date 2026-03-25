@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Table } from "antd";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import {
   Calendar,
@@ -27,7 +28,9 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
-import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
+import formatNumber, {
+  formatCurrency,
+} from "../../../../tools/function/formatNumber";
 
 import { url as API_URL } from "@/lib/uilchilgee";
 import uilchilgee from "@/lib/uilchilgee";
@@ -35,8 +38,6 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
-
-
 
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return "-";
@@ -87,7 +88,7 @@ const PrintStyles = () => (
       }
 
       /* Ensure parent containers don't clip */
-      div[data-radix-portal], 
+      div[data-radix-portal],
       div[role="dialog"],
       .ModalPortal {
         position: static !important;
@@ -109,16 +110,23 @@ const PrintStyles = () => (
         table-layout: fixed !important; /* Fixed layout helps with width control */
       }
 
-      th, td {
+      th,
+      td {
         border: 1px solid #000 !important;
         padding: 6px !important;
         font-size: 10pt !important;
         word-wrap: break-word !important;
       }
 
-      .invoice-modal h2 { font-size: 20pt !important; margin: 0 0 15px 0 !important; }
-      .invoice-modal h3 { font-size: 16pt !important; margin: 0 0 10px 0 !important; }
-      
+      .invoice-modal h2 {
+        font-size: 20pt !important;
+        margin: 0 0 15px 0 !important;
+      }
+      .invoice-modal h3 {
+        font-size: 16pt !important;
+        margin: 0 0 10px 0 !important;
+      }
+
       .custom-scrollbar {
         overflow: visible !important;
       }
@@ -267,7 +275,9 @@ const InvoiceModal = ({
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
   >("Тодорхойгүй");
   const [cronData, setCronData] = React.useState<any>(null);
-  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(null);
+  const [totalPaidFromApi, setTotalPaidFromApi] = React.useState<number | null>(
+    null,
+  );
   const invValid = React.useMemo(() => {
     if (!Array.isArray(expenseRows) || expenseRows.length === 0) return false;
     const invSum = expenseRows.reduce(
@@ -309,7 +319,7 @@ const InvoiceModal = ({
             !resident?.utas?.[0] ||
             !item?.utas?.[0] ||
             String(item.utas?.[0] || "").trim() ===
-            String(resident.utas?.[0] || "").trim();
+              String(resident.utas?.[0] || "").trim();
           return ovogMatch && nerMatch && utasMatch;
         });
         const latest = [
@@ -356,13 +366,16 @@ const InvoiceModal = ({
 
         const addToExpenseMap = (list: any[]) => {
           list.forEach((z: any) => {
-            const isEkhnii = z.isEkhniiUldegdel === true || 
-                            String(z.ner || "").startsWith("Эхний үлдэгдэл") || 
-                            String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
+            const isEkhnii =
+              z.isEkhniiUldegdel === true ||
+              String(z.ner || "").startsWith("Эхний үлдэгдэл") ||
+              String(z.zardliinNer || "").startsWith("Эхний үлдэгдэл");
             const amt = pickAmount(z);
             if (isEkhnii && amt <= 0) return; // Skip zero or negative initial balance
 
-            const ner = isEkhnii ? "Эхний үлдэгдэл" : String(z.ner || z.name || "").trim();
+            const ner = isEkhnii
+              ? "Эхний үлдэгдэл"
+              : String(z.ner || z.name || "").trim();
             const key = ner || z._id || `z-${Math.random()}`;
             const existing = expenseMap.get(key);
             if (!existing || amt > pickAmount(existing)) {
@@ -374,11 +387,17 @@ const InvoiceModal = ({
         addToExpenseMap(zardluudRows);
 
         // Add Цахилгаан if missing
-        const hasTsahilgaan = Array.from(expenseMap.values()).some(z => String(z.ner).trim() === "Цахилгаан");
+        const hasTsahilgaan = Array.from(expenseMap.values()).some(
+          (z) => String(z.ner).trim() === "Цахилгаан",
+        );
         if (!hasTsahilgaan && latest) {
           const tsahAmt = Number(latest?.tsahilgaanNekhemjlekh ?? 0);
           if (tsahAmt > 0) {
-            expenseMap.set("Цахилгаан", { ner: "Цахилгаан", tariff: tsahAmt, dun: tsahAmt });
+            expenseMap.set("Цахилгаан", {
+              ner: "Цахилгаан",
+              tariff: tsahAmt,
+              dun: tsahAmt,
+            });
           }
         }
 
@@ -395,43 +414,52 @@ const InvoiceModal = ({
           tariff: Number(z?.tariff) || 0,
           dun: pickAmount(z),
           turul: z.turul,
-          tailbar: z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || "",
+          tailbar:
+            z.tailbar || latest?.medeelel?.tailbar || latest?.tailbar || "",
         });
 
         setExpenseRows(Array.from(expenseMap.values()).map(norm));
 
         // Process Payments (Guilgeenuud)
-        const payments = guilgeenuudRows.filter((g: any) => {
-          const t = String(g.turul || "").toLowerCase();
-          const isTulsun = Number(g.tulsunDun) > 0 || Number(g.dun) > 0;
-          return t !== "avlaga" && t !== "авлага" && isTulsun;
-        }).map((g: any, idx: number) => ({
-          _id: g._id || `pay-${idx}`,
-          ognoo: g.ognoo || g.tulsunOgnoo,
-          tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
-          dun: Number(g.tulsunDun || g.dun || 0),
-          turul: g.turul || "Төлбөр",
-          ajiltan: g.ajiltanNer || "Систем",
-        }));
+        const payments = guilgeenuudRows
+          .filter((g: any) => {
+            const t = String(g.turul || "").toLowerCase();
+            const isTulsun = Number(g.tulsunDun) > 0 || Number(g.dun) > 0;
+            return t !== "avlaga" && t !== "авлага" && isTulsun;
+          })
+          .map((g: any, idx: number) => ({
+            _id: g._id || `pay-${idx}`,
+            ognoo: g.ognoo || g.tulsunOgnoo,
+            tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
+            dun: Number(g.tulsunDun || g.dun || 0),
+            turul: g.turul || "Төлбөр",
+            ajiltan: g.ajiltanNer || "Систем",
+          }));
         setPaymentRows(payments);
 
         setPaymentStatusLabel(getPaymentStatusLabel(latest));
 
-       
         const t = Number(
-          latest?.niitTulburOriginal ?? 
-          latest?.niitTulbur ?? 
-          latest?.niitDun ?? 
-          latest?.total ?? 
-          0
+          latest?.niitTulburOriginal ??
+            latest?.niitTulbur ??
+            latest?.niitDun ??
+            latest?.total ??
+            0,
         );
         setInvTotal(Number.isFinite(t) ? t : null);
 
         // Fetch cron and paid summary
         const gereeId = latest?.gereeniiId || latest?.gereeId;
         if (gereeId) {
-          uilchilgee(token).post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
-            .then(r => setTotalPaidFromApi(Number(r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0)))
+          uilchilgee(token)
+            .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
+            .then((r) =>
+              setTotalPaidFromApi(
+                Number(
+                  r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0,
+                ),
+              ),
+            )
             .catch(() => setTotalPaidFromApi(null));
         }
       } catch (e) {
@@ -442,7 +470,14 @@ const InvoiceModal = ({
       }
     };
     run();
-  }, [isOpen, token, baiguullagiinId, resident?._id, selectedBuildingId, barilgiinId]);
+  }, [
+    isOpen,
+    token,
+    baiguullagiinId,
+    resident?._id,
+    selectedBuildingId,
+    barilgiinId,
+  ]);
 
   const contractData = latestInvoice || nekhemjlekhData;
   const totalSum = React.useMemo(() => {
@@ -507,9 +542,9 @@ const InvoiceModal = ({
                   Огноо:{" "}
                   {formatDate(
                     latestInvoice?.ognoo ||
-                    nekhemjlekhData?.ognoo ||
-                    latestInvoice?.ognoo ||
-                    "",
+                      nekhemjlekhData?.ognoo ||
+                      latestInvoice?.ognoo ||
+                      "",
                   ) || "-"}
                 </p>
               </div>
@@ -584,8 +619,7 @@ const InvoiceModal = ({
                     })()}
                   </p>
                   <p className="flex items-center gap-2">
-                    <span className="">Хаяг:</span>{" "}
-                    {baiguullaga?.khayag || "-"}
+                    <span className="">Хаяг:</span> {baiguullaga?.khayag || "-"}
                   </p>
                 </div>
               </div>
@@ -595,9 +629,9 @@ const InvoiceModal = ({
                     <span className="">Огноо:</span>{" "}
                     {formatDate(
                       latestInvoice?.ognoo ||
-                      nekhemjlekhData?.ognoo ||
-                      latestInvoice?.ognoo ||
-                      currentDate,
+                        nekhemjlekhData?.ognoo ||
+                        latestInvoice?.ognoo ||
+                        currentDate,
                     )}
                   </p>
 
@@ -645,31 +679,49 @@ const InvoiceModal = ({
 
             {/* Expenses Table */}
             <div>
-              <h4 className="font-bold mb-2 text-slate-700">Зардлын жагсаалт</h4>
+              <h4 className="font-bold mb-2 text-slate-700">
+                Зардлын жагсаалт
+              </h4>
               <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="py-2 px-3 text-left text-slate-600">Зардал</th>
-                      <th className="py-2 px-3 text-right text-slate-600">Дүн</th>
-                      <th className="py-2 px-3 text-right text-slate-600">Тайлбар</th>
+                      <th className="py-2 px-3 text-left text-slate-600">
+                        Зардал
+                      </th>
+                      <th className="py-2 px-3 text-right text-slate-600">
+                        Дүн
+                      </th>
+                      <th className="py-2 px-3 text-right text-slate-600">
+                        Тайлбар
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {expenseRows.map((row: any) => (
-                      <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
+                      <tr
+                        key={row._id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
                         <td className="py-2 px-3 text-slate-700">{row.ner}</td>
                         <td className="py-2 px-3 text-right text-slate-900 font-medium">
                           {formatCurrency(Number(row.dun))}
                         </td>
-                        <td className="py-2 px-3 text-right text-slate-500">{row.tailbar}</td>
+                        <td className="py-2 px-3 text-right text-slate-500">
+                          {row.tailbar}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot className="bg-gray-50 border-t border-gray-100">
                     <tr>
-                      <td colSpan={2} className="py-2 px-3 text-slate-700 font-bold">Нийт дүн:</td>
-                      <td className="py-2 px-3 text-right text-slate-900 font-bold">
+                      <td
+                        colSpan={2}
+                        className="py-2 px-3 text-slate-700 force-bold"
+                      >
+                        Нийт дүн:
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-900 force-bold">
                         {formatCurrency(totalSum)}
                       </td>
                     </tr>
@@ -681,32 +733,60 @@ const InvoiceModal = ({
             {/* Payments Table */}
             {paymentRows.length > 0 && (
               <div>
-                <h4 className="font-bold mb-2 text-slate-700">Төлөлтийн мэдээлэл</h4>
+                <h4 className="font-bold mb-2 text-slate-700">
+                  Төлөлтийн мэдээлэл
+                </h4>
                 <div className="border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="py-2 px-3 text-left text-slate-600">Огноо</th>
-                        <th className="py-2 px-3 text-left text-slate-600">Тайлбар</th>
-                        <th className="py-2 px-3 text-right text-slate-600">Дүн</th>
-                        <th className="py-2 px-3 text-right text-slate-600">Төрөл</th>
+                        <th className="py-2 px-3 text-left text-slate-600">
+                          Огноо
+                        </th>
+                        <th className="py-2 px-3 text-left text-slate-600">
+                          Тайлбар
+                        </th>
+                        <th className="py-2 px-3 text-right text-slate-600">
+                          Дүн
+                        </th>
+                        <th className="py-2 px-3 text-right text-slate-600">
+                          Төрөл
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {paymentRows.map((row: any) => (
-                        <tr key={row._id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">{formatDate(row.ognoo)}</td>
-                          <td className="py-2 px-3 text-slate-700">{row.tailbar}</td>
-                          <td className="py-2 px-3 text-right text-green-700 font-bold">-{formatNumber(row.dun)} </td>
-                          <td className="py-2 px-3 text-right text-slate-500">{row.turul}</td>
+                        <tr
+                          key={row._id}
+                          className="hover:bg-gray-50/50 transition-colors"
+                        >
+                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">
+                            {formatDate(row.ognoo)}
+                          </td>
+                          <td className="py-2 px-3 text-slate-700">
+                            {row.tailbar}
+                          </td>
+                          <td className="py-2 px-3 text-right text-green-700 font-bold">
+                            -{formatNumber(row.dun)}{" "}
+                          </td>
+                          <td className="py-2 px-3 text-right text-slate-500">
+                            {row.turul}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot className="bg-gray-50 border-t font-bold text-green-700">
                       <tr>
-                        <td colSpan={2} className="py-2 px-3">Төлсөн дүн (энэ удаа):</td>
+                        <td colSpan={2} className="py-2 px-3">
+                          Төлсөн дүн (энэ удаа):
+                        </td>
                         <td className="py-2 px-3 text-right">
-                          {formatCurrency(paymentRows.reduce((s, r) => s + (Number(r.dun) || 0), 0))}
+                          {formatCurrency(
+                            paymentRows.reduce(
+                              (s, r) => s + (Number(r.dun) || 0),
+                              0,
+                            ),
+                          )}
                         </td>
                         <td></td>
                       </tr>
@@ -719,28 +799,40 @@ const InvoiceModal = ({
             <div className="border-t border-gray-100 pt-6 mt-4">
               <div className="flex flex-col items-end gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm text-slate-500 font-medium whitespace-nowrap">Төлбөрийн төлөв:</span>
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
-                    paymentStatusLabel === "Төлсөн" 
-                    ? "bg-green-100 text-green-700 border border-green-200" 
-                    : "bg-red-100 text-red-700 border border-red-200"
-                  }`}>
+                  <span className="text-sm text-slate-500 font-medium whitespace-nowrap">
+                    Төлбөрийн төлөв:
+                  </span>
+                  <span
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold shadow-sm ${
+                      paymentStatusLabel === "Төлсөн"
+                        ? "bg-green-100 text-green-700 border border-green-200"
+                        : "bg-red-100 text-red-700 border border-red-200"
+                    }`}
+                  >
                     {paymentStatusLabel}
                   </span>
                 </div>
-                
+
                 <div className="w-full max-w-[300px] space-y-2 text-right">
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-500">Нийт нэхэмжилсэн:</span>
-                    <span className="text-slate-900 font-medium">{formatCurrency(totalSum)}</span>
+                    <span className="text-slate-900 font-medium">
+                      {formatCurrency(totalSum)}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
                     <span className="text-slate-500">Нийт төлсөн:</span>
-                    <span className="text-green-700 font-medium">-{formatCurrency(totalPaidFromApi || 0)}</span>
+                    <span className="text-green-700 font-medium">
+                      -{formatCurrency(totalPaidFromApi || 0)}
+                    </span>
                   </div>
                   <div className="pt-2 border-t border-gray-200 flex justify-between items-center">
-                    <span className="text-base font-bold text-slate-800">Үлдэгдэл дүн:</span>
-                    <span className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}>
+                    <span className="text-base font-bold text-slate-800">
+                      Үлдэгдэл дүн:
+                    </span>
+                    <span
+                      className={`text-lg font-bold ${uldegdelDun > 0 ? "text-red-600" : "text-slate-900"}`}
+                    >
                       {formatCurrency(uldegdelDun)}
                     </span>
                   </div>
@@ -812,6 +904,10 @@ export default function InvoicingZardluud() {
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(0);
+
+  // Pagination state for table
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 10;
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
   const baiguullagiinId = ajiltan?.baiguullagiinId || null;
@@ -922,8 +1018,9 @@ export default function InvoicingZardluud() {
 
     nekhemjlekhList.forEach((invoice: any) => {
       // Create a unique key for each resident
-      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${invoice.utas?.[0] || ""
-        }`;
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
 
       // Get existing or create new resident entry
       const existing = residentMap.get(key);
@@ -934,7 +1031,7 @@ export default function InvoicingZardluud() {
       if (
         !existing ||
         invoiceDate >
-        new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
+          new Date(existing?.createdAt || existing?.ognoo || 0).getTime()
       ) {
         // Use the latest invoice data for this resident
         residentMap.set(key, {
@@ -970,8 +1067,9 @@ export default function InvoicingZardluud() {
     > = {};
 
     nekhemjlekhList.forEach((invoice: any) => {
-      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${invoice.utas?.[0] || ""
-        }`;
+      const key = `${invoice.ovog || ""}_${invoice.ner || ""}_${
+        invoice.utas?.[0] || ""
+      }`;
       const label = getPaymentStatusLabel(invoice);
       const ts = new Date(
         invoice?.tulsunOgnoo || invoice?.ognoo || invoice?.createdAt || 0,
@@ -1002,8 +1100,8 @@ export default function InvoicingZardluud() {
         const label = status.label as any;
         tuluvMap[r._id] =
           label === "Төлсөн" ||
-            label === "Төлөөгүй" ||
-            label === "Хугацаа хэтэрсэн"
+          label === "Төлөөгүй" ||
+          label === "Хугацаа хэтэрсэн"
             ? label
             : "";
         dateMap[r._id] = status.date;
@@ -1201,7 +1299,7 @@ export default function InvoicingZardluud() {
           !resident?.utas?.[0] ||
           !item?.utas?.[0] ||
           String(item.utas?.[0] || "").trim() ===
-          String(resident.utas?.[0] || "").trim();
+            String(resident.utas?.[0] || "").trim();
         return ovogMatch && nerMatch && utasMatch;
       });
 
@@ -1232,8 +1330,8 @@ export default function InvoicingZardluud() {
         const toStr = (v: any) => (v == null ? "" : String(v));
         const branchMatches = barilgiinId
           ? list.filter(
-            (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
-          )
+              (x: any) => toStr(x?.barilgiinId) === toStr(barilgiinId),
+            )
           : [];
         const pickLatest = (arr: any[]) =>
           [...arr].sort(
@@ -1254,7 +1352,7 @@ export default function InvoicingZardluud() {
           ? chosen.choloolugdokhDavkhar.map((f: any) => String(f))
           : [];
         setLiftFloors(floors);
-      } catch { }
+      } catch {}
     };
     fetchLiftFloors();
   }, [token, ajiltan?.baiguullagiinId, barilgiinId, selectedBuildingId]);
@@ -1274,6 +1372,117 @@ export default function InvoicingZardluud() {
     onClose: () => setIsHistoryOpen(false),
     container: historyRef.current,
   });
+
+  // Define columns for Ant Design Table
+  const nekhemjlekhColumns = useMemo(
+    () => [
+      {
+        title: "№",
+        dataIndex: "index",
+        key: "index",
+        width: 50,
+        align: "center" as const,
+        render: (_: any, __: any, index: number) => index + 1,
+      },
+      {
+        title: "Оршин суугч",
+        dataIndex: "ner",
+        key: "ner",
+        render: (text: string, record: any) => (
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <div className="text-theme truncate">{text}</div>
+            </div>
+          </div>
+        ),
+      },
+      {
+        title: "Тоот",
+        dataIndex: "toot",
+        key: "toot",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm">
+            {text || "-"}
+          </span>
+        ),
+      },
+      {
+        title: "Хаяг",
+        dataIndex: "khayag",
+        key: "khayag",
+        align: "center" as const,
+        render: (_: any, record: any) => {
+          const address =
+            record.duureg && record.horoo && record.davkhar
+              ? `${record.duureg}, ${record.horoo}, ${record.davkhar}`
+              : record.khayag || "Хаяг тодорхойгүй";
+          return <span className="text-gray-700">{address}</span>;
+        },
+      },
+      {
+        title: "Утас",
+        dataIndex: "utas",
+        key: "utas",
+        align: "center" as const,
+        render: (text: string) => (
+          <span className="text-gray-700 font-mono">{text || "-"}</span>
+        ),
+      },
+      {
+        title: "Төлөв",
+        dataIndex: "tuluv",
+        key: "tuluv",
+        align: "center" as const,
+        render: (_: any, record: any) => {
+          const id = String(record?._id || "");
+          const label =
+            id && tuluvByResidentId[id]
+              ? (tuluvByResidentId[id] as any)
+              : getPaymentStatusLabel(record);
+          const cls =
+            label === "Төлсөн"
+              ? "badge-paid"
+              : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
+                ? "badge-unpaid"
+                : "badge-neutral";
+          return (
+            <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>
+              {label}
+            </span>
+          );
+        },
+      },
+      {
+        title: "Үйлдэл",
+        key: "action",
+        align: "center" as const,
+        width: 100,
+        render: (_: any, record: any) => (
+          <div
+            className="flex justify-center items-center gap-2"
+            style={{ minWidth: 90 }}
+          >
+            <motion.button
+              onClick={() => {
+                const params = new URLSearchParams();
+                if (record.turul) params.set("turul", record.turul);
+                if (record.davkhar) params.set("davkhar", record.davkhar);
+                router.push(`/tulbur?${params.toString()}`);
+              }}
+              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Төлбөр хуудас руу шилжих"
+            >
+              →
+            </motion.button>
+          </div>
+        ),
+      },
+    ],
+    [tuluvByResidentId, router],
+  );
 
   if (!ajiltan || !ajiltan.baiguullagiinId) {
     return (
@@ -1353,7 +1562,9 @@ export default function InvoicingZardluud() {
                   transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
                 />
 
-                <div className="text-4xl  mb-2 text-theme">
+                <div
+                  className={`text-4xl mb-2 text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                >
                   {stat.title === "Нийт дүн"
                     ? stat.value
                     : typeof stat.value === "number"
@@ -1432,7 +1643,9 @@ export default function InvoicingZardluud() {
                 <TusgaiZagvar
                   value={selectedDavkhar}
                   onChange={setSelectedDavkhar}
-                  options={[...davkharList.map((d) => ({ value: d, label: d }))]}
+                  options={[
+                    ...davkharList.map((d) => ({ value: d, label: d })),
+                  ]}
                   placeholder="Давхар"
                   className="h-[40px] w-[120px]"
                   tone="theme"
@@ -1497,195 +1710,28 @@ export default function InvoicingZardluud() {
         >
           <div className="p-8">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
-              <table className="table-ui text-sm min-w-full">
-                <thead className="bg-white/95 backdrop-blur-sm top-0 z-10 border-b border-gray-200 shadow-sm">
-                  <tr>
-                    <th className="p-4 text-xs  text-theme text-center w-12 rounded-tl-2xl bg-white/95">
-                      №
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
-                      Оршин суугч
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
-                      Тоот
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
-                      Хаяг
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
-                      Утас
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap bg-white/95">
-                      Төлөв
-                    </th>
-                    <th className="py-4 px-6 text-center text-sm  text-theme whitespace-nowrap rounded-tr-2xl bg-white/95">
-                      Үйлдэл
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={7} className="py-20 text-center">
-                        <motion.div
-                          className="flex flex-col items-center justify-center space-y-4"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 2,
-                              ease: "linear",
-                            }}
-                          >
-                            <svg
-                              className="w-20 h-20 text-gray-300"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </motion.div>
-                          <div className="text-gray-500  text-lg">
-                            Уншиж байна...
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            Мэдээлэл ачааллаж байна
-                          </div>
-                        </motion.div>
-                      </td>
-                    </tr>
-                  ) : displayResidents.length === 0 ? (
-                    <tr>
-                      <td colSpan={7} className="py-20 text-center">
-                        <motion.div
-                          className="flex flex-col items-center justify-center space-y-4"
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{
-                              repeat: Infinity,
-                              duration: 2,
-                              ease: "linear",
-                            }}
-                          >
-                            <svg
-                              className="w-20 h-20 text-gray-300"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                          </motion.div>
-                          <div className="text-gray-500  text-lg">
-                            Хайсан мэдээлэл алга байна
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            Шүүлтүүрийг өөрчилж үзнэ үү
-                          </div>
-                        </motion.div>
-                      </td>
-                    </tr>
-                  ) : (
-                    displayResidents.map((resident: any, index: number) => (
-                      <motion.tr
-                        key={resident._id}
-                        className="border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <td className="py-4 px-4 text-center ">
-                          {index + 1}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-left">
-                          <div className="flex items-center gap-3">
-                            <div className="min-w-0">
-                              <div className=" text-theme truncate">
-                                {resident.ner}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm ">
-                            {resident.toot || "-"}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-center text-gray-700">
-                          {resident.duureg && resident.horoo && resident.davkhar
-                            ? `${resident.duureg}, ${resident.horoo}, ${resident.davkhar}`
-                            : resident.khayag || "Хаяг тодорхойгүй"}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-center text-gray-700 font-mono">
-                          {resident.utas || "-"}
-                        </td>
-                        <td className="py-4 px-6 whitespace-nowrap text-center">
-                          {(() => {
-                            const id = String(resident?._id || "");
-                            const label =
-                              id && tuluvByResidentId[id]
-                                ? (tuluvByResidentId[id] as any)
-                                : getPaymentStatusLabel(resident);
-                            const cls =
-                              label === "Төлсөн"
-                                ? "badge-paid"
-                                : label === "Төлөөгүй" ||
-                                  label === "Хугацаа хэтэрсэн"
-                                  ? "badge-unpaid"
-                                  : "badge-neutral";
-                            return (
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs  ${cls}`}
-                              >
-                                {label}
-                              </span>
-                            );
-                          })()}
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div
-                            className="flex justify-center items-center gap-2"
-                            style={{ minWidth: 90 }}
-                          >
-                            <motion.button
-                              onClick={() => {
-                                const params = new URLSearchParams();
-                                if (resident.turul) params.set("turul", resident.turul);
-                                if (resident.davkhar) params.set("davkhar", resident.davkhar);
-                                router.push(`/tulbur?${params.toString()}`);
-                              }}
-                              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm "
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              title="Төлбөр хуудас руу шилжих"
-                            >
-                              →
-                            </motion.button>
-                          </div>
-                        </td>
-                      </motion.tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+              <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
+                <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                  <Table
+                    dataSource={displayResidents}
+                    columns={nekhemjlekhColumns}
+                    rowKey="_id"
+                    pagination={{
+                      pageSize: rowsPerPage,
+                      total: totalResidents,
+                      current: currentPage,
+                      position: ["bottomCenter"],
+                      onChange: (page) => setCurrentPage(page),
+                    }}
+                    size="small"
+                    bordered
+                    className="guilgee-table"
+                    scroll={{ y: 400 }}
+                    loading={isLoading}
+                    locale={{ emptyText: "Мэдээлэл алга байна" }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -1787,8 +1833,8 @@ export default function InvoicingZardluud() {
                             const total = (() => {
                               const ekhniiUldegdel = Number(
                                 item?.medeelel?.ekhniiUldegdel ??
-                                item?.ekhniiUldegdel ??
-                                0,
+                                  item?.ekhniiUldegdel ??
+                                  0,
                               );
 
                               const tariffSum = rows.reduce(
@@ -1820,23 +1866,26 @@ export default function InvoicingZardluud() {
                                       <span className="">
                                         {dateStr
                                           ? new Date(
-                                            dateStr,
-                                          ).toLocaleDateString("mn-MN")
+                                              dateStr,
+                                            ).toLocaleDateString("mn-MN")
                                           : "-"}
                                       </span>
                                     </div>
                                   </div>
                                   <div className="text-right">
-                                    <div className="text-xs">Нийт дүн</div>
+                                    <div className="text-xs force-bold">
+                                      Нийт дүн
+                                    </div>
                                     <div className="text-xl ">
                                       {formatCurrency(total)}
                                     </div>
                                     <div className="mt-1">
                                       <span
-                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${total === 0
+                                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs  ${
+                                          total === 0
                                             ? "badge-paid"
                                             : "badge-unpaid"
-                                          }`}
+                                        }`}
                                       >
                                         {total === 0
                                           ? "Төлөгдсөн"
@@ -1856,8 +1905,8 @@ export default function InvoicingZardluud() {
                                       {formatCurrency(
                                         Number(
                                           item?.medeelel?.ekhniiUldegdel ??
-                                          item?.ekhniiUldegdel ??
-                                          0,
+                                            item?.ekhniiUldegdel ??
+                                            0,
                                         ),
                                       )}
                                     </span>
@@ -1900,7 +1949,7 @@ export default function InvoicingZardluud() {
                                             {z.ner || z.name}
                                           </span>
                                           <span className="">
-                                            {formatNumber(amount)} 
+                                            {formatNumber(amount)}
                                           </span>
                                         </div>
                                       );

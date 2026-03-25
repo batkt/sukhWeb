@@ -12,13 +12,16 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
 import toast from "react-hot-toast";
-import { Tooltip } from "antd";
+import { Tooltip, Table } from "antd";
+import type { TableColumnsType } from "antd";
+import GuilgeeTable from "./GuilgeeTable";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
 import IconTextButton from "@/components/ui/IconTextButton";
+import Button from "@/components/ui/Button";
 import {
   Download,
   Upload,
@@ -33,7 +36,9 @@ import {
 } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
-import formatNumber, { formatCurrency } from "../../../../tools/function/formatNumber";
+import formatNumber, {
+  formatCurrency,
+} from "../../../../tools/function/formatNumber";
 import matchesSearch from "@/tools/function/matchesSearch";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
@@ -58,9 +63,6 @@ import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
-
-
-
 
 type DateRangeValue = [string | null, string | null] | undefined;
 
@@ -122,7 +124,7 @@ export default function DansniiKhuulga() {
   >({});
   // Use a ref to track what's currently being requested across renders without causing loops
   const requestedGereeIdsRef = useRef<Set<string>>(new Set());
-  
+
   // Map gereeId -> latest row uldegdel from history ledger
   const [latestRowUldegdelByGereeId, setLatestRowUldegdelByGereeId] = useState<
     Record<string, number | null>
@@ -509,18 +511,26 @@ export default function DansniiKhuulga() {
     // 2. Override with the latest transaction's uldegdel (often more current than contract list)
     // Sort allHistoryItems by date (latest first) to pick the freshest balance
     const sorted = [...allHistoryItems].sort((a: any, b: any) => {
-      const da = new Date(a.ognoo || a.tulsunOgnoo || a.createdAt || 0).getTime();
-      const db = new Date(b.ognoo || b.tulsunOgnoo || b.createdAt || 0).getTime();
+      const da = new Date(
+        a.ognoo || a.tulsunOgnoo || a.createdAt || 0,
+      ).getTime();
+      const db = new Date(
+        b.ognoo || b.tulsunOgnoo || b.createdAt || 0,
+      ).getTime();
       return db - da;
     });
 
     const seenGid = new Set<string>();
     sorted.forEach((it: any) => {
-      const gid = String(it?.gereeniiId || it?.gereeId || "").trim() || (it?.gereeniiDugaar && String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) || "";
+      const gid =
+        String(it?.gereeniiId || it?.gereeId || "").trim() ||
+        (it?.gereeniiDugaar &&
+          String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
+        "";
       if (gid && !seenGid.has(gid)) {
         seenGid.add(gid);
         if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
-           balances[gid] = Number(it.uldegdel);
+          balances[gid] = Number(it.uldegdel);
         }
       }
     });
@@ -532,9 +542,15 @@ export default function DansniiKhuulga() {
 
     // 4. Removed rounding to preserve precision for the 0.Map (allows small residuals to be visible)
     // Precise epsilon checks will handle status categorization.
-    
+
     return balances;
-  }, [allHistoryItems, contractsById, contractsByNumber, latestRowUldegdelByGereeId, paidSummaryByGereeId]);
+  }, [
+    allHistoryItems,
+    contractsById,
+    contractsByNumber,
+    latestRowUldegdelByGereeId,
+    paidSummaryByGereeId,
+  ]);
 
   // Filter by paid/unpaid + Орц + Давхар
   const filteredItems = useMemo(() => {
@@ -560,10 +576,17 @@ export default function DansniiKhuulga() {
     });
 
     return buildingHistoryItems.filter((it: any) => {
-      const gid = String(it?.gereeniiId ?? it?.gereeId ?? "").trim() || (it?.gereeniiDugaar && String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) || "";
-      
+      const gid =
+        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
       // Use the Definitive Balance Map
-      const currentBalance = bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0);
+      const currentBalance =
+        bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0);
 
       // Use a consistent epsilon (0.01 MNT) for balance checks
       // Any balance >= 0.01 MNT is considered unpaid.
@@ -576,8 +599,8 @@ export default function DansniiKhuulga() {
         // Must have balance > 0 AND NOT linked to a cancelled contract
         const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
         const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const isLinkedToCancelledGeree = 
-          (itGereeId && cancelledGereeIds.has(itGereeId)) || 
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
           (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
 
         return !isResidentPaid && !isLinkedToCancelledGeree;
@@ -586,8 +609,8 @@ export default function DansniiKhuulga() {
         // Filter for cancelled receivables: must have balance > 0 AND be linked to cancelled contract
         const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
         const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const isLinkedToCancelledGeree = 
-          (itGereeId && cancelledGereeIds.has(itGereeId)) || 
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
           (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
 
         return !isResidentPaid && isLinkedToCancelledGeree;
@@ -933,16 +956,17 @@ export default function DansniiKhuulga() {
           : Array.isArray(it?.guilgeenuud)
             ? it.guilgeenuud
             : [];
-        
-        itemAmount = Number(
-          it?.niitTulbur ??
-            it?.niitDun ??
-            it?.total ??
-            it?.tulukhDun ??
-            it?.undsenDun ??
-            it?.dun ??
-            0,
-        ) || 0;
+
+        itemAmount =
+          Number(
+            it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
 
         // Extract ekhniiUldegdel from invoice zardluud and guilgeenuud for column display
         const zardluud = Array.isArray(it?.medeelel?.zardluud)
@@ -995,7 +1019,12 @@ export default function DansniiKhuulga() {
     });
 
     return Array.from(map.values());
-  }, [filteredItems, buildingHistoryItems, contractsByNumber, bestKnownBalances]);
+  }, [
+    filteredItems,
+    buildingHistoryItems,
+    contractsByNumber,
+    bestKnownBalances,
+  ]);
 
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
   const deduplicatedResidentsAll = useMemo(() => {
@@ -1093,22 +1122,26 @@ export default function DansniiKhuulga() {
         if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) return;
       }
 
-    let itemAmount = isStandaloneEkhniiUldegdel
-      ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-      : Number(
-          it?.niitTulbur ??
-            it?.niitDun ??
-            it?.total ??
-            it?.tulukhDun ??
-            it?.undsenDun ??
-            it?.dun ??
-            0,
-        ) || 0;
+      let itemAmount = isStandaloneEkhniiUldegdel
+        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+        : Number(
+            it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
 
       // Determine if this item is a CHARGE (increases total) or a PAYMENT (increases paid)
       // Usually "tulult" (payment) or "tsutlsasan" (cancelled) records are payments/deductions
       const type = String(it?.turul || it?.type || "").toLowerCase();
-      const isPayment = type === "tulult" || type === "төлбөр" || type === "төлөлт" || (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
+      const isPayment =
+        type === "tulult" ||
+        type === "төлбөр" ||
+        type === "төлөлт" ||
+        (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
 
       let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? itemAmount : 0;
       if (!isStandaloneEkhniiUldegdel) {
@@ -1143,7 +1176,9 @@ export default function DansniiKhuulga() {
 
       const chargeAmt = isPayment ? 0 : Math.abs(itemAmount);
       // For payments, use Math.abs(itemAmount) because payments are often stored as negative in the history
-      const paidAmt = isPayment ? Math.abs(itemAmount) : (Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0);
+      const paidAmt = isPayment
+        ? Math.abs(itemAmount)
+        : Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
 
       if (!map.has(key)) {
         map.set(key, {
@@ -1168,7 +1203,12 @@ export default function DansniiKhuulga() {
       }
     });
     return Array.from(map.values());
-  }, [filteredItemsAll, buildingHistoryItems, contractsByNumber, bestKnownBalances]);
+  }, [
+    filteredItemsAll,
+    buildingHistoryItems,
+    contractsByNumber,
+    bestKnownBalances,
+  ]);
 
   const sortedResidents = useMemo(() => {
     const result = Array.from(deduplicatedResidents);
@@ -1352,7 +1392,9 @@ export default function DansniiKhuulga() {
       // Only skip if we already have a valid number value or if request is in progress
       const existingValue = latestRowUldegdelByGereeId[gid];
       if (
-        (existingValue !== undefined && existingValue !== null && Number.isFinite(existingValue)) ||
+        (existingValue !== undefined &&
+          existingValue !== null &&
+          Number.isFinite(existingValue)) ||
         latestRowUldegdelRequestedRef.current.has(gid)
       ) {
         return;
@@ -1376,16 +1418,22 @@ export default function DansniiKhuulga() {
               : Array.isArray(resp.data)
                 ? resp.data
                 : [];
-          
+
           // Get latest row's uldegdel (backend returns oldest-first, so last row is latest)
-          const latestRow = backendLedger.length > 0 
-            ? backendLedger[backendLedger.length - 1]
-            : null;
-          const latestUldegdel = latestRow?.uldegdel != null && Number.isFinite(Number(latestRow.uldegdel))
-            ? Number(latestRow.uldegdel)
-            : null;
-          
-          setLatestRowUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestUldegdel }));
+          const latestRow =
+            backendLedger.length > 0
+              ? backendLedger[backendLedger.length - 1]
+              : null;
+          const latestUldegdel =
+            latestRow?.uldegdel != null &&
+            Number.isFinite(Number(latestRow.uldegdel))
+              ? Number(latestRow.uldegdel)
+              : null;
+
+          setLatestRowUldegdelByGereeId((prev) => ({
+            ...prev,
+            [gid]: latestUldegdel,
+          }));
         })
         .catch(() => {
           latestRowUldegdelRequestedRef.current.delete(gid);
@@ -1466,8 +1514,14 @@ export default function DansniiKhuulga() {
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidentsAll.length;
     const paidCount = deduplicatedResidentsAll.filter((r: any) => {
-      const gid = String(r?.gereeniiId ?? r?.gereeId ?? "").trim() || (r?.gereeniiDugaar && String((contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "")) || "";
-      
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
       const currentBalance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
 
       // Consistently use the same 0.01 MNT epsilon
@@ -1661,7 +1715,7 @@ export default function DansniiKhuulga() {
 
       // Build filters object based on current filters
       const filters: any = {};
-      
+
       // Date range filter
       if (ekhlekhOgnoo && ekhlekhOgnoo[0] && ekhlekhOgnoo[1]) {
         const startDate = new Date(ekhlekhOgnoo[0]);
@@ -2773,912 +2827,80 @@ export default function DansniiKhuulga() {
                   </motion.div>
                 </Tooltip>
 
-                {ajiltan?.erkh === "Admin" && (
-                  <Tooltip title="Нэхэмжлэх илгээх">
-                    <motion.div
-                      whileHover={{ scale: 1.03 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <IconTextButton
-                        onClick={handleSendInvoices}
-                        icon={
-                          isSendingInvoices ? (
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <Send className="w-4 h-4" />
-                          )
-                        }
-                        label="Нэхэмжлэх илгээх"
-                        showLabelFrom="xl"
-                        disabled={
-                          isSendingInvoices || selectedGereeIds.length === 0
-                        }
-                        className={
-                          selectedGereeIds.length > 0
-                            ? "bg-theme text-white border-transparent hover:bg-theme/90"
-                            : ""
-                        }
-                      />
-                    </motion.div>
-                  </Tooltip>
+                {isColumnModalOpen && (
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[200px] menu-surface rounded-xl shadow-lg overflow-hidden max-h-[60vh] overflow-y-auto">
+                    <div className="px-3 py-2 border-b border-white/10 text-sm font-medium text-theme/80">
+                      Багана сонгох
+                    </div>
+                    {selectableColumnDefs.map((col) => (
+                      <label
+                        key={col.key}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-white/5 cursor-pointer text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={columnVisibility[col.key] !== false}
+                          onChange={(e) => {
+                            setColumnVisibility((prev) => ({
+                              ...prev,
+                              [col.key]: e.target.checked,
+                            }));
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                        />
+                        <span className="text-theme">{col.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 )}
-
-                <AnimatePresence>
-                  {isColumnModalOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute top-full right-0 mt-2 w-64 menu-surface p-4 rounded-xl shadow-xl z-50 border border-[color:var(--surface-border)]"
-                    >
-                      <h4 className="text-sm  mb-3 text-theme">
-                        Багана сонгох
-                      </h4>
-                      <div className="flex flex-col gap-2 max-h-60 overflow-y-auto custom-scrollbar">
-                        {selectableColumnDefs.map((col) => {
-                          const isChecked = columnVisibility[col.key] !== false;
-                          return (
-                            <label
-                              key={col.key}
-                              className="flex items-center gap-2.5 text-sm text-muted-foreground cursor-pointer hover:text-theme transition-colors"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() =>
-                                  setColumnVisibility((prev) => {
-                                    const currentlyVisible = Object.values(
-                                      prev,
-                                    ).filter((v) => v !== false).length;
-                                    if (isChecked && currentlyVisible <= 1)
-                                      return prev;
-                                    return {
-                                      ...prev,
-                                      [col.key]: !isChecked,
-                                    };
-                                  })
-                                }
-                                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className={isChecked ? "text-theme" : ""}>
-                                {col.label}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
               </div>
-              {/* <motion.div
-                whileHover={{ scale: 1.03 }}
-                transition={{ duration: 0.3 }}
-              >
-                <button
-                  onClick={() => setIsKhungulultOpen(true)}
-                  className="btn-minimal"
-                >
-                  Хөнгөлөлт
-                </button>
-              </motion.div> */}
             </div>
           </div>
         </div>
-        <div className="table-surface overflow-hidden rounded-2xl w-full">
-          <div className="rounded-3xl p-6 mb-1 neu-table allow-overflow">
-            <div
-              className="max-h-[40vh] overflow-y-auto custom-scrollbar w-full"
-              id="guilgee-table"
-            >
-              <table className="table-ui text-sm min-w-full border border-[color:var(--surface-border)]">
-                <thead>
-                  <tr>
-                    {visibleColumns.map((col, colIdx) => {
-                      const alignClass =
-                        col.align === "left"
-                          ? "text-left pl-2"
-                          : col.align === "right"
-                            ? "text-right pr-2"
-                            : "text-center";
-                      const stickyClass = col.sticky
-                        ? "sticky z-20 bg-[color:var(--surface-bg)]"
-                        : "z-10";
-                      const isLastCol = colIdx === visibleColumns.length - 1;
-                      const isSortable =
-                        col.key === "uldegdel" ||
-                        col.key === "paid" ||
-                        col.key === "toot";
-                      const handleSort = () => {
-                        if (!isSortable) return;
-                        if (sortField === col.key) {
-                          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-                        } else {
-                          setSortField(col.key);
-                          setSortOrder("asc");
-                        }
-                      };
-                      return (
-                        <th
-                          key={col.key}
-                          className={`p-0 text-sm font-normal text-theme whitespace-nowrap ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""} ${isSortable ? "cursor-pointer hover:bg-black/10 dark:hover:bg-white/10 transition-colors" : ""}`}
-                          style={{
-                            ...(col.sticky
-                              ? { left: stickyOffsets[col.key] }
-                              : {}),
-                            minWidth: col.minWidth,
-                          }}
-                        >
-                          {col.key === "checkbox" ? (
-                            <div className="flex justify-center items-center h-full p-1">
-                              <input
-                                type="checkbox"
-                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                onChange={(e) =>
-                                  handleToggleSelectAll(e.target.checked)
-                                }
-                                checked={
-                                  paginated.length > 0 &&
-                                  paginated.every((it: any) => {
-                                    const gid =
-                                      (it?.gereeniiId &&
-                                        String(it.gereeniiId)) ||
-                                      (it?.gereeId && String(it.gereeId)) ||
-                                      (it?.gereeniiDugaar &&
-                                        String(
-                                          (contractsByNumber as any)[
-                                            String(it.gereeniiDugaar)
-                                          ]?._id || "",
-                                        ));
-                                    return (
-                                      gid && selectedGereeIds.includes(gid)
-                                    );
-                                  })
-                                }
-                              />
-                            </div>
-                          ) : isSortable ? (
-                            <button
-                              type="button"
-                              onClick={handleSort}
-                              className={`w-full h-full p-1 inline-flex items-center gap-2 ${
-                                alignClass.includes("text-left")
-                                  ? "justify-start"
-                                  : alignClass.includes("text-right")
-                                    ? "justify-end"
-                                    : "justify-center"
-                              }`}
-                              title={`Эрэмбэлэх: ${col.label}`}
-                            >
-                              <span>{col.label}</span>
-                              <div className="flex flex-col items-center">
-                                <ChevronUp
-                                  className={`w-3 h-3 ${
-                                    sortField === col.key && sortOrder === "asc"
-                                      ? "text-blue-500"
-                                      : "text-gray-300 dark:text-gray-600"
-                                  }`}
-                                />
-                                <ChevronDown
-                                  className={`w-3 h-3 ${
-                                    sortField === col.key &&
-                                    sortOrder === "desc"
-                                      ? "text-blue-500"
-                                      : "text-gray-300 dark:text-gray-600"
-                                  }`}
-                                />
-                              </div>
-                            </button>
-                          ) : (
-                            <div className={`p-1 ${alignClass}`}>
-                              {col.label}
-                            </div>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoadingHistory ? (
-                    <tr>
-                      <td
-                        colSpan={visibleColumnCount}
-                        className="p-8 text-center text-theme/70"
-                      >
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-                      </td>
-                    </tr>
-                  ) : deduplicatedResidents.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={visibleColumnCount}
-                        className="p-8 text-center"
-                      >
-                        <div className="flex flex-col items-center justify-center space-y-3">
-                          <svg
-                            className="w-16 h-16 text-slate-300"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={1.5}
-                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                            />
-                          </svg>
-                          <div className="text-slate-500 ">
-                            Хайсан мэдээлэл алга байна
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    paginated.map((it: any, idx: number) => {
-                      const ct =
-                        (it?.gereeniiId &&
-                          contractsById[String(it.gereeniiId)]) ||
-                        (it?.gereeniiDugaar &&
-                          contractsByNumber[String(it.gereeniiDugaar)]) ||
-                        undefined;
-                      // Try multiple ways to find resident data
-                      const resident =
-                        (it?.orshinSuugchId &&
-                          residentsById[String(it.orshinSuugchId)]) ||
-                        // Sometimes resident data might be embedded in the transaction
-                        (it?.orshinSuugch && typeof it.orshinSuugch === "object"
-                          ? it.orshinSuugch
-                          : undefined) ||
-                        undefined;
-                      const dugaar = String(
-                        it?.gereeniiDugaar || ct?.gereeniiDugaar || "-",
-                      );
-                      const total = Number(
-                        it?._totalTulbur ??
-                          it?.niitTulbur ??
-                          it?.niitDun ??
-                          it?.total ??
-                          it?.tulukhDun ??
-                          it?.undsenDun ??
-                          it?.dun ??
-                          0,
-                      );
-                      const gid =
-                        (it?.gereeniiId && String(it.gereeniiId)) ||
-                        (ct?._id && String(ct._id)) ||
-                        "";
-                      
-                      // Use the Unified Definitive Balance Map for consistency across the entire app
-                      // Fallback to history aggregate if mapping is missing
-                      const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
-                      const remainingValue = bestKnownBalances[gid] ?? (historyAggregate || Number(it?.uldegdel ?? 0));
-                      
-                      const paidFromSummary = gid
-                        ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
-                        : Number(it?._totalTulsun ?? 0);
 
-                      // Enrich with authoritative total balance and paid summary so getPaymentStatusLabel is accurate
-                      const itForTuluv = {
-                        ...it,
-                        uldegdel: remainingValue,
-                        _paidFromSummary: paidFromSummary,
-                      };
-                      let tuluvLabel: string =
-                        getPaymentStatusLabel(itForTuluv);
-                      if (
-                        itForTuluv?.tuluv === "Цуцалсан" ||
-                        itForTuluv?.status === "Цуцалсан"
-                      ) {
-                        tuluvLabel = "Цуцалсан";
-                      }
-
-                      // Force "Төлсөн" if balance is less than 0.01 MNT epsilon
-                      if (remainingValue < 0.01) {
-                         tuluvLabel = "Төлсөн";
-                      }
-                      
-                      const isPaid = tuluvLabel === "Төлсөн";
-                      const ner = resident
-                        ? [resident.ner]
-                            .map((v) => (v ? String(v).trim() : ""))
-                            .filter(Boolean)
-                            .join(" ") || "-"
-                        : [it.ner]
-                            .map((v) => (v ? String(v).trim() : ""))
-                            .filter(Boolean)
-                            .join(" ") || "-";
-                      // Get toot - prioritize toots array, then contract (geree) data
-                      const residentToot =
-                        Array.isArray(resident?.toots) &&
-                        resident.toots.length > 0
-                          ? resident.toots[0]?.toot
-                          : resident?.toot;
-                      const toot = String(
-                        ct?.toot || residentToot || it?.toot || "-",
-                      );
-
-                      // Get utas - can be string or array
-                      // Priority: resident.utas (array or string) > it.utas (array or string)
-                      const utas = (() => {
-                        // Check resident's utas (array)
-                        if (resident?.utas) {
-                          if (
-                            Array.isArray(resident.utas) &&
-                            resident.utas.length > 0
-                          ) {
-                            const firstUtas = resident.utas[0];
-                            if (
-                              firstUtas !== undefined &&
-                              firstUtas !== null &&
-                              firstUtas !== ""
-                            ) {
-                              return String(firstUtas);
-                            }
-                          } else if (
-                            typeof resident.utas === "string" &&
-                            resident.utas.trim() !== ""
-                          ) {
-                            return String(resident.utas);
-                          }
-                        }
-                        // Check transaction item's utas (array)
-                        if (it?.utas) {
-                          if (Array.isArray(it.utas) && it.utas.length > 0) {
-                            const firstUtas = it.utas[0];
-                            if (
-                              firstUtas !== undefined &&
-                              firstUtas !== null &&
-                              firstUtas !== ""
-                            ) {
-                              return String(firstUtas);
-                            }
-                          } else if (
-                            typeof it.utas === "string" &&
-                            it.utas.trim() !== ""
-                          ) {
-                            return String(it.utas);
-                          }
-                        }
-                        return "-";
-                      })();
-                      // Get orts - prioritize toots array, then contract (geree) data
-                      const residentOrts =
-                        Array.isArray(resident?.toots) &&
-                        resident.toots.length > 0
-                          ? resident.toots[0]?.orts
-                          : null;
-                      const orts = String(
-                        ct?.orts ??
-                          ct?.ortsDugaar ??
-                          ct?.ortsNer ??
-                          residentOrts ??
-                          resident?.orts ??
-                          resident?.ortsDugaar ??
-                          resident?.ortsNer ??
-                          resident?.block ??
-                          it?.orts ??
-                          it?.ortsDugaar ??
-                          it?.ortsNer ??
-                          "-",
-                      );
-                      // Get davkhar - prioritize toots array
-                      const residentDavkhar =
-                        Array.isArray(resident?.toots) &&
-                        resident.toots.length > 0
-                          ? resident.toots[0]?.davkhar
-                          : resident?.davkhar;
-                      const davkhar = String(
-                        residentDavkhar ?? it?.davkhar ?? "-",
-                      );
-                      const sentAt =
-                        it?.ognoo || it?.nekhemjlekhiinOgnoo || it?.createdAt;
-                      const paidAt = it?.tulsunOgnoo || it?.paidAt;
-                      const lastLog =
-                        paidAt != null
-                          ? `Төлсөн • ${formatDate(paidAt)}`
-                          : sentAt != null
-                            ? `Илгээсэн • ${formatDate(sentAt)}`
-                            : "-";
-
-                      const isItemCancelled =
-                        tuluvLabel === "Цуцалсан" ||
-                        String(it.tuluv || "").trim() === "Цуцалсан" ||
-                        String(it.status || "").trim() === "Цуцалсан" ||
-                        String(it.tuluv || "")
-                          .trim()
-                          .toLowerCase() === "цуцалсан" ||
-                        String(it.status || "")
-                          .trim()
-                          .toLowerCase() === "цуцалсан";
-
-                      return (
-                        <tr
-                          key={it?._id || `${idx}`}
-                          className={`transition-colors border-b last:border-b-0 ${isItemCancelled ? "!bg-red-100 dark:!bg-red-500" : ""}`}
-                        >
-                          {visibleColumns.map((col, colIdx) => {
-                            const alignClass =
-                              col.align === "left"
-                                ? "text-left pl-2"
-                                : col.key === "tulbur" ||
-                                    col.key === "paid" ||
-                                    col.key === "uldegdel" ||
-                                    col.key === "ekhniiUldegdel"
-                                  ? "text-right pr-2"
-                                  : "text-center";
-                            const stickyBg = isItemCancelled
-                              ? "!bg-red-100 dark:!bg-red-900"
-                              : "bg-[color:var(--surface-bg)]";
-                            const stickyClass = col.sticky
-                              ? `sticky z-10 ${stickyBg}`
-                              : "";
-                            const itemBg = isItemCancelled
-                              ? "!bg-red-100 dark:!bg-red-900"
-                              : "";
-                            const isLastCol =
-                              colIdx === visibleColumns.length - 1;
-                            const cellClass = `p-1 text-theme whitespace-nowrap ${alignClass} ${stickyClass} ${itemBg} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`;
-                            const style = {
-                              ...(col.sticky
-                                ? { left: stickyOffsets[col.key] }
-                                : {}),
-                              minWidth: col.minWidth,
-                            } as React.CSSProperties;
-
-                            switch (col.key) {
-                              case "checkbox": {
-                                const gid =
-                                  (it?.gereeniiId && String(it.gereeniiId)) ||
-                                  (it?.gereeId && String(it.gereeId)) ||
-                                  (it?.gereeniiDugaar &&
-                                    String(
-                                      (contractsByNumber as any)[
-                                        String(it.gereeniiDugaar)
-                                      ]?._id || "",
-                                    ));
-
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    <div
-                                      className="flex justify-center items-center h-full"
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      {gid ? (
-                                        <input
-                                          type="checkbox"
-                                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                          checked={selectedGereeIds.includes(
-                                            gid,
-                                          )}
-                                          onChange={(e) =>
-                                            handleToggleRow(
-                                              gid,
-                                              e.target.checked,
-                                            )
-                                          }
-                                        />
-                                      ) : (
-                                        <span className="text-gray-300">-</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                );
-                              }
-                              case "index":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {(page - 1) * rowsPerPage + idx + 1}
-                                  </td>
-                                );
-                              case "ner":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {ner}
-                                  </td>
-                                );
-                              case "toot":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {toot}
-                                  </td>
-                                );
-                              case "utas":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {utas}
-                                  </td>
-                                );
-                              case "orts":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {orts}
-                                  </td>
-                                );
-                              case "davkhar":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {davkhar}
-                                  </td>
-                                );
-                              case "gereeniiDugaar":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {dugaar}
-                                  </td>
-                                );
-                              case "tulbur": {
-                                // Match invoice modal logic: prefer niitTulburOriginal, then niitTulbur/niitDun
-                                const niitDun = Number(
-                                  it?.niitTulburOriginal ??
-                                    it?.niitTulbur ??
-                                    it?.niitDun ??
-                                    it?.total ??
-                                    0,
-                                );
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {formatNumber(niitDun, 2)} 
-                                  </td>
-                                );
-                              }
-                              case "ekhniiUldegdel": {
-                                const amt = Number(
-                                  it?._ekhniiUldegdelAmount ?? 0,
-                                );
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    <span
-                                      className={
-                                        amt <= 0
-                                          ? "!text-emerald-600 dark:!text-emerald-400"
-                                          : "!text-red-500 dark:!text-red-400"
-                                      }
-                                    >
-                                      {formatNumber(amt, 2)} 
-                                    </span>
-                                  </td>
-                                );
-                              }
-                              case "paid": {
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {formatNumber(paidFromSummary, 2)} 
-                                  </td>
-                                );
-                              }
-                              case "uldegdel": {
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    <span
-                                      className={
-                                        remainingValue < 0.01
-                                          ? "!text-emerald-600 dark:!text-emerald-400"
-                                          : "!text-red-500 dark:!text-red-400"
-                                      }
-                                    >
-                                      {formatNumber(remainingValue, 2)} 
-                                    </span>
-                                  </td>
-                                );
-                              }
-                              case "tuluv":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    <div className="flex items-center justify-center gap-2">
-                                      <span
-                                        className={
-                                          "px-2 py-0.5 rounded-full text-sm  " +
-                                          (isPaid
-                                            ? "badge-paid"
-                                            : tuluvLabel === "Цуцалсан"
-                                              ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
-                                              : tuluvLabel === "Төлөөгүй" ||
-                                                  tuluvLabel ===
-                                                    "Хугацаа хэтэрсэн"
-                                                ? "badge-unpaid"
-                                                : "badge-neutral")
-                                        }
-                                      >
-                                        {tuluvLabel}
-                                      </span>
-                                    </div>
-                                  </td>
-                                );
-                              case "lastLog":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    {lastLog}
-                                  </td>
-                                );
-                              case "action":
-                                return (
-                                  <td
-                                    key={col.key}
-                                    className={cellClass}
-                                    style={style}
-                                  >
-                                    <div className="flex items-center justify-center gap-2">
-                                      <button
-                                        onClick={() => {
-                                          // Use uldegdel directly from data - NO calculation
-                                          const contractBalance = Number(it?.uldegdel ?? 0);
-                                          const residentData = resident || {
-                                            _id: it?.orshinSuugchId,
-                                            ner: ner,
-                                            toot: toot,
-                                            utas: utas,
-                                            gereeniiDugaar: dugaar,
-                                            gereeniiId:
-                                              it?.gereeniiId || ct?._id,
-                                            ...it,
-                                            _contractBalance: contractBalance,
-                                          };
-                                          setSelectedResident(residentData);
-                                          setIsModalOpen(true);
-                                        }}
-                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
-                                        title="Нэхэмжлэх харах"
-                                      >
-                                        <Eye className="w-5 h-5 text-blue-500" />
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          // Create resident-like object from transaction data
-                                          const residentData = resident || {
-                                            _id: it?.orshinSuugchId,
-                                            ner: ner,
-                                            toot: toot,
-                                            utas: utas,
-                                            gereeniiDugaar: dugaar,
-                                            gereeniiId:
-                                              it?.gereeniiId || ct?._id,
-                                            ...it,
-                                          };
-                                          setHistoryResident(residentData);
-                                          setIsHistoryOpen(true);
-                                        }}
-                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors"
-                                        title="Түүх харах"
-                                      >
-                                        <History className="w-5 h-5 text-green-500" />
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          // Create resident-like object from transaction data; include цахилгаан from geree or orshinSuugch
-                                          const residentId =
-                                            resident?._id ||
-                                            it?.orshinSuugchId ||
-                                            ct?.orshinSuugchId;
-                                          const residentData = resident
-                                            ? {
-                                                ...it,
-                                                ...resident,
-                                                _id: residentId,
-                                                ovog: resident.ovog ?? it?.ovog,
-                                                ner: ner,
-                                                toot: toot,
-                                                utas: utas,
-                                                gereeniiDugaar: dugaar,
-                                                gereeniiId: it?.gereeniiId || ct?._id,
-                                                umnukhZaalt: ct?.umnukhZaalt,
-                                                suuliinZaalt: ct?.suuliinZaalt,
-                                              }
-                                            : {
-                                                ...it,
-                                                _id: residentId,
-                                                ovog: it?.ovog,
-                                                ner: ner,
-                                                toot: toot,
-                                                utas: utas,
-                                                gereeniiDugaar: dugaar,
-                                                gereeniiId:
-                                                  it?.gereeniiId || ct?._id,
-                                                umnukhZaalt: ct?.umnukhZaalt,
-                                                suuliinZaalt: ct?.suuliinZaalt,
-                                              };
-                                          setSelectedTransactionResident({
-                                            ...residentData,
-                                            uldegdel: remainingValue,
-                                          });
-                                          setIsTransactionModalOpen(true);
-                                        }}
-                                        className="p-2 rounded hover:bg-[color:var(--surface-hover)] transition-colors group"
-                                        title="Гүйлгээ хийх"
-                                      >
-                                        <Banknote className="w-5 h-5 text-[color:var(--theme)] group-hover:opacity-80 transition-opacity" />
-                                      </button>
-                                    </div>
-                                  </td>
-                                );
-                              default:
-                                return null;
-                            }
-                          })}
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-                <tfoot className="sticky bottom-0 z-30 bg-slate-200 dark:bg-slate-800 border-t border-[color:var(--surface-border)]">
-                  <tr className="">
-                    {visibleColumns.map((col, colIdx) => {
-                      const alignClass =
-                        col.align === "right" ||
-                        col.key === "tulbur" ||
-                        col.key === "paid" ||
-                        col.key === "uldegdel" ||
-                        col.key === "ekhniiUldegdel"
-                          ? "text-right pr-2"
-                          : col.align === "center"
-                            ? "text-center"
-                            : "text-left pl-2";
-                      const stickyClass = col.sticky
-                        ? "sticky z-40 bg-slate-200 dark:bg-slate-800"
-                        : "";
-                      const isLastCol = colIdx === visibleColumns.length - 1;
-
-                      // Calculate totals based on column key
-                      let content: React.ReactNode = "";
-
-                      if (col.key === "gereeniiDugaar") {
-                      } else if (col.key === "tulbur") {
-                        // Match invoice modal logic: prefer niitTulburOriginal, then niitTulbur/niitDun
-                        const total = deduplicatedResidents.reduce(
-                          (sum: number, it: any) => {
-                            const niitDun = Number(
-                              it?.niitTulburOriginal ??
-                                it?.niitTulbur ??
-                                it?.niitDun ??
-                                it?.total ??
-                                0,
-                            );
-                            return sum + niitDun;
-                          },
-                          0,
-                        );
-                        content = (
-                          <span className="text-theme">
-                            {formatNumber(total, 2)} 
-                          </span>
-                        );
-                      } else if (col.key === "ekhniiUldegdel") {
-                        const total = deduplicatedResidents.reduce(
-                          (sum: number, it: any) => {
-                            return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
-                          },
-                          0,
-                        );
-                        content = (
-                          <span
-                            className={
-                              total < 0
-                                ? "!text-emerald-600 dark:!text-emerald-400"
-                                : total > 0
-                                  ? "!text-red-500 dark:!text-red-400"
-                                  : "text-theme"
-                            }
-                          >
-                            {formatNumber(total, 2)} 
-                          </span>
-                        );
-                      } else if (col.key === "paid") {
-                        const total = deduplicatedResidents.reduce(
-                          (sum: number, it: any) => {
-                            const gid = getGereeId(it);
-                            const paid = gid
-                              ? (paidSummaryByGereeId[gid] ?? 0)
-                              : 0;
-                            return sum + paid;
-                          },
-                          0,
-                        );
-                        content = (
-                          <span className="text-theme">
-                            {formatNumber(total, 2)} 
-                          </span>
-                        );
-                      } else if (col.key === "uldegdel") {
-                        const total = deduplicatedResidents.reduce(
-                          (sum: number, it: any) => {
-                            const gid = String(it?.gereeniiId || it?.gereeId || "").trim() || (it?.gereeniiDugaar && String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) || "";
-                            const balance = bestKnownBalances[gid] ?? 0;
-                            return sum + balance;
-                          },
-                          0,
-                        );
-                        content = (
-                          <span
-                            className={
-                              total < 0.01
-                                ? "!text-emerald-600 dark:!text-emerald-400"
-                                : "!text-red-500 dark:!text-red-400"
-                            }
-                          >
-                            {formatNumber(total, 2)} 
-                          </span>
-                        );
-                      }
-
-                      return (
-                        <td
-                          key={col.key}
-                          className={`p-1.5 whitespace-nowrap ${alignClass} ${stickyClass} ${!isLastCol ? "border-r border-[color:var(--surface-border)]" : ""}`}
-                          style={{
-                            ...(col.sticky
-                              ? { left: stickyOffsets[col.key] }
-                              : {}),
-                            minWidth: col.minWidth,
-                          }}
-                        >
-                          {content}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+        {/* Ant Design Table */}
+        <div className="w-full">
+          <div className="w-full" id="guilgee-table">
+            <GuilgeeTable
+              data={paginated}
+              loading={isLoadingHistory}
+              visibleColumns={visibleColumns}
+              selectedGereeIds={selectedGereeIds}
+              onSelectionChange={setSelectedGereeIds}
+              contractsById={contractsById}
+              contractsByNumber={contractsByNumber}
+              residentsById={residentsById}
+              paidSummaryByGereeId={paidSummaryByGereeId}
+              bestKnownBalances={bestKnownBalances}
+              sortField={sortField}
+              sortOrder={sortOrder}
+              onSortChange={(field: string | null, order: "asc" | "desc") => {
+                setSortField(field);
+                setSortOrder(order);
+              }}
+              page={page}
+              rowsPerPage={rowsPerPage}
+              deduplicatedResidents={deduplicatedResidents}
+              getGereeId={getGereeId}
+              maxHeight={350}
+              onViewInvoice={(residentData: any) => {
+                setSelectedResident(residentData);
+                setIsModalOpen(true);
+              }}
+              onViewHistory={(residentData: any) => {
+                setHistoryResident(residentData);
+                setIsHistoryOpen(true);
+              }}
+              onTransaction={(residentData: any, remainingValue: number) => {
+                setSelectedTransactionResident({
+                  ...residentData,
+                  uldegdel: remainingValue,
+                });
+                setIsTransactionModalOpen(true);
+              }}
+            />
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-2 gap-3 text-md">
+          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-0 gap-3 text-md mt-2">
             <div className="text-theme/70">
               Нийт: {deduplicatedResidents.length}
             </div>
@@ -3737,13 +2959,13 @@ export default function DansniiKhuulga() {
             >
               <div className="flex items-center justify-between p-3 border-b border-white/20 dark:border-slate-800">
                 <div className=""></div>
-                <button
+                <Button
                   onClick={() => setIsKhungulultOpen(false)}
-                  className="btn-cancel btn-minimal"
-                  data-modal-primary
+                  variant="secondary"
+                  className="px-6 py-2"
                 >
                   Хаах
-                </button>
+                </Button>
               </div>
               {/* <div className="p-2 overflow-auto max-h-[calc(90vh-48px)] ">
                 <KhungulultPage />
