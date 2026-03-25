@@ -348,6 +348,45 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           onExpand: () => {},
           expandIcon: () => null,
         }}
+        summary={(pageData) => {
+          if (pageData.length === 0) return null;
+          
+          let totalPaid = 0;
+          let totalUldegdel = 0;
+
+          pageData.forEach((record) => {
+            totalPaid += getPaid(record);
+            totalUldegdel += getUldegdel(record);
+          });
+
+          return (
+            <Table.Summary.Row>
+              <Table.Summary.Cell index={0} colSpan={5} align="center">
+                <span className="font-bold text-theme force-bold">Нийт</span>
+              </Table.Summary.Cell>
+              {activeTab === "avlaga" ? (
+                <>
+                  <Table.Summary.Cell index={1} align="right">
+                    <span className={`font-bold force-bold ${totalUldegdel > 0 ? 'text-red-500' : totalUldegdel < 0 ? 'text-emerald-600' : 'text-theme'}`}>
+                      {formatNumber(totalUldegdel)}
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right">
+                    <span className="font-bold text-green-600 force-bold">
+                      {formatNumber(totalPaid)}
+                    </span>
+                  </Table.Summary.Cell>
+                </>
+              ) : (
+                <Table.Summary.Cell index={1} align="right">
+                  <span className="font-bold text-green-600 force-bold">
+                    {formatNumber(totalPaid)}
+                  </span>
+                </Table.Summary.Cell>
+              )}
+            </Table.Summary.Row>
+          );
+        }}
       />
     </div>
   );

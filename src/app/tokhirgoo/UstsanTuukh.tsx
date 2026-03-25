@@ -419,14 +419,33 @@ export default function UstsanTuukh({
 
   const allRecords: DeleteRecord[] = useMemo(() => {
     // API returns data in data.data array, not data.jagsaalt
-    const records = Array.isArray(data?.data) 
+    const raw = Array.isArray(data?.data) 
       ? data.data 
       : Array.isArray(data?.jagsaalt) 
         ? data.jagsaalt 
         : [];
     
+    // De-duplicate by ID and content to prevent visual duplication
+    const seenIds = new Set<string>();
+    const seenContent = new Set<string>();
+    const unique: any[] = [];
+
+    raw.forEach((r: any) => {
+      if (!r) return;
+      const id = r._id ? String(r._id) : null;
+      // Content key: documentId + date + model
+      const cKey = `${r.documentId}-${r.ognoo || r.createdAt}-${r.modelName}`;
+
+      if (id && seenIds.has(id)) return;
+      if (seenContent.has(cKey)) return;
+
+      if (id) seenIds.add(id);
+      seenContent.add(cKey);
+      unique.push(r);
+    });
+
     // Map API response to our interface format
-    return records.map((r: any) => ({
+    return unique.map((r: any) => ({
       ...r,
       deletedDocument: r.deletedData || r.deletedDocument, // Support both field names
       createdAt: r.ognoo || r.createdAt, // Use ognoo if available
