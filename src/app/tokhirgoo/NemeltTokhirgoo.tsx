@@ -19,7 +19,8 @@ import createMethod from "../../../tools/function/createMethod";
 import Button from "@/components/ui/Button";
 
 export default function NemeltTokhirgoo() {
-  const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } = useAuth();
+  const { token, ajiltan, barilgiinId, baiguullaga, baiguullagaMutate } =
+    useAuth();
   const { selectedBuildingId } = useBuilding();
   const { showSpinner, hideSpinner } = useSpinner();
 
@@ -27,7 +28,7 @@ export default function NemeltTokhirgoo() {
   const [invoiceDay, setInvoiceDay] = useState<number | null>(null);
   const [invoiceActive, setInvoiceActive] = useState<boolean>(true);
   const [invoiceScheduleId, setInvoiceScheduleId] = useState<string | null>(
-    null
+    null,
   );
 
   // Lift states
@@ -36,16 +37,20 @@ export default function NemeltTokhirgoo() {
   const [liftBulkInput, setLiftBulkInput] = useState<string>("");
   const [liftShalgayaId, setLiftShalgayaId] = useState<string | null>(null);
 
-
   // Guest settings states
   const [guestConfigEnabled, setGuestConfigEnabled] = useState<boolean>(false);
   const [guestNotes, setGuestNotes] = useState<any[]>([]);
   const [guestLimit, setGuestLimit] = useState<number | string>("");
   const [guestFreeMinutes, setGuestFreeMinutes] = useState<number | string>("");
-  const [guestTotalFreeMinutes, setGuestTotalFreeMinutes] = useState<number | string>("");
+  const [guestTotalFreeMinutes, setGuestTotalFreeMinutes] = useState<
+    number | string
+  >("");
   const [guestNote, setGuestNote] = useState<string>("");
-  const [guestFrequencyType, setGuestFrequencyType] = useState<string>("saraar");
-  const [guestFrequencyValue, setGuestFrequencyValue] = useState<number | string>("");
+  const [guestFrequencyType, setGuestFrequencyType] =
+    useState<string>("saraar");
+  const [guestFrequencyValue, setGuestFrequencyValue] = useState<
+    number | string
+  >("");
   const fetchInvoiceSchedule = async () => {
     if (!token || !ajiltan?.baiguullagiinId) return;
 
@@ -158,19 +163,19 @@ export default function NemeltTokhirgoo() {
       const toStr = (v: any) => (v == null ? "" : String(v));
       const branchMatches = list.filter(
         (x: any) =>
-          toStr(x?.barilgiinId) === toStr(selectedBuildingId || barilgiinId)
+          toStr(x?.barilgiinId) === toStr(selectedBuildingId || barilgiinId),
       );
       const pickLatest = (arr: any[]) =>
         [...arr].sort(
           (a, b) =>
             new Date(b?.updatedAt || b?.createdAt || 0).getTime() -
-            new Date(a?.updatedAt || a?.createdAt || 0).getTime()
+            new Date(a?.updatedAt || a?.createdAt || 0).getTime(),
         )[0];
 
       let chosen = branchMatches.length > 0 ? pickLatest(branchMatches) : null;
       if (!chosen) {
         const orgDefaults = list.filter(
-          (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === ""
+          (x: any) => x?.barilgiinId == null || toStr(x.barilgiinId) === "",
         );
         chosen =
           orgDefaults.length > 0 ? pickLatest(orgDefaults) : pickLatest(list);
@@ -204,7 +209,7 @@ export default function NemeltTokhirgoo() {
 
   const saveLiftSettings = async (
     floorsOrMax: string[] | number | null,
-    skipFetch = false
+    skipFetch = false,
   ) => {
     if (!token || !ajiltan?.baiguullagiinId) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
@@ -253,8 +258,6 @@ export default function NemeltTokhirgoo() {
     }
   };
 
-
-  
   useEffect(() => {
     if (token && ajiltan?.baiguullagiinId) {
       fetchLiftFloors();
@@ -266,21 +269,21 @@ export default function NemeltTokhirgoo() {
   useEffect(() => {
     const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
     if (!baiguullaga) {
-        return;
+      return;
     }
 
     let target: any = baiguullaga;
     let syncSource = "org-level";
-    
+
     if (effectiveBarilgiinId && baiguullaga.barilguud) {
-        const b = baiguullaga.barilguud.find((x: any) => {
-            const xId = x._id || x.id;
-            return String(xId).trim() === String(effectiveBarilgiinId).trim();
-        });
-        if (b) {
-            target = b;
-            syncSource = "building-level";
-        }
+      const b = baiguullaga.barilguud.find((x: any) => {
+        const xId = x._id || x.id;
+        return String(xId).trim() === String(effectiveBarilgiinId).trim();
+      });
+      if (b) {
+        target = b;
+        syncSource = "building-level";
+      }
     }
 
     const tok = (target.tokhirgoo || {}) as any;
@@ -288,30 +291,36 @@ export default function NemeltTokhirgoo() {
     const zt = tok.zochinTokhirgoo || {};
     // Priority 2: target.zochinTokhirgoo (legacy)
     const rootZt = (target as any).zochinTokhirgoo || {};
-    
+
     // Fallback Org Level
     const orgTok = (baiguullaga.tokhirgoo || {}) as any;
-    const orgZt = (orgTok.zochinTokhirgoo || (baiguullaga as any).zochinTokhirgoo || {}) as any;
+    const orgZt = (orgTok.zochinTokhirgoo ||
+      (baiguullaga as any).zochinTokhirgoo ||
+      {}) as any;
 
     const find = (field: string, def: any = "") => {
-        // 1. Check schema standard: target.tokhirgoo.zochinTokhirgoo
-        if (zt[field] !== undefined && zt[field] !== null) return zt[field];
-        // 2. Check root zochinTokhirgoo
-        if (rootZt[field] !== undefined && rootZt[field] !== null) return rootZt[field];
-        // 3. Check target.tokhirgoo root (legacy)
-        if (tok[field] !== undefined && tok[field] !== null) return tok[field];
-        // 4. Check target root
-        if (target[field] !== undefined && target[field] !== null) return target[field];
-        
-        // Final Fallback to Org level (if syncing at building level)
-        if (syncSource === "building-level") {
-            const b = baiguullaga as any;
-            if (orgZt[field] !== undefined && orgZt[field] !== null) return orgZt[field];
-            if (orgTok[field] !== undefined && orgTok[field] !== null) return orgTok[field];
-            if (b[field] !== undefined && b[field] !== null) return b[field];
-        }
-        
-        return def;
+      // 1. Check schema standard: target.tokhirgoo.zochinTokhirgoo
+      if (zt[field] !== undefined && zt[field] !== null) return zt[field];
+      // 2. Check root zochinTokhirgoo
+      if (rootZt[field] !== undefined && rootZt[field] !== null)
+        return rootZt[field];
+      // 3. Check target.tokhirgoo root (legacy)
+      if (tok[field] !== undefined && tok[field] !== null) return tok[field];
+      // 4. Check target root
+      if (target[field] !== undefined && target[field] !== null)
+        return target[field];
+
+      // Final Fallback to Org level (if syncing at building level)
+      if (syncSource === "building-level") {
+        const b = baiguullaga as any;
+        if (orgZt[field] !== undefined && orgZt[field] !== null)
+          return orgZt[field];
+        if (orgTok[field] !== undefined && orgTok[field] !== null)
+          return orgTok[field];
+        if (b[field] !== undefined && b[field] !== null) return b[field];
+      }
+
+      return def;
     };
 
     const isEnabled = !!find("zochinUrikhEsekh", false);
@@ -323,7 +332,6 @@ export default function NemeltTokhirgoo() {
     setGuestNote(find("zochinTailbar", ""));
     setGuestFrequencyType(find("davtamjiinTurul", "saraar"));
     setGuestFrequencyValue(find("davtamjUtga", ""));
-
   }, [baiguullaga, selectedBuildingId, barilgiinId]);
 
   const fetchGuestSettings = async () => {
@@ -333,81 +341,92 @@ export default function NemeltTokhirgoo() {
 
   const saveGuestSettings = async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
-        openErrorOverlay("Нэвтрэх шаардлагатай");
-        return;
+      openErrorOverlay("Нэвтрэх шаардлагатай");
+      return;
     }
     showSpinner();
     try {
-        const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
 
-        // 1. Fetch FRESH and FULL organization data
-        const resp = await uilchilgee(token).get(`/baiguullaga/${ajiltan.baiguullagiinId}`, {
-            headers: { "X-Org-Only": "1" }
-        });
-        
-        const freshOrg = resp.data;
-        if (!freshOrg || !freshOrg._id) {
-            throw new Error("Байгууллагын мэдээлэл олдсонгүй");
-        }
+      // 1. Fetch FRESH and FULL organization data
+      const resp = await uilchilgee(token).get(
+        `/baiguullaga/${ajiltan.baiguullagiinId}`,
+        {
+          headers: { "X-Org-Only": "1" },
+        },
+      );
 
-        // 2. Prepare schema-compliant configuration
-        const zochinTokhirgoo = {
-            zochinUrikhEsekh: !!guestConfigEnabled,
-            zochinTurul: "Оршин суугч",
-            zochinErkhiinToo: Number(guestLimit) || 0,
-            zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
-            zochinNiitUneguiMinut: Number(guestTotalFreeMinutes) || 0,
-            zochinTailbar: guestNote || "",
-            davtamjiinTurul: guestFrequencyType,
-            davtamjUtga: Number(guestFrequencyValue) || null
-        };
+      const freshOrg = resp.data;
+      if (!freshOrg || !freshOrg._id) {
+        throw new Error("Байгууллагын мэдээлэл олдсонгүй");
+      }
 
-        // Deep copy to prevent state mutation
-        let payload: any = JSON.parse(JSON.stringify(freshOrg));
+      // 2. Prepare schema-compliant configuration
+      const zochinTokhirgoo = {
+        zochinUrikhEsekh: !!guestConfigEnabled,
+        zochinTurul: "Оршин суугч",
+        zochinErkhiinToo: Number(guestLimit) || 0,
+        zochinTusBurUneguiMinut: Number(guestFreeMinutes) || 0,
+        zochinNiitUneguiMinut: Number(guestTotalFreeMinutes) || 0,
+        zochinTailbar: guestNote || "",
+        davtamjiinTurul: guestFrequencyType,
+        davtamjUtga: Number(guestFrequencyValue) || null,
+      };
 
-        if (effectiveBarilgiinId && payload.barilguud) {
-            let found = false;
-            payload.barilguud = payload.barilguud.map((b: any) => {
-                const bId = b._id || b.id;
-                if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
-                    found = true;
-                    return {
-                        ...b,
-                        tokhirgoo: {
-                            ...(b.tokhirgoo || {}),
-                            zochinTokhirgoo: zochinTokhirgoo
-                        }
-                    };
-                }
-                return b;
-            });
-            
-            if (!found) {
-                throw new Error("Сонгосон барилга байгууллагын жагсаалтад олдсонгүй. Хадгалах боломжгүй.");
-            }
-        } else {
-            // Organization level update
-            payload.tokhirgoo = {
-                ...(payload.tokhirgoo || {}),
-                zochinTokhirgoo: zochinTokhirgoo
+      // Deep copy to prevent state mutation
+      let payload: any = JSON.parse(JSON.stringify(freshOrg));
+
+      if (effectiveBarilgiinId && payload.barilguud) {
+        let found = false;
+        payload.barilguud = payload.barilguud.map((b: any) => {
+          const bId = b._id || b.id;
+          if (String(bId).trim() === String(effectiveBarilgiinId).trim()) {
+            found = true;
+            return {
+              ...b,
+              tokhirgoo: {
+                ...(b.tokhirgoo || {}),
+                zochinTokhirgoo: zochinTokhirgoo,
+              },
             };
+          }
+          return b;
+        });
+
+        if (!found) {
+          throw new Error(
+            "Сонгосон барилга байгууллагын жагсаалтад олдсонгүй. Хадгалах боломжгүй.",
+          );
         }
-        
-        // Use createMethod to perform a POST update (project convention for configs)
-        const result = await createMethod(`baiguullaga/${freshOrg._id}`, token, payload);
-        
-        if (result?.data) {
-            openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
-            const finalData = result.data.result || result.data;
-            await baiguullagaMutate(finalData, false);
-            await baiguullagaMutate(); 
-        } else {
-            throw new Error("Хадгалахад алдаа гарлаа");
-        }
+      } else {
+        // Organization level update
+        payload.tokhirgoo = {
+          ...(payload.tokhirgoo || {}),
+          zochinTokhirgoo: zochinTokhirgoo,
+        };
+      }
+
+      // Use createMethod to perform a POST update (project convention for configs)
+      const result = await createMethod(
+        `baiguullaga/${freshOrg._id}`,
+        token,
+        payload,
+      );
+
+      if (result?.data) {
+        openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
+        const finalData = result.data.result || result.data;
+        await baiguullagaMutate(finalData, false);
+        await baiguullagaMutate();
+      } else {
+        throw new Error("Хадгалахад алдаа гарлаа");
+      }
     } catch (error: any) {
-        openErrorOverlay(error?.message || "Зочны тохиргоо хадгалахад алдаа гарлаа");
+      openErrorOverlay(
+        error?.message || "Зочны тохиргоо хадгалахад алдаа гарлаа",
+      );
     } finally {
-        hideSpinner();
+      hideSpinner();
     }
   };
 
@@ -503,9 +522,7 @@ export default function NemeltTokhirgoo() {
       id="nemelt-panel"
       className="xxl:col-span-9 col-span-12 lg:col-span-12 h-[82vh]"
     >
-      <div
-        className="neu-panel allow-overflow p-4 md:p-6 pb-20 space-y-6 h-full overflow-auto custom-scrollbar"
-      >
+      <div className="neu-panel allow-overflow p-4 md:p-6 pb-20 space-y-6 h-full overflow-auto custom-scrollbar">
         <div className="flex flex-col sm:flex-row items-start sm:items-stretch gap-6">
           {/* Invoice box */}
           <div id="nemelt-invoice-box" className="flex-1">
@@ -527,7 +544,9 @@ export default function NemeltTokhirgoo() {
                     <input
                       type="checkbox"
                       checked={invoiceActive}
-                      onChange={(e) => setInvoiceActive(e.currentTarget.checked)}
+                      onChange={(e) =>
+                        setInvoiceActive(e.currentTarget.checked)
+                      }
                       className="sr-only peer"
                       aria-label="Нэхэмжлэх идэвхжүүлэх"
                     />
@@ -627,23 +646,11 @@ export default function NemeltTokhirgoo() {
                           setLiftBulkInput(e.currentTarget.value)
                         }
                         className="flex-1"
-                        size="md"
                       />
-
                       <Button
-                        id="nemelt-lift-save"
-                        onClick={handleSaveFloors}
-                        variant="warning"
-                        size="sm"
-                      >
-                        Хадгалах
-                      </Button>
-
-                      <Button
-                        onClick={handleDeleteAllFloors}
                         variant="ghost"
                         size="sm"
-                        className="text-red-600 hover:bg-red-100 dark:hover:bg-red-950/30"
+                        onClick={handleBulkLiftDelete}
                         title="Бүгдийг устгах"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -652,7 +659,9 @@ export default function NemeltTokhirgoo() {
                   </div>
 
                   <div className="pt-2 border-t border-[color:var(--surface-border)]">
-                    <p className="text-sm  text-theme mb-3">Тохируулсан давхарууд:</p>
+                    <p className="text-sm  text-theme mb-3">
+                      Тохируулсан давхарууд:
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {liftFloors && liftFloors.length > 0 ? (
                         liftFloors.map((f) => (
@@ -676,134 +685,157 @@ export default function NemeltTokhirgoo() {
               )}
             </div>
           </div>
-
-
-
         </div>
 
         {/* Visitor Configuration Box - Now Below */}
         <div id="nemelt-visitor-box" className="mt-6">
-             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
-               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
-                 <div className="flex items-center gap-3">
-                    <div>
-                       <h3 className="text-lg text-theme">Зочны тохиргоо</h3>
-                       <p className="text-xs text-[color:var(--muted-text)]">
-                          Шинэ оршин суугчдад автоматаар оноогдох тохиргоо
-                       </p>
-                    </div>
-                 </div>
-                 <div className="flex items-center gap-3">
-                   <span className="text-sm  text-theme">
-                     {guestConfigEnabled ? "Идэвхтэй" : "Идэвхгүй"}
-                   </span>
-                   <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={guestConfigEnabled}
-                        onChange={(e) => setGuestConfigEnabled(e.currentTarget.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
-                   </label>
-                 </div>
-               </div>
+          <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
+            <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20">
+              <div className="flex items-center gap-3">
+                <div>
+                  <h3 className="text-lg text-theme">Зочны тохиргоо</h3>
+                  <p className="text-xs text-[color:var(--muted-text)]">
+                    Шинэ оршин суугчдад автоматаар оноогдох тохиргоо
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm  text-theme">
+                  {guestConfigEnabled ? "Идэвхтэй" : "Идэвхгүй"}
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={guestConfigEnabled}
+                    onChange={(e) =>
+                      setGuestConfigEnabled(e.currentTarget.checked)
+                    }
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 dark:peer-checked:bg-blue-600 peer-checked:bg-blue-600"></div>
+                </label>
+              </div>
+            </div>
 
-               {guestConfigEnabled && (
-                  <div className="p-5 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10 space-y-4">
-                     
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                           <label className="text-sm  text-theme">Давтамж</label>
-                           <select 
-                             value={guestFrequencyType}
-                             onChange={(e) => setGuestFrequencyType(e.target.value)}
-                             className="w-full h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700"
-                           >
-                              <option value="udruur">Өдөр бүр</option>
-                              <option value="7khonogoor">Долоо хоног бүр</option>
-                              <option value="saraar">Сар бүр</option>
-                              <option value="jileer">Жил бүр</option>
-                           </select>
-                        </div>
-                        
-                        {(guestFrequencyType === 'saraar' || guestFrequencyType === 'jileer') && (
-                           <div className="space-y-1">
-                              <label className="text-sm  text-theme">
-                                 {guestFrequencyType === 'saraar' ? 'Сар бүрийн хэдэн' : 'Жил бүрийн хэддүгээр сар'}
-                              </label>
-                              <MNumberInput 
-                                 value={guestFrequencyValue === "" ? undefined : Number(guestFrequencyValue)}
-                                 onChange={(val) => setGuestFrequencyValue(val !== "" ? val : "")}
-                                 placeholder={guestFrequencyType === 'saraar' ? "1-31" : "1-12"}
-                                 min={1}
-                                 max={guestFrequencyType === 'saraar' ? 31 : 12}
-                                 className="w-full"
-                              />
-                           </div>
-                        )}
-                     </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-1">
-                           <label className="text-sm  text-theme">Эрхийн тоо</label>
-                           <MNumberInput 
-                              value={guestLimit === "" ? undefined : Number(guestLimit)}
-                              onChange={(val) => setGuestLimit(val !== "" ? val : "")}
-                              placeholder="0"
-                              min={0}
-                              className="w-full"
-                           />
-                        </div>
-                        <div className="space-y-1">
-                           <label className="text-sm  text-theme">Үнэгүй минут (тус бүр)</label>
-                           <MNumberInput 
-                              value={guestFreeMinutes === "" ? undefined : Number(guestFreeMinutes)}
-                              onChange={(val) => setGuestFreeMinutes(val !== "" ? val : "")}
-                              placeholder="0"
-                              min={0}
-                              className="w-full"
-                           />
-                        </div>
-                        <div className="space-y-1">
-                           <label className="text-sm  text-theme">Нийт үнэгүй минут</label>
-                           <MNumberInput 
-                              value={guestTotalFreeMinutes === "" ? undefined : Number(guestTotalFreeMinutes)}
-                              onChange={(val) => setGuestTotalFreeMinutes(val !== "" ? val : "")}
-                              placeholder="0"
-                              min={0}
-                              className="w-full"
-                           />
-                        </div>
-                     </div>
-
-                     <div className="space-y-1">
-                        <label className="text-sm  text-theme">Тайлбар</label>
-                        <MTextInput 
-                             value={guestNote}
-                             onChange={(e) => setGuestNote(e.currentTarget.value)}
-                             placeholder="Жишээ: Оршин суугчийн зочин"
-                             className="w-full"
-                        />
-                     </div>
-
-                     <div className="pt-2 flex justify-end">
-                        <Button
-                           onClick={saveGuestSettings}
-                           variant="primary"
-                           size="sm"
-                           className="!rounded-2xl"
-                        >
-                           Хадгалах
-                        </Button>
-                     </div>
+            {guestConfigEnabled && (
+              <div className="p-5 bg-gradient-to-br from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10 space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm  text-theme">Давтамж</label>
+                    <select
+                      value={guestFrequencyType}
+                      onChange={(e) => setGuestFrequencyType(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-gray-300 bg-white text-sm focus:outline-none focus:border-blue-500 dark:bg-gray-800 dark:border-gray-700"
+                    >
+                      <option value="udruur">Өдөр бүр</option>
+                      <option value="7khonogoor">Долоо хоног бүр</option>
+                      <option value="saraar">Сар бүр</option>
+                      <option value="jileer">Жил бүр</option>
+                    </select>
                   </div>
-               )}
-             </div>
+
+                  {(guestFrequencyType === "saraar" ||
+                    guestFrequencyType === "jileer") && (
+                    <div className="space-y-1">
+                      <label className="text-sm  text-theme">
+                        {guestFrequencyType === "saraar"
+                          ? "Сар бүрийн хэдэн"
+                          : "Жил бүрийн хэддүгээр сар"}
+                      </label>
+                      <MNumberInput
+                        value={
+                          guestFrequencyValue === ""
+                            ? undefined
+                            : Number(guestFrequencyValue)
+                        }
+                        onChange={(val) =>
+                          setGuestFrequencyValue(val !== "" ? val : "")
+                        }
+                        placeholder={
+                          guestFrequencyType === "saraar" ? "1-31" : "1-12"
+                        }
+                        min={1}
+                        max={guestFrequencyType === "saraar" ? 31 : 12}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-sm  text-theme">Эрхийн тоо</label>
+                    <MNumberInput
+                      value={guestLimit === "" ? undefined : Number(guestLimit)}
+                      onChange={(val) => setGuestLimit(val !== "" ? val : "")}
+                      placeholder="0"
+                      min={0}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm  text-theme">
+                      Үнэгүй минут (тус бүр)
+                    </label>
+                    <MNumberInput
+                      value={
+                        guestFreeMinutes === ""
+                          ? undefined
+                          : Number(guestFreeMinutes)
+                      }
+                      onChange={(val) =>
+                        setGuestFreeMinutes(val !== "" ? val : "")
+                      }
+                      placeholder="0"
+                      min={0}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm  text-theme">
+                      Нийт үнэгүй минут
+                    </label>
+                    <MNumberInput
+                      value={
+                        guestTotalFreeMinutes === ""
+                          ? undefined
+                          : Number(guestTotalFreeMinutes)
+                      }
+                      onChange={(val) =>
+                        setGuestTotalFreeMinutes(val !== "" ? val : "")
+                      }
+                      placeholder="0"
+                      min={0}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm  text-theme">Тайлбар</label>
+                  <MTextInput
+                    value={guestNote}
+                    onChange={(e) => setGuestNote(e.currentTarget.value)}
+                    placeholder="Жишээ: Оршин суугчийн зочин"
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <Button
+                    onClick={saveGuestSettings}
+                    variant="primary"
+                    size="sm"
+                    className="!rounded-2xl"
+                  >
+                    Хадгалах
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-      
     </div>
   );
 }
-

@@ -8,7 +8,7 @@ import {
   FileUp,
   LayoutTemplate,
   UserPlus,
-  Columns3Cog,
+  Settings2,
   ChevronDown,
 } from "lucide-react";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
@@ -80,7 +80,9 @@ export default function GereeHeader({
   visibleColumns,
   setVisibleColumns,
   columnMenuRef,
+  onShowAvlagaModal,
   onShowList2Modal,
+  onSendInvoices,
   onShowResidentModal,
   onExportResidentsExcel,
   onDownloadResidentsTemplate,
@@ -206,7 +208,7 @@ export default function GereeHeader({
                       aria-label="Багана сонгох"
                       title="Багана сонгох"
                     >
-                      <Columns3Cog className="w-5 h-5" />
+                      <Settings2 className="w-5 h-5" />
                       <span className="hidden sm:inline text-xs ml-1">
                         Багана
                       </span>

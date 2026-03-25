@@ -859,8 +859,8 @@ const TulburTootsoo: React.FC = () => {
               </div>
 
               <div className="col-span-12 md:col-span-8 xl:col-span-9">
-                <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
-                  <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                <div className="table-surface rounded-2xl mt-0 w-full">
+                  <div className="rounded-3xl p-1 mb-4 neu-table allow-overflow">
                     <Table
                       dataSource={gereeniiMedeelel.jagsaalt}
                       columns={gereeniiColumn}
@@ -869,7 +869,7 @@ const TulburTootsoo: React.FC = () => {
                       size="small"
                       bordered
                       className="guilgee-table"
-                      scroll={{ x: "max-content", y: 480 }}
+                      scroll={{ x: "max-content", y: 400 }}
                       rowSelection={{
                         type: "checkbox",
                         selectedRowKeys,
@@ -904,8 +904,8 @@ const TulburTootsoo: React.FC = () => {
                 </div>
 
                 <div className="col-span-12 md:col-span-8 xl:col-span-9">
-                  <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
-                    <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+                  <div className="table-surface rounded-2xl mt-0 w-full">
+                    <div className="rounded-3xl p-1 mb-4 neu-table allow-overflow">
                       <Table
                         dataSource={khungulultTuukh.jagsaalt}
                         columns={columns}
@@ -919,7 +919,7 @@ const TulburTootsoo: React.FC = () => {
                         size="small"
                         bordered
                         className="guilgee-table"
-                        scroll={{ x: "max-content", y: 480 }}
+                        scroll={{ x: "max-content", y: 400 }}
                         locale={{ emptyText: "Мэдээлэл алга байна" }}
                       />
                     </div>

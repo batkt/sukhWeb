@@ -178,8 +178,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
 
   return (
-    <div className="table-surface overflow-hidden rounded-2xl w-full">
-      <div className="rounded-3xl p-3 allow-overflow">
+    <div className="table-surface rounded-2xl w-full">
+      <div className="rounded-3xl p-1 allow-overflow">
         <div className="guilgee-table-wrap" id="geree-table">
           <Table
             dataSource={currentContracts}
@@ -189,7 +189,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             size="small"
             bordered
             className="guilgee-table"
-            scroll={{ x: "max-content", y: 480 }}
+            scroll={{ x: "max-content", y: 400 }}
             locale={{ emptyText: "Гэрээ олдсонгүй" }}
             onRow={(record) => ({
               onClick: () => {

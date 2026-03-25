@@ -238,52 +238,52 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             <Table.Summary fixed="bottom">
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5} align="center">
-                  <span className="font-bold text-theme text-xs uppercase tracking-wider">
+                  <span className="force-bold text-theme text-xs uppercase tracking-wider">
                     НИЙТ
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1} align="right">
-                  <span className="font-semibold text-theme">
+                  <span className="force-bold text-lg text-theme">
                     {formatNumber(totals.undsenDun)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} align="right">
-                  <span className="text-theme/60">
+                  <span className="force-bold text-theme/60">
                     {formatNumber(totals.khungulult)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={3} align="right">
-                  <span className="text-emerald-600">
+                  <span className="force-bold text-emerald-600">
                     {formatNumber(totals.tulsunDun)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={4} align="right">
-                  <span className="text-red-500 font-semibold">
+                  <span className="force-bold text-red-500">
                     {formatNumber(totals.uldegdel)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="right">
-                  <span className="text-theme/70">
+                  <span className="force-bold text-theme/70">
                     {formatNumber(totals.p0_30)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={6} align="right">
-                  <span className="text-theme/70">
+                  <span className="force-bold text-theme/70">
                     {formatNumber(totals.p31_60)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={7} align="right">
-                  <span className="text-theme/70">
+                  <span className="force-bold text-theme/70">
                     {formatNumber(totals.p61_90)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={8} align="right">
-                  <span className="text-theme/70">
+                  <span className="force-bold text-theme/70">
                     {formatNumber(totals.p91_120)}
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={9} align="right">
-                  <span className="text-theme/70">
+                  <span className="force-bold text-theme/70">
                     {formatNumber(totals.p120plus)}
                   </span>
                 </Table.Summary.Cell>

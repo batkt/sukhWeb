@@ -104,7 +104,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 480 }}
+        scroll={{ x: "max-content", y: 400 }}
         locale={{ emptyText: "Гүйлгээний мэдээлэл олдсонгүй" }}
         summary={() =>
           data.length > 0 ? (

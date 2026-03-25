@@ -64,9 +64,9 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           }
           return (
             <div
-              className="grid gap-1.5 py-1"
+              className="grid gap-1 py-0.5"
               style={{
-                gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fill, minmax(36px, 1fr))",
                 justifyItems: "center",
               }}
             >
@@ -76,14 +76,14 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                 return (
                   <div
                     key={unitStr}
-                    className={`group relative flex items-center justify-center w-[44px] h-[26px] rounded-2xl border transition-all duration-150 ${
+                    className={`group relative flex items-center justify-center w-[36px] h-[22px] rounded-lg border transition-all duration-150 ${
                       hasActive
                         ? "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-600"
                         : "border-slate-300 bg-white dark:bg-gray-800 dark:border-slate-600 hover:border-blue-400 shadow-sm"
                     }`}
                   >
                     <span
-                      className={`text-[12px] ${
+                      className={`text-[11px] font-medium ${
                         hasActive
                           ? "text-green-700 dark:text-green-400"
                           : "text-slate-900 dark:text-slate-100"
@@ -119,14 +119,14 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         render: (_: any, record: FloorItem) => (
           <div className="flex items-center justify-center gap-2">
             <button
-              className="p-2 rounded-2xl hover-surface transition-colors"
+              className="p-1 rounded-xl hover-surface transition-colors"
               title="Шинэ тоот нэмэх"
               onClick={() => onAddUnit?.(record.floor)}
             >
-              <Plus className="w-5 h-5 text-blue-500" />
+              <Plus className="w-4 h-4 text-blue-500" />
             </button>
             <button
-              className={`p-2 rounded-2xl action-delete hover-surface transition-colors ${
+              className={`p-1 rounded-xl action-delete hover-surface transition-colors ${
                 record.units.length === 0
                   ? "opacity-20 cursor-not-allowed grayscale"
                   : ""
@@ -141,7 +141,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               }
               disabled={record.units.length === 0}
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         ),
@@ -161,7 +161,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 480 }}
+        scroll={{ x: "max-content", y: 320 }}
         locale={{ emptyText: "Давхарын мэдээлэл алга" }}
       />
     </div>

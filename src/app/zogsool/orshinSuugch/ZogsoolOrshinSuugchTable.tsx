@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { User, Phone, Car, Edit2, Trash2 } from "lucide-react";
+import { User, Phone, Car, Edit, Trash2 } from "lucide-react";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
 
@@ -157,22 +157,20 @@ export const ZogsoolOrshinSuugchTable: React.FC<
         align: "center",
         render: (_: any, record: ResidentParking) => (
           <div className="flex justify-center items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
               onClick={() => onEdit(record)}
-              className="!p-2 !h-auto"
-              icon={<Edit2 className="w-4 h-4" />}
+              className="p-2 rounded-2xl action-edit hover-surface transition-colors"
               title="Засах"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+            <button
               onClick={() => onDelete(record)}
-              className="!p-2 !h-auto hover:!text-red-500"
-              icon={<Trash2 className="w-4 h-4" />}
+              className="p-2 rounded-2xl action-delete hover-surface transition-colors"
               title="Устгах"
-            />
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
           </div>
         ),
       },

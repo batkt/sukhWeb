@@ -47,8 +47,8 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
       {isValidatingSuugch ? (
         <div className="text-center py-8 text-subtle">Уншиж байна...</div>
       ) : (
-        <div className="table-surface overflow-hidden w-full">
-          <div className="p-3 allow-overflow">
+        <div className="table-surface w-full">
+          <div className="p-1 allow-overflow">
             <ResidentsTable
               data={currentResidents as ResidentItem[]}
               loading={isValidatingSuugch}

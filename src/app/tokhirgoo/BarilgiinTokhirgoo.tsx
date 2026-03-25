@@ -38,7 +38,7 @@ interface Duureg {
   kod: string;
   ded?: Horoo[];
 }
- 
+
 interface TatvariinAlbaResponse {
   jagsaalt: Duureg[];
 }
@@ -66,7 +66,10 @@ const EditBuildingModal: React.FC<{
   setHasUserEdited: (value: boolean) => void;
   editedBuildingId: string | null;
   baiguullaga: any;
-  handleSaveEditBuilding: (selectedDuureg?: string, selectedHoroo?: string) => Promise<void>;
+  handleSaveEditBuilding: (
+    selectedDuureg?: string,
+    selectedHoroo?: string,
+  ) => Promise<void>;
   isSaving: boolean;
   districts: Record<string, string[]>;
   subDistricts: Record<string, string[]>;
@@ -142,7 +145,7 @@ const EditBuildingModal: React.FC<{
       />
 
       {/* Modal Container */}
-      <div 
+      <div
         className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -237,7 +240,11 @@ const EditBuildingModal: React.FC<{
                           }))
                         : []
                     }
-                    placeholder={editSelectedDuureg ? "Хороо сонгоно уу" : "Эхлээд дүүрэг сонгоно уу"}
+                    placeholder={
+                      editSelectedDuureg
+                        ? "Хороо сонгоно уу"
+                        : "Эхлээд дүүрэг сонгоно уу"
+                    }
                     className="w-full"
                     disabled={!editSelectedDuureg}
                   />
@@ -316,7 +323,9 @@ const EditBuildingModal: React.FC<{
           <Button
             variant="primary"
             className="px-5 py-2.5"
-            onClick={() => handleSaveEditBuilding(editSelectedDuureg, editSelectedHoroo)}
+            onClick={() =>
+              handleSaveEditBuilding(editSelectedDuureg, editSelectedHoroo)
+            }
             id="barilgiin-edit-save"
             isLoading={isSaving}
             leftIcon={<Save className="w-4 h-4" />}
@@ -340,7 +349,10 @@ const NewBuildingModal: React.FC<{
   setOrtsCount: (value: number | "") => void;
   davkharCount: number | "";
   setDavkharCount: (value: number | "") => void;
-  handleSaveSettings: (selectedDuureg?: string, selectedHoroo?: string) => Promise<void>;
+  handleSaveSettings: (
+    selectedDuureg?: string,
+    selectedHoroo?: string,
+  ) => Promise<void>;
   isSaving: boolean;
   districts: Record<string, string[]>;
   subDistricts: Record<string, string[]>;
@@ -360,7 +372,7 @@ const NewBuildingModal: React.FC<{
 }) => {
   const [modalSelectedDuureg, setModalSelectedDuureg] = useState<string>("");
   const [modalSelectedHoroo, setModalSelectedHoroo] = useState<string>("");
-  
+
   // close on ESC
   useEffect(() => {
     if (!open) return;
@@ -413,7 +425,7 @@ const NewBuildingModal: React.FC<{
       />
 
       {/* Modal Container */}
-      <div 
+      <div
         className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -504,7 +516,11 @@ const NewBuildingModal: React.FC<{
                           }))
                         : []
                     }
-                    placeholder={modalSelectedDuureg ? "Хороо сонгоно уу" : "Эхлээд дүүрэг сонгоно уу"}
+                    placeholder={
+                      modalSelectedDuureg
+                        ? "Хороо сонгоно уу"
+                        : "Эхлээд дүүрэг сонгоно уу"
+                    }
                     className="w-full"
                     disabled={!modalSelectedDuureg}
                   />
@@ -581,7 +597,9 @@ const NewBuildingModal: React.FC<{
           <Button
             variant="primary"
             size="sm"
-            onClick={() => handleSaveSettings(modalSelectedDuureg, modalSelectedHoroo)}
+            onClick={() =>
+              handleSaveSettings(modalSelectedDuureg, modalSelectedHoroo)
+            }
             id="barilgiin-new-save"
             isLoading={isSaving}
             leftIcon={<Save className="w-4 h-4" />}
@@ -1265,7 +1283,10 @@ export default function BarilgiinTokhirgoo() {
     return res.data;
   };
 
-  const handleSaveEditBuilding = async (selectedDuureg?: string, selectedHoroo?: string) => {
+  const handleSaveEditBuilding = async (
+    selectedDuureg?: string,
+    selectedHoroo?: string,
+  ) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -1366,7 +1387,7 @@ export default function BarilgiinTokhirgoo() {
         ? davFrom.length
         : Number(davFrom) || 0;
       setEditDavkharCount(davCount);
-      
+
       // Load district and horoo if they exist
       const duuregNer = tok.duuregNer || "";
       const horooNer = tok.horoo?.ner || "";
@@ -1391,7 +1412,7 @@ export default function BarilgiinTokhirgoo() {
     id: string;
     ner?: string;
   } | null>(null);
-  
+
   // Transfer modal state - only for specific baiguullagiinId
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [buildingToTransfer, setBuildingToTransfer] = useState<{
@@ -1400,8 +1421,10 @@ export default function BarilgiinTokhirgoo() {
   } | null>(null);
   const [targetOrgId, setTargetOrgId] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState(false);
-  const [availableOrgs, setAvailableOrgs] = useState<Array<{ _id: string; ner: string }>>([]);
-  
+  const [availableOrgs, setAvailableOrgs] = useState<
+    Array<{ _id: string; ner: string }>
+  >([]);
+
   // Check if this is the specific baiguullagiinId
   const isTransferEnabled = useMemo(() => {
     return String(baiguullaga?._id) === "698e7fd3b6dd386b6c56a808";
@@ -1420,23 +1443,40 @@ export default function BarilgiinTokhirgoo() {
               getAll: true, // Alternative parameter
             },
           });
-          
+
           if (response.data) {
             let orgs: any[] = [];
             if (Array.isArray(response.data)) {
               orgs = response.data;
-            } else if (response.data.jagsaalt && Array.isArray(response.data.jagsaalt)) {
+            } else if (
+              response.data.jagsaalt &&
+              Array.isArray(response.data.jagsaalt)
+            ) {
               orgs = response.data.jagsaalt;
-            } else if (response.data.list && Array.isArray(response.data.list)) {
+            } else if (
+              response.data.list &&
+              Array.isArray(response.data.list)
+            ) {
               orgs = response.data.list;
-            } else if (response.data.data && Array.isArray(response.data.data)) {
+            } else if (
+              response.data.data &&
+              Array.isArray(response.data.data)
+            ) {
               orgs = response.data.data;
             }
-            
+
             // Filter out current organization
             const filtered = orgs
-              .filter((org: any) => org && org._id && String(org._id) !== String(baiguullaga?._id))
-              .map((org: any) => ({ _id: org._id, ner: org.ner || org.name || "" }));
+              .filter(
+                (org: any) =>
+                  org &&
+                  org._id &&
+                  String(org._id) !== String(baiguullaga?._id),
+              )
+              .map((org: any) => ({
+                _id: org._id,
+                ner: org.ner || org.name || "",
+              }));
             setAvailableOrgs(filtered);
           } else {
             // If no data, set empty array (user might not have access to list all orgs)
@@ -1449,7 +1489,9 @@ export default function BarilgiinTokhirgoo() {
           setAvailableOrgs([]);
           // Only show error if it's not a 404 or similar expected error
           if (error?.response?.status !== 404) {
-            console.warn("Could not fetch organization list. User may need to contact admin for target organization ID.");
+            console.warn(
+              "Could not fetch organization list. User may need to contact admin for target organization ID.",
+            );
           }
         }
       };
@@ -1470,11 +1512,14 @@ export default function BarilgiinTokhirgoo() {
 
     setIsTransferring(true);
     try {
-      const response = await uilchilgee(token).post("/transformation/transformBarilga", {
-        oldBaiguullagiinId: baiguullaga?._id,
-        newBaiguullagiinId: targetOrgId,
-        barilgiinId: buildingToTransfer.id,
-      });
+      const response = await uilchilgee(token).post(
+        "/transformation/transformBarilga",
+        {
+          oldBaiguullagiinId: baiguullaga?._id,
+          newBaiguullagiinId: targetOrgId,
+          barilgiinId: buildingToTransfer.id,
+        },
+      );
 
       if (response.status === 200 || response.status === 201) {
         openSuccessOverlay("Барилга амжилттай шилжүүллээ");
@@ -1490,7 +1535,10 @@ export default function BarilgiinTokhirgoo() {
       }
     } catch (error: any) {
       console.error("Transfer error:", error);
-      const errorMsg = error?.response?.data?.message || error?.message || "Шилжүүлэх явцад алдаа гарлаа";
+      const errorMsg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Шилжүүлэх явцад алдаа гарлаа";
       openErrorOverlay(errorMsg);
     } finally {
       setIsTransferring(false);
@@ -1547,7 +1595,10 @@ export default function BarilgiinTokhirgoo() {
   };
 
   // Handler for creating a new building (used by NewBuildingModal)
-  const handleSaveSettings = async (selectedDuureg?: string, selectedHoroo?: string) => {
+  const handleSaveSettings = async (
+    selectedDuureg?: string,
+    selectedHoroo?: string,
+  ) => {
     if (!token) {
       openErrorOverlay("Нэвтрэх шаардлагатай");
       return;
@@ -1600,12 +1651,10 @@ export default function BarilgiinTokhirgoo() {
       };
 
       // Preserve existing buildings from freshOrg and add the new building
-      const existingBuildings = (freshOrg.barilguud || []).map(
-        (b: any) => ({
-          ...b,
-          _id: b._id,
-        }),
-      );
+      const existingBuildings = (freshOrg.barilguud || []).map((b: any) => ({
+        ...b,
+        _id: b._id,
+      }));
       const updatedBarilguud = [...existingBuildings, newBuilding];
 
       const payload = {
@@ -1624,13 +1673,14 @@ export default function BarilgiinTokhirgoo() {
       const serverData = res?.data?.result || res?.data;
       if (serverData) {
         await baiguullagaMutate(serverData, false);
-      
+
         try {
           // Find the newly created building by name (baiguullagiinId may not be stored in building object)
-          const existingIds = new Set(existingBuildings.map((b: any) => String(b._id)));
+          const existingIds = new Set(
+            existingBuildings.map((b: any) => String(b._id)),
+          );
           const created = (serverData.barilguud || []).find(
-            (b: any) =>
-              b.ner === name && !existingIds.has(String(b._id)),
+            (b: any) => b.ner === name && !existingIds.has(String(b._id)),
           );
           if (created && created._id)
             setSelectedBuildingId(String(created._id));
@@ -2045,7 +2095,7 @@ export default function BarilgiinTokhirgoo() {
               onChange={(e) => setSohNer(e.target.value)}
               placeholder="СӨХ-ийн нэрийг оруулна уу"
               className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
-              style={{ borderRadius: '0.5rem' }}
+              style={{ borderRadius: "0.5rem" }}
               disabled
             />
           </div>
@@ -2071,12 +2121,14 @@ export default function BarilgiinTokhirgoo() {
                   value={sukhDugaar}
                   onChange={(e) => {
                     // Allow only digits and limit to 8 characters
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 8);
                     setSukhDugaar(digits);
                   }}
                   placeholder="Утас дугаар оруулна уу"
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                  style={{ borderRadius: '0.5rem' }}
+                  style={{ borderRadius: "0.5rem" }}
                 />
               </div>
               <div id="barilgiin-email" className="space-y-2">
@@ -2089,7 +2141,7 @@ export default function BarilgiinTokhirgoo() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Имэйл хаяг оруулна уу"
                   className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                  style={{ borderRadius: '0.5rem' }}
+                  style={{ borderRadius: "0.5rem" }}
                 />
               </div>
             </div>
@@ -2102,7 +2154,7 @@ export default function BarilgiinTokhirgoo() {
                 value={baiguullaga?.khayag || ""}
                 placeholder="Хаяг"
                 className="w-full px-4 py-3 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{ borderRadius: '0.5rem' }}
+                style={{ borderRadius: "0.5rem" }}
                 disabled
                 readOnly
               />
@@ -2120,7 +2172,7 @@ export default function BarilgiinTokhirgoo() {
                 leftIcon={<Save className="w-4 h-4" />}
                 disabled={isSaving}
                 className="!rounded-lg"
-                style={{ borderRadius: '0.5rem' }}
+                style={{ borderRadius: "0.5rem" }}
               >
                 Хадгалах
               </Button>
@@ -2146,7 +2198,7 @@ export default function BarilgiinTokhirgoo() {
                 leftIcon={<Plus className="w-4 h-4" />}
                 title="Шинэ барилга нэмэх"
                 className="!rounded-2xl"
-                style={{ borderRadius: '0.5rem' }}
+                style={{ borderRadius: "0.5rem" }}
               >
                 Нэмэх
               </Button>
@@ -2164,7 +2216,7 @@ export default function BarilgiinTokhirgoo() {
                     className={`p-3 flex items-center justify-between hover:bg-[color:var(--surface-hover)] transition-colors border-b border-[color:var(--surface-border)] relative ${
                       isFirst ? "rounded-t-lg" : ""
                     } ${isLast ? "rounded-b-lg border-b-0" : ""}`}
-                    style={{ pointerEvents: 'auto' }}
+                    style={{ pointerEvents: "auto" }}
                   >
                     <div
                       id={`barilgiin-select-${b._id}`}
@@ -2182,46 +2234,43 @@ export default function BarilgiinTokhirgoo() {
                           id={`barilgiin-transfer-${b._id}`}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setBuildingToTransfer({ id: String(b._id), ner: b.ner || "" });
+                            setBuildingToTransfer({
+                              id: String(b._id),
+                              ner: b.ner || "",
+                            });
                             setTransferModalOpen(true);
                           }}
                           variant="ghost"
                           size="sm"
                           title="Шилжүүлэх"
                           className="!rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/20 hover:text-blue-600 dark:hover:text-blue-400"
-                          style={{ borderRadius: '0.5rem' }}
+                          style={{ borderRadius: "0.5rem" }}
                         >
                           <ArrowRight className="w-4 h-4" />
                         </Button>
                       )}
-                      <Button
+                      <button
                         id={`barilgiin-edit-${b._id}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleEditBuilding(String(b._id));
                         }}
-                        variant="ghost"
-                        size="sm"
+                        className="p-2 rounded-2xl action-edit hover-surface transition-colors"
                         title="Засах"
-                        className="!rounded-lg"
-                        style={{ borderRadius: '0.5rem' }}
                       >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
+                        <Edit className="w-5 h-5" />
+                      </button>
+                      <button
                         id={`barilgiin-delete-${b._id}`}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteBuilding(String(b._id));
                         }}
-                        variant="ghost"
-                        size="sm"
+                        className="p-2 rounded-2xl action-delete hover-surface transition-colors"
                         title="Устгах"
-                        className="!rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-600 dark:hover:text-red-400"
-                        style={{ borderRadius: '0.5rem' }}
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                        <Trash2 className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
                 );
@@ -2238,7 +2287,8 @@ export default function BarilgiinTokhirgoo() {
               <div>
                 <p className="">Барилга олдсонгүй</p>
                 <p className="text-xs mt-1 opacity-80">
-                  Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох эсвэл шинээр нэмнэ үү.
+                  Зөвхөн мэдээллийг харах боломжтой. Барилга сонгох эсвэл шинээр
+                  нэмнэ үү.
                 </p>
               </div>
             </div>
@@ -2249,7 +2299,7 @@ export default function BarilgiinTokhirgoo() {
               leftIcon={<Plus className="w-4 h-4" />}
               title="Шинэ барилга нэмэх"
               className="!rounded-lg"
-              style={{ borderRadius: '0.5rem' }}
+              style={{ borderRadius: "0.5rem" }}
             >
               Шинэ барилга
             </Button>
@@ -2365,13 +2415,14 @@ export default function BarilgiinTokhirgoo() {
 
                 <div className="p-4 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
                   <label className="block text-sm  text-[color:var(--panel-text)] mb-2">
-                    Шинэ байгууллага сонгох <span className="text-red-500">*</span>
+                    Шинэ байгууллага сонгох{" "}
+                    <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={targetOrgId}
                     onChange={(e) => setTargetOrgId(e.target.value)}
                     className="w-full px-4 py-2 rounded-lg border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    style={{ borderRadius: '0.5rem' }}
+                    style={{ borderRadius: "0.5rem" }}
                   >
                     <option value="">Байгууллага сонгох...</option>
                     {availableOrgs.map((org) => (

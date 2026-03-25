@@ -1708,10 +1708,10 @@ export default function InvoicingZardluud() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="p-8">
+          <div className="p-1">
             <div className="max-h-[50vh] overflow-y-auto overflow-x-auto custom-scrollbar w-full rounded-2xl border border-gray-100">
-              <div className="table-surface overflow-hidden rounded-2xl mt-0 w-full">
-                <div className="rounded-3xl p-6 mb-4 neu-table allow-overflow">
+              <div className="table-surface rounded-2xl mt-0 w-full">
+                <div className="rounded-3xl p-1 mb-4 neu-table allow-overflow">
                   <Table
                     dataSource={displayResidents}
                     columns={nekhemjlekhColumns}
@@ -1726,7 +1726,7 @@ export default function InvoicingZardluud() {
                     size="small"
                     bordered
                     className="guilgee-table"
-                    scroll={{ x: "max-content", y: 480 }}
+                    scroll={{ x: "max-content", y: 400 }}
                     loading={isLoading}
                     locale={{ emptyText: "Мэдээлэл алга байна" }}
                   />

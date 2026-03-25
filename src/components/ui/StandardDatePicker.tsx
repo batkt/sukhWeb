@@ -13,8 +13,18 @@ dayjs.locale("mn");
 const { RangePicker } = DatePicker;
 
 // Define common props for our standardized DatePicker
-export interface StandardDatePickerProps extends Omit<DatePickerProps, 'value' | 'onChange'> {
-  value?: string | Date | Dayjs | null | [any, any] | string[] | [string | null, string | null];
+export interface StandardDatePickerProps extends Omit<
+  DatePickerProps,
+  "value" | "onChange"
+> {
+  value?:
+    | string
+    | Date
+    | Dayjs
+    | null
+    | [any, any]
+    | string[]
+    | [string | null, string | null];
   onChange?: (date: any, dateString: any) => void;
   isRange?: boolean;
   classNames?: { root?: string; input?: string };
@@ -31,7 +41,6 @@ export function StandardDatePicker({
   isRange = false,
   ...props
 }: StandardDatePickerProps) {
-  
   // Convert incoming value (string or Date) to dayjs object which Antd v5 expects
   const parsedValue = React.useMemo(() => {
     if (!value) return null;
@@ -62,12 +71,13 @@ export function StandardDatePicker({
   const legacyClassNames = (props as any).classNames || {};
   const rootClassName = legacyClassNames.root || "";
   const inputClassName = legacyClassNames.input || "";
-  
+
   // Combine passed className with standardized ones, removing the harsh default white background
-  const combinedClassName = `!border-slate-200 dark:!border-slate-800 !bg-transparent hover:!border-sky-500 focus:!border-sky-500 transition-all font-inter min-h-[40px] shadow-sm ${className} ${rootClassName} ${inputClassName}`.trim();
+  const combinedClassName =
+    `!border-slate-200 dark:!border-slate-800 !bg-transparent hover:!border-sky-500 focus:!border-sky-500 transition-all font-inter h-[44px] shadow-sm ${className} ${rootClassName} ${inputClassName}`.trim();
 
   return (
-    <ConfigProvider 
+    <ConfigProvider
       locale={mn_MN}
       theme={{
         token: {

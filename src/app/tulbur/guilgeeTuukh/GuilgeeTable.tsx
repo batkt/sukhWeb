@@ -54,7 +54,7 @@ export default function GuilgeeTable({
   onViewInvoice,
   onViewHistory,
   onTransaction,
-  maxHeight = 480,
+  maxHeight = 400,
 }: GuilgeeTableProps) {
   // Check if checkbox column is visible
   const isCheckboxVisible = visibleColumns.some(

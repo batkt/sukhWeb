@@ -3226,7 +3226,7 @@ select,
 /* Table should span container width */
 .table-surface {
   width: 100%;
-  height: 2000px;
+  height: auto;
 }
 
 .table-ui {
@@ -4344,13 +4344,13 @@ a:active {
 
 /* All cells - consistent font size */
 .guilgee-table .ant-table-cell {
-  padding: 4px 6px !important;
-  font-size: 14px !important;
+  padding: 2px 5px !important;
+  font-size: 13px !important;
 }
 
 .guilgee-table .ant-table-thead > tr > th {
-  padding: 6px 6px !important;
-  font-size: 14px !important;
+  padding: 4px 5px !important;
+  font-size: 13px !important;
 }
 
 /* Bordered table */

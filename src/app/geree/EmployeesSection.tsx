@@ -38,8 +38,8 @@ export default function EmployeesSection({
   }
 
   return (
-    <div className="table-surface overflow-hidden rounded-2xl w-full">
-      <div className="p-3 allow-overflow">
+    <div className="table-surface rounded-2xl w-full">
+      <div className="p-1 allow-overflow">
         <EmployeesTable
           data={currentEmployees as EmployeeItem[]}
           loading={isValidatingAjiltan}

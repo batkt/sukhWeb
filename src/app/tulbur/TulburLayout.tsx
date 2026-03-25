@@ -48,7 +48,7 @@ export default function TulburLayout({
 
   return (
     <div className="min-h-screen">
-      <div className="rounded-2xl p-4 table-surface">
+      <div className="rounded-2xl p-1 table-surface">
         <div className="flex items-center justify-between gap-3 flex-wrap px-1 mb-4">
           <div className="flex items-center gap-3">
             <motion.h1

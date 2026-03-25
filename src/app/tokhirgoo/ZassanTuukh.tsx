@@ -156,7 +156,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </div>
           </div>
 
-          <div>
+  <div>
             <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
               Өөрчлөлтүүд
             </h4>
@@ -279,8 +279,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  );
+  </div>
+);
                 })
               )}
             </div>
@@ -492,7 +492,7 @@ export default function ZassanTuukh({
           <div className="flex flex-col gap-4">
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="relative">
+    <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
@@ -591,9 +591,9 @@ export default function ZassanTuukh({
                         <th className="px-4 py-3 text-xs border-r   text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                </tr>
+              </thead>
+              <tbody>
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
@@ -627,12 +627,12 @@ export default function ZassanTuukh({
                                   <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                                   {record.ajiltniiNer || "-"}
                                 </div>
-                              </td>
+                    </td>
                               <td className="px-4 py-3 text-center border-r text-sm text-[color:var(--panel-text)]">
                                 {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
-                              </td>
+                    </td>
                               <td className="px-4 py-3 text-center text-sm text-center">
-                                <Button
+                      <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewDetails(record)}
@@ -641,14 +641,14 @@ export default function ZassanTuukh({
                                 >
                                   <Eye className="w-4 h-4 text-blue-600" />
                                 </Button>
-                              </td>
-                            </tr>
+                    </td>
+                  </tr>
                           );
                         })
                       )}
-                    </tbody>
-                  </table>
-                </div>
+              </tbody>
+            </table>
+          </div>
               </div>
 
               {/* Pagination */}
@@ -723,8 +723,8 @@ export default function ZassanTuukh({
               </div>
             </>
           )}
-        </div>
-      </div>
+          </div>
+    </div>
 
       {/* Detail Modal */}
       <DetailModal

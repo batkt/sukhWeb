@@ -138,7 +138,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 480 }}
+        scroll={{ x: "max-content", y: 400 }}
         locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
       />
     </div>

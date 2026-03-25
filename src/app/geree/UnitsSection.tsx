@@ -153,8 +153,8 @@ export default function UnitsSection({
 
         {selectedOrts && (
           <div>
-            <div className="table-surface overflow-hidden w-full">
-              <div className="p-3 allow-overflow">
+            <div className="table-surface w-full">
+              <div className="p-1 allow-overflow">
                 <UnitsTable
                   data={floorData}
                   loading={isSavingUnits}

@@ -146,7 +146,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 480 }}
+        scroll={{ x: "max-content", y: 400 }}
         locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
         summary={() =>
           data.length > 0 ? (
