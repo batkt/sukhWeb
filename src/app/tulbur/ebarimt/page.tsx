@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
 import Button from "@/components/ui/Button";
@@ -59,6 +59,48 @@ export default function Ebarimt() {
     undefined,
   );
   const [loading, setLoading] = useState(false);
+  // Cache for contract toot lookups
+  const [contractTootCache, setContractTootCache] = useState<
+    Record<string, string>
+  >({});
+
+  // Function to fetch toot by gereeniiDugaar
+  const fetchTootByDugaar = useCallback(
+    async (dugaar: string): Promise<string | null> => {
+      if (!token || !ajiltan?.baiguullagiinId || !dugaar) return null;
+
+      // Check cache first
+      if (contractTootCache[dugaar]) {
+        return contractTootCache[dugaar];
+      }
+
+      try {
+        const resp = await uilchilgee(token).get("/geree", {
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            barilgiinId: barilgiinId || null,
+            gereeniiDugaar: dugaar,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 1,
+          },
+        });
+
+        const contracts = resp.data?.jagsaalt || [];
+        if (contracts.length > 0) {
+          const contract = contracts[0];
+          const toot = contract?.toot || contract?.medeelel?.toot || null;
+          if (toot) {
+            setContractTootCache((prev) => ({ ...prev, [dugaar]: toot }));
+          }
+          return toot;
+        }
+      } catch (err) {
+        console.error("Failed to fetch contract toot:", err);
+      }
+      return null;
+    },
+    [token, ajiltan?.baiguullagiinId, barilgiinId, contractTootCache],
+  );
 
   const merchantTin = useMemo(() => {
     // Prefer selected building; fallback to sole building; then org-level tokhirgoo
@@ -229,15 +271,93 @@ export default function Ebarimt() {
         payStatus: pay?.status || "",
         payCode: pay?.code || "",
         service: item0?.name || it?.uilchilgee || it?.service || "-",
+        gereeniiDugaar: it?.gereeniiDugaar || it?.geree?.gereeniiDugaar || "-",
+        // Note: toot will be fetched asynchronously after initial render
         toot: it?.toot || it?.medeelel?.toot || it?.orshinSuugch?.toot || "-",
         ...it,
       } as TableItem;
     });
   }, [data]);
 
+  // Effect to fetch missing toot data for items with gereeniiDugaar
+  useEffect(() => {
+    const fetchMissingToots = async () => {
+      if (!token || !ajiltan?.baiguullagiinId) return;
+
+      // Find items that have gereeniiDugaar but no toot
+      const itemsNeedingToot = tableData.filter(
+        (item) =>
+          item.gereeniiDugaar &&
+          item.gereeniiDugaar !== "-" &&
+          item.toot === "-",
+      );
+
+      if (itemsNeedingToot.length === 0) return;
+
+      // Get unique dugaars
+      const uniqueDugaars = Array.from(
+        new Set(itemsNeedingToot.map((item) => item.gereeniiDugaar)),
+      ).filter(Boolean) as string[];
+
+      // Fetch toot for each unique dugaar
+      for (const dugaar of uniqueDugaars) {
+        if (!dugaar || contractTootCache[dugaar]) continue;
+
+        try {
+          const resp = await uilchilgee(token).get("/geree", {
+            params: {
+              baiguullagiinId: ajiltan.baiguullagiinId,
+              barilgiinId: barilgiinId || null,
+              gereeniiDugaar: dugaar,
+              khuudasniiDugaar: 1,
+              khuudasniiKhemjee: 1,
+            },
+          });
+
+          const contracts = resp.data?.jagsaalt || [];
+          if (contracts.length > 0) {
+            const contract = contracts[0];
+            const toot = contract?.toot || contract?.medeelel?.toot || null;
+            if (toot) {
+              setContractTootCache((prev) => ({ ...prev, [dugaar]: toot }));
+            }
+          }
+        } catch (err) {
+          console.error(`Failed to fetch toot for ${dugaar}:`, err);
+        }
+      }
+    };
+
+    fetchMissingToots();
+  }, [
+    tableData,
+    token,
+    ajiltan?.baiguullagiinId,
+    barilgiinId,
+    contractTootCache,
+  ]);
+
+  // Update table data with cached toot values
+  const tableDataWithToot = useMemo(() => {
+    return tableData.map((item) => {
+      if (
+        item.toot !== "-" ||
+        !item.gereeniiDugaar ||
+        item.gereeniiDugaar === "-"
+      ) {
+        return item;
+      }
+      const cachedToot = contractTootCache[item.gereeniiDugaar];
+      if (cachedToot) {
+        return { ...item, toot: cachedToot };
+      }
+      return item;
+    });
+  }, [tableData, contractTootCache]);
+
   // Client-side filtered view based on search input and date range
   const displayedData: TableItem[] = useMemo(() => {
-    let filtered = tableData;
+    let filtered = tableDataWithToot;
 
     // Filter by date range
     if (ekhlekhOgnoo && (ekhlekhOgnoo[0] || ekhlekhOgnoo[1])) {
@@ -431,7 +551,11 @@ export default function Ebarimt() {
           </div>
 
           {/* Table */}
-          <EbarimtTable data={displayedData} loading={isLoading} maxHeight="calc(100vh - 450px)" />
+          <EbarimtTable
+            data={displayedData}
+            loading={isLoading}
+            maxHeight="calc(100vh - 550px)"
+          />
         </div>
       </div>
     </TulburLayout>

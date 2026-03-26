@@ -2864,7 +2864,7 @@ export default function DansniiKhuulga() {
               rowsPerPage={rowsPerPage}
               deduplicatedResidents={deduplicatedResidents}
               getGereeId={getGereeId}
-              maxHeight="calc(100vh - 450px)"
+              maxHeight="calc(100vh - 550px)"
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);
                 setIsModalOpen(true);
@@ -2882,7 +2882,7 @@ export default function DansniiKhuulga() {
               }}
             />
           </div>
-          <div className="fixed bottom-0 left-0 right-0 z-40 neu-panel flex flex-row items-center justify-between w-full px-4 py-2 gap-3 text-sm border-t border-[color:var(--border)]">
+          <div className="w-full neu-panel flex flex-row items-center justify-between px-6 py-3 gap-3 text-sm rounded-[32px] border border-slate-200 dark:border-slate-800 mt-4 backdrop-blur-xl transition-all shadow-sm">
             <div className="text-theme/70 text-xs whitespace-nowrap">
               Нийт: {deduplicatedResidents.length}
             </div>
