@@ -34,11 +34,15 @@ export default function EmployeesSection({
   onCredentialsUpdate,
 }: EmployeesSectionProps) {
   if (isValidatingAjiltan) {
-    return <div className="text-center py-8 text-subtle">Уншиж байна...</div>;
+    return (
+      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+        Уншиж байна...
+      </div>
+    );
   }
 
   return (
-    <div className="table-surface rounded-2xl w-full">
+    <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
       <div className="p-1 allow-overflow">
         <EmployeesTable
           data={currentEmployees as EmployeeItem[]}
@@ -51,8 +55,10 @@ export default function EmployeesSection({
           onCredentialsUpdate={onCredentialsUpdate}
         />
         {/* Pagination */}
-        <div className="flex items-center justify-between px-2 py-3 text-md mt-2">
-          <div className="text-theme/70">Нийт: {filteredEmployees.length}</div>
+        <div className="flex items-center justify-between px-2 py-3 text-md mt-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
+          <div className="text-gray-700 dark:text-gray-300">
+            Нийт: {filteredEmployees.length}
+          </div>
           <div className="flex items-center gap-3">
             <PageSongokh
               value={empPageSize}
@@ -64,7 +70,7 @@ export default function EmployeesSection({
             />
             <div id="employees-pagination" className="flex items-center gap-1">
               <button
-                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 disabled={empPage <= 1}
                 onClick={() => {
                   const newPage = Math.max(1, empPage - 1);
@@ -73,9 +79,11 @@ export default function EmployeesSection({
               >
                 Өмнөх
               </button>
-              <div className="text-theme/70 px-1">{empPage}</div>
+              <div className="text-gray-700 dark:text-gray-300 px-1">
+                {empPage}
+              </div>
               <button
-                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 disabled={empPage >= empTotalPages}
                 onClick={() => {
                   const newPage = Math.min(empTotalPages, empPage + 1);

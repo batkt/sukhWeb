@@ -45,9 +45,11 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
   return (
     <>
       {isValidatingSuugch ? (
-        <div className="text-center py-8 text-subtle">Уншиж байна...</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          Уншиж байна...
+        </div>
       ) : (
-        <div className="table-surface w-full">
+        <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
           <div className="p-1 allow-overflow">
             <ResidentsTable
               data={currentResidents as ResidentItem[]}
@@ -63,8 +65,10 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
             />
           </div>
           {/* Pagination */}
-          <div className="flex items-center justify-between px-2 py-1 text-md">
-            <div className="text-theme/70">Нийт: {totalResidents}</div>
+          <div className="flex items-center justify-between px-2 py-1 text-md border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
+            <div className="text-gray-700 dark:text-gray-300">
+              Нийт: {totalResidents}
+            </div>
             <div className="flex items-center gap-3">
               <PageSongokh
                 value={resPageSize}
@@ -76,7 +80,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               />
               <div id="resident-pagination" className="flex items-center gap-1">
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   disabled={resPage <= 1}
                   onClick={() => {
                     const newPage = Math.max(1, resPage - 1);
@@ -85,9 +89,11 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
                 >
                   Өмнөх
                 </button>
-                <div className="text-theme/70 px-1">{resPage}</div>
+                <div className="text-gray-700 dark:text-gray-300 px-1">
+                  {resPage}
+                </div>
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
+                  className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                   disabled={resPage >= resTotalPages}
                   onClick={() => {
                     const newPage = Math.min(resTotalPages, resPage + 1);

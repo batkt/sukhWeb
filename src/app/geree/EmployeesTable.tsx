@@ -37,81 +37,98 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   const columns: ColumnsType<EmployeeItem> = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: "Нэр",
+        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
-          return <span className="text-theme whitespace-nowrap">{name}</span>;
+          return (
+            <span className="text-gray-900 dark:text-white whitespace-nowrap">
+              {name}
+            </span>
+          );
         },
       },
       {
-        title: "Холбоо барих",
+        title: (
+          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
+        ),
         dataIndex: "utas",
         key: "utas",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val || "-"}
+          </span>
         ),
       },
       {
-        title: "Албан тушаал",
+        title: (
+          <span className="text-gray-900 dark:text-white">Албан тушаал</span>
+        ),
         dataIndex: "albanTushaal",
         key: "albanTushaal",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val || "-"}
+          </span>
         ),
       },
       {
-        title: "Үйлдэл",
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 180,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: EmployeeItem) => (
           <div className="flex gap-2 justify-center">
             <button
               type="button"
               onClick={() => onManagePermissions?.(record)}
-              className="p-2 rounded-2xl action-primary hover-surface transition-colors"
+              className="p-2 rounded-2xl action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
               title="Эрх удирдлага"
             >
-              <Shield className="w-5 h-5" />
+              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
             </button>
             <button
               type="button"
               onClick={() => onCredentialsUpdate?.(record)}
-              className="p-2 rounded-2xl action-secondary hover-surface transition-colors"
+              className="p-2 rounded-2xl action-secondary hover-surface transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/30"
               title="Нэвтрэх эрх"
             >
-              <Lock className="w-5 h-5" />
+              <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </button>
             <button
               type="button"
               onClick={() => onEdit?.(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
               title="Засах"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </button>
             <button
               type="button"
               onClick={() => onDelete?.(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
               title="Устгах"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
             </button>
           </div>
         ),
@@ -128,7 +145,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap">
+    <div className="guilgee-table-wrap bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <Table
         dataSource={data}
         columns={columns}
@@ -137,9 +154,21 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
+        className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
         scroll={{ x: "max-content", y: 400 }}
-        locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
+        rowClassName={(record, index) => `
+          ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+          text-gray-900 dark:text-white
+          hover:bg-gray-100 dark:hover:bg-gray-600
+          transition-colors duration-200
+        `}
+        locale={{
+          emptyText: (
+            <span className="text-gray-500 dark:text-gray-400">
+              Хайсан мэдээлэл алга байна
+            </span>
+          ),
+        }}
       />
     </div>
   );

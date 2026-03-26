@@ -912,11 +912,16 @@ export default function InvoicingZardluud() {
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
   const baiguullagiinId = ajiltan?.baiguullagiinId || null;
-  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(token, baiguullagiinId);
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
+    token,
+    baiguullagiinId,
+  );
 
   useEffect(() => {
     if (baiguullaga && baiguullaga.barilguud) {
-      const effectiveBuildingId = (selectedBuildingId || barilgiinId || undefined) as string | undefined;
+      const effectiveBuildingId = (selectedBuildingId ||
+        barilgiinId ||
+        undefined) as string | undefined;
       const building = baiguullaga.barilguud.find(
         (b: any) => b._id === effectiveBuildingId,
       );
@@ -1430,63 +1435,77 @@ export default function InvoicingZardluud() {
   const nekhemjlekhColumns = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         dataIndex: "index",
         key: "index",
         width: 50,
         align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: "Оршин суугч",
+        title: (
+          <span className="text-gray-900 dark:text-white">Оршин суугч</span>
+        ),
         dataIndex: "ner",
         key: "ner",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string, record: any) => (
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <div className="text-theme truncate">{text}</div>
+              <div className="text-gray-900 dark:text-white truncate">
+                {text}
+              </div>
             </div>
           </div>
         ),
       },
       {
-        title: "Тоот",
+        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
         dataIndex: "toot",
         key: "toot",
         align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string) => (
-          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-500 text-blue-800 text-sm">
+          <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400 text-sm">
             {text || "-"}
           </span>
         ),
       },
       {
-        title: "Хаяг",
+        title: <span className="text-gray-900 dark:text-white">Хаяг</span>,
         dataIndex: "khayag",
         key: "khayag",
         align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const address =
             record.duureg && record.horoo && record.davkhar
               ? `${record.duureg}, ${record.horoo}, ${record.davkhar}`
               : record.khayag || "Хаяг тодорхойгүй";
-          return <span className="text-gray-700">{address}</span>;
+          return (
+            <span className="text-gray-700 dark:text-gray-300">{address}</span>
+          );
         },
       },
       {
-        title: "Утас",
+        title: <span className="text-gray-900 dark:text-white">Утас</span>,
         dataIndex: "utas",
         key: "utas",
         align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (text: string) => (
-          <span className="text-gray-700 font-mono">{text || "-"}</span>
+          <span className="text-gray-700 dark:text-gray-300 font-mono">
+            {text || "-"}
+          </span>
         ),
       },
       {
-        title: "Төлөв",
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
         dataIndex: "tuluv",
         key: "tuluv",
         align: "center" as const,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => {
           const id = String(record?._id || "");
           const label =
@@ -1495,10 +1514,10 @@ export default function InvoicingZardluud() {
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "badge-paid"
+              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
               : label === "Төлөөгүй" || label === "Хугацаа хэтэрсэн"
-                ? "badge-unpaid"
-                : "badge-neutral";
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
+                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
           return (
             <span className={`px-3 py-1 rounded-full text-xs ${cls}`}>
               {label}
@@ -1507,10 +1526,11 @@ export default function InvoicingZardluud() {
         },
       },
       {
-        title: "Үйлдэл",
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center" as const,
         width: 100,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => (
           <div
             className="flex justify-center items-center gap-2"
@@ -1523,7 +1543,7 @@ export default function InvoicingZardluud() {
                 if (record.davkhar) params.set("davkhar", record.davkhar);
                 router.push(`/tulbur?${params.toString()}`);
               }}
-              className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors text-sm"
+              className="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-500 text-white transition-colors text-sm"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               title="Төлбөр хуудас руу шилжих"
@@ -1745,8 +1765,14 @@ export default function InvoicingZardluud() {
               >
                 <IconTextButton
                   onClick={handleSendInvoices}
-                  icon={isSendingInvoices ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : null}
-                  label={isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"}
+                  icon={
+                    isSendingInvoices ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    ) : null
+                  }
+                  label={
+                    isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"
+                  }
                   disabled={isSendingInvoices || selectedExpenses.length === 0}
                   className="bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
                 />

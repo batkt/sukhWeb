@@ -34,26 +34,31 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   const columns: ColumnsType<FloorItem> = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: "Давхар",
+        title: <span className="text-gray-900 dark:text-white">Давхар</span>,
         dataIndex: "floor",
         key: "floor",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val}-р давхар</span>
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val}-р давхар
+          </span>
         ),
       },
       {
-        title: "Тоотууд",
+        title: <span className="text-gray-900 dark:text-white">Тоотууд</span>,
         dataIndex: "filteredUnits",
         key: "filteredUnits",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
@@ -112,21 +117,22 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         },
       },
       {
-        title: "Үйлдэл",
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 120,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: FloorItem) => (
           <div className="flex items-center justify-center gap-2">
             <button
-              className="p-1 rounded-xl hover-surface transition-colors"
+              className="p-1 rounded-xl hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
               title="Шинэ тоот нэмэх"
               onClick={() => onAddUnit?.(record.floor)}
             >
-              <Plus className="w-4 h-4 text-blue-500" />
+              <Plus className="w-4 h-4 text-blue-500 dark:text-blue-400" />
             </button>
             <button
-              className={`p-1 rounded-xl action-delete hover-surface transition-colors ${
+              className={`p-1 rounded-xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30 ${
                 record.units.length === 0
                   ? "opacity-20 cursor-not-allowed grayscale"
                   : ""
@@ -141,7 +147,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
               }
               disabled={record.units.length === 0}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
             </button>
           </div>
         ),
@@ -151,7 +157,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap">
+    <div className="guilgee-table-wrap bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <Table
         dataSource={data}
         columns={columns}
@@ -160,9 +166,21 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
+        className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
         scroll={{ x: "max-content", y: 320 }}
-        locale={{ emptyText: "Давхарын мэдээлэл алга" }}
+        rowClassName={(record, index) => `
+          ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+          text-gray-900 dark:text-white
+          hover:bg-gray-100 dark:hover:bg-gray-600
+          transition-colors duration-200
+        `}
+        locale={{
+          emptyText: (
+            <span className="text-gray-500 dark:text-gray-400">
+              Давхарын мэдээлэл алга
+            </span>
+          ),
+        }}
       />
     </div>
   );

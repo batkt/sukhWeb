@@ -63,6 +63,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
         key: "index",
         width: 50,
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) => startIndex + index + 1,
       },
     ];
@@ -84,6 +85,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                 columnKey === "baritsaaniiUldegdel"
               ? "right"
               : "center";
+
+        const headerClassName =
+          "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold";
 
         if (isSortable) {
           const keyMap: Record<string, SortKey> = {
@@ -108,20 +112,22 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                 }`}
                 title={`Эрэмбэлэх: ${column?.label}`}
               >
-                <span>{column?.label}</span>
+                <span className="text-gray-900 dark:text-white">
+                  {column?.label}
+                </span>
                 <span className="flex flex-col items-center">
                   <ChevronUp
                     className={`w-3 h-3 ${
                       sortKey === targetKey && sortOrder === "asc"
-                        ? "text-blue-500"
-                        : "text-subtle"
+                        ? "text-blue-500 dark:text-blue-400"
+                        : "text-gray-400 dark:text-gray-500"
                     }`}
                   />
                   <ChevronDown
                     className={`w-3 h-3 ${
                       sortKey === targetKey && sortOrder === "desc"
-                        ? "text-blue-500"
-                        : "text-subtle"
+                        ? "text-blue-500 dark:text-blue-400"
+                        : "text-gray-400 dark:text-gray-500"
                     }`}
                   />
                 </span>
@@ -130,34 +136,49 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             dataIndex: columnKey,
             key: columnKey,
             align: alignClass as any,
-            render: (_: any, record: any) => renderCellValue(record, columnKey),
+            className: headerClassName,
+            render: (_: any, record: any) => (
+              <span className="text-gray-900 dark:text-white">
+                {renderCellValue(record, columnKey)}
+              </span>
+            ),
           };
         }
 
         return {
-          title: column?.label,
+          title: (
+            <span className="text-gray-900 dark:text-white">
+              {column?.label}
+            </span>
+          ),
           dataIndex: columnKey,
           key: columnKey,
           align: alignClass as any,
-          render: (_: any, record: any) => renderCellValue(record, columnKey),
+          className: headerClassName,
+          render: (_: any, record: any) => (
+            <span className="text-gray-900 dark:text-white">
+              {renderCellValue(record, columnKey)}
+            </span>
+          ),
         };
       },
     );
 
     const actionColumn: ColumnsType<any> = [
       {
-        title: "Үйлдэл",
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 80,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => (
           <div className="flex gap-2 justify-center">
             <button
               onClick={() => handlePreviewInvoice(record)}
-              className="p-2 rounded-2xl hover-surface transition-colors"
+              className="p-2 rounded-2xl hover-surface transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
               title="Нэхэмжлэх харах"
             >
-              <FileText className="w-5 h-5" />
+              <FileText className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </button>
           </div>
         ),
@@ -178,43 +199,57 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   const totalPages = Math.max(1, Math.ceil(totalContracts / rowsPerPage));
 
   return (
-    <div className="table-surface rounded-2xl w-full">
+    <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
       <div className="rounded-3xl p-1 allow-overflow">
         <div className="w-full overflow-hidden" id="geree-table">
           <div className="w-full overflow-x-auto hide-scrollbar">
-          <Table
-            dataSource={currentContracts}
-            columns={columns}
-            rowKey={(record) => record._id || Math.random().toString()}
-            pagination={false}
-            size="small"
-            bordered
-            className="guilgee-table min-w-[1000px]"
-            scroll={{ x: "max-content", y: 400 }}
-            locale={{ emptyText: "Гэрээ олдсонгүй" }}
-            onRow={(record) => ({
-              onClick: () => {
-                if (ajiltan?.erkh === "Admin") {
-                  const id = String(record._id);
-                  setSelectedContracts((prev) =>
-                    prev.includes(id)
-                      ? prev.filter((x) => x !== id)
-                      : [...prev, id],
-                  );
-                }
-              },
-              className: `transition-colors cursor-pointer hover:bg-[color:var(--surface-hover)] ${
-                selectedContracts.includes(String(record._id))
-                  ? "bg-[color:var(--surface-hover)]/50"
-                  : ""
-              }`,
-            })}
-          />
+            <Table
+              dataSource={currentContracts}
+              columns={columns}
+              rowKey={(record) => record._id || Math.random().toString()}
+              pagination={false}
+              size="small"
+              bordered
+              className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-300"
+              scroll={{ x: "max-content", y: 400 }}
+              rowClassName={(record, index) => `
+                ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+                text-gray-900 dark:text-white
+                hover:bg-gray-100 dark:hover:bg-gray-600
+                transition-colors duration-200
+              `}
+              locale={{
+                emptyText: (
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Гэрээ олдсонгүй
+                  </span>
+                ),
+              }}
+              onRow={(record) => ({
+                onClick: () => {
+                  if (ajiltan?.erkh === "Admin") {
+                    const id = String(record._id);
+                    setSelectedContracts((prev) =>
+                      prev.includes(id)
+                        ? prev.filter((x) => x !== id)
+                        : [...prev, id],
+                    );
+                  }
+                },
+                className: `transition-colors cursor-pointer hover:bg-[color:var(--surface-hover)] dark:hover:bg-gray-800 ${
+                  selectedContracts.includes(String(record._id))
+                    ? "bg-[color:var(--surface-hover)]/50 dark:bg-gray-800/50"
+                    : ""
+                }`,
+              })}
+            />
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between px-2 py-1 text-md">
-        <div className="text-theme/70">Нийт: {totalContracts}</div>
+      <div className="flex items-center justify-between px-2 py-1 text-md border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
+        <div className="text-theme/70 dark:text-gray-400">
+          Нийт: {totalContracts}
+        </div>
         <div className="flex items-center gap-3">
           <PageSongokh
             value={rowsPerPage}

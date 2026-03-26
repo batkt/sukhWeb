@@ -74,68 +74,134 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: "Нэр",
+        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
-          return <span className="text-theme whitespace-nowrap">{name}</span>;
+          return (
+            <span className="text-gray-900 dark:text-white whitespace-nowrap">
+              {name}
+            </span>
+          );
         },
       },
       {
-        title: <SortHeader title="Орц" sortKeyValue="orts" />,
+        title: (
+          <button
+            type="button"
+            onClick={() => onSort?.("orts")}
+            className="w-full inline-flex items-center justify-center gap-2"
+            title="Орцоор эрэмбэлэх"
+          >
+            <span className="text-gray-900 dark:text-white">Орц</span>
+            <span className="flex flex-col items-center">
+              <ChevronUp
+                className={`w-3 h-3 ${sortKey === "orts" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+              <ChevronDown
+                className={`w-3 h-3 ${sortKey === "orts" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+            </span>
+          </button>
+        ),
         key: "orts",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentOrts(record) || "-"}
           </span>
         ),
       },
       {
-        title: <SortHeader title="Давхар" sortKeyValue="davkhar" />,
+        title: (
+          <button
+            type="button"
+            onClick={() => onSort?.("davkhar")}
+            className="w-full inline-flex items-center justify-center gap-2"
+            title="Давхраар эрэмбэлэх"
+          >
+            <span className="text-gray-900 dark:text-white">Давхар</span>
+            <span className="flex flex-col items-center">
+              <ChevronUp
+                className={`w-3 h-3 ${sortKey === "davkhar" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+              <ChevronDown
+                className={`w-3 h-3 ${sortKey === "davkhar" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+            </span>
+          </button>
+        ),
         key: "davkhar",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentDavkhar(record) || "-"}
           </span>
         ),
       },
       {
-        title: <SortHeader title="Тоот" sortKeyValue="toot" />,
+        title: (
+          <button
+            type="button"
+            onClick={() => onSort?.("toot")}
+            className="w-full inline-flex items-center justify-center gap-2"
+            title="Тоотоор эрэмбэлэх"
+          >
+            <span className="text-gray-900 dark:text-white">Тоот</span>
+            <span className="flex flex-col items-center">
+              <ChevronUp
+                className={`w-3 h-3 ${sortKey === "toot" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+              <ChevronDown
+                className={`w-3 h-3 ${sortKey === "toot" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
+              />
+            </span>
+          </button>
+        ),
         key: "toot",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentToot(record) || "-"}
           </span>
         ),
       },
       {
-        title: "Холбоо барих",
+        title: (
+          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
+        ),
         dataIndex: "utas",
         key: "utas",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val || "-"}
+          </span>
         ),
       },
       {
-        title: "Төлөв",
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
         key: "tuluv",
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
           const id = String(record?._id || "");
           const label =
@@ -144,15 +210,15 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "badge-paid"
+              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
               : label === "Хугацаа хэтэрсэн"
-                ? "bg-red-500 text-red-800"
+                ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400"
                 : label === "Төлөөгүй"
-                  ? "badge-unpaid"
-                  : "badge-neutral";
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
           return (
             <span
-              className={`inline-flex items-center px-2 py-0.5  text-sm font-normal ${cls}`}
+              className={`inline-flex items-center px-2 py-0.5 text-sm font-normal rounded-full ${cls}`}
             >
               {label}
             </span>
@@ -160,27 +226,28 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         },
       },
       {
-        title: "Үйлдэл",
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 100,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <div className="flex gap-2 justify-center">
             <button
               type="button"
               onClick={() => onEdit?.(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors"
+              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
               title="Засах"
             >
-              <Edit className="w-5 h-5" />
+              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </button>
             <button
               type="button"
               onClick={() => onDelete?.(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors"
+              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
               title="Устгах"
             >
-              <Trash2 className="w-5 h-5" />
+              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
             </button>
           </div>
         ),
@@ -199,7 +266,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap">
+    <div className="guilgee-table-wrap bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <Table
         dataSource={data}
         columns={columns}
@@ -208,9 +275,21 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
-        scroll={{ x: "max-content", y: 400 }}
-        locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
+        className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
+        scroll={{ x: "max-content", y: 320 }}
+        rowClassName={(record, index) => `
+        ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+        text-gray-900 dark:text-white
+        hover:bg-gray-100 dark:hover:bg-gray-600
+        transition-colors duration-200
+      `}
+        locale={{
+          emptyText: (
+            <span className="text-gray-500 dark:text-gray-400">
+              Хайсан мэдээлэл алга байна
+            </span>
+          ),
+        }}
       />
     </div>
   );

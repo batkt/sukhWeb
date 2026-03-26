@@ -251,43 +251,71 @@ export default function TransactionsPage() {
           <div className="max-h-[60vh] overflow-y-auto custom-scrollbar">
             <table className="table-ui text-xs min-w-full">
               <thead>
-                <tr>
-                  <th className="p-2 text-center w-12">#</th>
-                  <th className="p-2 text-center">Огноо</th>
-                  <th className="p-2 text-center">Төрөл</th>
-                  <th className="p-2 text-center">Дүн</th>
-                  <th className="p-2 text-center">Данс/Банк</th>
-                  <th className="p-2 text-center">Тайлбар / Нэх.</th>
-                  <th className="p-2 text-center">Төлөв</th>
+                <tr className="bg-gray-50 dark:bg-gray-900">
+                  <th className="p-2 text-center w-12 text-gray-900 dark:text-white">
+                    #
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Огноо
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Төрөл
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Дүн
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Данс/Банк
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Тайлбар / Нэх.
+                  </th>
+                  <th className="p-2 text-center text-gray-900 dark:text-white">
+                    Төлөв
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-subtle">
+                    <td
+                      colSpan={7}
+                      className="p-8 text-center text-gray-500 dark:text-gray-400"
+                    >
                       Мэдээлэл олдсонгүй
                     </td>
                   </tr>
                 ) : (
                   rows.map((r: any, idx: number) => (
-                    <tr key={r._id || idx} className="border-b last:border-b-0">
-                      <td className="p-2 text-center">
+                    <tr
+                      key={r._id || idx}
+                      className={`border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${
+                        idx % 2 === 0
+                          ? "bg-white dark:bg-gray-800"
+                          : "bg-gray-50 dark:bg-gray-700/50"
+                      } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
+                    >
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
                         {(page - 1) * pageSize + idx + 1}
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
                         {r.ognoo || r.date || "-"}
                       </td>
-                      <td className="p-2 text-center">{r.type || "-"}</td>
-                      <td className="p-2 text-center">
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
+                        {r.type || "-"}
+                      </td>
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
                         {r.amount ? formatNumber(Number(r.amount)) + " " : "-"}
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
                         {r.bank || r.account || "-"}
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
                         {r.note || r.invoiceId || "-"}
                       </td>
-                      <td className="p-2 text-center">{r.status || "-"}</td>
+                      <td className="p-2 text-center text-gray-900 dark:text-white">
+                        {r.status || "-"}
+                      </td>
                     </tr>
                   ))
                 )}

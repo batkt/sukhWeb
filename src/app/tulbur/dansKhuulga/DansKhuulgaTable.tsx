@@ -35,54 +35,67 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   const columns: ColumnsType<DansKhuulgaItem> = useMemo(
     () => [
       {
-        title: "№",
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * rowsPerPage + index + 1,
       },
       {
-        title: "Огноо",
+        title: <span className="text-gray-900 dark:text-white">Огноо</span>,
         dataIndex: "date",
         key: "date",
         align: "center",
         width: 100,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val || "-"}
+          </span>
         ),
       },
       {
-        title: "Гүйлгээний утга",
+        title: (
+          <span className="text-gray-900 dark:text-white">Гүйлгээний утга</span>
+        ),
         dataIndex: "action",
         align: "center",
         key: "action",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
-          <span className="text-theme" title={val}>
+          <span className="text-gray-900 dark:text-white" title={val}>
             {item.action || item.raw?.uilchilgeeniiUtga || "-"}
           </span>
         ),
       },
       {
-        title: "Гүйлгээний дүн",
+        title: (
+          <span className="text-gray-900 dark:text-white">Гүйлгээний дүн</span>
+        ),
         dataIndex: "total",
         key: "total",
         align: "center",
         width: 140,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap font-medium">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
             {formatNumber(val || 0, 0)}
           </span>
         ),
       },
       {
-        title: "Шилжүүлсэн данс",
+        title: (
+          <span className="text-gray-900 dark:text-white">Шилжүүлсэн данс</span>
+        ),
         dataIndex: "account",
         key: "account",
         align: "center",
         width: 180,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string, item: DansKhuulgaItem) => (
-          <span className="text-theme whitespace-nowrap font-mono text-xs">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap font-mono text-xs">
             {item.account || item.raw?.bairlal || "-"}
           </span>
         ),
@@ -99,42 +112,56 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   return (
     <div className="w-full overflow-hidden">
       <div className="w-full overflow-x-auto hide-scrollbar">
-      <Table
-        dataSource={data}
-        columns={columns}
-        rowKey={(record) => record.id?.toString() || Math.random().toString()}
-        pagination={false}
-        size="small"
-        bordered
-        loading={loading}
-        className="guilgee-table min-w-[1000px]"
-        scroll={{ x: "max-content", y: maxHeight }}
-        locale={{ emptyText: "Гүйлгээний мэдээлэл олдсонгүй" }}
-        summary={() =>
-          data.length > 0 ? (
-            <Table.Summary fixed="bottom">
-              <Table.Summary.Row>
-              <Table.Summary.Cell index={0} colSpan={2} align="center">
-                <span className="font-bold text-theme">Нийт:</span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} align="right">
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest">
-                  Нийт дүн:
-                </span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={2} align="right">
-                <span className="font-bold text-theme text-xs">
-                  {formatNumber(totalSum, 0)}
-                </span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={3} align="center">
-                -
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
+        <Table
+          dataSource={data}
+          columns={columns}
+          rowKey={(record) => record.id?.toString() || Math.random().toString()}
+          pagination={false}
+          size="small"
+          bordered
+          loading={loading}
+          className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
+          scroll={{ x: "max-content", y: maxHeight }}
+          rowClassName={(record, index) => `
+          ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+          text-gray-900 dark:text-white
+          hover:bg-gray-100 dark:hover:bg-gray-600
+          transition-colors duration-200
+        `}
+          locale={{
+            emptyText: (
+              <span className="text-gray-500 dark:text-gray-400">
+                Гүйлгээний мэдээлэл олдсонгүй
+              </span>
+            ),
+          }}
+          summary={() =>
+            data.length > 0 ? (
+              <Table.Summary fixed="bottom">
+                <Table.Summary.Row>
+                  <Table.Summary.Cell index={0} colSpan={2} align="center">
+                    <span className="font-bold text-gray-900 dark:text-white">
+                      Нийт:
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="right">
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                      Нийт дүн:
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right">
+                    <span className="font-bold text-gray-900 dark:text-white text-xs">
+                      {formatNumber(totalSum, 0)}
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={3} align="center">
+                    <span className="text-gray-500 dark:text-gray-400">-</span>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
               </Table.Summary>
             ) : null
           }
-      />
+        />
       </div>
     </div>
   );

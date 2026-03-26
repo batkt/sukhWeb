@@ -1,10 +1,18 @@
 "use client";
 
 import React from "react";
-import { Table, Spin, Pagination } from "antd";
+import { Table, Spin, Pagination, Tooltip } from "antd";
 import type { TableColumnsType } from "antd";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  History,
+  Mail,
+  Trash2,
+  FileText,
+} from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 interface Column<T> {
@@ -14,6 +22,7 @@ interface Column<T> {
   align?: "start" | "center" | "end" | "left" | "right";
   sorter?: boolean | ((a: T, b: T) => number);
   render?: (value: any, item: T, index: number) => React.ReactNode;
+  className?: string;
 }
 
 interface StandardTableProps<T extends object> {
@@ -64,7 +73,7 @@ export function StandardTable<T extends object>({
     return "left";
   };
 
-  // Convert our Column type to Ant Design's TableColumnsType
+  // Convert our Column type to Ant Design's TableColumnsType with dark mode support
   const antColumns: TableColumnsType<T> = columns.map((col) => ({
     key: col.key,
     dataIndex: col.key,
@@ -72,8 +81,19 @@ export function StandardTable<T extends object>({
     width: col.width,
     align: getAlign(col.align) as "left" | "center" | "right",
     sorter: col.sorter,
+    className: `
+      bg-gray-50 dark:bg-gray-900 
+      text-gray-900 dark:text-white 
+      border-b border-gray-200 dark:border-gray-700
+      font-semibold
+      ${col.className || ""}
+    `,
     render: (value: any, record: T, index: number) => {
-      return col.render ? col.render(value, record, index) : value;
+      return col.render ? (
+        col.render(value, record, index)
+      ) : (
+        <span className="text-gray-900 dark:text-white">{value}</span>
+      );
     },
   }));
 
@@ -105,7 +125,13 @@ export function StandardTable<T extends object>({
               columns={antColumns}
               dataSource={dataWithKeys}
               pagination={false}
-              locale={{ emptyText: emptyMessage }}
+              locale={{
+                emptyText: (
+                  <span className="text-gray-500 dark:text-gray-400">
+                    {emptyMessage}
+                  </span>
+                ),
+              }}
               sticky={stickyHeader}
               onRow={(record) => ({
                 onClick: () => handleRowClick(record),
@@ -116,7 +142,13 @@ export function StandardTable<T extends object>({
                 x: "max-content",
                 ...(maxHeight ? { y: maxHeight } : {}),
               }}
-              rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
+              rowClassName={(record, index) => `
+                ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
+                text-gray-900 dark:text-white
+                hover:bg-gray-100 dark:hover:bg-gray-600
+                transition-colors duration-200
+                border-b border-slate-100 dark:border-slate-800/50
+              `}
             />
           </Spin>
 
