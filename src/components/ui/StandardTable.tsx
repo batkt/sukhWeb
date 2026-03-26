@@ -4,6 +4,8 @@ import React from "react";
 import { Table, Spin, Pagination } from "antd";
 import type { TableColumnsType } from "antd";
 import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 
 interface Column<T> {
   key: string;
@@ -98,29 +100,38 @@ export function StandardTable<T extends object>({
             className,
           )}
         >
-        <Spin spinning={loading} tip="Уншиж байна..." size="small">
-          <Table<T>
-            columns={antColumns}
-            dataSource={dataWithKeys}
-            pagination={
-              pagination === false
-                ? false
-                : { ...pagination, position: ["bottomCenter"] }
-            }
-            locale={{ emptyText: emptyMessage }}
-            sticky={stickyHeader}
-            onRow={(record) => ({
-              onClick: () => handleRowClick(record),
-              style: { cursor: onRowClick ? "pointer" : "default" },
-            })}
-            className="min-w-full"
-            scroll={{ x: "max-content", ...(maxHeight ? { y: maxHeight } : {}) }}
-            rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
+          <Spin spinning={loading} tip="Уншиж байна..." size="small">
+            <Table<T>
+              columns={antColumns}
+              dataSource={dataWithKeys}
+              pagination={false}
+              locale={{ emptyText: emptyMessage }}
+              sticky={stickyHeader}
+              onRow={(record) => ({
+                onClick: () => handleRowClick(record),
+                style: { cursor: onRowClick ? "pointer" : "default" },
+              })}
+              className="min-w-full"
+              scroll={{
+                x: "max-content",
+                ...(maxHeight ? { y: maxHeight } : {}),
+              }}
+              rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
+            />
+          </Spin>
 
-          />
-        </Spin>
-        {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
-      </div>
+          {pagination && typeof pagination === "object" && (
+            <StandardPagination
+              current={pagination.current}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              onChange={pagination.onChange}
+              onPageSizeChange={(newSize) => pagination.onChange(1, newSize)}
+            />
+          )}
+
+          {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
+        </div>
       </div>
     </div>
   );
@@ -131,16 +142,16 @@ export function StandardPagination({
   total,
   pageSize,
   onChange,
+  onPageSizeChange,
+  pageSizeOptions = [50, 100, 500, 1000],
 }: {
   current: number;
   total: number;
   pageSize: number;
   onChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  pageSizeOptions?: number[];
 }) {
-  const totalPages = Math.ceil(total / pageSize);
-
-  if (totalPages <= 1) return null;
-
   const itemRender = (
     page: number,
     type: "page" | "prev" | "next" | "jump-prev" | "jump-next",
@@ -148,15 +159,15 @@ export function StandardPagination({
   ) => {
     if (type === "prev") {
       return (
-        <button className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 hover:bg-slate-50 transition-all text-[10px] uppercase tracking-tighter font-bold">
-          Өмнөх
+        <button className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+          <ChevronLeft className="w-4 h-4 text-theme/70" />
         </button>
       );
     }
     if (type === "next") {
       return (
-        <button className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 hover:bg-slate-50 transition-all text-[10px] uppercase tracking-tighter font-bold">
-          Дараах
+        <button className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+          <ChevronRight className="w-4 h-4 text-theme/70" />
         </button>
       );
     }
@@ -165,10 +176,8 @@ export function StandardPagination({
       return (
         <button
           className={cn(
-            "min-w-[32px] h-[32px] flex items-center justify-center rounded-xl text-xs transition-all",
-            isActive
-              ? "bg-primary text-white shadow-lg shadow-primary/30"
-              : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400",
+            "w-8 h-8 flex items-center justify-center rounded-xl text-xs transition-all",
+            isActive ? " text-white" : " hover:text-theme",
           )}
         >
           {page}
@@ -179,7 +188,14 @@ export function StandardPagination({
   };
 
   return (
-    <div className="flex justify-center items-center gap-4 py-8 mt-auto w-full">
+    <div className="flex flex-row items-center justify-between w-full px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm shadow-inner rounded-b-[32px]">
+      {/* Total Range */}
+      <div className="text-[11px] text-theme/60 font-medium whitespace-nowrap">
+        {Math.min((current - 1) * pageSize + 1, total)}-
+        {Math.min(current * pageSize, total)} / {total}
+      </div>
+
+      {/* Pagination Buttons */}
       <Pagination
         current={current}
         total={total}
@@ -187,12 +203,22 @@ export function StandardPagination({
         onChange={onChange}
         itemRender={itemRender}
         showSizeChanger={false}
-        showTotal={(total, range) => (
-          <span className="text-[10px] text-slate-400 uppercase tracking-widest">
-            {range[0]} - {range[1]} / {total}
-          </span>
-        )}
       />
+
+      {/* Page Size Selector */}
+      <div className="flex items-center gap-2">
+        {onPageSizeChange && (
+          <PageSongokh
+            value={pageSize}
+            onChange={(v) => {
+              onPageSizeChange(v);
+              onChange(1);
+            }}
+            options={pageSizeOptions}
+            suffix="/ хуудас"
+          />
+        )}
+      </div>
     </div>
   );
 }

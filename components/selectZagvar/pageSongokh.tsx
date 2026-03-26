@@ -8,11 +8,13 @@ export default function PageSongokh({
   onChange,
   options = [50, 100, 500, 1000],
   className = "",
+  suffix = "",
 }: {
   value: number;
   onChange: (v: number) => void;
   options?: number[];
   className?: string;
+  suffix?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -91,11 +93,11 @@ export default function PageSongokh({
               onChange(opt);
               setOpen(false);
             }}
-            className={`w-full text-left px-3 py-1 rounded-2xl text-sm transition-colors ${
-              active ? "bg-black/10 " : "hover:bg-black/8"
+            className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
+              active ? "bg-blue-500 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-theme"
             }`}
           >
-            {opt}
+            {opt} {suffix}
           </button>
         );
       })}
@@ -108,7 +110,7 @@ export default function PageSongokh({
         <button
           ref={buttonRef}
           type="button"
-          className={`page-surface inline-flex items-center gap-2 rounded-2xl text-sm px-3 py-1.5 focus-visible:outline-none ${className}`}
+          className={`inline-flex items-center gap-2 rounded-xl text-xs px-3 py-1.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all focus-visible:outline-none text-theme/80 ${className}`}
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -117,8 +119,8 @@ export default function PageSongokh({
           aria-haspopup="listbox"
           aria-expanded={open}
         >
-          {value}
-          <ChevronDown className="w-4 h-4" />
+          {value} {suffix}
+          <ChevronDown className="w-3 h-3 opacity-50" />
         </button>
       </div>
 

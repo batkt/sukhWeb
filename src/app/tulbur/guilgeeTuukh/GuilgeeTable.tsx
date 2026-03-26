@@ -78,8 +78,8 @@ export default function GuilgeeTable({
             col.key === "paid" ||
             col.key === "uldegdel" ||
             col.key === "ekhniiUldegdel"
-                ? "center"
-                : "center",
+              ? "center"
+              : "center",
           sorter:
             col.key === "uldegdel" || col.key === "paid" || col.key === "toot"
               ? true
@@ -687,60 +687,61 @@ export default function GuilgeeTable({
       <div className="w-full overflow-x-auto hide-scrollbar">
         <Table
           className="guilgee-table min-w-[1000px]"
-      dataSource={data}
-      loading={loading}
-      pagination={false}
-      size="small"
-      bordered
-      tableLayout="auto"
-      rowKey={(record: any) => record._id || Math.random().toString()}
-      rowSelection={
-        isCheckboxVisible
-          ? {
-              type: "checkbox",
-              selectedRowKeys: selectedGereeIds,
-              onChange: (selectedKeys) => {
-                onSelectionChange(selectedKeys as string[]);
-              },
-              getCheckboxProps: (record: any) => {
-                const gid = getGereeId(record);
-                return {
-                  disabled: !gid || gid.length <= 5,
-                };
-              },
+          dataSource={data}
+          loading={loading}
+          pagination={false}
+          size="small"
+          bordered
+          tableLayout="auto"
+          rowKey={(record: any) => record._id || Math.random().toString()}
+          rowSelection={
+            isCheckboxVisible
+              ? {
+                  type: "checkbox",
+                  selectedRowKeys: selectedGereeIds,
+                  onChange: (selectedKeys) => {
+                    onSelectionChange(selectedKeys as string[]);
+                  },
+                  getCheckboxProps: (record: any) => {
+                    const gid = getGereeId(record);
+                    return {
+                      disabled: !gid || gid.length <= 5,
+                    };
+                  },
+                }
+              : undefined
+          }
+          onChange={handleTableChange}
+          scroll={{ x: "max-content", y: maxHeight }}
+          locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
+          summary={getSummary}
+          columns={columns}
+          rowClassName={(record: any) => {
+            // Highlight cancelled items with red background
+            const gid = getGereeId(record);
+            const historyAggregate =
+              Number(record?._totalTulbur || 0) -
+              Number(record?._totalTulsun || 0);
+            const remainingValue =
+              bestKnownBalances[gid] ??
+              (historyAggregate || Number(record?.uldegdel ?? 0));
+            const itForTuluv = {
+              ...record,
+              uldegdel: remainingValue,
+            };
+            let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
+            if (record?.tuluv === "Цуцалсан" || record?.status === "Цуцалсан") {
+              tuluvLabel = "Цуцалсан";
             }
-          : undefined
-      }
-      onChange={handleTableChange}
-      scroll={{ x: "max-content", y: maxHeight }}
-      locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
-      summary={getSummary}
-      columns={columns}
-      rowClassName={(record: any) => {
-        // Highlight cancelled items with red background
-        const gid = getGereeId(record);
-        const historyAggregate =
-          Number(record?._totalTulbur || 0) - Number(record?._totalTulsun || 0);
-        const remainingValue =
-          bestKnownBalances[gid] ??
-          (historyAggregate || Number(record?.uldegdel ?? 0));
-        const itForTuluv = {
-          ...record,
-          uldegdel: remainingValue,
-        };
-        let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
-        if (record?.tuluv === "Цуцалсан" || record?.status === "Цуцалсан") {
-          tuluvLabel = "Цуцалсан";
-        }
-        if (remainingValue < 0.01) {
-          tuluvLabel = "Төлсөн";
-        }
-        if (tuluvLabel === "Цуцалсан") {
-          return "row-cancelled";
-        }
-        return "";
-      }}
-    />
+            if (remainingValue < 0.01) {
+              tuluvLabel = "Төлсөн";
+            }
+            if (tuluvLabel === "Цуцалсан") {
+              return "row-cancelled";
+            }
+            return "";
+          }}
+        />
       </div>
     </div>
   );

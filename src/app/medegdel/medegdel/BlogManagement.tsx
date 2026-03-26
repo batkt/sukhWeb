@@ -12,6 +12,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr";
 import Aos from "aos";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 interface BlogReaction {
   emoji: string;
@@ -53,6 +54,10 @@ export default function BlogManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBlog, setEditingBlog] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(false);
+  
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   
   // Form states
   const [title, setTitle] = useState("");
@@ -194,6 +199,12 @@ export default function BlogManagement() {
     blog.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const paginatedBlogs = filteredBlogs.slice((page - 1) * rowsPerPage, page * rowsPerPage);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchQuery, selectedBuildingId]);
+
   return (
     <div className="min-h-0 flex flex-col pt-2 bg-transparent">
       {/* Search and Add Header */}
@@ -237,76 +248,87 @@ export default function BlogManagement() {
             <h3 className="text-base  text-slate-700 dark:text-slate-200">Нийтлэл олдсонгүй</h3>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-8">
-            <AnimatePresence>
-              {filteredBlogs.map((blog) => (
-                <motion.div
-                  key={blog._id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <Card
-                    hoverable
-                    className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
-                    cover={
-                      blog.images && blog.images.length > 0 ? (
-                        <div className="h-40 overflow-hidden relative">
-                          <img
-                            src={getImageUrl(blog.images[0])}
-                            alt={blog.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = ""; // Clear broken images
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-40 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-                          <ImagePlus className="w-8 h-8 text-slate-300" />
-                        </div>
-                      )
-                    }
-                    actions={[
-                      <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
-                        <Edit2 size={16} />
-                      </button>,
-                      <Popconfirm
-                        key="delete"
-                        title="Устгах уу?"
-                        onConfirm={() => handleDelete(blog._id)}
-                        okText="Тийм"
-                        cancelText="Үгүй"
-                        placement="topRight"
-                      >
-                        <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </Popconfirm>
-                    ]}
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-4">
+              <AnimatePresence>
+                {paginatedBlogs.map((blog) => (
+                  <motion.div
+                    key={blog._id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
                   >
-                    <div className="flex flex-col h-full">
-                      <h3 className="text-sm  line-clamp-1 mb-1.5 text-theme">{blog.title}</h3>
-                      <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-1">{blog.content}</p>
-                      
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex -space-x-1">
-                          {(blog.reactions || []).slice(0, 3).map((r, i) => (
-                            <span key={i} className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-50 dark:bg-slate-800 text-[10px] border border-white dark:border-slate-900">
-                              {r.emoji}
-                            </span>
-                          ))}
+                    <Card
+                      hoverable
+                      className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
+                      cover={
+                        blog.images && blog.images.length > 0 ? (
+                          <div className="h-40 overflow-hidden relative">
+                            <img
+                              src={getImageUrl(blog.images[0])}
+                              alt={blog.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = ""; // Clear broken images
+                              }}
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-40 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
+                            <ImagePlus className="w-8 h-8 text-slate-300" />
+                          </div>
+                        )
+                      }
+                      actions={[
+                        <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
+                          <Edit2 size={16} />
+                        </button>,
+                        <Popconfirm
+                          key="delete"
+                          title="Устгах уу?"
+                          onConfirm={() => handleDelete(blog._id)}
+                          okText="Тийм"
+                          cancelText="Үгүй"
+                          placement="topRight"
+                        >
+                          <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </Popconfirm>
+                      ]}
+                    >
+                      <div className="flex flex-col h-full">
+                        <h3 className="text-sm  line-clamp-1 mb-1.5 text-theme">{blog.title}</h3>
+                        <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-1">{blog.content}</p>
+                        
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="flex -space-x-1">
+                            {(blog.reactions || []).slice(0, 3).map((r, i) => (
+                              <span key={i} className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-50 dark:bg-slate-800 text-[10px] border border-white dark:border-slate-900">
+                                {r.emoji}
+                              </span>
+                            ))}
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(blog.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(blog.createdAt).toLocaleDateString()}
-                        </span>
                       </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <StandardPagination
+              current={page}
+              total={filteredBlogs.length}
+              pageSize={rowsPerPage}
+              onChange={setPage}
+              onPageSizeChange={setRowsPerPage}
+              pageSizeOptions={[6, 9, 12, 24]}
+            />
           </div>
         )}
       </div>

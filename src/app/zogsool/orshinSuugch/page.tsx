@@ -25,6 +25,7 @@ import deleteMethod from "../../../../tools/function/deleteMethod";
 import { getResidentToot } from "@/lib/residentDataHelper";
 import Button from "@/components/ui/Button";
 import ZogsoolOrshinSuugchTable from "./ZogsoolOrshinSuugchTable";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 const RealTimeClock = () => {
   const [time, setTime] = useState(moment());
@@ -263,36 +264,13 @@ export default function OrshinSuugch() {
           />
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 py-8 mt-auto">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              Өмнөх
-            </Button>
-            <div className="flex items-center justify-center px-6 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <span className="text-xs font-black text-slate-600 dark:text-slate-300 tracking-tighter">
-                {page}{" "}
-                <span className="text-slate-300 dark:text-slate-600 mx-1">
-                  /
-                </span>{" "}
-                {totalPages}
-              </span>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
-              Дараах
-            </Button>
-          </div>
-        )}
+        <StandardPagination
+          current={page}
+          total={totalCount}
+          pageSize={pageSize}
+          onChange={setPage}
+          onPageSizeChange={undefined} // pageSize is fixed to 50 in this page currently
+        />
       </div>
     </div>
   );

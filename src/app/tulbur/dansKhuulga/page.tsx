@@ -5,14 +5,10 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useAuth } from "@/lib/useAuth";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
-import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import useJagsaalt from "@/lib/useJagsaalt";
 import uilchilgee, { url as API_URL } from "@/lib/uilchilgee";
-import IconTextButton from "@/components/ui/IconTextButton";
-import { Download } from "lucide-react";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
@@ -412,25 +408,13 @@ export default function DansniiKhuulga() {
               </div>
 
               <div className="flex items-center gap-3">
-                <div id="dans-page-size" className="flex items-center gap-2">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
-                    Мөр:
-                  </span>
-                  <PageSongokh
-                    value={rowsPerPage}
-                    onChange={(v) => {
-                      setRowsPerPage(v);
-                      setPage(1);
-                    }}
-                    className="text-xs bg-transparent border-0 text-slate-700 dark:text-slate-300"
-                  />
-                </div>
-
                 <StandardPagination
                   current={page}
                   total={filteredData.length}
                   pageSize={rowsPerPage}
                   onChange={setPage}
+                  onPageSizeChange={setRowsPerPage}
+                  pageSizeOptions={[50, 100, 500, 1000]}
                 />
               </div>
             </div>

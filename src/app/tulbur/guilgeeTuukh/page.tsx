@@ -16,7 +16,6 @@ import { Tooltip, Table } from "antd";
 import type { TableColumnsType } from "antd";
 import GuilgeeTable from "./GuilgeeTable";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
-import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { set } from "lodash";
@@ -61,6 +60,7 @@ import HistoryModal from "../../geree/modals/HistoryModal";
 import InvoiceModal from "../../geree/modals/InvoiceModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 import { useGereeActions } from "@/lib/useGereeActions";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -87,7 +87,10 @@ export default function DansniiKhuulga() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
-  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(token, (ajiltan?.baiguullagiinId || null) as string | null);
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
+    token,
+    (ajiltan?.baiguullagiinId || null) as string | null,
+  );
   const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
     token,
     ajiltan,
@@ -2185,7 +2188,7 @@ export default function DansniiKhuulga() {
     try {
       await sendInvoicesApi(uniqueGereeIds);
       setSelectedGereeIds([]); // Clear selection on success
-      
+
       // Refresh data
       mutate(
         (key: any) =>
@@ -2814,7 +2817,6 @@ export default function DansniiKhuulga() {
                               [col.key]: e.target.checked,
                             }));
                           }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
                         />
                         <span className="text-theme">{col.label}</span>
                       </label>
@@ -2829,9 +2831,17 @@ export default function DansniiKhuulga() {
                 >
                   <IconTextButton
                     onClick={handleSendInvoices}
-                    icon={isSendingInvoices ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <Send className="w-5 h-5" />}
+                    icon={
+                      isSendingInvoices ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      ) : (
+                        <Send className="w-5 h-5" />
+                      )
+                    }
                     label="Нэхэмжлэх илгээх"
-                    disabled={isSendingInvoices || selectedGereeIds.length === 0}
+                    disabled={
+                      isSendingInvoices || selectedGereeIds.length === 0
+                    }
                     className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
                   />
                 </motion.div>
@@ -2882,44 +2892,14 @@ export default function DansniiKhuulga() {
               }}
             />
           </div>
-          <div className="w-full flex flex-row items-center justify-between px-6 py-3 gap-3 text-sm mt-4 ">
-            <div className="text-theme/70 text-xs whitespace-nowrap">
-              Нийт: {deduplicatedResidents.length}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span id="guilgee-page-size">
-                <PageSongokh
-                  value={rowsPerPage}
-                  onChange={(v) => {
-                    setRowsPerPage(v);
-                    setPage(1);
-                  }}
-                  className="text-sm px-2 py-1"
-                />
-              </span>
-
-              <div id="guilgee-pagination" className="flex items-center gap-1">
-                <button
-                  className="!w-6 !h-6 !min-w-0 !p-0 !flex !items-center !justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                  disabled={page <= 1}
-                  onClick={() => setPage(Math.max(1, page - 1))}
-                  title="Өмнөх"
-                >
-                  <span className="text-[10px]">&lt;</span>
-                </button>
-                <div className="text-theme/70 px-1 text-[11px] font-medium">{page}</div>
-                <button
-                  className="!w-6 !h-6 !min-w-0 !p-0 !flex !items-center !justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                  disabled={page * rowsPerPage >= deduplicatedResidents.length}
-                  onClick={() => setPage(page + 1)}
-                  title="Дараах"
-                >
-                  <span className="text-[10px]">&gt;</span>
-                </button>
-              </div>
-            </div>
-          </div>
+          <StandardPagination
+            current={page}
+            total={deduplicatedResidents.length}
+            pageSize={rowsPerPage}
+            onChange={setPage}
+            onPageSizeChange={setRowsPerPage}
+            pageSizeOptions={[50, 100, 500, 1000]}
+          />
         </div>
       </div>
 

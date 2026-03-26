@@ -15,8 +15,8 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { Download } from "lucide-react";
 import IconTextButton from "@/components/ui/IconTextButton";
-import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import TulburLayout from "../TulburLayout";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 type TableItem = {
   id?: string | number;
@@ -555,6 +555,13 @@ export default function Ebarimt() {
             data={displayedData}
             loading={isLoading}
             maxHeight="calc(100vh - 550px)"
+          />
+
+          <StandardPagination
+            current={1}
+            total={displayedData.length}
+            pageSize={displayedData.length || 50}
+            onChange={() => {}}
           />
         </div>
       </div>
