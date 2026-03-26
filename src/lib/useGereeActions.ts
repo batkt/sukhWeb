@@ -1005,10 +1005,10 @@ export function useGereeActions(
     handleEditTemplate: (_id: string) => {},
     handleDeleteTemplate: (_id: string) => {},
     toggleSortFor: (_key: string) => {},
+    handleSendInvoices,
+    handlePreviewInvoice,
     deleteUnit,
     deleteFloor,
     addUnit,
-    handlePreviewInvoice,
-    handleSendInvoices,
   };
 }

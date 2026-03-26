@@ -963,6 +963,12 @@ export default function InvoiceModal({
 
                 {/* Content Footer / Actions */}
                 <div className="p-6 border-t flex justify-end gap-3 bg-white no-print">
+                   <button
+                    onClick={onClose}
+                    className="ant-btn ant-btn-default flex items-center gap-2 px-6 py-2.5"
+                  >
+                    Хаах
+                  </button>
                   <button
                     onClick={() => window.print()}
                     className="ant-btn ant-btn-primary flex items-center gap-2 px-6 py-2.5"
@@ -970,13 +976,7 @@ export default function InvoiceModal({
                     <Printer className="w-4 h-4" />
                     Хэвлэх
                   </button>
-                  <button
-                    onClick={onClose}
-                    className="ant-btn ant-btn-default flex items-center gap-2 px-6 py-2.5"
-                  >
-                    <X className="w-4 h-4" />
-                    Хаах
-                  </button>
+                 
                 </div>
               </div>
             ) : (

@@ -1466,13 +1466,13 @@ export default function HistoryModal({
           <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
             <button
               onClick={onClose}
-              className="ant-btn ant-btn-default no-print"
+              className="ant-btn w-20 ant-btn-default no-print"
             >
               Хаах
             </button>
             <button
               onClick={handlePrint}
-              className="ant-btn ant-btn-primary no-print"
+              className="ant-btn w-20 ant-btn-primary no-print"
             >
               Хэвлэх
             </button>

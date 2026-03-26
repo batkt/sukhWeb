@@ -60,6 +60,7 @@ import TransactionModal, {
 import HistoryModal from "../../geree/modals/HistoryModal";
 import InvoiceModal from "../../geree/modals/InvoiceModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
+import { useGereeActions } from "@/lib/useGereeActions";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -86,6 +87,15 @@ export default function DansniiKhuulga() {
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(token, (ajiltan?.baiguullagiinId || null) as string | null);
+  const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
+    token,
+    ajiltan,
+    (barilgiinId || undefined) as string | undefined,
+    (selectedBuildingId || undefined) as string | undefined,
+    baiguullaga,
+    baiguullagaMutate,
+  );
 
   // Memoize empty objects to prevent infinite SWR re-validation loops
   const emptyQuery = useMemo(() => ({}), []);
@@ -2156,65 +2166,40 @@ export default function DansniiKhuulga() {
 
   // Manual send invoice handler
   const handleSendInvoices = async () => {
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
-      return;
-    }
+    // Map transaction IDs to actual contract IDs (gereeniiId)
+    // selectedGereeIds actually contains transaction/_id values from the table rows
+    const mappedGereeIds = allHistoryItems
+      .filter((it: any) => selectedGereeIds.includes(it._id))
+      .map((it: any) => String(it.gereeniiId || it.gereeId || "").trim())
+      .filter(Boolean);
 
-    if (selectedGereeIds.length === 0) {
-      openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
+    // Deduplicate to send unique contract IDs
+    const uniqueGereeIds = Array.from(new Set(mappedGereeIds));
+
+    if (uniqueGereeIds.length === 0) {
+      toast.error("Сонгосон гүйлгээнүүдэд холбогдох гэрээ олдсонгүй!");
       return;
     }
 
     setIsSendingInvoices(true);
     try {
-      // Get current month and year as default
-      const now = new Date();
-
-      const body = {
-        gereeIds: selectedGereeIds,
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        override: false,
-        targetMonth: now.getMonth() + 1,
-        targetYear: now.getFullYear(),
-      };
-
-      const response = await uilchilgee(token).post("/manualSend", body);
-
-      if (response.data?.success) {
-        const message =
-          response.data.message ||
-          `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
-        openSuccessOverlay(message);
-        setSelectedGereeIds([]); // Clear selection on success
-
-        // If there are errors, show them
-        if (
-          response.data.data?.errors > 0 &&
-          response.data.data?.errorsList?.length > 0
-        ) {
-          const errorMessages = response.data.data.errorsList
-            .map((err: any) => `${err.gereeniiDugaar || "Гэрээ"}: ${err.error}`)
-            .join("\n");
-          openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
-        }
-
-        // Refresh data
-        mutate(
-          (key: any) =>
-            Array.isArray(key) &&
-            (key[0] === "/nekhemjlekhiinTuukh" ||
-              key[0] === "/geree" ||
-              key[0] === "/orshinSuugch" ||
-              key[0] === "/gereeniiTulukhAvlaga"),
-          undefined,
-          { revalidate: true },
-        );
-        setInvoiceRefreshTrigger((t) => t + 1);
-      }
+      await sendInvoicesApi(uniqueGereeIds);
+      setSelectedGereeIds([]); // Clear selection on success
+      
+      // Refresh data
+      mutate(
+        (key: any) =>
+          Array.isArray(key) &&
+          (key[0] === "/nekhemjlekhiinTuukh" ||
+            key[0] === "/geree" ||
+            key[0] === "/orshinSuugch" ||
+            key[0] === "/gereeniiTulukhAvlaga"),
+        undefined,
+        { revalidate: true },
+      );
+      setInvoiceRefreshTrigger((t) => t + 1);
     } catch (error: any) {
-      const msg = getErrorMessage(error);
-      openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
+      // Error is handled inside the hook (openErrorOverlay)
     } finally {
       setIsSendingInvoices(false);
     }
@@ -2837,6 +2822,20 @@ export default function DansniiKhuulga() {
                   </div>
                 )}
               </div>
+              <Tooltip title="Нэхэмжлэх илгээх">
+                <motion.div
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <IconTextButton
+                    onClick={handleSendInvoices}
+                    icon={isSendingInvoices ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div> : <Send className="w-5 h-5" />}
+                    label="Нэхэмжлэх илгээх"
+                    disabled={isSendingInvoices || selectedGereeIds.length === 0}
+                    className="w-[40px] h-[40px] !p-0 justify-center [&>span]:hidden bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50"
+                  />
+                </motion.div>
+              </Tooltip>
             </div>
           </div>
         </div>

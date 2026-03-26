@@ -38,6 +38,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
+import { useGereeActions } from "@/lib/useGereeActions";
 
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return "-";
@@ -911,12 +912,11 @@ export default function InvoicingZardluud() {
 
   const { zardluud: ashiglaltiinZardluud } = useAshiglaltiinZardluud();
   const baiguullagiinId = ajiltan?.baiguullagiinId || null;
-  const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+  const { baiguullaga, baiguullagaMutate } = useBaiguullaga(token, baiguullagiinId);
 
-  // Populate davkharList from baiguullaga tokhirgoo
   useEffect(() => {
     if (baiguullaga && baiguullaga.barilguud) {
-      const effectiveBuildingId = selectedBuildingId || barilgiinId;
+      const effectiveBuildingId = (selectedBuildingId || barilgiinId || undefined) as string | undefined;
       const building = baiguullaga.barilguud.find(
         (b: any) => b._id === effectiveBuildingId,
       );
@@ -951,6 +951,59 @@ export default function InvoicingZardluud() {
     }
     return selectedBuildingId || barilgiinId || null;
   }, [selectedBarilga, selectedBuildingId, barilgiinId]);
+
+  const { handleSendInvoices: sendInvoicesApi } = useGereeActions(
+    token,
+    ajiltan,
+    barilgiinId || undefined,
+    selectedBuildingId || undefined,
+    baiguullaga,
+    baiguullagaMutate,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    effectiveBarilgiinId || undefined,
+  );
+
+  const [isSendingInvoices, setIsSendingInvoices] = useState(false);
+
+  const handleSendInvoices = async () => {
+    if (selectedExpenses.length === 0) {
+      openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
+      return;
+    }
+
+    // Map selected invoice IDs (which are residents in this context) to their underlying gereeIds
+    const selectedGereeIds = displayResidents
+      .filter((r) => selectedExpenses.includes(r._id))
+      .map((r) => String(r.gereeniiId || r.gereeId || "").trim())
+      .filter(Boolean);
+
+    if (selectedGereeIds.length === 0) {
+      openErrorOverlay("Сонгосон оршин суугчдад холбогдох гэрээ олдсонгүй");
+      return;
+    }
+
+    setIsSendingInvoices(true);
+    try {
+      await sendInvoicesApi(selectedGereeIds);
+      setSelectedExpenses([]);
+    } catch (e) {
+      // Error handled in hook
+    } finally {
+      setIsSendingInvoices(false);
+    }
+  };
 
   // State for nekhemjlekhiinTuukh data (invoices/residents)
   const [nekhemjlekhList, setNekhemjlekhList] = useState<any[]>([]);
@@ -1684,20 +1737,21 @@ export default function InvoicingZardluud() {
               />
             </div>
 
-            {/* <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
+            <div className="flex flex-row gap-4 w-full lg:w-auto justify-end">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <button
-                  onClick={exceleerTatya}
-                  className="btn-minimal px-6 py-3 rounded-xl"
-                >
-                  Excel татах
-                </button>
+                <IconTextButton
+                  onClick={handleSendInvoices}
+                  icon={isSendingInvoices ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : null}
+                  label={isSendingInvoices ? "Илгээж байна..." : "Нэхэмжлэх илгээх"}
+                  disabled={isSendingInvoices || selectedExpenses.length === 0}
+                  className="bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 px-6 py-3 rounded-xl h-[40px] flex items-center shadow-lg"
+                />
               </motion.div>
-            </div> */}
+            </div>
           </div>
         </motion.div>
 
@@ -1716,6 +1770,11 @@ export default function InvoicingZardluud() {
                     dataSource={displayResidents}
                     columns={nekhemjlekhColumns}
                     rowKey="_id"
+                    rowSelection={{
+                      type: "checkbox",
+                      selectedRowKeys: selectedExpenses,
+                      onChange: (keys) => setSelectedExpenses(keys as string[]),
+                    }}
                     pagination={{
                       pageSize: rowsPerPage,
                       total: totalRecords,

@@ -3310,8 +3310,8 @@ select,
 /* Ant Design: buttons (neutralize theme differences) */
 .ant-btn:not([disabled]):hover,
 .ant-btn:not([disabled]):focus {
-  background: var(--btn-bg-hover) !important;
-  color: var(--btn-text) !important;
+  /* background: var(--btn-bg-hover) !important; */
+  /* color: var(--btn-text) !important; */
   border-color: var(--btn-border) !important;
 }
 
