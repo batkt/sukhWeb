@@ -4551,3 +4551,23 @@ a:active {
   background-color: var(--surface-bg, #111827) !important;
 }
 
+
+
+/* Refine GuilgeeTable header appearance */
+.guilgee-table .ant-table-thead > tr > th {
+  padding: 6px 4px !important;
+  font-size: 12px !important;
+}
+
+.guilgee-table .ant-table-tbody > tr > td {
+  padding: 4px 4px !important;
+}
+
+/* Ensure sticky columns have correct background in dark mode */
+.dark .guilgee-table .ant-table-cell-fix-left,
+.dark .guilgee-table .ant-table-cell-fix-right,
+.dark .guilgee-table .ant-table-thead > tr > th.ant-table-cell-fix-left,
+.dark .guilgee-table .ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background-color: #111827 !important;
+}
+
