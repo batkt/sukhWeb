@@ -939,7 +939,7 @@ export default function Khynalt() {
       value: filteredTotalResidents,
       color: "from-green-500 to-green-600",
       onClick: () => {
-        router.push("/geree?tab=residents");
+        router.push("/geree/orshinSuugch");
       },
       delay: 100,
       show: showResidents,
@@ -948,9 +948,7 @@ export default function Khynalt() {
       title: "Идэвхтэй гэрээ",
       value: filteredActiveContracts,
       color: "from-blue-500 to-blue-600",
-      onClick: () => {
-        router.push("/geree?tab=contracts");
-      },
+      onClick: () => router.push("/geree?status=active"),
       delay: 200,
       show: showContracts,
     },
@@ -977,7 +975,7 @@ export default function Khynalt() {
       value: cancelledGerees.length,
       subtitle: "Нийт цуцлагдсан",
       color: "from-orange-500 to-orange-600",
-      onClick: () => router.push("/geree?tab=contracts"),
+      onClick: () => router.push("/geree?status=cancelled"),
       delay: 600,
       show: showContracts,
     },

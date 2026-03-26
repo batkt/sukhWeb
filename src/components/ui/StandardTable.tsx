@@ -90,13 +90,14 @@ export function StandardTable<T extends object>({
   };
 
   return (
-    <div className={cn("w-full", containerClassName)}>
-      <div
-        className={cn(
-          "rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl overflow-hidden",
-          className,
-        )}
-      >
+    <div className={cn("w-full overflow-hidden", containerClassName)}>
+      <div className="w-full overflow-x-auto hide-scrollbar">
+        <div
+          className={cn(
+            "rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl overflow-hidden min-w-[800px]",
+            className,
+          )}
+        >
         <Spin spinning={loading} tip="Уншиж байна..." size="small">
           <Table<T>
             columns={antColumns}
@@ -113,11 +114,13 @@ export function StandardTable<T extends object>({
               style: { cursor: onRowClick ? "pointer" : "default" },
             })}
             className="min-w-full"
+            scroll={{ x: "max-content", ...(maxHeight ? { y: maxHeight } : {}) }}
             rowClassName="border-b border-slate-100 dark:border-slate-800/50 hover:bg-emerald-50/60 dark:hover:bg-emerald-900/20 transition-colors"
-            scroll={maxHeight ? { y: maxHeight } : undefined}
+
           />
         </Spin>
         {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
+      </div>
       </div>
     </div>
   );

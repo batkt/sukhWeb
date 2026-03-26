@@ -659,7 +659,7 @@ export default function InvoiceModal({
 
         <div className="flex-1 flex overflow-hidden">
           {/* LEFT SIDEBAR - INVOICE LIST */}
-          <div className="w-[400px] flex flex-col border-r bg-slate-50/30 no-print">
+          <div className="w-[400px] flex  flex-col border-r bg-slate-50/30 no-print">
             {/* Sidebar Filters */}
             <div className="p-4 space-y-3 bg-white ">
               <div className="flex gap-2">
@@ -697,8 +697,8 @@ export default function InvoiceModal({
                     onClick={() => setSelectedInvoice(inv)}
                     className={`w-full p-4 rounded-xl text-left border transition-all ${
                       selectedInvoice?._id === inv._id
-                        ? "bg-white border-sky-200 shadow-md ring-1 ring-sky-100"
-                        : "bg-transparent border-transparent hover:bg-white hover:border-slate-200"
+                        ? "neu-panel shadow-md"
+                        : "bg-transparent border-transparent hover:bg-white hover:border-slate-200 text-slate-800"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-1">
@@ -971,9 +971,8 @@ export default function InvoiceModal({
                   </button>
                   <button
                     onClick={() => window.print()}
-                    className="ant-btn ant-btn-primary flex items-center gap-2 px-6 py-2.5"
+                    className="ant-btn w-20 ant-btn-primary no-print !text-white"
                   >
-                    <Printer className="w-4 h-4" />
                     Хэвлэх
                   </button>
                  

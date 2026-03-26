@@ -82,7 +82,7 @@ export default function DansniiKhuulga() {
   const { mutate } = useSWRConfig();
   const socket = useSocket();
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(500);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
   const { selectedBuildingId } = useBuilding();
@@ -2552,7 +2552,7 @@ export default function DansniiKhuulga() {
   useRegisterTourSteps("/tulbur/guilgeeTuukh", tourSteps);
 
   return (
-    <div className="min-h-screen">
+    <div className="flex flex-col pb-14">
       {/* <div className="flex items-center gap-3 mb-4">
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
@@ -2864,7 +2864,7 @@ export default function DansniiKhuulga() {
               rowsPerPage={rowsPerPage}
               deduplicatedResidents={deduplicatedResidents}
               getGereeId={getGereeId}
-              maxHeight={400}
+              maxHeight="calc(100vh - 450px)"
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);
                 setIsModalOpen(true);
@@ -2882,8 +2882,8 @@ export default function DansniiKhuulga() {
               }}
             />
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between w-full px-0 gap-3 text-md mt-2">
-            <div className="text-theme/70">
+          <div className="fixed bottom-0 left-0 right-0 z-40 neu-panel flex flex-row items-center justify-between w-full px-4 py-2 gap-3 text-sm border-t border-[color:var(--border)]">
+            <div className="text-theme/70 text-xs whitespace-nowrap">
               Нийт: {deduplicatedResidents.length}
             </div>
 

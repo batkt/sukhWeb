@@ -607,7 +607,8 @@ export default function GolContent({ children }: GolContentProps) {
                           onClick={() => {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
-                            router.push(`/${item.path}`);
+                            // Special case: clicking the main 'Гэрээ' menu defaults to 'Оршин суугч'
+                            router.push(item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`);
                           }}
                           className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                             item.comingSoon
@@ -1120,7 +1121,8 @@ export default function GolContent({ children }: GolContentProps) {
                           if (hasSubmenu) {
                             setOpenSubmenuIndex(isOpen ? null : i);
                           } else {
-                            router.push(`/${item.path}`);
+                            // Special case: clicking the main 'Гэрээ' menu defaults to 'Оршин суугч'
+                            router.push(item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`);
                             setMobileMenuOpen(false);
                           }
                         }}

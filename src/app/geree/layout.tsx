@@ -24,8 +24,11 @@ function GereeLayoutWrapper({ children }: { children: React.ReactNode }) {
     if (pathname.includes("/orshinSuugch")) return "residents";
     if (pathname.includes("/ajiltan")) return "employees";
     if (pathname.includes("/tootBurtgel")) return "units";
+    if (pathname === "/geree" || pathname === "/geree/") return "contracts";
     return "contracts";
   }, [pathname]);
+
+
 
   const handleTabChange = (tab: "contracts" | "residents" | "employees" | "units") => {
     const routes = {

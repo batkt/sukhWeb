@@ -325,12 +325,12 @@ export default function TransactionModal({
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 10 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="relative modal-surface rounded-2xl shadow-2xl w-[700px] !max-h-[80vh] overflow-y-auto border border-[color:var(--surface-border)]"
+          className="relative modal-surface rounded-2xl shadow-2xl w-[700px] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
 
           {/* Body */}
-          <div className="px-6 py-5 space-y-5 bg-[color:var(--surface-bg)]">
+          <div className="flex-1 px-6 py-5 space-y-5 bg-[color:var(--surface-bg)] overflow-y-auto">
 
             {/* Resident Info Card */}
             {resident && (
@@ -354,7 +354,7 @@ export default function TransactionModal({
               <label className="block text-xs  text-[color:var(--panel-text)] mb-1.5">
                 Гүйлгээний төрөл
               </label>
-              <div className="grid grid-cols-3 gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
+              <div className="grid grid-cols-3 neu-panel gap-1 p-1 bg-[color:var(--surface-hover)] rounded-2xl">
                 {[
                   { value: "avlaga", label: "Авлага" },
                   { value: "ashiglalt", label: "Ашиглалт" },
@@ -377,9 +377,9 @@ export default function TransactionModal({
                     }}
                     disabled={isProcessing}
                     className={`
-                      relative py-1.5 px-3 text-sm  rounded-2xl transition-all duration-200
+                      relative py-1.5 px-3 text-sm rounded-2xl transition-all duration-200
                       ${transactionType === option.value
-                        ? "bg-[color:var(--theme)] text-white shadow-md shadow-[color:var(--theme)]/20 scale-[1.02]"
+                        ? "neu-panel-2 !text-white scale-[1.02]"
                         : "text-[color:var(--panel-text)] hover:bg-[color:var(--surface-bg)]/40"
                       }
                     `}
@@ -552,7 +552,7 @@ export default function TransactionModal({
                       />
                       <div 
                         className={`block w-9 h-5 rounded-full transition-colors duration-200 ease-in-out ${
-                          showUsageOnInvoice ? "bg-[color:var(--theme)]" : "bg-zinc-200 dark:bg-zinc-700"
+                          showUsageOnInvoice ? "neu-panel-2" : "bg-zinc-200 dark:bg-zinc-700"
                         }`}
                       />
                       <div 
@@ -627,12 +627,12 @@ export default function TransactionModal({
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 bg-[color:var(--surface-bg)] border-t border-[color:var(--surface-border)] flex justify-end gap-3">
+          <div className="px-6 py-4 border-t flex justify-end gap-3">
             <Button
               onClick={handleClose}
               disabled={isProcessing}
               variant="secondary"
-              className="px-5 py-2.5"
+              className="ant-btn w-20 color-black"
             >
               Хаах
             </Button>
@@ -640,7 +640,7 @@ export default function TransactionModal({
               onClick={handleSubmit}
               isLoading={isProcessing}
               variant="primary"
-              className="px-6 py-2.5"
+              className="ant-btn w-20 ant-btn-primary !text-white"
             >
               Хадгалах
             </Button>

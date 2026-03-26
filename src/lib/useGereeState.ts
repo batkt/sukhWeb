@@ -139,12 +139,16 @@ export function useGereeState(searchParams: any, didInitRef: any) {
   const unitExcelInputRef = useRef<HTMLInputElement | null>(null);
   const columnMenuRef = useRef<HTMLDivElement | null>(null);
 
-  // Initialize from URL tab
+  // Initialize from URL tab and status
   useEffect(() => {
     if (didInitRef.current) return;
     const t = searchParams.get("tab");
     if (t === "contracts" || t === "residents" || t === "employees" || t === "units") {
       setActiveTab(t as any);
+    }
+    const status = searchParams.get("status");
+    if (status === "all" || status === "active" || status === "cancelled") {
+      setStatusFilter(status as any);
     }
     didInitRef.current = true;
   }, [searchParams]);

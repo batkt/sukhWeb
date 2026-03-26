@@ -180,7 +180,8 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   return (
     <div className="table-surface rounded-2xl w-full">
       <div className="rounded-3xl p-1 allow-overflow">
-        <div className="guilgee-table-wrap" id="geree-table">
+        <div className="w-full overflow-hidden" id="geree-table">
+          <div className="w-full overflow-x-auto hide-scrollbar">
           <Table
             dataSource={currentContracts}
             columns={columns}
@@ -188,7 +189,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             pagination={false}
             size="small"
             bordered
-            className="guilgee-table"
+            className="guilgee-table min-w-[1000px]"
             scroll={{ x: "max-content", y: 400 }}
             locale={{ emptyText: "Гэрээ олдсонгүй" }}
             onRow={(record) => ({
@@ -209,6 +210,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
               }`,
             })}
           />
+          </div>
         </div>
       </div>
       <div className="flex items-center justify-between px-2 py-1 text-md">

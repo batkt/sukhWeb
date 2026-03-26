@@ -22,13 +22,15 @@ interface DansKhuulgaTableProps {
   loading?: boolean;
   page?: number;
   rowsPerPage?: number;
+  maxHeight?: string | number;
 }
 
 export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   data,
   loading = false,
   page = 1,
-  rowsPerPage = 500,
+  rowsPerPage = 100,
+  maxHeight = "calc(100vh - 500px)",
 }) => {
   const columns: ColumnsType<DansKhuulgaItem> = useMemo(
     () => [
@@ -53,6 +55,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
       {
         title: "Гүйлгээний утга",
         dataIndex: "action",
+        align: "center",
         key: "action",
         render: (val: string, item: DansKhuulgaItem) => (
           <span className="text-theme" title={val}>
@@ -64,7 +67,7 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         title: "Гүйлгээний дүн",
         dataIndex: "total",
         key: "total",
-        align: "right",
+        align: "center",
         width: 140,
         render: (val: number) => (
           <span className="text-theme whitespace-nowrap font-medium">
@@ -94,7 +97,8 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap">
+    <div className="w-full overflow-hidden">
+      <div className="w-full overflow-x-auto hide-scrollbar">
       <Table
         dataSource={data}
         columns={columns}
@@ -103,12 +107,13 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
-        scroll={{ x: "max-content", y: 400 }}
+        className="guilgee-table min-w-[1000px]"
+        scroll={{ x: "max-content", y: maxHeight }}
         locale={{ emptyText: "Гүйлгээний мэдээлэл олдсонгүй" }}
         summary={() =>
           data.length > 0 ? (
-            <Table.Summary.Row>
+            <Table.Summary fixed="bottom">
+              <Table.Summary.Row>
               <Table.Summary.Cell index={0} colSpan={2} align="center">
                 <span className="font-bold text-theme">Нийт:</span>
               </Table.Summary.Cell>
@@ -126,9 +131,11 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
                 -
               </Table.Summary.Cell>
             </Table.Summary.Row>
-          ) : null
-        }
+              </Table.Summary>
+            ) : null
+          }
       />
+      </div>
     </div>
   );
 };

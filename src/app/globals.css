@@ -443,6 +443,7 @@
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-hover: rgba(255, 255, 255, 0.05);
   --panel-text: #f1f5f9;
+  
   --muted-text: #94a3b8;
 }
 @layer base {
@@ -1370,6 +1371,37 @@ html[data-mode="dark"]:not([data-theme]),
   /* Text inherits theme color */
   color: var(--panel-text);
 }
+.neu-panel-2 {
+  position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  isolation: isolate;
+
+  /* iOS 26-style glass background with emerald tint */
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklch, oklch(69.6% 0.17 162.48), transparent 8%) 0%,
+    color-mix(in oklch, oklch(60% 0.20 155), transparent 18%) 100%
+  );
+
+  /* Premium blur, saturation and brightness for iOS 26 feel */
+  -webkit-backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
+  backdrop-filter: blur(48px) saturate(180%) brightness(1.12);
+
+  /* Luminous adaptive border */
+  border: 1.5px solid color-mix(in oklch, var(--glass-border), transparent 30%);
+  background-clip: padding-box;
+
+  /* iOS 26 multi-layer shadow system for depth */
+  box-shadow: 
+    0 24px 64px color-mix(in oklch, var(--glass-shadow), transparent 15%),
+    0 12px 32px color-mix(in oklch, var(--glass-shadow), transparent 35%),
+    0 4px 16px color-mix(in oklch, var(--glass-shadow), transparent 45%),
+    inset 0 1px 0 color-mix(in oklch, var(--glass-highlight), transparent 25%),
+    inset 0 -1px 0 color-mix(in oklch, var(--glass-highlight), transparent 82%);
+
+  color: var(--panel-text);
+}
 
 /* Calendar-specific surface that follows the app 'neu-panel' look but
    tuned for compact calendar popovers and modal panels. Use this class
@@ -1645,7 +1677,7 @@ html[data-mode="dark"]:not([data-theme]),
 .modal-surface {
   /* Always follow themed surface tokens */
   background: var(--surface-bg) !important;
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
   border: 1px solid var(--surface-border) !important;
   border-radius: 1rem;
   box-shadow:
@@ -1668,7 +1700,7 @@ html[data-mode="dark"]:not([data-theme]),
 .modal-surface dd,
 .modal-surface th,
 .modal-surface td {
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
 }
 
 /* Common borders inside modal should use themed border color */
@@ -1748,11 +1780,11 @@ html[data-mode="dark"]:not([data-theme]),
 }
 .ant-modal .ant-modal-title,
 .ant-modal .ant-modal-close {
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
 }
 .ant-modal .ant-modal-body,
 .ant-modal .ant-modal-footer {
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
 }
 /* AntD Modal responsiveness */
 .ant-modal {
@@ -1765,7 +1797,7 @@ html[data-mode="dark"]:not([data-theme]),
 /* Mantine Modal: follow themed surface/header colors globally */
 .mantine-Modal-content {
   background: var(--surface-bg) !important;
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
   border: 1px solid var(--surface-border) !important;
   border-radius: 1rem !important;
 }
@@ -1776,10 +1808,10 @@ html[data-mode="dark"]:not([data-theme]),
 }
 .mantine-Modal-title,
 .mantine-Modal-close {
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
 }
 .mantine-Modal-body {
-  color: var(--panel-text) !important;
+  color: var(--panel-text);
 }
 [data-theme="dark-black"] .mantine-DatePickerInput-root input {
   background: var(--surface-bg) !important;
@@ -1834,7 +1866,7 @@ html[data-mode="dark"]:not([data-theme]),
 [data-theme="dark-green"] .mantine-CalendarHeader-label,
 [data-theme="dark-green"] .mantine-Month-weekday,
 [data-theme="dark-green"] .mantine-Month-day {
-  color: var(--panel-text) !important; /* unify header + weekdays + days text */
+  color: var(--panel-text); /* unify header + weekdays + days text */
 }
 /* Also apply unscoped defaults so portal content (mounted on <body>) inherits theme vars */
 .mantine-CalendarHeader-label,
@@ -4444,3 +4476,4 @@ a:active {
 .guilgee-table .ant-table-empty .ant-table-cell {
   @apply text-gray-500 dark:text-gray-400;
 }
+

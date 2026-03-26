@@ -362,7 +362,7 @@ export default function Ebarimt() {
 
   return (
     <TulburLayout activeTab="ebarimt">
-      <div className="min-h-screen">
+      <div className="flex flex-col pb-14">
         <div className="space-y-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -431,7 +431,7 @@ export default function Ebarimt() {
           </div>
 
           {/* Table */}
-          <EbarimtTable data={displayedData} loading={isLoading} />
+          <EbarimtTable data={displayedData} loading={isLoading} maxHeight="calc(100vh - 450px)" />
         </div>
       </div>
     </TulburLayout>

@@ -26,11 +26,13 @@ export interface EbarimtItem {
 interface EbarimtTableProps {
   data: EbarimtItem[];
   loading?: boolean;
+  maxHeight?: string | number;
 }
 
 export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   data,
   loading = false,
+  maxHeight = "calc(100vh - 500px)",
 }) => {
   const columns: ColumnsType<EbarimtItem> = useMemo(
     () => [
@@ -134,38 +136,42 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap">
-      <Table
-        dataSource={data}
-        columns={columns}
-        rowKey={(record) =>
-          record.id?.toString() || record.receiptId || Math.random().toString()
-        }
-        pagination={false}
-        size="small"
-        bordered
-        loading={loading}
-        className="guilgee-table"
-        scroll={{ x: "max-content", y: 400 }}
-        locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
-        summary={() =>
-          data.length > 0 ? (
-            <Table.Summary.Row>
-              <Table.Summary.Cell index={0} colSpan={6} align="center">
-                <span className="font-bold text-theme">Нийт:</span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={1} align="right">
-                <span className="font-bold text-theme">
-                  {formatNumber(totalAmount)}
-                </span>
-              </Table.Summary.Cell>
-              <Table.Summary.Cell index={2} align="center">
-                -
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-          ) : null
-        }
-      />
+    <div className="w-full overflow-hidden">
+      <div className="w-full overflow-x-auto hide-scrollbar">
+        <Table
+          dataSource={data}
+          columns={columns}
+          rowKey={(record) =>
+            record.id?.toString() || record.receiptId || Math.random().toString()
+          }
+          pagination={false}
+          size="small"
+          bordered
+          loading={loading}
+          className="guilgee-table min-w-[1000px]"
+          scroll={{ x: "max-content", y: maxHeight }}
+          locale={{ emptyText: "Хайсан мэдээлэл алга байна" }}
+          summary={() =>
+            data.length > 0 ? (
+              <Table.Summary fixed="bottom">
+                <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={6} align="center">
+                  <span className="font-bold text-theme">Нийт:</span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={1} align="right">
+                  <span className="font-bold text-theme">
+                    {formatNumber(totalAmount)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell index={2} align="center">
+                  -
+                </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            ) : null
+          }
+        />
+      </div>
     </div>
   );
 };

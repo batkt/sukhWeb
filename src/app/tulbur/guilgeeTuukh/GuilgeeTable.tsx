@@ -54,7 +54,7 @@ export default function GuilgeeTable({
   onViewInvoice,
   onViewHistory,
   onTransaction,
-  maxHeight = 400,
+  maxHeight = "calc(100vh - 500px)",
 }: GuilgeeTableProps) {
   // Check if checkbox column is visible
   const isCheckboxVisible = visibleColumns.some(
@@ -78,10 +78,8 @@ export default function GuilgeeTable({
             col.key === "paid" ||
             col.key === "uldegdel" ||
             col.key === "ekhniiUldegdel"
-              ? "right"
-              : col.align === "center"
                 ? "center"
-                : "left",
+                : "center",
           sorter:
             col.key === "uldegdel" || col.key === "paid" || col.key === "toot"
               ? true
@@ -564,7 +562,7 @@ export default function GuilgeeTable({
     const checkboxOffset = isCheckboxVisible ? 1 : 0;
 
     return (
-      <Table.Summary>
+      <Table.Summary fixed="bottom">
         <Table.Summary.Row>
           {/* Empty cell for checkbox column alignment */}
           {isCheckboxVisible && (
@@ -685,8 +683,10 @@ export default function GuilgeeTable({
   };
 
   return (
-    <Table
-      className="guilgee-table"
+    <div className="w-full overflow-hidden">
+      <div className="w-full overflow-x-auto hide-scrollbar">
+        <Table
+          className="guilgee-table min-w-[1000px]"
       dataSource={data}
       loading={loading}
       pagination={false}
@@ -741,5 +741,7 @@ export default function GuilgeeTable({
         return "";
       }}
     />
+      </div>
+    </div>
   );
 }

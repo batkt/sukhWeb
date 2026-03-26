@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSearch } from "@/context/SearchContext";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
@@ -35,6 +35,7 @@ export function useGereeContext() {
 
 export function GereeProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const didInitRef = useRef(false);
   const DEFAULT_HIDDEN = ["aimag"];
   
@@ -49,11 +50,9 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
 
   const reloadPermissions = React.useCallback(() => {
     if (token) {
-      console.log("🔄 Reloading permissions (/erkhiinMedeelelAvya)...");
       uilchilgee(token)
         .post("/erkhiinMedeelelAvya")
         .then((res) => {
-          console.log("✅ Permissions loaded:", res.data);
           setPermissionsData(res.data);
         })
         .catch((e) => {
@@ -68,7 +67,7 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
   }, [reloadPermissions]);
 
   // Custom hooks for state management
-  const state = useGereeState({ get: () => null } as any, didInitRef);
+  const state = useGereeState(searchParams, didInitRef);
   const data = useGereeData(
     token,
     ajiltan,

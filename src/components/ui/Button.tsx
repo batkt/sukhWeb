@@ -80,6 +80,7 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
         style={{ 
           display: 'inline-flex', 
           alignItems: 'center', 
+          color: 'white',
           justifyContent: 'center',
           ...props.style 
         }}
