@@ -214,7 +214,6 @@ export default function BlogManagement() {
           </div>
           <Button
             type="primary"
-            icon={<Plus size={18} />}
             onClick={() => handleOpenModal()}
             className="h-10 rounded-xl bg-theme border-0 flex items-center gap-2 shadow-lg hover:shadow-xl transition-all"
           >

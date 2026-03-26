@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 
 import { useAuth } from "@/lib/useAuth";
 import { hasPermission } from "@/lib/permissionUtils";
+import Link from "next/link";
 
 interface TulburLayoutProps {
   children: React.ReactNode;
@@ -17,20 +17,16 @@ export default function TulburLayout({
   children,
   activeTab,
 }: TulburLayoutProps) {
-  const router = useRouter();
   const { ajiltan } = useAuth();
 
   const showGuilgee = hasPermission(ajiltan, "/tulbur");
   const showDans = hasPermission(ajiltan, "/tulbur/dansKhuulga");
   const showEbarimt = hasPermission(ajiltan, "/tulbur/ebarimt");
 
-  const handleTabChange = (tab: "guilgee" | "dansKhuulga" | "ebarimt") => {
-    const routes = {
-      guilgee: "/tulbur",
-      dansKhuulga: "/tulbur/dansKhuulga",
-      ebarimt: "/tulbur/ebarimt",
-    };
-    router.push(routes[tab]);
+  const routes = {
+    guilgee: "/tulbur",
+    dansKhuulga: "/tulbur/dansKhuulga",
+    ebarimt: "/tulbur/ebarimt",
   };
 
   const tabTitle = useMemo(() => {
@@ -75,9 +71,9 @@ export default function TulburLayout({
           </div>
           <div className="flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
             {showGuilgee && (
-              <button
+              <Link
                 id="tab-guilgee"
-                onClick={() => handleTabChange("guilgee")}
+                href={routes.guilgee}
                 className={`px-3 neu-panel md:px-5 py-2.5 md:py-2  text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "guilgee"
                     ? "bg-theme/15 text-theme font-medium"
@@ -85,12 +81,12 @@ export default function TulburLayout({
                 }`}
               >
                 Гүйлгээний түүх
-              </button>
+              </Link>
             )}
             {showDans && (
-              <button
+              <Link
                 id="tab-dansKhuulga"
-                onClick={() => handleTabChange("dansKhuulga")}
+                href={routes.dansKhuulga}
                 className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "dansKhuulga"
                     ? "bg-theme/15 text-theme font-medium"
@@ -98,12 +94,12 @@ export default function TulburLayout({
                 }`}
               >
                 Дансны хуулга
-              </button>
+              </Link>
             )}
             {showEbarimt && (
-              <button
+              <Link
                 id="tab-ebarimt"
-                onClick={() => handleTabChange("ebarimt")}
+                href={routes.ebarimt}
                 className={`px-3 neu-panel  md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 ${
                   activeTab === "ebarimt"
                     ? "bg-theme/15 text-theme font-medium"
@@ -111,7 +107,7 @@ export default function TulburLayout({
                 }`}
               >
                 И-баримт
-              </button>
+              </Link>
             )}
           </div>
         </div>

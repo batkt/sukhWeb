@@ -14,6 +14,7 @@ import {
 } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -938,9 +939,7 @@ export default function Khynalt() {
       title: "Оршин суугч",
       value: filteredTotalResidents,
       color: "from-green-500 to-green-600",
-      onClick: () => {
-        router.push("/geree/orshinSuugch");
-      },
+      href: "/geree/orshinSuugch",
       delay: 100,
       show: showResidents,
     },
@@ -948,7 +947,7 @@ export default function Khynalt() {
       title: "Идэвхтэй гэрээ",
       value: filteredActiveContracts,
       color: "from-blue-500 to-blue-600",
-      onClick: () => router.push("/geree?status=active"),
+      href: "/geree?status=active",
       delay: 200,
       show: showContracts,
     },
@@ -957,7 +956,7 @@ export default function Khynalt() {
       value: formatCurrency(footerTotals.totalPaid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
-      onClick: () => router.push("/tulbur"),
+      href: "/tulbur",
       delay: 400,
       show: showTulbur,
     },
@@ -966,7 +965,7 @@ export default function Khynalt() {
       value: formatCurrency(footerTotals.totalUldegdel),
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
-      onClick: () => router.push("/tulbur"),
+      href: "/tulbur",
       delay: 500,
       show: showTulbur,
     },
@@ -975,7 +974,7 @@ export default function Khynalt() {
       value: cancelledGerees.length,
       subtitle: "Нийт цуцлагдсан",
       color: "from-orange-500 to-orange-600",
-      onClick: () => router.push("/geree?status=cancelled"),
+      href: "/geree?status=cancelled",
       delay: 600,
       show: showContracts,
     },
@@ -1014,19 +1013,8 @@ export default function Khynalt() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
-          {kpiCards.map((card, index) => (
-            <div
-              key={index}
-              onClick={card.onClick}
-              className={`neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-                }`}
-              style={{
-                transitionDelay: `${card.delay}ms`,
-                willChange: "opacity, box-shadow",
-              }}
-            >
+          {kpiCards.map((card, index) => {
+            const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
                 <div>
                   <h3 className="text-sm  text-[color:var(--panel-text)] mb-2">
@@ -1040,8 +1028,40 @@ export default function Khynalt() {
                   {card.subtitle}
                 </p>
               </div>
-            </div>
-          ))}
+            );
+
+            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-4"
+              }`;
+            const style = {
+              transitionDelay: `${card.delay}ms`,
+              willChange: "opacity, box-shadow",
+            };
+
+            if (card.href) {
+              return (
+                <Link
+                  key={index}
+                  href={card.href}
+                  className={className}
+                  style={style}
+                >
+                  {CardContent}
+                </Link>
+              );
+            }
+
+            return (
+              <div
+                key={index}
+                className={className}
+                style={style}
+              >
+                {CardContent}
+              </div>
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0 flex-1 min-h-0">

@@ -98,7 +98,11 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
   // Track navigation state for loading indicator
   useEffect(() => {
-    setIsNavigating(false);
+    // Small delay before hiding the loader to prevent page-mount flickering
+    const timer = setTimeout(() => {
+      setIsNavigating(false);
+    }, 400);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // Listen for navigation events to show loader
@@ -272,28 +276,19 @@ function LayoutContent({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  if (!authChecked || spinnerLoading) {
+  if (!authChecked) {
     return (
       <>
-        <div
-          className="fixed inset-0 z-[2000] grid place-items-center"
-          style={{
-            background:
-              "color-mix(in oklch, var(--surface-bg), transparent 10%)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-          }}
-        >
-          <div className="menu-surface p-8 rounded-3xl flex flex-col items-center gap-5">
-            <div className="w-[160px] h-[160px]">
+            <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[2px] pointer-events-none transition-all duration-300">
+          <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
+            <div className="w-40 h-40 lg:w-56 lg:h-56">
               <DotLottieReact
-                src="https://lottie.host/5386a522-13d7-4766-b11e-78c8c868b2d6/ljDPLtL4kH.lottie"
+                src="/cat loading.json"
                 loop
                 autoplay
                 style={{ width: "100%", height: "100%" }}
               />
             </div>
-            <div className="text-sm text-muted-foreground">Түр хүлээнэ үү…</div>
           </div>
         </div>
         {/* Always mount overlay hosts so they can receive events during loading */}
@@ -315,25 +310,16 @@ function LayoutContent({ children }: { children: ReactNode }) {
 
           {/* Global loading overlay */}
           {(spinnerLoading || isNavigating) && (
-            <div
-              className="fixed inset-0 z-[2000] grid place-items-center"
-              style={{
-                background:
-                  "color-mix(in oklch, var(--surface-bg), transparent 10%)",
-                backdropFilter: "blur(8px)",
-                WebkitBackdropFilter: "blur(8px)",
-              }}
-            >
-              <div className="menu-surface p-8 rounded-3xl flex flex-col items-center gap-5">
-                <div className="w-[160px] h-[160px]">
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/10 backdrop-blur-[4px] pointer-events-none transition-all duration-300">
+              <div className="flex flex-col items-center justify-center p-8 rounded-[32px] pointer-events-auto gap-4">
+                <div className="w-40 h-40 lg:w-56 lg:h-56">
                   <DotLottieReact
-                    src="https://lottie.host/5386a522-13d7-4766-b11e-78c8c868b2d6/ljDPLtL4kH.lottie"
+                    src="/cat loading.json"
                     loop
                     autoplay
                     style={{ width: "100%", height: "100%" }}
                   />
                 </div>
-                <div className="text-sm text-theme">Түр хүлээнэ үү…</div>
               </div>
             </div>
           )}

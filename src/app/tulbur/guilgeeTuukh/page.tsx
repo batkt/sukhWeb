@@ -2882,7 +2882,7 @@ export default function DansniiKhuulga() {
               }}
             />
           </div>
-          <div className="w-full neu-panel flex flex-row items-center justify-between px-6 py-3 gap-3 text-sm rounded-[32px] border border-slate-200 dark:border-slate-800 mt-4 backdrop-blur-xl transition-all shadow-sm">
+          <div className="w-full flex flex-row items-center justify-between px-6 py-3 gap-3 text-sm mt-4 ">
             <div className="text-theme/70 text-xs whitespace-nowrap">
               Нийт: {deduplicatedResidents.length}
             </div>
@@ -2901,19 +2901,21 @@ export default function DansniiKhuulga() {
 
               <div id="guilgee-pagination" className="flex items-center gap-1">
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  className="!w-6 !h-6 !min-w-0 !p-0 !flex !items-center !justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                   disabled={page <= 1}
                   onClick={() => setPage(Math.max(1, page - 1))}
+                  title="Өмнөх"
                 >
-                  Өмнөх
+                  <span className="text-[10px]">&lt;</span>
                 </button>
-                <div className="text-theme/70 px-1">{page}</div>
+                <div className="text-theme/70 px-1 text-[11px] font-medium">{page}</div>
                 <button
-                  className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
+                  className="!w-6 !h-6 !min-w-0 !p-0 !flex !items-center !justify-center rounded-lg border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                   disabled={page * rowsPerPage >= deduplicatedResidents.length}
                   onClick={() => setPage(page + 1)}
+                  title="Дараах"
                 >
-                  Дараах
+                  <span className="text-[10px]">&gt;</span>
                 </button>
               </div>
             </div>

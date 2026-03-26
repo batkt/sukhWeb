@@ -387,12 +387,12 @@ function MedegdelContent() {
         </div>
 
         {/* Tabs Control */}
-        <div className="flex p-1 rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
+        <div className="flex p-1  rounded-2xl neu-panel bg-white/5 backdrop-blur-sm self-stretch sm:self-auto">
           <button
             onClick={() => handleTabChange("medegdel")}
-            className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
+            className={`flex-1  sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
               activeTab === "medegdel"
-                ? "bg-theme text-white shadow-lg"
+                ? "bg-theme !text-white neu-panel-2 shadow-lg"
                 : "text-slate-500 hover:text-theme"
             }`}
           >
@@ -402,7 +402,7 @@ function MedegdelContent() {
             onClick={() => handleTabChange("niitlel")}
             className={`flex-1 sm:flex-none px-6 py-2 rounded-xl text-sm transition-all duration-200 ${
               activeTab === "niitlel"
-                ? "bg-theme text-white shadow-lg"
+                ? "bg-theme !text-white neu-panel-2 shadow-lg"
                 : "text-slate-500 hover:text-theme"
             }`}
           >

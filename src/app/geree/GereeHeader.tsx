@@ -15,6 +15,7 @@ import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { hasPermission } from "@/lib/permissionUtils";
 import { ALL_COLUMNS } from "./columns";
+import Link from "next/link";
 
 interface GereeHeaderProps {
   activeTab: "contracts" | "residents" | "employees" | "units";
@@ -379,9 +380,9 @@ export default function GereeHeader({
           <div className="mt-3 w-full flex flex-col md:flex-row md:items-center gap-4 md:gap-12">
             <div className="grid grid-cols-2 md:flex md:flex-row gap-2 md:gap-4 tabbar flex-shrink-0">
               {showResidents && (
-                <button
+                <Link
                   id="tab-residents"
-                  onClick={() => setActiveTab("residents")}
+                  href="/geree/orshinSuugch"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "residents"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
@@ -389,12 +390,12 @@ export default function GereeHeader({
                   }`}
                 >
                   Оршин суугч
-                </button>
+                </Link>
               )}
               {showContracts && (
-                <button
+                <Link
                   id="tab-contracts"
-                  onClick={() => setActiveTab("contracts")}
+                  href="/geree"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "contracts"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
@@ -402,12 +403,12 @@ export default function GereeHeader({
                   }`}
                 >
                   Гэрээ
-                </button>
+                </Link>
               )}
               {showUnits && (
-                <button
+                <Link
                   id="tab-units"
-                  onClick={() => setActiveTab("units")}
+                  href="/geree/tootBurtgel"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "units"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
@@ -415,12 +416,12 @@ export default function GereeHeader({
                   }`}
                 >
                   Тоот бүртгэл
-                </button>
+                </Link>
               )}
               {showEmployees && (
-                <button
+                <Link
                   id="tab-employees"
-                  onClick={() => setActiveTab("employees")}
+                  href="/geree/ajiltan"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "employees"
                       ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
@@ -428,7 +429,7 @@ export default function GereeHeader({
                   }`}
                 >
                   Ажилтан
-                </button>
+                </Link>
               )}
             </div>
 

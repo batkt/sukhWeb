@@ -2,6 +2,7 @@
 
 import { Settings, Search as SearchIcon, X, LogOut, Type, Menu, HelpCircle, Bell, MessageSquare, ChevronRight } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { useAuth } from "@/lib/useAuth";
 import { createPortal } from "react-dom";
@@ -580,11 +581,10 @@ export default function GolContent({ children }: GolContentProps) {
                                     pathname.startsWith(subPath);
                                   return (
                                     <li key={j}>
-                                      <button
-                                        type="button"
+                                      <Link
+                                        href={subPath}
                                         onClick={() => {
                                           setOpenSubmenuIndex(null);
-                                          router.push(subPath);
                                         }}
                                         className={`menu-pro-font w-full text-left block px-4 py-2 text-xs xl:text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                                           isSubActive
@@ -593,7 +593,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         }`}
                                       >
                                         {sub.label}
-                                      </button>
+                                      </Link>
                                     </li>
                                   );
                                 })}
@@ -602,13 +602,11 @@ export default function GolContent({ children }: GolContentProps) {
                           )}
                         </>
                       ) : (
-                        <button
-                          type="button"
+                        <Link
+                          href={item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`}
                           onClick={() => {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
-                            // Special case: clicking the main 'Гэрээ' menu defaults to 'Оршин суугч'
-                            router.push(item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`);
                           }}
                           className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                             item.comingSoon
@@ -634,7 +632,7 @@ export default function GolContent({ children }: GolContentProps) {
                               </div>
                             </div>
                           )}
-                        </button>
+                        </Link>
                       )}
                     </div>
                   );
