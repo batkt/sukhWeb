@@ -116,7 +116,7 @@ export function StandardTable<T extends object>({
       <div className="w-full overflow-x-auto hide-scrollbar">
         <div
           className={cn(
-            "rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-2xl overflow-hidden min-w-[800px]",
+            "rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 backdrop-blur-xl shadow-2xl overflow-hidden min-w-[800px]",
             className,
           )}
         >
@@ -127,9 +127,11 @@ export function StandardTable<T extends object>({
               pagination={false}
               locale={{
                 emptyText: (
-                  <span className="text-gray-500 dark:text-gray-400">
-                    {emptyMessage}
-                  </span>
+                  <div className="py-12 text-center bg-transparent">
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                      {emptyMessage}
+                    </span>
+                  </div>
                 ),
               }}
               sticky={stickyHeader}
@@ -220,7 +222,7 @@ export function StandardPagination({
   };
 
   return (
-    <div className="flex flex-row items-center justify-between w-full px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 bg-white/40 dark:bg-slate-900/40 backdrop-blur-sm shadow-inner rounded-b-[32px]">
+    <div className="flex flex-row items-center justify-between w-full px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-sm shadow-inner rounded-b-[32px]">
       {/* Total Range */}
       <div className="text-[11px] text-theme/60 font-medium whitespace-nowrap">
         {Math.min((current - 1) * pageSize + 1, total)}-

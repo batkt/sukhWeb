@@ -130,31 +130,50 @@ export const DansKhuulgaTable: React.FC<DansKhuulgaTableProps> = ({
         `}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
-                Гүйлгээний мэдээлэл олдсонгүй
-              </span>
+              <div className="py-8 text-center bg-white dark:bg-gray-900">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Гүйлгээний мэдээлэл олдсонгүй
+                </span>
+              </div>
             ),
           }}
           summary={() =>
             data.length > 0 ? (
               <Table.Summary fixed="bottom">
-                <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={2} align="center">
+                <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
+                  <Table.Summary.Cell
+                    index={0}
+                    colSpan={2}
+                    align="center"
+                    className="dark:border-gray-700"
+                  >
                     <span className="font-bold text-gray-900 dark:text-white">
                       Нийт:
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="right">
-                    <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-widest">
+                  <Table.Summary.Cell
+                    index={1}
+                    align="right"
+                    className="dark:border-gray-700"
+                  >
+                    <span className="text-[10px] text-gray-900 dark:text-gray-400 uppercase tracking-widest">
                       Нийт дүн:
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="right">
+                  <Table.Summary.Cell
+                    index={2}
+                    align="right"
+                    className="dark:border-gray-700"
+                  >
                     <span className="font-bold text-gray-900 dark:text-white text-xs">
                       {formatNumber(totalSum, 0)}
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={3} align="center">
+                  <Table.Summary.Cell
+                    index={3}
+                    align="center"
+                    className="dark:border-gray-700"
+                  >
                     <span className="text-gray-500 dark:text-gray-400">-</span>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>

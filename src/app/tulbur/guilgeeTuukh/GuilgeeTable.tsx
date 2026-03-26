@@ -70,7 +70,7 @@ export default function GuilgeeTable({
           key: col.key,
           dataIndex: col.key,
           title: (
-            <span className="text-gray-900 dark:text-white">{col.label}</span>
+            <span className="text-inherit">{col.label}</span>
           ),
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
@@ -88,7 +88,7 @@ export default function GuilgeeTable({
               : false,
           fixed: col.sticky ? ("left" as const) : undefined,
           className:
-            "text-xs bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+            "text-xs bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)]",
         };
 
         // Custom render functions
@@ -594,7 +594,7 @@ export default function GuilgeeTable({
 
     return (
       <Table.Summary fixed="bottom">
-        <Table.Summary.Row>
+        <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
           {/* Empty cell for checkbox column alignment */}
           {isCheckboxVisible && (
             <Table.Summary.Cell index={0} className="text-center">

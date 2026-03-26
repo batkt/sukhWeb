@@ -74,26 +74,26 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: <span className="text-inherit">№</span>,
         key: "index",
         width: 50,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
+        title: <span className="text-inherit">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
           return (
-            <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            <span className="text-inherit whitespace-nowrap">
               {name}
             </span>
           );
@@ -107,7 +107,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
             className="w-full inline-flex items-center justify-center gap-2"
             title="Орцоор эрэмбэлэх"
           >
-            <span className="text-gray-900 dark:text-white">Орц</span>
+            <span className="text-inherit">Орц</span>
             <span className="flex flex-col items-center">
               <ChevronUp
                 className={`w-3 h-3 ${sortKey === "orts" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
@@ -120,9 +120,9 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
         key: "orts",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {getResidentOrts(record) || "-"}
           </span>
         ),
@@ -135,7 +135,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
             className="w-full inline-flex items-center justify-center gap-2"
             title="Давхраар эрэмбэлэх"
           >
-            <span className="text-gray-900 dark:text-white">Давхар</span>
+            <span className="text-inherit">Давхар</span>
             <span className="flex flex-col items-center">
               <ChevronUp
                 className={`w-3 h-3 ${sortKey === "davkhar" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
@@ -148,9 +148,9 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
         key: "davkhar",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {getResidentDavkhar(record) || "-"}
           </span>
         ),
@@ -163,7 +163,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
             className="w-full inline-flex items-center justify-center gap-2"
             title="Тоотоор эрэмбэлэх"
           >
-            <span className="text-gray-900 dark:text-white">Тоот</span>
+            <span className="text-inherit">Тоот</span>
             <span className="flex flex-col items-center">
               <ChevronUp
                 className={`w-3 h-3 ${sortKey === "toot" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
@@ -176,32 +176,32 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
         key: "toot",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {getResidentToot(record) || "-"}
           </span>
         ),
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
+          <span className="text-inherit">Холбоо барих</span>
         ),
         dataIndex: "utas",
         key: "utas",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {val || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
+        title: <span className="text-inherit">Төлөв</span>,
         key: "tuluv",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => {
           const id = String(record?._id || "");
           const label =
@@ -226,11 +226,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
+        title: <span className="text-inherit">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 100,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
           <div className="flex gap-2 justify-center">
             <button

@@ -546,7 +546,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-sm xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                               item.comingSoon
                                 ? "cursor-not-allowed opacity-60"
                                 : ""
@@ -586,7 +586,7 @@ export default function GolContent({ children }: GolContentProps) {
                                         onClick={() => {
                                           setOpenSubmenuIndex(null);
                                         }}
-                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-xs xl:text-sm rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
+                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-sm xl:text-[15px] font-semibold rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
                                           isSubActive
                                             ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
                                             : "hover:translate-x-0.5 hover:menu-surface/80"
@@ -608,7 +608,7 @@ export default function GolContent({ children }: GolContentProps) {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
                           }}
-                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-xs xl:text-sm  transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-sm xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                             item.comingSoon
                               ? "cursor-not-allowed opacity-60"
                               : ""

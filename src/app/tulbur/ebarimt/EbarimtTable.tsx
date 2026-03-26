@@ -37,57 +37,57 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
   const columns: ColumnsType<EbarimtItem> = useMemo(
     () => [
       {
-        title: <span className="text-gray-900 dark:text-white">№</span>,
+        title: <span className="text-inherit">№</span>,
         key: "index",
         width: 50,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Огноо</span>,
+        title: <span className="text-inherit">Огноо</span>,
         dataIndex: "date",
         key: "date",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {val || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
+        title: <span className="text-inherit">Тоот</span>,
         dataIndex: "toot",
         key: "toot",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string, item: EbarimtItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {item.toot || item.medeelel?.toot || item.orshinSuugch?.toot || "-"}
           </span>
         ),
       },
       {
         title: (
-          <span className="text-gray-900 dark:text-white">Гэрээний дугаар</span>
+          <span className="text-inherit">Гэрээний дугаар</span>
         ),
         dataIndex: "gereeniiDugaar",
         key: "gereeniiDugaar",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {val || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төрөл</span>,
+        title: <span className="text-inherit">Төрөл</span>,
         dataIndex: "type",
         key: "type",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => {
           const isB2C = val === "B2C_RECEIPT";
           const isB2B = val === "B2B_RECEIPT";
@@ -107,37 +107,37 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">ДДТД</span>,
+        title: <span className="text-inherit">ДДТД</span>,
         dataIndex: "ddtd",
         key: "ddtd",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string, item: EbarimtItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap font-mono text-xs">
+          <span className="text-inherit whitespace-nowrap font-mono text-xs">
             {item.ddtd || item.receiptId || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Дүн</span>,
+        title: <span className="text-inherit">Дүн</span>,
         dataIndex: "total",
         key: "total",
         align: "right",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: number) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap font-medium">
+          <span className="text-inherit whitespace-nowrap font-medium">
             {formatNumber(val || 0)}
           </span>
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үйлчилгээ</span>,
+        title: <span className="text-inherit">Үйлчилгээ</span>,
         dataIndex: "service",
         key: "service",
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+          <span className="text-inherit whitespace-nowrap">
             {val || "-"}
           </span>
         ),
@@ -166,7 +166,7 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           size="small"
           bordered
           loading={loading}
-          className="guilgee-table min-w-[1000px]"
+          className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
           scroll={{ x: "max-content", y: maxHeight }}
           rowClassName={(record, index) => `
             ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
@@ -176,9 +176,11 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           `}
           locale={{
             emptyText: (
-              <span className="text-gray-500 dark:text-gray-400">
-                Хайсан мэдээлэл алга байна
-              </span>
+              <div className="py-8 text-center bg-white dark:bg-gray-900">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Хайсан мэдээлэл алга байна
+                </span>
+              </div>
             ),
           }}
           summary={() =>

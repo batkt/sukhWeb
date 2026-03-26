@@ -1239,7 +1239,7 @@ export default function HistoryModal({
                   <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
                     Үлдэгдэл
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-white uppercase hidden md:table-cell">
                     Хэлбэр
                   </th>
                   <th className="py-2 px-2 text-center text-[9px] !border-r  text-slate-400 uppercase hidden md:table-cell">

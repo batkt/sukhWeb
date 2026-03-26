@@ -397,11 +397,17 @@
   background: transparent;
 }
 
+/* Default light mode border - subtle and neutral */
+:root {
+  --border: ()
+}
+
+/* Only apply system dark preferences if the app doesn't have a manual mode set, 
+   or move specific colored borders to their respective data-themes. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not([data-mode]) :root {
     --card: #fcfbf899;
     --button: #1a1a1a;
-    --border: #fdecd39a;
     --primary: #0f6fec;
   }
 }
@@ -443,7 +449,7 @@
   --surface-border: rgba(255, 255, 255, 0.1);
   --surface-hover: rgba(255, 255, 255, 0.05);
   --panel-text: #f1f5f9;
-  
+
   --muted-text: #94a3b8;
 }
 @layer base {
@@ -1381,7 +1387,7 @@ html[data-mode="dark"]:not([data-theme]),
   background: linear-gradient(
     135deg,
     color-mix(in oklch, oklch(69.6% 0.17 162.48), transparent 8%) 0%,
-    color-mix(in oklch, oklch(60% 0.20 155), transparent 18%) 100%
+    color-mix(in oklch, oklch(60% 0.2 155), transparent 18%) 100%
   );
 
   /* Premium blur, saturation and brightness for iOS 26 feel */
@@ -1393,7 +1399,7 @@ html[data-mode="dark"]:not([data-theme]),
   background-clip: padding-box;
 
   /* iOS 26 multi-layer shadow system for depth */
-  box-shadow: 
+  box-shadow:
     0 24px 64px color-mix(in oklch, var(--glass-shadow), transparent 15%),
     0 12px 32px color-mix(in oklch, var(--glass-shadow), transparent 35%),
     0 4px 16px color-mix(in oklch, var(--glass-shadow), transparent 45%),
@@ -4402,17 +4408,17 @@ a:active {
 
 /* Bordered table */
 .guilgee-table.ant-table-bordered .ant-table-cell {
-  @apply border-gray-200 dark:border-gray-600;
+  @apply border-gray-900 dark:border-gray-900;
 }
 
 /* Header style */
 .guilgee-table .ant-table-thead > tr > th {
-  @apply bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold;
+  @apply bg-gray-100 dark:bg-gray-900 text-black dark:text-white font-semibold;
 }
 
 /* Row hover */
 .guilgee-table .ant-table-tbody > tr:hover > td {
-  @apply bg-gray-50 dark:bg-gray-600;
+  @apply bg-gray-50 dark:bg-gray-900;
 }
 
 /* Row class - cancelled (red highlight) */
@@ -4434,7 +4440,7 @@ a:active {
 
 /* Summary/Footer row */
 .guilgee-table .ant-table-summary {
-  @apply bg-gray-100 dark:bg-gray-800 font-semibold;
+  @apply bg-gray-100 dark:bg-gray-900 font-semibold;
 }
 
 /* Checkbox column */
@@ -4459,7 +4465,7 @@ a:active {
 }
 
 .guilgee-table .ant-table-body::-webkit-scrollbar-track {
-  background: transparent;
+  @apply bg-transparent dark:bg-gray-800/30;
 }
 
 /* Dark mode scrollbar */
@@ -4475,5 +4481,73 @@ a:active {
 /* Empty state */
 .guilgee-table .ant-table-empty .ant-table-cell {
   @apply text-gray-500 dark:text-gray-400;
+}
+
+.dark .ant-table-placeholder,
+.dark .ant-table-placeholder .ant-table-cell,
+.dark .guilgee-table .ant-table-placeholder,
+.dark .guilgee-table .ant-table-placeholder .ant-table-cell {
+  background-color: rgb(17, 24, 39) !important; /* bg-gray-900 */
+  border-color: rgb(55, 65, 81) !important; /* border-gray-700 */
+  color: rgb(156, 163, 175) !important; /* text-gray-400 */
+}
+
+/* Aggressive dark mode table container fixes */
+.dark .ant-table,
+.dark .ant-table-container,
+.dark .ant-table-content,
+.dark .ant-table-body {
+  background-color: rgb(17, 24, 39) !important; /* bg-gray-900 */
+}
+
+.dark .ant-table-placeholder:hover > .ant-table-cell {
+  background-color: rgb(17, 24, 39) !important;
+}
+
+/* Definitive dark mode fixes for table empty/placeholder border */
+.dark .ant-table-placeholder {
+  border: none !important;
+}
+
+.dark .ant-table-placeholder > .ant-table-cell {
+  background: rgb(17, 24, 39) !important;
+  border-bottom: none !important;
+}
+
+.dark .ant-empty-description {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Scroll background and corner fix */
+.dark .guilgee-table .ant-table-body,
+.dark .guilgee-table .ant-table-header,
+.dark .guilgee-table .ant-table-footer,
+.dark .guilgee-table .ant-table-sticky-holder,
+.dark .guilgee-table .ant-table-body::-webkit-scrollbar-corner {
+  background-color: rgb(11, 15, 25) !important; 
+}
+
+.dark .ant-table,
+.dark .ant-table-container,
+.dark .ant-table-content,
+.dark .ant-table-body,
+.dark .ant-table-tbody {
+  background-color: rgb(11, 15, 25) !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: rgb(31, 41, 55) !important; /* bg-gray-800 */
+}
+
+
+/* Fix for Ant Design sticky columns in dark mode */
+.dark .ant-table-cell-fix-left,
+.dark .ant-table-cell-fix-right {
+  background-color: var(--surface-bg, #111827) !important;
+}
+
+.dark .ant-table-thead > tr > th.ant-table-cell-fix-left,
+.dark .ant-table-thead > tr > th.ant-table-cell-fix-right {
+  background-color: var(--surface-bg, #111827) !important;
 }
 

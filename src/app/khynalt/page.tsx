@@ -1017,10 +1017,10 @@ export default function Khynalt() {
             const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
                 <div>
-                  <h3 className="text-sm  text-[color:var(--panel-text)] mb-2">
+                  <h3 className="text-sm text-[color:var(--panel-text)] mb-2">
                     {card.title}
                   </h3>
-                  <p className="text-2xl  text-[color:var(--panel-text)] mb-1">
+                  <p className="text-2xl force-bold text-[color:var(--panel-text)] mb-1">
                     {card.value}
                   </p>
                 </div>
