@@ -385,8 +385,8 @@ export default function GereeHeader({
                   href="/geree/orshinSuugch"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "residents"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
-                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
+                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
+                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Оршин суугч
@@ -398,8 +398,8 @@ export default function GereeHeader({
                   href="/geree"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "contracts"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
-                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
+                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
+                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Гэрээ
@@ -411,8 +411,8 @@ export default function GereeHeader({
                   href="/geree/tootBurtgel"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "units"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
-                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
+                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
+                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Тоот бүртгэл
@@ -424,8 +424,8 @@ export default function GereeHeader({
                   href="/geree/ajiltan"
                   className={`px-3 md:px-5 py-2.5 md:py-2 text-xs md:text-sm font-normal rounded-2xl whitespace-nowrap overflow-hidden text-ellipsis transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme/50 hover:translate-y-0 ${
                     activeTab === "employees"
-                      ? "neu-panel ring-1 ring-[color:var(--surface-border)] shadow-sm text-theme font-medium scale-100"
-                      : "text-theme/60 hover:bg-theme/20 hover:text-theme hover:shadow-sm"
+                      ? "bg-theme/15 text-theme font-medium shadow-sm ring-1 ring-theme/30"
+                      : "text-theme/60 hover:bg-theme/10 hover:text-theme"
                   }`}
                 >
                   Ажилтан

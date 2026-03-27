@@ -672,7 +672,7 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-[color:var(--surface-bg)] h-[calc(100vh-80px)] overflow-y-auto w-full custom-scrollbar">
+    <div className="p-6 print-container bg-white dark:bg-gray-900 min-h-screen w-full">
       <PrintStyles />
 
       {/* Print-only Header */}

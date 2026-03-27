@@ -45,11 +45,20 @@ const fetcherJagsaalt = async ([
     };
     // Ensure org/branch are also present inside query for backends
     // that only filter by the nested query object.
-    if (baiguullagiinId != null && baiguullagiinId !== "") {
-      queryObj.baiguullagiinId = baiguullagiinId;
+    const bId = baiguullagiinId != null && baiguullagiinId !== "" && baiguullagiinId !== "null" && baiguullagiinId !== "undefined" ? String(baiguullagiinId) : "";
+    const barId = barilgiinId != null && barilgiinId !== "" && barilgiinId !== "null" && barilgiinId !== "undefined" ? String(barilgiinId) : "";
+
+    if (bId) {
+      // Support both possible field names in the database
+      queryObj.$or = queryObj.$or || [];
+      queryObj.baiguullagiinId = bId;
     }
-    if (barilgiinId != null && barilgiinId !== "") {
-      queryObj.barilgiinId = barilgiinId;
+
+    if (barId) {
+      // For buildings, it can be a direct field or inside an array
+      // We'll let the frontend filter handle the complex cases if the backend returns too much,
+      // but we send the direct field as a hint.
+      queryObj.barilgiinId = barId;
     }
 
     // Add search filters
@@ -102,7 +111,7 @@ const fetcherJagsaalt = async ([
       if (!want) return true;
       // 1) Direct single-field mappings
       const direct = toStr(
-        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId
+        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId ?? it?.barilgiinID
       );
       if (direct && direct === want) return true;
       // 2) Arrays of assignments: barilguud can be ids or objects
@@ -123,10 +132,12 @@ const fetcherJagsaalt = async ([
     };
 
     const filtered = list.filter((it: any) => {
-      const orgOk = toStr(it?.baiguullagiinId) === toStr(baiguullagiinId);
+      const itOrgId = toStr(it?.baiguullagiinId || it?.baiguullagaId || it?.baiguullagiinID);
+      const orgOk = itOrgId === bId;
       if (!orgOk) return false;
-      if (!barilgiinId) return true;
-      return includesBuilding(it, barilgiinId);
+      
+      if (!barId) return true;
+      return includesBuilding(it, barId);
     });
     if (Array.isArray(raw?.jagsaalt)) {
       return {

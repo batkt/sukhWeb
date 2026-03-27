@@ -25,6 +25,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
 import { createPortal } from "react-dom";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface Props {
   token: string;
@@ -62,6 +63,7 @@ interface DetailModalProps {
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
+  useModalHotkeys({ isOpen: open, onClose });
   if (!open || !record) return null;
 
   return createPortal(
@@ -84,20 +86,17 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 </h3>
                 <p className="text-xs text-theme mt-0.5">
                   {(() => {
-                    const modelNames: Record<string, string> = {
-                      ajiltan: "Ажилтан",
-                      geree: "Гэрээ",
-                      baiguullaga: "Байгууллага",
-                      barilga: "Барилга",
-                      talbai: "Талбай",
-                      orshinSuugch: "Оршин суугч",
-                      nekhemjlekh: "Нэхэмжлэх",
-                      nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                      medegdel: "Мэдэгдэл",
-                      tusgaaralt: "Тусгаарлалт",
-                      pwa_user: "PWA Хэрэглэгч",
-                    };
-                    return modelNames[record.modelName] || record.modelName;
+                  const modelNames: Record<string, string> = {
+                    ajiltan: "Ажилтан",
+                    geree: "Гэрээ",
+                    barilga: "Барилга",
+                    talbai: "Талбай",
+                    orshinSuugch: "Оршин суугч",
+                    nekhemjlekh: "Нэхэмжлэх",
+                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                    guilgee: "Гүйлгээ",
+                  };
+                  return modelNames[record.modelName] || record.modelName;
                   })()} - {record.documentId}
                 </p>
               </div>
@@ -140,15 +139,12 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   const modelNames: Record<string, string> = {
                     ajiltan: "Ажилтан",
                     geree: "Гэрээ",
-                    baiguullaga: "Байгууллага",
                     barilga: "Барилга",
                     talbai: "Талбай",
                     orshinSuugch: "Оршин суугч",
                     nekhemjlekh: "Нэхэмжлэх",
                     nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                    medegdel: "Мэдэгдэл",
-                    tusgaaralt: "Тусгаарлалт",
-                    pwa_user: "PWA Хэрэглэгч",
+                    guilgee: "Гүйлгээ",
                   };
                   return modelNames[record.modelName] || record.modelName || "-";
                 })()}
@@ -322,20 +318,42 @@ export default function ZassanTuukh({
   const [selectedRecord, setSelectedRecord] = useState<EditRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Common model names
+  // Common model names - Keep only necessary ones
   const modelNames = useMemo(() => [
-    { value: "ajiltan", label: "Ажилтан" },
     { value: "geree", label: "Гэрээ" },
-    { value: "baiguullaga", label: "Байгууллага" },
-    { value: "barilga", label: "Барилга" },
-    { value: "talbai", label: "Талбай" },
-    { value: "aldangi", label: "Алданги" },
     { value: "orshinSuugch", label: "Оршин суугч" },
+    { value: "talbai", label: "Талбай" },
     { value: "nekhemjlekh", label: "Нэхэмжлэх" },
     { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
-    { value: "medegdel", label: "Мэдэгдэл" },
-    { value: "tusgaaralt", label: "Тусгаарлалт" },
+    { value: "guilgee", label: "Гүйлгээ" },
+    { value: "ajiltan", label: "Ажилтан" },
+    { value: "barilga", label: "Барилга" },
   ], []);
+
+  // Fetch all employees for the filter
+  const { data: employeesData } = useSWR(
+    token && baiguullaga?._id 
+      ? [`/ajiltan`, token, baiguullaga._id] 
+      : null,
+    async ([url, tkn, orgId]) => {
+      const resp = await uilchilgee(tkn).get(url, { 
+        params: { baiguullagiinId: orgId, khuudasniiKhemjee: 1000 } 
+      });
+      return resp.data?.jagsaalt || resp.data?.data || [];
+    }
+  );
+
+  const employees = useMemo(() => {
+    if (!Array.isArray(employeesData)) return [];
+    return employeesData.map((e: any) => {
+      const aName = typeof e.ner === 'object' ? `${e.ner.over || e.ner.ovog || ''} ${e.ner.ner || ''}` : e.ner;
+      const bName = `${e.ovog || ''} ${e.ner || ''}`;
+      return {
+        id: e._id,
+        name: (aName || bName || e.nevtrekhNer || 'Нэргүй').trim()
+      };
+    });
+  }, [employeesData]);
 
   // Fetch edit history
   const { data, isLoading, mutate } = useSWR(
@@ -389,6 +407,7 @@ export default function ZassanTuukh({
     // Map API response to our interface format
     return records.map((r: any) => ({
       ...r,
+      ajiltniiId: r.ajiltniiId || r.ajiltanId || r.workerId || (r.ajiltan?._id || r.ajiltan?.id),
       createdAt: r.ognoo || r.createdAt, // Use ognoo if available (this is the edit date)
       // documentCreatedAt: The original creation date of the edited document
       // NOTE: The API response currently does NOT include documentCreatedAt.
@@ -398,23 +417,14 @@ export default function ZassanTuukh({
     }));
   }, [data]);
 
-  // Get unique employees from records
-  const employees = useMemo(() => {
-    const empMap = new Map<string, { id: string; name: string }>();
-    allRecords.forEach((r) => {
-      if (r.ajiltniiId && r.ajiltniiNer) {
-        if (!empMap.has(r.ajiltniiId)) {
-          empMap.set(r.ajiltniiId, { id: r.ajiltniiId, name: r.ajiltniiNer });
-        }
-      }
-    });
-    return Array.from(empMap.values());
-  }, [allRecords]);
-
   // Client-side filtering and pagination
   const filteredRecords = useMemo(() => {
-    return [...allRecords];
-  }, [allRecords]);
+    return allRecords.filter((r) => {
+      const matchesModel = !selectedModel || r.modelName === selectedModel;
+      const matchesEmployee = !selectedEmployee || r.ajiltniiId === selectedEmployee;
+      return matchesModel && matchesEmployee;
+    });
+  }, [allRecords, selectedModel, selectedEmployee]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;

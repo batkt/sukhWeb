@@ -54,97 +54,97 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
       {
-        title: <span className="text-inherit">№</span>,
+        title: <span className="text-gray-900 dark:text-white">№</span>,
         key: "index",
         width: 50,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: <span className="text-inherit">Нэр</span>,
+        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
         width: 250,
         sorter: true,
         sortOrder: sortKey === "ner" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
             typeof val === "object"
               ? `${val?.ner || ""} ${val?.kod || ""}`.trim() || "-"
               : val || "-";
           return (
-            <span className="text-inherit whitespace-nowrap">
+            <span className="text-gray-900 dark:text-white whitespace-nowrap">
               {name}
             </span>
           );
         },
       },
       {
-        title: <span className="text-inherit">Орц</span>,
+        title: <span className="text-gray-900 dark:text-white">Орц</span>,
         key: "orts",
         dataIndex: "orts",
         sorter: true,
         sortOrder: sortKey === "orts" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-inherit whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentOrts(record) || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-inherit">Давхар</span>,
+        title: <span className="text-gray-900 dark:text-white">Давхар</span>,
         key: "davkhar",
         dataIndex: "davkhar",
         sorter: true,
         sortOrder: sortKey === "davkhar" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-inherit whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentDavkhar(record) || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-inherit">Тоот</span>,
+        title: <span className="text-gray-900 dark:text-white">Тоот</span>,
         key: "toot",
         dataIndex: "toot",
         sorter: true,
         sortOrder: sortKey === "toot" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
-          <span className="text-inherit whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {getResidentToot(record) || "-"}
           </span>
         ),
       },
       {
         title: (
-          <span className="text-inherit">Холбоо барих</span>
+          <span className="text-gray-900 dark:text-white">Холбоо барих</span>
         ),
         dataIndex: "utas",
         key: "utas",
         sorter: true,
         sortOrder: sortKey === "utas" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
-          <span className="text-inherit whitespace-nowrap">
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {val || "-"}
           </span>
         ),
       },
       {
-        title: <span className="text-inherit">Төлөв</span>,
+        title: <span className="text-gray-900 dark:text-white">Төлөв</span>,
         key: "tuluv",
         align: "center",
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => {
           const id = String(record?._id || "");
           const label =
@@ -167,11 +167,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         },
       },
       {
-        title: <span className="text-inherit">Үйлдэл</span>,
+        title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center",
         width: 100,
-        className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
           <div className="flex gap-2 justify-center">
             <button
