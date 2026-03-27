@@ -15,7 +15,7 @@ interface ResidentsSectionProps {
   totalResidents: number;
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
-  toggleSortFor: (key: SortKey) => void;
+  toggleSortFor?: (key: string, order?: any) => void;
   tuluvByResidentId: Record<
     string,
     "Төлсөн" | "Төлөөгүй" | "Хугацаа хэтэрсэн" | "Тодорхойгүй"
@@ -61,7 +61,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               tuluvByResidentId={tuluvByResidentId}
               onEdit={onEditResident}
               onDelete={onRequestDeleteResident}
-              onSort={toggleSortFor}
+              onSort={(key, order) => toggleSortFor?.(key, order)}
             />
           </div>
           <div id="resident-pagination">

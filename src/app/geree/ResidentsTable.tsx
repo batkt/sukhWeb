@@ -34,7 +34,7 @@ interface ResidentsTableProps {
   tuluvByResidentId?: Record<string, string>;
   onEdit?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
-  onSort?: (key: SortKey) => void;
+  onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
 }
 
 export const ResidentsTable: React.FC<ResidentsTableProps> = ({
@@ -211,7 +211,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={(record) => record._id || Math.random().toString()}
+        rowKey={(record, index) => record._id || `res_${index}`}
         pagination={false}
         size="small"
         bordered
@@ -233,7 +233,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         }}
         onChange={(_: any, __: any, sorter: any) => {
           if (sorter.field && onSort) {
-            onSort(sorter.field as SortKey);
+            onSort(sorter.field as SortKey, sorter.order);
           }
         }}
       />

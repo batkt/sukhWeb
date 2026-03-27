@@ -50,6 +50,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   onRowClick,
   getGereeId,
 }) => {
+  const headerClassName =
+    "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold";
+
   const columns: ColumnsType<OrlogoAvlagaItem> = useMemo(() => {
     const baseColumns: ColumnsType<OrlogoAvlagaItem> = [
       {
@@ -57,7 +60,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "index",
         width: 50,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, __: any, index: number) =>
           (page - 1) * pageSize + index + 1,
       },
@@ -66,7 +69,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "gereeniiDugaar",
         width: 100,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, record: OrlogoAvlagaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {record._gereeDugaar || record.gereeniiDugaar || "-"}
@@ -76,7 +79,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       {
         title: "Нэр",
         key: "ner",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        width: 100,
+        className: headerClassName,
         render: (_: any, record: OrlogoAvlagaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {[record._ovog, record._ner].filter(Boolean).join(" ") || "-"}
@@ -88,7 +92,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "davkhar",
         width: 80,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, record: OrlogoAvlagaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {record._davkhar || "-"}
@@ -100,7 +104,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "toot",
         width: 80,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, record: OrlogoAvlagaItem) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
             {record._toot || "-"}
@@ -115,10 +119,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         {
           title: "Гүйцэтгэл",
           key: "paid",
-          width: 150,
-          align: "right",
-          className:
-            "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+          width: 120,
+          align: "center",
+          className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const paid = getPaid(record);
             const gid = getGereeId(record);
@@ -150,10 +153,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         {
           title: "Үлдэгдэл",
           key: "uldegdel",
-          width: 150,
+          width: 120,
           align: "right",
-          className:
-            "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+          className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const uldegdel = getUldegdel(record);
             const gid = getGereeId(record);
@@ -189,10 +191,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         {
           title: "Гүйцэтгэл",
           key: "paid",
-          width: 150,
+          width: 120,
           align: "right",
-          className:
-            "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+          className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const paid = getPaid(record);
             return (
@@ -226,9 +227,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       {
         title: "№",
         key: "index",
-        width: 40,
+        width: 50,
         align: "center",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
@@ -236,7 +237,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         dataIndex: "ognoo",
         key: "ognoo",
         width: 100,
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (val: string) => (
           <span className="text-gray-700 dark:text-gray-300 whitespace-nowrap">
             {val ? new Date(val).toLocaleDateString("mn-MN") : "-"}
@@ -247,7 +248,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         title: "Тайлбар",
         dataIndex: "tailbar",
         key: "tailbar",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        width: 120,
+        className: headerClassName,
         render: (val: string, row: any) => (
           <span
             className="text-gray-800 dark:text-gray-200 max-w-[180px] truncate"
@@ -263,7 +265,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "avlaga",
         width: 120,
         align: "right",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, row: any) => {
           const avlaga =
             Number(row?.avlagaDun ?? row?.tulukhDun ?? row?.debit ?? 0) || 0;
@@ -282,7 +284,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "tulult",
         width: 120,
         align: "right",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, row: any) => {
           const tulult =
             Number(row?.tulsunDun ?? row?.tulult ?? row?.credit ?? 0) || 0;
@@ -301,7 +303,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "uldegdel",
         width: 120,
         align: "right",
-        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        className: headerClassName,
         render: (_: any, row: any) => {
           const uldeg = Number(row?.uldegdel ?? 0);
           return (
@@ -346,7 +348,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             pagination={false}
             size="small"
             bordered
-            className="guilgee-table"
+            className="neu-table"
             scroll={{ y: 240 }}
             rowClassName={(record, index) => `
               ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
@@ -361,7 +363,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   };
 
   return (
-    <div className="guilgee-table-wrap">
+    <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
       <Table
         dataSource={data}
         columns={columns}
@@ -375,7 +377,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
+        className="neu-table"
         scroll={{ x: "max-content", y: 480 }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
@@ -396,6 +398,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           rowExpandable: () => true,
           onExpand: () => {},
           expandIcon: () => null,
+          expandIconColumnIndex: -1,
         }}
         summary={(pageData) => {
           if (pageData.length === 0) return null;
@@ -409,35 +412,37 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           });
 
           return (
-            <Table.Summary.Row>
-              <Table.Summary.Cell index={0} colSpan={5} align="center">
-                <span className="font-bold text-gray-900 dark:text-white force-bold">
-                  Нийт
-                </span>
-              </Table.Summary.Cell>
-              {activeTab === "avlaga" ? (
-                <>
+            <Table.Summary fixed>
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={5} align="center">
+                  <span className="font-bold text-gray-900 dark:text-white force-bold">
+                    Нийт
+                  </span>
+                </Table.Summary.Cell>
+                {activeTab === "avlaga" ? (
+                  <>
+                    <Table.Summary.Cell index={1} align="right">
+                      <span
+                        className={`font-bold force-bold ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
+                      >
+                        {formatNumber(totalUldegdel)}
+                      </span>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} align="right">
+                      <span className="font-bold text-green-600 dark:text-green-400 force-bold">
+                        {formatNumber(totalPaid)}
+                      </span>
+                    </Table.Summary.Cell>
+                  </>
+                ) : (
                   <Table.Summary.Cell index={1} align="right">
-                    <span
-                      className={`font-bold force-bold ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
-                    >
-                      {formatNumber(totalUldegdel)}
-                    </span>
-                  </Table.Summary.Cell>
-                  <Table.Summary.Cell index={2} align="right">
                     <span className="font-bold text-green-600 dark:text-green-400 force-bold">
                       {formatNumber(totalPaid)}
                     </span>
                   </Table.Summary.Cell>
-                </>
-              ) : (
-                <Table.Summary.Cell index={1} align="right">
-                  <span className="font-bold text-green-600 dark:text-green-400 force-bold">
-                    {formatNumber(totalPaid)}
-                  </span>
-                </Table.Summary.Cell>
-              )}
-            </Table.Summary.Row>
+                )}
+              </Table.Summary.Row>
+            </Table.Summary>
           );
         }}
       />

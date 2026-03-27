@@ -22,7 +22,7 @@ interface ContractsTableProps {
   ) => void;
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
-  toggleSortFor: (key: SortKey) => void;
+  toggleSortFor: (key: string, order?: any) => void;
   startIndex: number;
   renderCellValue: (contract: any, columnKey: string) => React.ReactNode;
   handleEdit: (contract: any) => void;
@@ -243,7 +243,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                 };
                 const targetKey = keyMap[sorter.field as string] || (sorter.field as string);
                 if (targetKey) {
-                  toggleSortFor(targetKey);
+                  toggleSortFor(targetKey, sorter.order);
                 }
               }}
             />

@@ -207,12 +207,9 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         bordered
         loading={loading}
         className="neu-table"
-        onChange={(pagination, filters, sorter: any) => {
-          if (sorter.field) {
-            // Assuming 'actions' is available in scope or passed as a prop
-            // For this example, 'actions' is not defined, so this line might cause an error
-            // You would need to define or pass 'actions' for this to work correctly.
-            // actions.toggleSortFor(sorter.field);
+        onChange={(_: any, __: any, sorter: any) => {
+          if (sorter.field && actions?.toggleSortFor) {
+            actions.toggleSortFor(sorter.field, sorter.order);
           }
         }}
         scroll={{ x: "max-content", y: 320 }}

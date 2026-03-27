@@ -11,6 +11,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import useSWR from "swr";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { StandardPagination } from "@/components/ui/StandardTable";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
@@ -664,7 +665,7 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-[color:var(--surface-bg)] min-h-screen">
+    <div className="p-6 print-container bg-[color:var(--surface-bg)] h-[calc(100vh-80px)] overflow-y-auto w-full custom-scrollbar">
       <PrintStyles />
 
       {/* Print-only Header */}
@@ -843,42 +844,17 @@ export default function OrlogoAvlagaPage() {
       </div>
 
       <div className="flex items-center justify-between no-print mt-3">
-        <div className="text-sm text-theme/70">
-          Нийт: {displayList.length} &nbsp;|&nbsp;
-          <span className="text-green-600">Орлого: {paidList.length}</span>
-          &nbsp;
-          <span className="text-red-500">Авлага: {avlagaList.length}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <PageSongokh
-            value={pageSize}
-            onChange={(v) => {
-              setPageSize(v);
-              setCurrentPage(1);
-            }}
-            className="text-xs"
-          />
-          <div className="flex items-center gap-1">
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              Өмнөх
-            </button>
-            <div className="text-theme/70 px-2">
-              {currentPage} /{" "}
-              {Math.max(1, Math.ceil(displayList.length / pageSize))}
-            </div>
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-xs"
-              disabled={currentPage * pageSize >= displayList.length}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Дараах
-            </button>
-          </div>
-        </div>
+        <StandardPagination
+          current={currentPage}
+          total={displayList.length}
+          pageSize={pageSize}
+          onChange={setCurrentPage}
+          onPageSizeChange={(v) => {
+            setPageSize(v);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[50, 100, 200, 500]}
+        />
       </div>
     </div>
   );

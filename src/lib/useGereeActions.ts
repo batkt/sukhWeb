@@ -1008,15 +1008,16 @@ export function useGereeActions(
     handlePreviewTemplate: (_id: string) => {},
     handleEditTemplate: (_id: string) => {},
     handleDeleteTemplate: (_id: string) => {},
-    toggleSortFor: useCallback((key: any) => {
+    toggleSortFor: useCallback((key: any, order?: "ascend" | "descend" | null) => {
       if (!setSortKey || !setSortOrder) return;
-      if (sortKey === key) {
-        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      if (order === undefined || order === null) {
+        setSortKey("createdAt");
+        setSortOrder("desc");
       } else {
         setSortKey(key);
-        setSortOrder("desc"); // Default to desc for new keys as per requested behavior or common UX
+        setSortOrder(order === "ascend" ? "asc" : "desc");
       }
-    }, [sortKey, sortOrder, setSortKey, setSortOrder]),
+    }, [setSortKey, setSortOrder]),
     handleSendInvoices,
     handlePreviewInvoice,
     deleteUnit,

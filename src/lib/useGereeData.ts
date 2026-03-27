@@ -6,6 +6,11 @@ import { useGereeniiZagvar } from "@/lib/useGereeniiZagvar";
 import { useSocket } from "@/context/SocketContext";
 import uilchilgee, { getErrorMessage } from "@/lib/uilchilgee";
 import { getPaymentStatusLabel } from "@/lib/utils";
+import {
+  getResidentToot,
+  getResidentDavkhar,
+  getResidentOrts,
+} from "@/lib/residentDataHelper";
 
 export function useGereeData(
   token: string | null,
@@ -653,11 +658,24 @@ export function useGereeData(
         aVal = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
         bVal = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
       } else if (sortKey === "ner") {
-        aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
-        bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
+        const getStr = (v: any) => typeof v === "object" && v !== null ? `${v.ner || ""} ${v.kod || ""}`.trim() : String(v || "");
+        aVal = `${getStr(a?.ovog)} ${getStr(a?.ner)}`.trim().toLowerCase();
+        bVal = `${getStr(b?.ovog)} ${getStr(b?.ner)}`.trim().toLowerCase();
       } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
-        const aRaw = String(a?.[sortKey] || "").trim();
-        const bRaw = String(b?.[sortKey] || "").trim();
+        let aRaw = String(a?.[sortKey] || "").trim();
+        let bRaw = String(b?.[sortKey] || "").trim();
+        
+        if (sortKey === "toot") {
+          aRaw = String(getResidentToot(a) || a?.toot || "").trim();
+          bRaw = String(getResidentToot(b) || b?.toot || "").trim();
+        } else if (sortKey === "orts") {
+          aRaw = String(getResidentOrts(a) || a?.orts || "").trim();
+          bRaw = String(getResidentOrts(b) || b?.orts || "").trim();
+        } else if (sortKey === "davkhar") {
+          aRaw = String(getResidentDavkhar(a) || a?.davkhar || "").trim();
+          bRaw = String(getResidentDavkhar(b) || b?.davkhar || "").trim();
+        }
+
         const aNum = parseInt(aRaw);
         const bNum = parseInt(bRaw);
         if (!isNaN(aNum) && !isNaN(bNum)) {
