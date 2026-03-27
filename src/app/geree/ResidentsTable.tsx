@@ -66,6 +66,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         title: <span className="text-inherit">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
+        width: 250,
         sorter: true,
         sortOrder: sortKey === "ner" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
