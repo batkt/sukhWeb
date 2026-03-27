@@ -24,6 +24,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { motion, AnimatePresence } from "framer-motion";
 import useSWR from "swr";
 import Button from "@/components/ui/Button";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface ResidentRegistrationModalProps {
   onClose: () => void;
@@ -42,6 +43,7 @@ export default function ResidentRegistrationModal({
   onSuccess,
   editData,
 }: ResidentRegistrationModalProps) {
+  useModalHotkeys({ isOpen: true, onClose });
   const [loading, setLoading] = useState(false);
   const [searching, setSearching] = useState(false);
   const [step, setStep] = useState(editData ? 2 : 1); // 1: Search Phone, 2: Full Form

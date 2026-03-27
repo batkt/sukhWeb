@@ -1,0 +1,205 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import { useBuilding } from "@/context/BuildingContext";
+import { useAuth } from "@/lib/useAuth";
+import useBaiguullaga from "@/lib/useBaiguullaga";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { StandardPagination } from "@/components/ui/StandardTable";
+import formatNumber from "../../../../tools/function/formatNumber";
+import { FileSpreadsheet } from "lucide-react";
+import useSWR from "swr";
+import uilchilgee from "@/lib/uilchilgee";
+import {
+  NegtgelTailanTable,
+  NegtgelTailanItem,
+  AvlagaItem,
+} from "./NegtgelTailanTable";
+
+export default function NegtgelTailanPage() {
+  const { selectedBuildingId } = useBuilding();
+  const { token, ajiltan } = useAuth();
+  const { baiguullaga } = useBaiguullaga(
+    token || null,
+    ajiltan?.baiguullagiinId || null
+  );
+
+  const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
+
+  const [dateRange, setDateRange] = useState<
+    [string | null, string | null] | undefined
+  >(undefined);
+  const [searchText, setSearchText] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
+
+  // ── Data fetching ────────────────────────────────────────────────────────
+  const swrKey = useMemo(() => {
+    if (!token || !baiguullagiinId) return null;
+    const now = new Date();
+    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      .toISOString()
+      .slice(0, 10);
+    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .slice(0, 10);
+    return [
+      "/tailan/negtgel",
+      token,
+      baiguullagiinId,
+      selectedBuildingId,
+      dateRange?.[0] ?? firstOfMonth,
+      dateRange?.[1] ?? lastOfMonth,
+      searchText,
+      currentPage,
+      pageSize,
+    ];
+  }, [token, baiguullagiinId, selectedBuildingId, dateRange, searchText, currentPage, pageSize]);
+
+  const { data: rawData, isLoading } = useSWR<{
+    data: NegtgelTailanItem[];
+    niitToo: number;
+  }>(
+    swrKey,
+    async ([url, tkn, bId, barId, start, end, search, page, limit]: any) => {
+      const resp = await uilchilgee(tkn).post(url, {
+        baiguullagiinId: bId,
+        ...(barId ? { barilgiinId: barId } : {}),
+        ekhlekhOgnoo: `${start} 00:00:00`,
+        duusakhOgnoo: `${end} 23:59:59`,
+        ...(search ? { search } : {}),
+        khuudasniiDugaar: page,
+        khuudasniiKhemjee: limit,
+      });
+      return {
+        data: Array.isArray(resp.data?.data) ? resp.data.data : [],
+        niitToo: Number(resp.data?.niitToo ?? 0),
+      };
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const tailanGaralt: NegtgelTailanItem[] = rawData?.data ?? [];
+  const totalCount = rawData?.niitToo ?? 0;
+
+  // Search and pagination are server-side — tailanGaralt is already the paged result
+  const filteredData = tailanGaralt;
+  const pagedData = tailanGaralt;
+
+  // ── Summary totals (current page) ────────────────────────────────────
+  const grandTotal = tailanGaralt.reduce(
+    (s, row) => s + (Number(row.niitTulukhDun) || 0),
+    0
+  );
+
+  // ── Excel export ────────────────────────────────────────────────────────
+  const exportToExcel = async () => {
+    try {
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+        .toISOString()
+        .slice(0, 10);
+      const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+        .toISOString()
+        .slice(0, 10);
+
+      const response = await uilchilgee(token).post(
+        "/tailan/export",
+        {
+          report: "negtgel",
+          baiguullagiinId,
+          barilgiinId: selectedBuildingId,
+          ekhlekhOgnoo: `${dateRange?.[0] ?? firstOfMonth} 00:00:00`,
+          duusakhOgnoo: `${dateRange?.[1] ?? lastOfMonth} 23:59:59`,
+          search: searchText,
+        },
+        { responseType: "blob" }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `negtgel_tailan_${new Date().toISOString().slice(0, 10)}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Excel export error:", error);
+    }
+  };
+
+  return (
+    <div className="p-6 bg-[color:var(--surface-bg)] h-[calc(100vh-80px)] overflow-y-auto w-full custom-scrollbar">
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="flex justify-between items-center mb-6 no-print">
+        <h1 className="text-2xl font-bold">Нэгтгэл тайлан</h1>
+        <div className="flex gap-3">
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel
+            татах
+          </button>
+        </div>
+      </div>
+
+      {/* ── Summary cards ───────────────────────────────────────── */}
+      
+
+      {/* ── Filters ─────────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-4 items-center no-print mb-4">
+        <div className="w-full sm:w-[320px]">
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder="Огноо сонгох"
+            className="flex-1 px-3 neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+          />
+        </div>
+        <div className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center">
+          <div className="flex items-center gap-2 w-full min-w-0">
+            
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => {
+                setSearchText(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+              placeholder="Хайх..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Table ───────────────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl w-full">
+        <div className="rounded-3xl p-3 allow-overflow">
+          <NegtgelTailanTable data={pagedData} loading={isLoading} />
+        </div>
+      </div>
+
+      {/* ── Pagination ──────────────────────────────────────────── */}
+      <div className="flex items-center justify-between no-print mt-3">
+        <StandardPagination
+          current={currentPage}
+          total={totalCount}
+          pageSize={pageSize}
+          onChange={setCurrentPage}
+          onPageSizeChange={(v) => {
+            setPageSize(v);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={[50, 100, 200, 500]}
+        />
+      </div>
+    </div>
+  );
+}

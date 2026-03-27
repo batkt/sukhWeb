@@ -20,7 +20,7 @@ export default function TulburLayout({
   const { ajiltan } = useAuth();
 
   const showGuilgee = hasPermission(ajiltan, "/tulbur");
-  const showDans = hasPermission(ajiltan, "/tulbur/dansKhuulga");
+  const showDans = false; // hasPermission(ajiltan, "/tulbur/dansKhuulga");
   const showEbarimt = hasPermission(ajiltan, "/tulbur/ebarimt");
 
   const routes = {

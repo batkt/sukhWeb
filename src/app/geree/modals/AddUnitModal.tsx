@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import Button from "@/components/ui/Button";
 
 interface AddUnitModalProps {
   show: boolean;
@@ -103,21 +104,20 @@ export default function AddUnitModal({
                 />
               </div>
               <div className="flex justify-center gap-3">
-                <button
-                  type="button"
+                <Button
                   onClick={onClose}
-                  className="btn-minimal-ghost px-4 py-2"
+                  variant="secondary"
+                  className="px-6"
                 >
                   Болих
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={handleSubmit}
-                  className="btn-minimal btn-save px-4 py-2"
-                  data-modal-primary
+                  variant="primary"
+                  className="px-6"
                 >
                   Нэмэх
-                </button>
+                </Button>
               </div>
             </div>
           </motion.div>

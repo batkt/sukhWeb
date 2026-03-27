@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import formatNumber from "../../../../tools/function/formatNumber";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface InvoicePreviewModalProps {
   show: boolean;
@@ -12,6 +13,7 @@ interface InvoicePreviewModalProps {
 }
 
 export default function InvoicePreviewModal({ show, onClose, invoiceData }: InvoicePreviewModalProps) {
+  useModalHotkeys({ isOpen: show, onClose });
   if (!show || !invoiceData?.preview) return null;
 
   const preview = invoiceData.preview;

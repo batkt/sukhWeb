@@ -301,7 +301,7 @@ export default function GolContent({ children }: GolContentProps) {
       path: "tailan",
       submenu: [
         { label: "Авлагын товчоо", path: "orlogo-avlaga" },
-        { label: "Сарын төлбөр", path: "sariin-tulbur" },
+        { label: "Нэгтгэл тайлан", path: "negtgel" },
         { label: "Авлагийн насжилт", path: "avlagiin-nasjilt" },
         { label: "Зогсоол", path: "zogsool" },
       ],

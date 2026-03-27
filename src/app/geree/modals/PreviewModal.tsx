@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface PreviewModalProps {
   show: boolean;
@@ -11,6 +12,7 @@ interface PreviewModalProps {
 }
 
 export default function PreviewModal({ show, onClose, template }: PreviewModalProps) {
+  useModalHotkeys({ isOpen: show, onClose });
   if (!show) return null;
 
   return (

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import Button from "@/components/ui/Button";
 
 interface EmployeeModalProps {
   show: boolean;
@@ -225,17 +226,17 @@ export default function EmployeeModal({
                   </>
                 )}
               </div>
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
+              <div className="flex justify-end gap-2 mt-6">
+                <Button
                   onClick={onClose}
-                  className="btn-minimal-ghost btn-cancel min-w-[100px]"
+                  variant="secondary"
+                  className="min-w-[100px]"
                 >
                   Цуцлах
-                </button>
-                <button type="submit" className="btn-minimal btn-save" data-modal-primary>
+                </Button>
+                <Button htmlType="submit" variant="primary" className="min-w-[100px]">
                   {editingEmployee ? "Хадгалах" : "Хадгалах"}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>

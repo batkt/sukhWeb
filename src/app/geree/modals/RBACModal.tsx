@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Shield, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface RBACModalProps {
   show: boolean;
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
 ];
 
 export default function RBACModal({ show, onClose, employee, onSave }: RBACModalProps) {
+  useModalHotkeys({ isOpen: show, onClose });
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 

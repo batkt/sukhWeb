@@ -4,6 +4,7 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { Trash2 } from "lucide-react";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface DeleteConfirmModalProps {
   show: boolean;
@@ -20,6 +21,7 @@ export default function DeleteConfirmModal({
   message,
   onConfirm,
 }: DeleteConfirmModalProps) {
+  useModalHotkeys({ isOpen: show, onClose });
   if (!show) return null;
 
   return (

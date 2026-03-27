@@ -366,21 +366,20 @@ export default function AshiglaltiinZardluud() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <MButton
+            <Button
               onClick={() => setView("list")}
-              variant="subtle"
-              size="sm"
-              className="px-6 h-10 text-slate-500  hover:bg-slate-100/50 rounded-xl"
+              variant="secondary"
+              className="px-6"
             >
               Буцах
-            </MButton>
-            <MButton
-              size="sm"
-              className="btn-save shadow-lg shadow-blue-500/20 rounded-xl px-10 h-10 font-black uppercase tracking-widest text-[10px]"
+            </Button>
+            <Button
               onClick={handleSave}
+              variant="primary"
+              className="px-8 shadow-blue-500/20 uppercase tracking-widest text-[10px]"
             >
               Хадгалах
-            </MButton>
+            </Button>
           </div>
         </div>
 

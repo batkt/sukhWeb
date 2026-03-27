@@ -14,6 +14,7 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { Search, Calendar, Printer, X, Eye } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import Button from "@/components/ui/Button";
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -969,18 +970,20 @@ export default function InvoiceModal({
 
                 {/* Content Footer / Actions */}
                 <div className="p-6 border-t border-[color:var(--surface-border)] flex justify-end gap-3 bg-[color:var(--surface-bg)] no-print">
-                   <button
+                   <Button
                     onClick={onClose}
-                    className="px-6 py-2.5 rounded-xl border border-[color:var(--surface-border)] text-theme dark:text-white hover:bg-[color:var(--surface-hover)] transition-all"
-                  >
+                    variant="secondary"
+                    className="px-6"
+                   >
                     Хаах
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => window.print()}
-                    className="px-8 py-2.5 rounded-xl bg-[color:var(--theme)] text-white hover:opacity-90 shadow-lg shadow-[color:var(--theme)]/20 transition-all no-print"
+                    variant="primary"
+                    className="px-8 no-print shadow-[color:var(--theme)]/20"
                   >
                     Хэвлэх
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (

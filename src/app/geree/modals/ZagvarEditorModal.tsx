@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/useAuth";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { X } from "lucide-react";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface ZagvarEditorModalProps {
   show: boolean;
@@ -22,6 +23,7 @@ export default function ZagvarEditorModal({
   templateId,
   onSuccess,
 }: ZagvarEditorModalProps) {
+  useModalHotkeys({ isOpen: show, onClose });
   const { token, ajiltan } = useAuth();
   const [templateData, setTemplateData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
