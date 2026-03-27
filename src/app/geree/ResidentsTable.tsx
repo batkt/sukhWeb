@@ -232,8 +232,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
           ),
         }}
         onChange={(_: any, __: any, sorter: any) => {
-          if (sorter.field && onSort) {
-            onSort(sorter.field as SortKey, sorter.order);
+          if (onSort) {
+            onSort((sorter.field || sorter.columnKey) as SortKey, sorter.order);
           }
         }}
       />

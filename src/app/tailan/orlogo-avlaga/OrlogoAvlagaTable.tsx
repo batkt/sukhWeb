@@ -189,7 +189,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           },
         },
         {
-          title: "Гүйцэтгэл",
+          title: "Төлөлт",
           key: "paid",
           width: 120,
           align: "right",

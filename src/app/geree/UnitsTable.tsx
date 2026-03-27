@@ -208,8 +208,8 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         loading={loading}
         className="neu-table"
         onChange={(_: any, __: any, sorter: any) => {
-          if (sorter.field && actions?.toggleSortFor) {
-            actions.toggleSortFor(sorter.field, sorter.order);
+          if (actions?.toggleSortFor) {
+            actions.toggleSortFor(sorter.field || sorter.columnKey, sorter.order);
           }
         }}
         scroll={{ x: "max-content", y: 320 }}

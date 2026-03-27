@@ -241,10 +241,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                   tuluv: "tuluv",
                   gereeniiDugaar: "gereeniiDugaar",
                 };
-                const targetKey = keyMap[sorter.field as string] || (sorter.field as string);
-                if (targetKey) {
-                  toggleSortFor(targetKey, sorter.order);
-                }
+                const field = sorter.field || sorter.columnKey;
+                const targetKey = field ? (keyMap[field as string] || (field as string)) : undefined;
+                toggleSortFor(targetKey || "createdAt", sorter.order);
               }}
             />
           </div>

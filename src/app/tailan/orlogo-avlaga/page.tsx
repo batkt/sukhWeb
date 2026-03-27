@@ -90,7 +90,7 @@ const PrintStyles = () => (
         width: 100% !important;
         border-collapse: collapse !important;
         table-layout: auto !important;
-        font-size: 9pt !important;
+        font-size: 10pt !important;
         color: black !important;
       }
 
@@ -147,7 +147,7 @@ export default function OrlogoAvlagaPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [activeTab, setActiveTab] = useState<TabType>("tulult");
+  const [activeTab, setActiveTab] = useState<TabType>("avlaga");
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(undefined);
@@ -420,24 +420,29 @@ export default function OrlogoAvlagaPage() {
       return;
     deduplicatedResidents.forEach((it: any) => {
       const gid = it?._gereeId || "";
+      const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
+      const queryKey = gid || rid;
       if (
-        !gid ||
-        paidRequestedRef.current.has(gid) ||
-        paidByGereeId[gid] !== undefined
+        !queryKey ||
+        paidRequestedRef.current.has(queryKey) ||
+        paidByGereeId[queryKey] !== undefined
       )
         return;
-      paidRequestedRef.current.add(gid);
+      paidRequestedRef.current.add(queryKey);
       uilchilgee(token)
-        .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gid })
+        .post("/tulsunSummary", { 
+          baiguullagiinId, 
+          ...(gid ? { gereeniiId: gid } : { orshinSuugchId: rid }) 
+        })
         .then((resp) => {
           const total =
             Number(
               resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0,
             ) || 0;
-          setPaidByGereeId((prev) => ({ ...prev, [gid]: total }));
+          setPaidByGereeId((prev) => ({ ...prev, [queryKey]: total }));
         })
         .catch(() => {
-          paidRequestedRef.current.delete(gid);
+          paidRequestedRef.current.delete(queryKey);
         });
     });
   }, [token, baiguullagiinId, deduplicatedResidents]);
@@ -500,7 +505,9 @@ export default function OrlogoAvlagaPage() {
 
   const getPaid = (it: any): number => {
     const gid = getGereeId(it);
-    return gid && paidByGereeId[gid] !== undefined ? paidByGereeId[gid] : 0;
+    const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
+    const key = gid || rid;
+    return key && paidByGereeId[key] !== undefined ? paidByGereeId[key] : 0;
   };
 
   const getUldegdel = (it: any): number => {
@@ -713,7 +720,31 @@ export default function OrlogoAvlagaPage() {
       </div>
 
       <div className="flex justify-between items-center mb-6 no-print">
-        <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
+        <div className="flex items-center gap-6">
+          <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
+          <div className="flex gap-2">
+            {(
+              [
+                ["avlaga", "Авлага"],
+                ["tulult", "Орлого"],
+              ] as [TabType, string][]
+            ).map(([tab, label]) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => {
+                  setActiveTab(tab);
+                  setExpandedRow(null);
+                  setExpandedLedger([]);
+                  setCurrentPage(1);
+                }}
+                className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex gap-3">
           <button
             onClick={exportToExcel}
@@ -721,73 +752,7 @@ export default function OrlogoAvlagaPage() {
           >
             <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
           </button>
-          {/* <button onClick={() => window.print()}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm">
-            <Printer className="w-4 h-4 text-blue-600" /> Хэвлэх
-          </button> */}
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-center no-print mb-4">
-        <div className="rounded-xl btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
-          <StandardDatePicker
-            isRange={true}
-            value={dateRange}
-            onChange={setDateRange}
-            allowClear
-            placeholder="Огноо сонгох"
-            className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
-          />
-        </div>
-        {[
-          {
-            key: "orshinSuugch",
-            label: "Оршин суугч",
-            placeholder: "Овог, нэрээр хайх",
-          },
-          { key: "toot", label: "Тоот", placeholder: "Тоот" },
-          { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
-        ].map(({ key, label, placeholder }) => (
-          <div key={key} className="rounded-xl h-[40px] flex items-center px-3">
-            <div className="flex items-center gap-2 w-full min-w-0">
-              <label className="whitespace-nowrap text-sm text-theme/80">
-                {label}
-              </label>
-              <input
-                type="text"
-                value={(filters as any)[key]}
-                onChange={(e) =>
-                  setFilters((p) => ({ ...p, [key]: e.target.value }))
-                }
-                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-                placeholder={placeholder}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex gap-2 mb-4 no-print">
-        {(
-          [
-            ["tulult", "Орлого"],
-            ["avlaga", "Авлага"],
-          ] as [TabType, string][]
-        ).map(([tab, label]) => (
-          <button
-            key={tab}
-            type="button"
-            onClick={() => {
-              setActiveTab(tab);
-              setExpandedRow(null);
-              setExpandedLedger([]);
-              setCurrentPage(1);
-            }}
-            className={`px-4 py-2 rounded-xl transition-all duration-200 ${activeTab === tab ? "bg-theme/15 text-theme font-medium shadow-sm" : "text-theme/60 hover:bg-theme/10 hover:text-theme"}`}
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -822,6 +787,52 @@ export default function OrlogoAvlagaPage() {
           </p>
         </div>
       </div>
+
+      <div className="flex flex-wrap gap-4 items-center no-print mb-4">
+        <div className="rounded-xl h-[40px] w-full sm:w-[320px] flex items-center">
+          <div className="flex items-center gap-2 w-full min-w-0">
+           
+            <StandardDatePicker
+              isRange={true}
+              value={dateRange}
+              onChange={setDateRange}
+              allowClear
+              placeholder="Огноо сонгох"
+              className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            />
+          </div>
+        </div>
+        {[
+          {
+            key: "orshinSuugch",
+            label: "Оршин суугч",
+            placeholder: "Овог, нэрээр хайх",
+          },
+          { key: "toot", label: "Тоот", placeholder: "Тоот" },
+          { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
+        ].map(({ key, label, placeholder }) => (
+          <div key={key} className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center">
+            <div className="flex items-center gap-2 w-full min-w-0">
+              <label className="text-sm text-theme/80 shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
+                {label}
+              </label>
+              <input
+                type="text"
+                value={(filters as any)[key]}
+                onChange={(e) =>
+                  setFilters((p) => ({ ...p, [key]: e.target.value }))
+                }
+                className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+                placeholder={placeholder}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+
+
+
 
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-3 allow-overflow">
