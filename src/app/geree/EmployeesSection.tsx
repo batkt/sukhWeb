@@ -2,7 +2,7 @@
 
 import React from "react";
 import { EmployeesTable, EmployeeItem } from "./EmployeesTable";
-import PageSongokh from "../../../components/selectZagvar/pageSongokh";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 interface EmployeesSectionProps {
   isValidatingAjiltan: boolean;
@@ -43,7 +43,7 @@ export default function EmployeesSection({
 
   return (
     <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-      <div className="p-1 allow-overflow">
+      <div className="p-1 allow-overflow no-scrollbar" id="employees-table">
         <EmployeesTable
           data={currentEmployees as EmployeeItem[]}
           loading={isValidatingAjiltan}
@@ -54,47 +54,18 @@ export default function EmployeesSection({
           onManagePermissions={onManagePermissions}
           onCredentialsUpdate={onCredentialsUpdate}
         />
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-2 py-3 text-md mt-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
-          <div className="text-gray-700 dark:text-gray-300">
-            Нийт: {filteredEmployees.length}
-          </div>
-          <div className="flex items-center gap-3">
-            <PageSongokh
-              value={empPageSize}
-              onChange={(v) => {
-                setEmpPageSize(v);
-                setEmpPage(1);
-              }}
-              className="text-sm px-2"
-            />
-            <div id="employees-pagination" className="flex items-center gap-1">
-              <button
-                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                disabled={empPage <= 1}
-                onClick={() => {
-                  const newPage = Math.max(1, empPage - 1);
-                  setEmpPage(newPage);
-                }}
-              >
-                Өмнөх
-              </button>
-              <div className="text-gray-700 dark:text-gray-300 px-1">
-                {empPage}
-              </div>
-              <button
-                className="btn-minimal-sm btn-minimal px-2 py-1 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                disabled={empPage >= empTotalPages}
-                onClick={() => {
-                  const newPage = Math.min(empTotalPages, empPage + 1);
-                  setEmpPage(newPage);
-                }}
-              >
-                Дараах
-              </button>
-            </div>
-          </div>
-        </div>
+      </div>
+      <div id="employees-pagination">
+        <StandardPagination
+          current={empPage}
+          total={filteredEmployees.length}
+          pageSize={empPageSize}
+          onChange={setEmpPage}
+          onPageSizeChange={(v) => {
+            setEmpPageSize(v);
+            setEmpPage(1);
+          }}
+        />
       </div>
     </div>
   );

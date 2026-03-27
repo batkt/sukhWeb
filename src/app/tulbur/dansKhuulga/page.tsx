@@ -367,56 +367,48 @@ export default function DansniiKhuulga() {
           <div className="relative z-10 px-6 py-4 rounded-[32px] bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm shadow-slate-200/50 backdrop-blur-xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                <div
-                  id="dans-date"
-                  className="h-11 w-full sm:w-[320px] rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 px-2 flex items-center shadow-inner"
-                >
+                <div id="dans-date" className="h-10 w-full sm:w-[320px]">
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo}
                     onChange={setEkhlekhOgnoo}
                     allowClear
                     placeholder="Огноо сонгох"
-                    className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none bg-transparent"
+                    className="text-theme !px-3"
                   />
                 </div>
-                <div id="dans-account" className="h-11 w-full sm:w-[200px]">
+                <div id="dans-account" className="h-10 w-full sm:w-[200px]">
                   <TusgaiZagvar
                     value={selectedDansId || ""}
                     onChange={(v) => setSelectedDansId(v || undefined)}
                     options={dansOptions}
                     placeholder={t("Данс")}
-                    className="h-full w-full rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 shadow-inner"
+                    className="h-full w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 transition-all font-inter"
                   />
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-4" id="dans-table">
-            <DansKhuulgaTable
-              data={paginated}
-              loading={isLoadingBankRows}
-              page={page}
-              rowsPerPage={rowsPerPage}
-              maxHeight="calc(100vh - 550px)"
-            />
-
-            <div className="w-full neu-panel flex flex-row items-center justify-between px-6 py-3 gap-3 text-sm rounded-[32px] border border-slate-200 dark:border-slate-800 mt-4 backdrop-blur-xl transition-all shadow-sm">
-              <div className="text-theme/70 text-xs whitespace-nowrap">
-                Нийт: {filteredData.length}
-              </div>
-
-              <div className="flex items-center gap-3">
-                <StandardPagination
-                  current={page}
-                  total={filteredData.length}
-                  pageSize={rowsPerPage}
-                  onChange={setPage}
-                  onPageSizeChange={setRowsPerPage}
-                  pageSizeOptions={[50, 100, 500, 1000]}
-                />
-              </div>
+          <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+            <div className="p-1 allow-overflow no-scrollbar" id="dans-table">
+              <DansKhuulgaTable
+                data={paginated}
+                loading={isLoadingBankRows}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                maxHeight="calc(100vh - 550px)"
+              />
+            </div>
+            <div id="dans-pagination">
+              <StandardPagination
+                current={page}
+                total={filteredData.length}
+                pageSize={rowsPerPage}
+                onChange={setPage}
+                onPageSizeChange={setRowsPerPage}
+                pageSizeOptions={[50, 100, 500, 1000]}
+              />
             </div>
           </div>
         </div>

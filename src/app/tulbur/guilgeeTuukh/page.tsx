@@ -2851,8 +2851,8 @@ export default function DansniiKhuulga() {
         </div>
 
         {/* Ant Design Table */}
-        <div className="w-full">
-          <div className="w-full" id="guilgee-table">
+        <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          <div className="p-1 allow-overflow no-scrollbar" id="guilgee-table">
             <GuilgeeTable
               data={paginated}
               loading={isLoadingHistory}

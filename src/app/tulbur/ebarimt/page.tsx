@@ -509,7 +509,7 @@ export default function Ebarimt() {
           <div className="rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <div className="btn-minimal h-[40px] w-[320px] flex items-center px-3">
+                <div id="ebarimt-date" className="h-10 w-full sm:w-[320px]">
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo ?? undefined}
@@ -520,7 +520,7 @@ export default function Ebarimt() {
                     }
                     allowClear
                     placeholder="Огноо сонгох"
-                    className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
+                    className="text-theme !px-3"
                   />
                 </div>
                 <input
@@ -528,7 +528,7 @@ export default function Ebarimt() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Баримт/Нэр/ДДТД хайх"
-                  className="rounded-2xl border px-4 py-2 text-theme neu-panel focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-[40px] w-[160px]"
+                  className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-theme bg-white/50 dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-10 w-[240px]"
                 />
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
@@ -550,19 +550,23 @@ export default function Ebarimt() {
             </div>
           </div>
 
-          {/* Table */}
-          <EbarimtTable
-            data={displayedData}
-            loading={isLoading}
-            maxHeight="calc(100vh - 550px)"
-          />
-
-          <StandardPagination
-            current={1}
-            total={displayedData.length}
-            pageSize={displayedData.length || 50}
-            onChange={() => {}}
-          />
+          <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+            <div className="p-1 allow-overflow no-scrollbar" id="ebarimt-table">
+              <EbarimtTable
+                data={displayedData}
+                loading={isLoading}
+                maxHeight="calc(100vh - 550px)"
+              />
+            </div>
+            <div id="ebarimt-pagination">
+              <StandardPagination
+                current={1}
+                total={displayedData.length}
+                pageSize={displayedData.length || 50}
+                onChange={() => {}}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </TulburLayout>

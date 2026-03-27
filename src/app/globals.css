@@ -4571,3 +4571,39 @@ a:active {
   background-color: #111827 !important;
 }
 
+/* Remove Ant Design blue border on active pagination item */
+.ant-pagination-item-active,
+.ant-pagination-item-active:hover {
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.ant-pagination-item-active a {
+  color: inherit !important;
+}
+
+/* Align Ant Design Pagination with surrounding controls */
+.ant-pagination {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.ant-pagination li {
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+}
+.no-scrollbar::-webkit-scrollbar,
+.no-scrollbar .ant-table-body::-webkit-scrollbar,
+.no-scrollbar .ant-table-content::-webkit-scrollbar {
+  display: none !important;
+}
+.no-scrollbar,
+.no-scrollbar .ant-table-body,
+.no-scrollbar .ant-table-content {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}

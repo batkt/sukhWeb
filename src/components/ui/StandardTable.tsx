@@ -193,15 +193,15 @@ export function StandardPagination({
   ) => {
     if (type === "prev") {
       return (
-        <button className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-          <ChevronLeft className="w-4 h-4 text-theme/70" />
+        <button className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+          <ChevronLeft className="w-3 h-3 text-theme/70" />
         </button>
       );
     }
     if (type === "next") {
       return (
-        <button className="w-8 h-8 flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
-          <ChevronRight className="w-4 h-4 text-theme/70" />
+        <button className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+          <ChevronRight className="w-3 h-3 text-theme/70" />
         </button>
       );
     }
@@ -210,9 +210,10 @@ export function StandardPagination({
       return (
         <button
           className={cn(
-            "w-8 h-8 flex items-center justify-center rounded-xl text-xs transition-all",
-            isActive ? " text-white" : " hover:text-theme",
-          )}
+            "w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-xs transition-all bg-white dark:bg-slate-800",
+            isActive
+              ? "text-theme font-medium"
+              : "text-theme/60 hover:bg-slate-50 dark:hover:bg-slate-700",          )}
         >
           {page}
         </button>
@@ -222,24 +223,13 @@ export function StandardPagination({
   };
 
   return (
-    <div className="flex flex-row items-center justify-between w-full px-6 py-4 border-t border-slate-100 dark:border-slate-800/50 bg-white/40 dark:bg-[#0b0f19]/40 backdrop-blur-sm shadow-inner rounded-b-[32px]">
-      {/* Total Range */}
+    <div className="flex flex-row items-center justify-between w-full px-6 py-2 rounded-b-2xl">
+      {/* Total */}
       <div className="text-[11px] text-theme/60 font-medium whitespace-nowrap">
-        {Math.min((current - 1) * pageSize + 1, total)}-
-        {Math.min(current * pageSize, total)} / {total}
+        Нийт: {total}
       </div>
 
-      {/* Pagination Buttons */}
-      <Pagination
-        current={current}
-        total={total}
-        pageSize={pageSize}
-        onChange={onChange}
-        itemRender={itemRender}
-        showSizeChanger={false}
-      />
-
-      {/* Page Size Selector */}
+      {/* Page Size + Pagination Buttons */}
       <div className="flex items-center gap-2">
         {onPageSizeChange && (
           <PageSongokh
@@ -250,8 +240,17 @@ export function StandardPagination({
             }}
             options={pageSizeOptions}
             suffix="/ хуудас"
+            className="!py-0 !h-6 !px-2 !rounded-lg !shadow-none !border-slate-200 dark:!border-slate-700"
           />
         )}
+        <Pagination
+          current={current}
+          total={total}
+          pageSize={pageSize}
+          onChange={onChange}
+          itemRender={itemRender}
+          showSizeChanger={false}
+        />
       </div>
     </div>
   );

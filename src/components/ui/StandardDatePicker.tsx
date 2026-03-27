@@ -63,7 +63,7 @@ export function StandardDatePicker({
   // The custom styles from your datepicker.md adapted for Tailwind & your theme
   const customStyles = {
     width: "100%",
-    borderRadius: "6px",
+    borderRadius: "16px",
     ...style,
   };
 
@@ -74,7 +74,7 @@ export function StandardDatePicker({
 
   // Combine passed className with standardized ones, removing the harsh default white background
   const combinedClassName =
-    `w-full !border-slate-200 dark:!border-slate-800 !bg-transparent hover:!border-sky-500 focus:!border-sky-500 transition-all font-inter h-full shadow-sm ${className} ${rootClassName} ${inputClassName}`.trim();
+    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName} ${inputClassName}`.trim();
 
   return (
     <ConfigProvider

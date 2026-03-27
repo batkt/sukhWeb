@@ -2,9 +2,9 @@
 
 import React, { useMemo } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import PageSongokh from "../../../components/selectZagvar/pageSongokh";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import { UnitsTable, FloorItem } from "./UnitsTable";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 interface UnitsSectionProps {
   davkharOptions: string[];
@@ -152,55 +152,29 @@ export default function UnitsSection({
         )}
 
         {selectedOrts && (
-          <div>
-            <div className="table-surface w-full">
-              <div className="p-1 allow-overflow">
-                <UnitsTable
-                  data={floorData}
-                  loading={isSavingUnits}
-                  page={unitPage}
-                  pageSize={unitPageSize}
-                  onAddUnit={onAddUnit}
-                  onDeleteUnit={onDeleteUnit}
-                  onDeleteFloor={onDeleteFloor}
-                />
-              </div>
+          <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
+            <div className="p-1 allow-overflow no-scrollbar" id="units-table">
+              <UnitsTable
+                data={floorData}
+                loading={isSavingUnits}
+                page={unitPage}
+                pageSize={unitPageSize}
+                onAddUnit={onAddUnit}
+                onDeleteUnit={onDeleteUnit}
+                onDeleteFloor={onDeleteFloor}
+              />
             </div>
-            <div className="flex items-center justify-between px-2 py-1 text-md">
-              <div className="text-theme/70">Нийт: {floorsList.length}</div>
-              <div className="flex items-center gap-3">
-                <PageSongokh
-                  value={unitPageSize}
-                  onChange={(v) => {
-                    setUnitPageSize(v);
-                    setUnitPage(1);
-                  }}
-                  className="text-sm px-2"
-                />
-                <div id="units-pagination" className="flex items-center gap-1">
-                  <button
-                    className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
-                    disabled={unitPage <= 1}
-                    onClick={() => {
-                      const newPage = Math.max(1, unitPage - 1);
-                      setUnitPage(newPage);
-                    }}
-                  >
-                    Өмнөх
-                  </button>
-                  <div className="text-theme/70 px-1">{unitPage}</div>
-                  <button
-                    className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
-                    disabled={unitPage >= unitTotalPages}
-                    onClick={() => {
-                      const newPage = Math.min(unitTotalPages, unitPage + 1);
-                      setUnitPage(newPage);
-                    }}
-                  >
-                    Дараах
-                  </button>
-                </div>
-              </div>
+            <div id="units-pagination">
+              <StandardPagination
+                current={unitPage}
+                total={floorsList.length}
+                pageSize={unitPageSize}
+                onChange={setUnitPage}
+                onPageSizeChange={(v) => {
+                  setUnitPageSize(v);
+                  setUnitPage(1);
+                }}
+              />
             </div>
           </div>
         )}

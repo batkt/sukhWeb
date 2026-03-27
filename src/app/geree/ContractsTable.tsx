@@ -5,7 +5,7 @@ import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { ChevronDown, ChevronUp, Edit, Eye, FileText } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
-import PageSongokh from "../../../components/selectZagvar/pageSongokh";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
 
@@ -200,7 +200,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
 
   return (
     <div className="table-surface rounded-2xl w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
-      <div className="rounded-3xl p-1 allow-overflow">
+      <div className="p-1 allow-overflow no-scrollbar" id="contracts-table">
         <div className="w-full overflow-hidden" id="geree-table">
           <div className="w-full overflow-x-auto hide-scrollbar">
             <Table
@@ -246,44 +246,17 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-between px-2 py-1 text-md border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-b-2xl">
-        <div className="text-theme/70 dark:text-gray-400">
-          Нийт: {totalContracts}
-        </div>
-        <div className="flex items-center gap-3">
-          <PageSongokh
-            value={rowsPerPage}
-            onChange={(v) => {
-              setRowsPerPage(v);
-              setCurrentPage(1);
-            }}
-            className="text-sm px-2"
-          />
-
-          <div id="geree-pagination" className="flex items-center gap-1">
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
-              disabled={currentPage <= 1}
-              onClick={() => {
-                const newPage = Math.max(1, currentPage - 1);
-                setCurrentPage(newPage);
-              }}
-            >
-              Өмнөх
-            </button>
-            <div className="text-theme/70 px-1">{currentPage}</div>
-            <button
-              className="btn-minimal-sm btn-minimal px-2 py-1 text-sm"
-              disabled={currentPage >= totalPages}
-              onClick={() => {
-                const newPage = Math.min(totalPages, currentPage + 1);
-                setCurrentPage(newPage);
-              }}
-            >
-              Дараах
-            </button>
-          </div>
-        </div>
+      <div id="geree-pagination">
+        <StandardPagination
+          current={currentPage}
+          total={totalContracts}
+          pageSize={rowsPerPage}
+          onChange={setCurrentPage}
+          onPageSizeChange={(v) => {
+            setRowsPerPage(v);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );
