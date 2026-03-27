@@ -513,16 +513,19 @@ export default function GereeHeader({
                       <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
                         Орц:
                       </label>
-                      <div className="w-18">
+                      <div className="w-26">
                         <TusgaiZagvar
                           value={selectedOrts}
                           onChange={(val) => setSelectedOrts(val)}
-                          options={ortsOptions.map((o) => ({
-                            value: o,
-                            label: o,
-                          }))}
+                          options={[
+                            { value: "", label: "Бүгд" },
+                            ...ortsOptions.map((o) => ({
+                              value: o,
+                              label: o,
+                            })),
+                          ]}
                           className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="1"
+                          placeholder="Сонгох..."
                         />
                       </div>
                     </div>
@@ -530,16 +533,19 @@ export default function GereeHeader({
                       <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
                         Давхар:
                       </label>
-                      <div className="w-18">
+                      <div className="w-26">
                         <TusgaiZagvar
                           value={selectedDawkhar}
                           onChange={(val) => setSelectedDawkhar(val)}
-                          options={davkharOptions.map((d) => ({
-                            value: String(d),
-                            label: String(d),
-                          }))}
+                          options={[
+                            { value: "", label: "Бүгд" },
+                            ...davkharOptions.map((d) => ({
+                              value: String(d),
+                              label: String(d),
+                            })),
+                          ]}
                           className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="1"
+                          placeholder="Сонгох..."
                         />
                       </div>
                     </div>
@@ -547,7 +553,7 @@ export default function GereeHeader({
                       <label className="text-sm text-theme/60 whitespace-nowrap tracking-wider font-normal">
                         Төлөв:
                       </label>
-                      <div className="w-28">
+                      <div className="w-38">
                         <TusgaiZagvar
                           value={unitStatusFilter}
                           onChange={(val) =>
@@ -556,11 +562,12 @@ export default function GereeHeader({
                             )
                           }
                           options={[
+                            { value: "all", label: "Бүгд" },
                             { value: "occupied", label: "Идэвхтэй" },
                             { value: "free", label: "Идэвхгүй" },
                           ]}
                           className="w-full z-50 text-sm rounded-2xl"
-                          placeholder="Төлөв"
+                          placeholder="Төлөв..."
                         />
                       </div>
                     </div>
@@ -640,25 +647,33 @@ export default function GereeHeader({
                   <TusgaiZagvar
                     value={selectedOrts}
                     onChange={(val) => setSelectedOrts(val)}
-                    options={ortsOptions.map((o) => ({
-                      value: o,
-                      label: o,
-                    }))}
+                    options={[
+                      { value: "", label: "Бүгд" },
+                      ...ortsOptions.map((o) => ({
+                        value: o,
+                        label: o,
+                      })),
+                    ]}
                     className="w-full z-50 text-xs"
-                    placeholder="1"
+                    placeholder="Сонгох..."
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="text-xs text-theme/60 font-normal">
                     Давхар:
                   </label>
-                  <input
-                    type="number"
-                    min={1}
+                  <TusgaiZagvar
                     value={selectedDawkhar}
-                    onChange={(e) => setSelectedDawkhar(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-xl border border-[color:var(--surface-border)] bg-transparent text-xs"
-                    placeholder=""
+                    onChange={(val) => setSelectedDawkhar(val)}
+                    options={[
+                      { value: "", label: "Бүгд" },
+                      ...davkharOptions.map((o) => ({
+                        value: String(o),
+                        label: String(o),
+                      })),
+                    ]}
+                    className="w-full z-50 text-xs"
+                    placeholder="Сонгох..."
                   />
                 </div>
                 <div className="flex flex-col gap-1 col-span-2">
@@ -673,11 +688,12 @@ export default function GereeHeader({
                       )
                     }
                     options={[
+                      { value: "all", label: "Бүгд" },
                       { value: "occupied", label: "Идэвхтэй" },
                       { value: "free", label: "Идэвхгүй" },
                     ]}
                     className="w-full z-50 text-xs"
-                    placeholder="Төлөв"
+                    placeholder="Төлөв..."
                   />
                 </div>
               </>

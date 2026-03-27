@@ -40,7 +40,11 @@ export function useGereeActions(
   setShowInvoicePreviewModal?: (show: boolean) => void,
   setInvoicePreviewData?: (data: any) => void,
   onLoadingChange?: (loading: boolean) => void,
-  contracts?: any[]
+  contracts?: any[],
+  sortKey?: string,
+  setSortKey?: (key: any) => void,
+  sortOrder?: "asc" | "desc",
+  setSortOrder?: (order: "asc" | "desc") => void
 ) {
   const { mutate } = useSWRConfig();
 
@@ -1004,7 +1008,15 @@ export function useGereeActions(
     handlePreviewTemplate: (_id: string) => {},
     handleEditTemplate: (_id: string) => {},
     handleDeleteTemplate: (_id: string) => {},
-    toggleSortFor: (_key: string) => {},
+    toggleSortFor: useCallback((key: any) => {
+      if (!setSortKey || !setSortOrder) return;
+      if (sortKey === key) {
+        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+      } else {
+        setSortKey(key);
+        setSortOrder("desc"); // Default to desc for new keys as per requested behavior or common UX
+      }
+    }, [sortKey, sortOrder, setSortKey, setSortOrder]),
     handleSendInvoices,
     handlePreviewInvoice,
     deleteUnit,

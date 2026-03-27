@@ -21,7 +21,7 @@ export interface ResidentItem {
   [key: string]: any;
 }
 
-type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
+type SortKey = string;
 type SortOrder = "asc" | "desc";
 
 interface ResidentsTableProps {
@@ -49,27 +49,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   onDelete,
   onSort,
 }) => {
-  const SortHeader: React.FC<{ title: string; sortKeyValue: SortKey }> = ({
-    title,
-    sortKeyValue,
-  }) => (
-    <button
-      type="button"
-      onClick={() => onSort?.(sortKeyValue)}
-      className="w-full inline-flex items-center justify-center gap-2"
-      title={`${title}-аар эрэмбэлэх`}
-    >
-      <span>{title}</span>
-      <span className="flex flex-col items-center">
-        <ChevronUp
-          className={`w-3 h-3 ${sortKey === sortKeyValue && sortOrder === "asc" ? "text-blue-500" : "text-subtle"}`}
-        />
-        <ChevronDown
-          className={`w-3 h-3 ${sortKey === sortKeyValue && sortOrder === "desc" ? "text-blue-500" : "text-subtle"}`}
-        />
-      </span>
-    </button>
-  );
+
 
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
@@ -86,6 +66,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         title: <span className="text-inherit">Нэр</span>,
         dataIndex: "ner",
         key: "ner",
+        sorter: true,
+        sortOrder: sortKey === "ner" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
@@ -100,25 +82,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         },
       },
       {
-        title: (
-          <button
-            type="button"
-            onClick={() => onSort?.("orts")}
-            className="w-full inline-flex items-center justify-center gap-2"
-            title="Орцоор эрэмбэлэх"
-          >
-            <span className="text-inherit">Орц</span>
-            <span className="flex flex-col items-center">
-              <ChevronUp
-                className={`w-3 h-3 ${sortKey === "orts" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-              <ChevronDown
-                className={`w-3 h-3 ${sortKey === "orts" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-            </span>
-          </button>
-        ),
+        title: <span className="text-inherit">Орц</span>,
         key: "orts",
+        dataIndex: "orts",
+        sorter: true,
+        sortOrder: sortKey === "orts" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
@@ -128,25 +96,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
       },
       {
-        title: (
-          <button
-            type="button"
-            onClick={() => onSort?.("davkhar")}
-            className="w-full inline-flex items-center justify-center gap-2"
-            title="Давхраар эрэмбэлэх"
-          >
-            <span className="text-inherit">Давхар</span>
-            <span className="flex flex-col items-center">
-              <ChevronUp
-                className={`w-3 h-3 ${sortKey === "davkhar" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-              <ChevronDown
-                className={`w-3 h-3 ${sortKey === "davkhar" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-            </span>
-          </button>
-        ),
+        title: <span className="text-inherit">Давхар</span>,
         key: "davkhar",
+        dataIndex: "davkhar",
+        sorter: true,
+        sortOrder: sortKey === "davkhar" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
@@ -156,25 +110,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
       },
       {
-        title: (
-          <button
-            type="button"
-            onClick={() => onSort?.("toot")}
-            className="w-full inline-flex items-center justify-center gap-2"
-            title="Тоотоор эрэмбэлэх"
-          >
-            <span className="text-inherit">Тоот</span>
-            <span className="flex flex-col items-center">
-              <ChevronUp
-                className={`w-3 h-3 ${sortKey === "toot" && sortOrder === "asc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-              <ChevronDown
-                className={`w-3 h-3 ${sortKey === "toot" && sortOrder === "desc" ? "text-blue-500 dark:text-blue-400" : "text-gray-400 dark:text-gray-500"}`}
-              />
-            </span>
-          </button>
-        ),
+        title: <span className="text-inherit">Тоот</span>,
         key: "toot",
+        dataIndex: "toot",
+        sorter: true,
+        sortOrder: sortKey === "toot" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (_: any, record: ResidentItem) => (
@@ -189,6 +129,8 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         ),
         dataIndex: "utas",
         key: "utas",
+        sorter: true,
+        sortOrder: sortKey === "utas" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         align: "center",
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
         render: (val: string) => (
@@ -287,6 +229,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
               Хайсан мэдээлэл алга байна
             </span>
           ),
+        }}
+        onChange={(_: any, __: any, sorter: any) => {
+          if (sorter.field && onSort) {
+            onSort(sorter.field as SortKey);
+          }
         }}
       />
     </div>

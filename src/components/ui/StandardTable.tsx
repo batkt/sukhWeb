@@ -210,10 +210,11 @@ export function StandardPagination({
       return (
         <button
           className={cn(
-            "w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-xs transition-all bg-white dark:bg-slate-800",
+            "w-6 h-6 flex items-center justify-center rounded-lg border text-xs transition-all",
             isActive
-              ? "text-theme font-medium"
-              : "text-theme/60 hover:bg-slate-50 dark:hover:bg-slate-700",          )}
+              ? "bg-blue-600 text-white border-blue-600 font-medium shadow-sm"
+              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700",
+          )}
         >
           {page}
         </button>

@@ -4,7 +4,7 @@ import React from "react";
 import { ResidentsTable, ResidentItem } from "./ResidentsTable";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
-type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
+type SortKey = string;
 
 interface ResidentsSectionProps {
   isValidatingSuugch: boolean;

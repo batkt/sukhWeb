@@ -51,19 +51,19 @@ export default function EmployeeModal({
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-2xl  text-slate-900">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl text-slate-900 dark:text-white">
                 {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
               </h2>
               <button
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-colors"
                 aria-label="Хаах"
                 title="Хаах"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-slate-700"
+                  className="h-6 w-6 text-slate-700 dark:text-slate-400"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -84,7 +84,7 @@ export default function EmployeeModal({
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     Овог
                   </label>
                   <input
@@ -95,12 +95,12 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ovog: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400"
+                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     Нэр
                   </label>
                   <input
@@ -111,12 +111,12 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^a-zA-Zа-яА-ЯөүёӨҮЁ-]/g, "");
                       setNewEmployee((p: any) => ({ ...p, ner: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400"
+                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     Утас
                   </label>
                   <input
@@ -127,14 +127,14 @@ export default function EmployeeModal({
                       const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 8);
                       setNewEmployee((p: any) => ({ ...p, utas: value }));
                     }}
-                    className="w-full p-3 rounded-2xl border border-gray-400"
+                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                     maxLength={8}
                     pattern="[0-9]{8}"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     И-мэйл
                   </label>
                   <input
@@ -142,11 +142,11 @@ export default function EmployeeModal({
                     name="email"
                     value={newEmployee.email}
                     onChange={(e) => setNewEmployee((p: any) => ({ ...p, email: e.target.value }))}
-                    className="w-full p-3 rounded-2xl border border-gray-400"
+                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     Албан тушаал
                   </label>
                   <input
@@ -156,12 +156,12 @@ export default function EmployeeModal({
                     onChange={(e) =>
                       setNewEmployee((p: any) => ({ ...p, albanTushaal: e.target.value }))
                     }
-                    className="w-full p-3 rounded-2xl border border-gray-400"
+                    className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                     required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm  text-slate-700 mb-1">
+                  <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                     Ажилд орсон огноо
                   </label>
                   <StandardDatePicker
@@ -187,7 +187,7 @@ export default function EmployeeModal({
                     allowClear
                     classNames={{
                       input:
-                        "text-theme neu-panel neu-calendar placeholder:text-theme !h-[50px] !py-2 !w-[420px]",
+                        "text-slate-900 dark:text-white bg-white dark:bg-gray-800 neu-panel neu-calendar placeholder:text-slate-400 !h-[50px] !py-2 !w-[420px]",
                     }}
                   />
                   <input type="hidden" name="ajildOrsonOgnoo" value={newEmployee.ajildOrsonOgnoo || ""} />
@@ -195,7 +195,7 @@ export default function EmployeeModal({
                 {!editingEmployee && (
                   <>
                     <div>
-                      <label className="block text-sm  text-slate-700 mb-1">
+                      <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                         Нэвтрэх нэр
                       </label>
                       <input
@@ -205,12 +205,12 @@ export default function EmployeeModal({
                         onChange={(e) =>
                           setNewEmployee((p: any) => ({ ...p, nevtrekhNer: e.target.value }))
                         }
-                        className="w-full p-3 rounded-2xl border border-gray-400"
+                        className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm  text-slate-700 mb-1">
+                      <label className="block text-sm text-slate-700 dark:text-slate-400 mb-1">
                         Нууц үг
                       </label>
                       <input
@@ -218,7 +218,7 @@ export default function EmployeeModal({
                         name="nuutsUg"
                         value={newEmployee.nuutsUg}
                         onChange={(e) => setNewEmployee((p: any) => ({ ...p, nuutsUg: e.target.value }))}
-                        className="w-full p-3 rounded-2xl border border-gray-400"
+                        className="w-full p-3 rounded-2xl border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white"
                         required
                       />
                     </div>

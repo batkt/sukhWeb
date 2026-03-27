@@ -477,7 +477,7 @@ export default function GolContent({ children }: GolContentProps) {
   return (
     <>
       <nav className="w-full sticky top-0 z-[1000] neu-nav">
-        <div className="max-w-[1600px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-3">
+        <div className="max-w-[1800px] mx-auto px-2 sm:px-4 lg:px-6 xl:px-8 py-2 sm:py-3">
           {/* Top row on mobile: Logo + Building Selector */}
           <div className="flex lg:hidden items-center justify-between gap-2 mb-2">
             <div className="shrink-0">
@@ -653,7 +653,7 @@ export default function GolContent({ children }: GolContentProps) {
                 />
               </div>
 
-              <UnguSongokh />
+              <UnguSongokh buttonClassName="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
               <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-9 w-9 xl:h-10 xl:w-10 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
               <button
@@ -866,7 +866,7 @@ export default function GolContent({ children }: GolContentProps) {
                 <SearchIcon className="w-4 h-4 pointer-events-none" />
               </button>
 
-              <UnguSongokh />
+              <UnguSongokh buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300" />
               <ThemeModeToggler buttonClassName="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel hover:scale-105 transition-all duration-300" />
 
               <button

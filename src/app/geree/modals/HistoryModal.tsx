@@ -1313,17 +1313,7 @@ export default function HistoryModal({
                             : "-"}
                         </td>
                         <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
-                          {/* Invoice View Button */}
-                          {(row.sourceCollection === "nekhemjlekhiinTuukh" ||
-                            row.parentInvoiceId) && (
-                            <button
-                              onClick={() => handleOpenInvoiceModal(row)}
-                              className="p-1 text-blue-500 hover:text-blue-600 transition-colors"
-                              title="Үйлчилгээний нэхэмжлэх харах"
-                            >
-                              <Eye size={16} />
-                            </button>
-                          )}
+
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

@@ -115,7 +115,11 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
     state.setShowInvoicePreviewModal,
     state.setInvoicePreviewData,
     (loading) => loading ? showSpinner() : hideSpinner(),
-    data.contracts
+    data.contracts,
+    state.sortKey,
+    state.setSortKey,
+    state.sortOrder,
+    state.setSortOrder
   );
 
   // Socket listeners

@@ -40,6 +40,7 @@ export default function TootBurtgelPage() {
       unitStatusFilter={state.unitStatusFilter}
       getTootOptions={data.getTootOptions}
       isSavingUnits={state.isSavingUnits}
+      actions={actions}
       composeKey={data.composeKey}
       onAddUnit={(floor) => {
         state.setAddTootFloor(floor);

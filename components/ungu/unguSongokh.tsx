@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import { Palette, Check } from "lucide-react";
 
 type Theme = "blue-gradient" | "colorful" | "white-gray" | "soft-sage";
+interface UnguSongokhProps {
+  buttonClassName?: string;
+}
 
-export default function ӨнгөнийЗагварСонгох() {
+export default function ӨнгөнийЗагварСонгох({ buttonClassName }: UnguSongokhProps) {
   const [currentTheme, setCurrentTheme] = useState<Theme>("soft-sage");
   const [isOpen, setIsOpen] = useState(false);
   const [clickedTheme, setClickedTheme] = useState<Theme | null>(null);
@@ -68,7 +71,7 @@ export default function ӨнгөнийЗагварСонгох() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-slate-700 hover:text-[#1e3a8a] hover:scale-105 duration-300 "
+        className={buttonClassName || "group relative inline-flex items-center justify-center h-10 w-10 neu-panel text-slate-700 hover:text-[#1e3a8a] hover:scale-105 duration-300 "}
         title="Өнгөний загварыг солих"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-current/10 to-current/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

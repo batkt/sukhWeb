@@ -22,6 +22,9 @@ interface UnitsSectionProps {
   setUnitPage: (page: number) => void;
   setUnitPageSize: (size: number) => void;
   isSavingUnits: boolean;
+  actions: any;
+  sortKey?: string;
+  sortOrder?: "asc" | "desc";
   composeKey: (orts: string, floor: string) => string;
   unitStatusFilter: "all" | "occupied" | "free";
   getTootOptions: (orts: string, floor: string) => string[];
@@ -46,6 +49,9 @@ export default function UnitsSection({
   setUnitPage,
   setUnitPageSize,
   isSavingUnits,
+  actions,
+  sortKey = "orts",
+  sortOrder = "asc",
   composeKey,
   unitStatusFilter,
   getTootOptions,
@@ -55,75 +61,110 @@ export default function UnitsSection({
 }: UnitsSectionProps) {
   // Compute floor data for UnitsTable
   const floorData = useMemo(() => {
-    if (!selectedOrts) return [];
+    const targetOrtsList = selectedOrts ? [selectedOrts] : ortsOptions;
+    if (targetOrtsList.length === 0) return [];
 
-    return currentFloors.map((floor) => {
-      const key = composeKey(selectedOrts, floor);
-      const units = getTootOptions(selectedOrts, floor);
+    const allFloorData: FloorItem[] = [];
 
-      // Find active toots (units with active contracts) for this floor
-      const activeToots = new Set<string>();
-      contracts.forEach((c) => {
-        const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled =
-          status === "Цуцалсан" ||
-          status.toLowerCase() === "цуцалсан" ||
-          status === "tsutlsasan" ||
-          status.toLowerCase() === "tsutlsasan" ||
-          status === "Идэвхгүй" ||
-          status.toLowerCase() === "идэвхгүй";
-        if (isCancelled) return;
+    targetOrtsList.forEach((orts) => {
+      floorsList.forEach((floor) => {
+        const key = composeKey(orts, floor);
+        const units = getTootOptions(orts, floor);
 
-        // Get orts and floor from contract or linked resident
-        const orshinSuugchId = c?.orshinSuugchId;
-        let contractOrts = String(c?.orts || "").trim();
-        let contractFloor = String(c?.davkhar || "").trim();
-        let contractToot = String(c?.toot || "").trim();
+        // Find active toots (units with active contracts) for this floor
+        const activeToots = new Set<string>();
+        contracts.forEach((c) => {
+          const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
+          const isCancelled =
+            status === "Цуцалсан" ||
+            status.toLowerCase() === "цуцалсан" ||
+            status === "tsutlsasan" ||
+            status.toLowerCase() === "tsutlsasan" ||
+            status === "Идэвхгүй" ||
+            status.toLowerCase() === "идэвхгүй";
+          if (isCancelled) return;
 
-        if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
-          const resident = residentsById[String(orshinSuugchId)];
-          if (resident.orts != null)
-            contractOrts = String(resident.orts).trim();
-          if (resident.davkhar != null)
-            contractFloor = String(resident.davkhar).trim();
-          if (resident.toot != null)
-            contractToot = String(resident.toot).trim();
+          // Get orts and floor from contract or linked resident
+          const orshinSuugchId = c?.orshinSuugchId;
+          let contractOrts = String(c?.orts || "").trim();
+          let contractFloor = String(c?.davkhar || "").trim();
+          let contractToot = String(c?.toot || "").trim();
+
+          if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
+            const resident = residentsById[String(orshinSuugchId)];
+            if (resident.orts != null)
+              contractOrts = String(resident.orts).trim();
+            if (resident.davkhar != null)
+              contractFloor = String(resident.davkhar).trim();
+            if (resident.toot != null)
+              contractToot = String(resident.toot).trim();
+          }
+
+          if (
+            contractOrts === orts &&
+            contractFloor === floor &&
+            contractToot
+          ) {
+            activeToots.add(contractToot);
+          }
+        });
+
+        // Filter units based on unitStatusFilter
+        let filteredUnits: string[];
+        if (unitStatusFilter === "occupied") {
+          filteredUnits = units.filter((u) => activeToots.has(u));
+        } else if (unitStatusFilter === "free") {
+          filteredUnits = units.filter((u) => !activeToots.has(u));
+        } else {
+          filteredUnits = units;
         }
 
-        if (
-          contractOrts === selectedOrts &&
-          contractFloor === floor &&
-          contractToot
-        ) {
-          activeToots.add(contractToot);
-        }
+        allFloorData.push({
+          orts,
+          floor,
+          units,
+          filteredUnits,
+          activeToots,
+        });
       });
+    });
 
-      // Filter units based on unitStatusFilter
-      let filteredUnits: string[];
-      if (unitStatusFilter === "occupied") {
-        filteredUnits = units.filter((u) => activeToots.has(u));
-      } else if (unitStatusFilter === "free") {
-        filteredUnits = units.filter((u) => !activeToots.has(u));
+    // Apply Sorting
+    allFloorData.sort((a, b) => {
+      let aVal: any = a[sortKey as keyof FloorItem] || a.floor;
+      let bVal: any = b[sortKey as keyof FloorItem] || b.floor;
+
+      if (sortKey === "unitsCount" || sortKey === "units") {
+        aVal = a.units.length;
+        bVal = b.units.length;
       } else {
-        filteredUnits = units;
+        const aNum = parseInt(String(aVal));
+        const bNum = parseInt(String(bVal));
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          aVal = aNum;
+          bVal = bNum;
+        } else {
+          aVal = String(aVal);
+          bVal = String(bVal);
+        }
       }
 
-      return {
-        floor,
-        units,
-        filteredUnits,
-        activeToots,
-      };
+      if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortOrder === "asc" ? 1 : -1;
+      return 0;
     });
+
+    return allFloorData;
   }, [
-    currentFloors,
+    floorsList,
     selectedOrts,
     contracts,
     residentsById,
     composeKey,
     getTootOptions,
     unitStatusFilter,
+    sortKey,
+    sortOrder,
   ]);
 
   if (davkharOptions.length === 0) {
@@ -151,23 +192,26 @@ export default function UnitsSection({
           </div>
         )}
 
-        {selectedOrts && (
+        {(selectedOrts !== undefined) && (
           <div className="table-surface w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl">
             <div className="p-1 allow-overflow no-scrollbar" id="units-table">
               <UnitsTable
-                data={floorData}
+                data={floorData.slice((unitPage - 1) * unitPageSize, unitPage * unitPageSize)}
+                actions={actions}
                 loading={isSavingUnits}
                 page={unitPage}
                 pageSize={unitPageSize}
                 onAddUnit={onAddUnit}
                 onDeleteUnit={onDeleteUnit}
                 onDeleteFloor={onDeleteFloor}
+                sortKey={sortKey}
+                sortOrder={sortOrder}
               />
             </div>
             <div id="units-pagination">
               <StandardPagination
                 current={unitPage}
-                total={floorsList.length}
+                total={floorData.length}
                 pageSize={unitPageSize}
                 onChange={setUnitPage}
                 onPageSizeChange={(v) => {

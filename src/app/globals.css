@@ -1788,6 +1788,16 @@ html[data-mode="dark"]:not([data-theme]),
   }
 }
 
+/* Ant Design Table Sorting - Prevent white background in dark mode */
+[data-mode="dark"] .ant-table-column-sort,
+[data-mode="dark"] .ant-table-column-has-sorters:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}
+
+[data-mode="dark"] .ant-table-thead th.ant-table-column-sort {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
 /* Ant Design Modal theming to follow tokens (both light/dark) */
 .ant-modal .ant-modal-content {
   background: var(--surface-bg) !important;
@@ -4586,15 +4596,60 @@ a:active {
   background-color: #111827 !important;
 }
 
-/* Remove Ant Design blue border on active pagination item */
-.ant-pagination-item-active,
-.ant-pagination-item-active:hover {
-  border-color: transparent !important;
+/* Standardize Ant Design Pagination Items */
+.ant-pagination-item,
+.ant-pagination-prev,
+.ant-pagination-next,
+.ant-pagination-jump-prev,
+.ant-pagination-jump-next {
+  border: none !important;
   background: transparent !important;
-  box-shadow: none !important;
+  min-width: 24px !important; /* Compact width */
+  height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 1px !important;
+  transition: all 0.2s !important;
 }
+
+.ant-pagination-item-active {
+  border: none !important;
+  background: var(--theme, #3b82f6) !important; /* Use theme color for active */
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+}
+
 .ant-pagination-item-active a {
-  color: inherit !important;
+  color: #ffffff !important; /* White text for active */
+}
+
+.ant-pagination-item a {
+  color: #1f2937 !important; /* Slate-800 for inactive in light mode */
+}
+
+[data-mode="dark"] .ant-pagination-item a,
+.dark .ant-pagination-item a {
+  color: #e5e7eb !important; /* Gray-200 for inactive in dark mode */
+}
+
+.ant-pagination-item-active:hover a {
+  color: #ffffff !important;
+}
+
+.ant-pagination-item:hover,
+.ant-pagination-prev:hover,
+.ant-pagination-next:hover {
+  background: rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-mode="dark"] .ant-pagination-item:hover,
+[data-mode="dark"] .ant-pagination-prev:hover,
+[data-mode="dark"] .ant-pagination-next:hover,
+.dark .ant-pagination-item:hover,
+.dark .ant-pagination-prev:hover,
+.dark .ant-pagination-next:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Align Ant Design Pagination with surrounding controls */
@@ -4603,13 +4658,10 @@ a:active {
   align-items: center !important;
   margin: 0 !important;
   padding: 0 !important;
-  line-height: 1 !important;
 }
 .ant-pagination li {
   margin: 0 !important;
   padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
 }
 .no-scrollbar::-webkit-scrollbar,
 .no-scrollbar .ant-table-body::-webkit-scrollbar,

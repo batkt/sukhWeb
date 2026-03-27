@@ -384,7 +384,7 @@ export default function ResidentModal({
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <h2 className="text-lg  text-slate-900 dark:text-[var(--panel-text)]">
+                  <h2 className="text-lg text-slate-900 dark:text-white">
                     {editingResident
                       ? "Оршин суугчийн мэдээлэл засах"
                       : "Оршин суугч нэмэх"}
@@ -422,7 +422,7 @@ export default function ResidentModal({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {/* Төрөл */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Төрөл
                       </label>
                       <div className="tusgai-wrapper w-full flex items-center">
@@ -443,7 +443,7 @@ export default function ResidentModal({
 
                     {/* Овог */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Овог
                       </label>
                       <input
@@ -462,7 +462,7 @@ export default function ResidentModal({
 
                     {/* Нэр */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Нэр
                       </label>
                       <input
@@ -481,7 +481,7 @@ export default function ResidentModal({
 
                     {/* Утас */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Утас
                       </label>
                       <input
@@ -507,7 +507,7 @@ export default function ResidentModal({
                     <div className="md:col-span-2 grid grid-cols-4 gap-2">
                       {/* СӨХ нэр (Регистр) */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           СӨХ нэр
                         </label>
                         <input
@@ -521,7 +521,7 @@ export default function ResidentModal({
 
                       {/* Орц */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Орц
                         </label>
                         <div
@@ -552,7 +552,7 @@ export default function ResidentModal({
 
                       {/* Давхар */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Давхар
                         </label>
                         <div
@@ -583,7 +583,7 @@ export default function ResidentModal({
 
                       {/* Тоот */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Тоот
                         </label>
                         <div
@@ -646,7 +646,7 @@ export default function ResidentModal({
 
                     {/* Барилгын нэр */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Барилгын нэр
                       </label>
                       <input
@@ -660,7 +660,7 @@ export default function ResidentModal({
 
                     {/* Эхний үлдэгдэл */}
                     <div>
-                      <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Эхний үлдэгдэл
                       </label>
                       <div className="relative">
@@ -696,7 +696,7 @@ export default function ResidentModal({
                     <div className="md:col-span-2 grid grid-cols-2 gap-2">
                       {/* Тайлбар */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Тайлбар
                         </label>
                         <textarea
@@ -714,7 +714,7 @@ export default function ResidentModal({
 
                       {/* Цахилгаан кВт */}
                       <div>
-                        <label className="block text-xs  text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Цахилгаан кВт
                         </label>
                         <input

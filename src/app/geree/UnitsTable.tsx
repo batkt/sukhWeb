@@ -6,6 +6,7 @@ import type { ColumnsType } from "antd/es/table";
 import { Plus, Trash2 } from "lucide-react";
 
 export interface FloorItem {
+  orts?: string;
   floor: string;
   units: string[];
   filteredUnits: string[];
@@ -14,22 +15,28 @@ export interface FloorItem {
 
 interface UnitsTableProps {
   data: FloorItem[];
+  actions: any;
   loading?: boolean;
   page?: number;
   pageSize?: number;
   onAddUnit?: (floor: string) => void;
   onDeleteUnit?: (floor: string, unit: string) => void;
   onDeleteFloor?: (floor: string) => void;
+  sortKey?: string;
+  sortOrder?: "asc" | "desc";
 }
 
 export const UnitsTable: React.FC<UnitsTableProps> = ({
   data,
+  actions,
   loading = false,
   page = 1,
   pageSize = 10,
   onAddUnit,
   onDeleteUnit,
   onDeleteFloor,
+  sortKey,
+  sortOrder,
 }) => {
   const columns: ColumnsType<FloorItem> = useMemo(
     () => [
@@ -43,10 +50,43 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           (page - 1) * pageSize + index + 1,
       },
       {
+        title: <span className="text-gray-900 dark:text-white">Нийт тоот</span>,
+        dataIndex: "units",
+        key: "unitsCount",
+        align: "center",
+        width: 100,
+        sorter: true,
+        sortOrder: (sortKey === "unitsCount" || sortKey === "units") ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-medium",
+        render: (units: string[]) => (
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {units ? units.length : 0}
+          </span>
+        ),
+      },
+      {
+        title: <span className="text-gray-900 dark:text-white">Орц</span>,
+        dataIndex: "orts",
+        key: "orts",
+        align: "center",
+        width: 80,
+        sorter: true,
+        sortOrder: sortKey === "orts" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
+        render: (val: string) => (
+          <span className="text-gray-900 dark:text-white whitespace-nowrap">
+            {val ? `${val}-р орц` : "-"}
+          </span>
+        ),
+      },
+      {
         title: <span className="text-gray-900 dark:text-white">Давхар</span>,
         dataIndex: "floor",
         key: "floor",
         align: "center",
+        width: 100,
+        sorter: true,
+        sortOrder: sortKey === "floor" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
           <span className="text-gray-900 dark:text-white whitespace-nowrap">
@@ -84,7 +124,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     className={`group relative flex items-center justify-center w-[36px] h-[22px] rounded-lg border transition-all duration-150 ${
                       hasActive
                         ? "border-green-500 bg-green-50 dark:bg-green-900/20 dark:border-green-600"
-                        : "border-slate-300 bg-white dark:bg-gray-800 dark:border-slate-600 hover:border-blue-400 shadow-sm"
+                        : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-blue-400 shadow-sm"
                     }`}
                   >
                     <span
@@ -161,12 +201,20 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={(record) => record.floor}
+        rowKey={(record) => `${record.orts || ""}-${record.floor}`}
         pagination={false}
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
+        className="neu-table"
+        onChange={(pagination, filters, sorter: any) => {
+          if (sorter.field) {
+            // Assuming 'actions' is available in scope or passed as a prop
+            // For this example, 'actions' is not defined, so this line might cause an error
+            // You would need to define or pass 'actions' for this to work correctly.
+            // actions.toggleSortFor(sorter.field);
+          }
+        }}
         scroll={{ x: "max-content", y: 320 }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}

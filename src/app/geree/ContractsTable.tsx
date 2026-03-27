@@ -7,7 +7,7 @@ import { ChevronDown, ChevronUp, Edit, Eye, FileText } from "lucide-react";
 import { ALL_COLUMNS } from "./columns";
 import { StandardPagination } from "@/components/ui/StandardTable";
 
-type SortKey = "createdAt" | "toot" | "orts" | "davkhar";
+type SortKey = string;
 
 interface ContractsTableProps {
   ajiltan: any;
@@ -75,7 +75,10 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           column?.key === "toot" ||
           column?.key === "orts" ||
           column?.key === "davkhar" ||
-          column?.key === "ognoo";
+          column?.key === "ognoo" ||
+          column?.key === "ner" ||
+          column?.key === "tuluv" ||
+          column?.key === "gereeniiDugaar";
         const isLastCol = colIdx === visibleColumns.length - 1;
 
         const alignClass =
@@ -89,54 +92,39 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
         const headerClassName =
           "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold";
 
+        let colWidth: number | undefined = undefined;
+        if (columnKey === "ner") colWidth = 200;
+        else if (columnKey === "horoo" || columnKey === "bairniiNer") colWidth = 150;
+        else if (columnKey === "toot" || columnKey === "orts" || columnKey === "davkhar") colWidth = 80;
+        else if (columnKey === "tuluv" || columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel") colWidth = 120;
+        else if (columnKey === "gereeniiDugaar") colWidth = 100;
+        else colWidth = 120;
+
         if (isSortable) {
-          const keyMap: Record<string, SortKey> = {
+          const keyMap: Record<string, string> = {
             ognoo: "createdAt",
             toot: "toot",
             orts: "orts",
             davkhar: "davkhar",
+            ner: "ner",
+            tuluv: "tuluv",
+            gereeniiDugaar: "gereeniiDugaar",
           };
-          const targetKey = keyMap[column?.key || "ognoo"];
+          const targetKey = keyMap[column?.key || "ognoo"] || (column?.key as string);
 
           return {
             title: (
-              <button
-                type="button"
-                onClick={() => toggleSortFor(targetKey)}
-                className={`w-full inline-flex items-center gap-2 ${
-                  alignClass === "left"
-                    ? "justify-start"
-                    : alignClass === "right"
-                      ? "justify-end"
-                      : "justify-center"
-                }`}
-                title={`Эрэмбэлэх: ${column?.label}`}
-              >
-                <span className="text-gray-900 dark:text-white">
-                  {column?.label}
-                </span>
-                <span className="flex flex-col items-center">
-                  <ChevronUp
-                    className={`w-3 h-3 ${
-                      sortKey === targetKey && sortOrder === "asc"
-                        ? "text-blue-500 dark:text-blue-400"
-                        : "text-gray-400 dark:text-gray-500"
-                    }`}
-                  />
-                  <ChevronDown
-                    className={`w-3 h-3 ${
-                      sortKey === targetKey && sortOrder === "desc"
-                        ? "text-blue-500 dark:text-blue-400"
-                        : "text-gray-400 dark:text-gray-500"
-                    }`}
-                  />
-                </span>
-              </button>
+              <span className="text-gray-900 dark:text-white">
+                {column?.label}
+              </span>
             ),
             dataIndex: columnKey,
             key: columnKey,
             align: alignClass as any,
+            width: colWidth,
             className: headerClassName,
+            sorter: true,
+            sortOrder: sortKey === targetKey ? (sortOrder === "asc" ? "ascend" : "descend") : null,
             render: (_: any, record: any) => (
               <span className="text-gray-900 dark:text-white">
                 {renderCellValue(record, columnKey)}
@@ -154,6 +142,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
           dataIndex: columnKey,
           key: columnKey,
           align: alignClass as any,
+          width: colWidth,
           className: headerClassName,
           render: (_: any, record: any) => (
             <span className="text-gray-900 dark:text-white">
@@ -206,7 +195,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             <Table
               dataSource={currentContracts}
               columns={columns}
-              rowKey={(record) => record._id || Math.random().toString()}
+              rowKey={(record) => record._id || record.id}
               pagination={false}
               size="small"
               bordered
@@ -242,6 +231,21 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                     : ""
                 }`,
               })}
+              onChange={(_: any, __: any, sorter: any) => {
+                const keyMap: Record<string, string> = {
+                  ognoo: "createdAt",
+                  toot: "toot",
+                  orts: "orts",
+                  davkhar: "davkhar",
+                  ner: "ner",
+                  tuluv: "tuluv",
+                  gereeniiDugaar: "gereeniiDugaar",
+                };
+                const targetKey = keyMap[sorter.field as string] || (sorter.field as string);
+                if (targetKey) {
+                  toggleSortFor(targetKey);
+                }
+              }}
             />
           </div>
         </div>

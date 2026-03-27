@@ -19,7 +19,7 @@ export function useGereeData(
   empPageSize: number,
   currentPage: number,
   rowsPerPage: number,
-  sortKey: "createdAt" | "toot" | "orts" | "davkhar",
+  sortKey: string,
   sortOrder: "asc" | "desc",
   searchTerm: string,
   unitPage: number,
@@ -652,37 +652,27 @@ export function useGereeData(
       if (sortKey === "createdAt") {
         aVal = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
         bVal = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
-      } else if (sortKey === "toot") {
-        aVal = String(a?.toot || "").trim();
-        bVal = String(b?.toot || "").trim();
-        // Try numeric comparison first
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
+      } else if (sortKey === "ner") {
+        aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
+        bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
+      } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
+        const aRaw = String(a?.[sortKey] || "").trim();
+        const bRaw = String(b?.[sortKey] || "").trim();
+        const aNum = parseInt(aRaw);
+        const bNum = parseInt(bRaw);
         if (!isNaN(aNum) && !isNaN(bNum)) {
           aVal = aNum;
           bVal = bNum;
+        } else {
+          aVal = aRaw.toLowerCase();
+          bVal = bRaw.toLowerCase();
         }
-      } else if (sortKey === "orts") {
-        aVal = String(a?.orts || "").trim();
-        bVal = String(b?.orts || "").trim();
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          aVal = aNum;
-          bVal = bNum;
-        }
-      } else if (sortKey === "davkhar") {
-        aVal = String(a?.davkhar || "").trim();
-        bVal = String(b?.davkhar || "").trim();
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          aVal = aNum;
-          bVal = bNum;
-        }
+      } else if (sortKey === "utas") {
+        aVal = String(a?.utas || "").replace(/[^0-9]/g, "");
+        bVal = String(b?.utas || "").replace(/[^0-9]/g, "");
       } else {
-        aVal = String(a?.[sortKey] || "").trim();
-        bVal = String(b?.[sortKey] || "").trim();
+        aVal = String(a?.[sortKey] || "").trim().toLowerCase();
+        bVal = String(b?.[sortKey] || "").trim().toLowerCase();
       }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
@@ -708,89 +698,54 @@ export function useGereeData(
   const filteredContracts = useMemo(() => {
     let filtered = [...contracts];
 
+    // ... (filters remain the same) ...
     // Apply orts filter
     if (selectedOrtsForContracts && selectedOrtsForContracts.trim() !== "") {
       const filterOrts = String(selectedOrtsForContracts).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
         let contractOrts = String(c?.orts || "").trim();
-
-        // Get orts from linked resident if available
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident.orts != null) {
-            contractOrts = String(resident.orts).trim();
-          }
+          if (resident.orts != null) contractOrts = String(resident.orts).trim();
         }
-
         return contractOrts === filterOrts;
       });
     }
 
-    // Apply dawkhar filter
     if (selectedDawkhar && selectedDawkhar.trim() !== "") {
       const filterDawkhar = String(selectedDawkhar).trim();
       filtered = filtered.filter((c: any) => {
         const orshinSuugchId = c.orshinSuugchId;
         let contractDawkhar = String(c?.davkhar || "").trim();
-
-        // Get davkhar from linked resident if available
         if (orshinSuugchId && residentsById[String(orshinSuugchId)]) {
           const resident = residentsById[String(orshinSuugchId)];
-          if (resident.davkhar != null) {
-            contractDawkhar = String(resident.davkhar).trim();
-          }
+          if (resident.davkhar != null) contractDawkhar = String(resident.davkhar).trim();
         }
-
         return contractDawkhar === filterDawkhar;
       });
     }
 
-    // Apply status filter (active/cancelled)
     if (statusFilter && statusFilter !== "all") {
       filtered = filtered.filter((c: any) => {
         const status = String(c?.tuluv || c?.status || "Идэвхтэй").trim();
-        const isCancelled =
-          status === "Цуцалсан" ||
-          status.toLowerCase() === "цуцалсан" ||
-          status === "tsutlsasan" ||
-          status.toLowerCase() === "tsutlsasan" ||
-          status === "Идэвхгүй" ||
-          status.toLowerCase() === "идэвхгүй";
-        const isActive =
-          !isCancelled &&
-          (status === "Идэвхтэй" ||
-            status.toLowerCase() === "идэвхтэй" ||
-            !status ||
-            status === "");
-
-        if (statusFilter === "active") {
-          return isActive;
-        } else if (statusFilter === "cancelled") {
-          return isCancelled;
-        }
+        const isCancelled = status === "Цуцалсан" || status.toLowerCase() === "цуцалсан" || status === "tsutlsasan" || status.toLowerCase() === "tsutlsasan" || status === "Идэвхгүй" || status.toLowerCase() === "идэвхгүй";
+        const isActive = !isCancelled && (status === "Идэвхтэй" || status.toLowerCase() === "идэвхтэй" || !status || status === "");
+        if (statusFilter === "active") return isActive;
+        if (statusFilter === "cancelled") return isCancelled;
         return true;
       });
     }
 
-    // Apply search filter if searchTerm exists
     if (searchTerm && searchTerm.trim() !== "") {
       const term = searchTerm.toLowerCase().trim();
       filtered = filtered.filter((c: any) => {
         const ner = String(c?.ner || "").toLowerCase();
         const ovog = String(c?.ovog || "").toLowerCase();
-        const utas = Array.isArray(c?.utas)
-          ? c.utas.map((u: any) => String(u).toLowerCase()).join(" ")
-          : String(c?.utas || "").toLowerCase();
+        const utas = Array.isArray(c?.utas) ? c.utas.map((u: any) => String(u).toLowerCase()).join(" ") : String(c?.utas || "").toLowerCase();
         const toot = String(c?.toot || "").toLowerCase();
         const gereeniiDugaar = String(c?.gereeniiDugaar || "").toLowerCase();
-        return (
-          ner.includes(term) ||
-          ovog.includes(term) ||
-          utas.includes(term) ||
-          toot.includes(term) ||
-          gereeniiDugaar.includes(term)
-        );
+        return ner.includes(term) || ovog.includes(term) || utas.includes(term) || toot.includes(term) || gereeniiDugaar.includes(term);
       });
     }
 
@@ -800,63 +755,36 @@ export function useGereeData(
       let bVal: any;
 
       if (sortKey === "createdAt") {
-        aVal = new Date(
-          a?.createdAt || a?.ognoo || a?.updatedAt || 0,
-        ).getTime();
-        bVal = new Date(
-          b?.createdAt || b?.ognoo || b?.updatedAt || 0,
-        ).getTime();
-      } else if (sortKey === "toot") {
-        // Get toot from linked resident if available
-        const aResident = a?.orshinSuugchId
-          ? residentsById[String(a.orshinSuugchId)]
-          : null;
-        const bResident = b?.orshinSuugchId
-          ? residentsById[String(b.orshinSuugchId)]
-          : null;
-        aVal = String(aResident?.toot ?? a?.toot ?? "").trim();
-        bVal = String(bResident?.toot ?? b?.toot ?? "").trim();
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
+        aVal = new Date(a?.createdAt || a?.ognoo || a?.updatedAt || 0).getTime();
+        bVal = new Date(b?.createdAt || b?.ognoo || b?.updatedAt || 0).getTime();
+      } else if (sortKey === "ner") {
+        aVal = `${a?.ovog || ""} ${a?.ner || ""}`.trim().toLowerCase();
+        bVal = `${b?.ovog || ""} ${b?.ner || ""}`.trim().toLowerCase();
+      } else if (sortKey === "toot" || sortKey === "orts" || sortKey === "davkhar") {
+        const aResident = a?.orshinSuugchId ? residentsById[String(a.orshinSuugchId)] : null;
+        const bResident = b?.orshinSuugchId ? residentsById[String(b.orshinSuugchId)] : null;
+        const aRaw = String(aResident?.[sortKey] ?? a?.[sortKey] ?? "").trim();
+        const bRaw = String(bResident?.[sortKey] ?? b?.[sortKey] ?? "").trim();
+        const aNum = parseInt(aRaw);
+        const bNum = parseInt(bRaw);
         if (!isNaN(aNum) && !isNaN(bNum)) {
           aVal = aNum;
           bVal = bNum;
+        } else {
+          aVal = aRaw.toLowerCase();
+          bVal = bRaw.toLowerCase();
         }
-      } else if (sortKey === "orts") {
-        // Get orts from linked resident if available
-        const aResident = a?.orshinSuugchId
-          ? residentsById[String(a.orshinSuugchId)]
-          : null;
-        const bResident = b?.orshinSuugchId
-          ? residentsById[String(b.orshinSuugchId)]
-          : null;
-        aVal = String(aResident?.orts ?? a?.orts ?? "").trim();
-        bVal = String(bResident?.orts ?? b?.orts ?? "").trim();
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          aVal = aNum;
-          bVal = bNum;
-        }
-      } else if (sortKey === "davkhar") {
-        // Get davkhar from linked resident if available
-        const aResident = a?.orshinSuugchId
-          ? residentsById[String(a.orshinSuugchId)]
-          : null;
-        const bResident = b?.orshinSuugchId
-          ? residentsById[String(b.orshinSuugchId)]
-          : null;
-        aVal = String(aResident?.davkhar ?? a?.davkhar ?? "").trim();
-        bVal = String(bResident?.davkhar ?? b?.davkhar ?? "").trim();
-        const aNum = parseInt(aVal);
-        const bNum = parseInt(bVal);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          aVal = aNum;
-          bVal = bNum;
-        }
+      } else if (sortKey === "utas") {
+        const aUtas = Array.isArray(a?.utas) ? a.utas[0] : a?.utas;
+        const bUtas = Array.isArray(b?.utas) ? b.utas[0] : b?.utas;
+        aVal = String(aUtas || "").replace(/[^0-9]/g, "");
+        bVal = String(bUtas || "").replace(/[^0-9]/g, "");
+      } else if (sortKey === "tuluv") {
+        aVal = String(a?.tuluv || a?.status || "Идэвхтэй").trim().toLowerCase();
+        bVal = String(b?.tuluv || b?.status || "Идэвхтэй").trim().toLowerCase();
       } else {
-        aVal = String(a?.[sortKey] || "").trim();
-        bVal = String(b?.[sortKey] || "").trim();
+        aVal = String(a?.[sortKey] || "").trim().toLowerCase();
+        bVal = String(b?.[sortKey] || "").trim().toLowerCase();
       }
 
       if (aVal < bVal) return sortOrder === "asc" ? -1 : 1;
