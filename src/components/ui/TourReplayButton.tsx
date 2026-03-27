@@ -4,12 +4,15 @@ import { HelpCircle, X, EyeOff, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTour } from "@/context/TourContext";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 export default function TourReplayButton() {
   const { start, disable, enable, disabled } = useTour();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+
+  useModalHotkeys({ isOpen: open, onClose: () => setOpen(false) });
 
   // Check if user has interacted before (stored in localStorage)
   useEffect(() => {
