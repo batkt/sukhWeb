@@ -103,15 +103,17 @@ export default function NegtgelTailanPage() {
         .toISOString()
         .slice(0, 10);
 
+      if (!token) return;
+
       const response = await uilchilgee(token).post(
         "/tailan/export",
         {
           report: "negtgel",
-          baiguullagiinId,
-          barilgiinId: selectedBuildingId,
+          baiguullagiinId: baiguullagiinId ?? undefined,
+          barilgiinId: selectedBuildingId ?? undefined,
           ekhlekhOgnoo: `${dateRange?.[0] ?? firstOfMonth} 00:00:00`,
           duusakhOgnoo: `${dateRange?.[1] ?? lastOfMonth} 23:59:59`,
-          search: searchText,
+          search: searchText || undefined,
         },
         { responseType: "blob" }
       );

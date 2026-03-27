@@ -112,7 +112,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         key: "ner",
         className: headerClassName,
         width: 160,
-        align: "left" as const,
+        align: "center" as const,
         ellipsis: true,
         fixed: "left" as const,
         render: (_: any, record: NegtgelTailanItem) => (
@@ -264,81 +264,6 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         ),
       }}
       pagination={false}
-      summary={(pageData) => {
-        if (pageData.length === 0) return null;
-
-        const totalNiit = pageData.reduce(
-          (s, row) => s + (Number(row.niitTulukhDun) || 0),
-          0
-        );
-        const totalTalbai = pageData.reduce(
-          (s, row) => s + (Number(row._id?.talbainKhemjee) || 0),
-          0
-        );
-
-        // Build per-avlaga totals
-        const avlagaTotals = avlagaTypes.map((assessment) => {
-          let total = 0;
-          pageData.forEach((row) => {
-            if (!Array.isArray(row.avlaga)) return;
-            row.avlaga.forEach((b) => {
-              if (b.ognoo?.slice(0, 7) === assessment.ognoo) {
-                const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0 
-                  ? b.zardluud 
-                  : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
-
-                zardluud.forEach((z) => {
-                  if (z.dun <= 0) return;
-                  const zName = z.ner || z.turul || "Бусад";
-
-                  if (assessment.tailbar === "Менежмент нэгж" && zName.includes("Менежментийн төлбөр")) {
-                    total += z.dun; // Same as column logic
-                  } else if (zName === assessment.tailbar) {
-                    total += z.dun;
-                  }
-                });
-              }
-            });
-          });
-          return total;
-        });
-
-        return (
-          <Table.Summary fixed>
-            <Table.Summary.Row>
-              <Table.Summary.Cell index={0} colSpan={4} align="center">
-                <span className="font-bold text-gray-900 dark:text-white force-bold">
-                  Нийт
-                </span>
-              </Table.Summary.Cell>
-              {avlagaTotals.map((total, i) => {
-                const assessment = avlagaTypes[i];
-                const isSpecial = assessment?.tailbar === "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
-                const displayTotal = isSpecial ? total * 0.4 : total;
-
-                return (
-                  <Table.Summary.Cell key={i} index={3 + i} align="center">
-                    <span className="font-bold text-gray-900 dark:text-white force-bold">
-                      {displayTotal > 0 || isSpecial
-                        ? formatNumber(displayTotal, 2)
-                        : ""}
-                    </span>
-                  </Table.Summary.Cell>
-                );
-              })}
-              {/* Grand total */}
-              <Table.Summary.Cell
-                index={3 + avlagaTotals.length}
-                align="center"
-              >
-                <span className="font-bold text-green-600 dark:text-green-400 force-bold">
-                  {formatNumber(totalNiit, 2)}
-                </span>
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-          </Table.Summary>
-        );
-      }}
     />
   );
 }
