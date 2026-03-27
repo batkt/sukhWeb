@@ -210,12 +210,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
               : getPaymentStatusLabel(record);
           const cls =
             label === "Төлсөн"
-              ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400"
-              : label === "Хугацаа хэтэрсэн"
-                ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400"
-                : label === "Төлөөгүй"
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400"
-                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
+              ? "badge-paid"
+              : label === "Хугацаа хэтэрсэн" || label === "Төлөөгүй"
+                ? "badge-unpaid"
+                : "badge-neutral";
           return (
             <span
               className={`inline-flex items-center px-2 py-0.5 text-sm font-normal rounded-full ${cls}`}

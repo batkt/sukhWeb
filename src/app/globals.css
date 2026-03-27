@@ -1632,10 +1632,25 @@ html[data-mode="dark"]:not([data-theme]),
   color: #7f1d1d !important; /* red-900 */
   border-color: rgba(239, 68, 68, 0.25) !important;
 }
-.badge-unknown {
+.badge-unknown, .badge-neutral {
   background: rgba(148, 163, 184, 0.16) !important; /* slate */
   color: #5b6a7e !important; /* slate-600 */
   border-color: rgba(148, 163, 184, 0.25) !important;
+}
+
+/* Dark mode overrides for better contrast */
+[data-mode="dark"] .badge-paid {
+  background: rgba(34, 197, 94, 0.25) !important;
+  color: #4ade80 !important; /* green-400 */
+}
+[data-mode="dark"] .badge-unpaid {
+  background: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important; /* red-400 */
+}
+[data-mode="dark"] .badge-neutral,
+[data-mode="dark"] .badge-unknown {
+  background: rgba(148, 163, 184, 0.25) !important;
+  color: #94a3b8 !important; /* slate-400 */
 }
 
 /* Ensure icons inside badges follow text color */
