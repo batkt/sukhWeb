@@ -108,13 +108,11 @@ export default function GolContent({ children }: GolContentProps) {
   const sanalUnreadList = sanalUnreadListRaw.filter((item) => isSanal(item.turul) || isGomdol(item.turul));
   const socket = useSocket();
 
-  // Global medegdel socket: show toast when new notification or chat message arrives (so toast shows on any page, not only sanalKhuselt)
   useEffect(() => {
     if (!socket || !ajiltan?.baiguullagiinId || !canSeeSanalKhuselt) return;
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
     const handler = (payload: any) => {
       if (payload?.type === "medegdelNew") {
-        // Don't show "you received" when this is an outbound notification we just sent (App/Мессеж/Mail from Мэдэгдэл page)
         const turul = (payload?.data?.turul ?? "").trim();
         const isOutboundByMe = ["App", "Мессеж", "Mail"].includes(turul);
         if (!isOutboundByMe) {
@@ -133,7 +131,6 @@ export default function GolContent({ children }: GolContentProps) {
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelAdminReply") {
-        // Skip toast when this client sent the reply (socket often arrives before API response, so check both sending flag and last-sent id)
         const win = typeof window !== "undefined" ? (window as any) : undefined;
         const sendingReply = win?.__medegdelSendingReply === true;
         const replyId = payload?.data?._id != null ? String(payload.data._id) : null;
@@ -179,11 +176,9 @@ export default function GolContent({ children }: GolContentProps) {
     return b.ner !== baiguullaga?.ner;
   });
 
-  // Memoized handler to prevent unnecessary updates and ensure building selection persists
   const handleBuildingChange = useCallback(
     (v: string) => {
       const newValue = v && v.trim() ? v.trim() : null;
-      // Only update if the value actually changed to prevent unnecessary side effects
       if (newValue !== selectedBuildingId) {
         setSelectedBuildingId(newValue);
       }
@@ -198,7 +193,6 @@ export default function GolContent({ children }: GolContentProps) {
   const menuRef = useRef<HTMLDivElement | null>(null);
   const [openSubmenuIndex, setOpenSubmenuIndex] = useState<number | null>(null);
 
-  // Refs to detect login transition and to trigger selection when buildings load
   const prevTokenRef = useRef<string | null | undefined>(null);
   const justLoggedInRef = useRef(false);
 
@@ -206,7 +200,6 @@ export default function GolContent({ children }: GolContentProps) {
     setMounted(true);
   }, []);
 
-  // Detect token transition from falsy -> truthy (user just logged in)
   useEffect(() => {
     if (!prevTokenRef.current && token) {
       justLoggedInRef.current = true;
@@ -216,18 +209,15 @@ export default function GolContent({ children }: GolContentProps) {
 
   useEffect(() => {
     if (filteredBuildings.length > 0) {
-      // Check if current selection is valid (exists in the filtered list)
       const isSelectionValid = selectedBuildingId && filteredBuildings.some((b: any) => b._id === selectedBuildingId);
       
       if (!isSelectionValid) {
-        // Try to recover from localStorage first
         const stored = typeof window !== "undefined" ? localStorage.getItem("selectedBuildingId") : null;
         const isStoredValid = stored && filteredBuildings.some((b: any) => b._id === stored);
 
         if (isStoredValid && stored) {
            setSelectedBuildingId(stored);
         } else {
-           // Default to first available building if no valid selection exists
            setSelectedBuildingId(filteredBuildings[0]._id);
         }
       }
@@ -375,7 +365,6 @@ export default function GolContent({ children }: GolContentProps) {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeTab, setActiveTab] = useState<'general' | 'font-size'>('general');
   
-  // Font size options with more granular control
   const fontSizeOptions = [
     { value: 0, label: 'Хамгийн жижиг', size: '10px' },
     { value: 1, label: 'Маш жижиг', size: '11px' },
@@ -397,7 +386,7 @@ export default function GolContent({ children }: GolContentProps) {
   const [fontSizeIndex, setFontSizeIndex] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('fontSizeIndex');
-      return saved ? parseInt(saved) : 6; // Default to 'Дунд' (16px)
+      return saved ? parseInt(saved) : 6;
     }
     return 6;
   });
@@ -433,7 +422,6 @@ export default function GolContent({ children }: GolContentProps) {
   const userName = ajiltan?.ner || ajiltan?.nevtrekhNer || "User";
   const isLoggedIn = !!token;
 
-  // Register global tour steps that exist across most pages
   useRegisterTourSteps("global", [
     {
       element: ".neu-nav",
@@ -473,6 +461,34 @@ export default function GolContent({ children }: GolContentProps) {
   ]);
 
   if (!mounted) return null;
+
+  // ─── Shared inline styles ─────────────────────────────────────────────────
+  // Using inline style (not Tailwind classes) so nothing can ever override it.
+  const NAV_ITEM_STYLE: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "96px",
+    paddingTop: "10px",
+    paddingBottom: "10px",
+    borderRadius: "12px",
+    fontSize: "14px",
+    fontWeight: 600,
+    fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    letterSpacing: "0.1px",
+    whiteSpace: "nowrap",
+    cursor: "pointer",
+    transition: "all 0.2s",
+    position: "relative",
+    zIndex: 1005,
+    color: "var(--panel-text)",
+    textDecoration: "none",
+    background: "transparent",
+    border: "none",
+    outline: "none",
+  };
+
+  const menuItemHover = "hover:menu-surface";
 
   return (
     <>
@@ -515,27 +531,44 @@ export default function GolContent({ children }: GolContentProps) {
                     value: b._id,
                     label: b.ner,
                   }))}
-                placeholder={
-                  filteredBuildings.length
-                    ? "Барилга сонгох"
-                    : "Барилга нэмнэ үү"
-                }
-                className="[&_span]:!leading-tight"
-              />
+                  placeholder={
+                    filteredBuildings.length
+                      ? "Барилга сонгох"
+                      : "Барилга нэмнэ үү"
+                  }
+                  className="[&_span]:!leading-tight"
+                />
+              </div>
             </div>
-          </div>
 
-            {/* Center: Desktop Menu - Consistent small font for medium viewports */}
-            <div className="hidden lg:flex flex-1 items-center justify-center px-1">
+            {/* Center: Desktop Menu */}
+            <div className="flex items-center justify-center">
               <div
-                className="flex items-center justify-center gap-1 xl:gap-2 relative"
+                className="flex items-center justify-center gap-1 relative"
                 ref={menuRef}
               >
                 {menuItems.map((item, i) => {
                   const isParentActive = pathname.startsWith(`/${item.path}`);
                   const isOpen = openSubmenuIndex === i;
+
+                  const activeStyle: React.CSSProperties = isParentActive
+                    ? {
+                        background: "rgba(16,185,129,0.12)",
+                        boxShadow: "0 2px 8px rgba(16,185,129,0.15)",
+                        border: "1px solid rgba(16,185,129,0.25)",
+                        color: "#10b981",
+                      }
+                    : {};
+
+                  const itemStyle: React.CSSProperties = {
+                    ...NAV_ITEM_STYLE,
+                    ...activeStyle,
+                    opacity: item.comingSoon ? 0.6 : 1,
+                    cursor: item.comingSoon ? "not-allowed" : "pointer",
+                  };
+
                   return (
-                    <div key={i} className="relative shrink-0 z-[1005]">
+                    <div key={i} className="relative">
                       {item.submenu ? (
                         <>
                           <button
@@ -547,51 +580,36 @@ export default function GolContent({ children }: GolContentProps) {
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font inline-flex items-center justify-center w-[82px] xl:w-[105px] py-2.5 rounded-xl text-[13px] xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
-                              item.comingSoon
-                                ? "cursor-not-allowed opacity-60"
-                                : ""
-                            } ${
-                              isParentActive
-                                ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
-                                : "hover:menu-surface"
-                            }`}
+                            style={itemStyle}
+                            className={!isParentActive ? menuItemHover : ""}
                           >
                             {item.label}
-                            {item.comingSoon && (
-                              <div
-                                className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
-                                style={{ transform: "translate(20%, -20%)" }}
-                              >
-                                <div
-                                  className="inline-block bg-green-500 text-white text-[10px]  px-4 py-0.5 shadow-sm"
-                                  style={{ transform: "rotate(45deg)" }}
-                                >
-                                  Тун удахгүй
-                                </div>
-                              </div>
-                            )}
                           </button>
 
                           {isOpen && (
-                            <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-48 xl:w-56 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto">
+                            <div className="absolute left-1/2 transform -translate-x-1/2 mt-3 w-48 rounded-2xl shadow-lg menu-surface z-[1100] pointer-events-auto">
                               <ul className="py-2">
                                 {item.submenu.map((sub, j) => {
                                   const subPath = `/${item.path}/${sub.path}`;
-                                  const isSubActive =
-                                    pathname.startsWith(subPath);
+                                  const isSubActive = pathname.startsWith(subPath);
                                   return (
                                     <li key={j}>
                                       <Link
                                         href={subPath}
-                                        onClick={() => {
-                                          setOpenSubmenuIndex(null);
+                                        onClick={() => setOpenSubmenuIndex(null)}
+                                        style={{
+                                          display: "block",
+                                          padding: "8px 16px",
+                                          fontSize: "14px",
+                                          fontWeight: 600,
+                                          fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                                          borderRadius: "12px",
+                                          transition: "all 0.2s",
+                                          color: "var(--panel-text)",
+                                          textDecoration: "none",
+                                          background: isSubActive ? "rgba(255,255,255,0.15)" : "transparent",
                                         }}
-                                        className={`menu-pro-font w-full text-left block px-4 py-2 text-sm xl:text-[15px] font-semibold rounded-2xl transition-all duration-200 text-[color:var(--panel-text)] ${
-                                          isSubActive
-                                            ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner"
-                                            : "hover:translate-x-0.5 hover:menu-surface/80"
-                                        }`}
+                                        className={!isSubActive ? "hover:translate-x-0.5 hover:menu-surface/80" : ""}
                                       >
                                         {sub.label}
                                       </Link>
@@ -609,30 +627,10 @@ export default function GolContent({ children }: GolContentProps) {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
                           }}
-                          className={`menu-pro-font inline-flex items-center justify-center w-[82px] xl:w-[105px] py-2.5 rounded-xl text-[13px] xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
-                            item.comingSoon
-                              ? "cursor-not-allowed opacity-60"
-                              : ""
-                          } ${
-                            isParentActive
-                              ? "neu-panel bg-white/20 backdrop-blur-sm border border-white/20 shadow-inner scale-105"
-                              : "hover:menu-surface"
-                          }`}
+                          style={itemStyle}
+                          className={!isParentActive ? menuItemHover : ""}
                         >
                           {item.label}
-                          {item.comingSoon && (
-                            <div
-                              className="absolute top-0 right-0 z-[1010] pointer-events-none overflow-visible"
-                              style={{ transform: "translate(20%, -20%)" }}
-                            >
-                              <div
-                                className="inline-block bg-green-500 text-white text-[10px]  px-4 py-0.5 shadow-sm"
-                                style={{ transform: "rotate(45deg)" }}
-                              >
-                                Тун удахгүй
-                              </div>
-                            </div>
-                          )}
                         </Link>
                       )}
                     </div>
@@ -682,7 +680,7 @@ export default function GolContent({ children }: GolContentProps) {
                       <Bell className="w-4 h-4 xl:w-5 xl:h-5 text-[color:var(--panel-text)]" />
                     </button>
                     {sanalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px]  leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-[20px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[11px] leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
                         {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
                       </span>
                     )}
@@ -693,7 +691,7 @@ export default function GolContent({ children }: GolContentProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm  text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                        <span className="text-sm text-[color:var(--panel-text)]">Санал хүсэлт</span>
                       </div>
                       <ul className="py-2">
                         {sanalUnreadList.length === 0 ? (
@@ -703,44 +701,44 @@ export default function GolContent({ children }: GolContentProps) {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
                             const isSanalItem = isSanal(item.turul);
                             const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
-                            const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadSanal = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadGomdol = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
                             const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
                             const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-blue-600 dark:text-blue-400" : "opacity-100 text-red-600 dark:text-red-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
                             const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
-                            <li key={item._id}>
-                              <button
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  setShowSanalDropdown(false);
-                                  router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
-                                }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
-                              >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={badgeClass}>{typeLabel}</span>
-                                    <span className={`truncate ${isUnread ? "" : ""}`}>{item.title || "Мэдэгдэл"}</span>
-                                  </div>
-                                  {item.message && (
-                                    <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
-                                  )}
-                                  {item.createdAt && (
-                                    <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
-                                      {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              <li key={item._id}>
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setShowSanalDropdown(false);
+                                    router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                  }}
+                                  className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
+                                >
+                                  <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className={badgeClass}>{typeLabel}</span>
+                                      <span className="truncate">{item.title || "Мэдэгдэл"}</span>
                                     </div>
-                                  )}
-                                </div>
-                                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
-                              </button>
-                            </li>
-                          );
+                                    {item.message && (
+                                      <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                    )}
+                                    {item.createdAt && (
+                                      <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                        {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                </button>
+                              </li>
+                            );
                           })
                         )}
                       </ul>
@@ -786,21 +784,21 @@ export default function GolContent({ children }: GolContentProps) {
                     >
                       <ul className="py-2">
                         {(has("tokhirgoo") || has("/tokhirgoo") || ajiltan?.erkh?.toLowerCase() === "admin") && (
-                        <li>
-                          <button
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setShowLogout(false);
-                              router.push("/tokhirgoo");
-                            }}
-                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
-                          >
-                            <Settings className="w-4 h-4 opacity-80" />
-                            <span>Тохиргоо</span>
-                          </button>
-                        </li>
+                          <li>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setShowLogout(false);
+                                router.push("/tokhirgoo");
+                              }}
+                              className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer pointer-events-auto hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                            >
+                              <Settings className="w-4 h-4 opacity-80" />
+                              <span>Тохиргоо</span>
+                            </button>
+                          </li>
                         )}
                         <li>
                           <button
@@ -843,7 +841,6 @@ export default function GolContent({ children }: GolContentProps) {
 
           {/* Mobile Actions Row */}
           <div className="flex lg:hidden items-center justify-between gap-1.5 sm:gap-2">
-            {/* Hamburger Menu Button - Visible below lg (1024px) */}
             <button
               type="button"
               aria-label="Open menu"
@@ -895,7 +892,7 @@ export default function GolContent({ children }: GolContentProps) {
                       <Bell className="w-4 h-4 text-[color:var(--panel-text)]" />
                     </button>
                     {sanalUnreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px]  leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
+                      <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1.5 py-0 rounded-full bg-red-500 text-white text-[10px] leading-none shadow-sm ring-2 ring-white/90 dark:ring-slate-800/90">
                         {sanalUnreadCount > 99 ? "99+" : sanalUnreadCount}
                       </span>
                     )}
@@ -906,7 +903,7 @@ export default function GolContent({ children }: GolContentProps) {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-3 py-2 border-b border-[color:var(--panel-text)]/20">
-                        <span className="text-sm  text-[color:var(--panel-text)]">Санал хүсэлт</span>
+                        <span className="text-sm text-[color:var(--panel-text)]">Санал хүсэлт</span>
                       </div>
                       <ul className="py-2">
                         {sanalUnreadList.length === 0 ? (
@@ -916,44 +913,44 @@ export default function GolContent({ children }: GolContentProps) {
                             const isUnread = item.status === "pending" && !item.kharsanEsekh;
                             const isSanalItem = isSanal(item.turul);
                             const typeLabel = isSanalItem ? "Санал" : "Гомдол";
-                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500  text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
-                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500  text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                            const unreadSanal = "bg-red-500/15 dark:bg-red-500/25 border-l-4 border-red-500 text-[color:var(--panel-text)] hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                            const unreadGomdol = "bg-blue-500/15 dark:bg-blue-500/25 border-l-4 border-blue-500 text-[color:var(--panel-text)] hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
                             const unreadClass = isUnread ? (isSanalItem ? unreadSanal : unreadGomdol) : "text-[color:var(--panel-text)]/80 hover:bg-[color:var(--surface-hover)]/50 border-l-4 border-transparent";
                             const iconClass = isUnread ? (isSanalItem ? "opacity-100 text-red-600 dark:text-red-400" : "opacity-100 text-blue-600 dark:text-blue-400") : "opacity-60";
-                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px]  bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
-                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px]  bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
+                            const badgeSanal = "px-1.5 py-0.5 rounded text-[10px] bg-red-500/20 text-red-700 dark:text-red-300 border border-red-400/50";
+                            const badgeGomdol = "px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-400/50";
                             const badgeClass = isSanalItem ? badgeSanal : badgeGomdol;
                             return (
-                            <li key={item._id}>
-                              <button
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  setShowSanalDropdown(false);
-                                  router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
-                                }}
-                                className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
-                              >
-                                <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <span className={badgeClass}>{typeLabel}</span>
-                                    <span className={`truncate ${isUnread ? "" : ""}`}>{item.title || "Мэдэгдэл"}</span>
-                                  </div>
-                                  {item.message && (
-                                    <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
-                                  )}
-                                  {item.createdAt && (
-                                    <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
-                                      {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                              <li key={item._id}>
+                                <button
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setShowSanalDropdown(false);
+                                    router.push(`/medegdel/sanalKhuselt?id=${item._id}`);
+                                  }}
+                                  className={`w-full flex items-start gap-2 text-left px-4 py-3 text-sm rounded-lg transition-all cursor-pointer mx-2 my-0.5 ${unreadClass}`}
+                                >
+                                  <MessageSquare className={`w-4 h-4 mt-0.5 shrink-0 ${iconClass}`} />
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className={badgeClass}>{typeLabel}</span>
+                                      <span className="truncate">{item.title || "Мэдэгдэл"}</span>
                                     </div>
-                                  )}
-                                </div>
-                                <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
-                              </button>
-                            </li>
-                          );
+                                    {item.message && (
+                                      <div className="text-xs text-[color:var(--panel-text)]/70 truncate mt-0.5">{item.message}</div>
+                                    )}
+                                    {item.createdAt && (
+                                      <div className="text-[10px] text-[color:var(--panel-text)]/50 mt-1">
+                                        {new Date(item.createdAt).toLocaleDateString("mn-MN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <ChevronRight className="w-4 h-4 shrink-0 opacity-60" />
+                                </button>
+                              </li>
+                            );
                           })
                         )}
                       </ul>
@@ -985,7 +982,7 @@ export default function GolContent({ children }: GolContentProps) {
                       setShowLogout(!showLogout);
                     }}
                     id="tokhirgoo"
-                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm  shadow-md hover:scale-105 transition-transform"
+                    className="w-8 h-8 sm:w-9 sm:h-9 rounded-full neu-panel flex items-center justify-center cursor-pointer select-none text-sm shadow-md hover:scale-105 transition-transform"
                   >
                     {userName.charAt(0).toUpperCase()}
                   </div>
@@ -994,20 +991,20 @@ export default function GolContent({ children }: GolContentProps) {
                     <div className="absolute right-0 mt-2 w-48 menu-surface rounded-xl transition-all duration-300 z-[200] shadow-xl">
                       <ul className="py-2">
                         {(has("tokhirgoo") || has("/tokhirgoo") || ajiltan?.erkh?.toLowerCase() === "admin") && (
-                        <li>
-                          <button
-                            onMouseDown={(e) => {
-                              e.stopPropagation();
-                              e.preventDefault();
-                              setShowLogout(false);
-                              router.push("/tokhirgoo");
-                            }}
-                            className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
-                          >
-                            <Settings className="w-4 h-4 opacity-80" />
-                            <span>Тохиргоо</span>
-                          </button>
-                        </li>
+                          <li>
+                            <button
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setShowLogout(false);
+                                router.push("/tokhirgoo");
+                              }}
+                              className="w-full flex items-center gap-2 text-left px-4 py-2 text-sm rounded-2xl transition-all text-[color:var(--panel-text)] cursor-pointer hover:menu-surface/80 hover:translate-x-0.5 hover:scale-[1.01]"
+                            >
+                              <Settings className="w-4 h-4 opacity-80" />
+                              <span>Тохиргоо</span>
+                            </button>
+                          </li>
                         )}
                         <li>
                           <button
@@ -1051,7 +1048,7 @@ export default function GolContent({ children }: GolContentProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between p-4 border-b border-[color:var(--surface-border)]">
-                <h3 className="text-lg  text-theme">Тусламж</h3>
+                <h3 className="text-lg text-theme">Тусламж</h3>
                 <button
                   type="button"
                   onClick={() => setTuslamjModalOpen(false)}
@@ -1081,19 +1078,15 @@ export default function GolContent({ children }: GolContentProps) {
       {mobileMenuOpen && (
         <ModalPortal>
           <div className="fixed inset-0 z-[1100] lg:hidden">
-            {/* Backdrop */}
             <div
               className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
               onClick={() => setMobileMenuOpen(false)}
             />
-
-            {/* Drawer */}
             <div className="absolute left-0 top-0 bottom-0 w-[280px] sm:w-[320px] bg-[color:var(--surface-bg)] shadow-2xl transform transition-transform duration-300 ease-out overflow-y-auto">
-              {/* Drawer Header */}
               <div className="sticky top-0 z-10 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] p-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ThemedLogo size={32} />
-                  <span className="text-lg  text-theme">Цэс</span>
+                  <span className="text-lg text-theme">Цэс</span>
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
@@ -1104,7 +1097,6 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
               </div>
 
-              {/* Menu Items */}
               <nav className="p-4 space-y-2">
                 {menuItems.map((item, i) => {
                   const isParentActive = pathname.startsWith(`/${item.path}`);
@@ -1120,15 +1112,12 @@ export default function GolContent({ children }: GolContentProps) {
                           if (hasSubmenu) {
                             setOpenSubmenuIndex(isOpen ? null : i);
                           } else {
-                            // Special case: clicking the main 'Гэрээ' menu defaults to 'Оршин суугч'
                             router.push(item.path === "geree" ? "/geree/orshinSuugch" : `/${item.path}`);
                             setMobileMenuOpen(false);
                           }
                         }}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm  transition-all duration-200 ${
-                          item.comingSoon
-                            ? "cursor-not-allowed opacity-60 text-theme"
-                            : ""
+                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+                          item.comingSoon ? "cursor-not-allowed opacity-60 text-theme" : ""
                         } ${
                           isParentActive
                             ? "bg-[color:var(--theme)] text-white shadow-lg"
@@ -1138,24 +1127,16 @@ export default function GolContent({ children }: GolContentProps) {
                         <span>{item.label}</span>
                         {hasSubmenu && (
                           <svg
-                            className={`w-4 h-4 transition-transform duration-200 ${
-                              isOpen ? "rotate-180" : ""
-                            }`}
+                            className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
                         )}
                       </button>
 
-                      {/* Submenu */}
                       {hasSubmenu && isOpen && (
                         <div className="pl-4 space-y-1 animate-fadeIn">
                           {item.submenu!.map((sub, j) => {
@@ -1172,7 +1153,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 }}
                                 className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-200 ${
                                   isSubActive
-                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)]  border-l-2 border-[color:var(--theme)]"
+                                    ? "bg-[color:var(--theme)]/10 text-[color:var(--theme)] font-semibold border-l-2 border-[color:var(--theme)]"
                                     : "text-theme hover:bg-[color:var(--surface-hover)] hover:translate-x-1"
                                 }`}
                               >
@@ -1207,7 +1188,6 @@ export default function GolContent({ children }: GolContentProps) {
         </div>
       </main>
 
-      {/* Floating tour controls */}
       <TourReplayButton />
 
       {mobileSearchOpen && (
@@ -1250,9 +1230,8 @@ export default function GolContent({ children }: GolContentProps) {
               onClick={() => setShowSettingsModal(false)}
             />
             <div className="relative bg-[color:var(--surface-bg)] rounded-3xl w-full max-w-2xl overflow-hidden border border-[color:var(--surface-border)] dark:border-[color:var(--panel)] transform transition-all duration-300 scale-100 shadow-[0_20px_60px_rgba(0,0,0,0.2)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.8)]">
-              {/* Header */}
               <div className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-[color:var(--surface-bg)] via-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--surface-bg)] dark:via-[color:var(--panel)] dark:to-[color:var(--surface-bg)]">
-                <h3 className="text-2xl  text-theme">Тохиргоо</h3>
+                <h3 className="text-2xl text-theme">Тохиргоо</h3>
                 <button
                   onClick={() => setShowSettingsModal(false)}
                   className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-[color:var(--panel)] rounded-xl transition-all duration-200 hover:rotate-90 group"
@@ -1262,11 +1241,10 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
               </div>
 
-              {/* Tabs */}
               <div className="flex gap-2 px-6 pt-4 pb-2 bg-[color:var(--surface-hover)] dark:bg-[color:var(--panel)] overflow-x-auto border-b border-[color:var(--surface-border)]">
                 <button
                   onClick={() => setActiveTab('general')}
-                  className={`px-6 py-3 rounded-xl  transition-all duration-300 whitespace-nowrap ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'general'
                       ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
                       : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
@@ -1280,7 +1258,7 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
                 <button
                   onClick={() => setActiveTab('font-size')}
-                  className={`px-6 py-3 rounded-xl  transition-all duration-300 whitespace-nowrap ${
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 whitespace-nowrap ${
                     activeTab === 'font-size'
                       ? 'bg-[color:var(--theme)] text-white shadow-lg shadow-[color:var(--theme)]/20 dark:shadow-[color:var(--theme)]/40 transform scale-105'
                       : 'bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-bg)] text-theme hover:bg-[color:var(--surface-border)] dark:hover:bg-[color:var(--surface-hover)] hover:scale-102 shadow-sm'
@@ -1294,13 +1272,11 @@ export default function GolContent({ children }: GolContentProps) {
                 </button>
               </div>
 
-              {/* Tab Content */}
               <div className="p-6 min-h-[400px] max-h-[60vh] overflow-y-auto custom-scrollbar bg-gradient-to-b from-transparent to-[color:var(--surface-hover)]/20 dark:to-[color:var(--panel)]/30">
-                {/* General Settings Tab */}
                 {activeTab === 'general' && (
                   <div className="space-y-6 animate-fadeIn">
                     <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
-                      <h4 className="text-lg  text-theme mb-4 flex items-center gap-2">
+                      <h4 className="text-lg text-theme mb-4 flex items-center gap-2">
                         <div className="p-2 bg-[color:var(--theme)]/10 dark:bg-[color:var(--theme)]/20 rounded-lg">
                           <Settings className="w-5 h-5 text-[color:var(--theme)]" />
                         </div>
@@ -1314,7 +1290,7 @@ export default function GolContent({ children }: GolContentProps) {
                           setShowSettingsModal(false);
                           router.push("/tokhirgoo");
                         }}
-                        className="px-6 py-3 bg-[color:var(--theme)] hover:opacity-90 text-white rounded-xl  transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 group"
+                        className="px-6 py-3 bg-[color:var(--theme)] hover:opacity-90 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2 group"
                         style={{ borderRadius: '0.75rem' }}
                       >
                         <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-300" />
@@ -1326,34 +1302,32 @@ export default function GolContent({ children }: GolContentProps) {
                       <div className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-xl border border-blue-200/50 dark:border-blue-600/50 hover:shadow-lg dark:hover:shadow-blue-500/10 transition-all duration-200 hover:scale-105">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse"></div>
-                          <h5 className=" text-theme">Хэрэглэгч</h5>
+                          <h5 className="font-semibold text-theme">Хэрэглэгч</h5>
                         </div>
-                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] ">{userName}</p>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)]">{userName}</p>
                       </div>
                       <div className="p-5 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl border border-purple-200/50 dark:border-purple-600/50 hover:shadow-lg dark:hover:shadow-purple-500/10 transition-all duration-200 hover:scale-105">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="w-2 h-2 rounded-full bg-purple-500 dark:bg-purple-400 animate-pulse"></div>
-                          <h5 className=" text-theme">Байгууллага</h5>
+                          <h5 className="font-semibold text-theme">Байгууллага</h5>
                         </div>
-                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)] ">{baiguullaga?.ner || "-"}</p>
+                        <p className="text-sm text-[color:var(--muted-text)] dark:text-[color:var(--panel-text)]">{baiguullaga?.ner || "-"}</p>
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* Font Size Tab */}
                 {activeTab === 'font-size' && (
                   <div className="space-y-6 animate-fadeIn">
-                    {/* Preview Text */}
                     <div className="p-8 bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-emerald-900/30 dark:via-teal-900/30 dark:to-cyan-900/30 rounded-2xl text-center border-2 border-emerald-200/50 dark:border-emerald-600/50 shadow-lg dark:shadow-emerald-500/10 relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-white/40 to-transparent dark:from-white/10 dark:to-transparent"></div>
                       <div className="relative z-10">
-                        <p className="text-theme dark:text-[color:var(--panel-text)]  mb-3 opacity-70 text-sm flex items-center justify-center gap-2">
+                        <p className="text-theme dark:text-[color:var(--panel-text)] mb-3 opacity-70 text-sm flex items-center justify-center gap-2">
                           <Type className="w-4 h-4" />
                           Жишээ текст
                         </p>
                         <p 
-                          className="text-theme dark:text-[color:var(--panel-text)]  transition-all duration-300 drop-shadow-sm"
+                          className="text-theme dark:text-[color:var(--panel-text)] font-semibold transition-all duration-300 drop-shadow-sm"
                           style={{ fontSize: fontSizeOptions[fontSizeIndex].size }}
                         >
                           Энэ бол жишээ текст юм
@@ -1361,14 +1335,13 @@ export default function GolContent({ children }: GolContentProps) {
                       </div>
                     </div>
 
-                    {/* Slider */}
                     <div className="p-6 bg-gradient-to-br from-[color:var(--surface-hover)] to-[color:var(--surface-bg)] dark:from-[color:var(--panel)] dark:to-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-sm dark:shadow-md">
                       <div className="flex items-center justify-between mb-4">
-                        <span className="text-base text-theme dark:text-white  flex items-center gap-2">
+                        <span className="text-base text-theme dark:text-white font-semibold flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-[color:var(--theme)] animate-pulse"></div>
                           {fontSizeOptions[fontSizeIndex].label}
                         </span>
-                        <span className="text-sm text-theme dark:text-white font-mono  bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-hover)] px-3 py-1.5 rounded-lg border border-[color:var(--surface-border)] shadow-sm">
+                        <span className="text-sm text-theme dark:text-white font-mono font-semibold bg-[color:var(--surface-bg)] dark:bg-[color:var(--surface-hover)] px-3 py-1.5 rounded-lg border border-[color:var(--surface-border)] shadow-sm">
                           {fontSizeOptions[fontSizeIndex].size}
                         </span>
                       </div>
@@ -1385,8 +1358,6 @@ export default function GolContent({ children }: GolContentProps) {
                             background: `linear-gradient(to right, var(--theme) 0%, var(--theme) ${(fontSizeIndex / (fontSizeOptions.length - 1)) * 100}%, rgba(156, 163, 175, 0.5) ${(fontSizeIndex / (fontSizeOptions.length - 1)) * 100}%, rgba(156, 163, 175, 0.5) 100%)`
                           }}
                         />
-                        
-                        {/* Tick marks */}
                         <div className="flex justify-between mt-3 px-1">
                           {fontSizeOptions.map((_, idx) => (
                             <div
@@ -1402,11 +1373,10 @@ export default function GolContent({ children }: GolContentProps) {
                       </div>
                     </div>
 
-                    {/* Quick preset buttons */}
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         onClick={() => handleFontSizeChange(2)}
-                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 2
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 text-theme dark:text-[color:var(--panel-text)] border-blue-200/50 dark:border-blue-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
@@ -1417,7 +1387,7 @@ export default function GolContent({ children }: GolContentProps) {
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(6)}
-                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 6
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 text-theme dark:text-[color:var(--panel-text)] border-green-200/50 dark:border-green-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
@@ -1428,7 +1398,7 @@ export default function GolContent({ children }: GolContentProps) {
                       </button>
                       <button
                         onClick={() => handleFontSizeChange(10)}
-                        className={`px-4 py-3 rounded-xl  transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
+                        className={`px-4 py-3 rounded-xl font-semibold transition-all duration-200 border shadow-sm hover:shadow-lg hover:scale-105 ${
                           fontSizeIndex === 10
                             ? 'bg-[color:var(--theme)] text-white border-transparent shadow-lg shadow-[color:var(--theme)]/20'
                             : 'bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/30 dark:to-amber-900/30 text-theme dark:text-[color:var(--panel-text)] border-orange-200/50 dark:border-orange-600/50 hover:bg-[color:var(--theme)] hover:text-white hover:border-transparent'
