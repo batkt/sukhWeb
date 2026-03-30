@@ -1539,7 +1539,7 @@ export default function Camera() {
                   )}
                 </div>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
-                Нийт {total} бичлэг
+                Нийт {total} мөр
               </span>
               </div>
               <div className="flex items-center gap-2">

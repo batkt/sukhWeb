@@ -208,8 +208,8 @@ export default function DansniiKhuulga() {
         label: "Нэр",
         align: "center",
         sticky: true,
-        width: 150,
-        minWidth: 150,
+        width: 180,
+        minWidth: 180,
       },
       {
         key: "toot",
@@ -233,7 +233,7 @@ export default function DansniiKhuulga() {
         key: "gereeniiDugaar",
         label: "Гэрээний дугаар",
         align: "center",
-        minWidth: 140,
+        minWidth: 120,
       },
       {
         key: "ekhniiUldegdel",
@@ -247,10 +247,9 @@ export default function DansniiKhuulga() {
       {
         key: "lastLog",
         label: "Огноо",
-        align: "center",
         minWidth: 140,
       },
-      { key: "action", label: "Үйлдэл", align: "center", minWidth: 130 },
+      { key: "action", label: "Үйлдэл", align: "center", minWidth: 80 },
     ],
     [],
   );
@@ -1544,7 +1543,7 @@ export default function DansniiKhuulga() {
 
     return [
       { title: "Оршин суугч", value: residentCount },
-      { title: "Цуцласан гэрээний авлага", value: cancelledGereesWithUnpaid },
+      { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
       { title: "Төлсөн", value: paidCount },
       { title: "Төлөөгүй", value: unpaidCount },
     ];
@@ -2585,7 +2584,7 @@ export default function DansniiKhuulga() {
                 return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
-              if (title === "Цуцласан гэрээний авлага") return "overdue";
+              if (title === "Цуцалсан гэрээний авлага") return "overdue";
               return null;
             };
 
@@ -2610,7 +2609,7 @@ export default function DansniiKhuulga() {
                   <div className="text-3xl  mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme">
                     {stat.value}
                   </div>
-                  <div className="text-xs text-theme leading-tight">
+                  <div className="text-[13px] text-theme leading-tight">
                     {stat.title}
                   </div>
                 </div>
@@ -2642,7 +2641,7 @@ export default function DansniiKhuulga() {
               <div className="flex flex-wrap gap-3">
                 {/* Орц filter */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <label className="text-[13px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Орц:
                   </label>
                   <div className="w-[100px]">
@@ -2650,14 +2649,14 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedOrtsFilter}
                       onChange={(e) => setSelectedOrtsFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <label className="text-[13px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Тоот:
                   </label>
                   <div className="w-[100px]">
@@ -2665,7 +2664,7 @@ export default function DansniiKhuulga() {
                       type="text"
                       value={selectedTootFilter}
                       onChange={(e) => setSelectedTootFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -2673,7 +2672,7 @@ export default function DansniiKhuulga() {
 
                 {/* Давхар filter */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
+                  <label className="text-[11px] text-theme/60 whitespace-nowrap text-[13px]  tracking-wider font-normal">
                     Давхар:
                   </label>
                   <div className="w-[100px]">
@@ -2682,7 +2681,7 @@ export default function DansniiKhuulga() {
                       min={1}
                       value={selectedDavkharFilter}
                       onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-sm focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
                       placeholder="Бүгд"
                     />
                   </div>
@@ -2717,7 +2716,7 @@ export default function DansniiKhuulga() {
                         fileInputRef.current?.click();
                         setIsZaaltDropdownOpen(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2"
                     >
                       <Upload className="w-4 h-4" />
                       <span>Excel импорт</span>
@@ -2727,7 +2726,7 @@ export default function DansniiKhuulga() {
                         zaaltTemplateTatak();
                         setIsZaaltDropdownOpen(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
                       <span>Заалт татах</span>
@@ -2737,7 +2736,7 @@ export default function DansniiKhuulga() {
                         zaaltOruulakh();
                         setIsZaaltDropdownOpen(false);
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                      className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
                       <span>Заалт жагсаалт авах</span>

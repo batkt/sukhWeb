@@ -86,7 +86,15 @@ export default function GuilgeeTable({
               : false,
           fixed: col.sticky ? ("left" as const) : undefined,
           className:
-            "text-xs bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)]",
+            "text-[13px] bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)]",
+          onCell: () => ({
+            className:
+              col.key === "paid" ||
+              col.key === "uldegdel" ||
+              col.key === "ekhniiUldegdel"
+                ? "!text-right"
+                : "!text-center",
+          }),
         };
 
         // Custom render functions
@@ -507,24 +515,24 @@ export default function GuilgeeTable({
               };
 
               return (
-                <div className="flex items-center justify-center gap-2 divide-x divide-gray-200 dark:divide-gray-700">
+                <div className="flex items-center justify-center gap-1 divide-x divide-gray-200 dark:divide-gray-700">
                   <button
                     onClick={() => onViewInvoice(residentData)}
-                    className="p-2 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                    className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                     title="Нэхэмжлэх харах"
                   >
                     <Eye className="w-5 h-5 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
                   </button>
                   <button
                     onClick={() => onViewHistory(residentData)}
-                    className="p-2 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                     title="Түүх харах"
                   >
                     <History className="w-5 h-5 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
                   </button>
                   <button
                     onClick={() => onTransaction(residentData, remainingValue)}
-                    className="p-2 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
+                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
                     title="Гүйлгээ хийх"
                   >
                     <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
@@ -592,11 +600,11 @@ export default function GuilgeeTable({
               content = (
                 <span
                   className={
-                    total < 0
+                    (total < 0
                       ? "!text-emerald-600 dark:!text-emerald-400"
                       : total > 0
                         ? "!text-red-500 dark:!text-red-400"
-                        : "text-theme"
+                        : "text-[color:var(--panel-text)]") + " font-bold"
                   }
                 >
                   {formatNumber(total, 2)}
@@ -615,7 +623,7 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-slate-900 dark:!text-white">
                   {formatNumber(total, 2)}
                 </span>
               );
@@ -642,9 +650,9 @@ export default function GuilgeeTable({
               content = (
                 <span
                   className={
-                    total < 0.01
+                    (total < 0.01
                       ? "!text-emerald-600 dark:!text-emerald-400"
-                      : "!text-red-500 dark:!text-red-400"
+                      : "!text-red-500 dark:!text-red-400") + " font-bold"
                   }
                 >
                   {formatNumber(total, 2)}

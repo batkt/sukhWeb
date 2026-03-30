@@ -3,13 +3,6 @@ import type { Metadata } from "next";
 import ClientLayout from "./ClientLayout";
 import { AuthProvider } from "@/lib/useAuth";
 import Script from "next/script";
-import { JetBrains_Mono } from "next/font/google";
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-mono",
-  weight: ["400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Амар Сөх",
@@ -38,7 +31,8 @@ var savedTheme=localStorage.getItem('app-theme')||'soft-sage';d.setAttribute('da
         </Script>
       </head>
       <body
-        className={`${jetbrainsMono.variable} min-h-screen bg-card text-foreground font-sans`}
+        className="min-h-screen bg-card text-foreground"
+        style={{ fontFamily: '"Segoe UI", sans-serif' }}
         suppressHydrationWarning
       >
         <AuthProvider>

@@ -226,7 +226,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                       if (typeof obj !== 'object' || obj === null) return String(obj);
                       if (Array.isArray(obj)) {
                         if (obj.length === 0) return "(хоосон)";
-                        return `[${obj.length} бичлэг]`;
+                        return `[${obj.length} мөр]`;
                       }
                       if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
                       
@@ -260,9 +260,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     if (value.length === 0) return "(хоосон)";
                     // Format payment history or other arrays
                     if (key === 'paymentHistory' || key === 'guilgeenuud' || key === 'zardluud') {
-                      return `${value.length} бичлэг`;
+                      return `${value.length} мөр`;
                     }
-                    if (typeof value[0] === 'object') return `${value.length} бичлэг`;
+                    if (typeof value[0] === 'object') return `${value.length} мөр`;
                     return value.join(", ");
                   }
                   return String(value);
@@ -723,7 +723,7 @@ export default function UstsanTuukh({
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-[color:var(--panel-text)]">
-                    Нийт {totalRecords} бичлэг
+                    Нийт {totalRecords} мөр
                   </span>
                   
                   {/* Page Size Selector */}

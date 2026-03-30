@@ -39,6 +39,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import { getErrorMessage } from "@/lib/uilchilgee";
 import { useRouter } from "next/navigation";
 import { useGereeActions } from "@/lib/useGereeActions";
+import { useSearch } from "@/context/SearchContext";
 
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return "-";
@@ -887,7 +888,7 @@ export default function InvoicingZardluud() {
   const [selectedExpenses, setSelectedExpenses] = useState<string[]>([]);
   // Align DatePickerInput value/onChange with string-based dates used across the app
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const { searchTerm } = useSearch();
   const [expenses, setExpenses] = useState<any[]>([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
   const [davkharList, setDavkharList] = useState<string[]>([]);

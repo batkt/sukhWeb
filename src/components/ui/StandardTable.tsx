@@ -128,15 +128,15 @@ export function StandardTable<T extends object>({
   };
 
   return (
-    <div className={cn("w-full overflow-hidden", containerClassName)}>
-      <div className="w-full overflow-x-auto hide-scrollbar">
-        <div
-          className={cn(
-            "rounded-[32px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-gray-900 backdrop-blur-xl shadow-2xl overflow-hidden min-w-[800px]",
-            className,
-          )}
-        >
-          <Spin spinning={loading} tip="Уншиж байна..." size="small">
+    <div className={cn("flex flex-col w-full", containerClassName)}>
+      <div 
+        className={cn(
+          "relative border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm rounded-2xl",
+          className
+        )}
+        style={{ maxHeight }}
+      >
+        <Spin spinning={loading} tip="Уншиж байна..." size="small">
             <Table<T>
               columns={antColumns}
               dataSource={dataWithKeys}
@@ -182,7 +182,6 @@ export function StandardTable<T extends object>({
 
           {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
         </div>
-      </div>
     </div>
   );
 }
@@ -202,64 +201,73 @@ export function StandardPagination({
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
 }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
   return (
-    <div className="flex flex-row items-center justify-between w-full px-4 py-4 mt-2 gap-4">
-      {/* Page Size & Total */}
-      <div className="flex items-center gap-6">
-        <Field orientation="horizontal" className="items-center">
-          <FieldLabel className="text-sm">Нийт: {total}</FieldLabel>
-        </Field>
-        
+    <div className="flex flex-col sm:flex-row items-center justify-between w-full px-4 py-4 gap-4">
+      {/* Left side: Total & Page Size */}
+      <div className="flex items-center gap-4">
+        <span className="text-[13px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+          Нийт <span className="text-slate-800 dark:text-slate-200">{total}</span> мөр
+        </span>
+
         {onPageSizeChange && (
-          <Field orientation="horizontal" className="items-center">
-            <FieldLabel htmlFor="rows-per-page" className="text-sm">Хуудсанд:</FieldLabel>
-            <Select 
-              value={pageSize.toString()} 
+          <div className="relative group">
+            <Select
+              value={pageSize.toString()}
               onValueChange={(v) => {
-                onPageSizeChange(parseInt(v));
-                onChange(1, parseInt(v));
+                const newSize = parseInt(v);
+                onPageSizeChange(newSize);
+                onChange(1, newSize);
               }}
             >
-              <SelectTrigger id="rows-per-page" className="w-[80px] h-10 rounded-xl">
-                <SelectValue />
+              <SelectTrigger 
+                className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 gap-2 transition-colors !shadow-none"
+              >
+                <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">
+                  {pageSize} / хуудас
+                </span>
               </SelectTrigger>
-              <SelectContent>
-                {pageSizeOptions.map(opt => (
-                  <SelectItem key={opt} value={opt.toString()}>
+              <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl">
+                {pageSizeOptions.map((opt) => (
+                  <SelectItem 
+                    key={opt} 
+                    value={opt.toString()} 
+                    className="text-[13px] focus:bg-emerald-50 focus:text-emerald-600 dark:focus:bg-emerald-950/20 dark:focus:text-emerald-400 rounded-xl cursor-pointer"
+                  >
                     {opt}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </Field>
+          </div>
         )}
       </div>
 
-      {/* Pagination Controls */}
-      <Pagination className="mx-0 w-auto">
-        <PaginationContent className="gap-2">
-          <PaginationItem>
-            <PaginationPrevious 
-              onClick={() => current > 1 && onChange(current - 1, pageSize)}
-              className={cn("cursor-pointer", current <= 1 && "pointer-events-none opacity-50")}
-            />
-          </PaginationItem>
-          
-          {/* Simple Page Indicator */}
-          <PaginationItem>
-             <div className="flex items-center gap-1 px-4 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-bold text-emerald-500 shadow-sm">
-               {current} / {Math.max(1, Math.ceil(total / pageSize))}
-             </div>
-          </PaginationItem>
+      {/* Right side: Navigation */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => current > 1 && onChange(current - 1, pageSize)}
+          disabled={current <= 1}
+          className="flex items-center gap-1.5 px-3 h-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-[13px]  border-none"
+        >
+          <span className="text-[13px]">Өмнөх</span>
+        </button>
 
-          <PaginationItem>
-            <PaginationNext 
-              onClick={() => current < Math.ceil(total / pageSize) && onChange(current + 1, pageSize)}
-              className={cn("cursor-pointer", current >= Math.ceil(total / pageSize) && "pointer-events-none opacity-50")}
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+        <div className="flex items-center justify-center px-4 h-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+          <span className="text-[13px] font-bold text-emerald-500 tabular-nums">
+            {current} <span className="text-slate-300 mx-1">/</span> {totalPages}
+          </span>
+        </div>
+
+        <button
+          onClick={() => current < totalPages && onChange(current + 1, pageSize)}
+          disabled={current >= totalPages}
+          className="flex items-center gap-1.5 px-3 h-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-[13px]  border-none"
+        >
+          <span className="text-[13px]">Дараах</span>
+        </button>
+      </div>
     </div>
   );
 }

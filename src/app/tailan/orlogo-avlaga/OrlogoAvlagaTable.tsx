@@ -348,7 +348,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             pagination={false}
             size="small"
             bordered
-            className="neu-table"
+            className="guilgee-table"
             scroll={{ y: 240 }}
             rowClassName={(record, index) => `
               ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
@@ -377,7 +377,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="neu-table"
+        className="guilgee-table"
         scroll={{ x: "max-content", y: 480 }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}

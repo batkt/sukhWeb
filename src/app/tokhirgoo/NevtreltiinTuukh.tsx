@@ -332,7 +332,7 @@ export default function NevtreltiinTuukh({
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
               <div className="flex items-center gap-3">
                 <span className="text-sm text-[color:var(--panel-text)]">
-                  Нийт {totalRecords} бичлэг
+                  Нийт {totalRecords} мөр
                 </span>
 
                 {/* Page Size Selector */}

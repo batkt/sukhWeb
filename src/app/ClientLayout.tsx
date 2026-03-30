@@ -63,7 +63,14 @@ function isTokenValid(token: string): boolean {
 }
 
 const theme = createTheme({
-  fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+  fontFamily: '"Segoe UI", sans-serif',
+  fontSizes: {
+    xs: '10px',
+    sm: '11px',
+    md: '13px',
+    lg: '16px',
+    xl: '20px',
+  },
 });
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
@@ -73,7 +80,8 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: '"Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+          fontFamily: '"Segoe UI", sans-serif',
+          fontSize: 13,
         },
       }}
     >

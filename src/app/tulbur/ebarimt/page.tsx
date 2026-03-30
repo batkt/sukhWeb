@@ -18,6 +18,7 @@ import { Download } from "lucide-react";
 import IconTextButton from "@/components/ui/IconTextButton";
 import TulburLayout from "../TulburLayout";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import { useSearch } from "@/context/SearchContext";
 
 type TableItem = {
   id?: string | number;
@@ -58,7 +59,7 @@ export default function Ebarimt() {
     const [start, end] = getDefaultDateRange();
     return [new Date(start), new Date(end)];
   });
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { searchTerm } = useSearch();
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined,
   );
@@ -527,13 +528,7 @@ export default function Ebarimt() {
                     className="text-theme !px-3"
                   />
                 </div>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Баримт/Нэр/ДДТД хайх"
-                  className="rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-2 text-theme bg-white/50 dark:bg-slate-900/50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 h-10 w-[240px]"
-                />
+
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
                 <IconTextButton

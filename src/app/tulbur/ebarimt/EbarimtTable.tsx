@@ -122,8 +122,9 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
         title: <span className="text-inherit">Дүн</span>,
         dataIndex: "total",
         key: "total",
-        align: "right",
+        align: "center",
         className: "bg-gray-50/50 dark:bg-gray-900/50 text-[color:var(--panel-text)]",
+        onCell: () => ({ className: "!text-right" }),
         render: (val: number) => (
           <span className="text-inherit whitespace-nowrap font-medium">
             {formatNumber(val || 0)}
@@ -186,14 +187,14 @@ export const EbarimtTable: React.FC<EbarimtTableProps> = ({
           summary={() =>
             data.length > 0 ? (
               <Table.Summary fixed="bottom">
-                <Table.Summary.Row>
+                <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
                   <Table.Summary.Cell index={0} colSpan={6} align="center">
-                    <span className="font-bold text-gray-900 dark:text-white">
+                    <span className="font-bold text-gray-900 dark:!text-white">
                       Нийт:
                     </span>
                   </Table.Summary.Cell>
-                  <Table.Summary.Cell index={1} align="right">
-                    <span className="font-bold text-gray-900 dark:text-white">
+                  <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-800">
+                    <span className="font-bold text-gray-900 dark:!text-white">
                       {formatNumber(totalAmount)}
                     </span>
                   </Table.Summary.Cell>

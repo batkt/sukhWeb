@@ -1155,8 +1155,8 @@ export default function HistoryModal({
                 <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
                   Хуулга
                 </h2>
-                <div className="text-xs text-slate-400">
-                  {contract?.ovog} {contract?.ner} • {data.length} бичлэг
+                <div className="text-[13px] text-slate-400">
+                  {contract?.ovog} {contract?.ner} • {data.length} мөр
                 </div>
               </div>
               <button
@@ -1187,7 +1187,7 @@ export default function HistoryModal({
                   <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
                     {item.label}
                   </span>
-                  <span className="text-xs  text-slate-700 dark:text-slate-200 truncate block">
+                  <span className="text-[13px]  text-slate-700 dark:text-slate-200 truncate block">
                     {item.value}
                   </span>
                 </div>
@@ -1204,7 +1204,7 @@ export default function HistoryModal({
                   size="small"
                   placeholder="Огноо"
                   classNames={{
-                    input: "border-none h-8 text-xs ",
+                    input: "border-none h-8 text-[13px] ",
                   }}
                 />
               </div>
@@ -1221,7 +1221,7 @@ export default function HistoryModal({
 
           {/* Table Section - Scrollable */}
           <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-xs">
+            <table className="w-full text-[13px]">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
                   <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
@@ -1248,7 +1248,7 @@ export default function HistoryModal({
                   <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell">
                     Бүртгэсэн огноо
                   </th>
-                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-12">
+                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-8">
                     Үйлдэл
                   </th>
                 </tr>
@@ -1265,7 +1265,7 @@ export default function HistoryModal({
                 ) : filteredData.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center">
-                      <span className="text-slate-400 text-xs">
+                      <span className="text-slate-400 text-[13px]">
                         Мэдээлэл олдсонгүй
                       </span>
                     </td>
@@ -1277,20 +1277,20 @@ export default function HistoryModal({
                         key={row._id || idx}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                       >
-                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
                           {row.ognoo.split("T")[0].replace(/-/g, ".")}
                         </td>
-                        <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                           {row.isSystem ? "Систем" : row.ajiltan}
                         </td>
-                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
                           {formatCurrency(row.tulukhDun)}
                         </td>
                         <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
                           {formatCurrency(row.tulsunDun)}
                         </td>
                         <td
-                          className={`py-2 px-2 text-xs border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
+                          className={`py-2 px-2 text-[13px] border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
                         >
                           {typeof row.uldegdel === "number"
                             ? formatCurrency(row.uldegdel)
@@ -1298,13 +1298,13 @@ export default function HistoryModal({
                               ? formatCurrency(Number(row.uldegdel))
                               : "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
                           {row.khelber || "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
                           {row.tailbar || "-"}
                         </td>
-                        <td className="py-2 px-2 text-xs border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                        <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
                           {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
                             ? new Date(row.burtgesenOgnoo).toLocaleString(
                                 "mn-MN",
@@ -1395,18 +1395,18 @@ export default function HistoryModal({
                         <tr className="bg-slate-100 dark:bg-slate-800/50">
                           <td
                             colSpan={2}
-                            className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
+                            className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
                           >
                             Нийт
                           </td>
-                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
                             {formatCurrency(totalCharges)}
                           </td>
-                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-xs  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
                             {formatCurrency(totalPayments)}
                           </td>
                           <td
-                            className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-xs  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
+                            className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
                           >
                             {formatCurrency(balance)}
                           </td>

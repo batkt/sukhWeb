@@ -11,8 +11,6 @@ import {
   Edit, 
   User,
   FileText,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   X,
   ChevronDown
@@ -26,6 +24,7 @@ import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
 import { createPortal } from "react-dom";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 interface Props {
   token: string;
@@ -213,7 +212,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     const safeStringify = (obj: any): string => {
                       try {
                         if (typeof obj !== 'object' || obj === null) return String(obj);
-                        if (Array.isArray(obj)) return `[${obj.length} бичлэг]`;
+                        if (Array.isArray(obj)) return `[${obj.length} мөр]`;
                         if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
                         
                         const keys = Object.keys(obj).filter(k => !k.startsWith('_'));
@@ -244,9 +243,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     if (Array.isArray(value)) {
                       if (value.length === 0) return "(хоосон)";
                       if (change.field === 'paymentHistory' || change.field === 'guilgeenuud' || change.field === 'zardluud') {
-                         return `${value.length} бичлэг`;
+                         return `${value.length} мөр`;
                       }
-                      if (typeof value[0] === 'object') return `${value.length} бичлэг`;
+                      if (typeof value[0] === 'object') return `${value.length} мөр`;
                       if (value.length <= 5) return value.join(", ");
                       return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
                     }
@@ -661,75 +660,22 @@ export default function ZassanTuukh({
           </div>
               </div>
 
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-[color:var(--panel-text)]">
-                    Нийт {totalRecords} бичлэг
-                  </span>
-                  
-                  {/* Page Size Selector */}
-                  <div className="relative page-size-selector">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-2xl"
-                      style={{ borderRadius: '0.5rem' }}
-                    >
-                      {pageSize} / хуудас
-                    </Button>
-                    {isPageSizeOpen && (
-                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg shadow-lg z-10 min-w-[100px] overflow-hidden">
-                        {[10, 20, 50, 100, 500].map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => {
-                              setPageSize(size);
-                              setPage(1);
-                              setIsPageSizeOpen(false);
-                            }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-[color:var(--surface-hover)] transition-colors ${
-                              pageSize === size
-                                ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                                : "text-[color:var(--panel-text)]"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
-                    leftIcon={<ChevronLeft className="w-4 h-4" />}
-                  >
-                    Өмнөх
-                  </Button>
-                  <span className="text-sm text-[color:var(--panel-text)] px-3">
-                    {page} / {totalPages || 1}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
-                    rightIcon={<ChevronRight className="w-4 h-4" />}
-                  >
-                    Дараах
-                  </Button>
-                </div>
+              {/* Global Standard Pagination */}
+              <div className="pt-2 border-t border-[color:var(--surface-border)]">
+                <StandardPagination
+                  current={page}
+                  total={totalRecords}
+                  pageSize={pageSize}
+                  onChange={(p, size) => {
+                    setPage(p);
+                    if (size) setPageSize(size);
+                  }}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100, 500]}
+                />
               </div>
             </>
           )}

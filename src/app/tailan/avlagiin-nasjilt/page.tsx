@@ -303,7 +303,7 @@ export default function AvlagiinNasjiltPage() {
 
         <div
           className="rounded-3xl overflow-hidden neu-panel p-3 bg-white dark:bg-slate-900/50 dark:border-slate-800 border 
-          mb-1 neu-table allow-overflow flex flex-col min-h-0
+          mb-1 guilgee-table allow-overflow flex flex-col min-h-0
         "
         >
           <AvlagiinNasjiltTable

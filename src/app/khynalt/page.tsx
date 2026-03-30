@@ -940,22 +940,24 @@ export default function Khynalt() {
       show: showContracts,
     },
     {
-      title: "Орлого (Гүйцэтгэл)",
+      title: "Орлого/Гүйцэтгэл",
       value: formatCurrency(footerTotals.totalPaid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
       href: "/tulbur",
       delay: 400,
       show: showTulbur,
+      centerHeader: true,
     },
     {
-      title: "Үлдэгдэл (Авлага)",
+      title: "Үлдэгдэл/Авлага",
       value: formatCurrency(footerTotals.totalUldegdel),
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
       href: "/tulbur",
       delay: 500,
       show: showTulbur,
+      centerHeader: true,
     },
     {
       title: "Цуцлагдсан гэрээ",
@@ -1004,15 +1006,15 @@ export default function Khynalt() {
           {kpiCards.map((card, index) => {
             const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
-                <div>
-                  <h3 className="text-sm text-[color:var(--panel-text)] mb-2">
+                <div className={card.centerHeader ? "flex flex-col items-end" : ""}>
+                  <h3 className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${card.centerHeader ? 'text-center' : ''}`}>
                     {card.title}
                   </h3>
                   <p className="text-2xl force-bold text-[color:var(--panel-text)] mb-1">
                     {card.value}
                   </p>
                 </div>
-                <p className="text-xs text-[color:var(--muted-text)]">
+                <p className={`text-xs text-[color:var(--muted-text)] ${card.centerHeader ? 'text-right' : ''}`}>
                   {card.subtitle}
                 </p>
               </div>
@@ -1052,13 +1054,14 @@ export default function Khynalt() {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0" style={{ height: "240px" }}>
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "600ms",
               willChange: "opacity, box-shadow",
+              height: "240px",
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
@@ -1097,11 +1100,12 @@ export default function Khynalt() {
           </div>
 
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "700ms",
               willChange: "opacity, box-shadow",
+              height: "240px",
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
@@ -1144,17 +1148,18 @@ export default function Khynalt() {
 
           {/* Cancelled contract receivables */}
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col min-h-0 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
               }`}
             style={{
               transitionDelay: "800ms",
               willChange: "opacity, box-shadow",
+              height: "240px",
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
-                  Цуцлагдсан гэрээний авлага
+                  Цуцалсан гэрээний авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
                   {cancelledReceivables.count} Оршин суугч / {formatCurrency(cancelledReceivables.total)}

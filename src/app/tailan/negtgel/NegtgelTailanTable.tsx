@@ -248,7 +248,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       bordered
       scroll={{ x: "max-content", y: "calc(100vh - 350px)" }}
       tableLayout="fixed"
-      className="neu-table"
+      className="guilgee-table"
       rowClassName={(_, index) =>
         `${
           index % 2 === 0
