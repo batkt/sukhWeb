@@ -1530,12 +1530,12 @@ export default function InvoicingZardluud() {
         title: <span className="text-gray-900 dark:text-white">Үйлдэл</span>,
         key: "action",
         align: "center" as const,
-        width: 100,
+        width: 80,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: any) => (
           <div
             className="flex justify-center items-center gap-2"
-            style={{ minWidth: 90 }}
+            style={{ minWidth: 70 }}
           >
             <motion.button
               onClick={() => {

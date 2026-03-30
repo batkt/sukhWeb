@@ -42,7 +42,7 @@ interface NegtgelTailanTableProps {
 }
 
 const headerClassName =
-  "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold";
+  "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
 
 export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
   // Build the unique month list and avlaga type list from the data
@@ -116,7 +116,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         ellipsis: true,
         fixed: "left" as const,
         render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-gray-900 dark:text-white">
+          <span className="text-gray-900 dark:text-white text-[13px]">
             {record._id?.ovog || ""} {record._id?.ner || record.ner || "-"}
           </span>
         ),
@@ -130,7 +130,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         align: "center" as const,
         fixed: "left" as const,
         render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-gray-900 dark:text-white">{record._id?.toot || record.toot || "-"}</span>
+          <span className="text-gray-900 dark:text-white text-[13px]">{record._id?.toot || record.toot || "-"}</span>
         ),
       },
       {
@@ -144,7 +144,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         render: (_: any, record: NegtgelTailanItem) => {
           const u = record._id?.utas || record.utas;
           return (
-            <span className="text-gray-900 dark:text-white">
+            <span className="text-gray-900 dark:text-white text-[13px]">
               {Array.isArray(u) ? u[0] || "-" : u || "-"}
             </span>
           );
@@ -201,7 +201,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             const displayTotal = isSpecialCategory ? total * 0.4 : total;
 
             return displayTotal > 0 || isSpecialCategory ? (
-              <span className="text-gray-900 dark:text-white">
+              <span className="text-gray-900 dark:text-white text-[13px]">
                 {formatNumber(displayTotal, 2)}
               </span>
             ) : null;
@@ -227,7 +227,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       ellipsis: true,
       align: "center" as const,
       render: (e: number) => (
-        <span className="font-semibold text-green-600 dark:text-green-400">
+        <span className="font-semibold text-green-600 dark:text-green-400 text-[13px] dark:!text-white">
           {formatNumber(e, 2)}
         </span>
       ),

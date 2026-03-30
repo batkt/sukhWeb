@@ -497,13 +497,15 @@ export default function Ebarimt() {
                 className="relative group rounded-2xl neu-panel hover:bg-[color:var(--surface-hover)] transition-colors"
               >
                 <div className="relative rounded-2xl p-5 overflow-hidden">
-                  <div
-                    className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
-                  >
-                    {stat.value}
-                  </div>
-                  <div className="text-xs text-theme leading-tight">
-                    {stat.title}
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <div
+                      className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme dark:!text-white ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                    >
+                      {stat.value}
+                    </div>
+                    <div className="text-xs text-theme dark:!text-white/70 leading-tight font-medium">
+                      {stat.title}
+                    </div>
                   </div>
                 </div>
               </div>

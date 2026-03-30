@@ -11,6 +11,7 @@ import { FileSpreadsheet } from "lucide-react";
 import { getDefaultDateRange } from "@/lib/utils";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { useSearch } from "@/context/SearchContext";
 import {
   NegtgelTailanTable,
   NegtgelTailanItem,
@@ -31,6 +32,7 @@ export default function NegtgelTailanPage() {
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
   const [searchText, setSearchText] = useState("");
+  const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
 
@@ -45,23 +47,24 @@ export default function NegtgelTailanPage() {
       dateRange?.[0] || "",
       dateRange?.[1] || "",
       searchText,
+      searchTerm,
       currentPage,
       pageSize,
     ];
-  }, [token, baiguullagiinId, selectedBuildingId, dateRange, searchText, currentPage, pageSize]);
+  }, [token, baiguullagiinId, selectedBuildingId, dateRange, searchText, searchTerm, currentPage, pageSize]);
 
   const { data: rawData, isLoading } = useSWR<{
     data: NegtgelTailanItem[];
     niitToo: number;
   }>(
     swrKey,
-    async ([url, tkn, bId, barId, start, end, search, page, limit]: any) => {
+    async ([url, tkn, bId, barId, start, end, search, globalSearch, page, limit]: any) => {
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: bId,
         ...(barId ? { barilgiinId: barId } : {}),
         ekhlekhOgnoo: `${start} 00:00:00`,
         duusakhOgnoo: `${end} 23:59:59`,
-        ...(search ? { search } : {}),
+        search: search || globalSearch || undefined,
         khuudasniiDugaar: page,
         khuudasniiKhemjee: limit,
       });
@@ -99,7 +102,7 @@ export default function NegtgelTailanPage() {
           barilgiinId: selectedBuildingId ?? undefined,
           ekhlekhOgnoo: `${dateRange?.[0] || ""} 00:00:00`,
           duusakhOgnoo: `${dateRange?.[1] || ""} 23:59:59`,
-          search: searchText || undefined,
+          search: searchText || searchTerm || undefined,
         },
         { responseType: "blob" }
       );
@@ -149,21 +152,6 @@ export default function NegtgelTailanPage() {
             placeholder="Огноо сонгох"
             className="flex-1 px-3 neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
           />
-        </div>
-        <div className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center">
-          <div className="flex items-center gap-2 w-full min-w-0">
-            
-            <input
-              type="text"
-              value={searchText}
-              onChange={(e) => {
-                setSearchText(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-              placeholder="Хайх..."
-            />
-          </div>
         </div>
       </div>
 

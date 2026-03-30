@@ -11,6 +11,7 @@ import formatNumber from "../../../../tools/function/formatNumber";
 import { FileSpreadsheet, Printer, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { getDefaultDateRange } from "@/lib/utils";
+import { useSearch } from "@/context/SearchContext";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -91,6 +92,7 @@ export default function ZogsoolTailanPage() {
     token || null,
     ajiltan?.baiguullagiinId || null,
   );
+  const { searchTerm } = useSearch();
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
@@ -135,7 +137,7 @@ export default function ZogsoolTailanPage() {
             barilgiinId: selectedBuildingId,
             ekhlekhOgnoo: dateRange?.[0] || undefined,
             duusakhOgnoo: dateRange?.[1] || undefined,
-            orshinSuugch: filters.orshinSuugch || undefined,
+            orshinSuugch: filters.orshinSuugch || searchTerm || undefined,
             toot: filters.toot || undefined,
           },
         );
@@ -155,7 +157,7 @@ export default function ZogsoolTailanPage() {
     };
 
     fetchData();
-  }, [selectedBuildingId, baiguullaga, token, dateRange, filters]);
+  }, [selectedBuildingId, baiguullaga, token, dateRange, filters, searchTerm]);
 
   const residentSummary = apiResponse?.residentSummary || [];
   const niit = apiResponse?.niit || {
@@ -320,7 +322,7 @@ export default function ZogsoolTailanPage() {
         dataIndex: "ner",
         key: "ner",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -329,7 +331,7 @@ export default function ZogsoolTailanPage() {
         key: "toot",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -338,7 +340,7 @@ export default function ZogsoolTailanPage() {
         key: "urisanMachinToo",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
         ),
       },
       {
@@ -347,7 +349,7 @@ export default function ZogsoolTailanPage() {
         key: "niitTulbur",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-theme whitespace-nowrap text-[13px]">
             {formatNumber(val)}
           </span>
         ),
@@ -358,7 +360,7 @@ export default function ZogsoolTailanPage() {
         key: "khungulultMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{val || "-"}</span>
         ),
       },
       {
@@ -367,7 +369,7 @@ export default function ZogsoolTailanPage() {
         key: "tulsunDun",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-theme whitespace-nowrap text-[13px]">
             {formatNumber(val)}
           </span>
         ),
@@ -403,7 +405,7 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -412,7 +414,7 @@ export default function ZogsoolTailanPage() {
         key: "zogssonMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
         ),
       },
       {
@@ -421,7 +423,7 @@ export default function ZogsoolTailanPage() {
         key: "khungulsunMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
         ),
       },
       {
@@ -430,7 +432,7 @@ export default function ZogsoolTailanPage() {
         key: "tulbur",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap">
+          <span className="text-theme whitespace-nowrap text-[13px]">
             {val > 0 ? formatNumber(val) : "-"}
           </span>
         ),
@@ -441,7 +443,7 @@ export default function ZogsoolTailanPage() {
         key: "tuluv",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
     ],
@@ -464,7 +466,7 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -472,7 +474,7 @@ export default function ZogsoolTailanPage() {
         dataIndex: "orshinSuugchiinNer",
         key: "orshinSuugchiinNer",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -481,7 +483,7 @@ export default function ZogsoolTailanPage() {
         key: "davkhar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -490,7 +492,7 @@ export default function ZogsoolTailanPage() {
         key: "toot",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
       {
@@ -499,7 +501,7 @@ export default function ZogsoolTailanPage() {
         key: "utas",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
         ),
       },
     ],
@@ -567,22 +569,9 @@ export default function ZogsoolTailanPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 no-print">
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">
-            Оршин суугч
-          </label>
-          <input
-            type="text"
-            value={filters.orshinSuugch}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, orshinSuugch: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Нэрээр хайх"
-          />
-        </div>
-        <div className="p-3 rounded-xl">
-          <label className="block text-sm  text-theme/80 mb-1.5">Тоот</label>
+       
+        <div className="p-3 w-30 rounded-xl">
+          <label className="block text-sm w-8 text-theme/80 mb-1.5">Тоот</label>
           <input
             type="text"
             value={filters.toot}
@@ -590,7 +579,6 @@ export default function ZogsoolTailanPage() {
               setFilters((p) => ({ ...p, toot: e.target.value }))
             }
             className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            placeholder="Тоот"
           />
         </div>
       </div>
@@ -660,23 +648,23 @@ export default function ZogsoolTailanPage() {
               })}
               summary={() =>
                 residentSummary.length > 0 ? (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={3} align="center">
+                  <Table.Summary.Row className="bg-theme/5">
+                    <Table.Summary.Cell index={0} colSpan={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="center">
+                    <Table.Summary.Cell index={1} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {niit.urisanMachinToo}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="center">
+                    <Table.Summary.Cell index={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {formatNumber(niit.niitTulbur)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center">
+                    <Table.Summary.Cell index={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {niit.khungulultMinut || "-"}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="center">
+                    <Table.Summary.Cell index={4} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {formatNumber(niit.tulsunDun)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="center">
+                    <Table.Summary.Cell index={5} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {formatNumber(niit.uldegdelTulbur)}
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
@@ -717,22 +705,22 @@ export default function ZogsoolTailanPage() {
               }}
               summary={() =>
                 displayDetail && displayDetail.length > 0 ? (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={2} align="center">
+                  <Table.Summary.Row className="bg-theme/5">
+                    <Table.Summary.Cell index={0} colSpan={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="center">
+                    <Table.Summary.Cell index={1} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="center">
+                    <Table.Summary.Cell index={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center">
+                    <Table.Summary.Cell index={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       {formatNumber(
                         displayDetail.reduce((s, r) => s + r.tulbur, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="center">
+                    <Table.Summary.Cell index={4} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
                       -
                     </Table.Summary.Cell>
                   </Table.Summary.Row>

@@ -7,16 +7,12 @@ import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import uilchilgee from "@/lib/uilchilgee";
 import {
-  getPaymentStatusLabel,
   isPaidLike,
-  isUnpaidLike,
-  isOverdueLike,
   getDefaultDateRange,
 } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { ChartData } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
@@ -947,7 +943,6 @@ export default function Khynalt() {
       href: "/tulbur",
       delay: 400,
       show: showTulbur,
-      centerHeader: true,
     },
     {
       title: "Үлдэгдэл/Авлага",
@@ -957,7 +952,6 @@ export default function Khynalt() {
       href: "/tulbur",
       delay: 500,
       show: showTulbur,
-      centerHeader: true,
     },
     {
       title: "Цуцлагдсан гэрээ",
@@ -1004,17 +998,18 @@ export default function Khynalt() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
           {kpiCards.map((card, index) => {
+            const isCenter = (card as any).centerHeader;
             const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
-                <div className={card.centerHeader ? "flex flex-col items-end" : ""}>
-                  <h3 className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${card.centerHeader ? 'text-center' : ''}`}>
+                <div className={isCenter ? "flex flex-col items-end" : ""}>
+                  <h3 className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${isCenter ? 'text-center' : ''}`}>
                     {card.title}
                   </h3>
                   <p className="text-2xl force-bold text-[color:var(--panel-text)] mb-1">
                     {card.value}
                   </p>
                 </div>
-                <p className={`text-xs text-[color:var(--muted-text)] ${card.centerHeader ? 'text-right' : ''}`}>
+                <p className={`text-xs text-[color:var(--muted-text)] ${isCenter ? 'text-right' : ''}`}>
                   {card.subtitle}
                 </p>
               </div>

@@ -12,6 +12,7 @@ import useSWR from "swr";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import { useSearch } from "@/context/SearchContext";
 import { getDefaultDateRange } from "@/lib/utils";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -152,6 +153,7 @@ export default function OrlogoAvlagaPage() {
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
+  const { searchTerm } = useSearch();
   const [filters, setFilters] = useState({
     orshinSuugch: "",
     toot: "",
@@ -252,7 +254,7 @@ export default function OrlogoAvlagaPage() {
     token || undefined,
     baiguullagiinId || undefined,
     selectedBuildingId || undefined,
-  );
+);
   const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
     token || "",
     baiguullagiinId || "",
@@ -545,6 +547,15 @@ export default function OrlogoAvlagaPage() {
       const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
       if (!name.includes(f.orshinSuugch.toLowerCase())) return false;
     }
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
+      const gd = String(it?._gereeDugaar || it?.gereeniiDugaar || "").toLowerCase();
+      const utas = Array.isArray(it?._utas || it?.utas)
+        ? String((it?._utas || it?.utas)[0] || "").toLowerCase()
+        : String(it?._utas || it?.utas || "").toLowerCase();
+      if (!name.includes(term) && !gd.includes(term) && !utas.includes(term)) return false;
+    }
     return true;
   };
   const paidList = useMemo(
@@ -552,25 +563,25 @@ export default function OrlogoAvlagaPage() {
       deduplicatedResidents.filter(
         (it) => matchesFilters(it) && getPaid(it) > 0,
       ),
-    [deduplicatedResidents, paidByGereeId, debouncedFilters],
+    [deduplicatedResidents, paidByGereeId, debouncedFilters, searchTerm],
   );
   const avlagaList = useMemo(
     () =>
       deduplicatedResidents.filter(
         (it) => matchesFilters(it) && getUldegdel(it) > 0,
       ),
-    [deduplicatedResidents, uldegdelByGereeId, debouncedFilters],
+    [deduplicatedResidents, uldegdelByGereeId, debouncedFilters, searchTerm],
   );
 
   const displayList = activeTab === "tulult" ? paidList : avlagaList;
   const totalOrlogo = useMemo(
-    () => deduplicatedResidents.reduce((s, it) => s + getPaid(it), 0),
-    [deduplicatedResidents, paidByGereeId],
+    () => deduplicatedResidents.filter(matchesFilters).reduce((s, it) => s + getPaid(it), 0),
+    [deduplicatedResidents, paidByGereeId, searchTerm, debouncedFilters],
   );
 
   const totalUldegdel = useMemo(
-    () => deduplicatedResidents.reduce((s, it) => s + getUldegdel(it), 0),
-    [deduplicatedResidents, uldegdelByGereeId],
+    () => deduplicatedResidents.filter(matchesFilters).reduce((s, it) => s + getUldegdel(it), 0),
+    [deduplicatedResidents, uldegdelByGereeId, searchTerm, debouncedFilters],
   );
   const handleRowClick = async (it: any) => {
     const gid = getGereeId(it);
