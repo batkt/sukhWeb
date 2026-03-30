@@ -6,6 +6,7 @@ import moment from "moment";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import Button from "@/components/ui/Button";
+import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface VehicleRegistrationModalProps {
   onClose: () => void;
@@ -44,6 +45,8 @@ export default function VehicleRegistrationModal({
       setSelectedIP(entryCameras[0].cameraIP);
     }
   }, [entryCameras, selectedCameraIP]);
+
+  useModalHotkeys({ isOpen: true, onClose });
 
   const handleKey = (char: string) => {
     if (plate.length >= 7) return;
@@ -140,7 +143,7 @@ export default function VehicleRegistrationModal({
 
       <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 backdrop-blur-xl rounded-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 border border-slate-200/50 dark:border-white/10">
         {/* Header */}
-        <div className="relative flex items-center justify-between px-5 py-4 border-b border-slate-200/50 bg-white">
+        <div className="relative flex items-center justify-between px-5 py-4 border-b border-slate-200/50 bg-white dark:bg-slate-900">
           <div className="flex items-center gap-3">
             <Keyboard className="w-5 h-5 text-slate-600 dark:text-slate-400" />
             <div>
@@ -154,9 +157,9 @@ export default function VehicleRegistrationModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all duration-200"
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-100 transition-all duration-200"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" />
           </button>
         </div>
 

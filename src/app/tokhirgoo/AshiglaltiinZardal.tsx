@@ -868,7 +868,7 @@ export default function AshiglaltiinZardluud() {
                 className="btn-minimal"
                 radius="xl"
               >
-                Болих
+                Хаах
               </MButton>
               <MButton
                 color="red"

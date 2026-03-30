@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { Tag, notification } from "antd";
+import { getDefaultDateRange } from "@/lib/utils";
 import Aos from "aos";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "react-i18next";
@@ -47,7 +48,7 @@ export default function SanalKhuselt() {
   const [expandedName, setExpandedName] = useState<string | null>(null);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
 
   const KhariltsagchiinMedeelel: { jagsaalt: Khariltsagch[] } = {
     jagsaalt: [

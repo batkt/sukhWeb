@@ -126,7 +126,7 @@ export default function CredentialsModal({
                   className="px-6 py-2.5 text-sm  text-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
                   disabled={isSaving}
                 >
-                  Цуцлах
+                  Хаах
                 </button>
                 <button
                   type="submit"

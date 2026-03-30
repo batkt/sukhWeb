@@ -503,7 +503,7 @@ export default function PermissionsModal({
                 className="btn-minimal-ghost btn-cancel px-3 py-1.5 text-xs"
                 disabled={isSaving}
               >
-                Цуцлах
+                Хаах
               </button>
               <button
                 type="button"

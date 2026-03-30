@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { Spin, message } from "antd";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { EbarimtTable, EbarimtItem } from "./EbarimtTable";
 import moment from "moment";
@@ -53,7 +54,10 @@ export default function Ebarimt() {
   );
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
-  >(null);
+  >(() => {
+    const [start, end] = getDefaultDateRange();
+    return [new Date(start), new Date(end)];
+  });
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [uilchilgeeAvi, setUilchilgeeAvi] = useState<string | undefined>(
     undefined,

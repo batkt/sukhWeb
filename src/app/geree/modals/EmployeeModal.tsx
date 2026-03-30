@@ -232,7 +232,7 @@ export default function EmployeeModal({
                   variant="secondary"
                   className="min-w-[100px]"
                 >
-                  Цуцлах
+                  Хаах
                 </Button>
                 <Button htmlType="submit" variant="primary" className="min-w-[100px]">
                   {editingEmployee ? "Хадгалах" : "Хадгалах"}

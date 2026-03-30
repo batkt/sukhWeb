@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { getDefaultDateRange } from "@/lib/utils";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
@@ -109,7 +110,7 @@ export default function NekhemjlekhiinTuukhPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
 
   const fetchData = async () => {
     if (!selectedBuildingId || !baiguullaga) return;

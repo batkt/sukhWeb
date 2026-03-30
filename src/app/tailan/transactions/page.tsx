@@ -11,6 +11,7 @@ import { getErrorMessage } from "@/lib/uilchilgee";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import IconTextButton from "@/components/ui/IconTextButton";
+import { getDefaultDateRange } from "@/lib/utils";
 import { Download, ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 
@@ -64,7 +65,7 @@ export default function TransactionsPage() {
   const { selectedBuildingId } = useBuilding();
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
   const [filters, setFilters] = useState<any>({});
 
   const [type, setType] = useState<string>(""); // income / expense

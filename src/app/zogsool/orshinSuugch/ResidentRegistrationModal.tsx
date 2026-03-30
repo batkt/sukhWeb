@@ -551,7 +551,7 @@ export default function ResidentRegistrationModal({
 
               <div className="p-6 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-end gap-3">
                 <Button onClick={onClose} variant="secondary" size="sm">
-                  Болих
+                  Хаах
                 </Button>
                 <Button
                   onClick={handleSave}

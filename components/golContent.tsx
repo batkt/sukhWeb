@@ -507,7 +507,7 @@ export default function GolContent({ children }: GolContentProps) {
               <div className="shrink-0">
                 <ThemedLogo />
               </div>
-              <div id="barilga-songoh" className="w-auto min-w-[144px] xl:min-w-[224px] [&_span]:!whitespace-normal [&_span]:!overflow-visible [&_span]:!text-clip">
+              <div id="barilga-songoh" className="w-auto min-w-[124px] xl:min-w-[200px] [&_span]:!whitespace-normal [&_span]:!overflow-visible [&_span]:!text-clip">
                 <TusgaiZagvar
                   value={selectedBuildingId ?? ""}
                   onChange={handleBuildingChange}
@@ -515,19 +515,20 @@ export default function GolContent({ children }: GolContentProps) {
                     value: b._id,
                     label: b.ner,
                   }))}
-                  placeholder={
-                    filteredBuildings.length
-                      ? "Барилга сонгох"
-                      : "Барилга нэмнэ үү"
-                  }
-                />
-              </div>
+                placeholder={
+                  filteredBuildings.length
+                    ? "Барилга сонгох"
+                    : "Барилга нэмнэ үү"
+                }
+                className="[&_span]:!leading-tight"
+              />
             </div>
+          </div>
 
-            {/* Center: Desktop Menu */}
-            <div className="flex flex-1 items-center justify-center px-1 xl:px-2 min-w-0">
+            {/* Center: Desktop Menu - Consistent small font for medium viewports */}
+            <div className="hidden lg:flex flex-1 items-center justify-center px-1">
               <div
-                className="flex items-center justify-center gap-1.5 xl:gap-3 relative"
+                className="flex items-center justify-center gap-1 xl:gap-2 relative"
                 ref={menuRef}
               >
                 {menuItems.map((item, i) => {
@@ -546,7 +547,7 @@ export default function GolContent({ children }: GolContentProps) {
                                 prev === i ? null : i
                               );
                             }}
-                            className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-sm xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                            className={`menu-pro-font inline-flex items-center justify-center w-[82px] xl:w-[105px] py-2.5 rounded-xl text-[13px] xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                               item.comingSoon
                                 ? "cursor-not-allowed opacity-60"
                                 : ""
@@ -608,7 +609,7 @@ export default function GolContent({ children }: GolContentProps) {
                             if (item.comingSoon) return;
                             setOpenSubmenuIndex(null);
                           }}
-                          className={`menu-pro-font px-2.5 xl:px-4 py-1.5 xl:py-2 rounded-xl text-sm xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
+                          className={`menu-pro-font inline-flex items-center justify-center w-[82px] xl:w-[105px] py-2.5 rounded-xl text-[13px] xl:text-[15px] font-semibold transition-all duration-300 text-[color:var(--panel-text)] whitespace-nowrap pointer-events-auto relative z-[1005] overflow-visible ${
                             item.comingSoon
                               ? "cursor-not-allowed opacity-60"
                               : ""
@@ -646,7 +647,7 @@ export default function GolContent({ children }: GolContentProps) {
                 <SearchIcon className="absolute left-2 xl:left-3 top-1/2 -translate-y-1/2 w-3.5 xl:w-4 h-3.5 xl:h-4 text-[color:var(--panel-text)] opacity-60 pointer-events-none" />
                 <input
                   aria-label="Global search"
-                  className="w-full h-full pl-8 xl:pl-10 pr-2 xl:pr-3 rounded-2xl border border-transparent bg-transparent text-theme text-xs xl:text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
+                  className="w-full h-full pl-8 xl:pl-10 pr-2 xl:pr-3 rounded-2xl border border-transparent bg-transparent text-theme text-sm xl:text-base focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
                   placeholder="Хайх..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -842,12 +843,12 @@ export default function GolContent({ children }: GolContentProps) {
 
           {/* Mobile Actions Row */}
           <div className="flex lg:hidden items-center justify-between gap-1.5 sm:gap-2">
-            {/* Hamburger Menu Button */}
+            {/* Hamburger Menu Button - Visible below lg (1024px) */}
             <button
               type="button"
               aria-label="Open menu"
               onClick={() => setMobileMenuOpen(true)}
-              className="inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
+              className="inline-flex lg:hidden items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-full neu-panel active:scale-95 hover:scale-105 transition-all duration-300"
             >
               <Menu className="w-4 h-4 pointer-events-none" />
             </button>

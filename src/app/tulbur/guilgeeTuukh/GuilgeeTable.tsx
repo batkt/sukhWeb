@@ -75,8 +75,6 @@ export default function GuilgeeTable({
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
           align:
-            col.align === "right" ||
-            col.key === "tulbur" ||
             col.key === "paid" ||
             col.key === "uldegdel" ||
             col.key === "ekhniiUldegdel"
@@ -280,26 +278,6 @@ export default function GuilgeeTable({
               return (
                 <span className="text-gray-900 dark:text-white">
                   {String(record?.gereeniiDugaar || ct?.gereeniiDugaar || "-")}
-                </span>
-              );
-            },
-          };
-        }
-
-        if (col.key === "tulbur") {
-          return {
-            ...baseColumn,
-            render: (_: any, record: any) => {
-              const niitDun = Number(
-                record?.niitTulburOriginal ??
-                  record?.niitTulbur ??
-                  record?.niitDun ??
-                  record?.total ??
-                  0,
-              );
-              return (
-                <span className="text-gray-900 dark:text-white">
-                  {formatNumber(niitDun, 2)}
                 </span>
               );
             },
@@ -604,26 +582,7 @@ export default function GuilgeeTable({
           {dataCols.map((col, colIdx) => {
             let content: React.ReactNode = "";
 
-            if (col.key === "tulbur") {
-              const total = deduplicatedResidents.reduce(
-                (sum: number, it: any) => {
-                  const niitDun = Number(
-                    it?.niitTulburOriginal ??
-                      it?.niitTulbur ??
-                      it?.niitDun ??
-                      it?.total ??
-                      0,
-                  );
-                  return sum + niitDun;
-                },
-                0,
-              );
-              content = (
-                <span className="text-gray-900 dark:text-white">
-                  {formatNumber(total, 2)}
-                </span>
-              );
-            } else if (col.key === "ekhniiUldegdel") {
+            if (col.key === "ekhniiUldegdel") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   return sum + Number(it?._ekhniiUldegdelAmount ?? 0);
@@ -698,7 +657,6 @@ export default function GuilgeeTable({
                 key={col.key}
                 index={colIdx + checkboxOffset}
                 className={`${
-                  col.key === "tulbur" ||
                   col.key === "paid" ||
                   col.key === "uldegdel" ||
                   col.key === "ekhniiUldegdel"

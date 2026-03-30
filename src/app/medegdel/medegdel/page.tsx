@@ -490,7 +490,7 @@ function MedegdelContent() {
             onOk={handleSaveTemplate}
             onCancel={() => setTemplateModalOpen(false)}
             okText="Хадгалах"
-            cancelText="Цуцлах"
+            cancelText="Хаах"
             destroyOnHidden
             className="[&_.ant-modal-content]:rounded-2xl"
           >

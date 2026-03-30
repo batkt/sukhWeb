@@ -13,6 +13,7 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr";
 import Aos from "aos";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import ExpandableCardDemo from "@/components/ui/expandable-card-demo-grid";
 
 interface BlogReaction {
   emoji: string;
@@ -57,7 +58,7 @@ export default function BlogManagement() {
   
   // Pagination
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [rowsPerPage, setRowsPerPage] = useState(16);
   
   // Form states
   const [title, setTitle] = useState("");
@@ -249,76 +250,68 @@ export default function BlogManagement() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-4">
-              <AnimatePresence>
-                {paginatedBlogs.map((blog) => (
-                  <motion.div
-                    key={blog._id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                  >
-                    <Card
-                      hoverable
-                      className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
-                      cover={
-                        blog.images && blog.images.length > 0 ? (
-                          <div className="h-40 overflow-hidden relative">
-                            <img
-                              src={getImageUrl(blog.images[0])}
-                              alt={blog.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = ""; // Clear broken images
-                              }}
-                            />
+            <div className="pb-4">
+              <ExpandableCardDemo
+                cards={paginatedBlogs.map(blog => ({
+                  _id: blog._id,
+                  title: blog.title,
+                  description: new Date(blog.createdAt).toLocaleDateString(),
+                  src: blog.images && blog.images.length > 0 ? getImageUrl(blog.images[0]) : "/placeholder-blog.png",
+                  previewContent: blog.content,
+                  content: () => (
+                    <div className="space-y-4">
+                      {/* Detailed Content */}
+                      <div className="flex flex-col gap-4">
+                        <p className="whitespace-pre-wrap leading-relaxed text-neutral-700 dark:text-neutral-300">
+                          {blog.content}
+                        </p>
+                        
+                        {/* Reactions in expanded view */}
+                        {(blog.reactions && blog.reactions.length > 0) && (
+                          <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                            {blog.reactions.map((r, i) => (
+                              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 shadow-sm">
+                                <span className="text-base">{r.emoji}</span>
+                                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">{r.count}</span>
+                              </div>
+                            ))}
                           </div>
-                        ) : (
-                          <div className="h-40 bg-slate-50 dark:bg-slate-800 flex items-center justify-center">
-                            <ImagePlus className="w-8 h-8 text-slate-300" />
-                          </div>
-                        )
-                      }
-                      actions={[
-                        <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
-                          <Edit2 size={16} />
-                        </button>,
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 pt-4 border-t border-neutral-100 dark:border-neutral-800">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenModal(blog);
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Edit2 size={14} /> Засах
+                        </Button>
                         <Popconfirm
-                          key="delete"
                           title="Устгах уу?"
                           onConfirm={() => handleDelete(blog._id)}
                           okText="Тийм"
                           cancelText="Үгүй"
-                          placement="topRight"
                         >
-                          <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex items-center gap-2"
+                          >
+                            <Trash2 size={14} /> Устгах
+                          </Button>
                         </Popconfirm>
-                      ]}
-                    >
-                      <div className="flex flex-col h-full">
-                        <h3 className="text-sm  line-clamp-1 mb-1.5 text-theme">{blog.title}</h3>
-                        <p className="text-xs text-slate-500 line-clamp-2 mb-3 flex-1">{blog.content}</p>
-                        
-                        <div className="flex items-center justify-between mt-auto">
-                          <div className="flex -space-x-1">
-                            {(blog.reactions || []).slice(0, 3).map((r, i) => (
-                              <span key={i} className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-50 dark:bg-slate-800 text-[10px] border border-white dark:border-slate-900">
-                                {r.emoji}
-                              </span>
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(blog.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
                       </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                    </div>
+                  ),
+                  originalData: blog
+                }))}
+              />
             </div>
 
             <StandardPagination
@@ -338,7 +331,7 @@ export default function BlogManagement() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={[
-          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Цуцлах</Button>,
+          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Хаах</Button>,
           <Button key="save" type="primary" loading={loading} onClick={handleSave} className="rounded-lg h-10 bg-theme">Хадгалах</Button>
         ]}
         width={600}

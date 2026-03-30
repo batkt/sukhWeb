@@ -41,10 +41,10 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
 
     const variants = {
       primary: "bg-emerald-500 hover:bg-emerald-400 !text-white shadow-sm dark:bg-emerald-600 dark:hover:bg-emerald-500",
-      secondary: "bg-slate-200/50 hover:bg-slate-200/80 text-slate-700 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700",
-      back: "text-gray-400 !border !border-slate-200 dark:!border-white dark:!bg-gray-800 dark:!text-gray-400 hover:bg-slate-50 dark:hover:bg-slate-700",
-      text: "bg-transparent border-none text-gray-600 hover:bg-emerald-500/10 hover:text-emerald-600 dark:text-gray-300 dark:hover:bg-white/5",
-      ghost: "bg-transparent border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-400 dark:hover:bg-white/5",
+      secondary: "bg-slate-200/50 hover:bg-slate-200/80 !text-slate-700 dark:bg-slate-800 dark:!text-gray-400 dark:hover:bg-slate-700",
+      back: "!text-gray-400 !border !border-slate-200 dark:!border-white dark:!bg-gray-800 dark:!text-gray-400 hover:bg-slate-50 dark:hover:bg-slate-700",
+      text: "bg-transparent border-none !text-gray-600 hover:bg-emerald-500/10 hover:!text-emerald-600 dark:!text-gray-300 dark:hover:bg-white/5",
+      ghost: "bg-transparent border border-slate-200 !text-slate-600 hover:bg-slate-50 dark:!border-white/10 dark:!text-slate-400 dark:hover:bg-white/5",
       danger: "bg-red-500 hover:bg-red-400 !text-white shadow-sm dark:bg-red-600 dark:hover:bg-red-500",
       success: "bg-green-500 hover:bg-green-400 !text-white shadow-sm",
       warning: "bg-yellow-500 hover:bg-yellow-400 !text-white shadow-sm",
@@ -80,7 +80,6 @@ const Button = React.forwardRef<HTMLElement, ButtonProps>(
         style={{ 
           display: 'inline-flex', 
           alignItems: 'center', 
-          color: 'white',
           justifyContent: 'center',
           ...props.style 
         }}

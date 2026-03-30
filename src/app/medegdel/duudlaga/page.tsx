@@ -8,6 +8,7 @@ import moment from "moment";
 import { motion, AnimatePresence } from "framer-motion";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
+import { getDefaultDateRange } from "@/lib/utils";
 
 const { Option } = Select;
 
@@ -133,7 +134,14 @@ export default function TaskManagementSystem() {
   const [duudlaga, setDuudlaga] = useState<DuudlagaItem | null>(null);
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<
     [Date | null, Date | null] | null
-  >([new Date(), new Date()]);
+  >(() => {
+    const range = getDefaultDateRange();
+    if (!range) return [null, null];
+    return [
+      range[0] ? new Date(range[0]) : null,
+      range[1] ? new Date(range[1]) : null,
+    ];
+  });
   const [turulFilter, setTurulFilter] = useState<string>("Бүгд");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [expandedNames, setExpandedNames] = useState<Set<string>>(new Set());
@@ -550,7 +558,7 @@ export default function TaskManagementSystem() {
                               whileTap={{ scale: 0.95 }}
                               className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-green-400 to-emerald-500 text-white text-xs  cursor-pointer text-center"
                             >
-                              ✓ Дуусгах
+                              Дуусгах
                             </motion.div>
                           </Popconfirm>
                           <motion.div
@@ -565,7 +573,7 @@ export default function TaskManagementSystem() {
                                 updateTaskStatus(item._id, -1, reason);
                             }}
                           >
-                            ✕ Цуцлах
+                            Цуцлах
                           </motion.div>
                         </motion.div>
                       )}

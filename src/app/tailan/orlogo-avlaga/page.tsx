@@ -12,6 +12,7 @@ import useSWR from "swr";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import { getDefaultDateRange } from "@/lib/utils";
 import formatNumber from "../../../../tools/function/formatNumber";
 import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
@@ -150,7 +151,7 @@ export default function OrlogoAvlagaPage() {
   const [activeTab, setActiveTab] = useState<TabType>("avlaga");
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
   const [filters, setFilters] = useState({
     orshinSuugch: "",
     toot: "",

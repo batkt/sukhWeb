@@ -6,6 +6,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { t } from "i18next";
 import formatNumber from "../../../tools/function/formatNumber";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 
 interface BackItem {
   _id: number;
@@ -20,7 +21,10 @@ interface BaazProps {
 
 function Baaz({ token }: BaazProps) {
   const [loading, setLoading] = useState(false);
-  const [ognoo, setOgnoo] = useState<[Date | null, Date | null] | null>(null);
+  const [ognoo, setOgnoo] = useState<[Date | null, Date | null] | null>(() => {
+    const [start, end] = getDefaultDateRange();
+    return [new Date(start), new Date(end)];
+  });
 
   const backAwsanTuukh = {
     jagsaalt: [

@@ -10,6 +10,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { FileSpreadsheet, Printer, Plus } from "lucide-react";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -92,7 +93,7 @@ export default function ZogsoolTailanPage() {
   );
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([null, null]);
+  >(getDefaultDateRange);
   const [filters, setFilters] = useState({
     orshinSuugch: "",
     toot: "",
@@ -794,7 +795,7 @@ export default function ZogsoolTailanPage() {
                   setNewToot("");
                 }}
               >
-                Болих
+                Хаах
               </Button>
               <Button
                 variant="primary"

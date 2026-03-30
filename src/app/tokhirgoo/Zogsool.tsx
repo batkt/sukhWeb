@@ -190,7 +190,7 @@ export default function Zogsool({
                 className="!rounded-lg"
                 style={{ borderRadius: '0.5rem' }}
               >
-                Болих
+                Хаах
               </Button>
               <Button
                 onClick={() => zogsoolRef.current?.khadgalya()}

@@ -185,7 +185,7 @@ const Medegdel: React.FC<MedegdelProps> = ({
         onOk={handleModalOk}
         onCancel={handleModalCancel}
         okText="Хадгалах"
-        cancelText="Болих"
+        cancelText="Хаах"
         width={600}
         rootClassName="modal-themed"
       >

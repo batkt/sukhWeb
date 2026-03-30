@@ -8,6 +8,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { FileSpreadsheet } from "lucide-react";
+import { getDefaultDateRange } from "@/lib/utils";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import {
@@ -28,7 +29,7 @@ export default function NegtgelTailanPage() {
 
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
   const [searchText, setSearchText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
@@ -36,20 +37,13 @@ export default function NegtgelTailanPage() {
   // ── Data fetching ────────────────────────────────────────────────────────
   const swrKey = useMemo(() => {
     if (!token || !baiguullagiinId) return null;
-    const now = new Date();
-    const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .slice(0, 10);
-    const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .slice(0, 10);
     return [
       "/tailan/negtgel",
       token,
       baiguullagiinId,
       selectedBuildingId,
-      dateRange?.[0] ?? firstOfMonth,
-      dateRange?.[1] ?? lastOfMonth,
+      dateRange?.[0] || "",
+      dateRange?.[1] || "",
       searchText,
       currentPage,
       pageSize,
@@ -95,14 +89,6 @@ export default function NegtgelTailanPage() {
   // ── Excel export ────────────────────────────────────────────────────────
   const exportToExcel = async () => {
     try {
-      const now = new Date();
-      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .slice(0, 10);
-      const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .slice(0, 10);
-
       if (!token) return;
 
       const response = await uilchilgee(token).post(
@@ -111,8 +97,8 @@ export default function NegtgelTailanPage() {
           report: "negtgel",
           baiguullagiinId: baiguullagiinId ?? undefined,
           barilgiinId: selectedBuildingId ?? undefined,
-          ekhlekhOgnoo: `${dateRange?.[0] ?? firstOfMonth} 00:00:00`,
-          duusakhOgnoo: `${dateRange?.[1] ?? lastOfMonth} 23:59:59`,
+          ekhlekhOgnoo: `${dateRange?.[0] || ""} 00:00:00`,
+          duusakhOgnoo: `${dateRange?.[1] || ""} 23:59:59`,
           search: searchText || undefined,
         },
         { responseType: "blob" }

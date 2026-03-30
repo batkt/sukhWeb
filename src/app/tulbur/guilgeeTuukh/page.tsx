@@ -45,6 +45,7 @@ import {
   isPaidLike,
   isUnpaidLike,
   isOverdueLike,
+  getDefaultDateRange,
 } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
@@ -104,7 +105,7 @@ export default function DansniiKhuulga() {
   const emptyQuery = useMemo(() => ({}), []);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(getDefaultDateRange);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "overdue"
   >("all");
@@ -234,7 +235,6 @@ export default function DansniiKhuulga() {
         align: "center",
         minWidth: 140,
       },
-      { key: "tulbur", label: "Төлбөр", align: "center", minWidth: 110 },
       {
         key: "ekhniiUldegdel",
         label: "Эхний үлдэгдэл",
@@ -2696,17 +2696,17 @@ export default function DansniiKhuulga() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     transition={{ duration: 0.3 }}
-                    onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
+                      onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
                     className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
-                    id="zaalt-btn"
-                  >
+                      id="zaalt-btn"
+                    >
                     <FileSpreadsheet className="w-5 h-5" />
-                    <span className="hidden">Заалт</span>
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        isZaaltDropdownOpen ? "rotate-180" : ""
-                      }`}
-                    />
+                      <span className="hidden">Заалт</span>
+                      <ChevronDown
+                        className={`w-4 h-4 transition-transform ${
+                          isZaaltDropdownOpen ? "rotate-180" : ""
+                        }`}
+                      />
                   </motion.button>
                 </Tooltip>
 

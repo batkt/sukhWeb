@@ -190,7 +190,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                 onClick={onClose}
                 className="px-6 py-2.5 rounded-xl  text-theme hover:bg-[color:var(--surface-hover)] transition-colors"
               >
-                Болих
+                Хаах
               </button>
               <button
                 onClick={handleSave}

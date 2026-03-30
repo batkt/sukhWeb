@@ -53,7 +53,7 @@ export default function DeleteConfirmModal({
                   onClick={onClose}
                   className="btn-minimal-ghost px-4 py-2"
                 >
-                  Цуцлах
+                  Хаах
                 </button>
                 <button
                   type="button"

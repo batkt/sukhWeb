@@ -318,7 +318,7 @@ const EditBuildingModal: React.FC<{
             className="px-5 py-2.5"
             disabled={isSaving}
           >
-            Цуцлах
+            Хаах
           </Button>
           <Button
             variant="primary"
@@ -592,7 +592,7 @@ const NewBuildingModal: React.FC<{
             size="sm"
             disabled={isSaving}
           >
-            Цуцлах
+            Хаах
           </Button>
           <Button
             variant="primary"
@@ -2373,7 +2373,7 @@ export default function BarilgiinTokhirgoo() {
                 onClick={() => setDeleteModalOpen(false)}
                 className="btn-minimal"
               >
-                Болих
+                Хаах
               </MButton>
               <MButton
                 color="red"
@@ -2445,7 +2445,7 @@ export default function BarilgiinTokhirgoo() {
                 className="btn-minimal"
                 disabled={isTransferring}
               >
-                Болих
+                Хаах
               </MButton>
               <MButton
                 onClick={handleTransferBuilding}

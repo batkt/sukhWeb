@@ -315,7 +315,7 @@ export default function DateRangeButton({
                   className="px-4 py-2 text-sm text-[color:var(--panel-text)] hover:bg-[color:var(--surface-hover)] rounded-lg transition-colors"
                   style={{ borderRadius: '0.5rem' }}
                 >
-                  Цуцлах
+                  Хаах
                 </button>
                 <button
                   type="button"

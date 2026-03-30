@@ -28,6 +28,7 @@ import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 
 interface Props {
   token: string;
@@ -60,10 +61,9 @@ export default function NevtreltiinTuukh({
 }: Props) {
   const { t } = useTranslation();
 
-  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
-    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
-    dayjs().format("YYYY-MM-DD"),
-  ]);
+  const [dateRange, setDateRange] = useState<[string | null, string | null]>(
+    getDefaultDateRange(),
+  );
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);

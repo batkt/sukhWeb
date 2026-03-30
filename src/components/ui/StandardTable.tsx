@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Table, Spin, Pagination, Tooltip } from "antd";
+import { Table, Spin, Tooltip } from "antd";
 import type { TableColumnsType } from "antd";
 import { cn } from "@/lib/utils";
 import {
@@ -14,6 +14,22 @@ import {
   FileText,
 } from "lucide-react";
 import PageSongokh from "../../../components/selectZagvar/pageSongokh";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Field, FieldLabel } from "@/components/ui/field";
 
 interface Column<T> {
   key: string;
@@ -177,82 +193,73 @@ export function StandardPagination({
   pageSize,
   onChange,
   onPageSizeChange,
-  pageSizeOptions = [50, 100, 500, 1000],
+  pageSizeOptions = [100, 200, 300, 400, 500, 1000],
 }: {
   current: number;
   total: number;
   pageSize: number;
-  onChange: (page: number) => void;
+  onChange: (page: number, pageSize?: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
 }) {
-  const itemRender = (
-    page: number,
-    type: "page" | "prev" | "next" | "jump-prev" | "jump-next",
-    originalElement: React.ReactNode,
-  ) => {
-    if (type === "prev") {
-      return (
-        <button className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-          <ChevronLeft className="w-3 h-3 text-theme/70" />
-        </button>
-      );
-    }
-    if (type === "next") {
-      return (
-        <button className="w-6 h-6 flex items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
-          <ChevronRight className="w-3 h-3 text-theme/70" />
-        </button>
-      );
-    }
-    if (type === "page") {
-      const isActive = page === current;
-      return (
-        <button
-          className={cn(
-            "w-6 h-6 flex items-center justify-center rounded-lg border text-xs transition-all",
-            isActive
-              ? "bg-blue-600 text-white border-blue-600 font-medium shadow-sm"
-              : "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700",
-          )}
-        >
-          {page}
-        </button>
-      );
-    }
-    return originalElement;
-  };
-
   return (
-    <div className="flex flex-row items-center justify-between w-full px-6 py-2 rounded-b-2xl">
-      {/* Total */}
-      <div className="text-[11px] text-theme/60 font-medium whitespace-nowrap">
-        Нийт: {total}
+    <div className="flex flex-row items-center justify-between w-full px-4 py-4 mt-2 gap-4">
+      {/* Page Size & Total */}
+      <div className="flex items-center gap-6">
+        <Field orientation="horizontal" className="items-center">
+          <FieldLabel className="text-sm">Нийт: {total}</FieldLabel>
+        </Field>
+        
+        {onPageSizeChange && (
+          <Field orientation="horizontal" className="items-center">
+            <FieldLabel htmlFor="rows-per-page" className="text-sm">Хуудсанд:</FieldLabel>
+            <Select 
+              value={pageSize.toString()} 
+              onValueChange={(v) => {
+                onPageSizeChange(parseInt(v));
+                onChange(1, parseInt(v));
+              }}
+            >
+              <SelectTrigger id="rows-per-page" className="w-[80px] h-10 rounded-xl">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {pageSizeOptions.map(opt => (
+                  <SelectItem key={opt} value={opt.toString()}>
+                    {opt}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        )}
       </div>
 
-      {/* Page Size + Pagination Buttons */}
-      <div className="flex items-center gap-2">
-        {onPageSizeChange && (
-          <PageSongokh
-            value={pageSize}
-            onChange={(v) => {
-              onPageSizeChange(v);
-              onChange(1);
-            }}
-            options={pageSizeOptions}
-            suffix="/ хуудас"
-            className="!py-0 !h-6 !px-2 !rounded-lg !shadow-none !border-slate-200 dark:!border-slate-700"
-          />
-        )}
-        <Pagination
-          current={current}
-          total={total}
-          pageSize={pageSize}
-          onChange={onChange}
-          itemRender={itemRender}
-          showSizeChanger={false}
-        />
-      </div>
+      {/* Pagination Controls */}
+      <Pagination className="mx-0 w-auto">
+        <PaginationContent className="gap-2">
+          <PaginationItem>
+            <PaginationPrevious 
+              onClick={() => current > 1 && onChange(current - 1, pageSize)}
+              className={cn("cursor-pointer", current <= 1 && "pointer-events-none opacity-50")}
+            />
+          </PaginationItem>
+          
+          {/* Simple Page Indicator */}
+          <PaginationItem>
+             <div className="flex items-center gap-1 px-4 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-bold text-emerald-500 shadow-sm">
+               {current} / {Math.max(1, Math.ceil(total / pageSize))}
+             </div>
+          </PaginationItem>
+
+          <PaginationItem>
+            <PaginationNext 
+              onClick={() => current < Math.ceil(total / pageSize) && onChange(current + 1, pageSize)}
+              className={cn("cursor-pointer", current >= Math.ceil(total / pageSize) && "pointer-events-none opacity-50")}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 }

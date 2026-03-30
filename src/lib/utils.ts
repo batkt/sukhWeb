@@ -95,3 +95,22 @@ export function canPayLike(item: PaymentLike | undefined | null): boolean {
   // Mirrors backend virtual: can pay unless already paid
   return getPaymentStatusLabel(item) !== "Төлсөн";
 }
+/**
+ * Returns the current month's start and end dates as [YYYY-MM-DD, YYYY-MM-DD]
+ */
+export function getDefaultDateRange(): [string, string] {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  const start = new Date(y, m, 1);
+  const end = new Date(y, m + 1, 0);
+
+  const f = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  return [f(start), f(end)];
+}

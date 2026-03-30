@@ -12,6 +12,7 @@ import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr";
 import Aos from "aos";
+import { StandardPagination } from "@/components/ui/StandardTable";
 
 interface BlogReaction {
   emoji: string;
@@ -51,6 +52,10 @@ export default function BlogNiitlelPage() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [attachPreviewUrls, setAttachPreviewUrls] = useState<string[]>([]);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(100);
 
   const { data: blogData, mutate: revalidateBlogs, isValidating } = useSWR(
     token && baiguullagiinId
@@ -206,88 +211,91 @@ export default function BlogNiitlelPage() {
             <Loader2 className="w-8 h-8 text-theme animate-spin" />
             <span className="text-sm text-slate-500">Уншиж байна...</span>
           </div>
-        ) : filteredBlogs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl neu-panel flex items-center justify-center mb-4">
-              <MessageSquare className="w-8 h-8 text-slate-400" />
-            </div>
-            <h3 className="text-base  text-slate-700 dark:text-slate-200">Нийтлэл олдсонгүй</h3>
-            <p className="text-sm text-slate-500 max-w-[280px] mt-1">Одоогоор нийтлэл байхгүй байна. "Нэмэх" товчийг дарж шинээр нэмнэ үү.</p>
-          </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-            <AnimatePresence>
-              {filteredBlogs.map((blog) => (
-                <motion.div
-                  key={blog._id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                >
-                  <Card
-                    hoverable
-                    className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
-                    cover={
-                      blog.images && blog.images.length > 0 ? (
-                        <div className="h-48 overflow-hidden relative">
-                          <img
-                            src={blog.images[0]}
-                            alt={blog.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                      ) : (
-                        <div className="h-48 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                          <ImagePlus className="w-8 h-8 text-slate-300" />
-                        </div>
-                      )
-                    }
-                    actions={[
-                      <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
-                        <Edit2 size={16} />
-                      </button>,
-                      <Popconfirm
-                        key="delete"
-                        title="Нийтлэлийг устгах уу?"
-                        onConfirm={() => handleDelete(blog._id)}
-                        okText="Тийм"
-                        cancelText="Үгүй"
-                        placement="topRight"
-                      >
-                        <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
-                          <Trash2 size={16} />
-                        </button>
-                      </Popconfirm>
-                    ]}
+          <div className="flex flex-col h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
+              <AnimatePresence>
+                {filteredBlogs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((blog) => (
+                  <motion.div
+                    key={blog._id}
+                    layout
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
                   >
-                    <div className="flex flex-col h-full">
-                      <h3 className="text-base  line-clamp-1 mb-2 text-theme">{blog.title}</h3>
-                      <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">{blog.content}</p>
-                      
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex -space-x-1">
-                          {(blog.reactions || []).slice(0, 3).map((r, i) => (
-                            <span key={i} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-xs border border-white dark:border-slate-900">
-                              {r.emoji}
-                            </span>
-                          ))}
-                          {blog.reactions && blog.reactions.length > 0 && (
-                            <span className="text-[10px] text-slate-400 ml-2 flex items-center">
-                              {blog.reactions.reduce((acc, r) => acc + r.count, 0)} reactions
-                            </span>
-                          )}
+                    <Card
+                      hoverable
+                      className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
+                      cover={
+                        blog.images && blog.images.length > 0 ? (
+                          <div className="h-48 overflow-hidden relative">
+                            <img
+                              src={blog.images[0]}
+                              alt={blog.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        ) : (
+                          <div className="h-48 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                            <ImagePlus className="w-8 h-8 text-slate-300" />
+                          </div>
+                        )
+                      }
+                      actions={[
+                        <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
+                          <Edit2 size={16} />
+                        </button>,
+                        <Popconfirm
+                          key="delete"
+                          title="Нийтлэлийг устгах уу?"
+                          onConfirm={() => handleDelete(blog._id)}
+                          okText="Тийм"
+                          cancelText="Үгүй"
+                          placement="topRight"
+                        >
+                          <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </Popconfirm>
+                      ]}
+                    >
+                      <div className="flex flex-col h-full">
+                        <h3 className="text-base  line-clamp-1 mb-2 text-theme">{blog.title}</h3>
+                        <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">{blog.content}</p>
+                        
+                        <div className="flex items-center justify-between mt-auto">
+                          <div className="flex -space-x-1">
+                            {(blog.reactions || []).slice(0, 3).map((r, i) => (
+                              <span key={i} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-xs border border-white dark:border-slate-900">
+                                {r.emoji}
+                              </span>
+                            ))}
+                            {blog.reactions && blog.reactions.length > 0 && (
+                              <span className="text-[10px] text-slate-400 ml-2 flex items-center">
+                                {blog.reactions.reduce((acc, r) => acc + r.count, 0)} reactions
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-slate-400">
+                            {new Date(blog.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(blog.createdAt).toLocaleDateString()}
-                        </span>
                       </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <StandardPagination
+              current={currentPage}
+              total={filteredBlogs.length}
+              pageSize={pageSize}
+              onChange={(p) => setCurrentPage(p)}
+              onPageSizeChange={(s) => setPageSize(s)}
+              pageSizeOptions={[100, 200, 300, 400, 500, 1000]}
+            />
           </div>
         )}
       </div>
@@ -298,7 +306,7 @@ export default function BlogNiitlelPage() {
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         footer={[
-          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Цуцлах</Button>,
+          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Хаах</Button>,
           <Button key="save" type="primary" loading={loading} onClick={handleSave} className="rounded-lg h-10 bg-theme">Хадгалах</Button>
         ]}
         width={600}

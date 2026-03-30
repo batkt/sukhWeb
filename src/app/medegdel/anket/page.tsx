@@ -21,6 +21,7 @@ import {
 import Button from "@/components/ui/Button";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { getDefaultDateRange } from "@/lib/utils";
 import {
   CloseCircleOutlined,
   DeleteOutlined,
@@ -378,10 +379,14 @@ function AnketiinZagvar({
 
 export default function Page() {
   const { t } = useTranslation();
-  const [ognoo, setOgnoo] = useState<[Date | null, Date | null]>([
-    dayjs(new Date()).subtract(1, "month").toDate(),
-    new Date(),
-  ]);
+  const [ognoo, setOgnoo] = useState<[Date | null, Date | null]>(() => {
+    const range = getDefaultDateRange();
+    if (!range) return [null, null];
+    return [
+      range[0] ? new Date(range[0]) : null,
+      range[1] ? new Date(range[1]) : null,
+    ];
+  });
   const [data, setData] = useState<Record<string, unknown> | undefined>(
     undefined
   );

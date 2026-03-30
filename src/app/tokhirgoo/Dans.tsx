@@ -63,56 +63,50 @@ function DansTile({ data, onEdit, onDelete, t }: DansTileProps) {
             >
               <Popover.Target>
                 <Tooltip label={t("Устгах")} withArrow>
-                  <Button
-                    onClick={() => setDeleteOpened(true)}
-                    variant="primary"
-                    className="flex h-9 w-9 items-center justify-center text-white transition-all duration-200 !rounded-xl"
-                    style={{ borderRadius: '0.75rem', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
-                    aria-label={t("Устгах")}
-                  >
-                    ×
-                  </Button>
-                </Tooltip>
-              </Popover.Target>
-              <Popover.Dropdown>
-                <div className="text-sm text-theme dark:text-white">
-                  <p className="mb-3">{data.dugaar} данс устгах уу?</p>
-                  <div className="flex gap-2 justify-end">
-                    <Button
-                      variant="secondary"
-                      className="px-3 py-1.5"
-                      style={{ borderRadius: '0.5rem' }}
-                      onClick={() => setDeleteOpened(false)}
-                    >
-                      {t("Болих")}
-                    </Button>
-                    <Button
-                      variant="primary"
-                      className="px-3 py-1.5"
-                      style={{ borderRadius: '0.5rem', backgroundColor: '#ef4444', borderColor: '#ef4444' }}
-                      onClick={() => {
-                        onDelete(data._id);
-                        setDeleteOpened(false);
-                      }}
-                    >
-                      {t("Устгах")}
-                    </Button>
-                  </div>
-                </div>
-              </Popover.Dropdown>
-            </Popover>
-
-            <Tooltip label={t("Засах")} withArrow>
-              <Button
-                variant="warning"
-                className="flex h-9 w-9 items-center justify-center text-white transition-all duration-200 !rounded-xl"
-                style={{ borderRadius: '0.75rem' }}
-                onClick={() => onEdit(data)}
-                aria-label={t("Засах")}
-              >
-                ✎
-              </Button>
+                   <button
+                     onClick={() => setDeleteOpened(true)}
+                     className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 hover:bg-rose-600 hover:text-white transition-all duration-200"
+                     aria-label={t("Устгах")}
+                   >
+                     <span className="text-lg leading-none">×</span>
+                   </button>
             </Tooltip>
+          </Popover.Target>
+          <Popover.Dropdown className="modal-surface border-[color:var(--surface-border)]">
+            <div className="text-sm text-theme dark:text-white">
+              <p className="mb-3">{data.dugaar} данс устгах уу?</p>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setDeleteOpened(false)}
+                >
+                  {t("Хаах")}
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => {
+                    onDelete(data._id);
+                    setDeleteOpened(false);
+                  }}
+                >
+                  {t("Устгах")}
+                </Button>
+              </div>
+            </div>
+          </Popover.Dropdown>
+        </Popover>
+
+        <Tooltip label={t("Засах")} withArrow>
+          <button
+            onClick={() => onEdit(data)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-200"
+            aria-label={t("Засах")}
+          >
+            <span className="text-sm">✎</span>
+          </button>
+        </Tooltip>
           </div>
         </div>
       </div>
@@ -402,9 +396,8 @@ function Dans() {
                 />
               </div>
 
-              <div className="flex justify-end gap-2 mt-2">
+          <div className="flex justify-end gap-2 mt-2">
                 <Button
-                  className="btn-minimal btn-cancel"
                   onClick={() => {
                     setModalOpen(false);
                     setEditing(null);
@@ -412,9 +405,14 @@ function Dans() {
                   variant="secondary"
                   size="sm"
                 >
-                  {t("Болих")}
+                  {t("Хаах")}
                 </Button>
-                <Button variant="primary" className="btn-minimal btn-save" size="sm" onClick={saveDans}>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveDans}
+                  isLoading={false}
+                >
                   {t("Хадгалах")}
                 </Button>
               </div>

@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import moment from "moment";
+import { getDefaultDateRange } from "@/lib/utils";
 import useSWR from "swr";
 import axios from "axios";
 import uilchilgee, { socket as getSocket, aldaaBarigch } from "@/lib/uilchilgee";
@@ -118,24 +119,17 @@ export default function Camera() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [ebarimtResult, setEbarimtResult] = useState<any>(null);
 
-  const toISODate = (d: Date) => d.toISOString().slice(0, 10);
-  const today = useMemo(() => new Date(), []);
-  const defaultEnd = useMemo(() => toISODate(today), [today]);
-  const defaultStart = useMemo(() => {
-    const d = new Date(today);
-    d.setMonth(d.getMonth() - 1);
-    return toISODate(d);
-  }, [today]);
-
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >([defaultStart, defaultEnd]);
+  >(getDefaultDateRange);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
-    const end = (dateRange?.[1] as string) || defaultEnd;
-    const start = (dateRange?.[0] as string) || defaultStart;
-    return { start, end };
-  }, [dateRange, defaultEnd, defaultStart]);
+    const range = dateRange || getDefaultDateRange();
+    return { 
+      start: range[0] || "", 
+      end: range[1] || "" 
+    };
+  }, [dateRange]);
 
   const shouldFetch = !!token && !!ajiltan?.baiguullagiinId;
 

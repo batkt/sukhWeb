@@ -14,6 +14,13 @@ import { getErrorMessage } from "@/lib/uilchilgee";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { useBuilding } from "@/context/BuildingContext";
 import matchesSearch from "@/tools/function/matchesSearch";
+import {
+  getPaymentStatusLabel,
+  isPaidLike,
+  isUnpaidLike,
+  isOverdueLike,
+  getDefaultDateRange,
+} from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import TulburLayout from "../TulburLayout";
 import { DansKhuulgaTable, DansKhuulgaItem } from "./DansKhuulgaTable";
@@ -55,7 +62,8 @@ export default function DansniiKhuulga() {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const todayStr = new Date().toISOString().split("T")[0];
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(undefined);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] =
+    useState<DateRangeValue>(getDefaultDateRange);
   const [selectedDansId, setSelectedDansId] = useState<string | undefined>(
     undefined,
   );

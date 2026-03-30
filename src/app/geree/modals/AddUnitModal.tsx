@@ -109,7 +109,7 @@ export default function AddUnitModal({
                   variant="secondary"
                   className="px-6"
                 >
-                  Болих
+                  Хаах
                 </Button>
                 <Button
                   onClick={handleSubmit}

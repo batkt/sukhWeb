@@ -24,6 +24,7 @@ import {
   Switch,
 } from "antd";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { MonthPickerInput } from "@/components/ui/MonthPickerInput";
 import type { TableColumnsType } from "antd";
@@ -69,10 +70,10 @@ interface KhungulultData {
 }
 
 const TulburTootsoo: React.FC = () => {
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<[Date | null, Date | null]>([
-    new Date(),
-    new Date(),
-  ]);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<[Date | null, Date | null]>(() => {
+    const [start, end] = getDefaultDateRange();
+    return [new Date(start), new Date(end)];
+  });
   const formRef = useRef<any>(null);
   const [songogdsonGereenuud, setSongogdsonGereenuud] = useState<GereeData[]>(
     [],

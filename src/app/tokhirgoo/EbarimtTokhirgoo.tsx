@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import useSWR from "swr";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import Button from "@/components/ui/Button";
+import { getDefaultDateRange } from "@/lib/utils";
 import { useAuth } from "@/lib/useAuth";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
@@ -267,7 +268,7 @@ export default function EbarimtTokhirgoo() {
   const { showSpinner, hideSpinner } = useSpinner();
 
   // Date range like guilgeeTuukh page
-  const [ognoo, setOgnoo] = useState<DateRangeValue>(undefined);
+  const [ognoo, setOgnoo] = useState<DateRangeValue>(getDefaultDateRange);
   const [ebAutoSend, setEbAutoSend] = useState<boolean>(false);
   const [ebNuat, setEbNuat] = useState<boolean>(false);
   const [ebAshiglakh, setEbAshiglakh] = useState<boolean>(false);

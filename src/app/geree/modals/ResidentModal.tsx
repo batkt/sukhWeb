@@ -751,7 +751,7 @@ export default function ResidentModal({
                     onClick={onClose}
                     className="ant-btn ant-btn-default min-w-[80px] text-sm py-2 px-4 rounded-lg"
                   >
-                    Цуцлах
+                    Хаах
                   </button>
                   <button
                     type="submit"

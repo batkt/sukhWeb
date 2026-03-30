@@ -11,6 +11,7 @@ import {
   isPaidLike,
   isUnpaidLike,
   isOverdueLike,
+  getDefaultDateRange,
 } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
@@ -62,17 +63,9 @@ export default function Khynalt() {
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const toISODate = (d: Date) => d.toISOString().slice(0, 10);
-  const today = useMemo(() => new Date(), []);
-  const defaultEnd = useMemo(() => toISODate(today), [today]);
-  const defaultStart = useMemo(() => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - 30);
-    return toISODate(d);
-  }, [today]);
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
-  >(undefined);
+  >(getDefaultDateRange);
 
   useEffect(() => setMounted(true), []);
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
@@ -172,17 +165,12 @@ export default function Khynalt() {
   }, [contracts]);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
-    const end = (dateRange?.[1] as string) || defaultEnd;
-    const start =
-      (dateRange?.[0] as string) ||
-      (() => {
-        const e = new Date(end + "T00:00:00Z");
-        const s = new Date(e);
-        s.setDate(s.getDate() - 30);
-        return toISODate(s);
-      })();
-    return { start, end };
-  }, [dateRange, defaultEnd]);
+    const range = dateRange || getDefaultDateRange();
+    return { 
+      start: range[0] || "", 
+      end: range[1] || "" 
+    };
+  }, [dateRange]);
 
   const { labels: orderedLabels, buildLabel } = useMemo(() => {
     const start = rangeStart;
@@ -952,7 +940,7 @@ export default function Khynalt() {
       show: showContracts,
     },
     {
-      title: "Орлого",
+      title: "Орлого (Гүйцэтгэл)",
       value: formatCurrency(footerTotals.totalPaid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
@@ -961,7 +949,7 @@ export default function Khynalt() {
       show: showTulbur,
     },
     {
-      title: "Үлдэгдэл",
+      title: "Үлдэгдэл (Авлага)",
       value: formatCurrency(footerTotals.totalUldegdel),
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
@@ -1076,7 +1064,7 @@ export default function Khynalt() {
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
-                  Орлогын тайлан
+                  Орлого
                 </h3>
               </div>
               <div className="flex-1 min-h-0">
@@ -1119,7 +1107,7 @@ export default function Khynalt() {
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
-                  Хуримтлагдсан авлага
+                  Авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
                   {huurimtlagdsanAvlaga.count} Оршин суугч / {formatCurrency(huurimtlagdsanAvlaga.total)}

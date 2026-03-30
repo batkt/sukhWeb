@@ -911,7 +911,7 @@ export default function SanalKhuselt() {
                               onClick={() => { setPendingStatusChange(null); setTailbarText(""); }}
                               className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs  rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
                             >
-                              {t("Болих")}
+                              {t("Хаах")}
                             </button>
                           </div>
                         </motion.div>

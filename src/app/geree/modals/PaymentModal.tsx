@@ -131,7 +131,7 @@ export default function PaymentModal({
                   className="px-4 py-2 text-sm  bg-red-500 hover:bg-red-600 text-slate-200 hover:text-slate-800 rounded-full transition-colors disabled:opacity-50"
                   disabled={isProcessingPayment}
                 >
-                  Цуцлах
+                  Хаах
                 </button>
                 <button
                   type="button"

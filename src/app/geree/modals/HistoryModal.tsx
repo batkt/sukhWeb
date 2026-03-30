@@ -1482,7 +1482,7 @@ export default function HistoryModal({
                         onClick={handleDeleteCancel}
                         className="ant-btn ant-btn-default flex-1"
                       >
-                        Болих
+                        Хаах
                       </button>
                       <button
                         onClick={handleDeleteConfirm}

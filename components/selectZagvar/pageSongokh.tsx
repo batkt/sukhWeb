@@ -94,7 +94,7 @@ export default function PageSongokh({
               setOpen(false);
             }}
             className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${
-              active ? "bg-blue-500 text-white" : "hover:bg-slate-100 dark:hover:bg-slate-800 text-theme"
+              active ? "bg-emerald-500 text-white font-bold" : "hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-theme"
             }`}
           >
             {opt} {suffix}
