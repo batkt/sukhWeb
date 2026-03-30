@@ -168,6 +168,8 @@ export default function OrlogoAvlagaPage() {
   const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
   const [expandedLoading, setExpandedLoading] = useState(false);
   const [expandedError, setExpandedError] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const footerTotals = useTulburFooterTotals(
     token,
     ajiltan?.baiguullagiinId ?? null,
@@ -254,7 +256,7 @@ export default function OrlogoAvlagaPage() {
     token || undefined,
     baiguullagiinId || undefined,
     selectedBuildingId || undefined,
-);
+  );
   const { orshinSuugchGaralt } = useOrshinSuugchJagsaalt(
     token || "",
     baiguullagiinId || "",
@@ -433,9 +435,9 @@ export default function OrlogoAvlagaPage() {
         return;
       paidRequestedRef.current.add(queryKey);
       uilchilgee(token)
-        .post("/tulsunSummary", { 
-          baiguullagiinId, 
-          ...(gid ? { gereeniiId: gid } : { orshinSuugchId: rid }) 
+        .post("/tulsunSummary", {
+          baiguullagiinId,
+          ...(gid ? { gereeniiId: gid } : { orshinSuugchId: rid }),
         })
         .then((resp) => {
           const total =
@@ -550,11 +552,14 @@ export default function OrlogoAvlagaPage() {
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       const name = `${it?._ovog || ""} ${it?._ner || ""}`.toLowerCase();
-      const gd = String(it?._gereeDugaar || it?.gereeniiDugaar || "").toLowerCase();
+      const gd = String(
+        it?._gereeDugaar || it?.gereeniiDugaar || "",
+      ).toLowerCase();
       const utas = Array.isArray(it?._utas || it?.utas)
         ? String((it?._utas || it?.utas)[0] || "").toLowerCase()
         : String(it?._utas || it?.utas || "").toLowerCase();
-      if (!name.includes(term) && !gd.includes(term) && !utas.includes(term)) return false;
+      if (!name.includes(term) && !gd.includes(term) && !utas.includes(term))
+        return false;
     }
     return true;
   };
@@ -575,25 +580,26 @@ export default function OrlogoAvlagaPage() {
 
   const displayList = activeTab === "tulult" ? paidList : avlagaList;
   const totalOrlogo = useMemo(
-    () => deduplicatedResidents.filter(matchesFilters).reduce((s, it) => s + getPaid(it), 0),
+    () =>
+      deduplicatedResidents
+        .filter(matchesFilters)
+        .reduce((s, it) => s + getPaid(it), 0),
     [deduplicatedResidents, paidByGereeId, searchTerm, debouncedFilters],
   );
 
   const totalUldegdel = useMemo(
-    () => deduplicatedResidents.filter(matchesFilters).reduce((s, it) => s + getUldegdel(it), 0),
+    () =>
+      deduplicatedResidents
+        .filter(matchesFilters)
+        .reduce((s, it) => s + getUldegdel(it), 0),
     [deduplicatedResidents, uldegdelByGereeId, searchTerm, debouncedFilters],
   );
   const handleRowClick = async (it: any) => {
-    const gid = getGereeId(it);
-    const gd = it?._gereeDugaar || it?.gereeniiDugaar || gid;
-    if (expandedRow === gd) {
-      setExpandedRow(null);
-      setExpandedLedger([]);
-      return;
-    }
-    setExpandedRow(gd);
+    setSelectedRecord(it);
+    setModalOpen(true);
     setExpandedLedger([]);
     setExpandedError(null);
+    const gid = getGereeId(it);
     if (!gid || !baiguullagiinId) return;
     setExpandedLoading(true);
     try {
@@ -620,6 +626,13 @@ export default function OrlogoAvlagaPage() {
     } finally {
       setExpandedLoading(false);
     }
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedRecord(null);
+    setExpandedLedger([]);
+    setExpandedError(null);
   };
 
   const exportToExcel = async () => {
@@ -803,7 +816,6 @@ export default function OrlogoAvlagaPage() {
       <div className="flex flex-wrap gap-4 items-center no-print mb-4">
         <div className="rounded-xl h-[40px] w-full sm:w-[320px] flex items-center">
           <div className="flex items-center gap-2 w-full min-w-0">
-           
             <StandardDatePicker
               isRange={true}
               value={dateRange}
@@ -823,7 +835,10 @@ export default function OrlogoAvlagaPage() {
           { key: "toot", label: "Тоот", placeholder: "Тоот" },
           { key: "davkhar", label: "Давхар", placeholder: "Давхар" },
         ].map(({ key, label, placeholder }) => (
-          <div key={key} className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center">
+          <div
+            key={key}
+            className="rounded-xl h-[40px] w-full sm:w-[280px] flex items-center"
+          >
             <div className="flex items-center gap-2 w-full min-w-0">
               <label className="text-sm text-theme/80 shrink-0 whitespace-nowrap w-[90px] text-right pr-2">
                 {label}
@@ -842,10 +857,6 @@ export default function OrlogoAvlagaPage() {
         ))}
       </div>
 
-
-
-
-
       <div className="overflow-hidden rounded-2xl w-full">
         <div className="rounded-3xl p-3 allow-overflow">
           <OrlogoAvlagaTable
@@ -854,7 +865,6 @@ export default function OrlogoAvlagaPage() {
             page={currentPage}
             pageSize={pageSize}
             activeTab={activeTab}
-            expandedRow={expandedRow}
             expandedLedger={expandedLedger}
             expandedLoading={expandedLoading}
             expandedError={expandedError}
@@ -862,6 +872,9 @@ export default function OrlogoAvlagaPage() {
             getUldegdel={getUldegdel}
             onRowClick={handleRowClick}
             getGereeId={getGereeId}
+            modalOpen={modalOpen}
+            onModalClose={handleModalClose}
+            selectedRecord={selectedRecord}
           />
         </div>
       </div>

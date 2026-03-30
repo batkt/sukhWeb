@@ -31,7 +31,11 @@ import {
 /** Normalize zurag/duu to API path "baiguullagiinId/filename". Handles full server paths (e.g. /root/sukhBack/public/medegdel/.../file.jpg) and relative paths. */
 function normalizeMedegdelAssetPath(p: string | null | undefined): string {
   if (p == null || !p.trim()) return "";
-  const s = p.trim().replace(/^\/+/, "").replace(/^public\/medegdel\/?/i, "").replace(/^public\/?/i, "");
+  const s = p
+    .trim()
+    .replace(/^\/+/, "")
+    .replace(/^public\/medegdel\/?/i, "")
+    .replace(/^public\/?/i, "");
   const parts = s.split("/").filter(Boolean);
   if (parts.length >= 2) return parts.slice(-2).join("/");
   if (parts.length === 1) return parts[0];
@@ -70,7 +74,7 @@ export default function SanalKhuselt() {
 
   const [medegdelList, setMedegdelList] = useState<MedegdelItem[]>([]);
   const [selectedMedegdel, setSelectedMedegdel] = useState<MedegdelItem | null>(
-    null
+    null,
   );
   const [loading, setLoading] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<{
@@ -107,17 +111,31 @@ export default function SanalKhuselt() {
 
   const fetchThread = async (rootId: string) => {
     if (!token || !ajiltan?.baiguullagiinId) {
-      console.warn("[sanalKhuselt] fetchThread skip (missing token/baiguullagiinId) rootId=", rootId);
+      console.warn(
+        "[sanalKhuselt] fetchThread skip (missing token/baiguullagiinId) rootId=",
+        rootId,
+      );
       return;
     }
     setThreadLoading(true);
     try {
-      const params: { baiguullagiinId: string; tukhainBaaziinKholbolt?: string } = { baiguullagiinId: ajiltan.baiguullagiinId };
-      if (ajiltan.tukhainBaaziinKholbolt) params.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
-      const res = await uilchilgee(token).get(`/medegdel/thread/${rootId}`, { params });
+      const params: {
+        baiguullagiinId: string;
+        tukhainBaaziinKholbolt?: string;
+      } = { baiguullagiinId: ajiltan.baiguullagiinId };
+      if (ajiltan.tukhainBaaziinKholbolt)
+        params.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
+      const res = await uilchilgee(token).get(`/medegdel/thread/${rootId}`, {
+        params,
+      });
       if (res.data?.data && Array.isArray(res.data.data)) {
         setThreadMessages(res.data.data);
-        console.log("[sanalKhuselt] fetchThread ok rootId=", rootId, "count=", res.data.data.length);
+        console.log(
+          "[sanalKhuselt] fetchThread ok rootId=",
+          rootId,
+          "count=",
+          res.data.data.length,
+        );
       } else {
         setThreadMessages([]);
       }
@@ -134,7 +152,8 @@ export default function SanalKhuselt() {
       setThreadMessages([]);
       return;
     }
-    const rootId = (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id;
+    const rootId =
+      (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id;
     fetchThread(rootId);
   }, [selectedMedegdel?._id]);
 
@@ -155,30 +174,50 @@ export default function SanalKhuselt() {
       if (item.status !== "pending" || item.kharsanEsekh) return;
 
       try {
-        await uilchilgee(token).patch(`/medegdel/${item._id}/kharsanEsekh`, {}, {
-          params: { baiguullagiinId: ajiltan.baiguullagiinId },
-        });
+        await uilchilgee(token).patch(
+          `/medegdel/${item._id}/kharsanEsekh`,
+          {},
+          {
+            params: { baiguullagiinId: ajiltan.baiguullagiinId },
+          },
+        );
         markedSeenRootIds.current.add(rootId);
         // Backend marks root + all replies in thread; update all list rows that belong to this thread
         setMedegdelList((prev) =>
-          prev.map((it) => (String(it.parentId || it._id) === rootId ? { ...it, kharsanEsekh: true } : it))
+          prev.map((it) =>
+            String(it.parentId || it._id) === rootId
+              ? { ...it, kharsanEsekh: true }
+              : it,
+          ),
         );
         setSelectedMedegdel((prev) =>
-          prev && String((prev as MedegdelItem).parentId || prev._id) === rootId ? { ...prev, kharsanEsekh: true } : prev
+          prev && String((prev as MedegdelItem).parentId || prev._id) === rootId
+            ? { ...prev, kharsanEsekh: true }
+            : prev,
         );
         // Update thread messages so "seen" shows without refetch
-        setThreadMessages((prev) => prev.map((m) => ({ ...m, kharsanEsekh: true })));
+        setThreadMessages((prev) =>
+          prev.map((m) => ({ ...m, kharsanEsekh: true })),
+        );
         // Fetch fresh unread count and update cache directly (same params as golContent)
         const countRes = await uilchilgee(token).get("/medegdel/unreadCount", {
-          params: { baiguullagiinId: ajiltan.baiguullagiinId, ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}) },
+          params: {
+            baiguullagiinId: ajiltan.baiguullagiinId,
+            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
+          },
         });
-        const unreadKey = ["/medegdel/unreadCount", token, ajiltan.baiguullagiinId, selectedBuildingId];
+        const unreadKey = [
+          "/medegdel/unreadCount",
+          token,
+          ajiltan.baiguullagiinId,
+          selectedBuildingId,
+        ];
         mutate(unreadKey, countRes.data, { revalidate: false });
         // Revalidate unread list so dropdown shows updated kharsanEsekh
         mutate(
           (k) => Array.isArray(k) && k[0] === "/medegdel/unreadList",
           undefined,
-          { revalidate: true }
+          { revalidate: true },
         );
       } catch {
         // Ignore - don't block UI
@@ -190,9 +229,12 @@ export default function SanalKhuselt() {
 
   const fetchMedegdelData = async (
     baiguullagiinId: string,
-    options?: { keepSelection?: boolean }
+    options?: { keepSelection?: boolean },
   ) => {
-    console.log("[sanalKhuselt] fetchMedegdelData start baiguullagiinId=", baiguullagiinId);
+    console.log(
+      "[sanalKhuselt] fetchMedegdelData start baiguullagiinId=",
+      baiguullagiinId,
+    );
     setLoading(true);
     try {
       const response = await uilchilgee(token || undefined).get("/medegdel", {
@@ -217,16 +259,31 @@ export default function SanalKhuselt() {
         // Sort by last activity (updatedAt) so last replied chat is on top
         filteredData.sort(
           (a: any, b: any) =>
-            new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime()
+            new Date(b.updatedAt || b.createdAt).getTime() -
+            new Date(a.updatedAt || a.createdAt).getTime(),
         );
         setMedegdelList(filteredData);
-        console.log("[sanalKhuselt] fetchMedegdelData ok count=", filteredData.length);
+        console.log(
+          "[sanalKhuselt] fetchMedegdelData ok count=",
+          filteredData.length,
+        );
         const rootIdToKeep = keepSelectionRootIdRef.current;
-        if (options?.keepSelection && (rootIdToKeep != null || selectedMedegdelRef.current)) {
+        if (
+          options?.keepSelection &&
+          (rootIdToKeep != null || selectedMedegdelRef.current)
+        ) {
           // Prefer explicit root we stored (e.g. when socket fired); else use current selection
-          const rootId = rootIdToKeep ?? String(((selectedMedegdelRef.current as MedegdelItem)?.parentId || selectedMedegdelRef.current?._id) ?? "");
+          const rootId =
+            rootIdToKeep ??
+            String(
+              ((selectedMedegdelRef.current as MedegdelItem)?.parentId ||
+                selectedMedegdelRef.current?._id) ??
+                "",
+            );
           keepSelectionRootIdRef.current = null;
-          const fresh = filteredData.find((it: MedegdelItem) => String(it._id) === String(rootId));
+          const fresh = filteredData.find(
+            (it: MedegdelItem) => String(it._id) === String(rootId),
+          );
           if (fresh) setSelectedMedegdel(fresh);
         } else if (filteredData.length > 0) {
           const toSelect = preselectedId
@@ -251,46 +308,95 @@ export default function SanalKhuselt() {
     const event = "baiguullagiin" + ajiltan.baiguullagiinId;
     const bId = ajiltan.baiguullagiinId;
     console.log("[sanalKhuselt] SUBSCRIBE socket event=", event);
-    const handler = (payload: { type?: string; data?: { parentId?: unknown; rootId?: string } }) => {
-      console.log("[sanalKhuselt] RECV socket", event, "payload.type=", payload?.type, "payload=", payload);
+    const handler = (payload: {
+      type?: string;
+      data?: { parentId?: unknown; rootId?: string };
+    }) => {
+      console.log(
+        "[sanalKhuselt] RECV socket",
+        event,
+        "payload.type=",
+        payload?.type,
+        "payload=",
+        payload,
+      );
       // Real-time seen: update list, selection, and thread so "seen" shows without refresh
       if (payload?.type === "medegdelSeen") {
-        const rootId = payload?.data?.rootId != null ? String(payload.data.rootId) : null;
+        const rootId =
+          payload?.data?.rootId != null ? String(payload.data.rootId) : null;
         if (rootId) {
           setMedegdelList((prev) =>
-            prev.map((it) => (String(it._id) === rootId || String(it.parentId) === rootId ? { ...it, kharsanEsekh: true } : it))
+            prev.map((it) =>
+              String(it._id) === rootId || String(it.parentId) === rootId
+                ? { ...it, kharsanEsekh: true }
+                : it,
+            ),
           );
           setSelectedMedegdel((prev) => {
             if (!prev) return prev;
-            const prevRootId = String((prev as MedegdelItem).parentId || prev._id);
-            return prevRootId === rootId ? { ...prev, kharsanEsekh: true } : prev;
+            const prevRootId = String(
+              (prev as MedegdelItem).parentId || prev._id,
+            );
+            return prevRootId === rootId
+              ? { ...prev, kharsanEsekh: true }
+              : prev;
           });
           const sel = selectedMedegdelRef.current;
-          const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
+          const currentRootId = sel
+            ? String((sel as MedegdelItem).parentId || sel._id)
+            : null;
           if (currentRootId === rootId) {
-            setThreadMessages((prev) => prev.map((m) => ({ ...m, kharsanEsekh: true })));
+            setThreadMessages((prev) =>
+              prev.map((m) => ({ ...m, kharsanEsekh: true })),
+            );
           }
-          mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
-          mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList", undefined, { revalidate: true });
+          mutate(
+            (k: unknown) =>
+              Array.isArray(k) && k[0] === "/medegdel/unreadCount",
+            undefined,
+            { revalidate: true },
+          );
+          mutate(
+            (k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadList",
+            undefined,
+            { revalidate: true },
+          );
         }
       }
       // Toast is shown globally from golContent so it appears on any page; here we only refetch and update list/thread
       if (payload?.type === "medegdelNew") {
         fetchMedegdelData(bId);
-        mutate((k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+        mutate(
+          (k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount",
+          undefined,
+          { revalidate: true },
+        );
       }
       if (payload?.type === "medegdelUserReply") {
         const replyData = payload?.data as MedegdelItem | undefined;
-        const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
+        const replyParentId =
+          replyData?.parentId != null ? String(replyData.parentId) : null;
         const sel = selectedMedegdelRef.current;
-        const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
-        const isForOpenThread = replyParentId !== null && currentRootId !== null && replyParentId === currentRootId;
+        const currentRootId = sel
+          ? String((sel as MedegdelItem).parentId || sel._id)
+          : null;
+        const isForOpenThread =
+          replyParentId !== null &&
+          currentRootId !== null &&
+          replyParentId === currentRootId;
         if (isForOpenThread && replyData) {
-          setThreadMessages((prev) => [...prev, { ...replyData, parentId: replyParentId }]);
+          setThreadMessages((prev) => [
+            ...prev,
+            { ...replyData, parentId: replyParentId },
+          ]);
         }
         if (currentRootId) keepSelectionRootIdRef.current = currentRootId;
         fetchMedegdelData(bId, { keepSelection: true });
-        mutate((k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
+        mutate(
+          (k) => Array.isArray(k) && k[0] === "/medegdel/unreadCount",
+          undefined,
+          { revalidate: true },
+        );
       }
       if (payload?.type === "medegdelAdminReply") {
         const replyData = payload?.data as MedegdelItem | undefined;
@@ -298,17 +404,27 @@ export default function SanalKhuselt() {
         if (replyId && replyId === lastSentAdminReplyIdRef.current) {
           lastSentAdminReplyIdRef.current = null;
           const sel = selectedMedegdelRef.current;
-          if (sel) keepSelectionRootIdRef.current = String((sel as MedegdelItem).parentId || sel._id);
+          if (sel)
+            keepSelectionRootIdRef.current = String(
+              (sel as MedegdelItem).parentId || sel._id,
+            );
           fetchMedegdelData(bId, { keepSelection: true });
           return;
         }
-        const replyParentId = replyData?.parentId != null ? String(replyData.parentId) : null;
+        const replyParentId =
+          replyData?.parentId != null ? String(replyData.parentId) : null;
         const sel = selectedMedegdelRef.current;
-        const currentRootId = sel ? String((sel as MedegdelItem).parentId || sel._id) : null;
-        const isForOpenThread = replyParentId !== null && currentRootId !== null && replyParentId === currentRootId;
+        const currentRootId = sel
+          ? String((sel as MedegdelItem).parentId || sel._id)
+          : null;
+        const isForOpenThread =
+          replyParentId !== null &&
+          currentRootId !== null &&
+          replyParentId === currentRootId;
         if (isForOpenThread && replyData) {
           setThreadMessages((prev) => {
-            if (replyId && prev.some((m) => String(m._id) === replyId)) return prev;
+            if (replyId && prev.some((m) => String(m._id) === replyId))
+              return prev;
             return [...prev, { ...replyData, parentId: replyParentId }];
           });
         }
@@ -354,11 +470,18 @@ export default function SanalKhuselt() {
         ctx.drawImage(img, 0, 0, w, h);
         canvas.toBlob(
           (blob) => {
-            if (blob) resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg") || "image.jpg", { type: "image/jpeg" }));
+            if (blob)
+              resolve(
+                new File(
+                  [blob],
+                  file.name.replace(/\.[^.]+$/, ".jpg") || "image.jpg",
+                  { type: "image/jpeg" },
+                ),
+              );
             else resolve(file);
           },
           "image/jpeg",
-          0.82
+          0.82,
         );
       };
       img.onerror = () => {
@@ -373,7 +496,10 @@ export default function SanalKhuselt() {
     const form = new FormData();
     form.append("baiguullagiinId", ajiltan!.baiguullagiinId);
     form.append("file", file);
-    const res = await uilchilgee(token ?? undefined).post<{ success: boolean; path: string }>("/medegdel/uploadChatFile", form, {
+    const res = await uilchilgee(token ?? undefined).post<{
+      success: boolean;
+      path: string;
+    }>("/medegdel/uploadChatFile", form, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     if (!res.data?.path) throw new Error("Upload failed");
@@ -385,10 +511,15 @@ export default function SanalKhuselt() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mr = new MediaRecorder(stream);
       const chunks: BlobPart[] = [];
-      mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      mr.ondataavailable = (e) => {
+        if (e.data.size) chunks.push(e.data);
+      };
       mr.onstop = () => {
         stream.getTracks().forEach((t) => t.stop());
-        if (chunks.length) setReplyVoiceBlob(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
+        if (chunks.length)
+          setReplyVoiceBlob(
+            new Blob(chunks, { type: mr.mimeType || "audio/webm" }),
+          );
       };
       mr.start();
       mediaRecorderRef.current = mr;
@@ -400,14 +531,21 @@ export default function SanalKhuselt() {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
       mediaRecorderRef.current.stop();
       setRecording(false);
     }
   };
 
   const sendAdminReply = async () => {
-    const rootId = selectedMedegdel ? String((selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id) : null;
+    const rootId = selectedMedegdel
+      ? String(
+          (selectedMedegdel as MedegdelItem).parentId || selectedMedegdel._id,
+        )
+      : null;
     const hasText = replyInput.trim().length > 0;
     const hasImage = !!replyImage;
     const hasVoice = !!replyVoiceBlob;
@@ -421,7 +559,8 @@ export default function SanalKhuselt() {
     }
     keepSelectionRootIdRef.current = rootId;
     setReplySending(true);
-    if (typeof window !== "undefined") (window as any).__medegdelSendingReply = true;
+    if (typeof window !== "undefined")
+      (window as any).__medegdelSendingReply = true;
     try {
       let zuragPath: string | undefined;
       let voicePath: string | undefined;
@@ -431,19 +570,32 @@ export default function SanalKhuselt() {
         setReplyImage(null);
       }
       if (replyVoiceBlob) {
-        const voiceFile = new File([replyVoiceBlob], "voice.webm", { type: replyVoiceBlob.type });
+        const voiceFile = new File([replyVoiceBlob], "voice.webm", {
+          type: replyVoiceBlob.type,
+        });
         voicePath = await uploadChatFile(voiceFile);
         setReplyVoiceBlob(null);
       }
-      const body: { parentId: string; message: string; baiguullagiinId: string; tukhainBaaziinKholbolt?: string; zurag?: string; voiceUrl?: string } = {
+      const body: {
+        parentId: string;
+        message: string;
+        baiguullagiinId: string;
+        tukhainBaaziinKholbolt?: string;
+        zurag?: string;
+        voiceUrl?: string;
+      } = {
         parentId: rootId,
         message: replyInput.trim() || "",
         baiguullagiinId: ajiltan.baiguullagiinId,
       };
       if (zuragPath) body.zurag = zuragPath;
       if (voicePath) body.voiceUrl = voicePath;
-      if (ajiltan.tukhainBaaziinKholbolt) body.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
-      const res = await uilchilgee(token).post<{ success: boolean; data: MedegdelItem }>("/medegdel/adminReply", body);
+      if (ajiltan.tukhainBaaziinKholbolt)
+        body.tukhainBaaziinKholbolt = ajiltan.tukhainBaaziinKholbolt;
+      const res = await uilchilgee(token).post<{
+        success: boolean;
+        data: MedegdelItem;
+      }>("/medegdel/adminReply", body);
       setReplyInput("");
       const newReply = res.data?.data;
       if (newReply) {
@@ -451,12 +603,20 @@ export default function SanalKhuselt() {
         if (replyId) {
           lastSentAdminReplyIdRef.current = replyId;
           // So golContent can skip "new message" toast when this client sent the reply
-          if (typeof window !== "undefined") (window as any).__medegdelLastSentReplyId = replyId;
-          setTimeout(() => { if (typeof window !== "undefined") (window as any).__medegdelLastSentReplyId = null; }, 5000);
+          if (typeof window !== "undefined")
+            (window as any).__medegdelLastSentReplyId = replyId;
+          setTimeout(() => {
+            if (typeof window !== "undefined")
+              (window as any).__medegdelLastSentReplyId = null;
+          }, 5000);
         }
-        const item = { ...newReply, parentId: newReply.parentId ? String(newReply.parentId) : rootId };
+        const item = {
+          ...newReply,
+          parentId: newReply.parentId ? String(newReply.parentId) : rootId,
+        };
         setThreadMessages((prev) => {
-          if (replyId && prev.some((m) => String(m._id) === replyId)) return prev;
+          if (replyId && prev.some((m) => String(m._id) === replyId))
+            return prev;
           return [...prev, item];
         });
       }
@@ -464,7 +624,8 @@ export default function SanalKhuselt() {
       console.error("[sanalKhuselt] sendAdminReply error", e);
       notification.error({ message: t("Хариу илгээхэд алдаа гарлаа") });
     } finally {
-      if (typeof window !== "undefined") (window as any).__medegdelSendingReply = false;
+      if (typeof window !== "undefined")
+        (window as any).__medegdelSendingReply = false;
       setReplySending(false);
     }
   };
@@ -523,7 +684,7 @@ export default function SanalKhuselt() {
     try {
       // Find the current item to get its data
       const currentItem = medegdelList.find(
-        (item) => item._id === pendingStatusChange.id
+        (item) => item._id === pendingStatusChange.id,
       );
       if (!currentItem) return;
 
@@ -541,7 +702,7 @@ export default function SanalKhuselt() {
           tailbar: tailbarText.trim() || undefined,
           repliedBy: ajiltan?._id,
           updatedAt: new Date().toISOString(),
-        }
+        },
       );
 
       if (response.data.success) {
@@ -549,20 +710,24 @@ export default function SanalKhuselt() {
           prev.map((item) =>
             item._id === pendingStatusChange.id
               ? { ...item, status: pendingStatusChange.newStatus }
-              : item
-          )
+              : item,
+          ),
         );
         setSelectedMedegdel((prev) =>
           prev
-            ? { ...prev, status: pendingStatusChange.newStatus, tailbar: tailbarText.trim() || prev.tailbar }
-            : null
+            ? {
+                ...prev,
+                status: pendingStatusChange.newStatus,
+                tailbar: tailbarText.trim() || prev.tailbar,
+              }
+            : null,
         );
         setMedegdelList((prev) =>
           prev.map((item) =>
             item._id === pendingStatusChange.id
               ? { ...item, tailbar: tailbarText.trim() || item.tailbar }
-              : item
-          )
+              : item,
+          ),
         );
         notification.success({ message: t("Төлөв амжилттай шинэчлэгдлээ") });
       }
@@ -578,16 +743,32 @@ export default function SanalKhuselt() {
     const t = (turul ?? "").toLowerCase().trim();
     if (t === "sanal" || t === "санал") return "Санал";
     if (t === "gomdol" || t === "гомдол") return "Гомдол";
-    if (t === "app" || t === "мессеж" || t === "mail" || t === "мэдэгдэл" || t === "medegdel") return "Мэдэгдэл";
+    if (
+      t === "app" ||
+      t === "мессеж" ||
+      t === "mail" ||
+      t === "мэдэгдэл" ||
+      t === "medegdel"
+    )
+      return "Мэдэгдэл";
     return turul ?? "";
   };
 
-  const isSanal = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "sanal" || x === "санал"; };
-  const isGomdol = (t: string | undefined) => { const x = (t ?? "").toLowerCase().trim(); return x === "gomdol" || x === "гомдол"; };
-  const rootList = medegdelList.filter((item) => (item.turul ?? "").toLowerCase() !== "user_reply");
+  const isSanal = (t: string | undefined) => {
+    const x = (t ?? "").toLowerCase().trim();
+    return x === "sanal" || x === "санал";
+  };
+  const isGomdol = (t: string | undefined) => {
+    const x = (t ?? "").toLowerCase().trim();
+    return x === "gomdol" || x === "гомдол";
+  };
+  const rootList = medegdelList.filter(
+    (item) => (item.turul ?? "").toLowerCase() !== "user_reply",
+  );
   const dashboardCounts = {
     all: rootList.length,
-    shiidegdsen: rootList.filter((i) => (i.status || "pending") === "done").length,
+    shiidegdsen: rootList.filter((i) => (i.status || "pending") === "done")
+      .length,
     gomdol: rootList.filter((i) => isGomdol(i.turul)).length,
     sanal: rootList.filter((i) => isSanal(i.turul)).length,
   };
@@ -597,11 +778,29 @@ export default function SanalKhuselt() {
     gomdol: filterType === "gomdol" && filterStatus === "all",
     sanal: filterType === "sanal" && filterStatus === "all",
   };
-  const setDashboardFilter = (key: "all" | "shiidegdsen" | "gomdol" | "sanal") => {
-    if (key === "all") { setFilterType("all"); setFilterStatus("all"); return; }
-    if (key === "shiidegdsen") { setFilterStatus("done"); setFilterType("all"); return; }
-    if (key === "gomdol") { setFilterType("gomdol"); setFilterStatus("all"); return; }
-    if (key === "sanal") { setFilterType("sanal"); setFilterStatus("all"); return; }
+  const setDashboardFilter = (
+    key: "all" | "shiidegdsen" | "gomdol" | "sanal",
+  ) => {
+    if (key === "all") {
+      setFilterType("all");
+      setFilterStatus("all");
+      return;
+    }
+    if (key === "shiidegdsen") {
+      setFilterStatus("done");
+      setFilterType("all");
+      return;
+    }
+    if (key === "gomdol") {
+      setFilterType("gomdol");
+      setFilterStatus("all");
+      return;
+    }
+    if (key === "sanal") {
+      setFilterType("sanal");
+      setFilterStatus("all");
+      return;
+    }
   };
 
   const filteredList = medegdelList.filter((item) => {
@@ -609,18 +808,22 @@ export default function SanalKhuselt() {
     const type = item.turul?.toLowerCase() || "";
     if (type === "user_reply") return false;
 
-    const matchesSearch = item.title?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+    const matchesSearch = item.title
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
     // Type Filter
-    const matchesType = filterType === "all" 
-      ? true 
-      : filterType === "sanal" 
-        ? type.includes("sanal") || type.includes("санал")
-        : type.includes("gomdol") || type.includes("гомдол");
+    const matchesType =
+      filterType === "all"
+        ? true
+        : filterType === "sanal"
+          ? type.includes("sanal") || type.includes("санал")
+          : type.includes("gomdol") || type.includes("гомдол");
 
     // Status Filter
     const status = item.status || "pending";
-    const matchesStatus = filterStatus === "all" ? true : status === filterStatus;
+    const matchesStatus =
+      filterStatus === "all" ? true : status === filterStatus;
 
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -630,7 +833,7 @@ export default function SanalKhuselt() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`flex items-center justify-between shrink-0 ${showDetail ? 'hidden md:flex' : 'flex'}`}
+        className={`flex items-center justify-between shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
       >
         <div>
           <h1 className="text-2xl  text-theme">{t("Санал хүсэлт")}</h1>
@@ -646,7 +849,7 @@ export default function SanalKhuselt() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className={`w-full md:w-[380px] lg:w-[420px] flex-col gap-4 shrink-0 ${showDetail ? 'hidden md:flex' : 'flex'}`}
+          className={`w-full md:w-[380px] lg:w-[420px] flex-col gap-4 shrink-0 ${showDetail ? "hidden md:flex" : "flex"}`}
         >
           {/* Dashboard: counts, click to filter list */}
           <div className="grid grid-cols-4 gap-2 shrink-0">
@@ -702,40 +905,48 @@ export default function SanalKhuselt() {
 
           {/* Search and Filters */}
           <div className="flex flex-col gap-3">
-             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme/50" />
-                <input
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme/50" />
+              <input
                 type="text"
                 placeholder={t("Хайх...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm transition-all"
-                />
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
-                 <Select
-                    value={filterType}
-                    onChange={setFilterType}
-                    className="w-full"
-                    classNames={{ popup: { root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl" } }}
-                    options={[
-                      { value: "all", label: t("Бүгд") },
-                      { value: "sanal", label: t("Санал") },                                      
-                      { value: "gomdol", label: t("Гомдол") },
-                    ]}
-                 />
-                 <Select
-                    value={filterStatus}
-                    onChange={setFilterStatus}
-                    className="w-full"
-                    classNames={{ popup: { root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl" } }}
-                    options={[
-                      { value: "all", label: t("Бүх төлөв") },
-                      { value: "pending", label: t("Хүлээгдэж байна") },
-                      { value: "done", label: t("Шийдэгдсэн") },
-                      { value: "rejected", label: t("Татгалзсан") },
-                    ]}
-                 />
+              <Select
+                value={filterType}
+                onChange={setFilterType}
+                className="w-full"
+                classNames={{
+                  popup: {
+                    root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
+                  },
+                }}
+                options={[
+                  { value: "all", label: t("Бүгд") },
+                  { value: "sanal", label: t("Санал") },
+                  { value: "gomdol", label: t("Гомдол") },
+                ]}
+              />
+              <Select
+                value={filterStatus}
+                onChange={setFilterStatus}
+                className="w-full"
+                classNames={{
+                  popup: {
+                    root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
+                  },
+                }}
+                options={[
+                  { value: "all", label: t("Бүх төлөв") },
+                  { value: "pending", label: t("Хүлээгдэж байна") },
+                  { value: "done", label: t("Шийдэгдсэн") },
+                  { value: "rejected", label: t("Татгалзсан") },
+                ]}
+              />
             </div>
           </div>
 
@@ -757,14 +968,14 @@ export default function SanalKhuselt() {
               filteredList.map((item) => {
                 const status = getStatusInfo(item.status);
                 const isSelected = selectedMedegdel?._id === item._id;
-                
+
                 return (
                   <motion.div
                     key={item._id}
                     layoutId={item._id}
                     onClick={() => {
-                        setSelectedMedegdel(item);
-                        setShowDetail(true);
+                      setSelectedMedegdel(item);
+                      setShowDetail(true);
                     }}
                     className={`group relative p-4 rounded-2xl border transition-all cursor-pointer ${
                       isSelected
@@ -776,7 +987,9 @@ export default function SanalKhuselt() {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`inline-flex px-2 py-0.5 rounded-2xl text-[10px]  tracking-wide border ${
-                            (item.turul?.toLowerCase() || "").includes("sanal") || (item.turul ?? "").includes("санал")
+                            (item.turul?.toLowerCase() || "").includes(
+                              "sanal",
+                            ) || (item.turul ?? "").includes("санал")
                               ? "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/50"
                               : "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/50"
                           }`}
@@ -793,17 +1006,19 @@ export default function SanalKhuselt() {
                         {moment(item.createdAt).fromNow()}
                       </span>
                     </div>
-                    <h3 className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-blue-700 dark:text-blue-300" : "text-theme"}`}>
+                    <h3
+                      className={`text-sm  mb-1 line-clamp-1 ${isSelected ? "text-blue-700 dark:text-blue-300" : "text-theme"}`}
+                    >
                       {item.title}
                     </h3>
                     <p className="text-xs text-theme/60 line-clamp-2 leading-relaxed">
                       {item.message}
                     </p>
-                    
+
                     {isSelected && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <ChevronRight className="w-4 h-4 text-blue-500" />
-                        </div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ChevronRight className="w-4 h-4 text-blue-500" />
+                      </div>
                     )}
                   </motion.div>
                 );
@@ -817,22 +1032,24 @@ export default function SanalKhuselt() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className={`flex-1 bg-transparent border rounded-3xl shadow-sm overflow-hidden flex flex-col ${showDetail ? 'fixed inset-0 z-50 m-0 rounded-none md:static md:z-auto md:m-0 md:rounded-3xl' : 'hidden md:flex'}`}
+          className={`flex-1 bg-transparent border-[color:var(--surface-border)] border rounded-3xl shadow-sm overflow-hidden flex flex-col ${showDetail ? "fixed inset-0 z-50 m-0 rounded-none md:static md:z-auto md:m-0 md:rounded-3xl" : "hidden md:flex"}`}
         >
           {selectedMedegdel ? (
             <>
               {/* Detail Header */}
               <div className="p-4 md:p-6 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] md:bg-theme/5 backdrop-blur-sm flex flex-col gap-4">
                 {/* Mobile Back Button */}
-                 <div className="flex md:hidden items-center gap-2 mb-1">
-                     <button 
-                        onClick={() => setShowDetail(false)}
-                        className="p-2 -ml-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors active:scale-95"
-                     >
-                        <ArrowLeft className="w-6 h-6 text-theme" />
-                     </button>
-                     <span className=" text-lg text-theme">{t("Санал хүсэлт")}</span>
-                  </div>
+                <div className="flex md:hidden items-center gap-2 mb-1">
+                  <button
+                    onClick={() => setShowDetail(false)}
+                    className="p-2 -ml-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors active:scale-95"
+                  >
+                    <ArrowLeft className="w-6 h-6 text-theme" />
+                  </button>
+                  <span className=" text-lg text-theme">
+                    {t("Санал хүсэлт")}
+                  </span>
+                </div>
 
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pt-2 md:pt-0">
                   <div className="flex-1">
@@ -847,14 +1064,16 @@ export default function SanalKhuselt() {
                         {turulToLabel(selectedMedegdel.turul)}
                       </span>
                       <span className="text-xs text-theme/50">
-                        {moment(selectedMedegdel.createdAt).format("YYYY-MM-DD HH:mm")}
+                        {moment(selectedMedegdel.createdAt).format(
+                          "YYYY-MM-DD HH:mm",
+                        )}
                       </span>
                     </div>
                     <h2 className="text-xl md:text-2xl  text-theme leading-tight">
                       {selectedMedegdel.title}
                     </h2>
                   </div>
-                  
+
                   <div className="flex flex-col items-end gap-3 min-w-[200px]">
                     <Select
                       value={
@@ -864,15 +1083,43 @@ export default function SanalKhuselt() {
                       }
                       onChange={handleStatusChange}
                       className="w-full"
-                      classNames={{ popup: { root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl" } }}
+                      classNames={{
+                        popup: {
+                          root: "rounded-2xl border border-[color:var(--surface-border)] shadow-xl",
+                        },
+                      }}
                       size="large"
                       options={[
-                        { value: "pending", label: <span className="flex items-center gap-2"><Clock className="w-4 h-4 text-amber-500"/> {t("Хүлээгдэж байна")}</span> },
-                        { value: "done", label: <span className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-500"/> {t("Шийдэгдсэн")}</span> },
-                        { value: "rejected", label: <span className="flex items-center gap-2"><XCircle className="w-4 h-4 text-rose-500"/> {t("Татгалзсан")}</span> },
+                        {
+                          value: "pending",
+                          label: (
+                            <span className="flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-amber-500" />{" "}
+                              {t("Хүлээгдэж байна")}
+                            </span>
+                          ),
+                        },
+                        {
+                          value: "done",
+                          label: (
+                            <span className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-emerald-500" />{" "}
+                              {t("Шийдэгдсэн")}
+                            </span>
+                          ),
+                        },
+                        {
+                          value: "rejected",
+                          label: (
+                            <span className="flex items-center gap-2">
+                              <XCircle className="w-4 h-4 text-rose-500" />{" "}
+                              {t("Татгалзсан")}
+                            </span>
+                          ),
+                        },
                       ]}
                     />
-                    
+
                     <AnimatePresence>
                       {pendingStatusChange?.id === selectedMedegdel._id && (
                         <motion.div
@@ -881,17 +1128,26 @@ export default function SanalKhuselt() {
                           exit={{ opacity: 0, height: 0 }}
                           className="flex flex-col gap-3 w-full overflow-hidden"
                         >
-                          {(pendingStatusChange.newStatus === "done" || pendingStatusChange.newStatus === "rejected") && (
+                          {(pendingStatusChange.newStatus === "done" ||
+                            pendingStatusChange.newStatus === "rejected") && (
                             <div>
                               <label className="block text-xs  text-theme/70 mb-1.5">
-                                {t("Хариу тайлбар")} {pendingStatusChange.newStatus === "rejected" && `(${t("Татгалзсан шалтгаан")})`}
+                                {t("Хариу тайлбар")}{" "}
+                                {pendingStatusChange.newStatus === "rejected" &&
+                                  `(${t("Татгалзсан шалтгаан")})`}
                               </label>
                               <textarea
                                 value={tailbarText}
                                 onChange={(e) => setTailbarText(e.target.value)}
-                                placeholder={pendingStatusChange.newStatus === "done" 
-                                  ? t("Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)") 
-                                  : t("Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)")}
+                                placeholder={
+                                  pendingStatusChange.newStatus === "done"
+                                    ? t(
+                                        "Шийдвэрийн тайлбар (хэрэглэгчид илгээгдэнэ)",
+                                      )
+                                    : t(
+                                        "Татгалзсан шалтгаанаа бичнэ үү (хэрэглэгчид илгээгдэнэ)",
+                                      )
+                                }
                                 rows={3}
                                 className="w-full px-3 py-2 rounded-2xl bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] text-theme placeholder:text-theme/40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
                               />
@@ -908,7 +1164,10 @@ export default function SanalKhuselt() {
                               {t("Батлах")}
                             </button>
                             <button
-                              onClick={() => { setPendingStatusChange(null); setTailbarText(""); }}
+                              onClick={() => {
+                                setPendingStatusChange(null);
+                                setTailbarText("");
+                              }}
                               className="flex-1 py-1.5 px-3 bg-gray-200 text-gray-700 text-xs  rounded-2xl hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-gray-200"
                             >
                               {t("Хаах")}
@@ -923,38 +1182,41 @@ export default function SanalKhuselt() {
 
               {/* Detail Content */}
               <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 bg-[color:var(--surface-bg)]">
-               
-                
-
                 {/* Reply Section (single admin tailbar when no thread) */}
                 {selectedMedegdel.tailbar && threadMessages.length <= 1 && (
-                     <div>
-                        <h3 className="text-sm  text-blue-600 dark:text-blue-400  tracking-wide mb-3 flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-blue-500" />
-                            {t("Хариу тайлбар")}
-                        </h3>
-                        <div className="p-6 rounded-2xl bg-blue-200 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 text-theme leading-relaxed whitespace-pre-wrap relative">
-                             {selectedMedegdel.tailbar}
-                             {selectedMedegdel.repliedAt && (
-                                <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800/50 text-xs text-theme/50 flex items-center gap-2">
-                                     <CheckCircle className="w-3 h-3" />
-                                     {t("Хариулсан")}: {moment(selectedMedegdel.repliedAt).format("YYYY-MM-DD HH:mm")}
-                                </div>
-                             )}
+                  <div>
+                    <h3 className="text-sm  text-blue-600 dark:text-blue-400  tracking-wide mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      {t("Хариу тайлбар")}
+                    </h3>
+                    <div className="p-6 rounded-2xl bg-blue-200 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 text-theme leading-relaxed whitespace-pre-wrap relative">
+                      {selectedMedegdel.tailbar}
+                      {selectedMedegdel.repliedAt && (
+                        <div className="mt-4 pt-3 border-t border-blue-100 dark:border-blue-800/50 text-xs text-theme/50 flex items-center gap-2">
+                          <CheckCircle className="w-3 h-3" />
+                          {t("Хариулсан")}:{" "}
+                          {moment(selectedMedegdel.repliedAt).format(
+                            "YYYY-MM-DD HH:mm",
+                          )}
                         </div>
+                      )}
                     </div>
+                  </div>
                 )}
 
                 {/* Thread / chat history (same as app) */}
                 <div>
                   <h3 className="text-sm text-theme/80 tracking-wide mb-3 flex items-center gap-2">
                     <MessageSquare className="w-4 h-4" />
-                    
                   </h3>
                   {threadLoading ? (
-                    <div className="py-6 text-center text-theme/50 text-sm">{t("Уншиж байна...")}</div>
+                    <div className="py-6 text-center text-theme/50 text-sm">
+                      {t("Уншиж байна...")}
+                    </div>
                   ) : threadMessages.length === 0 ? (
-                    <div className="py-4 text-center text-theme/50 text-sm">{t("Харилцаа байхгүй")}</div>
+                    <div className="py-4 text-center text-theme/50 text-sm">
+                      {t("Харилцаа байхгүй")}
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {threadMessages.map((msg) => {
@@ -977,39 +1239,75 @@ export default function SanalKhuselt() {
                                   : "bg-[color:var(--surface-hover)] border border-[color:var(--surface-border)] rounded-bl-md"
                               }`}
                             >
-                              {msg.zurag && (() => {
-                                const paths = String(msg.zurag).split(",").map((p) => normalizeMedegdelAssetPath(p.trim())).filter(Boolean);
-                                const base = getApiUrl().replace(/\/$/, "");
-                                return paths.length ? (
-                                  <div className="flex flex-wrap gap-1 my-1">
-                                    {paths.map((path, i) => {
-                                      const url = `${base}/medegdel/${path}`;
-                                      return (
-                                        <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block rounded-xl overflow-hidden max-w-[140px]">
-                                          <img src={url} alt="" className="w-full h-auto object-cover" />
-                                        </a>
-                                      );
-                                    })}
-                                  </div>
-                                ) : null;
-                              })()}
-                              {msg.duu && (() => {
-                                const path = normalizeMedegdelAssetPath(msg.duu);
-                                const audioUrl = path ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}` : "";
-                                return audioUrl ? (
-                                  <div className="my-1">
-                                    <audio controls src={audioUrl} className="max-w-full h-9" />
-                                  </div>
-                                ) : null;
-                              })()}
-                              {msg.message ? <p className="text-theme text-sm whitespace-pre-wrap">{msg.message}</p> : null}
+                              {msg.zurag &&
+                                (() => {
+                                  const paths = String(msg.zurag)
+                                    .split(",")
+                                    .map((p) =>
+                                      normalizeMedegdelAssetPath(p.trim()),
+                                    )
+                                    .filter(Boolean);
+                                  const base = getApiUrl().replace(/\/$/, "");
+                                  return paths.length ? (
+                                    <div className="flex flex-wrap gap-1 my-1">
+                                      {paths.map((path, i) => {
+                                        const url = `${base}/medegdel/${path}`;
+                                        return (
+                                          <a
+                                            key={i}
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="block rounded-xl overflow-hidden max-w-[140px]"
+                                          >
+                                            <img
+                                              src={url}
+                                              alt=""
+                                              className="w-full h-auto object-cover"
+                                            />
+                                          </a>
+                                        );
+                                      })}
+                                    </div>
+                                  ) : null;
+                                })()}
+                              {msg.duu &&
+                                (() => {
+                                  const path = normalizeMedegdelAssetPath(
+                                    msg.duu,
+                                  );
+                                  const audioUrl = path
+                                    ? `${getApiUrl().replace(/\/$/, "")}/medegdel/${path}`
+                                    : "";
+                                  return audioUrl ? (
+                                    <div className="my-1">
+                                      <audio
+                                        controls
+                                        src={audioUrl}
+                                        className="max-w-full h-9"
+                                      />
+                                    </div>
+                                  ) : null;
+                                })()}
+                              {msg.message ? (
+                                <p className="text-theme text-sm whitespace-pre-wrap">
+                                  {msg.message}
+                                </p>
+                              ) : null}
                               <p className="text-theme/50 text-xs mt-1">
-                                {moment(msg.createdAt).format("YYYY-MM-DD HH:mm")}
+                                {moment(msg.createdAt).format(
+                                  "YYYY-MM-DD HH:mm",
+                                )}
                               </p>
                               {msg.kharsanEsekh && msg.updatedAt && (
                                 <p className="text-theme/40 text-xs mt-1 flex items-center gap-1 justify-end">
-                                  <CheckCheck className="w-3.5 h-3.5 text-blue-500" aria-hidden />
-                                  <span>{moment(msg.updatedAt).format("HH:mm")}</span>
+                                  <CheckCheck
+                                    className="w-3.5 h-3.5 text-blue-500"
+                                    aria-hidden
+                                  />
+                                  <span>
+                                    {moment(msg.updatedAt).format("HH:mm")}
+                                  </span>
                                 </p>
                               )}
                             </div>
@@ -1039,14 +1337,26 @@ export default function SanalKhuselt() {
                         <span className="inline-flex items-center gap-1 rounded-xl bg-blue-100 dark:bg-blue-900/30 px-2 py-1 text-sm">
                           <ImagePlus className="w-4 h-4" />
                           {replyImage.name}
-                          <button type="button" onClick={() => setReplyImage(null)} className="text-red-500 hover:underline">×</button>
+                          <button
+                            type="button"
+                            onClick={() => setReplyImage(null)}
+                            className="text-red-500 hover:underline"
+                          >
+                            ×
+                          </button>
                         </span>
                       )}
                       {replyVoiceBlob && (
                         <span className="inline-flex items-center gap-1 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 text-sm">
                           <Mic className="w-4 h-4" />
                           {t("Дуу")}
-                          <button type="button" onClick={() => setReplyVoiceBlob(null)} className="text-red-500 hover:underline">×</button>
+                          <button
+                            type="button"
+                            onClick={() => setReplyVoiceBlob(null)}
+                            className="text-red-500 hover:underline"
+                          >
+                            ×
+                          </button>
                         </span>
                       )}
                     </div>
@@ -1098,7 +1408,10 @@ export default function SanalKhuselt() {
                     <button
                       type="button"
                       onClick={sendAdminReply}
-                      disabled={replySending || (!replyInput.trim() && !replyImage && !replyVoiceBlob)}
+                      disabled={
+                        replySending ||
+                        (!replyInput.trim() && !replyImage && !replyVoiceBlob)
+                      }
                       className="rounded-2xl bg-blue-500 dark:bg-blue-700 text-white p-3 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
                       aria-label={t("Илгээх")}
                     >
@@ -1109,12 +1422,12 @@ export default function SanalKhuselt() {
               </div>
             </>
           ) : (
-             <div className="flex-1 flex flex-col items-center justify-center text-theme/40 gap-4">
-                <div className="w-20 h-20 bg-[color:var(--surface-hover)] rounded-full flex items-center justify-center">
-                    <MessageSquare className="w-10 h-10 opacity-50" />
-                </div>
-                <p>{t("Дэлгэрэнгүй харах мэдээллийг сонгоно уу")}</p>
-             </div>
+            <div className="flex-1 flex flex-col items-center justify-center text-theme/40 gap-4">
+              <div className="w-20 h-20 bg-[color:var(--surface-hover)] rounded-full flex items-center justify-center">
+                <MessageSquare className="w-10 h-10 opacity-50" />
+              </div>
+              <p>{t("Дэлгэрэнгүй харах мэдээллийг сонгоно уу")}</p>
+            </div>
           )}
         </motion.div>
       </div>

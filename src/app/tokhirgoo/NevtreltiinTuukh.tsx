@@ -194,24 +194,6 @@ export default function NevtreltiinTuukh({
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          {/* Search */}
-          <div className="flex-1 w-full sm:max-w-md">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)]" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setPage(1);
-                }}
-                placeholder="Хайх..."
-                className="w-full pl-10 pr-4 h-[44px] bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] !rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)]"
-                style={{ borderRadius: "0.5rem" }}
-              />
-            </div>
-          </div>
-
           {/* Date Range */}
           <div className="flex items-center gap-2">
             <StandardDatePicker

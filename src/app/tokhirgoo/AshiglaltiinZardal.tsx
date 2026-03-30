@@ -22,7 +22,15 @@ import { fetchWithDomainFallback } from "@/lib/uilchilgee";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSpinner } from "@/context/SpinnerContext";
-import { Edit, Trash2, Activity, Layers, CreditCard, ChevronRight, Settings } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Activity,
+  Layers,
+  CreditCard,
+  ChevronRight,
+  Settings,
+} from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import Button from "@/components/ui/Button";
@@ -96,9 +104,8 @@ export default function AshiglaltiinZardluud() {
   const [editingItem, setEditingItem] = useState<ZardalItem | null>(null);
   const [isUilchilgeeModal, setIsUilchilgeeModal] = useState(false);
   const [editedTariffs, setEditedTariffs] = useState<Record<string, number>>(
-    {}
+    {},
   );
-
 
   const [formData, setFormData] = useState<ZardalFormData>({
     ner: "",
@@ -189,22 +196,22 @@ export default function AshiglaltiinZardluud() {
     });
     setTariffInputValue(formatNumber(item.tariff, 2));
     setSuuriKhuraamjInput(
-      item.suuriKhuraamj ? formatNumber(item.suuriKhuraamj, 2) : ""
+      item.suuriKhuraamj ? formatNumber(item.suuriKhuraamj, 2) : "",
     );
     setZaaltTariffInput(
-      item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : ""
+      item.zaaltTariff ? formatNumber(item.zaaltTariff, 2) : "",
     );
     setZaaltDefaultDunInput(
-      item.zaaltDefaultDun ? formatNumber(item.zaaltDefaultDun, 2) : ""
+      item.zaaltDefaultDun ? formatNumber(item.zaaltDefaultDun, 2) : "",
     );
     setTariff150kvInput(
-      item.tariff150kv ? formatNumber(item.tariff150kv, 2) : ""
+      item.tariff150kv ? formatNumber(item.tariff150kv, 2) : "",
     );
     setTariff150to300kvInput(
-      item.tariff150to300kv ? formatNumber(item.tariff150to300kv, 2) : ""
+      item.tariff150to300kv ? formatNumber(item.tariff150to300kv, 2) : "",
     );
     setTariff300pluskvInput(
-      item.tariff300pluskv ? formatNumber(item.tariff300pluskv, 2) : ""
+      item.tariff300pluskv ? formatNumber(item.tariff300pluskv, 2) : "",
     );
     setView("form");
   };
@@ -218,20 +225,25 @@ export default function AshiglaltiinZardluud() {
     showSpinner();
     try {
       const nameLower = formData.ner.toLowerCase();
-      
+
       // Check if this is a VARIABLE electricity charge (meter-based, uses Excel readings)
       // Only plain "Цахилгаан" should be zaalt=true
       // "Дундын өмчлөл Цахилгаан" is a FIXED charge and should NOT be zaalt=true
-      const isVariableElectricity = nameLower.includes("цахилгаан") && 
-                                     !nameLower.includes("дундын") && 
-                                     !nameLower.includes("өмчлөл");
-      
+      const isVariableElectricity =
+        nameLower.includes("цахилгаан") &&
+        !nameLower.includes("дундын") &&
+        !nameLower.includes("өмчлөл");
+
       // Check if this is a FIXED electricity charge (like "Дундын өмчлөл Цахилгаан")
-      const isFixedElectricity = nameLower.includes("цахилгаан") && 
-                                  (nameLower.includes("дундын") || nameLower.includes("өмчлөл"));
-      
-      let payload = { ...formData, barilgiinId: selectedBuildingId || barilgiinId || undefined };
-      
+      const isFixedElectricity =
+        nameLower.includes("цахилгаан") &&
+        (nameLower.includes("дундын") || nameLower.includes("өмчлөл"));
+
+      let payload = {
+        ...formData,
+        barilgiinId: selectedBuildingId || barilgiinId || undefined,
+      };
+
       if (isVariableElectricity) {
         // Variable electricity: zaalt=true, tariffUsgeer="кВт", tariff=0 (kWh rate from orshinSuugch)
         payload = {
@@ -271,7 +283,7 @@ export default function AshiglaltiinZardluud() {
   const saveAllTariffs = async () => {
     const itemsById = new Map(ashiglaltiinZardluud.map((it) => [it._id, it]));
     const changed = Object.entries(editedTariffs).filter(
-      ([id, val]) => itemsById.get(id)?.tariff !== val
+      ([id, val]) => itemsById.get(id)?.tariff !== val,
     );
     if (changed.length === 0) return;
     showSpinner();
@@ -281,7 +293,7 @@ export default function AshiglaltiinZardluud() {
           const item = itemsById.get(id);
           if (!item) return;
           await updateZardal(id, { ...item, tariff: Number(val) });
-        })
+        }),
       );
       openSuccessOverlay("Өөрчлөлтүүд хадгалагдлаа");
       setEditedTariffs({});
@@ -316,8 +328,7 @@ export default function AshiglaltiinZardluud() {
         element: "#zardal-panel",
         popover: {
           title: "Ашиглалтын зардал",
-          description:
-            "Зардлын жагсаалт энд байна.",
+          description: "Зардлын жагсаалт энд байна.",
           side: "bottom",
         },
       },
@@ -393,7 +404,9 @@ export default function AshiglaltiinZardluud() {
                 value={formData.ner}
                 onChange={(e) => {
                   const newName = e.currentTarget.value;
-                  const isCakhilgaan = newName.toLowerCase().includes("цахилгаан");
+                  const isCakhilgaan = newName
+                    .toLowerCase()
+                    .includes("цахилгаан");
                   setFormData({
                     ...formData,
                     ner: newName,
@@ -402,8 +415,13 @@ export default function AshiglaltiinZardluud() {
                   });
                 }}
                 placeholder="Жишээ: Цэвэр ус..."
-                classNames={{ input: "rounded-xl h-11  text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all" }}
-                leftSection={<Activity className="w-4 h-4 text-theme opacity-50" />}
+                classNames={{
+                  input:
+                    "rounded-xl h-11  text-base shadow-sm focus:ring-4 focus:ring-theme/5 transition-all",
+                }}
+                leftSection={
+                  <Activity className="w-4 h-4 text-theme opacity-50" />
+                }
               />
             </div>
 
@@ -414,7 +432,9 @@ export default function AshiglaltiinZardluud() {
                 </label>
                 <MSelect
                   value={formData.zardliinTurul ?? undefined}
-                  onChange={(value) => setFormData({ ...formData, zardliinTurul: value as string })}
+                  onChange={(value) =>
+                    setFormData({ ...formData, zardliinTurul: value as string })
+                  }
                   data={[
                     { label: "Энгийн / Default", value: "Энгийн" },
                     { label: "Лифт / Elevator", value: "Лифт" },
@@ -422,15 +442,17 @@ export default function AshiglaltiinZardluud() {
                   placeholder="Сонгох..."
                   searchable={false}
                   classNames={{ input: "rounded-xl h-11  text-base" }}
-                  leftSection={<Layers className="w-4 h-4 text-theme opacity-50" />}
+                  leftSection={
+                    <Layers className="w-4 h-4 text-theme opacity-50" />
+                  }
                 />
               </div>
             )}
 
             {/* Variable electricity (Цахилгаан only, NOT Дундын өмчлөл) - show Суурь хураамж */}
-            {formData.ner.toLowerCase().includes("цахилгаан") && 
-             !formData.ner.toLowerCase().includes("дундын") && 
-             !formData.ner.toLowerCase().includes("өмчлөл") ? (
+            {formData.ner.toLowerCase().includes("цахилгаан") &&
+            !formData.ner.toLowerCase().includes("дундын") &&
+            !formData.ner.toLowerCase().includes("өмчлөл") ? (
               <div className="space-y-1.5">
                 <label className="block text-[9px] font-black text-[color:var(--muted-text)] uppercase tracking-widest ml-1">
                   Суурь хураамж ()
@@ -442,21 +464,37 @@ export default function AshiglaltiinZardluud() {
                     const cleanValue = raw.replace(/[^0-9.]/g, "");
                     const n = Number(cleanValue);
                     setSuuriKhuraamjInput(cleanValue);
-                    setFormData({ ...formData, suuriKhuraamj: Number.isFinite(n) ? n : 0 });
+                    setFormData({
+                      ...formData,
+                      suuriKhuraamj: Number.isFinite(n) ? n : 0,
+                    });
                   }}
                   onBlur={() => {
-                    if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formatNumber(formData.suuriKhuraamj, 2));
+                    if (formData.suuriKhuraamj)
+                      setSuuriKhuraamjInput(
+                        formatNumber(formData.suuriKhuraamj, 2),
+                      );
                     else setSuuriKhuraamjInput("");
                   }}
                   onFocus={() => {
-                    if (formData.suuriKhuraamj) setSuuriKhuraamjInput(formData.suuriKhuraamj.toString());
+                    if (formData.suuriKhuraamj)
+                      setSuuriKhuraamjInput(formData.suuriKhuraamj.toString());
                   }}
                   placeholder="0.00"
-                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400  pr-3 text-xs italic"></span>}
-                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
+                  classNames={{
+                    input:
+                      "rounded-xl h-11 font-black text-theme text-lg shadow-sm",
+                  }}
+                  rightSection={
+                    <span className="text-slate-400  pr-3 text-xs italic"></span>
+                  }
+                  leftSection={
+                    <CreditCard className="w-4 h-4 text-theme opacity-50" />
+                  }
                 />
-                <p className="text-[9px] text-[color:var(--muted-text)] ml-1">Excel файлаас ирэх суурь дүн (заалтаас авна)</p>
+                <p className="text-[9px] text-[color:var(--muted-text)] ml-1">
+                  Excel файлаас ирэх суурь дүн (заалтаас авна)
+                </p>
               </div>
             ) : (
               <div className="space-y-1.5">
@@ -470,19 +508,31 @@ export default function AshiglaltiinZardluud() {
                     const cleanValue = raw.replace(/[^0-9.]/g, "");
                     const n = Number(cleanValue);
                     setTariffInputValue(cleanValue);
-                    setFormData({ ...formData, tariff: Number.isFinite(n) ? n : 0 });
+                    setFormData({
+                      ...formData,
+                      tariff: Number.isFinite(n) ? n : 0,
+                    });
                   }}
                   onBlur={() => {
-                    if (formData.tariff) setTariffInputValue(formatNumber(formData.tariff, 2));
+                    if (formData.tariff)
+                      setTariffInputValue(formatNumber(formData.tariff, 2));
                     else setTariffInputValue("");
                   }}
                   onFocus={() => {
-                    if (formData.tariff) setTariffInputValue(formData.tariff.toString());
+                    if (formData.tariff)
+                      setTariffInputValue(formData.tariff.toString());
                   }}
                   placeholder="0.00"
-                  classNames={{ input: "rounded-xl h-11 font-black text-theme text-lg shadow-sm" }}
-                  rightSection={<span className="text-slate-400  pr-3 text-xs italic"></span>}
-                  leftSection={<CreditCard className="w-4 h-4 text-theme opacity-50" />}
+                  classNames={{
+                    input:
+                      "rounded-xl h-11 font-black text-theme text-lg shadow-sm",
+                  }}
+                  rightSection={
+                    <span className="text-slate-400  pr-3 text-xs italic"></span>
+                  }
+                  leftSection={
+                    <CreditCard className="w-4 h-4 text-theme opacity-50" />
+                  }
                 />
               </div>
             )}
@@ -494,7 +544,9 @@ export default function AshiglaltiinZardluud() {
             </label>
             <MTextarea
               value={formData.tailbar}
-              onChange={(e) => setFormData({ ...formData, tailbar: e.currentTarget.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, tailbar: e.currentTarget.value })
+              }
               placeholder="Нэмэлт тайлбар оруулах..."
               minRows={3}
               classNames={{ input: "rounded-2xl shadow-sm p-4 text-sm" }}
@@ -506,7 +558,9 @@ export default function AshiglaltiinZardluud() {
               <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                 <Settings className="w-3 h-3 text-slate-400" />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Автоматаар хадгалагдана</span>
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                Автоматаар хадгалагдана
+              </span>
             </div>
           </div>
         </div>
@@ -528,12 +582,13 @@ export default function AshiglaltiinZardluud() {
             <CreditCard className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-[color:var(--panel-text)] uppercase tracking-tighter leading-none">Ашиглалтын зардал</h1>
-            <p className="text-[10px] sm:text-xs  text-[color:var(--muted-text)] mt-1 opacity-70 uppercase tracking-widest">БАЙРНЫ ТОГТМОЛ БОЛОН ХУВЬСАХ ЗАРДЛЫН ТОХИРГОО</p>
+            <h1 className="text-2xl sm:text-3xl text-[color:var(--panel-text)]">
+              Ашиглалтын зардал
+            </h1>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <div className="flex-1">
             <div className="bg-gradient-to-br from-[color:var(--surface-bg)] to-[color:var(--panel)] rounded-2xl shadow-lg border border-[color:var(--surface-border)] overflow-hidden">
               <div className="p-5 flex items-center justify-between border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
@@ -541,7 +596,12 @@ export default function AshiglaltiinZardluud() {
                   <div>
                     <h3 className="text-lg text-theme">Тогтмол зардлууд</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
-                      {ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length} зардал
+                      {
+                        ashiglaltiinZardluud.filter(
+                          (x) => x.turul === "Тогтмол",
+                        ).length
+                      }{" "}
+                      зардал
                     </p>
                   </div>
                 </div>
@@ -561,10 +621,13 @@ export default function AshiglaltiinZardluud() {
                 <div className="flex justify-center items-center p-10">
                   <Loader />
                 </div>
-              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол").length === 0 ? (
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Тогтмол")
+                  .length === 0 ? (
                 <div className="p-12 text-center">
                   <p className="text-theme ">Тогтмол зардал байхгүй байна</p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                    Зардал нэмэх товчийг дарж эхлүүлнэ үү
+                  </p>
                 </div>
               ) : (
                 <div id="zardal-list" className="flex flex-col">
@@ -573,9 +636,15 @@ export default function AshiglaltiinZardluud() {
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
                         <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs  uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
                           <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
-                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">Үйлдэл</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">
+                            Тариф
+                          </th>
+                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">
+                            Тайлбар
+                          </th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">
+                            Үйлдэл
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -586,8 +655,8 @@ export default function AshiglaltiinZardluud() {
                             filterText.trim() === ""
                               ? true
                               : String(x.ner || "")
-                                .toLowerCase()
-                                .includes(filterText.toLowerCase())
+                                  .toLowerCase()
+                                  .includes(filterText.toLowerCase()),
                           )
                           .map((mur) => {
                             const displayValue = mur.tariff;
@@ -601,14 +670,16 @@ export default function AshiglaltiinZardluud() {
                                 key={mur._id}
                                 className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
-                                <td className="py-2 px-2 text-theme">
-                                  <div className=" text-[13px] sm:text-sm max-w-[100px] sm:max-w-[120px] leading-tight break-words">{mur.ner}</div>
+                                <td className="py-2 px-2 text-theme w-1/3">
+                                  <div className=" text-[13px] sm:text-sm max-w-[150px] sm:max-w-[400px] leading-tight break-words">
+                                    {mur.ner}
+                                  </div>
                                 </td>
 
                                 <td className="py-2 px-2">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 2)} 
+                                      {formatNumber(currentValue, 2)}
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -618,14 +689,21 @@ export default function AshiglaltiinZardluud() {
                                   </div>
                                 </td>
                                 <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
-                                  {mur.tailbar || <span className="text-[color:var(--muted-text)] opacity-40">-</span>}
+                                  {mur.tailbar || (
+                                    <span className="text-[color:var(--muted-text)] opacity-40">
+                                      -
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="py-2 px-2">
                                   <div className="flex items-center justify-center gap-1 sm:gap-2">
                                     <button
                                       onClick={() => openEditModal(mur, false)}
-                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors shrink-0"
-                                      style={{ borderRadius: "0.5rem" }}
+                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors shrink-0"
+                                      style={{
+                                        borderRadius: "0.5rem",
+                                        color: "#2563eb",
+                                      }}
                                       title="Засах"
                                     >
                                       <Edit className="w-4 h-4" />
@@ -635,8 +713,11 @@ export default function AshiglaltiinZardluud() {
                                         setItemToDelete(mur);
                                         setDeleteModalOpen(true);
                                       }}
-                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors shrink-0"
-                                      style={{ borderRadius: "0.5rem" }}
+                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
+                                      style={{
+                                        borderRadius: "0.5rem",
+                                        color: "#dc2626",
+                                      }}
                                       title="Устгах"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -649,11 +730,16 @@ export default function AshiglaltiinZardluud() {
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-t-2 border-blue-200 dark:border-blue-800">
                         <tr className="bg-white/50 dark:bg-black/20">
-                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                            <div className="text-[11px] sm:text-xs force-bold uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme w-1/3">
+                            <div
+                              className="text-[11px] sm:text-xs font-sans font-bold tracking-wide opacity-60 whitespace-nowrap"
+                              style={{ fontFamily: "Segoe UI, sans-serif" }}
+                            >
+                              Нийт дүн:
+                            </div>
                           </td>
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                            <div className="text-sm sm:text-lg force-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                            <div className="text-sm sm:text-lg force-bold text-blue-600 dark:text-blue-400 whitespace-nowrap pl-4">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)
@@ -662,8 +748,8 @@ export default function AshiglaltiinZardluud() {
                                     filterText.trim() === ""
                                       ? true
                                       : String(x.ner || "")
-                                        .toLowerCase()
-                                        .includes(filterText.toLowerCase())
+                                          .toLowerCase()
+                                          .includes(filterText.toLowerCase()),
                                   )
                                   .reduce((sum, item) => {
                                     const displayValue = item.tariff;
@@ -672,8 +758,9 @@ export default function AshiglaltiinZardluud() {
                                         ? editedTariffs[item._id!]
                                         : displayValue;
                                     return sum + currentValue;
-                                  }, 0)
-                              )} 
+                                  }, 0),
+                                2,
+                              )}
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>
@@ -695,7 +782,11 @@ export default function AshiglaltiinZardluud() {
                   <div>
                     <h3 className="text-lg text-theme">Хувьсах зардлууд</h3>
                     <p className="text-xs text-[color:var(--muted-text)]">
-                      {ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length} зардал
+                      {
+                        ashiglaltiinZardluud.filter((x) => x.turul === "Дурын")
+                          .length
+                      }{" "}
+                      зардал
                     </p>
                   </div>
                 </div>
@@ -706,7 +797,7 @@ export default function AshiglaltiinZardluud() {
                   variant="primary"
                   size="sm"
                   leftIcon={<PlusOutlined />}
-                  style={{ backgroundColor: '#10b981', borderColor: '#10b981' }} 
+                  style={{ backgroundColor: "#10b981", borderColor: "#10b981" }}
                 >
                   Нэмэх
                 </Button>
@@ -716,10 +807,13 @@ export default function AshiglaltiinZardluud() {
                 <div className="flex justify-center items-center p-10">
                   <Loader />
                 </div>
-              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын").length === 0 ? (
+              ) : ashiglaltiinZardluud.filter((x) => x.turul === "Дурын")
+                  .length === 0 ? (
                 <div className="p-12 text-center">
                   <p className="text-theme ">Хувьсах зардал байхгүй байна</p>
-                  <p className="text-xs text-[color:var(--muted-text)] mt-1">Зардал нэмэх товчийг дарж эхлүүлнэ үү</p>
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                    Зардал нэмэх товчийг дарж эхлүүлнэ үү
+                  </p>
                 </div>
               ) : (
                 <div className="flex flex-col">
@@ -728,9 +822,15 @@ export default function AshiglaltiinZardluud() {
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
                         <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs  uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">
                           <th className="py-2 px-2 whitespace-nowrap">Нэр</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">Тариф</th>
-                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">Тайлбар</th>
-                          <th className="py-2 px-2 text-center whitespace-nowrap">Үйлдэл</th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">
+                            Тариф
+                          </th>
+                          <th className="py-2 px-2 hidden md:table-cell whitespace-nowrap">
+                            Тайлбар
+                          </th>
+                          <th className="py-2 px-2 text-center whitespace-nowrap">
+                            Үйлдэл
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -741,11 +841,18 @@ export default function AshiglaltiinZardluud() {
                             filterText.trim() === ""
                               ? true
                               : String(x.ner || "")
-                                .toLowerCase()
-                                .includes(filterText.toLowerCase())
+                                  .toLowerCase()
+                                  .includes(filterText.toLowerCase()),
                           )
                           .map((mur) => {
-                            const nameLower = (mur.ner || "").toLowerCase(); const isVariableElectricity = nameLower.includes("цахилгаан") && !nameLower.includes("дундын") && !nameLower.includes("өмчлөл"); const displayValue = isVariableElectricity ? (mur.suuriKhuraamj || 0) : mur.tariff;
+                            const nameLower = (mur.ner || "").toLowerCase();
+                            const isVariableElectricity =
+                              nameLower.includes("цахилгаан") &&
+                              !nameLower.includes("дундын") &&
+                              !nameLower.includes("өмчлөл");
+                            const displayValue = isVariableElectricity
+                              ? mur.suuriKhuraamj || 0
+                              : mur.tariff;
                             const currentValue =
                               editedTariffs[mur._id!] !== undefined
                                 ? editedTariffs[mur._id!]
@@ -756,14 +863,16 @@ export default function AshiglaltiinZardluud() {
                                 key={mur._id}
                                 className="border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors duration-150"
                               >
-                                <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                                  <div className=" text-[13px] sm:text-sm max-w-[120px] sm:max-w-[150px] md:max-w-[200px] leading-tight break-words">{mur.ner}</div>
+                                <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme w-1/3">
+                                  <div className=" text-[13px] sm:text-sm max-w-[150px] sm:max-w-[200px] md:max-w-[300px] leading-tight break-words">
+                                    {mur.ner}
+                                  </div>
                                 </td>
 
                                 <td className="py-2 sm:py-3 px-2 sm:px-4">
                                   <div className="flex flex-col items-center gap-0.5">
                                     <div className="text-theme text-sm sm:text-sm whitespace-nowrap">
-                                      {formatNumber(currentValue, 0)} 
+                                      {formatNumber(currentValue, 0)}
                                     </div>
                                     {changed && (
                                       <span className="text-[9px] text-amber-600  uppercase tracking-tighter whitespace-nowrap">
@@ -773,14 +882,21 @@ export default function AshiglaltiinZardluud() {
                                   </div>
                                 </td>
                                 <td className="py-2 px-2 text-theme text-[12px] sm:text-sm max-w-[100px] lg:max-w-[150px] truncate hidden md:table-cell">
-                                  {mur.tailbar || <span className="text-[color:var(--muted-text)] opacity-40">-</span>}
+                                  {mur.tailbar || (
+                                    <span className="text-[color:var(--muted-text)] opacity-40">
+                                      -
+                                    </span>
+                                  )}
                                 </td>
                                 <td className="py-2 px-2">
                                   <div className="flex items-center justify-center gap-1 sm:gap-2">
                                     <button
                                       onClick={() => openEditModal(mur, false)}
-                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 transition-colors shrink-0"
-                                      style={{ borderRadius: "0.5rem" }}
+                                      className="p-2 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors shrink-0"
+                                      style={{
+                                        borderRadius: "0.5rem",
+                                        color: "#2563eb",
+                                      }}
                                       title="Засах"
                                     >
                                       <Edit className="w-4 h-4" />
@@ -790,8 +906,11 @@ export default function AshiglaltiinZardluud() {
                                         setItemToDelete(mur);
                                         setDeleteModalOpen(true);
                                       }}
-                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors shrink-0"
-                                      style={{ borderRadius: "0.5rem" }}
+                                      className="p-2 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors shrink-0"
+                                      style={{
+                                        borderRadius: "0.5rem",
+                                        color: "#dc2626",
+                                      }}
                                       title="Устгах"
                                     >
                                       <Trash2 className="w-4 h-4" />
@@ -804,11 +923,16 @@ export default function AshiglaltiinZardluud() {
                       </tbody>
                       <tfoot className="sticky bottom-0 z-10 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-t-2 border-emerald-200 dark:border-emerald-800">
                         <tr className="bg-white/50 dark:bg-black/20">
-                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme">
-                            <div className="text-[11px] sm:text-xs force-bold uppercase tracking-widest opacity-60 whitespace-nowrap">Нийт дүн:</div>
+                          <td className="py-2 sm:py-3 px-2 sm:px-4 text-theme w-1/3">
+                            <div
+                              className="text-[11px] sm:text-xs font-sans font-bold tracking-wide opacity-60 whitespace-nowrap"
+                              style={{ fontFamily: "Segoe UI, sans-serif" }}
+                            >
+                              Нийт дүн:
+                            </div>
                           </td>
                           <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                            <div className="text-sm sm:text-lg force-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                            <div className="text-sm sm:text-lg force-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap pl-4">
                               {formatNumber(
                                 ashiglaltiinZardluud
                                   .filter((x) => x._id)
@@ -817,18 +941,28 @@ export default function AshiglaltiinZardluud() {
                                     filterText.trim() === ""
                                       ? true
                                       : String(x.ner || "")
-                                        .toLowerCase()
-                                        .includes(filterText.toLowerCase())
+                                          .toLowerCase()
+                                          .includes(filterText.toLowerCase()),
                                   )
                                   .reduce((sum, item) => {
-                                    const nameLower = (item.ner || "").toLowerCase(); const isVariableElectricity = nameLower.includes("цахилгаан") && !nameLower.includes("дундын") && !nameLower.includes("өмчлөл"); const displayValue = isVariableElectricity ? (item.suuriKhuraamj || 0) : item.tariff;
+                                    const nameLower = (
+                                      item.ner || ""
+                                    ).toLowerCase();
+                                    const isVariableElectricity =
+                                      nameLower.includes("цахилгаан") &&
+                                      !nameLower.includes("дундын") &&
+                                      !nameLower.includes("өмчлөл");
+                                    const displayValue = isVariableElectricity
+                                      ? item.suuriKhuraamj || 0
+                                      : item.tariff;
                                     const currentValue =
                                       editedTariffs[item._id!] !== undefined
                                         ? editedTariffs[item._id!]
                                         : displayValue;
                                     return sum + currentValue;
-                                  }, 0)
-                              )} 
+                                  }, 0),
+                                2,
+                              )}
                             </div>
                           </td>
                           <td className="hidden md:table-cell"></td>
@@ -852,7 +986,8 @@ export default function AshiglaltiinZardluud() {
             header:
               "bg-[color:var(--surface)] border-b border-[color:var(--panel-border)] px-6 py-4 rounded-t-2xl",
             title: "text-theme ",
-            close: "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
+            close:
+              "text-theme hover:bg-[color:var(--surface-hover)] rounded-xl",
           }}
           overlayProps={{ opacity: 0.5, blur: 6 }}
           centered

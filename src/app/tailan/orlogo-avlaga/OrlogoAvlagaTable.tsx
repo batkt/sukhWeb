@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
+import { Table, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, X } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 export interface OrlogoAvlagaItem {
@@ -25,7 +25,7 @@ interface OrlogoAvlagaTableProps {
   page?: number;
   pageSize?: number;
   activeTab: "tulult" | "avlaga";
-  expandedRow: string | null;
+  expandedRow?: string | null;
   expandedLedger: any[];
   expandedLoading: boolean;
   expandedError: string | null;
@@ -33,6 +33,9 @@ interface OrlogoAvlagaTableProps {
   getUldegdel: (item: any) => number;
   onRowClick: (item: any) => void;
   getGereeId: (item: any) => string;
+  modalOpen: boolean;
+  onModalClose: () => void;
+  selectedRecord: OrlogoAvlagaItem | null;
 }
 
 export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
@@ -41,7 +44,6 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   page = 1,
   pageSize = 200,
   activeTab,
-  expandedRow,
   expandedLedger,
   expandedLoading,
   expandedError,
@@ -49,6 +51,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   getUldegdel,
   onRowClick,
   getGereeId,
+  modalOpen,
+  onModalClose,
+  selectedRecord,
 }) => {
   const headerClassName =
     "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
@@ -117,28 +122,21 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       return [
         ...baseColumns,
         {
-          title: <span className="text-gray-900 dark:text-white">Гүйцэтгэл</span>,
+          title: (
+            <span className="text-gray-900 dark:text-white">Гүйцэтгэл</span>
+          ),
           key: "paid",
           width: 120,
           align: "center",
           className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const paid = getPaid(record);
-            const gid = getGereeId(record);
-            const gd = record._gereeDugaar || record.gereeniiDugaar || gid;
-            const isExpanded = expandedRow === gd;
-
             return (
               <button
                 type="button"
                 onClick={() => onRowClick(record)}
                 className="text-gray-900 dark:text-white hover:underline cursor-pointer inline-flex items-center gap-1"
               >
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
                 <span className="text-green-600 dark:text-green-400 font-medium">
                   {formatNumber(paid)}
                 </span>
@@ -151,28 +149,23 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       return [
         ...baseColumns,
         {
-          title: <span className="text-gray-900 dark:text-white">Үлдэгдэл</span>,
+          title: (
+            <span className="text-gray-900 dark:text-white text-center block w-full">
+              Үлдэгдэл
+            </span>
+          ),
           key: "uldegdel",
           width: 120,
           align: "right",
           className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const uldegdel = getUldegdel(record);
-            const gid = getGereeId(record);
-            const gd = record._gereeDugaar || record.gereeniiDugaar || gid;
-            const isExpanded = expandedRow === gd;
-
             return (
               <button
                 type="button"
                 onClick={() => onRowClick(record)}
                 className="text-gray-900 dark:text-white hover:underline cursor-pointer inline-flex items-center gap-1"
               >
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
                 <span
                   className={
                     uldegdel > 0
@@ -189,7 +182,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           },
         },
         {
-          title: <span className="text-gray-900 dark:text-white">Төлөлт</span>,
+          title: (
+            <span className="text-gray-900 dark:text-white text-center block w-full">
+              Төлөлт
+            </span>
+          ),
           key: "paid",
           width: 120,
           align: "right",
@@ -205,23 +202,13 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         },
       ];
     }
-  }, [
-    activeTab,
-    page,
-    pageSize,
-    expandedRow,
-    getPaid,
-    getUldegdel,
-    onRowClick,
-    getGereeId,
-  ]);
+  }, [activeTab, page, pageSize, getPaid, getUldegdel, onRowClick, getGereeId]);
 
-  const expandedRowRender = (record: OrlogoAvlagaItem) => {
-    const gid = getGereeId(record);
-    const gd = record._gereeDugaar || record.gereeniiDugaar || gid;
-    const isExpanded = expandedRow === gd;
-
-    if (!isExpanded) return null;
+  const modalContent = () => {
+    if (!selectedRecord) return null;
+    const gid = getGereeId(selectedRecord);
+    const gd =
+      selectedRecord._gereeDugaar || selectedRecord.gereeniiDugaar || gid;
 
     const ledgerColumns: ColumnsType<any> = [
       {
@@ -248,11 +235,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         title: <span className="text-gray-900 dark:text-white">Тайлбар</span>,
         dataIndex: "tailbar",
         key: "tailbar",
-        width: 120,
+        width: 200,
         className: headerClassName,
         render: (val: string, row: any) => (
           <span
-            className="text-gray-900 dark:text-white max-w-[180px] truncate text-[13px]"
+            className="text-gray-900 dark:text-white max-w-[280px] truncate text-[13px]"
             title={val || row?.ner || row?.turul || "-"}
           >
             {val || row?.ner || row?.turul || "-"}
@@ -324,7 +311,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     ];
 
     return (
-      <div className="p-4 bg-gray-100/50 dark:bg-gray-800/50">
+      <div className="p-4">
         <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">
           Дэлгэрэнгүй ({gd})
         </h4>
@@ -349,7 +336,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             size="small"
             bordered
             className="guilgee-table"
-            scroll={{ y: 240 }}
+            scroll={{ y: 400 }}
             rowClassName={(record, index) => `
               ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
               text-gray-900 dark:text-white
@@ -392,14 +379,6 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             </span>
           ),
         }}
-        expandable={{
-          expandedRowRender,
-          expandedRowKeys: expandedRow ? [expandedRow] : [],
-          rowExpandable: () => true,
-          onExpand: () => {},
-          expandIcon: () => null,
-          expandIconColumnIndex: -1,
-        }}
         summary={(pageData) => {
           if (pageData.length === 0) return null;
 
@@ -414,28 +393,45 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           return (
             <Table.Summary fixed>
               <Table.Summary.Row className="bg-gray-50 dark:bg-gray-900">
-                <Table.Summary.Cell index={0} colSpan={5} align="center" className="bg-gray-50 dark:bg-gray-900">
+                <Table.Summary.Cell
+                  index={0}
+                  colSpan={5}
+                  align="center"
+                  className="bg-gray-50 dark:bg-gray-900"
+                >
                   <span className="font-bold text-gray-900 dark:text-white force-bold text-[13px]">
                     Нийт
                   </span>
                 </Table.Summary.Cell>
                 {activeTab === "avlaga" ? (
                   <>
-                    <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-900">
+                    <Table.Summary.Cell
+                      index={1}
+                      align="right"
+                      className="bg-gray-50 dark:bg-gray-900"
+                    >
                       <span
                         className={`font-bold force-bold text-[13px] ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
                       >
                         {formatNumber(totalUldegdel)}
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="right" className="bg-gray-50 dark:bg-gray-900">
+                    <Table.Summary.Cell
+                      index={2}
+                      align="right"
+                      className="bg-gray-50 dark:bg-gray-900"
+                    >
                       <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px] dark:!text-white">
                         {formatNumber(totalPaid)}
                       </span>
                     </Table.Summary.Cell>
                   </>
                 ) : (
-                  <Table.Summary.Cell index={1} align="right" className="bg-gray-50 dark:bg-gray-900">
+                  <Table.Summary.Cell
+                    index={1}
+                    align="right"
+                    className="bg-gray-50 dark:bg-gray-900"
+                  >
                     <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px] dark:!text-white">
                       {formatNumber(totalPaid)}
                     </span>
@@ -446,6 +442,16 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           );
         }}
       />
+      <Modal
+        open={modalOpen}
+        onCancel={onModalClose}
+        footer={null}
+        width={1100}
+        closeIcon={<X className="w-5 h-5" />}
+        className="dark:bg-gray-900"
+      >
+        {modalContent()}
+      </Modal>
     </div>
   );
 };
