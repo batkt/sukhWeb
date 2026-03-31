@@ -107,20 +107,10 @@ export function StandardTable<T extends object>({
       ${col.className || ""}
     `,
     onCell: () => ({
-      style: {
-        borderRight:
-          colIndex < columns.length - 1
-            ? "1px solid var(--surface-border, rgba(100,116,139,0.2))"
-            : undefined,
-      },
+      className: colIndex < columns.length - 1 ? "!border-r !border-slate-200 dark:!border-slate-700/60" : undefined,
     }),
     onHeaderCell: () => ({
-      style: {
-        borderRight:
-          colIndex < columns.length - 1
-            ? "1px solid var(--surface-border, rgba(100,116,139,0.2))"
-            : undefined,
-      },
+      className: colIndex < columns.length - 1 ? "!border-r !border-slate-200 dark:!border-slate-700/60" : undefined,
     }),
     render: (value: any, record: T, index: number) => {
       return col.render ? (
