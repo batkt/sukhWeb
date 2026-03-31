@@ -8,8 +8,7 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import formatNumber from "../../../../tools/function/formatNumber";
-import { FileSpreadsheet, Printer, Plus } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { FileSpreadsheet, Printer } from "lucide-react";
 import { getDefaultDateRange } from "@/lib/utils";
 import { useSearch } from "@/context/SearchContext";
 
@@ -61,7 +60,6 @@ const PrintStyles = () => (
 interface ResidentSummaryRow {
   orshinSuugchiinId: string;
   ner: string;
-  toot: string;
   urisanMachinToo: number;
   niitTulbur: number;
   khungulultMinut: number;
@@ -81,7 +79,6 @@ interface GuestCarRow {
   mashiniiDugaar: string;
   orshinSuugchiinNer: string;
   davkhar: string;
-  toot: string;
   utas: string;
 }
 
@@ -98,7 +95,6 @@ export default function ZogsoolTailanPage() {
   >(getDefaultDateRange);
   const [filters, setFilters] = useState({
     orshinSuugch: "",
-    toot: "",
   });
   const [apiResponse, setApiResponse] = useState<{
     residentSummary: ResidentSummaryRow[];
@@ -122,7 +118,6 @@ export default function ZogsoolTailanPage() {
   );
   const [detailLoading, setDetailLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newToot, setNewToot] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -138,7 +133,6 @@ export default function ZogsoolTailanPage() {
             ekhlekhOgnoo: dateRange?.[0] || undefined,
             duusakhOgnoo: dateRange?.[1] || undefined,
             orshinSuugch: filters.orshinSuugch || searchTerm || undefined,
-            toot: filters.toot || undefined,
           },
         );
         setApiResponse(response.data);
@@ -193,7 +187,6 @@ export default function ZogsoolTailanPage() {
           ekhlekhOgnoo: dateRange?.[0] || undefined,
           duusakhOgnoo: dateRange?.[1] || undefined,
           orshinSuugch: resident.ner,
-          toot: resident.toot,
         },
       );
       setApiResponse((prev) =>
@@ -227,7 +220,6 @@ export default function ZogsoolTailanPage() {
       headers = [
         "№",
         "Нэр",
-        "Тоот",
         "Урьсан машин тоо",
         "Нийт төлөх",
         "Хөнгөлөлт Минут",
@@ -237,7 +229,6 @@ export default function ZogsoolTailanPage() {
       dataToExport = residentSummary.map((row, idx) => [
         idx + 1,
         `"${row.ner || ""}"`,
-        `"${row.toot || ""}"`,
         row.urisanMachinToo,
         row.niitTulbur,
         row.khungulultMinut,
@@ -269,7 +260,6 @@ export default function ZogsoolTailanPage() {
         "Машины дугаар",
         "Оршин суугчийн нэр",
         "Давхар",
-        "Тоот",
         "Утасны дугаар",
       ];
       dataToExport = guestCarList.map((row, idx) => [
@@ -277,7 +267,6 @@ export default function ZogsoolTailanPage() {
         `"${row.mashiniiDugaar || ""}"`,
         `"${row.orshinSuugchiinNer || ""}"`,
         `"${row.davkhar || ""}"`,
-        `"${row.toot || ""}"`,
         `"${row.utas || ""}"`,
       ]);
       fileName = "guest_car_list";
@@ -322,16 +311,9 @@ export default function ZogsoolTailanPage() {
         dataIndex: "ner",
         key: "ner",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
-        ),
-      },
-      {
-        title: "Тоот",
-        dataIndex: "toot",
-        key: "toot",
-        align: "center" as const,
-        render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
       {
@@ -340,7 +322,9 @@ export default function ZogsoolTailanPage() {
         key: "urisanMachinToo",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {val}
+          </span>
         ),
       },
       {
@@ -360,7 +344,9 @@ export default function ZogsoolTailanPage() {
         key: "khungulultMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{val || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {val || "-"}
+          </span>
         ),
       },
       {
@@ -405,7 +391,9 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
       {
@@ -414,7 +402,9 @@ export default function ZogsoolTailanPage() {
         key: "zogssonMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {val}
+          </span>
         ),
       },
       {
@@ -423,7 +413,9 @@ export default function ZogsoolTailanPage() {
         key: "khungulsunMinut",
         align: "center" as const,
         render: (val: number) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{val}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {val}
+          </span>
         ),
       },
       {
@@ -443,7 +435,9 @@ export default function ZogsoolTailanPage() {
         key: "tuluv",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
     ],
@@ -466,7 +460,9 @@ export default function ZogsoolTailanPage() {
         key: "mashiniiDugaar",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
       {
@@ -474,25 +470,9 @@ export default function ZogsoolTailanPage() {
         dataIndex: "orshinSuugchiinNer",
         key: "orshinSuugchiinNer",
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
-        ),
-      },
-      {
-        title: "Давхар",
-        dataIndex: "davkhar",
-        key: "davkhar",
-        align: "center" as const,
-        render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
-        ),
-      },
-      {
-        title: "Тоот",
-        dataIndex: "toot",
-        key: "toot",
-        align: "center" as const,
-        render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
       {
@@ -501,7 +481,9 @@ export default function ZogsoolTailanPage() {
         key: "utas",
         align: "center" as const,
         render: (text: string) => (
-          <span className="text-theme whitespace-nowrap text-[13px]">{text || "-"}</span>
+          <span className="text-theme whitespace-nowrap text-[13px]">
+            {text || "-"}
+          </span>
         ),
       },
     ],
@@ -529,93 +511,69 @@ export default function ZogsoolTailanPage() {
       <PrintStyles />
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Зогсоолын тайлан</h1>
-        <div className="flex gap-3">
-          <Button
-            variant="primary"
-            size="sm"
-            leftIcon={<Plus className="w-4 h-4" />}
-            onClick={() => setIsModalOpen(true)}
-          >
-            Тоот нэмэх
-          </Button>
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
-            Excel татах
-          </button>
-          {/* <button
-            onClick={handlePrint}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <Printer className="w-4 h-4 text-blue-600" />
-            Хэвлэх
-          </button> */}
-        </div>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 no-print">
-        <div className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
+      <div className="flex flex-wrap items-center gap-3 mb-4 no-print">
+        <div
+          id="zogsool-date"
+          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+        >
           <StandardDatePicker
             isRange={true}
             value={dateRange}
             onChange={setDateRange}
             allowClear
             placeholder="Огноо сонгох"
-            className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
+            classNames={{
+              root: "!h-full !w-full",
+              input:
+                "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+            }}
           />
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 no-print">
-       
-        <div className="p-3 w-30 rounded-xl">
-          <label className="block text-sm w-8 text-theme/80 mb-1.5">Тоот</label>
-          <input
-            type="text"
-            value={filters.toot}
-            onChange={(e) =>
-              setFilters((p) => ({ ...p, toot: e.target.value }))
-            }
-            className="w-full p-2 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-          />
+        <div className="flex gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setActiveTab("residentSummary")}
+            className={`px-4 py-2 rounded-xl transition-all ${
+              activeTab === "residentSummary"
+                ? "neu-panel bg-white/20 border border-white/20"
+                : "hover:menu-surface"
+            }`}
+          >
+            Оршин суугчдын урьсан зочдын машин
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("guestDetail")}
+            className={`px-4 py-2 rounded-xl transition-all ${
+              activeTab === "guestDetail"
+                ? "neu-panel bg-white/20 border border-white/20"
+                : "hover:menu-surface"
+            }`}
+          >
+            Зочдын дэлгэрэнгүй тайлан
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("guestCarList")}
+            className={`px-4 py-2 rounded-xl transition-all ${
+              activeTab === "guestCarList"
+                ? "neu-panel bg-white/20 border border-white/20"
+                : "hover:menu-surface"
+            }`}
+          >
+            Зочдын машины жагсаалт
+          </button>
         </div>
-      </div>
 
-      <div className="flex gap-2 mb-4 no-print">
         <button
-          type="button"
-          onClick={() => setActiveTab("residentSummary")}
-          className={`px-4 py-2 rounded-xl  transition-all ${
-            activeTab === "residentSummary"
-              ? "neu-panel bg-white/20 border border-white/20"
-              : "hover:menu-surface"
-          }`}
+          onClick={exportToExcel}
+          className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm ml-auto"
         >
-          Оршин суугчдын урьсан зочдын машин
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("guestDetail")}
-          className={`px-4 py-2 rounded-xl  transition-all ${
-            activeTab === "guestDetail"
-              ? "neu-panel bg-white/20 border border-white/20"
-              : "hover:menu-surface"
-          }`}
-        >
-          Зочдын дэлгэрэнгүй тайлан
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("guestCarList")}
-          className={`px-4 py-2 rounded-xl  transition-all ${
-            activeTab === "guestCarList"
-              ? "neu-panel bg-white/20 border border-white/20"
-              : "hover:menu-surface"
-          }`}
-        >
-          Зочдын машины жагсаалт
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          Excel татах
         </button>
       </div>
 
@@ -649,22 +607,47 @@ export default function ZogsoolTailanPage() {
               summary={() =>
                 residentSummary.length > 0 ? (
                   <Table.Summary.Row className="bg-theme/5">
-                    <Table.Summary.Cell index={0} colSpan={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={0}
+                      colSpan={2}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={1}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {niit.urisanMachinToo}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={2}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {formatNumber(niit.niitTulbur)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={3}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {niit.khungulultMinut || "-"}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={4}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {formatNumber(niit.tulsunDun)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={5} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={5}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {formatNumber(niit.uldegdelTulbur)}
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
@@ -681,7 +664,7 @@ export default function ZogsoolTailanPage() {
             Зочдын дэлгэрэнгүй тайлан
             {selectedResident && (
               <span className="ml-2 text-sm font-normal text-theme/70">
-                — Нэр: {selectedResident.ner} | Тоот: {selectedResident.toot}
+                — Нэр: {selectedResident.ner}
               </span>
             )}
           </h3>
@@ -706,21 +689,42 @@ export default function ZogsoolTailanPage() {
               summary={() =>
                 displayDetail && displayDetail.length > 0 ? (
                   <Table.Summary.Row className="bg-theme/5">
-                    <Table.Summary.Cell index={0} colSpan={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={0}
+                      colSpan={2}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       <strong>Нийт</strong>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={1}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {displayDetail.reduce((s, r) => s + r.zogssonMinut, 0)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={2}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {displayDetail.reduce((s, r) => s + r.khungulsunMinut, 0)}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={3} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={3}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       {formatNumber(
                         displayDetail.reduce((s, r) => s + r.tulbur, 0),
                       )}
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={4} align="center" className="text-[13px] font-bold dark:!text-white force-bold text-theme">
+                    <Table.Summary.Cell
+                      index={4}
+                      align="center"
+                      className="text-[13px] font-bold dark:!text-white force-bold text-theme"
+                    >
                       -
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
@@ -738,9 +742,6 @@ export default function ZogsoolTailanPage() {
             <Table
               dataSource={guestCarList}
               columns={guestCarListColumns}
-              // rowKey={(record) =>
-              //   `${record.mashiniiDugaar}-${record._id || Math.random().toString()}`
-              // }
               pagination={false}
               size="small"
               bordered
@@ -748,56 +749,6 @@ export default function ZogsoolTailanPage() {
               scroll={{ x: "max-content", y: 240 }}
               locale={{ emptyText: "Мэдээлэл алга байна" }}
             />
-          </div>
-        </div>
-      )}
-
-      {/* Modal for adding new room */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-              Тоот нэмэх
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              1-р давхарт шинэ тоот нэмнэ үү.
-            </p>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Тоот
-              </label>
-              <input
-                type="text"
-                value={newToot}
-                onChange={(e) => setNewToot(e.target.value)}
-                placeholder="1-9 гэх мэтээр оруулна уу"
-                className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <Button
-                variant="back"
-                size="md"
-                onClick={() => {
-                  setIsModalOpen(false);
-                  setNewToot("");
-                }}
-              >
-                Хаах
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  // TODO: Add API call to save the new room
-                  console.log("Adding new room:", newToot);
-                  setIsModalOpen(false);
-                  setNewToot("");
-                }}
-              >
-                Нэмэх
-              </Button>
-            </div>
           </div>
         </div>
       )}

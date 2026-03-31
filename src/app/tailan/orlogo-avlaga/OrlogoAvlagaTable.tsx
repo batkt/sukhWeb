@@ -419,7 +419,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="center"
                   className="bg-gray-50 dark:bg-gray-900"
                 >
-                  <span className="font-bold text-gray-900 dark:text-white force-bold text-[11px]">
+                  <span className="font-bold text-gray-900 dark:!text-white force-bold text-[11px]">
                     Нийт
                   </span>
                 </Table.Summary.Cell>
@@ -431,7 +431,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                       className="bg-gray-50 dark:bg-gray-900"
                     >
                       <span
-                        className={`font-bold force-bold text-[11px] ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
+                        className={`font-bold force-bold text-[11px] ${totalUldegdel > 0 ? "text-gray-900 dark:!text-white" : totalUldegdel < 0 ? "text-emerald-600 dark:!text-emerald-400" : "text-gray-900 dark:!text-white"}`}
                       >
                         {formatNumber(totalUldegdel, 2)} ₮
                       </span>
