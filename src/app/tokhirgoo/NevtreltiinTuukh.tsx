@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import DateRangeButton from "@/components/ui/DateRangeButton";
 import {
   Tooltip,
   TooltipContent,
@@ -193,16 +193,18 @@ export default function NevtreltiinTuukh({
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-          {/* Date Range */}
-          <div className="flex items-center gap-2">
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={handleDateChange}
-              className="text-[color:var(--panel-text)]"
-              format="YYYY-MM-DD"
-            />
+        <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm text-[color:var(--panel-text)] mb-1">
+                Огноо
+              </label>
+              <DateRangeButton
+                value={dateRange}
+                onChange={handleDateChange}
+                placeholder="Огноо сонгох"
+              />
+            </div>
           </div>
         </div>
 

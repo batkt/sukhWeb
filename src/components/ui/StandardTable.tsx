@@ -129,59 +129,59 @@ export function StandardTable<T extends object>({
 
   return (
     <div className={cn("flex flex-col w-full", containerClassName)}>
-      <div 
+      <div
         className={cn(
           "relative border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm rounded-2xl",
-          className
+          className,
         )}
         style={{ maxHeight }}
       >
         <Spin spinning={loading} tip="Уншиж байна..." size="small">
-            <Table<T>
-              columns={antColumns}
-              dataSource={dataWithKeys}
-              pagination={false}
-              locale={{
-                emptyText: (
-                  <div className="py-12 text-center bg-transparent">
-                    <span className="text-gray-500 dark:text-gray-400 text-sm">
-                      {emptyMessage}
-                    </span>
-                  </div>
-                ),
-              }}
-              sticky={stickyHeader}
-              onRow={(record) => ({
-                onClick: () => handleRowClick(record),
-                style: { cursor: onRowClick ? "pointer" : "default" },
-              })}
-              className="min-w-full"
-              scroll={{
-                x: "max-content",
-                ...(maxHeight ? { y: maxHeight } : {}),
-              }}
-              rowClassName={(record, index) => `
+          <Table<T>
+            columns={antColumns}
+            dataSource={dataWithKeys}
+            pagination={false}
+            locale={{
+              emptyText: (
+                <div className="py-12 text-center bg-transparent">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                    {emptyMessage}
+                  </span>
+                </div>
+              ),
+            }}
+            sticky={stickyHeader}
+            onRow={(record) => ({
+              onClick: () => handleRowClick(record),
+              style: { cursor: onRowClick ? "pointer" : "default" },
+            })}
+            className="min-w-full"
+            scroll={{
+              x: "max-content",
+              ...(maxHeight ? { y: maxHeight } : {}),
+            }}
+            rowClassName={(record, index) => `
                 ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
                 text-gray-900 dark:text-white
                 hover:bg-gray-100 dark:hover:bg-gray-600
                 transition-colors duration-200
                 border-b border-slate-100 dark:border-slate-800/50
               `}
-            />
-          </Spin>
+          />
+        </Spin>
 
-          {pagination && typeof pagination === "object" && (
-            <StandardPagination
-              current={pagination.current}
-              total={pagination.total}
-              pageSize={pagination.pageSize}
-              onChange={pagination.onChange}
-              onPageSizeChange={(newSize) => pagination.onChange(1, newSize)}
-            />
-          )}
+        {pagination && typeof pagination === "object" && (
+          <StandardPagination
+            current={pagination.current}
+            total={pagination.total}
+            pageSize={pagination.pageSize}
+            onChange={pagination.onChange}
+            onPageSizeChange={(newSize) => pagination.onChange(1, newSize)}
+          />
+        )}
 
-          {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
-        </div>
+        {footer && <div className="mt-4 px-4 pb-4">{footer}</div>}
+      </div>
     </div>
   );
 }
@@ -208,7 +208,9 @@ export function StandardPagination({
       {/* Left side: Total & Page Size */}
       <div className="flex items-center gap-4">
         <span className="text-[13px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-          Нийт <span className="text-slate-800 dark:text-slate-200">{total}</span> мөр
+          Нийт{" "}
+          <span className="text-slate-800 dark:text-slate-200">{total}</span>{" "}
+          мөр
         </span>
 
         {onPageSizeChange && (
@@ -221,18 +223,16 @@ export function StandardPagination({
                 onChange(1, newSize);
               }}
             >
-              <SelectTrigger 
-                className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 gap-2 transition-colors !shadow-none"
-              >
+              <SelectTrigger className="h-8 border-none bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl px-3 gap-2 transition-colors !shadow-none">
                 <span className="text-[13px] font-semibold text-slate-800 dark:text-slate-200">
                   {pageSize} / хуудас
                 </span>
               </SelectTrigger>
               <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 shadow-xl">
                 {pageSizeOptions.map((opt) => (
-                  <SelectItem 
-                    key={opt} 
-                    value={opt.toString()} 
+                  <SelectItem
+                    key={opt}
+                    value={opt.toString()}
                     className="text-[13px] focus:bg-emerald-50 focus:text-emerald-600 dark:focus:bg-emerald-950/20 dark:focus:text-emerald-400 rounded-xl cursor-pointer"
                   >
                     {opt}
@@ -256,12 +256,15 @@ export function StandardPagination({
 
         <div className="flex items-center justify-center px-4 h-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
           <span className="text-[13px] font-bold text-emerald-500 tabular-nums">
-            {current} <span className="text-slate-300 mx-1">/</span> {totalPages}
+            {current} <span className="text-slate-300 mx-1">/</span>{" "}
+            {totalPages}
           </span>
         </div>
 
         <button
-          onClick={() => current < totalPages && onChange(current + 1, pageSize)}
+          onClick={() =>
+            current < totalPages && onChange(current + 1, pageSize)
+          }
           disabled={current >= totalPages}
           className="flex items-center gap-1.5 px-3 h-8 rounded-2xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all text-[13px]  border-none"
         >

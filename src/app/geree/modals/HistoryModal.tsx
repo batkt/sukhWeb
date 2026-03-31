@@ -271,8 +271,6 @@ export default function HistoryModal({
         : [];
       const freshContract = contractResp?.data;
 
-    
-
       // Extract all possible identifiers from the contract/resident object
       const contractId = String(contract?._id || "").trim();
       const residentId = String(
@@ -294,7 +292,6 @@ export default function HistoryModal({
         return String(contract?.utas || "").trim();
       })();
 
-     
       // Filter for this specific contract/resident using multiple strategies
       // When gereeniiId is available, REQUIRE it to match - otherwise we'd pull in invoices
       // from other contracts (same resident, different apartment) and double-count charges
@@ -382,8 +379,6 @@ export default function HistoryModal({
         return false;
       });
 
-     
-
       // 1. Process Invoices and their contents
       const flatLedger: LedgerEntry[] = [];
       const processedIds = new Set<string>();
@@ -399,7 +394,6 @@ export default function HistoryModal({
 
       // Log first item for debugging
       if (contractItemsToProcess.length > 0) {
-       
       }
       const invoiceIds = new Set(
         contractItemsToProcess.map((item: any) => item._id?.toString()),
@@ -460,7 +454,6 @@ export default function HistoryModal({
             // For "Эхний үлдэгдэл" entries with 0 value, SKIP them entirely
             // We'll use the gereeniiTulukhAvlaga record instead (which has the actual value)
             if (isEkhniiUldegdel && (amt === 0 || amt === undefined)) {
-              
               return;
             }
 
@@ -499,7 +492,6 @@ export default function HistoryModal({
                 matchedReceivables.forEach((r: any) => {
                   if (r.ekhniiUldegdelEsekh === true && r._id) {
                     processedIds.add(r._id.toString());
-                 
                   }
                 });
               }
@@ -728,13 +720,10 @@ export default function HistoryModal({
         );
       });
 
- 
-
       matchedReceivables.forEach((rec: any) => {
         const recId = rec._id?.toString();
         // Skip if already processed in invoice loop
         if (recId && processedIds.has(recId)) {
-          
           return;
         }
 
@@ -745,7 +734,6 @@ export default function HistoryModal({
         // Skip ekhniiUldegdel records if they're already included in the invoice zardluud
         // This prevents duplicate "Эхний үлдэгдэл" entries
         if (rec.ekhniiUldegdelEsekh === true && hasEkhniiUldegdelInInvoice) {
-    
           return;
         }
 
@@ -837,8 +825,6 @@ export default function HistoryModal({
           name = "Төлөлт";
           khelber = "Төлбөр";
         }
-
-     
 
         if (tulsunDun > 0) {
           flatLedger.push({
@@ -1290,7 +1276,7 @@ export default function HistoryModal({
                           {formatCurrency(row.tulsunDun)}
                         </td>
                         <td
-                          className={`py-2 px-2 text-[13px] border-r text-right whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
+                          className={`py-2 px-2 text-[13px] border-r text-right underline whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
                         >
                           {typeof row.uldegdel === "number"
                             ? formatCurrency(row.uldegdel)
@@ -1313,7 +1299,6 @@ export default function HistoryModal({
                             : "-"}
                         </td>
                         <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
-
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1400,17 +1385,20 @@ export default function HistoryModal({
                             Нийт
                           </td>
                           <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                            {formatCurrency(totalCharges)}
+                            {formatCurrency(totalCharges)} ₮
                           </td>
                           <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                            {formatCurrency(totalPayments)}
+                            {formatCurrency(totalPayments)} ₮
                           </td>
                           <td
                             className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
                           >
-                            {formatCurrency(balance)}
+                            {formatCurrency(balance)} ₮
                           </td>
-                          <td colSpan={3} className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"></td>
+                          <td
+                            colSpan={3}
+                            className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
+                          ></td>
                         </tr>
                       );
                     })()}

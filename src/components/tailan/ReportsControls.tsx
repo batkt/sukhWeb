@@ -29,27 +29,23 @@ export default function ReportsControls({
   return (
     <div className="mb-4">
       <div className="flex flex-wrap gap-3 items-center">
-        {/* <StandardDatePicker
-          isRange={true}
-          locale="mn"
-          value={dateRange}
-          onChange={setDateRange}
-          valueFormat="YYYY-MM-DD"
-          placeholder="Огноо сонгох"
-          clearable
-          dropdownType="popover"
-          popoverProps={{
-            position: "bottom-start",
-            withinPortal: true,
-            width: 320,
-          }}
-          size="sm"
-          radius="xl"
-          classNames={{
-            root: "neu-panel rounded-2xl",
-            input: "px-3 py-2 h-10 text-sm",
-          }}
-        /> */}
+        <div
+          id="reports-date"
+          className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
+        >
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder="Огноо сонгох"
+            classNames={{
+              root: "!h-full !w-full",
+              input:
+                "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+            }}
+          />
+        </div>
 
         <input
           placeholder="Байр"

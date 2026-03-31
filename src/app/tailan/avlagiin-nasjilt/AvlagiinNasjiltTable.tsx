@@ -79,9 +79,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "ner",
         key: "ner",
         width: 150,
+        align: "center",
         fixed: "left",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap font-medium truncate max-w-[140px]" title={val}>
+          <span
+            className="text-theme whitespace-nowrap font-medium truncate max-w-[140px]"
+            title={val}
+          >
             {val || "-"}
           </span>
         ),
@@ -113,11 +117,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "undsenDun",
         key: "undsenDun",
         width: 100,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.niitDun)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.niitDun, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -125,11 +131,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "khungulult",
         key: "khungulult",
         width: 100,
-        align: "right",
+        align: "center",
         render: (val: number) => (
-          <span className="text-theme/60 whitespace-nowrap">
-            {formatNumber(val)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme/60 whitespace-nowrap">
+              {formatNumber(val, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -137,11 +145,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "tulsunDun",
         key: "tulsunDun",
         width: 100,
-        align: "right",
+        align: "center",
         render: (val: number) => (
-          <span className="text-emerald-600 whitespace-nowrap">
-            {formatNumber(val)}
-          </span>
+          <div className="text-right">
+            <span className="text-emerald-600 whitespace-nowrap">
+              {formatNumber(val, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -149,11 +159,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "uldegdel",
         key: "uldegdel",
         width: 100,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-red-500 font-bold whitespace-nowrap">
-            {formatNumber(val ?? record.tulukhDun)}
-          </span>
+          <div className="text-right">
+            <span className="text-red-500 font-bold whitespace-nowrap">
+              {formatNumber(val ?? record.tulukhDun, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -161,11 +173,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "p0_30",
         key: "p0_30",
         width: 80,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.avalaga0)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.avalaga0, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -173,11 +187,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "p31_60",
         key: "p31_60",
         width: 80,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.avlaga31)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.avlaga31, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -185,11 +201,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "p61_90",
         key: "p61_90",
         width: 80,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.avlaga61)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.avlaga61, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -197,11 +215,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "p91_120",
         key: "p91_120",
         width: 80,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.avlaga91)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.avlaga91, 2)}
+            </span>
+          </div>
         ),
       },
       {
@@ -209,15 +229,17 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         dataIndex: "p120plus",
         key: "p120plus",
         width: 80,
-        align: "right",
+        align: "center",
         render: (val: number, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {formatNumber(val ?? record.avlaga120)}
-          </span>
+          <div className="text-right">
+            <span className="text-theme whitespace-nowrap">
+              {formatNumber(val ?? record.avlaga120, 2)}
+            </span>
+          </div>
         ),
       },
     ],
-    [page, pageSize]
+    [page, pageSize],
   );
 
   return (
@@ -238,53 +260,53 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             <Table.Summary fixed="bottom">
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5} align="center">
-                  <span className="force-bold text-theme text-xs uppercase tracking-wider">
-                    НИЙТ
+                  <span className="force-bold text-theme tracking-wider">
+                    Нийт
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1} align="right">
-                  <span className="force-bold text-lg text-theme">
-                    {formatNumber(totals.undsenDun)}
+                  <span className="force-bold text-theme">
+                    {formatNumber(totals.undsenDun, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} align="right">
                   <span className="force-bold text-theme/60">
-                    {formatNumber(totals.khungulult)}
+                    {formatNumber(totals.khungulult, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={3} align="right">
                   <span className="force-bold text-emerald-600">
-                    {formatNumber(totals.tulsunDun)}
+                    {formatNumber(totals.tulsunDun, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={4} align="right">
                   <span className="force-bold text-red-500">
-                    {formatNumber(totals.uldegdel)}
+                    {formatNumber(totals.uldegdel, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="right">
                   <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p0_30)}
+                    {formatNumber(totals.p0_30, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={6} align="right">
                   <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p31_60)}
+                    {formatNumber(totals.p31_60, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={7} align="right">
                   <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p61_90)}
+                    {formatNumber(totals.p61_90, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={8} align="right">
                   <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p91_120)}
+                    {formatNumber(totals.p91_120, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={9} align="right">
                   <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p120plus)}
+                    {formatNumber(totals.p120plus, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
               </Table.Summary.Row>

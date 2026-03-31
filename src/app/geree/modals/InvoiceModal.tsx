@@ -744,7 +744,9 @@ export default function InvoiceModal({
                 <div className="p-6 bg-[color:var(--surface-hover)]/30 no-print border-b border-[color:var(--surface-border)]">
                   <div className="grid grid-cols-2 gap-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">Гэрээний дугаар:</span>
+                      <span className="text-[color:var(--panel-text)] opacity-70">
+                        Гэрээний дугаар:
+                      </span>
                       <span className="font-bold text-theme dark:text-white">
                         {selectedInvoice?.gereeniiDugaar ||
                           resident?.gereeniiId ||
@@ -752,19 +754,25 @@ export default function InvoiceModal({
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">Нэр:</span>
+                      <span className="text-[color:var(--panel-text)] opacity-70">
+                        Нэр:
+                      </span>
                       <span className="font-bold text-theme dark:text-white">
                         {resident?.ovog} {resident?.ner}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">Тоот:</span>
+                      <span className="text-[color:var(--panel-text)] opacity-70">
+                        Тоот:
+                      </span>
                       <span className="font-bold text-theme dark:text-white">
                         {resident?.toot || "-"}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">Утас:</span>
+                      <span className="text-[color:var(--panel-text)] opacity-70">
+                        Утас:
+                      </span>
                       <span className="font-bold text-theme dark:text-white">
                         {resident?.utas || "-"}
                       </span>
@@ -801,24 +809,32 @@ export default function InvoiceModal({
                             {baiguullaga?.ner || "Computer Mall"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Хаяг:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Хаяг:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {baiguullaga?.khayag || "sukhbaatar 9th district"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Утас, Факс:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Утас, Факс:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {Array.isArray(baiguullaga?.utas)
                               ? baiguullaga.utas[0]
                               : baiguullaga?.utas || "70107010"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">И-мэйл:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            И-мэйл:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {baiguullaga?.email || "-"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Банкны нэр:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Банкны нэр:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {baiguullaga?.bankNer || "Хаан банк"}
                           </span>
@@ -830,7 +846,9 @@ export default function InvoiceModal({
                             {baiguullaga?.dans || "MN320005005620095719"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Данс эзэмшигч:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Данс эзэмшигч:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             ЦЭГЦТЭЙ НАЙРАМДАЛ ПРОПЕРТИ
                           </span>
@@ -843,17 +861,23 @@ export default function InvoiceModal({
                           Төлөгч:
                         </div>
                         <div className="grid grid-cols-[120px_1fr] gap-x-2">
-                          <span className="text-[color:var(--panel-text)] opacity-70">Оршин суугч:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Оршин суугч:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {resident?.ovog} {resident?.ner}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Тоот:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Тоот:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {resident?.toot ? `${resident.toot} тоот` : "-"}
                           </span>
 
-                          <span className="text-[color:var(--panel-text)] opacity-70">Гэрээний №:</span>
+                          <span className="text-[color:var(--panel-text)] opacity-70">
+                            Гэрээний №:
+                          </span>
                           <span className="font-bold text-right text-theme dark:text-white">
                             {selectedInvoice?.gereeniiDugaar ||
                               resident?.gereeniiId ||
@@ -899,25 +923,32 @@ export default function InvoiceModal({
                             const discount = Number(row.khungulult || 0);
 
                             return (
-                              <tr key={row._id} className="text-center border-b border-[color:var(--surface-border)] last:border-0">
+                              <tr
+                                key={row._id}
+                                className="text-center border-b border-[color:var(--surface-border)] last:border-0"
+                              >
                                 <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
                                   {idx + 1}
                                 </td>
                                 <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-left">
                                   {row.ner}
                                 </td>
-                                 <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
-                                   {(() => {
-                                     const val = row.umnukh || row.umnukhZaalt;
-                                     return val != null && val !== "" ? formatNumber(val, 2) : "";
-                                   })()}
-                                 </td>
-                                 <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
-                                   {(() => {
-                                     const val = row.suuliin || row.suuliinZaalt;
-                                     return val != null && val !== "" ? formatNumber(val, 2) : "";
-                                   })()}
-                                 </td>
+                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
+                                  {(() => {
+                                    const val = row.umnukh || row.umnukhZaalt;
+                                    return val != null && val !== ""
+                                      ? formatNumber(val, 2)
+                                      : "";
+                                  })()}
+                                </td>
+                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
+                                  {(() => {
+                                    const val = row.suuliin || row.suuliinZaalt;
+                                    return val != null && val !== ""
+                                      ? formatNumber(val, 2)
+                                      : "";
+                                  })()}
+                                </td>
                                 {/* <td className="border-r border-slate-200 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
                                 <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right font-medium">
                                   {formatNumber(total, 2)}
@@ -952,13 +983,17 @@ export default function InvoiceModal({
                     <div className="flex justify-between items-start mt-4">
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
-                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">Хүлээн авсан:</span>
+                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">
+                            Хүлээн авсан:
+                          </span>
                           <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
                             /{resident?.ovog?.charAt(0)}. {resident?.ner}/
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">Нэхэмжлэл бичсэн:</span>
+                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">
+                            Нэхэмжлэл бичсэн:
+                          </span>
                           <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
                             {selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}
                           </span>
@@ -970,11 +1005,11 @@ export default function InvoiceModal({
 
                 {/* Content Footer / Actions */}
                 <div className="p-6 border-t border-[color:var(--surface-border)] flex justify-end gap-3 bg-[color:var(--surface-bg)] no-print">
-                   <Button
+                  <Button
                     onClick={onClose}
                     variant="secondary"
                     className="px-6"
-                   >
+                  >
                     Хаах
                   </Button>
                   <Button

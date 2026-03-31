@@ -516,7 +516,10 @@ export default function Ebarimt() {
           <div className="rounded-2xl">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                <div id="ebarimt-date" className="h-10 w-full sm:w-[320px]">
+                <div
+                  id="ebarimt-date"
+                  className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+                >
                   <StandardDatePicker
                     isRange={true}
                     value={ekhlekhOgnoo ?? undefined}
@@ -527,10 +530,13 @@ export default function Ebarimt() {
                     }
                     allowClear
                     placeholder="Огноо сонгох"
-                    className="text-theme !px-3"
+                    classNames={{
+                      root: "!h-full !w-full",
+                      input:
+                        "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                    }}
                   />
                 </div>
-
               </div>
               <div className="flex flex-row gap-3 w-full lg:w-auto justify-end">
                 <IconTextButton

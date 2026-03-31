@@ -7,8 +7,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  Trash2, 
+import {
+  Trash2,
   User,
   FileText,
   ChevronLeft,
@@ -16,7 +16,7 @@ import {
   Eye,
   X,
   AlertTriangle,
-  ChevronDown
+  ChevronDown,
 } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
@@ -76,7 +76,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-  <div>
+              <div>
                 <h3 className="text-xl  text-[color:var(--panel-text)]">
                   Устгасан дэлгэрэнгүй
                 </h3>
@@ -107,7 +107,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 Огноо
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
-                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
+                {moment(record.createdAt || record.ognoo).format(
+                  "YYYY-MM-DD HH:mm:ss",
+                )}
               </p>
             </div>
             <div>
@@ -126,11 +128,13 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
                     guilgee: "Гүйлгээ",
                   };
-                  return modelNames[record.modelName] || record.modelName || "-";
+                  return (
+                    modelNames[record.modelName] || record.modelName || "-"
+                  );
                 })()}
               </p>
             </div>
-  </div>
+          </div>
 
           <div>
             <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
@@ -138,7 +142,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             </h4>
             <div className="grid grid-cols-2 gap-4 max-h-96 overflow-y-auto">
               {(() => {
-                const deletedData = record.deletedDocument || record.deletedData;
+                const deletedData =
+                  record.deletedDocument || record.deletedData;
                 if (!deletedData) {
                   return (
                     <p className="text-sm text-[color:var(--muted-text)]">
@@ -146,7 +151,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     </p>
                   );
                 }
-                
+
                 // Common field labels in Mongolian
                 const fieldLabels: Record<string, string> = {
                   ner: "Нэр",
@@ -186,9 +191,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   guilgeenuud: "Гүйлгээнүүд",
                   tulsun: "Төлсөн",
                 };
-                  
-                  // Fields to exclude from display
-                  const excludedFields = [
+
+                // Fields to exclude from display
+                const excludedFields = [
                   "taniltsuulgaKharakhEsekh",
                   "baiguullagiinId",
                   "barilgiinId",
@@ -203,11 +208,12 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   "_id",
                   "__v",
                 ];
-                
+
                 const formatValue = (value: any, key?: string): string => {
                   if (value === null || value === undefined) return "(хоосон)";
-                  if (typeof value === "boolean") return value ? "Тийм" : "Үгүй";
-                  
+                  if (typeof value === "boolean")
+                    return value ? "Тийм" : "Үгүй";
+
                   // Format dates in Mongolian format
                   if (key === "createdAt" || key === "updatedAt") {
                     try {
@@ -216,80 +222,131 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                       return String(value);
                     }
                   }
-                  
+
                   // Check if value is a date string (ISO format)
                   if (value === "pending") return "Хүлээгдэж буй";
                   if (value === "done") return "Дууссан";
-                  
+
                   const safeStringify = (obj: any): string => {
                     try {
-                      if (typeof obj !== 'object' || obj === null) return String(obj);
+                      if (typeof obj !== "object" || obj === null)
+                        return String(obj);
                       if (Array.isArray(obj)) {
                         if (obj.length === 0) return "(хоосон)";
                         return `[${obj.length} мөр]`;
                       }
                       if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
-                      
+
                       // Try to pick some useful keys
-                      const keys = Object.keys(obj).filter(k => !k.startsWith('_'));
+                      const keys = Object.keys(obj).filter(
+                        (k) => !k.startsWith("_"),
+                      );
                       if (keys.length === 0) return "{...}";
-                      const summary = keys.slice(0, 3).map(k => {
-                        const v = obj[k];
-                        const valStr = (typeof v === 'object' && v !== null) ? (Array.isArray(v) ? `[${v.length}]` : "{...}") : String(v);
-                        return `${k}: ${valStr}`;
-                      }).join(", ");
+                      const summary = keys
+                        .slice(0, 3)
+                        .map((k) => {
+                          const v = obj[k];
+                          const valStr =
+                            typeof v === "object" && v !== null
+                              ? Array.isArray(v)
+                                ? `[${v.length}]`
+                                : "{...}"
+                              : String(v);
+                          return `${k}: ${valStr}`;
+                        })
+                        .join(", ");
                       return summary + (keys.length > 3 ? "..." : "");
-                    } catch { return "[Объект]"; }
+                    } catch {
+                      return "[Объект]";
+                    }
                   };
 
                   if (typeof value === "object" && !Array.isArray(value)) {
-                    if (value.ner && value.kod) return `${value.ner} (${value.kod})`;
-                    
+                    if (value.ner && value.kod)
+                      return `${value.ner} (${value.kod})`;
+
                     // Detailed object formatting to avoid [object Object]
-                    if (key === 'medeelel' || key === 'deletedData' || key === 'deletedDocument') {
+                    if (
+                      key === "medeelel" ||
+                      key === "deletedData" ||
+                      key === "deletedDocument"
+                    ) {
                       const summaryLines: string[] = [];
-                      if (Array.isArray(value.zardluud)) summaryLines.push(`Зардал: ${value.zardluud.length}`);
-                      if (Array.isArray(value.guilgeenuud)) summaryLines.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
-                      if (value.niitTulbur !== undefined) summaryLines.push(`Нийт: ${value.niitTulbur}`);
-                      if (summaryLines.length > 0) return summaryLines.join(", ");
+                      if (Array.isArray(value.zardluud))
+                        summaryLines.push(`Зардал: ${value.zardluud.length}`);
+                      if (Array.isArray(value.guilgeenuud))
+                        summaryLines.push(
+                          `Гүйлгээ: ${value.guilgeenuud.length}`,
+                        );
+                      if (value.niitTulbur !== undefined)
+                        summaryLines.push(`Нийт: ${value.niitTulbur}`);
+                      if (summaryLines.length > 0)
+                        return summaryLines.join(", ");
                     }
-                    
+
                     return safeStringify(value);
                   }
                   if (Array.isArray(value)) {
                     if (value.length === 0) return "(хоосон)";
                     // Format payment history or other arrays
-                    if (key === 'paymentHistory' || key === 'guilgeenuud' || key === 'zardluud') {
+                    if (
+                      key === "paymentHistory" ||
+                      key === "guilgeenuud" ||
+                      key === "zardluud"
+                    ) {
                       return `${value.length} мөр`;
                     }
-                    if (typeof value[0] === 'object') return `${value.length} мөр`;
+                    if (typeof value[0] === "object")
+                      return `${value.length} мөр`;
                     return value.join(", ");
                   }
                   return String(value);
                 };
-                
+
                 // Helper to get value from toots array first, then fallback to top-level
-                const getValueFromToots = (key: string, topLevelValue: any): any => {
+                const getValueFromToots = (
+                  key: string,
+                  topLevelValue: any,
+                ): any => {
                   // Fields that should prioritize toots array
-                  const tootsFields = ['toot', 'davkhar', 'orts', 'duureg', 'horoo', 'soh', 'bairniiNer'];
-                  if (tootsFields.includes(key) && Array.isArray(deletedData.toots) && deletedData.toots.length > 0) {
+                  const tootsFields = [
+                    "toot",
+                    "davkhar",
+                    "orts",
+                    "duureg",
+                    "horoo",
+                    "soh",
+                    "bairniiNer",
+                  ];
+                  if (
+                    tootsFields.includes(key) &&
+                    Array.isArray(deletedData.toots) &&
+                    deletedData.toots.length > 0
+                  ) {
                     const tootsValue = deletedData.toots[0][key];
-                    if (tootsValue != null && tootsValue !== '') {
+                    if (tootsValue != null && tootsValue !== "") {
                       return tootsValue;
                     }
                   }
                   return topLevelValue;
                 };
-                
-                const filteredEntries = Object.entries(deletedData)
-                  .filter(([key]) => !key.startsWith("_") && key !== "__v" && !excludedFields.includes(key));
-                
+
+                const filteredEntries = Object.entries(deletedData).filter(
+                  ([key]) =>
+                    !key.startsWith("_") &&
+                    key !== "__v" &&
+                    !excludedFields.includes(key),
+                );
+
                 // Check if createdAt and updatedAt are the same
                 const createdAt = deletedData.createdAt;
                 const updatedAt = deletedData.updatedAt;
-                const datesAreSame = createdAt && updatedAt && 
-                  moment(createdAt).format("YYYY-MM-DD HH:mm:ss") === moment(updatedAt).format("YYYY-MM-DD HH:mm:ss");
-                
+                const datesAreSame =
+                  createdAt &&
+                  updatedAt &&
+                  moment(createdAt).format("YYYY-MM-DD HH:mm:ss") ===
+                    moment(updatedAt).format("YYYY-MM-DD HH:mm:ss");
+
                 return filteredEntries
                   .filter(([key]) => {
                     if (datesAreSame && key === "updatedAt") {
@@ -300,12 +357,13 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                   .map(([key, value]) => {
                     // Prioritize toots array data for specific fields
                     const displayValue = getValueFromToots(key, value);
-                    
+
                     // If dates are the same and this is createdAt, change label to show both
-                    const displayLabel = datesAreSame && key === "createdAt" 
-                      ? "Үүсгэсэн/Устгасан огноо"
-                      : (fieldLabels[key] || key);
-                    
+                    const displayLabel =
+                      datesAreSame && key === "createdAt"
+                        ? "Үүсгэсэн/Устгасан огноо"
+                        : fieldLabels[key] || key;
+
                     return (
                       <div
                         key={key}
@@ -317,8 +375,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                         <div className="text-sm text-theme break-words">
                           {formatValue(displayValue, key)}
                         </div>
-  </div>
-);
+                      </div>
+                    );
                   });
               })()}
             </div>
@@ -330,22 +388,18 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             onClick={onClose}
             variant="primary"
             size="sm"
-            style={{ borderRadius: '0.5rem' }}
+            style={{ borderRadius: "0.5rem" }}
           >
             Хаах
           </Button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 
-export default function UstsanTuukh({
-  token,
-  baiguullaga,
-  ajiltan,
-}: Props) {
+export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
@@ -357,42 +411,48 @@ export default function UstsanTuukh({
     dayjs().format("YYYY-MM-DD"),
   ]);
   const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
-  const [selectedRecord, setSelectedRecord] = useState<DeleteRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<DeleteRecord | null>(
+    null,
+  );
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Common model names - Keep only necessary ones
-  const modelNames = useMemo(() => [
-    { value: "geree", label: "Гэрээ" },
-    { value: "orshinSuugch", label: "Оршин суугч" },
-    { value: "talbai", label: "Талбай" },
-    { value: "nekhemjlekh", label: "Нэхэмжлэх" },
-    { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
-    { value: "guilgee", label: "Гүйлгээ" },
-    { value: "ajiltan", label: "Ажилтан" },
-    { value: "barilga", label: "Барилга" },
-  ], []);
+  const modelNames = useMemo(
+    () => [
+      { value: "geree", label: "Гэрээ" },
+      { value: "orshinSuugch", label: "Оршин суугч" },
+      { value: "talbai", label: "Талбай" },
+      { value: "nekhemjlekh", label: "Нэхэмжлэх" },
+      { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
+      { value: "guilgee", label: "Гүйлгээ" },
+      { value: "ajiltan", label: "Ажилтан" },
+      { value: "barilga", label: "Барилга" },
+    ],
+    [],
+  );
 
   // Fetch all employees for the filter
   const { data: employeesData } = useSWR(
-    token && baiguullaga?._id 
-      ? [`/ajiltan`, token, baiguullaga._id] 
-      : null,
+    token && baiguullaga?._id ? [`/ajiltan`, token, baiguullaga._id] : null,
     async ([url, tkn, orgId]) => {
-      const resp = await uilchilgee(tkn).get(url, { 
-        params: { baiguullagiinId: orgId, khuudasniiKhemjee: 1000 } 
+      const resp = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: orgId, khuudasniiKhemjee: 1000 },
       });
       return resp.data?.jagsaalt || resp.data?.data || [];
-    }
+    },
   );
 
   const employees = useMemo(() => {
     if (!Array.isArray(employeesData)) return [];
     return employeesData.map((e: any) => {
-      const aName = typeof e.ner === 'object' ? `${e.ner.over || e.ner.ovog || ''} ${e.ner.ner || ''}` : e.ner;
-      const bName = `${e.ovog || ''} ${e.ner || ''}`;
+      const aName =
+        typeof e.ner === "object"
+          ? `${e.ner.over || e.ner.ovog || ""} ${e.ner.ner || ""}`
+          : e.ner;
+      const bName = `${e.ovog || ""} ${e.ner || ""}`;
       return {
         id: e._id,
-        name: (aName || bName || e.nevtrekhNer || 'Нэргүй').trim()
+        name: (aName || bName || e.nevtrekhNer || "Нэргүй").trim(),
       };
     });
   }, [employeesData]);
@@ -412,40 +472,50 @@ export default function UstsanTuukh({
           pageSize,
         ]
       : null,
-    async ([url, tkn, orgId, startDate, endDate, model, employee, pg, pgSize]) => {
+    async ([
+      url,
+      tkn,
+      orgId,
+      startDate,
+      endDate,
+      model,
+      employee,
+      pg,
+      pgSize,
+    ]) => {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: pg,
         khuudasniiKhemjee: 10000, // Fetch all for client-side filtering
       };
-      
+
       if (model) {
         params.modelName = model;
       }
-      
+
       if (employee) {
         params.ajiltniiId = employee;
       }
-      
+
       if (startDate && endDate) {
         params.ekhlekhOgnoo = `${startDate} 00:00:00`;
         params.duusakhOgnoo = `${endDate} 23:59:59`;
       }
-      
+
       const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const allRecords: DeleteRecord[] = useMemo(() => {
     // API returns data in data.data array, not data.jagsaalt
-    const raw = Array.isArray(data?.data) 
-      ? data.data 
-      : Array.isArray(data?.jagsaalt) 
-        ? data.jagsaalt 
+    const raw = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.jagsaalt)
+        ? data.jagsaalt
         : [];
-    
+
     // De-duplicate by ID and content to prevent visual duplication
     const seenIds = new Set<string>();
     const seenContent = new Set<string>();
@@ -468,7 +538,12 @@ export default function UstsanTuukh({
     // Map API response to our interface format
     return unique.map((r: any) => ({
       ...r,
-      ajiltniiId: r.ajiltniiId || r.ajiltanId || r.workerId || (r.ajiltan?._id || r.ajiltan?.id),
+      ajiltniiId:
+        r.ajiltniiId ||
+        r.ajiltanId ||
+        r.workerId ||
+        r.ajiltan?._id ||
+        r.ajiltan?.id,
       deletedDocument: r.deletedData || r.deletedDocument, // Support both field names
       createdAt: r.ognoo || r.createdAt, // Use ognoo if available
     }));
@@ -478,7 +553,8 @@ export default function UstsanTuukh({
   const filteredRecords = useMemo(() => {
     return allRecords.filter((r) => {
       const matchesModel = !selectedModel || r.modelName === selectedModel;
-      const matchesEmployee = !selectedEmployee || r.ajiltniiId === selectedEmployee;
+      const matchesEmployee =
+        !selectedEmployee || r.ajiltniiId === selectedEmployee;
       return matchesModel && matchesEmployee;
     });
   }, [allRecords, selectedModel, selectedEmployee]);
@@ -516,7 +592,9 @@ export default function UstsanTuukh({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .ustsan-select-wrapper {
           border-radius: 0.5rem !important;
           -webkit-border-radius: 0.5rem !important;
@@ -542,9 +620,11 @@ export default function UstsanTuukh({
           background: var(--surface-bg) !important;
           color: var(--panel-text) !important;
         }
-      `}} />
+      `,
+        }}
+      />
       <div className="h-full overflow-y-auto custom-scrollbar">
-        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
+        <div className="bg-[color:var(--surface-bg)] rounded-2xl p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
@@ -559,13 +639,30 @@ export default function UstsanTuukh({
           <div className="flex flex-col gap-4">
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div className="relative">
+              <div>
+                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
+                  Огноо
+                </label>
+                <DateRangeButton
+                  value={dateRange}
+                  onChange={handleDateChange}
+                  placeholder="Огноо сонгох"
+                />
+              </div>
+
+              <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
-                <div 
+                <div
                   className="ustsan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
+                  style={
+                    {
+                      borderRadius: "0.5rem",
+                      overflow: "hidden",
+                      height: "42px",
+                    } as React.CSSProperties
+                  }
                 >
                   <select
                     value={selectedModel}
@@ -574,7 +671,14 @@ export default function UstsanTuukh({
                       setPage(1);
                     }}
                     className="ustsan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
+                    style={
+                      {
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        borderRadius: 0,
+                        height: "100%",
+                      } as React.CSSProperties
+                    }
                   >
                     <option value="">Бүгд</option>
                     {modelNames.map((m) => (
@@ -586,45 +690,6 @@ export default function UstsanTuukh({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
                 </div>
               </div>
-
-              <div className="relative">
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Ажилтан
-                </label>
-                <div 
-                  className="ustsan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
-                >
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => {
-                      setSelectedEmployee(e.target.value);
-                      setPage(1);
-                    }}
-                    className="ustsan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
-                  >
-                    <option value="">Бүгд</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Огноо
-                </label>
-                <DateRangeButton
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  placeholder="Огноо сонгох"
-                />
-              </div>
             </div>
           </div>
 
@@ -632,7 +697,7 @@ export default function UstsanTuukh({
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader size="md" />
-          </div>
+            </div>
           ) : (
             <>
               <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
@@ -647,76 +712,80 @@ export default function UstsanTuukh({
                           Үүссэн огноо
                         </th>
                         <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
-                          Төрөл
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
-                          Ажилтан
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
                           Устгасан огноо
+                        </th>
+                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
+                          Төрөл
                         </th>
                         <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
-                </tr>
-              </thead>
-              <tbody>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={5}
                             className="px-4 py-12 text-center text-[color:var(--muted-text)]"
                           >
                             Устгасан түүх олдсонгүй
-                    </td>
+                          </td>
                         </tr>
                       ) : (
                         paginatedRecords.map((record, index) => {
                           const isLast = index === paginatedRecords.length - 1;
                           // Get original creation date from deleted document
-                          const originalCreatedAt = record.deletedDocument?.createdAt || record.deletedData?.createdAt || "-";
+                          const originalCreatedAt =
+                            record.deletedDocument?.createdAt ||
+                            record.deletedData?.createdAt ||
+                            "-";
                           return (
                             <tr
                               key={record._id}
-                              className={`border-b text-center items-center justify-center border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
+                              className={`border-b text-center items-center justify-center border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? "last:border-b-0" : ""}`}
                             >
                               <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)] text-center">
                                 {(page - 1) * pageSize + index + 1}
                               </td>
                               <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)]">
-                                {originalCreatedAt !== "-" ? moment(originalCreatedAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center items-center justify-center text-sm text-[color:var(--panel-text)]">
-                                {modelNames.find((m) => m.value === record.modelName)?.label || record.modelName || "-"}
-                              </td>
-                              <td className="px-4 py-3 text-sm border-r border-l text-[color:var(--panel-text)]">
-                                <div className="flex text-center items-center justify-center gap-2">
-                                  <User className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                  {record.ajiltniiNer || "-"}
-                                </div>
+                                {originalCreatedAt !== "-"
+                                  ? moment(originalCreatedAt).format(
+                                      "YYYY-MM-DD HH:mm:ss",
+                                    )
+                                  : "-"}
                               </td>
                               <td className="px-4 py-3 text-sm border-r text-[color:var(--panel-text)]">
-                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
-                    </td>
+                                {moment(
+                                  record.createdAt || record.ognoo,
+                                ).format("YYYY-MM-DD HH:mm:ss")}
+                              </td>
+                              <td className="px-4 py-3 text-center items-center justify-center text-sm text-[color:var(--panel-text)]">
+                                {modelNames.find(
+                                  (m) => m.value === record.modelName,
+                                )?.label ||
+                                  record.modelName ||
+                                  "-"}
+                              </td>
                               <td className="px-4 py-3 text-sm text-center">
-                      <Button
+                                <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewDetails(record)}
                                   className="!rounded-2xl"
-                                  style={{ borderRadius: '0.5rem' }}
+                                  style={{ borderRadius: "0.5rem" }}
                                   title="Дэлгэрэнгүй үзэх"
                                 >
                                   <Eye className="w-4 h-4 text-blue-600" />
                                 </Button>
-                    </td>
-                  </tr>
+                              </td>
+                            </tr>
                           );
                         })
                       )}
-              </tbody>
-            </table>
-          </div>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* Pagination */}
@@ -725,7 +794,7 @@ export default function UstsanTuukh({
                   <span className="text-sm text-[color:var(--panel-text)]">
                     Нийт {totalRecords} мөр
                   </span>
-                  
+
                   {/* Page Size Selector */}
                   <div className="relative page-size-selector">
                     <Button
@@ -733,7 +802,7 @@ export default function UstsanTuukh({
                       size="sm"
                       onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
                       className="!rounded-2xl"
-                      style={{ borderRadius: '0.5rem' }}
+                      style={{ borderRadius: "0.5rem" }}
                     >
                       {pageSize} / хуудас
                     </Button>
@@ -768,7 +837,7 @@ export default function UstsanTuukh({
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
+                    style={{ borderRadius: "0.5rem" }}
                     leftIcon={<ChevronLeft className="w-4 h-4" />}
                   >
                     Өмнөх
@@ -782,7 +851,7 @@ export default function UstsanTuukh({
                     onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page >= totalPages}
                     className="!rounded-2xl"
-                    style={{ borderRadius: '0.5rem' }}
+                    style={{ borderRadius: "0.5rem" }}
                     rightIcon={<ChevronRight className="w-4 h-4" />}
                   >
                     Дараах
@@ -791,8 +860,8 @@ export default function UstsanTuukh({
               </div>
             </>
           )}
-          </div>
-    </div>
+        </div>
+      </div>
 
       {/* Detail Modal */}
       <DetailModal

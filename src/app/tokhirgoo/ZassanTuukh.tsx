@@ -7,14 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  Edit, 
-  User,
-  FileText,
-  Eye,
-  X,
-  ChevronDown
-} from "lucide-react";
+import { Edit, User, FileText, Eye, X, ChevronDown } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -71,7 +64,7 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
         className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
-      <div 
+      <div
         className="relative w-full max-w-4xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -85,18 +78,19 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                 </h3>
                 <p className="text-xs text-theme mt-0.5">
                   {(() => {
-                  const modelNames: Record<string, string> = {
-                    ajiltan: "Ажилтан",
-                    geree: "Гэрээ",
-                    barilga: "Барилга",
-                    talbai: "Талбай",
-                    orshinSuugch: "Оршин суугч",
-                    nekhemjlekh: "Нэхэмжлэх",
-                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                    guilgee: "Гүйлгээ",
-                  };
-                  return modelNames[record.modelName] || record.modelName;
-                  })()} - {record.documentId}
+                    const modelNames: Record<string, string> = {
+                      ajiltan: "Ажилтан",
+                      geree: "Гэрээ",
+                      barilga: "Барилга",
+                      talbai: "Талбай",
+                      orshinSuugch: "Оршин суугч",
+                      nekhemjlekh: "Нэхэмжлэх",
+                      nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                      guilgee: "Гүйлгээ",
+                    };
+                    return modelNames[record.modelName] || record.modelName;
+                  })()}{" "}
+                  - {record.documentId}
                 </p>
               </div>
             </div>
@@ -116,22 +110,21 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
               <label className="block text-sm  font-bold text-theme mb-1">
                 Зассан ажилтан
               </label>
-              <p className="text-sm text-theme">
-                {record.ajiltniiNer || "-"}
-              </p>
+              <p className="text-sm text-theme">{record.ajiltniiNer || "-"}</p>
             </div>
             <div>
               <label className="block text-sm  text-theme font-bold mb-1">
                 Огноо
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
-                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
+                {moment(record.createdAt || record.ognoo).format(
+                  "YYYY-MM-DD HH:mm:ss",
+                )}
               </p>
             </div>
             <div>
               <label className="block text-sm  text-theme font-bold mb-1">
                 Төрөл
-
               </label>
               <p className="text-sm text-[color:var(--panel-text)]">
                 {(() => {
@@ -145,13 +138,15 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
                     guilgee: "Гүйлгээ",
                   };
-                  return modelNames[record.modelName] || record.modelName || "-";
+                  return (
+                    modelNames[record.modelName] || record.modelName || "-"
+                  );
                 })()}
               </p>
             </div>
           </div>
 
-  <div>
+          <div>
             <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
               Өөрчлөлтүүд
             </h4>
@@ -199,42 +194,62 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     zardluud: "Зардлууд",
                     guilgeenuud: "Гүйлгээнүүд",
                   };
-                  
+
                   const excludedFields = ["nuutsUg", "password", "token"];
                   if (excludedFields.includes(change.field)) return null;
-                  
+
                   const formatValue = (value: any): string => {
-                    if (value === null || value === undefined) return "(хоосон)";
-                    if (typeof value === "boolean") return value ? "Тийм" : "Үгүй";
+                    if (value === null || value === undefined)
+                      return "(хоосон)";
+                    if (typeof value === "boolean")
+                      return value ? "Тийм" : "Үгүй";
                     if (value === "pending") return "Хүлээгдэж буй";
                     if (value === "done") return "Дууссан";
-                    
+
                     const safeStringify = (obj: any): string => {
                       try {
-                        if (typeof obj !== 'object' || obj === null) return String(obj);
+                        if (typeof obj !== "object" || obj === null)
+                          return String(obj);
                         if (Array.isArray(obj)) return `[${obj.length} мөр]`;
-                        if (obj.ner && obj.kod) return `${obj.ner} (${obj.kod})`;
-                        
-                        const keys = Object.keys(obj).filter(k => !k.startsWith('_'));
+                        if (obj.ner && obj.kod)
+                          return `${obj.ner} (${obj.kod})`;
+
+                        const keys = Object.keys(obj).filter(
+                          (k) => !k.startsWith("_"),
+                        );
                         if (keys.length === 0) return "{...}";
-                        const summary = keys.slice(0, 3).map(k => {
-                          const v = obj[k];
-                          const vStr = (typeof v === 'object' && v !== null) ? (Array.isArray(v) ? `[${v.length}]` : "{...}") : String(v);
-                          return `${k}: ${vStr}`;
-                        }).join(", ");
+                        const summary = keys
+                          .slice(0, 3)
+                          .map((k) => {
+                            const v = obj[k];
+                            const vStr =
+                              typeof v === "object" && v !== null
+                                ? Array.isArray(v)
+                                  ? `[${v.length}]`
+                                  : "{...}"
+                                : String(v);
+                            return `${k}: ${vStr}`;
+                          })
+                          .join(", ");
                         return summary + (keys.length > 3 ? "..." : "");
-                      } catch { return "[Объект]"; }
+                      } catch {
+                        return "[Объект]";
+                      }
                     };
 
                     if (typeof value === "object" && !Array.isArray(value)) {
-                      if (value.ner && value.kod) return `${value.ner} (${value.kod})`;
-                      
+                      if (value.ner && value.kod)
+                        return `${value.ner} (${value.kod})`;
+
                       // Detailed summary for medeelel to avoid [object Object]
-                      if (change.field === 'medeelel') {
+                      if (change.field === "medeelel") {
                         const parts: string[] = [];
-                        if (Array.isArray(value.zardluud)) parts.push(`Зардал: ${value.zardluud.length}`);
-                        if (Array.isArray(value.guilgeenuud)) parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
-                        if (value.niitTulbur !== undefined) parts.push(`Нийт: ${value.niitTulbur}`);
+                        if (Array.isArray(value.zardluud))
+                          parts.push(`Зардал: ${value.zardluud.length}`);
+                        if (Array.isArray(value.guilgeenuud))
+                          parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
+                        if (value.niitTulbur !== undefined)
+                          parts.push(`Нийт: ${value.niitTulbur}`);
                         if (parts.length > 0) return parts.join(", ");
                       }
 
@@ -242,16 +257,21 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                     }
                     if (Array.isArray(value)) {
                       if (value.length === 0) return "(хоосон)";
-                      if (change.field === 'paymentHistory' || change.field === 'guilgeenuud' || change.field === 'zardluud') {
-                         return `${value.length} мөр`;
+                      if (
+                        change.field === "paymentHistory" ||
+                        change.field === "guilgeenuud" ||
+                        change.field === "zardluud"
+                      ) {
+                        return `${value.length} мөр`;
                       }
-                      if (typeof value[0] === 'object') return `${value.length} мөр`;
+                      if (typeof value[0] === "object")
+                        return `${value.length} мөр`;
                       if (value.length <= 5) return value.join(", ");
                       return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
                     }
                     return String(value);
                   };
-                  
+
                   return (
                     <div
                       key={change._id || index}
@@ -262,7 +282,9 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                       </div>
                       <div className="grid grid-cols-2 gap-3 text-xs">
                         <div>
-                          <div className="text-theme font-bold mb-1">Хуучин:</div>
+                          <div className="text-theme font-bold mb-1">
+                            Хуучин:
+                          </div>
                           <div className="text-theme break-words">
                             {formatValue(change.oldValue)}
                           </div>
@@ -274,8 +296,8 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
                           </div>
                         </div>
                       </div>
-  </div>
-);
+                    </div>
+                  );
                 })
               )}
             </div>
@@ -287,22 +309,18 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
             onClick={onClose}
             variant="primary"
             size="sm"
-            style={{ borderRadius: '0.5rem' }}
+            style={{ borderRadius: "0.5rem" }}
           >
             Хаах
           </Button>
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 
-export default function ZassanTuukh({
-  token,
-  baiguullaga,
-  ajiltan,
-}: Props) {
+export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
@@ -318,38 +336,42 @@ export default function ZassanTuukh({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   // Common model names - Keep only necessary ones
-  const modelNames = useMemo(() => [
-    { value: "geree", label: "Гэрээ" },
-    { value: "orshinSuugch", label: "Оршин суугч" },
-    { value: "talbai", label: "Талбай" },
-    { value: "nekhemjlekh", label: "Нэхэмжлэх" },
-    { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
-    { value: "guilgee", label: "Гүйлгээ" },
-    { value: "ajiltan", label: "Ажилтан" },
-    { value: "barilga", label: "Барилга" },
-  ], []);
+  const modelNames = useMemo(
+    () => [
+      { value: "geree", label: "Гэрээ" },
+      { value: "orshinSuugch", label: "Оршин суугч" },
+      { value: "talbai", label: "Талбай" },
+      { value: "nekhemjlekh", label: "Нэхэмжлэх" },
+      { value: "nekhemjlekhiinTuukh", label: "Нэхэмжлэлийн түүх" },
+      { value: "guilgee", label: "Гүйлгээ" },
+      { value: "ajiltan", label: "Ажилтан" },
+      { value: "barilga", label: "Барилга" },
+    ],
+    [],
+  );
 
   // Fetch all employees for the filter
   const { data: employeesData } = useSWR(
-    token && baiguullaga?._id 
-      ? [`/ajiltan`, token, baiguullaga._id] 
-      : null,
+    token && baiguullaga?._id ? [`/ajiltan`, token, baiguullaga._id] : null,
     async ([url, tkn, orgId]) => {
-      const resp = await uilchilgee(tkn).get(url, { 
-        params: { baiguullagiinId: orgId, khuudasniiKhemjee: 1000 } 
+      const resp = await uilchilgee(tkn).get(url, {
+        params: { baiguullagiinId: orgId, khuudasniiKhemjee: 1000 },
       });
       return resp.data?.jagsaalt || resp.data?.data || [];
-    }
+    },
   );
 
   const employees = useMemo(() => {
     if (!Array.isArray(employeesData)) return [];
     return employeesData.map((e: any) => {
-      const aName = typeof e.ner === 'object' ? `${e.ner.over || e.ner.ovog || ''} ${e.ner.ner || ''}` : e.ner;
-      const bName = `${e.ovog || ''} ${e.ner || ''}`;
+      const aName =
+        typeof e.ner === "object"
+          ? `${e.ner.over || e.ner.ovog || ""} ${e.ner.ner || ""}`
+          : e.ner;
+      const bName = `${e.ovog || ""} ${e.ner || ""}`;
       return {
         id: e._id,
-        name: (aName || bName || e.nevtrekhNer || 'Нэргүй').trim()
+        name: (aName || bName || e.nevtrekhNer || "Нэргүй").trim(),
       };
     });
   }, [employeesData]);
@@ -369,44 +391,59 @@ export default function ZassanTuukh({
           pageSize,
         ]
       : null,
-    async ([url, tkn, orgId, startDate, endDate, model, employee, pg, pgSize]) => {
+    async ([
+      url,
+      tkn,
+      orgId,
+      startDate,
+      endDate,
+      model,
+      employee,
+      pg,
+      pgSize,
+    ]) => {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: pg,
         khuudasniiKhemjee: 10000, // Fetch all for client-side filtering
       };
-      
+
       if (model) {
         params.modelName = model;
       }
-      
+
       if (employee) {
         params.ajiltniiId = employee;
       }
-      
+
       if (startDate && endDate) {
         params.ekhlekhOgnoo = `${startDate} 00:00:00`;
         params.duusakhOgnoo = `${endDate} 23:59:59`;
       }
-      
+
       const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const allRecords: EditRecord[] = useMemo(() => {
     // API returns data in data.data array, not data.jagsaalt
-    const records = Array.isArray(data?.data) 
-      ? data.data 
-      : Array.isArray(data?.jagsaalt) 
-        ? data.jagsaalt 
+    const records = Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.jagsaalt)
+        ? data.jagsaalt
         : [];
-    
+
     // Map API response to our interface format
     return records.map((r: any) => ({
       ...r,
-      ajiltniiId: r.ajiltniiId || r.ajiltanId || r.workerId || (r.ajiltan?._id || r.ajiltan?.id),
+      ajiltniiId:
+        r.ajiltniiId ||
+        r.ajiltanId ||
+        r.workerId ||
+        r.ajiltan?._id ||
+        r.ajiltan?.id,
       createdAt: r.ognoo || r.createdAt, // Use ognoo if available (this is the edit date)
       // documentCreatedAt: The original creation date of the edited document
       // NOTE: The API response currently does NOT include documentCreatedAt.
@@ -420,7 +457,8 @@ export default function ZassanTuukh({
   const filteredRecords = useMemo(() => {
     return allRecords.filter((r) => {
       const matchesModel = !selectedModel || r.modelName === selectedModel;
-      const matchesEmployee = !selectedEmployee || r.ajiltniiId === selectedEmployee;
+      const matchesEmployee =
+        !selectedEmployee || r.ajiltniiId === selectedEmployee;
       return matchesModel && matchesEmployee;
     });
   }, [allRecords, selectedModel, selectedEmployee]);
@@ -458,7 +496,9 @@ export default function ZassanTuukh({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .zassan-select-wrapper {
           border-radius: 0.5rem !important;
           -webkit-border-radius: 0.5rem !important;
@@ -484,7 +524,9 @@ export default function ZassanTuukh({
           background: var(--surface-bg) !important;
           color: var(--panel-text) !important;
         }
-      `}} />
+      `,
+        }}
+      />
       <div className="h-full overflow-y-auto custom-scrollbar">
         <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
           {/* Header */}
@@ -501,13 +543,30 @@ export default function ZassanTuukh({
           <div className="flex flex-col gap-4">
             {/* Model, Employee, and Date Filters */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-    <div className="relative">
+              <div>
+                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
+                  Огноо
+                </label>
+                <DateRangeButton
+                  value={dateRange}
+                  onChange={handleDateChange}
+                  placeholder="Огноо сонгох"
+                />
+              </div>
+
+              <div className="relative">
                 <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
                   Төрөл
                 </label>
-                <div 
+                <div
                   className="zassan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
+                  style={
+                    {
+                      borderRadius: "0.5rem",
+                      overflow: "hidden",
+                      height: "42px",
+                    } as React.CSSProperties
+                  }
                 >
                   <select
                     value={selectedModel}
@@ -516,7 +575,14 @@ export default function ZassanTuukh({
                       setPage(1);
                     }}
                     className="zassan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
+                    style={
+                      {
+                        WebkitAppearance: "none",
+                        MozAppearance: "none",
+                        borderRadius: 0,
+                        height: "100%",
+                      } as React.CSSProperties
+                    }
                   >
                     <option value="">Бүгд</option>
                     {modelNames.map((m) => (
@@ -528,45 +594,6 @@ export default function ZassanTuukh({
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
                 </div>
               </div>
-
-              <div className="relative">
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Ажилтан
-                </label>
-                <div 
-                  className="zassan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={{ borderRadius: '0.5rem', overflow: 'hidden', height: '42px' } as React.CSSProperties}
-                >
-                  <select
-                    value={selectedEmployee}
-                    onChange={(e) => {
-                      setSelectedEmployee(e.target.value);
-                      setPage(1);
-                    }}
-                    className="zassan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'none', borderRadius: 0, height: '100%' } as React.CSSProperties}
-                  >
-                    <option value="">Бүгд</option>
-                    {employees.map((emp) => (
-                      <option key={emp.id} value={emp.id}>
-                        {emp.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Огноо
-                </label>
-                <DateRangeButton
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  placeholder="Огноо сонгох"
-                />
-              </div>
             </div>
           </div>
 
@@ -577,7 +604,10 @@ export default function ZassanTuukh({
             </div>
           ) : (
             <>
-              <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden" style={{ maxHeight: `${pageSize * 60}px`, overflowY: 'auto' }}>
+              <div
+                className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+                style={{ maxHeight: `${pageSize * 60}px`, overflowY: "auto" }}
+              >
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead className="bg-[color:var(--surface-hover)] sticky top-0 border-b">
@@ -588,25 +618,22 @@ export default function ZassanTuukh({
                         <th className="px-4 py-3 text-xs border-r text-center   text-[color:var(--panel-text)]">
                           Үүссэн огноо
                         </th>
-                        <th className="px-4 py-3 text-xs border- text-center  text-[color:var(--panel-text)]">
-                          Төрөл
-                        </th>
-                        <th className="px-4 py-3 text-xs border-r text-center   text-[color:var(--panel-text)]">
-                          Ажилтан
-                        </th>
                         <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
                           Өөрчилсөн огноо
+                        </th>
+                        <th className="px-4 py-3 text-xs border- text-center  text-[color:var(--panel-text)]">
+                          Төрөл
                         </th>
                         <th className="px-4 py-3 text-xs border-r   text-[color:var(--panel-text)] text-center !rounded-tr-lg">
                           Үйлдэл
                         </th>
-                </tr>
-              </thead>
-              <tbody>
+                      </tr>
+                    </thead>
+                    <tbody>
                       {paginatedRecords.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={5}
                             className="px-4 py-12 text-center text-[color:var(--muted-text)]"
                           >
                             Зассан түүх олдсонгүй
@@ -616,32 +643,37 @@ export default function ZassanTuukh({
                         paginatedRecords.map((record, index) => {
                           const isLast = index === paginatedRecords.length - 1;
                           // Get original creation date from documentCreatedAt field
-                          const originalCreatedAt = (record as any).documentCreatedAt || "-";
+                          const originalCreatedAt =
+                            (record as any).documentCreatedAt || "-";
                           return (
                             <tr
                               key={record._id}
-                              className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? 'last:border-b-0' : ''}`}
+                              className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? "last:border-b-0" : ""}`}
                             >
                               <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] text-center">
                                 {(page - 1) * pageSize + index + 1}
                               </td>
                               <td className="px-4 py-3 border-r text-center text-sm text-[color:var(--panel-text)]">
-                                {originalCreatedAt !== "-" ? moment(originalCreatedAt).format("YYYY-MM-DD HH:mm:ss") : "-"}
+                                {originalCreatedAt !== "-"
+                                  ? moment(originalCreatedAt).format(
+                                      "YYYY-MM-DD HH:mm:ss",
+                                    )
+                                  : "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center border-r text-sm text-[color:var(--panel-text)]">
+                                {moment(
+                                  record.createdAt || record.ognoo,
+                                ).format("YYYY-MM-DD HH:mm:ss")}
                               </td>
                               <td className="px-4 py-3 text-sm text-center border-r text-[color:var(--panel-text)]">
-                                {modelNames.find((m) => m.value === record.modelName)?.label || record.modelName || "-"}
+                                {modelNames.find(
+                                  (m) => m.value === record.modelName,
+                                )?.label ||
+                                  record.modelName ||
+                                  "-"}
                               </td>
-                              <td className="px-4 py-3 text-sm border-r  text-[color:var(--panel-text)]">
-                                <div className="flex text-center items-center justify-center gap-2">
-                                  <User className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                  {record.ajiltniiNer || "-"}
-                                </div>
-                    </td>
-                              <td className="px-4 py-3 text-center border-r text-sm text-[color:var(--panel-text)]">
-                                {moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}
-                    </td>
-                              <td className="px-4 py-3 text-center text-sm text-center">
-                      <Button
+                              <td className="px-4 py-3 text-center text-sm">
+                                <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleViewDetails(record)}
@@ -650,14 +682,14 @@ export default function ZassanTuukh({
                                 >
                                   <Eye className="w-4 h-4 text-blue-600" />
                                 </Button>
-                    </td>
-                  </tr>
+                              </td>
+                            </tr>
                           );
                         })
                       )}
-              </tbody>
-            </table>
-          </div>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               {/* Global Standard Pagination */}
@@ -679,8 +711,8 @@ export default function ZassanTuukh({
               </div>
             </>
           )}
-          </div>
-    </div>
+        </div>
+      </div>
 
       {/* Detail Modal */}
       <DetailModal

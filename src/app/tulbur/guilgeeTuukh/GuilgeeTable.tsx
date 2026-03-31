@@ -69,9 +69,7 @@ export default function GuilgeeTable({
         const baseColumn = {
           key: col.key,
           dataIndex: col.key,
-          title: (
-            <span className="text-inherit">{col.label}</span>
-          ),
+          title: <span className="text-inherit">{col.label}</span>,
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
           align:
@@ -86,14 +84,16 @@ export default function GuilgeeTable({
               : false,
           fixed: col.sticky ? ("left" as const) : undefined,
           className:
-            "text-[13px] bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)]",
+            "text-[11px] bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)] py-1",
           onCell: () => ({
             className:
               col.key === "paid" ||
               col.key === "uldegdel" ||
               col.key === "ekhniiUldegdel"
                 ? "!text-right"
-                : "!text-center",
+                : col.key === "ner"
+                  ? "!text-left"
+                  : "!text-center",
           }),
         };
 
@@ -752,7 +752,7 @@ export default function GuilgeeTable({
 
             const cancelledClass =
               tuluvLabel === "Цуцалсан" ? " row-cancelled" : "";
-            return `${baseClass} text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors${cancelledClass}`;
+            return `${baseClass} text-gray-900 dark:text-white transition-colors compact-row${cancelledClass}`;
           }}
         />
       </div>

@@ -730,7 +730,7 @@ export default function OrlogoAvlagaPage() {
               Нийт орлого
             </p>
             <p className="text-xl font-bold text-green-700">
-              {formatNumber(totalOrlogo)}{" "}
+              {formatNumber(totalOrlogo, 2)}{" "}
             </p>
           </div>
           <div className="border p-3 rounded">
@@ -738,7 +738,7 @@ export default function OrlogoAvlagaPage() {
               Нийт үлдэгдэл
             </p>
             <p className="text-xl font-bold text-red-700">
-              {formatNumber(totalUldegdel)}{" "}
+              {formatNumber(totalUldegdel, 2)}{" "}
             </p>
           </div>
         </div>
@@ -814,17 +814,22 @@ export default function OrlogoAvlagaPage() {
       </div>
 
       <div className="flex flex-wrap gap-4 items-center no-print mb-4">
-        <div className="rounded-xl h-[40px] w-full sm:w-[320px] flex items-center">
-          <div className="flex items-center gap-2 w-full min-w-0">
-            <StandardDatePicker
-              isRange={true}
-              value={dateRange}
-              onChange={setDateRange}
-              allowClear
-              placeholder="Огноо сонгох"
-              className="flex-1 px-3 rounded-lg neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
-            />
-          </div>
+        <div
+          id="orlogo-avlaga-date"
+          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+        >
+          <StandardDatePicker
+            isRange={true}
+            value={dateRange}
+            onChange={setDateRange}
+            allowClear
+            placeholder="Огноо сонгох"
+            classNames={{
+              root: "!h-full !w-full",
+              input:
+                "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+            }}
+          />
         </div>
         {[
           {

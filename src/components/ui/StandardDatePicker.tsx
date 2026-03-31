@@ -74,7 +74,7 @@ export function StandardDatePicker({
 
   // Combine passed className with standardized ones, removing the harsh default white background
   const combinedClassName =
-    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 !bg-white/50 dark:!bg-slate-900/50 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName} ${inputClassName}`.trim();
+    `w-full rounded-2xl !border-slate-200 dark:!border-slate-800 hover:!border-slate-300 dark:hover:!border-slate-700 focus:!border-sky-500 transition-all font-inter h-full ${className} ${rootClassName} ${inputClassName}`.trim();
 
   // Monitor dark mode
   const [isDark, setIsDark] = React.useState(false);
@@ -83,7 +83,10 @@ export function StandardDatePicker({
     const observer = new MutationObserver(() => {
       setIsDark(document.documentElement.classList.contains("dark"));
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -101,23 +104,31 @@ export function StandardDatePicker({
           colorTextPlaceholder: isDark ? "#64748b" : "#94a3b8",
           colorIcon: isDark ? "#94a3b8" : "#64748b",
           colorIconHover: isDark ? "#f1f5f9" : "#0f172a",
-          
+
           // Selection colors
           colorPrimary: "#10b981", // emerald-500
           colorLink: "#10b981",
           colorLinkHover: "#059669",
-          
+
           // Range selection
-          controlItemBgActive: isDark ? "rgba(16, 185, 129, 0.2)" : "rgba(16, 185, 129, 0.1)",
-          controlItemBgHover: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
+          controlItemBgActive: isDark
+            ? "rgba(16, 185, 129, 0.2)"
+            : "rgba(16, 185, 129, 0.1)",
+          controlItemBgHover: isDark
+            ? "rgba(255, 255, 255, 0.05)"
+            : "rgba(0, 0, 0, 0.02)",
         },
         components: {
           DatePicker: {
-            cellActiveWithRangeBg: isDark ? "rgba(16, 185, 129, 0.2)" : "#e6fffb",
-            cellHoverWithRangeBg: isDark ? "rgba(16, 185, 129, 0.1)" : "#f0f5ff",
+            cellActiveWithRangeBg: isDark
+              ? "rgba(16, 185, 129, 0.2)"
+              : "#e6fffb",
+            cellHoverWithRangeBg: isDark
+              ? "rgba(16, 185, 129, 0.1)"
+              : "#f0f5ff",
             colorTextHeading: isDark ? "#f1f5f9" : "#0f172a",
-          }
-        }
+          },
+        },
       }}
     >
       {isRange ? (

@@ -48,7 +48,10 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
   // Build the unique month list and avlaga type list from the data
   const { months, avlagaTypes } = useMemo(() => {
     const monthSet = new Set<string>();
-    const avlagaMap = new Map<string, { tailbar: string; ognoo: string; index: number }>();
+    const avlagaMap = new Map<
+      string,
+      { tailbar: string; ognoo: string; index: number }
+    >();
 
     (Array.isArray(data) ? data : []).forEach((row) => {
       (row.avlaga || []).forEach((b) => {
@@ -56,9 +59,10 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         if (!ym) return;
         monthSet.add(ym);
 
-        const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0 
-          ? b.zardluud 
-          : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
+        const zardluud =
+          Array.isArray(b.zardluud) && b.zardluud.length > 0
+            ? b.zardluud
+            : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
 
         zardluud.forEach((z) => {
           if (z.dun <= 0) return;
@@ -89,7 +93,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
 
     const months = Array.from(monthSet).sort();
     const avlagaTypes = Array.from(avlagaMap.values()).sort(
-      (a, b) => a.ognoo.localeCompare(b.ognoo) || a.index - b.index
+      (a, b) => a.ognoo.localeCompare(b.ognoo) || a.index - b.index,
     );
 
     return { months, avlagaTypes };
@@ -106,7 +110,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         fixed: "left" as const,
         render: (_: any, __: any, index: number) => index + 1,
       },
-      
+
       {
         title: "Харилцагч нэр",
         key: "ner",
@@ -130,7 +134,9 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         align: "center" as const,
         fixed: "left" as const,
         render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-gray-900 dark:text-white text-[13px]">{record._id?.toot || record.toot || "-"}</span>
+          <span className="text-gray-900 dark:text-white text-[13px]">
+            {record._id?.toot || record.toot || "-"}
+          </span>
         ),
       },
       {
@@ -170,7 +176,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
           align: "center" as const,
           width: 160,
           onHeaderCell: () => ({
-            style: { minWidth: 160, maxWidth: 160, padding: "4px 0" }
+            style: { minWidth: 160, maxWidth: 160, padding: "4px 0" },
           }),
           ellipsis: true,
           render: (values: AvlagaItem[], record: NegtgelTailanItem) => {
@@ -179,16 +185,20 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             let total = 0;
             values.forEach((b) => {
               if (b.ognoo?.slice(0, 7) === ym) {
-                const zardluud = Array.isArray(b.zardluud) && b.zardluud.length > 0 
-                  ? b.zardluud 
-                  : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
+                const zardluud =
+                  Array.isArray(b.zardluud) && b.zardluud.length > 0
+                    ? b.zardluud
+                    : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
 
                 zardluud.forEach((z) => {
                   if (z.dun <= 0) return;
                   const zName = z.ner || z.turul || "Бусад";
 
                   // Check if it is special management fee condition
-                  if (assessment.tailbar === "Менежмент нэгж" && zName.includes("Менежментийн төлбөр")) {
+                  if (
+                    assessment.tailbar === "Менежмент нэгж" &&
+                    zName.includes("Менежментийн төлбөр")
+                  ) {
                     total += z.dun; // Can't divide by talbainKhemjee as it doesn't exist anymore in the API, we will just sum.
                   } else if (zName === assessment.tailbar) {
                     total += z.dun;
@@ -197,13 +207,17 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
               }
             });
 
-            const isSpecialCategory = assessment.tailbar === "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
+            const isSpecialCategory =
+              assessment.tailbar ===
+              "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
             const displayTotal = isSpecialCategory ? total * 0.4 : total;
 
             return displayTotal > 0 || isSpecialCategory ? (
-              <span className="text-gray-900 dark:text-white text-[13px]">
-                {formatNumber(displayTotal, 2)}
-              </span>
+              <div className="text-right">
+                <span className="text-gray-900 dark:text-white text-[13px]">
+                  {formatNumber(displayTotal, 2)}
+                </span>
+              </div>
             ) : null;
           },
         }));
@@ -227,9 +241,11 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       ellipsis: true,
       align: "center" as const,
       render: (e: number) => (
-        <span className="font-semibold text-green-600 dark:text-green-400 text-[13px] dark:!text-white">
-          {formatNumber(e, 2)}
-        </span>
+        <div className="text-right">
+          <span className="font-semibold text-green-600 dark:text-green-400 text-[13px] dark:!text-white">
+            {formatNumber(e, 2)}
+          </span>
+        </div>
       ),
     });
 

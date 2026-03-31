@@ -399,7 +399,7 @@
 
 /* Default light mode border - subtle and neutral */
 :root {
-  --border: ()
+  --border: ();
 }
 
 /* Only apply system dark preferences if the app doesn't have a manual mode set, 
@@ -1633,7 +1633,8 @@ html[data-mode="dark"]:not([data-theme]),
   color: #7f1d1d !important; /* red-900 */
   border-color: rgba(239, 68, 68, 0.25) !important;
 }
-.badge-unknown, .badge-neutral {
+.badge-unknown,
+.badge-neutral {
   background: rgba(148, 163, 184, 0.16) !important; /* slate */
   color: #5b6a7e !important; /* slate-600 */
   border-color: rgba(148, 163, 184, 0.25) !important;
@@ -4387,6 +4388,19 @@ a:active {
 
 /* ================== GuilgeeTable (Ant Design Table) Styles ================== */
 
+/* ===== SELECTED ROW STYLES FOR DARK MODE ===== */
+/* Fix: Selected rows (when checkbox is marked) should have dark background in dark mode */
+.dark .guilgee-table .ant-table-tbody > tr.ant-table-row-selected > td,
+.dark .guilgee-table .ant-table-tbody > tr.ant-table-row-selected:hover > td {
+  background-color: #374151 !important; /* gray-700 */
+  color: #ffffff !important;
+}
+
+/* Light mode selected row */
+.guilgee-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #e5e7eb !important; /* gray-200 */
+}
+
 /* ===== TABLE WRAPPER FOR STICKY HEADERS ===== */
 /* Simple wrapper — AntD handles sticky headers via scroll.y internally */
 .guilgee-table-wrap {
@@ -4423,13 +4437,13 @@ a:active {
 
 /* All cells - consistent font size */
 .guilgee-table .ant-table-cell {
-  padding: 2px 5px !important;
-  font-size: 13px !important;
+  padding: 1px 4px !important;
+  font-size: 11px !important;
 }
 
 .guilgee-table .ant-table-thead > tr > th {
-  padding: 4px 5px !important;
-  font-size: 13px !important;
+  padding: 2px 4px !important;
+  font-size: 11px !important;
 }
 
 /* Bordered table */
@@ -4449,14 +4463,44 @@ a:active {
   color: white !important;
 }
 
-/* Row hover */
+/* Row hover - DISABLED per user request */
 .guilgee-table .ant-table-tbody > tr:hover > td {
-  @apply bg-gray-50 dark:bg-gray-900;
+  background: inherit !important;
+}
+
+/* Add bottom border to table rows - higher specificity to override compact-row */
+.guilgee-table .ant-table-tbody > tr > td,
+.guilgee-table .ant-table-tbody > tr.compact-row > td {
+  border-bottom: 1px solid #e5e7eb !important;
+}
+
+.dark .guilgee-table .ant-table-tbody > tr > td,
+.dark .guilgee-table .ant-table-tbody > tr.compact-row > td {
+  border-bottom: 1px solid #374151 !important;
 }
 
 /* Row class - cancelled (red highlight) */
 .guilgee-table .row-cancelled {
   background-color: rgb(254 226 226) !important; /* red-100 */
+}
+
+/* Compact row styling for smaller table */
+.guilgee-table .ant-table-tbody > tr.compact-row > td,
+.guilgee-table .compact-row > td {
+  padding: 0px !important;
+  height: 8px !important;
+  min-height: 8px !important;
+  max-height: 8px !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+.guilgee-table .compact-row .ant-table-cell,
+.guilgee-table .ant-table-tbody > tr.compact-row .ant-table-cell {
+  font-size: 11px !important;
+  padding: 0px 2px !important;
+  height: 9px !important;
+  line-height: 3 !important;
 }
 
 .dark .guilgee-table .row-cancelled {
@@ -4557,7 +4601,7 @@ a:active {
 .dark .guilgee-table .ant-table-footer,
 .dark .guilgee-table .ant-table-sticky-holder,
 .dark .guilgee-table .ant-table-body::-webkit-scrollbar-corner {
-  background-color: rgb(11, 15, 25) !important; 
+  background-color: rgb(11, 15, 25) !important;
 }
 
 .dark .ant-table,
@@ -4572,7 +4616,6 @@ a:active {
   background-color: rgb(31, 41, 55) !important; /* bg-gray-800 */
 }
 
-
 /* Fix for Ant Design sticky columns in dark mode */
 .dark .ant-table-cell-fix-left,
 .dark .ant-table-cell-fix-right {
@@ -4584,16 +4627,14 @@ a:active {
   background-color: var(--surface-bg, #111827) !important;
 }
 
-
-
 /* Refine GuilgeeTable header appearance */
 .guilgee-table .ant-table-thead > tr > th {
-  padding: 6px 4px !important;
-  font-size: 12px !important;
+  padding: 2px 4px !important;
+  font-size: 11px !important;
 }
 
 .guilgee-table .ant-table-tbody > tr > td {
-  padding: 4px 4px !important;
+  padding: 1px 4px !important;
 }
 
 /* Ensure sticky columns have correct background in dark mode */
@@ -4604,8 +4645,19 @@ a:active {
   background-color: #111827 !important;
 }
 
-/* Global Ant Design Pagination Overrides Removed to allow local theme styling */
+/* AGGRESSIVE: Force table row borders - light mode */
+.guilgee-table .ant-table-tbody > tr > td,
+.guilgee-table .ant-table-tbody > tr > td.ant-table-cell {
+  border-bottom: 1px solid #d1d5db !important;
+}
 
+/* AGGRESSIVE: Force table row borders - dark mode */
+.dark .guilgee-table .ant-table-tbody > tr > td,
+.dark .guilgee-table .ant-table-tbody > tr > td.ant-table-cell {
+  border-bottom: 1px solid #4b5563 !important;
+}
+
+/* Global Ant Design Pagination Overrides Removed to allow local theme styling */
 
 /* Align Ant Design Pagination with surrounding controls */
 .ant-pagination {

@@ -6,10 +6,7 @@ import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import useGereeJagsaalt from "@/lib/useGeree";
 import { useAjiltniiJagsaalt } from "@/lib/useAjiltan";
 import uilchilgee from "@/lib/uilchilgee";
-import {
-  isPaidLike,
-  getDefaultDateRange,
-} from "@/lib/utils";
+import { isPaidLike, getDefaultDateRange } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,7 +25,9 @@ import {
   ArcElement,
 } from "chart.js";
 import useSWR from "swr";
-import formatNumber, { formatCurrency } from "../../../tools/function/formatNumber";
+import formatNumber, {
+  formatCurrency,
+} from "../../../tools/function/formatNumber";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 
 ChartJS.register(
@@ -162,9 +161,9 @@ export default function Khynalt() {
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
     const range = dateRange || getDefaultDateRange();
-    return { 
-      start: range[0] || "", 
-      end: range[1] || "" 
+    return {
+      start: range[0] || "",
+      end: range[1] || "",
     };
   }, [dateRange]);
 
@@ -204,13 +203,13 @@ export default function Khynalt() {
   const { data: incomeData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-        "/nekhemjlekhiinTuukh",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId,
-        rangeStart,
-        rangeEnd,
-      ]
+          "/nekhemjlekhiinTuukh",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const startIso = `${start}T00:00:00.000Z`;
@@ -236,11 +235,11 @@ export default function Khynalt() {
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        `/tailan/udsan-avlaga`,
-        token,
-        effectiveBarilgiinId,
-        ajiltan.baiguullagiinId,
-      ]
+          `/tailan/udsan-avlaga`,
+          token,
+          effectiveBarilgiinId,
+          ajiltan.baiguullagiinId,
+        ]
       : null,
     async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -257,11 +256,11 @@ export default function Khynalt() {
   const { data: cancelledData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        `/tailan/tsutslasan-gereenii-avlaga`,
-        token,
-        effectiveBarilgiinId,
-        ajiltan.baiguullagiinId,
-      ]
+          `/tailan/tsutslasan-gereenii-avlaga`,
+          token,
+          effectiveBarilgiinId,
+          ajiltan.baiguullagiinId,
+        ]
       : null,
     async ([url, tkn, barId, bId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -279,13 +278,13 @@ export default function Khynalt() {
   const { data: buildingPaymentSummary } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-        "/tulsunSummary",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId,
-        rangeStart,
-        rangeEnd,
-      ]
+          "/tulsunSummary",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
       : null,
     async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).post(url, {
@@ -296,19 +295,23 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: orlogoAvlagaData } = useSWR(
-    token && ajiltan?.baiguullagiinId && effectiveBarilgiinId && rangeStart && rangeEnd
+    token &&
+      ajiltan?.baiguullagiinId &&
+      effectiveBarilgiinId &&
+      rangeStart &&
+      rangeEnd
       ? [
-        "/tailan/orlogo-avlaga",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId,
-        rangeStart,
-        rangeEnd,
-      ]
+          "/tailan/orlogo-avlaga",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
       : null,
     async ([, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).post("/tailan/orlogo-avlaga", {
@@ -319,7 +322,7 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const {
@@ -331,13 +334,12 @@ export default function Khynalt() {
       ? orlogoAvlagaData.paid.list
       : [];
     const paid = rawPaid.filter(
-      (item: any) =>
-        (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0
+      (item: any) => (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0) > 0,
     );
     const total = paid.reduce(
       (sum: number, item: any) =>
         sum + (Number(item?.tulsunDun ?? item?.tulsun ?? 0) || 0),
-      0
+      0,
     );
     const rawUnpaid = Array.isArray(orlogoAvlagaData?.unpaid?.list)
       ? orlogoAvlagaData.unpaid.list
@@ -352,13 +354,13 @@ export default function Khynalt() {
   const { data: avlagiinNasjiltData } = useSWR(
     token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
-        "/tailan/avlagiin-nasjilt",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId,
-        rangeStart,
-        rangeEnd,
-      ]
+          "/tailan/avlagiin-nasjilt",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
       : null,
     async ([, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).post("/tailan/avlagiin-nasjilt", {
@@ -372,17 +374,17 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const { data: tulukhAvlagaData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
-        "/gereeniiTulukhAvlaga",
-        token,
-        ajiltan.baiguullagiinId,
-        effectiveBarilgiinId,
-      ]
+          "/gereeniiTulukhAvlaga",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+        ]
       : null,
     async ([url, tkn, bId, barId]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
@@ -395,14 +397,14 @@ export default function Khynalt() {
       });
       return resp.data;
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const ekhniiUldegdelTotal = useMemo(() => {
     const list = Array.isArray(tulukhAvlagaData?.jagsaalt)
       ? tulukhAvlagaData.jagsaalt
       : [];
-    
+
     return list
       .filter((item: any) => item.ekhniiUldegdelEsekh === true)
       .reduce((sum: number, item: any) => sum + Number(item.uldegdel || 0), 0);
@@ -487,17 +489,31 @@ export default function Khynalt() {
     const byBld: Record<string, number> = {};
     const seriesMap = new Map<string, { paid: number; unpaid: number }>();
 
-    const residentInvoiceStats = new Map<string, { totalTulbur: number; totalTulsun: number }>();
+    const residentInvoiceStats = new Map<
+      string,
+      { totalTulbur: number; totalTulsun: number }
+    >();
     residents.forEach((r: any) => {
-      residentInvoiceStats.set(String(r._id || ""), { totalTulbur: 0, totalTulsun: 0 });
+      residentInvoiceStats.set(String(r._id || ""), {
+        totalTulbur: 0,
+        totalTulsun: 0,
+      });
     });
 
     list.forEach((it) => {
-      const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
+      const amount =
+        Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0;
       const backendUldegdel = it.uldegdel != null ? Number(it.uldegdel) : null;
-      const uldegdelInvoice = backendUldegdel !== null
-        ? (backendUldegdel > 0 ? backendUldegdel : (isPaidLike(it) ? 0 : amount))
-        : (isPaidLike(it) ? 0 : amount);
+      const uldegdelInvoice =
+        backendUldegdel !== null
+          ? backendUldegdel > 0
+            ? backendUldegdel
+            : isPaidLike(it)
+              ? 0
+              : amount
+          : isPaidLike(it)
+            ? 0
+            : amount;
       const tulsunInvoice = amount - uldegdelInvoice;
 
       const invoiceKeys: string[] = [];
@@ -533,7 +549,8 @@ export default function Khynalt() {
 
       const barilga =
         osId && residentById.has(osId)
-          ? residentById.get(osId)?.barilgiinId || residentById.get(osId)?.barilga
+          ? residentById.get(osId)?.barilgiinId ||
+            residentById.get(osId)?.barilga
           : it?.barilgiinId || "Тодорхойгүй";
       byBld[barilga] = (byBld[barilga] || 0) + amount;
 
@@ -561,8 +578,12 @@ export default function Khynalt() {
     });
 
     const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
-    const totalInvoiceAmount = list.reduce((s, it) => s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0), 0);
-    const finalUnpaid = (totalInvoiceAmount - finalPaid) + ekhniiUldegdelTotal;
+    const totalInvoiceAmount = list.reduce(
+      (s, it) =>
+        s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
+      0,
+    );
+    const finalUnpaid = totalInvoiceAmount - finalPaid + ekhniiUldegdelTotal;
 
     const paidArr: number[] = [];
     const unpaidArr: number[] = [];
@@ -584,7 +605,14 @@ export default function Khynalt() {
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
       },
     };
-  }, [incomeData, residents, orderedLabels, buildLabel, buildingPaymentSummary, ekhniiUldegdelTotal]);
+  }, [
+    incomeData,
+    residents,
+    orderedLabels,
+    buildLabel,
+    buildingPaymentSummary,
+    ekhniiUldegdelTotal,
+  ]);
 
   const {
     incomeTotals,
@@ -605,7 +633,7 @@ export default function Khynalt() {
   const footerTotals = useTulburFooterTotals(
     token,
     ajiltan?.baiguullagiinId ?? null,
-    effectiveBarilgiinId
+    effectiveBarilgiinId,
   );
 
   const overdue2m = useMemo(() => {
@@ -620,8 +648,14 @@ export default function Khynalt() {
   }, [overdueData]);
 
   const avlagaAgingMap = useMemo(() => {
-    const list = avlagiinNasjiltData?.detailed?.list ?? avlagiinNasjiltData?.jagsaalt ?? [];
-    const map = new Map<string, { daysOverdue?: number; monthsOverdue?: number; ageBucket?: string }>();
+    const list =
+      avlagiinNasjiltData?.detailed?.list ??
+      avlagiinNasjiltData?.jagsaalt ??
+      [];
+    const map = new Map<
+      string,
+      { daysOverdue?: number; monthsOverdue?: number; ageBucket?: string }
+    >();
     (Array.isArray(list) ? list : []).forEach((it: any) => {
       const gd = it?.gereeniiDugaar ?? it?.gereeniiId;
       if (gd) {
@@ -699,20 +733,28 @@ export default function Khynalt() {
     }
     const isCancelled = (c: any) => {
       const s = String(c?.tuluv ?? c?.status ?? "").toLowerCase();
-      return s.includes("цуцлагдсан") || s.includes("цуцалсан") || s.includes("идэвхгүй") || s === "tsutlsasan";
+      return (
+        s.includes("цуцлагдсан") ||
+        s.includes("цуцалсан") ||
+        s.includes("идэвхгүй") ||
+        s === "tsutlsasan"
+      );
     };
     const cancelledContractIds = new Set(
       (contracts || [])
         .filter((c: any) => isCancelled(c))
         .map((c: any) => String(c._id || ""))
-        .filter(Boolean)
+        .filter(Boolean),
     );
-    const tulukhList = Array.isArray(tulukhAvlagaData?.jagsaalt) ? tulukhAvlagaData.jagsaalt : [];
+    const tulukhList = Array.isArray(tulukhAvlagaData?.jagsaalt)
+      ? tulukhAvlagaData.jagsaalt
+      : [];
     const byContract = new Map<string, { amount: number; item: any }>();
     tulukhList.forEach((rec: any) => {
       const gid = String(rec?.gereeniiId ?? "").trim();
       if (!gid || !cancelledContractIds.has(gid)) return;
-      const amt = Number(rec?.uldegdel ?? rec?.undsenDun ?? rec?.tulukhDun ?? 0) || 0;
+      const amt =
+        Number(rec?.uldegdel ?? rec?.undsenDun ?? rec?.tulukhDun ?? 0) || 0;
       if (amt <= 0) return;
       const existing = byContract.get(gid);
       if (existing) {
@@ -736,7 +778,10 @@ export default function Khynalt() {
       ...item,
       niitTulbur: amount,
     }));
-    const total = items.reduce((s, it) => s + (Number(it?.niitTulbur ?? 0) || 0), 0);
+    const total = items.reduce(
+      (s, it) => s + (Number(it?.niitTulbur ?? 0) || 0),
+      0,
+    );
     return { count: items.length, total, items };
   }, [cancelledData, contracts, tulukhAvlagaData]);
 
@@ -776,11 +821,9 @@ export default function Khynalt() {
   }, [incomeSeries]);
 
   const huurimtlagdsanAvlagaChartData: Dataset = useMemo(() => {
-    const top = huurimtlagdsanAvlaga.items
-      .slice(0, 10)
-      .map((it: any) => ({
-        amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
-      }));
+    const top = huurimtlagdsanAvlaga.items.slice(0, 10).map((it: any) => ({
+      amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
+    }));
     return {
       labels: top.map((t: { name: string; amount: number }) => {
         const s = t.name || "";
@@ -800,12 +843,13 @@ export default function Khynalt() {
   }, [huurimtlagdsanAvlaga.items]);
 
   const cancelledReceivablesChartData: Dataset = useMemo(() => {
-    const top = cancelledReceivables.items
-      .slice(0, 10)
-      .map((it: any) => ({
-        name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
-        amount: Number(it?.niitTulbur ?? 0) || 0,
-      }));
+    const top = cancelledReceivables.items.slice(0, 10).map((it: any) => ({
+      name:
+        [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") ||
+        it?.gereeniiDugaar ||
+        "-",
+      amount: Number(it?.niitTulbur ?? 0) || 0,
+    }));
     return {
       labels: top.map((t: { name: string; amount: number }) => {
         const s = t.name || "-";
@@ -835,7 +879,6 @@ export default function Khynalt() {
     return d >= _startDate && d <= _endDate;
   };
 
-
   const filteredContracts = contracts.filter((c: any) => {
     const timeMatch = _inRange(
       c?.createdAt || c?.ognoo || c?.date || c?.duusakhOgnoo,
@@ -846,7 +889,6 @@ export default function Khynalt() {
       String(buildingField) === String(effectiveBarilgiinId);
     return timeMatch && buildingMatch;
   });
-
 
   const filteredTotalResidents = totalResidents;
   const buildingCount = useMemo(() => {
@@ -875,7 +917,8 @@ export default function Khynalt() {
     let active = 0;
     filteredContracts.forEach((g: any) => {
       const status = String(g?.tuluv || g?.status || "").trim();
-      const isCancelled = status === "Цуцалсан" ||
+      const isCancelled =
+        status === "Цуцалсан" ||
         status.toLowerCase() === "цуцалсан" ||
         status === "tsutlsasan" ||
         status.toLowerCase() === "tsutlsasan" ||
@@ -891,24 +934,31 @@ export default function Khynalt() {
     });
     return active;
   })();
- 
- 
 
   const cancelledGerees = useMemo(() => {
     return filteredContracts.filter((c: any) => {
       const status = String(c?.tuluv || c?.status || "").trim();
-      return status === "Цуцалсан" ||
+      return (
+        status === "Цуцалсан" ||
         status.toLowerCase() === "цуцалсан" ||
         status === "tsutlsasan" ||
         status.toLowerCase() === "tsutlsasan" ||
         status === "Идэвхгүй" ||
-        status.toLowerCase() === "идэвхгүй";
+        status.toLowerCase() === "идэвхгүй"
+      );
     });
   }, [filteredContracts]);
 
-  const showContracts = ajiltan && (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
-  const showResidents = ajiltan && (hasPermission(ajiltan, "/geree/orshinSuugch") || hasPermission(ajiltan, "geree.orshinSuugch"));
-  const showTulbur = ajiltan && (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
+  const showContracts =
+    ajiltan &&
+    (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
+  const showResidents =
+    ajiltan &&
+    (hasPermission(ajiltan, "/geree/orshinSuugch") ||
+      hasPermission(ajiltan, "geree.orshinSuugch"));
+  const showTulbur =
+    ajiltan &&
+    (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
 
   const kpiCardsRaw = [
     {
@@ -964,61 +1014,71 @@ export default function Khynalt() {
     },
   ];
 
-  const kpiCards = kpiCardsRaw.filter(c => c.show !== false);
+  const kpiCards = kpiCardsRaw.filter((c) => c.show !== false);
 
   return (
     <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
       <div className="flex flex-col flex-1 min-h-full pl-4 pt-4 pb-8 pr-0">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6 transition-all duration-700 pr-4 flex-shrink-0">
+          <div
+            className={`transition-all duration-700 ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
+          >
+            <div
+              id="khynalt-date"
+              className="btn-minimal h-[40px] w-[320px] flex items-center px-3"
+            >
+              <StandardDatePicker
+                isRange={true}
+                value={dateRange}
+                onChange={(v: any) => setDateRange(v)}
+                format="YYYY-MM-DD"
+                allowClear
+                placeholder="Огноо сонгох"
+                classNames={{
+                  root: "!h-full !w-full",
+                  input:
+                    "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                }}
+              />
+            </div>
+          </div>
+
           <h1 className="text-2xl  text-[color:var(--panel-text)] leading-tight">
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
-
-          <div
-            className={`transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              }`}
-          >
-            <div
-              className="neu-panel hadow-lg"
-              style={{ overflow: "visible" }}
-            >
-              <div className="min-w-[220px]">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={(v: any) => setDateRange(v)}
-                  format="YYYY-MM-DD"
-                  className="w-full"
-                  allowClear
-                />
-              </div>
-            </div>
-          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2" style={{ marginRight: 'calc(-2rem - 0.5rem)', paddingRight: 0 }}>
+        <div
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2"
+          style={{ marginRight: "calc(-2rem - 0.5rem)", paddingRight: 0 }}
+        >
           {kpiCards.map((card, index) => {
             const isCenter = (card as any).centerHeader;
             const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
                 <div className={isCenter ? "flex flex-col items-end" : ""}>
-                  <h3 className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${isCenter ? 'text-center' : ''}`}>
+                  <h3
+                    className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${isCenter ? "text-center" : ""}`}
+                  >
                     {card.title}
                   </h3>
                   <p className="text-2xl force-bold text-[color:var(--panel-text)] mb-1">
                     {card.value}
                   </p>
                 </div>
-                <p className={`text-xs text-[color:var(--muted-text)] ${isCenter ? 'text-right' : ''}`}>
+                <p
+                  className={`text-xs text-[color:var(--muted-text)] ${isCenter ? "text-right" : ""}`}
+                >
                   {card.subtitle}
                 </p>
               </div>
             );
 
-            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${mounted
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
-              }`;
+            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`;
             const style = {
               transitionDelay: `${card.delay}ms`,
               willChange: "opacity, box-shadow",
@@ -1038,21 +1098,21 @@ export default function Khynalt() {
             }
 
             return (
-              <div
-                key={index}
-                className={className}
-                style={style}
-              >
+              <div key={index} className={className} style={style}>
                 {CardContent}
               </div>
             );
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0" style={{ height: "240px" }}>
+        <div
+          className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0"
+          style={{ height: "240px" }}
+        >
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              }`}
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
             style={{
               transitionDelay: "600ms",
               willChange: "opacity, box-shadow",
@@ -1095,8 +1155,9 @@ export default function Khynalt() {
           </div>
 
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              }`}
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
             style={{
               transitionDelay: "700ms",
               willChange: "opacity, box-shadow",
@@ -1109,7 +1170,8 @@ export default function Khynalt() {
                   Авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
-                  {huurimtlagdsanAvlaga.count} Оршин суугч / {formatCurrency(huurimtlagdsanAvlaga.total)}
+                  {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
+                  {formatCurrency(huurimtlagdsanAvlaga.total)}
                 </p>
               </div>
               <div className="flex-1 min-h-0">
@@ -1143,8 +1205,9 @@ export default function Khynalt() {
 
           {/* Cancelled contract receivables */}
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-              }`}
+            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+            }`}
             style={{
               transitionDelay: "800ms",
               willChange: "opacity, box-shadow",
@@ -1157,7 +1220,8 @@ export default function Khynalt() {
                   Цуцалсан гэрээний авлага
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
-                  {cancelledReceivables.count} Оршин суугч / {formatCurrency(cancelledReceivables.total)}
+                  {cancelledReceivables.count} Оршин суугч /{" "}
+                  {formatCurrency(cancelledReceivables.total)}
                 </p>
               </div>
               <div className="flex-1 min-h-0">

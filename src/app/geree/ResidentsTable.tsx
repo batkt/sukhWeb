@@ -49,8 +49,6 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   onDelete,
   onSort,
 }) => {
-
-
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
       {
@@ -68,7 +66,12 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         key: "ner",
         width: 250,
         sorter: true,
-        sortOrder: sortKey === "ner" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "ner"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string | { ner?: string; kod?: string }) => {
           const name =
@@ -87,7 +90,12 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         key: "orts",
         dataIndex: "orts",
         sorter: true,
-        sortOrder: sortKey === "orts" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "orts"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
@@ -101,7 +109,12 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         key: "davkhar",
         dataIndex: "davkhar",
         sorter: true,
-        sortOrder: sortKey === "davkhar" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "davkhar"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
@@ -115,7 +128,12 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         key: "toot",
         dataIndex: "toot",
         sorter: true,
-        sortOrder: sortKey === "toot" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "toot"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: ResidentItem) => (
@@ -131,7 +149,12 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         dataIndex: "utas",
         key: "utas",
         sorter: true,
-        sortOrder: sortKey === "utas" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "utas"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         align: "center",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (val: string) => (
@@ -159,7 +182,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
                 : "badge-neutral";
           return (
             <span
-              className={`inline-flex items-center px-2 py-0.5 text-sm font-normal rounded-full ${cls}`}
+              className={`inline-flex items-center px-2 py-0.5 font-normal rounded-full ${cls}`}
             >
               {label}
             </span>

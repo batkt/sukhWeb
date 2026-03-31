@@ -23,7 +23,7 @@ export default function NegtgelTailanPage() {
   const { token, ajiltan } = useAuth();
   const { baiguullaga } = useBaiguullaga(
     token || null,
-    ajiltan?.baiguullagiinId || null
+    ajiltan?.baiguullagiinId || null,
   );
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
@@ -51,14 +51,34 @@ export default function NegtgelTailanPage() {
       currentPage,
       pageSize,
     ];
-  }, [token, baiguullagiinId, selectedBuildingId, dateRange, searchText, searchTerm, currentPage, pageSize]);
+  }, [
+    token,
+    baiguullagiinId,
+    selectedBuildingId,
+    dateRange,
+    searchText,
+    searchTerm,
+    currentPage,
+    pageSize,
+  ]);
 
   const { data: rawData, isLoading } = useSWR<{
     data: NegtgelTailanItem[];
     niitToo: number;
   }>(
     swrKey,
-    async ([url, tkn, bId, barId, start, end, search, globalSearch, page, limit]: any) => {
+    async ([
+      url,
+      tkn,
+      bId,
+      barId,
+      start,
+      end,
+      search,
+      globalSearch,
+      page,
+      limit,
+    ]: any) => {
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: bId,
         ...(barId ? { barilgiinId: barId } : {}),
@@ -73,7 +93,7 @@ export default function NegtgelTailanPage() {
         niitToo: Number(resp.data?.niitToo ?? 0),
       };
     },
-    { revalidateOnFocus: false }
+    { revalidateOnFocus: false },
   );
 
   const tailanGaralt: NegtgelTailanItem[] = rawData?.data ?? [];
@@ -86,7 +106,7 @@ export default function NegtgelTailanPage() {
   // ── Summary totals (current page) ────────────────────────────────────
   const grandTotal = tailanGaralt.reduce(
     (s, row) => s + (Number(row.niitTulukhDun) || 0),
-    0
+    0,
   );
 
   // ── Excel export ────────────────────────────────────────────────────────
@@ -104,7 +124,7 @@ export default function NegtgelTailanPage() {
           duusakhOgnoo: `${dateRange?.[1] || ""} 23:59:59`,
           search: searchText || searchTerm || undefined,
         },
-        { responseType: "blob" }
+        { responseType: "blob" },
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -112,7 +132,7 @@ export default function NegtgelTailanPage() {
       link.href = url;
       link.setAttribute(
         "download",
-        `negtgel_tailan_${new Date().toISOString().slice(0, 10)}.xlsx`
+        `negtgel_tailan_${new Date().toISOString().slice(0, 10)}.xlsx`,
       );
       document.body.appendChild(link);
       link.click();
@@ -127,32 +147,35 @@ export default function NegtgelTailanPage() {
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Нэгтгэл тайлан</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={exportToExcel}
-            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-          >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel
-            татах
-          </button>
-        </div>
       </div>
 
       {/* ── Summary cards ───────────────────────────────────────── */}
-      
 
       {/* ── Filters ─────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-4 items-center no-print mb-4">
-        <div className="w-full sm:w-[320px]">
+      <div className="flex flex-wrap gap-3 items-center no-print mb-4">
+        <div
+          id="negtgel-date"
+          className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+        >
           <StandardDatePicker
             isRange={true}
             value={dateRange}
             onChange={setDateRange}
             allowClear
             placeholder="Огноо сонгох"
-            className="flex-1 px-3 neu-panel text-theme placeholder:text-theme/50 !h-[40px]"
+            classNames={{
+              root: "!h-full !w-full",
+              input:
+                "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+            }}
           />
         </div>
+        <button
+          onClick={exportToExcel}
+          className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+        >
+          <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+        </button>
       </div>
 
       {/* ── Table ───────────────────────────────────────────────── */}

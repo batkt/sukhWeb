@@ -135,10 +135,10 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               <button
                 type="button"
                 onClick={() => onRowClick(record)}
-                className="text-gray-900 dark:text-white hover:underline cursor-pointer inline-flex items-center gap-1"
+                className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
               >
-                <span className="text-green-600 dark:text-green-400 font-medium">
-                  {formatNumber(paid)}
+                <span className="text-green-600 dark:text-green-400 font-medium text-[13px]">
+                  {formatNumber(paid, 2)}
                 </span>
               </button>
             );
@@ -164,7 +164,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               <button
                 type="button"
                 onClick={() => onRowClick(record)}
-                className="text-gray-900 dark:text-white hover:underline cursor-pointer inline-flex items-center gap-1"
+                className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
               >
                 <span
                   className={
@@ -175,7 +175,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                         : "text-gray-900 dark:text-white"
                   }
                 >
-                  {formatNumber(uldegdel)}
+                  {formatNumber(uldegdel, 2)}
                 </span>
               </button>
             );
@@ -195,7 +195,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             const paid = getPaid(record);
             return (
               <span className="text-green-600 dark:text-green-400 text-[13px]">
-                {formatNumber(paid)}
+                {formatNumber(paid, 2)}
               </span>
             );
           },
@@ -209,6 +209,19 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const gid = getGereeId(selectedRecord);
     const gd =
       selectedRecord._gereeDugaar || selectedRecord.gereeniiDugaar || gid;
+
+    // Get resident info for modal title - try multiple field name variations
+    const ner = selectedRecord._ner || selectedRecord.ner || "";
+    const ovog = selectedRecord._ovog || selectedRecord.ovog || "";
+    const fullName = ovog && ner ? `${ovog} ${ner}` : ner || ovog || "";
+    const toot =
+      selectedRecord._toot ||
+      selectedRecord.toot ||
+      selectedRecord._tootName ||
+      "";
+    const utas =
+      selectedRecord._utas || selectedRecord.utas || selectedRecord.phone || "";
+    const titleInfo = [fullName, toot, utas].filter(Boolean).join(" | ");
 
     const ledgerColumns: ColumnsType<any> = [
       {
@@ -258,7 +271,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             Number(row?.avlagaDun ?? row?.tulukhDun ?? row?.debit ?? 0) || 0;
           return avlaga > 0 ? (
             <span className="text-red-500 dark:text-red-400 text-[13px]">
-              {formatNumber(avlaga)}
+              {formatNumber(avlaga, 2)}
             </span>
           ) : (
             <span className="text-[13px]">-</span>
@@ -277,7 +290,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             Number(row?.tulsunDun ?? row?.tulult ?? row?.credit ?? 0) || 0;
           return tulult > 0 ? (
             <span className="text-green-600 dark:text-green-400 text-[13px]">
-              {formatNumber(tulult)}
+              {formatNumber(tulult, 2)}
             </span>
           ) : (
             <span className="text-[13px]">-</span>
@@ -303,7 +316,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     : "text-gray-900 dark:text-white") + " text-[13px]"
               }
             >
-              {formatNumber(uldeg)}
+              {formatNumber(uldeg, 2)}
             </span>
           );
         },
@@ -312,9 +325,14 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
 
     return (
       <div className="p-4">
-        <h4 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">
-          Дэлгэрэнгүй ({gd})
-        </h4>
+        <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+          <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            Дэлгэрэнгүй мэдээлэл
+          </h4>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {titleInfo || gd}
+          </p>
+        </div>
         {expandedLoading ? (
           <div className="py-4 text-center text-gray-500 dark:text-gray-400">
             Уншиж байна...
@@ -369,8 +387,10 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
           text-gray-900 dark:text-white
-          hover:bg-gray-100 dark:hover:bg-gray-600
-          transition-colors duration-200
+          hover:bg-blue-50 dark:hover:bg-blue-900/20
+          hover:shadow-sm
+          cursor-pointer
+          transition-all duration-150
         `}
         locale={{
           emptyText: (
@@ -399,7 +419,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="center"
                   className="bg-gray-50 dark:bg-gray-900"
                 >
-                  <span className="font-bold text-gray-900 dark:text-white force-bold text-[13px]">
+                  <span className="font-bold text-gray-900 dark:text-white force-bold text-[11px]">
                     Нийт
                   </span>
                 </Table.Summary.Cell>
@@ -411,9 +431,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                       className="bg-gray-50 dark:bg-gray-900"
                     >
                       <span
-                        className={`font-bold force-bold text-[13px] ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
+                        className={`font-bold force-bold text-[11px] ${totalUldegdel > 0 ? "text-red-500 dark:text-red-400" : totalUldegdel < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-gray-900 dark:text-white"}`}
                       >
-                        {formatNumber(totalUldegdel)}
+                        {formatNumber(totalUldegdel, 2)} ₮
                       </span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
@@ -421,8 +441,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                       align="right"
                       className="bg-gray-50 dark:bg-gray-900"
                     >
-                      <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px] dark:!text-white">
-                        {formatNumber(totalPaid)}
+                      <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px] dark:!text-white">
+                        {formatNumber(totalPaid, 2)} ₮
                       </span>
                     </Table.Summary.Cell>
                   </>
@@ -432,8 +452,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     align="right"
                     className="bg-gray-50 dark:bg-gray-900"
                   >
-                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px] dark:!text-white">
-                      {formatNumber(totalPaid)}
+                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px] dark:!text-white">
+                      {formatNumber(totalPaid, 2)} ₮
                     </span>
                   </Table.Summary.Cell>
                 )}

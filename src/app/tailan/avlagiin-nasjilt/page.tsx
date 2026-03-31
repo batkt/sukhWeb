@@ -23,6 +23,7 @@ import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
 } from "./AvlagiinNasjiltTable";
+import { getDefaultDateRange } from "@/lib/utils";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -123,9 +124,10 @@ export default function AvlagiinNasjiltPage() {
   const [data, setData] = useState<AvlagiinNasjiltItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<any>(null);
-  const [ognoo, setOgnoo] = useState<dayjs.Dayjs | null>(
-    dayjs().endOf("month"),
-  );
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(() => {
+    const [start, end] = getDefaultDateRange();
+    return [new Date(start), new Date(end)];
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(200);
   const [isDark, setIsDark] = useState(false);
@@ -150,8 +152,8 @@ export default function AvlagiinNasjiltPage() {
       const payload = {
         baiguullagiinId: baiguullaga._id,
         barilgiinId: selectedBuildingId,
-        duusakhOgnoo: ognoo
-          ? ognoo.endOf("month").format("YYYY-MM-DD 23:59:59")
+        duusakhOgnoo: dateRange?.[1]
+          ? dayjs(dateRange[1]).format("YYYY-MM-DD 23:59:59")
           : undefined,
         khuudasniiDugaar: currentPage,
         khuudasniiKhemjee: pageSize,
@@ -181,7 +183,7 @@ export default function AvlagiinNasjiltPage() {
   }, [
     selectedBuildingId,
     baiguullaga,
-    ognoo,
+    dateRange,
     searchTerm,
     currentPage,
     pageSize,
@@ -196,7 +198,9 @@ export default function AvlagiinNasjiltPage() {
         report: "avlagiin-nasjilt",
         baiguullagiinId: baiguullaga?._id,
         barilgiinId: selectedBuildingId,
-        duusakhOgnoo: ognoo?.endOf("month").format("YYYY-MM-DD"),
+        duusakhOgnoo: dateRange?.[1]
+          ? dayjs(dateRange[1]).format("YYYY-MM-DD")
+          : undefined,
         search: searchTerm || undefined,
       };
       const resp = await uilchilgee(token).post("/tailan/export", payload, {
@@ -266,7 +270,10 @@ export default function AvlagiinNasjiltPage() {
           </h1>
           <p className="mt-4 text-xl font-bold">{baiguullaga?.ner}</p>
           <p className="text-sm mt-1">
-            Огноо: {ognoo?.format("YYYY-MM-DD") || "Өнөөдөр"}
+            Огноо:{" "}
+            {dateRange?.[0] && dateRange?.[1]
+              ? `${dayjs(dateRange[0]).format("YYYY-MM-DD")} - ${dayjs(dateRange[1]).format("YYYY-MM-DD")}`
+              : "Бүх хугацаа"}
           </p>
         </div>
 
@@ -274,31 +281,38 @@ export default function AvlagiinNasjiltPage() {
           <h1 className="text-2xl font-bold text-theme tracking-tight">
             Насжилтын тайлан
           </h1>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3">
-              <StandardDatePicker
-                value={ognoo}
-                onChange={setOgnoo}
-                picker="month"
-                placeholder="Сар сонгох"
-                format="YYYY-MM"
-                className="!h-full !w-full text-theme !px-0 flex items-center justify-center text-center border-0 shadow-none"
-              />
-            </div>
-            <button
-              onClick={() => window.print()}
-              className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-            >
-              <Printer className="w-4 h-4" /> Хэвлэх
-            </button>
-            <button
-              onClick={exportToExcel}
-              className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel
-              татах
-            </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 no-print mb-3">
+          <div
+            id="nasjilt-date"
+            className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3"
+          >
+            <StandardDatePicker
+              isRange={true}
+              value={dateRange}
+              onChange={setDateRange}
+              allowClear
+              placeholder="Огноо сонгох"
+              classNames={{
+                root: "!h-full !w-full",
+                input:
+                  "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+              }}
+            />
           </div>
+          <button
+            onClick={() => window.print()}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <Printer className="w-4 h-4" /> Хэвлэх
+          </button>
+          <button
+            onClick={exportToExcel}
+            className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" /> Excel татах
+          </button>
         </div>
 
         <div
@@ -316,14 +330,7 @@ export default function AvlagiinNasjiltPage() {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0 mt-2">
-          <div className="flex gap-4 text-xs font-bold uppercase tracking-widest">
-            <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-500">
-              Нийт: {summary?.count || filteredData.length}
-            </div>
-            <div className="px-4 py-2 bg-red-50 dark:bg-red-900/30 rounded-full text-red-500">
-              Авлага: {formatNumber(totals.uldegdel)}{" "}
-            </div>
-          </div>
+          <div></div>
           <div className="flex items-center gap-4">
             <PageSongokh
               value={pageSize}
