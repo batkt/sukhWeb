@@ -7,6 +7,7 @@ import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import Button from "@/components/ui/Button";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 
 interface TransactionModalProps {
   show: boolean;
@@ -67,6 +68,7 @@ export default function TransactionModal({
   const [residentBalance, setResidentBalance] = useState<number | null>(null);
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const [isFetchingLatest, setIsFetchingLatest] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
 
   // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
   const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt;
@@ -94,7 +96,23 @@ export default function TransactionModal({
 
   const handleClose = () => {
     resetForm();
+    setShowConfirmClose(false);
     onClose();
+  };
+
+  // hasChanges: any meaningful user input detected
+  const hasChanges =
+    amount !== "0.00" ||
+    tailbar.trim() !== "" ||
+    umnukhZaalt.trim() !== "" ||
+    suuliinZaalt.trim() !== "";
+
+  const requestClose = () => {
+    if (hasChanges) {
+      setShowConfirmClose(true);
+    } else {
+      handleClose();
+    }
   };
 
   const fetchLatestZaalt = async () => {
@@ -141,7 +159,7 @@ export default function TransactionModal({
 
   useModalHotkeys({
     isOpen: show,
-    onClose: handleClose,
+    onClose: requestClose,
     container: modalRef.current,
   });
 
@@ -308,15 +326,16 @@ export default function TransactionModal({
   if (!show) return null;
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
+    <>
+      <AnimatePresence>
+        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
         {contextHolder}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-          onClick={handleClose}
+          onClick={requestClose}
         />
 
         <motion.div
@@ -629,7 +648,7 @@ export default function TransactionModal({
           {/* Footer */}
           <div className="px-6 py-4 border-t flex justify-end gap-3">
             <Button
-              onClick={handleClose}
+              onClick={requestClose}
               disabled={isProcessing}
               variant="secondary"
               className="ant-btn w-20 color-black"
@@ -646,7 +665,14 @@ export default function TransactionModal({
             </Button>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+        </div>
+      </AnimatePresence>
+
+      <ConfirmCloseDialog
+        open={showConfirmClose}
+        onCancel={() => setShowConfirmClose(false)}
+        onConfirm={handleClose}
+      />
+    </>
   );
 }

@@ -660,7 +660,7 @@ export function useGereeActions(
         const topMsg = data?.message || "Импортын явцад зарим мөр алдаатай байна";
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
-        openSuccessOverlay("Excel импорт амжилттай");
+        openSuccessOverlay("Загвар амжилттай орууллаа.");
         if (baiguullagaMutate) {
           await baiguullagaMutate();
         }
@@ -746,7 +746,7 @@ export function useGereeActions(
         const topMsg = data?.message || "Импортын явцад зарим мөр алдаатай байна";
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
-        openSuccessOverlay("Excel импорт амжилттай");
+        openSuccessOverlay("Загвар амжилттай орууллаа.");
         if (baiguullagaMutate) {
           await baiguullagaMutate();
         }

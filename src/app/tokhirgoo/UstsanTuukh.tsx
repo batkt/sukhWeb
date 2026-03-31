@@ -1,18 +1,9 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
-import DateRangeButton from "@/components/ui/DateRangeButton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import React, { useMemo, useState } from "react";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   Trash2,
-  User,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   X,
   AlertTriangle,
@@ -27,6 +18,10 @@ import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
 import { createPortal } from "react-dom";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import {
+  StandardTable,
+  StandardPagination,
+} from "@/components/ui/StandardTable";
 
 interface Props {
   token: string;
@@ -405,12 +400,10 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedModel, setSelectedModel] = useState<string>("");
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([
     dayjs().subtract(30, "days").format("YYYY-MM-DD"),
     dayjs().format("YYYY-MM-DD"),
   ]);
-  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DeleteRecord | null>(
     null,
   );
@@ -457,8 +450,8 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
     });
   }, [employeesData]);
 
-  // Fetch delete history
-  const { data, isLoading, mutate } = useSWR(
+  // Fetch delete history — page/pageSize NOT in key (client-side pagination)
+  const { data, isLoading } = useSWR(
     token && baiguullaga?._id
       ? [
           "/audit/ustgakhTuukh",
@@ -467,35 +460,16 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
           dateRange[0],
           dateRange[1],
           selectedModel,
-          selectedEmployee,
-          page,
-          pageSize,
         ]
       : null,
-    async ([
-      url,
-      tkn,
-      orgId,
-      startDate,
-      endDate,
-      model,
-      employee,
-      pg,
-      pgSize,
-    ]) => {
+    async ([url, tkn, orgId, startDate, endDate, model]) => {
       const params: any = {
         baiguullagiinId: orgId,
-        khuudasniiDugaar: pg,
-        khuudasniiKhemjee: 10000, // Fetch all for client-side filtering
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 10000,
       };
 
-      if (model) {
-        params.modelName = model;
-      }
-
-      if (employee) {
-        params.ajiltniiId = employee;
-      }
+      if (model) params.modelName = model;
 
       if (startDate && endDate) {
         params.ekhlekhOgnoo = `${startDate} 00:00:00`;
@@ -552,20 +526,15 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   // Client-side filtering and pagination
   const filteredRecords = useMemo(() => {
     return allRecords.filter((r) => {
-      const matchesModel = !selectedModel || r.modelName === selectedModel;
-      const matchesEmployee =
-        !selectedEmployee || r.ajiltniiId === selectedEmployee;
-      return matchesModel && matchesEmployee;
+      return !selectedModel || r.modelName === selectedModel;
     });
-  }, [allRecords, selectedModel, selectedEmployee]);
+  }, [allRecords, selectedModel]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredRecords.slice(start, end);
+    return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
 
   const handleDateChange = (dates: [string | null, string | null]) => {
@@ -578,118 +547,57 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
     setIsDetailModalOpen(true);
   };
 
-  // Close page size dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".page-size-selector")) {
-        setIsPageSizeOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
     <>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .ustsan-select-wrapper {
-          border-radius: 0.5rem !important;
-          -webkit-border-radius: 0.5rem !important;
-          -moz-border-radius: 0.5rem !important;
-          overflow: hidden !important;
-          transition: all 0.2s ease !important;
-        }
-        .ustsan-select-wrapper:hover {
-          border-color: rgba(59, 130, 246, 0.5) !important;
-        }
-        .ustsan-select-wrapper:focus-within {
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-        }
-        .ustsan-tuukh-select {
-          -webkit-appearance: none !important;
-          -moz-appearance: none !important;
-          appearance: none !important;
-          border-radius: 0 !important;
-        }
-        .ustsan-tuukh-select option {
-          padding: 8px 12px !important;
-          background: var(--surface-bg) !important;
-          color: var(--panel-text) !important;
-        }
-      `,
-        }}
-      />
       <div className="h-full overflow-y-auto custom-scrollbar">
-        <div className="bg-[color:var(--surface-bg)] rounded-2xl p-6 space-y-6">
+        <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
               <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-              <h2 className="text-xl  text-[color:var(--panel-text)]">
+              <h2 className="text-xl text-[color:var(--panel-text)]">
                 {t("Устгасан түүх")}
               </h2>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex flex-col gap-4">
-            {/* Model, Employee, and Date Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Огноо
-                </label>
-                <DateRangeButton
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  placeholder="Огноо сонгох"
-                />
-              </div>
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div
+              id="ustsan-date"
+              className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+            >
+              <StandardDatePicker
+                isRange={true}
+                value={dateRange}
+                onChange={handleDateChange}
+                allowClear
+                placeholder="Огноо сонгох"
+                classNames={{
+                  root: "!h-full !w-full",
+                  input:
+                    "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                }}
+              />
+            </div>
 
-              <div className="relative">
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Төрөл
-                </label>
-                <div
-                  className="ustsan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={
-                    {
-                      borderRadius: "0.5rem",
-                      overflow: "hidden",
-                      height: "42px",
-                    } as React.CSSProperties
-                  }
-                >
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => {
-                      setSelectedModel(e.target.value);
-                      setPage(1);
-                    }}
-                    className="ustsan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={
-                      {
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        borderRadius: 0,
-                        height: "100%",
-                      } as React.CSSProperties
-                    }
-                  >
-                    <option value="">Бүгд</option>
-                    {modelNames.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                </div>
-              </div>
+            <div className="relative h-[40px] w-full sm:w-[200px] border border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)] flex items-center">
+              <select
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full h-full px-4 pr-10 bg-transparent border-0 focus:outline-none text-[color:var(--panel-text)] appearance-none cursor-pointer text-sm"
+              >
+                <option value="">Бүгд</option>
+                {modelNames.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
             </div>
           </div>
 
@@ -700,163 +608,92 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
             </div>
           ) : (
             <>
-              <div className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden">
-                <div className="overflow-x-auto custom-scrollbar">
-                  <table className="w-full text-left">
-                    <thead className="bg-[color:var(--surface-hover)] sticky top-0">
-                      <tr>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
-                          #
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
-                          Үүссэн огноо
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
-                          Устгасан огноо
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center border-r items-center justify-center  text-[color:var(--panel-text)]">
-                          Төрөл
-                        </th>
-                        <th className="px-4 py-3 text-xs text-center items-center justify-center  text-[color:var(--panel-text)] text-center !rounded-tr-lg">
-                          Үйлдэл
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedRecords.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="px-4 py-12 text-center text-[color:var(--muted-text)]"
-                          >
-                            Устгасан түүх олдсонгүй
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedRecords.map((record, index) => {
-                          const isLast = index === paginatedRecords.length - 1;
-                          // Get original creation date from deleted document
-                          const originalCreatedAt =
-                            record.deletedDocument?.createdAt ||
-                            record.deletedData?.createdAt ||
-                            "-";
-                          return (
-                            <tr
-                              key={record._id}
-                              className={`border-b text-center items-center justify-center border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? "last:border-b-0" : ""}`}
-                            >
-                              <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)] text-center">
-                                {(page - 1) * pageSize + index + 1}
-                              </td>
-                              <td className="px-4 text-center items-center border-r justify-center py-3 text-sm text-[color:var(--panel-text)]">
-                                {originalCreatedAt !== "-"
-                                  ? moment(originalCreatedAt).format(
-                                      "YYYY-MM-DD HH:mm:ss",
-                                    )
-                                  : "-"}
-                              </td>
-                              <td className="px-4 py-3 text-sm border-r text-[color:var(--panel-text)]">
-                                {moment(
-                                  record.createdAt || record.ognoo,
-                                ).format("YYYY-MM-DD HH:mm:ss")}
-                              </td>
-                              <td className="px-4 py-3 text-center items-center justify-center text-sm text-[color:var(--panel-text)]">
-                                {modelNames.find(
-                                  (m) => m.value === record.modelName,
-                                )?.label ||
-                                  record.modelName ||
-                                  "-"}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-center">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewDetails(record)}
-                                  className="!rounded-2xl"
-                                  style={{ borderRadius: "0.5rem" }}
-                                  title="Дэлгэрэнгүй үзэх"
-                                >
-                                  <Eye className="w-4 h-4 text-blue-600" />
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardTable
+                data={paginatedRecords}
+                columns={[
+                  {
+                    key: "index",
+                    label: "#",
+                    width: 60,
+                    align: "center",
+                    render: (_: any, __: any, index: number) =>
+                      (page - 1) * pageSize + index + 1,
+                  },
+                  {
+                    key: "documentCreatedAt",
+                    label: "Үүссэн огноо",
+                    align: "center",
+                    render: (_value: any, record: any) => {
+                      const orig =
+                        record.deletedDocument?.createdAt ||
+                        record.deletedData?.createdAt ||
+                        null;
+                      return orig
+                        ? moment(orig).format("YYYY-MM-DD HH:mm:ss")
+                        : "-";
+                    },
+                  },
+                  {
+                    key: "createdAt",
+                    label: "Устгасан огноо",
+                    align: "center",
+                    render: (value: any, record: any) =>
+                      moment(value || record.ognoo).format(
+                        "YYYY-MM-DD HH:mm:ss",
+                      ),
+                  },
+                  {
+                    key: "modelName",
+                    label: "Төрөл",
+                    align: "center",
+                    render: (value: any) =>
+                      modelNames.find((m) => m.value === value)?.label ||
+                      value ||
+                      "-",
+                  },
+                  {
+                    key: "action",
+                    label: "Үйлдэл",
+                    align: "center",
+                    render: (_value: any, record: any) => (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleViewDetails(record);
+                        }}
+                        className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors relative z-10"
+                        title="Дэлгэрэнгүй үзэх"
+                      >
+                        <Eye className="w-4 h-4 text-blue-600 pointer-events-none" />
+                      </button>
+                    ),
+                  },
+                ]}
+                rowKey="_id"
+                loading={isLoading}
+                emptyMessage="Устгасан түүх олдсонгүй"
+                className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+                maxHeight={pageSize * 60}
+              />
 
-              {/* Pagination */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-[color:var(--panel-text)]">
-                    Нийт {totalRecords} мөр
-                  </span>
-
-                  {/* Page Size Selector */}
-                  <div className="relative page-size-selector">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                      className="!rounded-2xl"
-                      style={{ borderRadius: "0.5rem" }}
-                    >
-                      {pageSize} / хуудас
-                    </Button>
-                    {isPageSizeOpen && (
-                      <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg shadow-lg z-10 min-w-[100px] overflow-hidden">
-                        {[10, 20, 50, 100, 500].map((size) => (
-                          <button
-                            key={size}
-                            onClick={() => {
-                              setPageSize(size);
-                              setPage(1);
-                              setIsPageSizeOpen(false);
-                            }}
-                            className={`w-full px-4 py-2 text-left text-sm hover:bg-[color:var(--surface-hover)] transition-colors ${
-                              pageSize === size
-                                ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                                : "text-[color:var(--panel-text)]"
-                            }`}
-                          >
-                            {size}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: "0.5rem" }}
-                    leftIcon={<ChevronLeft className="w-4 h-4" />}
-                  >
-                    Өмнөх
-                  </Button>
-                  <span className="text-sm text-[color:var(--panel-text)] px-3">
-                    {page} / {totalPages || 1}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: "0.5rem" }}
-                    rightIcon={<ChevronRight className="w-4 h-4" />}
-                  >
-                    Дараах
-                  </Button>
-                </div>
+              <div className="pt-2 border-t border-[color:var(--surface-border)]">
+                <StandardPagination
+                  current={page}
+                  total={totalRecords}
+                  pageSize={pageSize}
+                  onChange={(p, size) => {
+                    setPage(p);
+                    if (size) setPageSize(size);
+                  }}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50, 100, 500]}
+                />
               </div>
             </>
           )}

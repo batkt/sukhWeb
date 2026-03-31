@@ -2249,7 +2249,7 @@ export default function DansniiKhuulga() {
 
       const endpoint = "/zaaltExcelTatya";
 
-      importToastId = toast.loading("Excel импорт хийж байна…");
+      importToastId = toast.loading("Загвар оруулж байна…");
 
       const resp: any = await uilchilgee(token).post(endpoint, form, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -2268,7 +2268,7 @@ export default function DansniiKhuulga() {
           data?.message || "Импортын явцад зарим мөр алдаатай байна";
         openErrorOverlay(`${topMsg}\n${details}`);
       } else {
-        toast.success("Excel импорт амжилттай");
+        toast.success("Загвар амжилттай орууллаа.");
         // Refresh the page data without reloading
         mutate(
           (key: any) =>
@@ -2710,7 +2710,7 @@ export default function DansniiKhuulga() {
                 </Tooltip>
 
                 {isZaaltDropdownOpen && (
-                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 z-50 min-w-[250px] menu-surface rounded-xl shadow-lg overflow-hidden">
                     <button
                       onClick={() => {
                         fileInputRef.current?.click();
@@ -2719,7 +2719,7 @@ export default function DansniiKhuulga() {
                       className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2"
                     >
                       <Upload className="w-4 h-4" />
-                      <span>Excel импорт</span>
+                      <span>Загвар оруулах</span>
                     </button>
                     <button
                       onClick={() => {
@@ -2729,7 +2729,7 @@ export default function DansniiKhuulga() {
                       className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Заалт татах</span>
+                      <span>Заалтын загвар татах</span>
                     </button>
                     <button
                       onClick={() => {
@@ -2739,7 +2739,7 @@ export default function DansniiKhuulga() {
                       className="w-full px-4 py-2.5 text-left text-[13px] hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
                     >
                       <Download className="w-4 h-4" />
-                      <span>Заалт жагсаалт авах</span>
+                      <span>Заалтын жагсаалт татах</span>
                     </button>
                   </div>
                 )}

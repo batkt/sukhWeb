@@ -286,16 +286,17 @@ export default function GereeHeader({
                     </button>
                     {isDesktopExcelOpen && (
                       <div className="absolute right-0 top-full mt-2 z-50 min-w-[180px] menu-surface rounded-xl shadow-lg overflow-hidden">
-                        <button
+                         <button
                           onClick={() => {
-                            onExportResidentsExcel();
+                            onResidentsExcelImportClick();
                             setIsDesktopExcelOpen(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
-                          id="resident-download-list-btn-top"
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
+                          id="resident-upload-template-btn-top"
+                          disabled={isUploadingResidents}
                         >
-                          <Download className="w-4 h-4" />
-                          <span>Жагсаалт татах</span>
+                          <FileUp className="w-4 h-4" />
+                          <span>Загвар оруулах</span>
                         </button>
                         <button
                           onClick={() => {
@@ -310,15 +311,14 @@ export default function GereeHeader({
                         </button>
                         <button
                           onClick={() => {
-                            onResidentsExcelImportClick();
+                            onExportResidentsExcel();
                             setIsDesktopExcelOpen(false);
                           }}
-                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2 border-t border-white/10"
-                          id="resident-upload-template-btn-top"
-                          disabled={isUploadingResidents}
+                          className="w-full px-4 border-t py-2.5 text-left text-sm hover:bg-white/10 transition-colors flex items-center gap-2"
+                          id="resident-download-list-btn-top"
                         >
-                          <FileUp className="w-4 h-4" />
-                          <span>Загвар оруулах</span>
+                          <Download className="w-4 h-4" />
+                          <span>Жагсаалт татах</span>
                         </button>
                       </div>
                     )}

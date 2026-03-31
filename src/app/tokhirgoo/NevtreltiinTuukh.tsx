@@ -1,34 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
-import DateRangeButton from "@/components/ui/DateRangeButton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Settings,
-  MoreHorizontal,
-  Search,
-  Filter,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  User,
-  Globe,
-  Monitor,
-  MapPin,
-  Clock,
-} from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
+import { Clock, User, Globe, Monitor, MapPin } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { Loader } from "@mantine/core";
-import Button from "@/components/ui/Button";
-import { getDefaultDateRange } from "@/lib/utils";
+import {
+  StandardTable,
+  StandardPagination,
+} from "@/components/ui/StandardTable";
 
 interface Props {
   token: string;
@@ -61,123 +45,80 @@ export default function NevtreltiinTuukh({
 }: Props) {
   const { t } = useTranslation();
 
-  const [dateRange, setDateRange] = useState<[string | null, string | null]>(
-    getDefaultDateRange(),
-  );
-
+  const [dateRange, setDateRange] = useState<[string | null, string | null]>([
+    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
+    dayjs().format("YYYY-MM-DD"),
+  ]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
 
-  // Build query for API
-  const query = useMemo(() => {
-    const q: any = {};
-
-    if (baiguullaga?._id) {
-      q.baiguullagiinId = baiguullaga._id;
-    }
-
-    if (dateRange[0] && dateRange[1]) {
-      q.ognoo = {
-        $gte: `${dateRange[0]} 00:00:00`,
-        $lte: `${dateRange[1]} 23:59:59`,
-      };
-    }
-
-    if (searchTerm) {
-      q.$or = [
-        { ajiltniiNer: { $regex: searchTerm, $options: "i" } },
-        { ip: { $regex: searchTerm, $options: "i" } },
-        { browser: { $regex: searchTerm, $options: "i" } },
-        { uildliinSystem: { $regex: searchTerm, $options: "i" } },
-        { bairshilKhot: { $regex: searchTerm, $options: "i" } },
-        { bairshilUls: { $regex: searchTerm, $options: "i" } },
-      ];
-    }
-
-    return q;
-  }, [baiguullaga?._id, dateRange, searchTerm]);
-
-  // Fetch login history
-  const { data, isLoading, mutate } = useSWR(
+  // Fetch login history — page/pageSize NOT in key (client-side pagination)
+  const { data, isLoading } = useSWR(
     token && baiguullaga?._id
       ? [
           "/nevtreltiinTuukh",
           token,
           baiguullaga._id,
-          JSON.stringify(query),
-          page,
-          pageSize,
+          dateRange[0],
+          dateRange[1],
+          searchTerm,
         ]
       : null,
-    async ([url, tkn, orgId, queryStr, pg, pgSize]) => {
-      const resp = await uilchilgee(tkn).get(url, {
-        params: {
-          khuudasniiDugaar: pg,
-          khuudasniiKhemjee: 10000, // Fetch all for client-side filtering
-          query: queryStr,
-          order: JSON.stringify({ ognoo: -1 }), // Newest first
-        },
-      });
+    async ([url, tkn, orgId, startDate, endDate, search]) => {
+      const params: any = {
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 10000,
+        order: JSON.stringify({ ognoo: -1 }),
+      };
+
+      if (startDate && endDate) {
+        params.ekhlekhOgnoo = `${startDate} 00:00:00`;
+        params.duusakhOgnoo = `${endDate} 23:59:59`;
+      }
+
+      const resp = await uilchilgee(tkn).get(url, { params });
       return resp.data;
     },
     { revalidateOnFocus: false },
   );
 
   const allRecords: LoginRecord[] = useMemo(
-    () => (Array.isArray(data?.jagsaalt) ? data.jagsaalt : []),
+    () =>
+      Array.isArray(data?.jagsaalt)
+        ? data.jagsaalt
+        : Array.isArray(data?.data)
+          ? data.data
+          : [],
     [data],
   );
 
-  // Client-side filtering and pagination
+  // Client-side search filter
   const filteredRecords = useMemo(() => {
-    let filtered = [...allRecords];
-
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (r) =>
-          r.ajiltniiNer?.toLowerCase().includes(term) ||
-          r.ip?.toLowerCase().includes(term) ||
-          r.browser?.toLowerCase().includes(term) ||
-          r.uildliinSystem?.toLowerCase().includes(term) ||
-          r.bairshilKhot?.toLowerCase().includes(term) ||
-          r.bairshilUls?.toLowerCase().includes(term),
-      );
-    }
-
-    return filtered;
+    if (!searchTerm) return allRecords;
+    const term = searchTerm.toLowerCase();
+    return allRecords.filter(
+      (r) =>
+        r.ajiltniiNer?.toLowerCase().includes(term) ||
+        r.ip?.toLowerCase().includes(term) ||
+        r.browser?.toLowerCase().includes(term) ||
+        r.uildliinSystem?.toLowerCase().includes(term) ||
+        r.bairshilKhot?.toLowerCase().includes(term) ||
+        r.bairshilUls?.toLowerCase().includes(term),
+    );
   }, [allRecords, searchTerm]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredRecords.slice(start, end);
+    return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (
-    dates: [string | null, string | null] | undefined,
-  ) => {
-    setDateRange((dates || [null, null]) as [string | null, string | null]);
-    setPage(1); // Reset to first page
+  const handleDateChange = (dates: [string | null, string | null]) => {
+    setDateRange(dates);
+    setPage(1);
   };
-
-  // Close page size dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".page-size-selector")) {
-        setIsPageSizeOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   return (
     <div className="h-full overflow-y-auto custom-scrollbar">
@@ -186,25 +127,43 @@ export default function NevtreltiinTuukh({
         <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
           <div className="flex items-center gap-3">
             <Clock className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h2 className="text-xl  text-[color:var(--panel-text)]">
+            <h2 className="text-xl text-[color:var(--panel-text)]">
               {t("Нэвтрэлтийн түүх")}
             </h2>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm text-[color:var(--panel-text)] mb-1">
-                Огноо
-              </label>
-              <DateRangeButton
-                value={dateRange}
-                onChange={handleDateChange}
-                placeholder="Огноо сонгох"
-              />
-            </div>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div
+            id="nevtrel-date"
+            className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+          >
+            <StandardDatePicker
+              isRange={true}
+              value={dateRange}
+              onChange={handleDateChange}
+              allowClear
+              placeholder="Огноо сонгох"
+              classNames={{
+                root: "!h-full !w-full",
+                input:
+                  "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+              }}
+            />
+          </div>
+
+          <div className="border border-[color:var(--surface-border)] rounded-2xl bg-[color:var(--surface-bg)] h-[40px] w-full sm:w-[220px] flex items-center px-3 gap-2">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Хайх..."
+              className="w-full text-[color:var(--panel-text)] placeholder:text-[color:var(--muted-text)] text-sm"
+            />
           </div>
         </div>
 
@@ -215,172 +174,102 @@ export default function NevtreltiinTuukh({
           </div>
         ) : (
           <>
-            <div
-              className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
-              style={{ maxHeight: `${pageSize * 60}px`, overflowY: "auto" }}
-            >
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead className="bg-[color:var(--surface-hover)] sticky top-0 border-b">
-                    <tr>
-                      <th className="px-4 border-r py-3 text-xs  text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
-                        #
-                      </th>
-                      <th className="px-4 text-center  border-r py-3 text-xs  text-[color:var(--panel-text)]">
-                        Огноо
-                      </th>
-                      <th className="px-4 text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
-                        Ажилтны нэр
-                      </th>
-                      <th className="px-4  text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
-                        IP хаяг
-                      </th>
-                      <th className="px-4 text-center border-r py-3 text-xs  text-[color:var(--panel-text)]">
-                        Байршил
-                      </th>
-                      <th className="px-4 border-r py-3 text-xs  text-[color:var(--panel-text)]">
-                        Хөтөч
-                      </th>
-                      <th className="px-4 text-center py-3 text-xs  text-[color:var(--panel-text)] !rounded-tr-lg">
-                        Төхөөрөмж
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedRecords.length === 0 ? (
-                      <tr>
-                        <td
-                          colSpan={7}
-                          className="px-4 py-12 text-center text-[color:var(--muted-text)]"
-                        >
-                          Нэвтрэлтийн түүх олдсонгүй
-                        </td>
-                      </tr>
-                    ) : (
-                      paginatedRecords.map((record, index) => {
-                        const isLast = index === paginatedRecords.length - 1;
-                        return (
-                          <tr
-                            key={record._id}
-                            className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? "last:border-b-0" : ""}`}
-                          >
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] text-center">
-                              {(page - 1) * pageSize + index + 1}
-                            </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              {moment(record.ognoo).format(
-                                "YYYY-MM-DD HH:mm:ss",
-                              )}
-                            </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                {record.ajiltniiNer || "-"}
-                              </div>
-                            </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] font-mono">
-                              {record.ip || "-"}
-                            </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                <span>
-                                  {record.bairshilKhot || "-"}
-                                  {record.bairshilUls &&
-                                    `, ${record.bairshilUls}`}
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)]">
-                              <div className="flex items-center gap-2">
-                                <Globe className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                {record.browser || "-"}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-[color:var(--panel-text)]">
-                              <div className="flex items-center gap-2">
-                                <Monitor className="w-4 h-4 text-[color:var(--muted-text)]" />
-                                {record.uildliinSystem || "-"}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Pagination */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[color:var(--surface-border)]">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-[color:var(--panel-text)]">
-                  Нийт {totalRecords} мөр
-                </span>
-
-                {/* Page Size Selector */}
-                <div className="relative page-size-selector">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsPageSizeOpen(!isPageSizeOpen)}
-                    className="!rounded-2xl"
-                    style={{ borderRadius: "0.5rem" }}
-                  >
-                    {pageSize} / хуудас
-                  </Button>
-                  {isPageSizeOpen && (
-                    <div className="absolute bottom-full mb-2 left-0 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg shadow-lg z-10 min-w-[100px] overflow-hidden">
-                      {[10, 20, 50, 100, 500].map((size) => (
-                        <button
-                          key={size}
-                          onClick={() => {
-                            setPageSize(size);
-                            setPage(1);
-                            setIsPageSizeOpen(false);
-                          }}
-                          className={`w-full px-4 py-2 text-left text-sm hover:bg-[color:var(--surface-hover)] transition-colors ${
-                            pageSize === size
-                              ? "bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400"
-                              : "text-[color:var(--panel-text)]"
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      ))}
+            <StandardTable
+              data={paginatedRecords}
+              columns={[
+                {
+                  key: "index",
+                  label: "#",
+                  width: 60,
+                  align: "center",
+                  render: (_: any, __: any, index: number) =>
+                    (page - 1) * pageSize + index + 1,
+                },
+                {
+                  key: "ognoo",
+                  label: "Огноо",
+                  align: "center",
+                  render: (value: any) =>
+                    value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "-",
+                },
+                {
+                  key: "ajiltniiNer",
+                  label: "Ажилтны нэр",
+                  align: "center",
+                  render: (value: any) => (
+                    <div className="flex items-center justify-center gap-2">
+                      <User className="w-4 h-4 text-[color:var(--muted-text)]" />
+                      {value || "-"}
                     </div>
-                  )}
-                </div>
-              </div>
+                  ),
+                },
+                {
+                  key: "ip",
+                  label: "IP хаяг",
+                  align: "center",
+                  render: (value: any) => (
+                    <span className="font-mono">{value || "-"}</span>
+                  ),
+                },
+                {
+                  key: "bairshilKhot",
+                  label: "Байршил",
+                  align: "center",
+                  render: (value: any, record: any) => (
+                    <div className="flex items-center justify-center gap-2">
+                      <MapPin className="w-4 h-4 text-[color:var(--muted-text)]" />
+                      <span>
+                        {value || "-"}
+                        {record.bairshilUls && `, ${record.bairshilUls}`}
+                      </span>
+                    </div>
+                  ),
+                },
+                {
+                  key: "browser",
+                  label: "Хөтөч",
+                  align: "center",
+                  render: (value: any) => (
+                    <div className="flex items-center justify-center gap-2">
+                      <Globe className="w-4 h-4 text-[color:var(--muted-text)]" />
+                      {value || "-"}
+                    </div>
+                  ),
+                },
+                {
+                  key: "uildliinSystem",
+                  label: "Төхөөрөмж",
+                  align: "center",
+                  render: (value: any) => (
+                    <div className="flex items-center justify-center gap-2">
+                      <Monitor className="w-4 h-4 text-[color:var(--muted-text)]" />
+                      {value || "-"}
+                    </div>
+                  ),
+                },
+              ]}
+              rowKey="_id"
+              loading={isLoading}
+              emptyMessage="Нэвтрэлтийн түүх олдсонгүй"
+              className="rounded-2xl guilgee-table border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+              maxHeight={pageSize * 60}
+            />
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="!rounded-2xl"
-                  style={{ borderRadius: "0.5rem" }}
-                  leftIcon={<ChevronLeft className="w-4 h-4" />}
-                >
-                  Өмнөх
-                </Button>
-                <span className="text-sm text-[color:var(--panel-text)] px-3">
-                  {page} / {totalPages || 1}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="!rounded-2xl"
-                  style={{ borderRadius: "0.5rem" }}
-                  rightIcon={<ChevronRight className="w-4 h-4" />}
-                >
-                  Дараах
-                </Button>
-              </div>
+            <div className="pt-2 border-t border-[color:var(--surface-border)]">
+              <StandardPagination
+                current={page}
+                total={totalRecords}
+                pageSize={pageSize}
+                onChange={(p, size) => {
+                  setPage(p);
+                  if (size) setPageSize(size);
+                }}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
+                pageSizeOptions={[10, 20, 50, 100, 500]}
+              />
             </div>
           </>
         )}

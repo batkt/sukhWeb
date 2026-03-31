@@ -6,6 +6,7 @@ import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 import {
   getResidentToot,
   getResidentDavkhar,
@@ -43,11 +44,31 @@ export default function ResidentModal({
 }: ResidentModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
   const [errors, setErrors] = React.useState<string[]>([]);
+  const [showConfirmClose, setShowConfirmClose] = React.useState(false);
 
-  // Clear errors when modal opens/closes
+  // Snapshot of newResident when modal opens — used to detect unsaved changes
+  const initialSnapshot = React.useRef<any>(null);
   React.useEffect(() => {
-    if (show) setErrors([]);
+    if (show) {
+      initialSnapshot.current = JSON.parse(JSON.stringify(newResident));
+      setErrors([]);
+    } else {
+      setShowConfirmClose(false);
+    }
   }, [show]);
+
+  const hasChanges = React.useMemo(() => {
+    if (!initialSnapshot.current) return false;
+    return JSON.stringify(newResident) !== JSON.stringify(initialSnapshot.current);
+  }, [newResident]);
+
+  const requestClose = () => {
+    if (hasChanges) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
 
   const validate = () => {
     const newErrors: string[] = [];
@@ -146,7 +167,7 @@ export default function ResidentModal({
 
   useModalHotkeys({
     isOpen: show,
-    onClose,
+    onClose: requestClose,
     container: residentRef.current,
   });
 
@@ -391,7 +412,7 @@ export default function ResidentModal({
                   </h2>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={requestClose}
                   className="p-1.5 rounded-lg transition-all duration-200  active:scale-95"
                   aria-label="Хаах"
                   title="Хаах"
@@ -748,7 +769,7 @@ export default function ResidentModal({
                 <div className="flex justify-end px-4 py-3 border-t border-gray-200/50 dark:border-gray-700/50 gap-3 bg-gradient-to-r from-transparent via-white/5 to-transparent">
                   <button
                     type="button"
-                    onClick={onClose}
+                    onClick={requestClose}
                     className="ant-btn ant-btn-default min-w-[80px] text-sm py-2 px-4 rounded-lg"
                   >
                     Хаах
@@ -766,6 +787,12 @@ export default function ResidentModal({
           </motion.div>
         </ModalPortal>
       </AnimatePresence>
+
+      <ConfirmCloseDialog
+        open={showConfirmClose}
+        onCancel={() => setShowConfirmClose(false)}
+        onConfirm={() => { setShowConfirmClose(false); onClose(); }}
+      />
     </>
   );
 }

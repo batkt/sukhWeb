@@ -189,7 +189,7 @@ export default function OrshinSuugch() {
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-lg font-black text-slate-800 dark:text-white tracking-tight leading-none">
+                <h1 className="text-lg text-slate-800 dark:text-white">
                   Оршин суугч
                 </h1>
                 <p className="text-[9px]  text-slate-400 uppercase tracking-widest mt-1">

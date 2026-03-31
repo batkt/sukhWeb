@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import DateRangeButton from "@/components/ui/DateRangeButton";
+import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import {
   Tooltip,
   TooltipContent,
@@ -17,7 +17,11 @@ import { Loader } from "@mantine/core";
 import Button from "@/components/ui/Button";
 import { createPortal } from "react-dom";
 import useModalHotkeys from "@/lib/useModalHotkeys";
-import { StandardPagination } from "@/components/ui/StandardTable";
+import { Table } from "antd";
+import {
+  StandardTable,
+  StandardPagination,
+} from "@/components/ui/StandardTable";
 
 interface Props {
   token: string;
@@ -387,25 +391,13 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
           dateRange[1],
           selectedModel,
           selectedEmployee,
-          page,
-          pageSize,
         ]
       : null,
-    async ([
-      url,
-      tkn,
-      orgId,
-      startDate,
-      endDate,
-      model,
-      employee,
-      pg,
-      pgSize,
-    ]) => {
+    async ([url, tkn, orgId, startDate, endDate, model, employee]) => {
       const params: any = {
         baiguullagiinId: orgId,
-        khuudasniiDugaar: pg,
-        khuudasniiKhemjee: 10000, // Fetch all for client-side filtering
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 10000, // Fetch all for client-side pagination
       };
 
       if (model) {
@@ -444,12 +436,16 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
         r.workerId ||
         r.ajiltan?._id ||
         r.ajiltan?.id,
-      createdAt: r.ognoo || r.createdAt, // Use ognoo if available (this is the edit date)
-      // documentCreatedAt: The original creation date of the edited document
-      // NOTE: The API response currently does NOT include documentCreatedAt.
-      // The backend needs to add this field to the audit response.
-      // Until then, this will be null and display as "-" in the table.
+      createdAt: r.ognoo || r.createdAt,
       documentCreatedAt: r.documentCreatedAt || null,
+      // modelName might come as different field names
+      modelName:
+        r.modelName ||
+        r.collection ||
+        r.collectionName ||
+        r.entity ||
+        r.entityType ||
+        "-",
     }));
   }, [data]);
 
@@ -539,61 +535,43 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col gap-4">
-            {/* Model, Employee, and Date Filters */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Огноо
-                </label>
-                <DateRangeButton
-                  value={dateRange}
-                  onChange={handleDateChange}
-                  placeholder="Огноо сонгох"
-                />
-              </div>
+          {/* Filters - One Line */}
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div
+              id="zassan-date"
+              className="btn-minimal h-[40px] w-full sm:w-[320px] flex items-center px-3"
+            >
+              <StandardDatePicker
+                isRange={true}
+                value={dateRange}
+                onChange={handleDateChange}
+                allowClear
+                placeholder="Огноо сонгох"
+                classNames={{
+                  root: "!h-full !w-full",
+                  input:
+                    "text-theme placeholder:text-theme h-full w-full !px-0 !bg-transparent !border-0 shadow-none flex items-center justify-center text-center",
+                }}
+              />
+            </div>
 
-              <div className="relative">
-                <label className="block text-sm  text-[color:var(--panel-text)] mb-1">
-                  Төрөл
-                </label>
-                <div
-                  className="zassan-select-wrapper relative border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center"
-                  style={
-                    {
-                      borderRadius: "0.5rem",
-                      overflow: "hidden",
-                      height: "42px",
-                    } as React.CSSProperties
-                  }
-                >
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => {
-                      setSelectedModel(e.target.value);
-                      setPage(1);
-                    }}
-                    className="zassan-tuukh-select w-full px-4 pr-10 bg-transparent border-0 focus:outline-none focus:ring-0 text-[color:var(--panel-text)] appearance-none cursor-pointer"
-                    style={
-                      {
-                        WebkitAppearance: "none",
-                        MozAppearance: "none",
-                        borderRadius: 0,
-                        height: "100%",
-                      } as React.CSSProperties
-                    }
-                  >
-                    <option value="">Бүгд</option>
-                    {modelNames.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
-                </div>
-              </div>
+            <div className="relative zassan-select-wrapper h-[40px] w-full sm:w-[200px]">
+              <select
+                value={selectedModel}
+                onChange={(e) => {
+                  setSelectedModel(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full h-full px-4 pr-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-[color:var(--panel-text)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              >
+                <option value="">Бүгд</option>
+                {modelNames.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
             </div>
           </div>
 
@@ -604,93 +582,69 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
             </div>
           ) : (
             <>
-              <div
-                className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
-                style={{ maxHeight: `${pageSize * 60}px`, overflowY: "auto" }}
-              >
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-[color:var(--surface-hover)] sticky top-0 border-b">
-                      <tr>
-                        <th className="px-4 py-3 text-xs border-r text-[color:var(--panel-text)] text-center w-16 !rounded-tl-lg">
-                          #
-                        </th>
-                        <th className="px-4 py-3 text-xs border-r text-center   text-[color:var(--panel-text)]">
-                          Үүссэн огноо
-                        </th>
-                        <th className="px-4 py-3 text-xs border-r text-center  text-[color:var(--panel-text)]">
-                          Өөрчилсөн огноо
-                        </th>
-                        <th className="px-4 py-3 text-xs border- text-center  text-[color:var(--panel-text)]">
-                          Төрөл
-                        </th>
-                        <th className="px-4 py-3 text-xs border-r   text-[color:var(--panel-text)] text-center !rounded-tr-lg">
-                          Үйлдэл
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedRecords.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={5}
-                            className="px-4 py-12 text-center text-[color:var(--muted-text)]"
-                          >
-                            Зассан түүх олдсонгүй
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedRecords.map((record, index) => {
-                          const isLast = index === paginatedRecords.length - 1;
-                          // Get original creation date from documentCreatedAt field
-                          const originalCreatedAt =
-                            (record as any).documentCreatedAt || "-";
-                          return (
-                            <tr
-                              key={record._id}
-                              className={`border-b border-[color:var(--surface-border)] hover:bg-[color:var(--surface-hover)] transition-colors ${isLast ? "last:border-b-0" : ""}`}
-                            >
-                              <td className="px-4 border-r py-3 text-sm text-[color:var(--panel-text)] text-center">
-                                {(page - 1) * pageSize + index + 1}
-                              </td>
-                              <td className="px-4 py-3 border-r text-center text-sm text-[color:var(--panel-text)]">
-                                {originalCreatedAt !== "-"
-                                  ? moment(originalCreatedAt).format(
-                                      "YYYY-MM-DD HH:mm:ss",
-                                    )
-                                  : "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center border-r text-sm text-[color:var(--panel-text)]">
-                                {moment(
-                                  record.createdAt || record.ognoo,
-                                ).format("YYYY-MM-DD HH:mm:ss")}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-center border-r text-[color:var(--panel-text)]">
-                                {modelNames.find(
-                                  (m) => m.value === record.modelName,
-                                )?.label ||
-                                  record.modelName ||
-                                  "-"}
-                              </td>
-                              <td className="px-4 py-3 text-center text-sm">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleViewDetails(record)}
-                                  className="!rounded-2xl"
-                                  title="Дэлгэрэнгүй үзэх"
-                                >
-                                  <Eye className="w-4 h-4 text-blue-600" />
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+              <StandardTable
+                data={paginatedRecords}
+                columns={[
+                  {
+                    key: "index",
+                    label: "#",
+                    width: 60,
+                    align: "center",
+                    render: (_: any, __: any, index: number) =>
+                      (page - 1) * pageSize + index + 1,
+                  },
+                  {
+                    key: "documentCreatedAt",
+                    label: "Үүссэн огноо",
+                    align: "center",
+                    render: (value: any) =>
+                      value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "-",
+                  },
+                  {
+                    key: "createdAt",
+                    label: "Өөрчилсөн огноо",
+                    align: "center",
+                    render: (value: any, record: any) =>
+                      moment(value || record.ognoo).format(
+                        "YYYY-MM-DD HH:mm:ss",
+                      ),
+                  },
+                  {
+                    key: "modelName",
+                    label: "Төрөл",
+                    align: "center",
+                    render: (value: any) =>
+                      modelNames.find((m) => m.value === value)?.label ||
+                      value ||
+                      "-",
+                  },
+                  {
+                    key: "action",
+                    label: "Үйлдэл",
+                    align: "center",
+                    render: (_value: any, record: any) => (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleViewDetails(record);
+                        }}
+                        className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-colors relative z-10"
+                        title="Дэлгэрэнгүй үзэх"
+                      >
+                        <Eye className="w-4 h-4 text-blue-600 pointer-events-none" />
+                      </button>
+                    ),
+                  },
+                ]}
+                rowKey="_id"
+                loading={isLoading}
+                emptyMessage="Зассан түүх олдсонгүй"
+                className="rounded-2xl guilgee-table border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+                maxHeight={pageSize * 60}
+              />
 
               {/* Global Standard Pagination */}
               <div className="pt-2 border-t border-[color:var(--surface-border)]">

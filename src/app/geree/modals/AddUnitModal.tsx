@@ -6,6 +6,7 @@ import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import Button from "@/components/ui/Button";
+import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
 
 interface AddUnitModalProps {
   show: boolean;
@@ -24,9 +25,21 @@ export default function AddUnitModal({
   setValue,
   onSubmit,
 }: AddUnitModalProps) {
+  const [showConfirmClose, setShowConfirmClose] = React.useState(false);
+
+  const hasChanges = value.trim() !== "";
+
+  const requestClose = () => {
+    if (hasChanges) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
   useModalHotkeys({
     isOpen: show,
-    onClose,
+    onClose: requestClose,
   });
 
   const parseToots = (input: string): string[] => {
@@ -69,8 +82,9 @@ export default function AddUnitModal({
   if (!show) return null;
 
   return (
-    <AnimatePresence>
-      <ModalPortal>
+    <>
+      <AnimatePresence>
+        <ModalPortal>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -105,7 +119,7 @@ export default function AddUnitModal({
               </div>
               <div className="flex justify-center gap-3">
                 <Button
-                  onClick={onClose}
+                  onClick={requestClose}
                   variant="secondary"
                   className="px-6"
                 >
@@ -114,7 +128,7 @@ export default function AddUnitModal({
                 <Button
                   onClick={handleSubmit}
                   variant="primary"
-                  className="px-6"
+                  className="px-6 ant-btn ant-btn-primary"
                 >
                   Нэмэх
                 </Button>
@@ -122,7 +136,14 @@ export default function AddUnitModal({
             </div>
           </motion.div>
         </motion.div>
-      </ModalPortal>
-    </AnimatePresence>
+        </ModalPortal>
+      </AnimatePresence>
+
+      <ConfirmCloseDialog
+        open={showConfirmClose}
+        onCancel={() => setShowConfirmClose(false)}
+        onConfirm={() => { setShowConfirmClose(false); onClose(); }}
+      />
+    </>
   );
 }

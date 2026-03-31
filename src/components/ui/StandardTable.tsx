@@ -53,6 +53,7 @@ interface StandardTableProps<T extends object> {
   stickyHeader?: boolean;
   footer?: React.ReactNode;
   maxHeight?: string | number;
+  bordered?: boolean;
   pagination?:
     | false
     | {
@@ -75,6 +76,7 @@ export function StandardTable<T extends object>({
   stickyHeader = false,
   footer,
   maxHeight,
+  bordered = false,
   pagination,
 }: StandardTableProps<T>) {
   const getRowKey = (item: T, index: number): string => {
@@ -90,7 +92,7 @@ export function StandardTable<T extends object>({
   };
 
   // Convert our Column type to Ant Design's TableColumnsType with dark mode support
-  const antColumns: TableColumnsType<T> = columns.map((col) => ({
+  const antColumns: TableColumnsType<T> = columns.map((col, colIndex) => ({
     key: col.key,
     dataIndex: col.key,
     title: col.label,
@@ -104,6 +106,22 @@ export function StandardTable<T extends object>({
       font-semibold
       ${col.className || ""}
     `,
+    onCell: () => ({
+      style: {
+        borderRight:
+          colIndex < columns.length - 1
+            ? "1px solid var(--surface-border, rgba(100,116,139,0.2))"
+            : undefined,
+      },
+    }),
+    onHeaderCell: () => ({
+      style: {
+        borderRight:
+          colIndex < columns.length - 1
+            ? "1px solid var(--surface-border, rgba(100,116,139,0.2))"
+            : undefined,
+      },
+    }),
     render: (value: any, record: T, index: number) => {
       return col.render ? (
         col.render(value, record, index)
@@ -141,6 +159,7 @@ export function StandardTable<T extends object>({
             columns={antColumns}
             dataSource={dataWithKeys}
             pagination={false}
+            bordered={bordered}
             locale={{
               emptyText: (
                 <div className="py-12 text-center bg-transparent">

@@ -603,11 +603,11 @@ export default function GuilgeeTable({
                     (total < 0
                       ? "!text-emerald-600 dark:!text-emerald-400"
                       : total > 0
-                        ? "!text-red-500 dark:!text-red-400"
+                        ? "!text-red-500 dark:!text-red-400 font bold"
                         : "text-[color:var(--panel-text)]") + " font-bold"
                   }
                 >
-                  {formatNumber(total, 2)}
+                  {formatNumber(total, 2)} ₮
                 </span>
               );
             } else if (col.key === "paid") {
@@ -623,8 +623,8 @@ export default function GuilgeeTable({
                 0,
               );
               content = (
-                <span className="text-slate-900 dark:!text-white">
-                  {formatNumber(total, 2)}
+                <span className="text-slate-900 dark:!text-white font-bold">
+                  {formatNumber(total, 2)} ₮
                 </span>
               );
             } else if (col.key === "uldegdel") {
@@ -655,7 +655,7 @@ export default function GuilgeeTable({
                       : "!text-red-500 dark:!text-red-400") + " font-bold"
                   }
                 >
-                  {formatNumber(total, 2)}
+                  {formatNumber(total, 2)} ₮
                 </span>
               );
             }
