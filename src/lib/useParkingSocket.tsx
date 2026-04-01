@@ -138,7 +138,7 @@ export function useParkingSocket({
 
     // Socket.IO server URL - use the parking server
     // User requested to connect to domain
-    const socketUrl = 'https://amarhome.mn';
+    const socketUrl = 'http://103.236.194.99';
 
 
     // Create socket instance
