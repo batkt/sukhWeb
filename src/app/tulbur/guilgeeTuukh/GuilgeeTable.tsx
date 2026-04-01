@@ -504,13 +504,17 @@ export default function GuilgeeTable({
                 bestKnownBalances[gid] ??
                 (historyAggregate || Number(record?.uldegdel ?? 0));
 
-              const residentData = resident || {
+              const residentData = resident ? {
+                ...resident,
+                gereeniiDugaar: dugaar,
+                gereeniiId: gid || record?.gereeniiId || ct?._id,
+              } : {
                 _id: record?.orshinSuugchId,
                 ner: ner,
                 toot: toot,
                 utas: utas,
                 gereeniiDugaar: dugaar,
-                gereeniiId: record?.gereeniiId || ct?._id,
+                gereeniiId: gid || record?.gereeniiId || ct?._id,
                 ...record,
               };
 
