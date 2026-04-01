@@ -11,10 +11,11 @@ const fetcher = async (
   try {
     const response = await uilchilgee(token).get(`${url}/${baiguullagiinId}`, {
       headers: {
-        "X-Org-Only": "1"
-      }
+        "X-Org-Only": "1",
+      },
     });
-    return response.data;
+    // Ensure we return the raw organization record, unwrapping result/data if needed
+    return response.data?.result || response.data;
   } catch (error) {
     aldaaBarigch(error as AxiosError<{ aldaa?: string }>);
     throw error;

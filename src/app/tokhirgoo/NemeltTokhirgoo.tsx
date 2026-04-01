@@ -16,6 +16,7 @@ import { Trash2 } from "lucide-react";
 import uilchilgee from "@/lib/uilchilgee";
 import deleteMethod from "../../../tools/function/deleteMethod";
 import createMethod from "../../../tools/function/createMethod";
+import updateMethod from "../../../tools/function/updateMethod";
 import Button from "@/components/ui/Button";
 
 export default function NemeltTokhirgoo() {
@@ -407,23 +408,22 @@ export default function NemeltTokhirgoo() {
       }
 
       // Use createMethod to perform a POST update (project convention for configs)
-      const result = await createMethod(
-        `baiguullaga/${freshOrg._id}`,
-        token,
-        payload,
-      );
+      // Organizations (baiguullaga) updates typically use POST specifically for these config paths
+      const result = await updateMethod("baiguullaga", token, payload);
 
       if (result?.data) {
-        openSuccessOverlay("Зочны тохиргоо хадгалагдлаа");
         const finalData = result.data.result || result.data;
+        // Optimistically update the cache
         await baiguullagaMutate(finalData, false);
+        // Ensure a background sync is triggered to confirm server state
         await baiguullagaMutate();
+        openSuccessOverlay("Амжилттай хадгаллаа");
       } else {
         throw new Error("Хадгалахад алдаа гарлаа");
       }
     } catch (error: any) {
       openErrorOverlay(
-        error?.message || "Зочны тохиргоо хадгалахад алдаа гарлаа",
+        error?.message || "  хадгалахад алдаа гарлаа",
       );
     } finally {
       hideSpinner();

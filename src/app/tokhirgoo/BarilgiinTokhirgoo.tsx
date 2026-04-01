@@ -1349,7 +1349,10 @@ export default function BarilgiinTokhirgoo() {
       };
 
       const res = await updateMethod("baiguullaga", token, payload);
-      if (res?.data) await baiguullagaMutate(res.data, false);
+      if (res?.data) {
+        const finalData = res.data.result || res.data;
+        await baiguullagaMutate(finalData, false);
+      }
       await baiguullagaMutate();
 
       openSuccessOverlay("Барилга амжилттай засагдлаа");
@@ -1573,8 +1576,10 @@ export default function BarilgiinTokhirgoo() {
       };
 
       const res = await updateMethod("baiguullaga", token, payload);
-      if (res?.data) await baiguullagaMutate(res.data, false);
-      await baiguullagaMutate();
+      if (res?.data) {
+        const finalData = res.data.result || res.data;
+        await baiguullagaMutate(finalData, false);
+      }
 
       openSuccessOverlay("Барилга устгагдлаа");
 
@@ -1889,8 +1894,10 @@ export default function BarilgiinTokhirgoo() {
       const updated = await updateMethod("baiguullaga", token, payload);
 
       if (updated?.data) {
+        const finalData = updated.data.result || updated.data;
         // Optimistically update cache with server response
-        await baiguullagaMutate(updated.data, false);
+        await baiguullagaMutate(finalData, false);
+
         // Also update local UI state from the server response so contacts show immediately
         try {
           const server = updated.data as any;
