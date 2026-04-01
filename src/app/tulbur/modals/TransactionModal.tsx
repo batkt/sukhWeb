@@ -313,8 +313,8 @@ export default function TransactionModal({
       type: transactionType,
       date: transactionDate,
       amount: parseFloat(amount.replace(/,/g, "")) || 0,
-      residentId: resident?._id,
-      gereeniiId: resident?.gereeniiId,
+      residentId: resident?._id || resident?.orshinSuugchId,
+      gereeniiId: resident?.gereeniiId || resident?.gereeId,
       tailbar: finalTailbar,
       ekhniiUldegdel,
     };

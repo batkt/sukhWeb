@@ -2914,6 +2914,7 @@ export default function DansniiKhuulga() {
               onTransaction={(residentData: any, remainingValue: number) => {
                 setSelectedTransactionResident({
                   ...residentData,
+                  gereeniiId: getGereeId(residentData) || residentData?.gereeniiId || residentData?.gereeId,
                   uldegdel: remainingValue,
                 });
                 setIsTransactionModalOpen(true);
