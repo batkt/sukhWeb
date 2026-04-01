@@ -97,7 +97,7 @@ export default function VehicleRegistrationModal({
       };
 
       const resp = await axios.post(
-        "http://103.236.194.99/zogsoolSdkService",
+        "https://amarhome.mn/api/zogsoolSdkService",
         payload,
         {
           headers: {
