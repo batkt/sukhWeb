@@ -56,6 +56,14 @@ function updateMethod<T = any>(
       // don't block the main request on normalization errors
     }
   }
+  // Organizations (baiguullaga) use POST for the custom update handler
+  if (modelName === "baiguullaga") {
+    return uilchilgee(token || undefined).post(
+      `/${modelName}/${data._id}`,
+      payload
+    );
+  }
+
   return uilchilgee(token || undefined).put(
     `/${modelName}/${data._id}`,
     payload

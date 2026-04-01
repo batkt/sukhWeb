@@ -718,16 +718,18 @@ export default function EbarimtTokhirgoo() {
                       payload
                     );
                     if (updated?.data) {
-                      await baiguullagaMutate(updated.data, false);
+                      const finalData = updated.data.result || updated.data;
+                      await baiguullagaMutate(finalData, false);
+                      
                       // Reflect saved UI state directly from current form values
                       setEbAutoSend(ebAutoSend);
                       setEbNuat(ebNuat);
                       setEbAshiglakh(ebAshiglakh);
                       setEbShine(ebShine);
                       setMerchantTin(merchantTin);
+                      openSuccessOverlay("Хадгалагдлаа");
                     }
                     // Removed localStorage persistence for API-backed data
-                    openSuccessOverlay("Хадгалагдлаа");
                   } catch (err) {
                     openErrorOverlay("Хадгалахдаа алдаа гарлаа");
                   } finally {
