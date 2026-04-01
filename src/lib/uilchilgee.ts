@@ -17,7 +17,7 @@ export function getApiUrl(): string {
     process.env.BRANCH === "dev"
   ) {
     // return "http://103.50.205.80/";
-    return "https://amarhome.mn/api/";
+    return "http://103.236.194.99:8084084/";
     // buynaa
   }
 
@@ -35,10 +35,10 @@ export function getApiUrl(): string {
     window.location.hostname === "amarhome.mn"
   ) {
     // return "http://103.50.205.80/";
-    return "https://amarhome.mn/api/";
+    return "http://103.236.194.99:8084/";
   }
   // return "http://103.50.205.80/";
-  return "https://amarhome.mn/api/";
+  return "http://103.236.194.99:8084/";
 }
 
 /** Base URL for medegdel static assets (images/audio). Use origin + /medegdel/ so nginx can serve or proxy without /api. */
@@ -113,8 +113,8 @@ export async function fetchWithDomainFallback(
   options?: RequestInit
 ): Promise<Response> {
   // Use the api proxy path on the domain so URLs become
-  // https://amarhome.mn/api/nekhemjlekhCron/...
-  const CRON_DOMAIN = "https://amarhome.mn/api";
+  // http://103.236.194.99:8084/nekhemjlekhCron/...
+  const CRON_DOMAIN = "http://103.236.194.99:8084";
   const CRON_IP = "https://amarhome.mn/";
   const bases = [CRON_DOMAIN, CRON_IP];
 

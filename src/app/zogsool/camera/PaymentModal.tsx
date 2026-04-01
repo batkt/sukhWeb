@@ -301,7 +301,7 @@ export default function PaymentModal({ transaction, onClose, onConfirm }: Paymen
     if (qe && transaction?._id) {
       (async () => {
         try {
-          const r = await fetch(`https://amarhome.mn/api/payment/qpay?id=${transaction._id}&amount=${qe.dun}`);
+          const r = await fetch(`http://103.236.194.99:8084084/payment/qpay?id=${transaction._id}&amount=${qe.dun}`);
           const d = await r.json();
           if (d.qr_image || d.qrData) setQpayData(d);
         } catch {}
