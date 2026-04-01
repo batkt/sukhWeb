@@ -160,7 +160,7 @@ export default function NegtgelTailanPage() {
           <StandardDatePicker
             isRange={true}
             value={dateRange}
-            onChange={setDateRange}
+            onChange={(dates, dateStrings) => setDateRange(dateStrings)}
             allowClear
             placeholder="Огноо сонгох"
             classNames={{
