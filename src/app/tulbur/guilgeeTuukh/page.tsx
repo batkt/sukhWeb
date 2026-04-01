@@ -107,7 +107,7 @@ export default function DansniiKhuulga() {
   const todayStr = new Date().toISOString().split("T")[0];
   const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(getDefaultDateRange);
   const [tuluvFilter, setTuluvFilter] = useState<
-    "all" | "paid" | "unpaid" | "overdue"
+    "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
   const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
   const [selectedTootFilter, setSelectedTootFilter] = useState<string>("");
@@ -430,11 +430,19 @@ export default function DansniiKhuulga() {
     const s = startObj ? startObj.getTime() : Number.NEGATIVE_INFINITY;
     const e = endObj ? new Date(endObj).getTime() : Number.POSITIVE_INFINITY;
 
-    return combined.filter((it: any) => {
+    const filtered = combined.filter((it: any) => {
       const d = new Date(
         it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
       ).getTime();
       return d >= s && d <= e;
+    });
+
+    // CRITICAL: Sort by date ASCENDING so that forEach(it => balances[gid] = it.uldegdel) 
+    // will always leave the LATEST balance in the map.
+    return filtered.sort((a, b) => {
+      const da = new Date(a?.tulsunOgnoo || a?.ognoo || a?.createdAt || 0).getTime();
+      const db = new Date(b?.tulsunOgnoo || b?.ognoo || b?.createdAt || 0).getTime();
+      return da - db;
     });
   }, [historyData, receivableData, ekhlekhOgnoo]);
 
@@ -600,22 +608,30 @@ export default function DansniiKhuulga() {
       const currentBalance =
         bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0);
 
+      const paidAmount = gid
+        ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
+        : Number(it?._totalTulsun ?? 0);
+
       // Use a consistent epsilon (0.01 MNT) for balance checks
       // Any balance >= 0.01 MNT is considered unpaid.
       const isResidentPaid = currentBalance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
 
       if (tuluvFilter === "paid") {
         return isResidentPaid;
       }
+      if (tuluvFilter === "partiallyPaid") {
+        return isPartiallyPaid;
+      }
       if (tuluvFilter === "unpaid") {
-        // Must have balance > 0 AND NOT linked to a cancelled contract
+        // Full Unpaid: balance > 0 AND has paid nothing (<= 0.1)
         const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
         const itGereeDugaar = String(it?.gereeniiDugaar || "");
         const isLinkedToCancelledGeree =
           (itGereeId && cancelledGereeIds.has(itGereeId)) ||
           (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
 
-        return !isResidentPaid && !isLinkedToCancelledGeree;
+        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
       }
       if (tuluvFilter === "overdue") {
         // Filter for cancelled receivables: must have balance > 0 AND be linked to cancelled contract
@@ -1525,27 +1541,39 @@ export default function DansniiKhuulga() {
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidentsAll.length;
-    const paidCount = deduplicatedResidentsAll.filter((r: any) => {
-      const gid =
-        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
-        (r?.gereeniiDugaar &&
-          String(
-            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
-          )) ||
-        "";
+    const counts = deduplicatedResidentsAll.reduce(
+      (acc, r) => {
+        const gid =
+          String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+          (r?.gereeniiDugaar &&
+            String(
+              (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+            )) ||
+          "";
 
-      const currentBalance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
+        const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
+        const paid = gid
+          ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
+          : Number(r?._totalTulsun ?? 0);
 
-      // Consistently use the same 0.01 MNT epsilon
-      return currentBalance < 0.01;
-    }).length;
-    const unpaidCount = residentCount - paidCount;
+        if (balance < 0.01) {
+          acc.paid++;
+        } else if (paid > 0.1) {
+          acc.partial++;
+        } else {
+          acc.unpaid++;
+        }
+        return acc;
+      },
+      { paid: 0, partial: 0, unpaid: 0 },
+    );
 
     return [
       { title: "Оршин суугч", value: residentCount },
       { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
-      { title: "Төлсөн", value: paidCount },
-      { title: "Төлөөгүй", value: unpaidCount },
+      { title: "Төлсөн", value: counts.paid },
+      { title: "Төлөлт дутуу", value: counts.partial },
+      { title: "Төлөөгүй", value: counts.unpaid },
     ];
   }, [
     deduplicatedResidentsAll,
@@ -2574,19 +2602,20 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
-            const getFilterValue = (
-              title: string,
-            ): "all" | "paid" | "unpaid" | "overdue" | null => {
-              if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
-                return "all";
-              if (title === "Төлсөн") return "paid";
-              if (title === "Төлөөгүй") return "unpaid";
-              if (title === "Цуцалсан гэрээний авлага") return "overdue";
-              return null;
-            };
+              const getFilterValue = (
+                title: string,
+              ): "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue" | null => {
+                if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
+                  return "all";
+                if (title === "Төлсөн") return "paid";
+                if (title === "Төлөөгүй") return "unpaid";
+                if (title === "Төлөлт дутуу") return "partiallyPaid";
+                if (title === "Цуцалсан гэрээний авлага") return "overdue";
+                return null;
+              };
 
             const filterValue = getFilterValue(stat.title);
             const isActive = filterValue && tuluvFilter === filterValue;

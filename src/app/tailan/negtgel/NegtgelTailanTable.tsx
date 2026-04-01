@@ -257,8 +257,8 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       dataSource={data}
       columns={columns}
       loading={loading}
-      rowKey={(record, index) =>
-        `${record._id?.gereeniiId || ""}-${record._id?.toot || ""}-${index}`
+      rowKey={(record) =>
+        `${record._id?.gereeniiId || ""}-${record._id?.toot || "" || record.toot || ""}-${record.ner || ""}`
       }
       size="small"
       bordered

@@ -124,9 +124,36 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
 
   // Socket listeners
   React.useEffect(() => {
-    if (!socketCtx) return;
-    
-    const handlers = {
+    if (!socketCtx || !ajiltan?.baiguullagiinId) return;
+
+    // Listen on baiguullagiin channel for realtime typed events
+    const baiguullagiinEvent = "baiguullagiin" + ajiltan.baiguullagiinId;
+    const baiguullagiinHandler = (payload: { type?: string }) => {
+      const type = payload?.type || "";
+      if (
+        type === "orshinSuugch.created" ||
+        type === "orshinSuugch.updated" ||
+        type === "orshinSuugch.deleted"
+      ) {
+        data.orshinSuugchJagsaaltMutate?.();
+        data.gereeJagsaaltMutate?.();
+      } else if (
+        type === "geree.created" ||
+        type === "geree.updated" ||
+        type === "geree.deleted"
+      ) {
+        data.gereeJagsaaltMutate?.();
+      } else if (
+        type === "ajiltan.created" ||
+        type === "ajiltan.updated" ||
+        type === "ajiltan.deleted"
+      ) {
+        data.ajiltniiJagsaaltMutate?.();
+      }
+    };
+
+    // Also keep legacy direct event name handlers for backward compat
+    const legacyHandlers: Record<string, () => void> = {
       "orshinSuugch.created": data.orshinSuugchJagsaaltMutate,
       "orshinSuugch.updated": data.orshinSuugchJagsaaltMutate,
       "orshinSuugch.deleted": data.orshinSuugchJagsaaltMutate,
@@ -138,18 +165,18 @@ export function GereeProvider({ children }: { children: React.ReactNode }) {
       "ajiltan.deleted": data.ajiltniiJagsaaltMutate,
     };
 
-    Object.entries(handlers).forEach(([event, handler]) => {
+    socketCtx.on(baiguullagiinEvent, baiguullagiinHandler);
+    Object.entries(legacyHandlers).forEach(([event, handler]) => {
       socketCtx?.on(event, handler);
     });
 
     return () => {
-      Object.entries(handlers).forEach(([event, handler]) => {
-        try {
-          socketCtx?.off(event, handler);
-        } catch (e) {}
+      try { socketCtx.off(baiguullagiinEvent, baiguullagiinHandler); } catch (e) {}
+      Object.entries(legacyHandlers).forEach(([event, handler]) => {
+        try { socketCtx?.off(event, handler); } catch (e) {}
       });
     };
-  }, [socketCtx, data.orshinSuugchJagsaaltMutate, data.gereeJagsaaltMutate, data.ajiltniiJagsaaltMutate]);
+  }, [socketCtx, ajiltan?.baiguullagiinId, data.orshinSuugchJagsaaltMutate, data.gereeJagsaaltMutate, data.ajiltniiJagsaaltMutate]);
 
   const value = {
     state,

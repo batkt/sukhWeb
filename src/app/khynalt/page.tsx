@@ -910,12 +910,16 @@ export default function Khynalt() {
     return set.size;
   }, [baiguullaga, residents]);
   const filteredActiveContracts = (() => {
-    if (!filteredContracts?.length) return 0;
+    // Total Active should ignore the date range filter, but respect organizational/building filter
+    const baseContracts = contracts.filter((c: any) => {
+      const buildingField = c?.barilgiinId ?? c?.barilga;
+      return !effectiveBarilgiinId || String(buildingField) === String(effectiveBarilgiinId);
+    });
+
+    if (!baseContracts?.length) return 0;
     const now = new Date();
-    const in30Days = new Date();
-    in30Days.setDate(now.getDate() + 30);
     let active = 0;
-    filteredContracts.forEach((g: any) => {
+    baseContracts.forEach((g: any) => {
       const status = String(g?.tuluv || g?.status || "").trim();
       const isCancelled =
         status === "Цуцалсан" ||
@@ -936,7 +940,12 @@ export default function Khynalt() {
   })();
 
   const cancelledGerees = useMemo(() => {
-    return filteredContracts.filter((c: any) => {
+    // Total Cancelled should also ignore the date range filter but respect building filter
+    return contracts.filter((c: any) => {
+      const buildingField = c?.barilgiinId ?? c?.barilga;
+      const buildingMatch = !effectiveBarilgiinId || String(buildingField) === String(effectiveBarilgiinId);
+      if (!buildingMatch) return false;
+
       const status = String(c?.tuluv || c?.status || "").trim();
       return (
         status === "Цуцалсан" ||
@@ -947,7 +956,7 @@ export default function Khynalt() {
         status.toLowerCase() === "идэвхгүй"
       );
     });
-  }, [filteredContracts]);
+  }, [contracts, effectiveBarilgiinId]);
 
   const showContracts =
     ajiltan &&

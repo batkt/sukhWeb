@@ -234,7 +234,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={(record, index) => record._id || `res_${index}`}
+        rowKey={(record) => record._id || `res_${String(typeof record.ner === 'object' ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`}
         pagination={false}
         size="small"
         bordered

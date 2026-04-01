@@ -1221,12 +1221,14 @@ export default function SanalKhuselt() {
                     <div className="space-y-3">
                       {threadMessages.map((msg) => {
                         const turul = (msg.turul || "").toLowerCase();
-                        const isUser =
-                          turul === "user_reply" ||
-                          turul === "sanal" ||
-                          turul === "санал" ||
-                          turul === "gomdol" ||
-                          turul === "гомдол";
+                        // In admin web view: user/resident messages (sanal, gomdol, user_reply) go LEFT
+                        // Admin replies (khariu, hariu, хариу) go RIGHT
+                        const isAdminReply =
+                          turul === "khariu" ||
+                          turul === "hariu" ||
+                          turul === "хариу";
+                        // isUser = true means RIGHT side (admin's own messages)
+                        const isUser = isAdminReply;
                         return (
                           <div
                             key={msg._id}
