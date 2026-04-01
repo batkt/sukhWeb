@@ -469,7 +469,7 @@ export default function Camera() {
         };
 
         const resp = await axios.post(
-          "http://103.236.194.99/zogsoolSdkService",
+          "https://amarhome.mn/api/zogsoolSdkService",
           payload,
           {
             headers: {
