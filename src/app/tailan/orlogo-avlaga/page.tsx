@@ -417,14 +417,45 @@ export default function OrlogoAvlagaPage() {
       }
     });
 
+    // Add contracts from gereeGaralt that aren't already in the map (no history yet)
+    (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
+      const gereeId = String(ct?._id || "").trim();
+      if (!gereeId) return;
+      if (map.has(gereeId)) return; // Already added from history
+
+      const residentId = String(ct?.orshinSuugchId || "").trim();
+      const gereeDugaar = String(ct?.gereeniiDugaar || "").trim();
+      const r = residentId ? residentsById[residentId] : undefined;
+
+      map.set(gereeId, {
+        ...ct,
+        _gereeId: gereeId,
+        _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || "",
+        _residentId: residentId,
+        _ner: r?.ner ?? ct?.ner ?? "",
+        _ovog: r?.ovog ?? ct?.ovog ?? "",
+        _utas: r?.utas ?? ct?.utas ?? "",
+        _toot: r?.toot ?? ct?.toot ?? "",
+        _davkhar: r?.davkhar ?? ct?.davkhar ?? "",
+      });
+    });
+
     return Array.from(map.values());
-  }, [buildingHistoryItems, contractsByNumber, contractsById, residentsById]);
+  }, [
+    buildingHistoryItems,
+    contractsByNumber,
+    contractsById,
+    residentsById,
+    gereeGaralt,
+  ]);
 
   useEffect(() => {
     if (!token || !baiguullagiinId || deduplicatedResidents.length === 0)
       return;
     deduplicatedResidents.forEach((it: any) => {
-      const gid = it?._gereeId || "";
+      const gid = String(
+        it?._gereeId || it?.gereeniiId || it?.gereeId || "",
+      ).trim();
       const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
       const queryKey = gid || rid;
       if (

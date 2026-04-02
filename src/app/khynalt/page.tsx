@@ -29,15 +29,6 @@ import formatNumber, {
   formatCurrency,
 } from "../../../tools/function/formatNumber";
 import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
-import {
-  ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart"
 
 ChartJS.register(
   CategoryScale,
@@ -169,11 +160,10 @@ export default function Khynalt() {
   }, [contracts]);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
-    const defaultRange = getDefaultDateRange();
-    const range = dateRange || defaultRange;
+    const range = dateRange || getDefaultDateRange();
     return {
-      start: range[0] || defaultRange[0],
-      end: range[1] || defaultRange[1],
+      start: range[0] || "",
+      end: range[1] || "",
     };
   }, [dateRange]);
 
@@ -604,11 +594,7 @@ export default function Khynalt() {
     });
 
     return {
-      incomeTotals: { 
-        paid: finalPaid, 
-        unpaid: finalUnpaid,
-        planned: totalInvoiceAmount 
-      },
+      incomeTotals: { paid: finalPaid, unpaid: finalUnpaid },
       incomeByBuilding: byBld,
       residentsPaidCount: finalPaidResidents.size,
       residentsUnpaidCount: finalUnpaidResidents.size,
@@ -983,40 +969,61 @@ export default function Khynalt() {
     ajiltan &&
     (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
 
-  const kpiCards = [
+  const kpiCardsRaw = [
     {
-      title: "Төлөвлөгөөт",
-      value: formatCurrency(incomeTotals.planned),
-      subtitle: "Нийт авах ёстой",
-      color: "from-blue-500 to-blue-600",
+      title: "Барилга",
+      value: buildingCount,
+      subtitle: "Нийт барилга",
+      color: "from-indigo-500 to-indigo-600",
       delay: 0,
       show: true,
     },
     {
-      title: "Гүйцэтгэл",
-      value: formatCurrency(incomeTotals.paid),
-      subtitle: "Нийт төлсөн",
+      title: "Оршин суугч",
+      value: filteredTotalResidents,
       color: "from-green-500 to-green-600",
+      href: "/geree/orshinSuugch",
       delay: 100,
-      show: true,
+      show: showResidents,
     },
     {
-      title: "Үлдэгдэл",
-      value: formatCurrency(incomeTotals.planned - incomeTotals.paid),
-      subtitle: "Төлөвлөгөөт - Гүйцэтгэл",
-      color: "from-amber-500 to-amber-600",
+      title: "Идэвхтэй гэрээ",
+      value: filteredActiveContracts,
+      color: "from-blue-500 to-blue-600",
+      href: "/geree?status=active",
       delay: 200,
-      show: true,
+      show: showContracts,
     },
     {
-      title: "Төлөх дүн",
+      title: "Орлого/Гүйцэтгэл",
+      value: formatCurrency(footerTotals.totalPaid),
+      subtitle: "Төлсөн дүн",
+      color: "from-purple-500 to-purple-600",
+      href: "/tulbur",
+      delay: 400,
+      show: showTulbur,
+    },
+    {
+      title: "Үлдэгдэл/Авлага",
       value: formatCurrency(footerTotals.totalUldegdel),
-      subtitle: "Нийт үлдэгдэл",
-      color: "from-rose-500 to-rose-600",
-      delay: 300,
-      show: true,
+      subtitle: "Үлдэгдэл дүн",
+      color: "from-red-500 to-red-600",
+      href: "/tulbur",
+      delay: 500,
+      show: showTulbur,
+    },
+    {
+      title: "Цуцлагдсан гэрээ",
+      value: cancelledGerees.length,
+      subtitle: "Нийт цуцлагдсан",
+      color: "from-orange-500 to-orange-600",
+      href: "/geree?status=cancelled",
+      delay: 600,
+      show: showContracts,
     },
   ];
+
+  const kpiCards = kpiCardsRaw.filter((c) => c.show !== false);
 
   return (
     <div className="h-full flex flex-col overflow-y-auto custom-scrollbar">
@@ -1053,7 +1060,7 @@ export default function Khynalt() {
         </div>
 
         <div
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-6 w-full flex-shrink-0 py-2"
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2"
           style={{ marginRight: "calc(-2rem - 0.5rem)", paddingRight: 0 }}
         >
           {kpiCards.map((card, index) => {
@@ -1086,6 +1093,18 @@ export default function Khynalt() {
               willChange: "opacity, box-shadow",
             };
 
+            if (card.href) {
+              return (
+                <Link
+                  key={index}
+                  href={card.href}
+                  className={className}
+                  style={style}
+                >
+                  {CardContent}
+                </Link>
+              );
+            }
 
             return (
               <div key={index} className={className} style={style}>
@@ -1115,35 +1134,31 @@ export default function Khynalt() {
                   Орлого
                 </h3>
               </div>
-              <div className="flex-1 min-h-0 relative">
-                <ChartContainer
-                  config={{
-                    paid: { label: "Төлсөн", color: "#22c55e" },
-                    unpaid: { label: "Төлөөгүй", color: "#ef4444" },
+              <div className="flex-1 min-h-0">
+                <Line
+                  data={incomeLineData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
+                      title: { display: false },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                    },
                   }}
-                  className="h-full w-full"
-                >
-                  <BarChart
-                    data={(incomeSeries?.labels || []).map((lb, i) => ({
-                      name: lb,
-                      paid: incomeSeries.paid?.[i] || 0,
-                      unpaid: incomeSeries.unpaid?.[i] || 0,
-                    }))}
-                  >
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
-                    <XAxis
-                      dataKey="name"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tick={{ fill: chartColors.text, fontSize: 10 }}
-                    />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <ChartLegend content={<ChartLegendContent />} />
-                    <Bar dataKey="paid" fill="var(--color-paid)" radius={[4, 4, 0, 0]} minPointSize={2} />
-                    <Bar dataKey="unpaid" fill="var(--color-unpaid)" radius={[4, 4, 0, 0]} minPointSize={2} />
-                  </BarChart>
-                </ChartContainer>
+                />
               </div>
             </div>
           </div>
@@ -1168,38 +1183,31 @@ export default function Khynalt() {
                   {formatCurrency(huurimtlagdsanAvlaga.total)}
                 </p>
               </div>
-              <div className="flex-1 min-h-0 relative">
-                {huurimtlagdsanAvlaga.items.length === 0 ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
-                    Төлбөрийн үлдэгдэлгүй байна
-                  </div>
-                ) : (
-                  <ChartContainer
-                    config={{
-                      amount: { label: "Төлбөр", color: "#ef4444" },
-                    }}
-                    className="h-full w-full"
-                  >
-                    <BarChart
-                      data={huurimtlagdsanAvlaga.items.slice(0, 10).map((it: any) => ({
-                        name: it.name || it.gereeniiDugaar || "-",
-                        amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
-                      }))}
-                    >
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        tick={{ fill: chartColors.text, fontSize: 10 }}
-                        tickFormatter={(v) => (v.length > 10 ? v.slice(0, 9) + "..." : v)}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="amount" fill="var(--color-amount)" radius={[4, 4, 0, 0]} minPointSize={2} />
-                    </BarChart>
-                  </ChartContainer>
-                )}
+              <div className="flex-1 min-h-0">
+                <Line
+                  data={huurimtlagdsanAvlagaChartData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
+                      title: { display: false },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: chartColors.text, maxRotation: 45 },
+                        grid: { color: chartColors.grid },
+                      },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                    },
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -1225,38 +1233,31 @@ export default function Khynalt() {
                   {formatCurrency(cancelledReceivables.total)}
                 </p>
               </div>
-              <div className="flex-1 min-h-0 relative">
-                {cancelledReceivables.items.length === 0 ? (
-                  <div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">
-                    Цуцалсан гэрээний авлагагүй байна
-                  </div>
-                ) : (
-                  <ChartContainer
-                    config={{
-                      amount: { label: "Төлбөр", color: "#f97316" },
-                    }}
-                    className="h-full w-full"
-                  >
-                    <BarChart
-                      data={cancelledReceivables.items.slice(0, 10).map((it: any) => ({
-                        name: [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") || it?.gereeniiDugaar || "-",
-                        amount: Number(it?.niitTulbur ?? 0) || 0,
-                      }))}
-                    >
-                      <CartesianGrid vertical={false} strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis
-                        dataKey="name"
-                        tickLine={false}
-                        tickMargin={10}
-                        axisLine={false}
-                        tick={{ fill: chartColors.text, fontSize: 10 }}
-                        tickFormatter={(v) => (v.length > 10 ? v.slice(0, 9) + "..." : v)}
-                      />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="amount" fill="var(--color-amount)" radius={[4, 4, 0, 0]} minPointSize={2} />
-                    </BarChart>
-                  </ChartContainer>
-                )}
+              <div className="flex-1 min-h-0">
+                <Line
+                  data={cancelledReceivablesChartData as any}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: "top" as const,
+                        labels: { color: chartColors.text },
+                      },
+                      title: { display: false },
+                    },
+                    scales: {
+                      x: {
+                        ticks: { color: chartColors.text, maxRotation: 45 },
+                        grid: { color: chartColors.grid },
+                      },
+                      y: {
+                        ticks: { color: chartColors.text },
+                        grid: { color: chartColors.grid },
+                      },
+                    },
+                  }}
+                />
               </div>
             </div>
           </div>

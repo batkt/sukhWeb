@@ -72,12 +72,7 @@ export default function GuilgeeTable({
           title: <span className="text-inherit">{col.label}</span>,
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
-          align:
-            col.key === "paid" ||
-            col.key === "uldegdel" ||
-            col.key === "ekhniiUldegdel"
-              ? "center"
-              : "center",
+          align: col.align || "center",
           sorter:
             col.key === "uldegdel" || col.key === "paid" || col.key === "toot"
               ? true
@@ -87,11 +82,9 @@ export default function GuilgeeTable({
             "text-[11px] bg-gray-50/50 dark:bg-slate-900/50 text-[color:var(--panel-text)] py-1",
           onCell: () => ({
             className:
-              col.key === "paid" ||
-              col.key === "uldegdel" ||
-              col.key === "ekhniiUldegdel"
+              col.align === "end"
                 ? "!text-right"
-                : col.key === "ner"
+                : col.align === "start"
                   ? "!text-left"
                   : "!text-center",
           }),
@@ -317,13 +310,25 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const paidFromSummary = gid
-                ? (paidSummaryByGereeId[gid] ??
-                  Number(record?._totalTulsun ?? 0))
-                : Number(record?._totalTulsun ?? 0);
+              const monthlyPaid = Number(record?._totalTulsun ?? 0);
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {formatNumber(paidFromSummary, 2)}
+                  {formatNumber(monthlyPaid, 2)}
+                </span>
+              );
+            },
+          };
+        }
+
+        if (col.key === "sariinTurees") {
+          return {
+            ...baseColumn,
+            render: (_: any, record: any) => {
+              // Show current month's pay amount (total charge)
+              const monthlyPay = Number(record?._totalTulbur ?? 0);
+              return (
+                <span className="text-gray-900 dark:text-white">
+                  {formatNumber(monthlyPay, 2)}
                 </span>
               );
             },
@@ -370,10 +375,7 @@ export default function GuilgeeTable({
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
-                _paidFromSummary: gid
-                  ? (paidSummaryByGereeId[gid] ??
-                    Number(record?._totalTulsun ?? 0))
-                  : Number(record?._totalTulsun ?? 0),
+                _paidFromSummary: Number(record?._totalTulsun ?? 0),
               };
               let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
               if (
@@ -616,15 +618,24 @@ export default function GuilgeeTable({
                   {formatNumber(total, 2)} ₮
                 </span>
               );
-            } else if (col.key === "paid") {
+            } else if (col.key === "sariinTurees") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  const gid = getGereeId(it);
-                  const paid = gid
-                    ? (paidSummaryByGereeId[gid] ??
-                      Number(it?._totalTulsun ?? 0))
-                    : Number(it?._totalTulsun ?? 0);
-                  return sum + paid;
+                  return sum + Number(it?._totalTulbur ?? 0);
+                },
+                0,
+              );
+              content = (
+                <span className="text-slate-900 dark:!text-white font-bold">
+                  {formatNumber(total, 2)} ₮
+                </span>
+              );
+            } else if (col.key === "paid") {
+
+              const total = deduplicatedResidents.reduce(
+                (sum: number, it: any) => {
+                  const monthlyPaid = Number(it?._totalTulsun ?? 0);
+                  return sum + monthlyPaid;
                 },
                 0,
               );
@@ -671,13 +682,11 @@ export default function GuilgeeTable({
                 key={col.key}
                 index={colIdx + checkboxOffset}
                 className={`${
-                  col.key === "paid" ||
-                  col.key === "uldegdel" ||
-                  col.key === "ekhniiUldegdel"
+                  col.align === "end"
                     ? "text-right"
-                    : col.align === "center"
-                      ? "text-center"
-                      : "text-left"
+                    : col.align === "start"
+                      ? "text-left"
+                      : "text-center"
                 }`}
               >
                 {content}

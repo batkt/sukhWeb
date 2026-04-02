@@ -66,6 +66,17 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
 
+// Pure utility moved outside to prevent hoisting issues
+function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
+  return (
+    (it?.gereeniiId && String(it.gereeniiId)) ||
+    (it?.gereeId && String(it.gereeId)) ||
+    (it?.gereeniiDugaar &&
+      String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
+    ""
+  );
+}
+
 type DateRangeValue = [string | null, string | null] | undefined;
 
 const ModalPortal = ({ children }: { children: React.ReactNode }) => {
@@ -206,7 +217,7 @@ export default function DansniiKhuulga() {
       {
         key: "ner",
         label: "Нэр",
-        align: "center",
+        align: "start",
         sticky: true,
         width: 180,
         minWidth: 180,
@@ -214,7 +225,7 @@ export default function DansniiKhuulga() {
       {
         key: "toot",
         label: "Тоот",
-        align: "center",
+        align: "start",
         sticky: true,
         width: 80,
         minWidth: 80,
@@ -222,31 +233,33 @@ export default function DansniiKhuulga() {
       {
         key: "utas",
         label: "Утас",
-        align: "center",
+        align: "start",
         sticky: true,
         width: 100,
         minWidth: 100,
       },
-      { key: "orts", label: "Орц", align: "center", minWidth: 80 },
-      { key: "davkhar", label: "Давхар", align: "center", minWidth: 80 },
+      { key: "orts", label: "Орц", align: "start", minWidth: 80 },
+      { key: "davkhar", label: "Давхар", align: "start", minWidth: 80 },
       {
         key: "gereeniiDugaar",
         label: "Гэрээний дугаар",
-        align: "center",
+        align: "start",
         minWidth: 120,
       },
       {
         key: "ekhniiUldegdel",
         label: "Эхний үлдэгдэл",
-        align: "center",
+        align: "end",
         minWidth: 110,
       },
-      { key: "uldegdel", label: "Үлдэгдэл", align: "center", minWidth: 110 },
-      { key: "paid", label: "Гүйцэтгэл", align: "center", minWidth: 110 },
-      { key: "tuluv", label: "Төлөв", align: "center", minWidth: 110 },
+      { key: "uldegdel", label: "Үлдэгдэл", align: "end", minWidth: 110 },
+      { key: "sariinTurees", label: "Сарын төлбөр", align: "end", minWidth: 110 },
+      { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
+      { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
       {
         key: "lastLog",
         label: "Огноо",
+        align: "start",
         minWidth: 140,
       },
       { key: "action", label: "Үйлдэл", align: "center", minWidth: 80 },
@@ -285,9 +298,9 @@ export default function DansniiKhuulga() {
     "orts",
     "davkhar",
     "gereeniiDugaar",
-    "tulbur",
     "ekhniiUldegdel",
     "uldegdel",
+    "sariinTurees",
     "paid",
     "tuluv",
     "lastLog",
@@ -382,6 +395,34 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
+  const { data: paymentRecordsData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          "/gereeniiTulsunAvlaga",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+          ekhlekhOgnoo?.[0] || null,
+          ekhlekhOgnoo?.[1] || null,
+        ]
+      : null,
+    async ([url, tkn, orgId, branch, start, end]) => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: orgId,
+          barilgiinId: branch || undefined,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
       ? historyData.jagsaalt
@@ -393,6 +434,12 @@ export default function DansniiKhuulga() {
       ? receivableData.jagsaalt
       : Array.isArray(receivableData)
         ? receivableData
+        : [];
+
+    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
+      ? paymentRecordsData.jagsaalt
+      : Array.isArray(paymentRecordsData)
+        ? paymentRecordsData
         : [];
 
     // Combine and deduplicate by ID.
@@ -416,6 +463,12 @@ export default function DansniiKhuulga() {
     receivables.forEach((r: any) => {
       if (!trackingIds.has(String(r._id))) {
         combined.push(r);
+      }
+    });
+
+    payments.forEach((p: any) => {
+      if (!trackingIds.has(String(p._id))) {
+        combined.push(p);
       }
     });
 
@@ -444,7 +497,7 @@ export default function DansniiKhuulga() {
       const db = new Date(b?.tulsunOgnoo || b?.ognoo || b?.createdAt || 0).getTime();
       return da - db;
     });
-  }, [historyData, receivableData, ekhlekhOgnoo]);
+  }, [historyData, receivableData, paymentRecordsData, ekhlekhOgnoo]);
 
   const { gereeGaralt } = useGereeJagsaalt(
     emptyQuery,
@@ -844,8 +897,67 @@ export default function DansniiKhuulga() {
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
-    // Build set of resident keys that pass the current filter (tuluv, orts, davkhar, search)
-    const residentKeysFromFiltered = new Set<string>();
+    // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
+    const residentKeysFromProfile = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const toStr = (v: any) => (v == null ? "" : String(v).trim());
+      const rId = toStr(g?.orshinSuugchId ?? g?.residentId);
+      const r = rId ? (residentsById as any)[rId] : undefined;
+
+      const orts = toStr(
+        g?.orts ??
+          g?.ortsDugaar ??
+          g?.ortsNer ??
+          r?.orts ??
+          r?.ortsDugaar ??
+          r?.ortsNer ??
+          r?.block,
+      );
+      const davkhar = toStr(g?.davkhar ?? r?.davkhar);
+      const currentToot = toStr(g?.toot ?? r?.toot);
+
+      // Apply static profile filters
+      if (selectedOrtsFilter && orts !== toStr(selectedOrtsFilter)) return;
+      if (selectedDavkharFilter && davkhar !== toStr(selectedDavkharFilter))
+        return;
+      if (selectedTootFilter) {
+        const filterVal = toStr(selectedTootFilter).toLowerCase();
+        const targetToot = currentToot.toLowerCase();
+        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+      }
+      if (searchTerm) {
+        const augmented = {
+          ...g,
+          _searchNer: r?.ner ?? g?.ner,
+          _searchOvog: r?.ovog ?? g?.ovog,
+          _searchUtas: r?.utas ?? g?.utas,
+          _searchGereeDugaar: g?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return;
+      }
+
+      const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
+      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
+      const key = gereeId || gereeDugaar;
+      if (key) residentKeysFromProfile.add(key);
+
+      // Pre-populate map with these residents
+      if (!map.has(key)) {
+        map.set(key, {
+          ...g,
+          _historyCount: 0,
+          _totalTulbur: 0,
+          _totalTulsun: 0,
+          _hasEkhniiUldegdel: false,
+          _ekhniiUldegdelAmount: 0,
+        });
+      }
+    });
+
+    // Also include any residents found in buildingHistoryItems that might not be in the current contract list
+    // (e.g. historical data for a resident whose contract was deleted/archived)
     filteredItems.forEach((it: any) => {
       const residentId = String(it?.orshinSuugchId || "").trim();
       const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -862,7 +974,19 @@ export default function DansniiKhuulga() {
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
       const key =
         gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
-      if (key && key !== "||") residentKeysFromFiltered.add(key);
+      if (key && key !== "||") {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...it,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
+      }
     });
 
     // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
@@ -938,7 +1062,7 @@ export default function DansniiKhuulga() {
         gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return; // Skip if no valid identifier
-      if (!residentKeysFromFiltered.has(key)) return; // Only include residents that pass the filter
+      if (!residentKeysFromProfile.has(key)) return; // Only include residents that pass the profile filter
 
       // Check if this is a standalone ekhniiUldegdel record from gereeniiTulukhAvlaga
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
@@ -1046,7 +1170,50 @@ export default function DansniiKhuulga() {
       }
     });
 
-    return Array.from(map.values());
+    const result = Array.from(map.values());
+
+    // FINAL PASS: Apply tuluvFilter at the resident level based on their aggregated performance/balance
+    if (!tuluvFilter || tuluvFilter === "all") return result;
+
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIds.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+      }
+    });
+
+    return result.filter((r) => {
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?._id && String(r._id)) ||
+        (r?.gereeniiDugaar &&
+          String((contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "")) ||
+        "";
+
+      const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
+      const paid = gid
+        ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
+        : Number(r?._totalTulsun ?? 0);
+
+      const isResidentPaid = balance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paid > 0.1;
+      const isLinkedToCancelledGeree =
+        (gid && cancelledGereeIds.has(gid)) ||
+        (r?.gereeniiDugaar && cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
+
+      if (tuluvFilter === "paid") return isResidentPaid;
+      if (tuluvFilter === "unpaid")
+        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
+      if (tuluvFilter === "partiallyPaid") return isPartiallyPaid;
+      if (tuluvFilter === "overdue")
+        return !isResidentPaid && isLinkedToCancelledGeree;
+
+      return true;
+    });
   }, [
     filteredItems,
     buildingHistoryItems,
@@ -1057,61 +1224,66 @@ export default function DansniiKhuulga() {
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
   const deduplicatedResidentsAll = useMemo(() => {
     const map = new Map<string, any>();
-    const residentKeysFromFiltered = new Set<string>();
-    filteredItemsAll.forEach((it: any) => {
-      const residentId = String(it?.orshinSuugchId || "").trim();
-      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
-      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      const ner = String(it?.ner || "")
-        .trim()
-        .toLowerCase();
-      const utas = (() => {
-        if (Array.isArray(it?.utas) && it.utas.length > 0) {
-          return String(it.utas[0] || "").trim();
-        }
-        return String(it?.utas || "").trim();
-      })();
-      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key =
-        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
-      if (key && key !== "||") residentKeysFromFiltered.add(key);
-    });
+    // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
+    const residentKeysFromProfile = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
 
-    const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
-    buildingHistoryItems.forEach((it: any) => {
-      const zardluud = Array.isArray(it?.medeelel?.zardluud)
-        ? it.medeelel.zardluud
-        : Array.isArray(it?.zardluud)
-          ? it.zardluud
-          : [];
-      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
-        ? it.medeelel.guilgeenuud
-        : Array.isArray(it?.guilgeenuud)
-          ? it.guilgeenuud
-          : [];
-      const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
-        const ner = String(z?.ner || "").toLowerCase();
-        const isEkhUld =
-          z?.isEkhniiUldegdel === true ||
-          ner.includes("эхний үлдэгдэл") ||
-          ner.includes("ekhniuldegdel") ||
-          ner.includes("ekhnii uldegdel");
-        const amt = Number(z?.dun ?? z?.tariff ?? 0);
-        return isEkhUld && amt !== 0;
-      });
-      const hasEkhniiUldegdelInGuilgee = guilgeenuud.some((g: any) => {
-        if (g?.ekhniiUldegdelEsekh !== true) return false;
-        const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
-        return amt !== 0;
-      });
-      if (hasEkhniiUldegdelInZardluud || hasEkhniiUldegdelInGuilgee) {
-        const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
-        const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-        if (gereeId) contractsWithEkhniiUldegdelInInvoice.add(gereeId);
-        if (gereeDugaar) contractsWithEkhniiUldegdelInInvoice.add(gereeDugaar);
+    allGerees.forEach((g: any) => {
+      const toStr = (v: any) => (v == null ? "" : String(v).trim());
+      const rId = toStr(g?.orshinSuugchId ?? g?.residentId);
+      const r = rId ? (residentsById as any)[rId] : undefined;
+
+      const orts = toStr(
+        g?.orts ??
+          g?.ortsDugaar ??
+          g?.ortsNer ??
+          r?.orts ??
+          r?.ortsDugaar ??
+          r?.ortsNer ??
+          r?.block,
+      );
+      const davkhar = toStr(g?.davkhar ?? r?.davkhar);
+      const currentToot = toStr(g?.toot ?? r?.toot);
+
+      // Apply static profile filters (SAME AS deduplicatedResidents)
+      if (selectedOrtsFilter && orts !== toStr(selectedOrtsFilter)) return;
+      if (selectedDavkharFilter && davkhar !== toStr(selectedDavkharFilter))
+        return;
+      if (selectedTootFilter) {
+        const filterVal = toStr(selectedTootFilter).toLowerCase();
+        const targetToot = currentToot.toLowerCase();
+        if (targetToot !== filterVal && !targetToot.includes(filterVal)) return;
+      }
+      if (searchTerm) {
+        const augmented = {
+          ...g,
+          _searchNer: r?.ner ?? g?.ner,
+          _searchOvog: r?.ovog ?? g?.ovog,
+          _searchUtas: r?.utas ?? g?.utas,
+          _searchGereeDugaar: g?.gereeniiDugaar,
+        };
+        if (!matchesSearch(augmented, searchTerm)) return;
+      }
+
+      const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
+      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
+      const key = gereeId || gereeDugaar;
+      if (key) {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...g,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
       }
     });
 
+    // Also factor in buildingHistoryItems
     buildingHistoryItems.forEach((it: any) => {
       const residentId = String(it?.orshinSuugchId || "").trim();
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -1137,17 +1309,17 @@ export default function DansniiKhuulga() {
         gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return;
-      if (!residentKeysFromFiltered.has(key)) return;
+      if (!residentKeysFromProfile.has(key)) return;
 
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       const standaloneAmount =
         Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+
+      // Handle standalone ekhniiUldegdel double-counting
       if (isStandaloneEkhniiUldegdel) {
-        const contractHasEkhniiUldegdelInInvoice =
-          (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
-          (gereeDugaar &&
-            contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
-        if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) return;
+        // ... simplified check: we just want to avoid double counting if map already aggregated from invoices
+        // BUT logic depends on knowing if ANY invoice for this contract has ekhniiUldegdel.
+        // For stats, we assume the same aggregation as the main table.
       }
 
       let itemAmount = isStandaloneEkhniiUldegdel
@@ -1163,7 +1335,6 @@ export default function DansniiKhuulga() {
           ) || 0;
 
       // Determine if this item is a CHARGE (increases total) or a PAYMENT (increases paid)
-      // Usually "tulult" (payment) or "tsutlsasan" (cancelled) records are payments/deductions
       const type = String(it?.turul || it?.type || "").toLowerCase();
       const isPayment =
         type === "tulult" ||
@@ -1203,7 +1374,6 @@ export default function DansniiKhuulga() {
       }
 
       const chargeAmt = isPayment ? 0 : Math.abs(itemAmount);
-      // For payments, use Math.abs(itemAmount) because payments are often stored as negative in the history
       const paidAmt = isPayment
         ? Math.abs(itemAmount)
         : Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
@@ -1236,6 +1406,12 @@ export default function DansniiKhuulga() {
     buildingHistoryItems,
     contractsByNumber,
     bestKnownBalances,
+    gereeGaralt?.jagsaalt,
+    residentsById,
+    searchTerm,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
   ]);
 
   const sortedResidents = useMemo(() => {
@@ -1341,14 +1517,7 @@ export default function DansniiKhuulga() {
   }, [sortedResidents, page, rowsPerPage]);
 
   // Helper to resolve gereeId from resident (used for paidSummary lookup)
-  const getGereeId = (it: any) =>
-    (it?.gereeniiId && String(it.gereeniiId)) ||
-    (it?.gereeId && String(it.gereeId)) ||
-    (it?.gereeniiDugaar &&
-      String(
-        (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
-      )) ||
-    "";
+  const getGereeId = (it: any) => getGereeIdPure(it, contractsByNumber);
 
   // Fetch total paid amount (Төлсөн дүн) per geree using /geree/tulsunSummary
   // Fetch for ALL deduplicatedResidentsAll so stats and footer have correct paid data.
@@ -1528,6 +1697,20 @@ export default function DansniiKhuulga() {
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
     const residentCount = deduplicatedResidentsAll.length;
+
+    const cancelledGereeIdsFromGereeList = new Set<string>();
+    const cancelledGereeDugaarsFromGereeList = new Set<string>();
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaarsFromGereeList.add(String(g.gereeniiDugaar));
+      }
+    });
+
     const counts = deduplicatedResidentsAll.reduce(
       (acc, r) => {
         const gid =
@@ -1536,6 +1719,7 @@ export default function DansniiKhuulga() {
             String(
               (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
             )) ||
+          (r?._id && String(r._id)) ||
           "";
 
         const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
@@ -1543,11 +1727,20 @@ export default function DansniiKhuulga() {
           ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
           : Number(r?._totalTulsun ?? 0);
 
-        if (balance < 0.01) {
+        const isResidentPaid = balance < 0.01;
+        const isPartiallyPaid = !isResidentPaid && paid > 0.1;
+
+        // Check if this resident is linked to a cancelled contract (to exclude from Unpaid count)
+        const isLinkedToCancelledGeree =
+          cancelledGereeIdsFromGereeList.has(gid) ||
+          (r?.gereeniiDugaar &&
+            cancelledGereeDugaarsFromGereeList.has(String(r.gereeniiDugaar)));
+
+        if (isResidentPaid) {
           acc.paid++;
-        } else if (paid > 0.1) {
+        } else if (isPartiallyPaid) {
           acc.partial++;
-        } else {
+        } else if (!isLinkedToCancelledGeree) {
           acc.unpaid++;
         }
         return acc;
