@@ -569,22 +569,14 @@ export default function AshiglaltiinZardluud() {
   }
 
   return (
-    <div
-      id="barilgiin-panel"
-      className="xxl:col-span-9 col-span-12 lg:col-span-12"
-    >
-      <div
-        id="zardal-panel"
-        className="animate-in fade-in duration-700 space-y-6 overflow-auto max-h-[calc(100vh-220px)] custom-scrollbar pr-2"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl shadow-blue-500/30 w-fit shrink-0">
-            <CreditCard className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl text-[color:var(--panel-text)]">
+    <div className="h-full overflow-y-auto custom-scrollbar">
+      <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
+        <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h2 className="text-xl text-[color:var(--panel-text)]">
               Ашиглалтын зардал
-            </h1>
+            </h2>
           </div>
         </div>
 
@@ -631,7 +623,7 @@ export default function AshiglaltiinZardluud() {
                 </div>
               ) : (
                 <div id="zardal-list" className="flex flex-col">
-                  <div className="overflow-y-auto custom-scrollbar max-h-[50vh]">
+                  <div className="overflow-y-auto custom-scrollbar max-h-[30vh]">
                     <table className="w-full text-sm">
                       <thead className="sticky top-0 z-10 bg-[color:var(--surface-bg)]">
                         <tr className="text-left text-[color:var(--muted-text)] text-[10px] sm:text-xs  uppercase tracking-wider border-b-2 border-[color:var(--surface-border)]">

@@ -197,7 +197,7 @@ export default function NevtreltiinTuukh({
                   label: "Ажилтны нэр",
                   align: "center",
                   render: (value: any) => (
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-start gap-2">
                       <User className="w-4 h-4 text-[color:var(--muted-text)]" />
                       {value || "-"}
                     </div>
@@ -241,7 +241,7 @@ export default function NevtreltiinTuukh({
                   label: "Төхөөрөмж",
                   align: "center",
                   render: (value: any) => (
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-end gap-2">
                       <Monitor className="w-4 h-4 text-[color:var(--muted-text)]" />
                       {value || "-"}
                     </div>

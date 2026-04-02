@@ -82,7 +82,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Нэр
+          </span>
+        ),
         key: "ner",
         width: 100,
         className: headerClassName,
@@ -127,7 +131,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           ),
           key: "paid",
           width: 120,
-          align: "center",
+          align: "right",
           className: headerClassName,
           render: (_: any, record: OrlogoAvlagaItem) => {
             const paid = getPaid(record);
@@ -233,7 +237,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         render: (_: any, __: any, index: number) => index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Огноо</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Огноо
+          </span>
+        ),
         dataIndex: "ognoo",
         key: "ognoo",
         width: 100,
@@ -245,7 +253,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Тайлбар</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Тайлбар
+          </span>
+        ),
         dataIndex: "tailbar",
         key: "tailbar",
         width: 200,
@@ -260,7 +272,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         ),
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Авлага</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Авлага
+          </span>
+        ),
         dataIndex: "avlagaDun",
         key: "avlaga",
         width: 120,
@@ -279,7 +295,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Төлөлт</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Төлөлт
+          </span>
+        ),
         dataIndex: "tulsunDun",
         key: "tulult",
         width: 120,
@@ -298,7 +318,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         },
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Үлдэгдэл</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block w-full">
+            Үлдэгдэл
+          </span>
+        ),
         dataIndex: "uldegdel",
         key: "uldegdel",
         width: 120,

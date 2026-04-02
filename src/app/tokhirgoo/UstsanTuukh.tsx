@@ -2,13 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import {
-  Trash2,
-  Eye,
-  X,
-  AlertTriangle,
-  ChevronDown,
-} from "lucide-react";
+import { Trash2, Eye, X, AlertTriangle, ChevronDown } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
@@ -675,7 +669,7 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
                 rowKey="_id"
                 loading={isLoading}
                 emptyMessage="Устгасан түүх олдсонгүй"
-                className="rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
+                className="rounded-2xl guilgee-table border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] overflow-hidden"
                 maxHeight={pageSize * 60}
               />
 
