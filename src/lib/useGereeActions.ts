@@ -206,8 +206,67 @@ export function useGereeActions(
     }
   }, [token]);
 
-  const handleEditResident = useCallback((p: any, setEditingResident: any, setNewResident: any, setShowResidentModal: any) => {
+  const handleEditResident = useCallback(async (p: any, setEditingResident: any, setNewResident: any, setShowResidentModal: any) => {
     setEditingResident(p);
+    
+    let ekhniiUldegdel = p.ekhniiUldegdel ?? p.medeelel?.ekhniiUldegdel ?? 0;
+
+    // If ekhniiUldegdel is 0, attempt to fetch from invoice history
+    if (ekhniiUldegdel === 0 && token && baiguullaga?._id) {
+      try {
+        const resp = await uilchilgee(token).get("/nekhemjlekhiinTuukh", {
+          params: {
+            baiguullagiinId: baiguullaga._id,
+            barilgiinId: selectedBuildingId || barilgiinId || null,
+            khuudasniiDugaar: 1,
+            khuudasniiKhemjee: 100,
+          },
+        });
+        
+        const list = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data)
+          ? resp.data
+          : [];
+          
+        // Find the latest invoice for this resident
+        const residentInvoices = list.filter((item: any) => {
+          const pNer = String(p.ner || "").trim().toLowerCase();
+          const pOvog = String(p.ovog || "").trim().toLowerCase();
+          const iNer = String(item.ner || "").trim().toLowerCase();
+          const iOvog = String(item.ovog || "").trim().toLowerCase();
+          
+          return (
+             (iNer === pNer && iOvog === pOvog) ||
+             (item.register && p.register && String(item.register).trim() === String(p.register).trim())
+          );
+        });
+        
+        if (residentInvoices.length > 0) {
+          const latest = residentInvoices[0];
+          const zardluud = latest.medeelel?.zardluud || latest.zardluud || [];
+          
+          const ekhniiRow = zardluud.find((z: any) => {
+             const name = String(z.ner || z.name || "").toLowerCase();
+             return (
+                z.isEkhniiUldegdel === true ||
+                name.includes("эхний үлдэгдэл") ||
+                name.includes("starting balance")
+             );
+          });
+          
+          if (ekhniiRow) {
+             const val = Number(ekhniiRow.dun || ekhniiRow.tariff || 0);
+             if (val > 0) {
+                ekhniiUldegdel = val;
+             }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch ekhniiUldegdel from history:", error);
+      }
+    }
+
     setNewResident({
       ovog: p.ovog || "",
       ner: p.ner || "",
@@ -224,9 +283,10 @@ export function useGereeActions(
       tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
       turul: p.turul || "Үндсэн",
       tailbar: p?.tailbar || "",
+      ekhniiUldegdel: ekhniiUldegdel,
     });
     setShowResidentModal(true);
-  }, []);
+  }, [token, baiguullaga, selectedBuildingId, barilgiinId]);
 
   const composeKeyFn = useCallback((orts: string, floor: string) => {
     if (composeKey) return composeKey(orts, floor);

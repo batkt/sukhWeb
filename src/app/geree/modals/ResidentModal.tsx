@@ -186,6 +186,14 @@ export default function ResidentModal({
     });
   };
 
+  const isEkhniiUldegdelDisabled = React.useMemo(() => {
+    if (!editingResident) return false;
+    const existing = editingResident.ekhniiUldegdel ?? editingResident.medeelel?.ekhniiUldegdel;
+    const initial = initialSnapshot.current?.ekhniiUldegdel;
+    // Disable if original record has non-zero OR if it was non-zero when modal opened (e.g. fetched from history)
+    return (existing != null && Number(existing) !== 0) || (initial != null && Number(initial) !== 0);
+  }, [editingResident, show, initialSnapshot.current]);
+
   const parseToNumber = (str: string) => {
     return parseFloat(str.replace(/,/g, "")) || 0;
   };
@@ -708,6 +716,7 @@ export default function ResidentModal({
                           }}
                           className="modern-input w-full pr-extra text-right "
                           placeholder="0.00"
+                          disabled={isEkhniiUldegdelDisabled}
                         />
                         <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none"></span>
                       </div>
