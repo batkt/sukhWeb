@@ -46,7 +46,11 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Нэр
+          </span>
+        ),
         dataIndex: "ner",
         key: "ner",
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",

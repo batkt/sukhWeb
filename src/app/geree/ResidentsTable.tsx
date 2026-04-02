@@ -61,7 +61,11 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: <span className="text-gray-900 dark:text-white">Нэр</span>,
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block">
+            Нэр
+          </span>
+        ),
         dataIndex: "ner",
         key: "ner",
         width: 250,
@@ -234,7 +238,10 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
       <Table
         dataSource={data}
         columns={columns}
-        rowKey={(record) => record._id || `res_${String(typeof record.ner === 'object' ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`}
+        rowKey={(record) =>
+          record._id ||
+          `res_${String(typeof record.ner === "object" ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`
+        }
         pagination={false}
         size="small"
         bordered

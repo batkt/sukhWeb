@@ -1210,31 +1210,31 @@ export default function HistoryModal({
             <table className="w-full text-[13px]">
               <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
                 <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
                     Огноо
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell font-medium">
                     Ажилтан
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
                     Төлөх дүн
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
                     Төлсөн дүн
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
                     Үлдэгдэл
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-white uppercase hidden md:table-cell">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
                     Хэлбэр
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] !border-r  text-slate-400 uppercase hidden md:table-cell">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
                     Тайлбар
                   </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell">
+                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell font-medium">
                     Бүртгэсэн огноо
                   </th>
-                  <th className="py-2  text-center text-[9px]  text-slate-400 uppercase w-8">
+                  <th className="py-2 px-3 text-center text-[9px]  text-slate-400 uppercase w-28 font-medium">
                     Үйлдэл
                   </th>
                 </tr>
@@ -1243,14 +1243,14 @@ export default function HistoryModal({
                 {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <tr key={i} className="animate-pulse">
-                      <td colSpan={8} className="py-3 px-2">
+                      <td colSpan={9} className="py-3 px-2">
                         <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
                       </td>
                     </tr>
                   ))
                 ) : filteredData.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={9} className="py-12 text-center">
                       <span className="text-slate-400 text-[13px]">
                         Мэдээлэл олдсонгүй
                       </span>
@@ -1281,8 +1281,8 @@ export default function HistoryModal({
                           {typeof row.uldegdel === "number"
                             ? formatCurrency(row.uldegdel)
                             : row.uldegdel != null
-                              ? formatCurrency(Number(row.uldegdel))
-                              : "-"}
+                               ? formatCurrency(Number(row.uldegdel))
+                               : "-"}
                         </td>
                         <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
                           {row.khelber || "-"}
@@ -1298,56 +1298,51 @@ export default function HistoryModal({
                               )
                             : "-"}
                         </td>
-                        <td className="py-2 px-2 text-center flex items-center justify-center gap-1">
+                        <td className="py-2 px-3 text-center flex items-center justify-center">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              const canDelete =
-                                row._id &&
-                                !row._id.startsWith("z-") &&
-                                !row._id.startsWith("g-") &&
-                                !row._id.includes("-z-") &&
+                              const isDeletable = 
+                                row._id && 
+                                row.sourceCollection !== "nekhemjlekhiinTuukh" && 
                                 !row.isSystem;
-                              if (canDelete && row._id) {
+                                
+                              if (isDeletable && row._id) {
                                 handleDeleteClick(
                                   row._id,
                                   row.ner || row.khelber || "",
                                 );
                               }
                             }}
-                            className={`p-1 transition-colors ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row._id.includes("-z-") && !row.isSystem ? "!text-red-500 hover:!text-red-600 cursor-pointer" : "text-slate-200 dark:text-slate-700 cursor-not-allowed"}`}
+                            className={`p-2 transition-all rounded-lg ${
+                              row._id && 
+                              row.sourceCollection !== "nekhemjlekhiinTuukh" && 
+                              !row.isSystem 
+                                ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer" 
+                                : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
+                            }`}
                             title={
-                              row.isSystem
-                                ? "Системээс үүсгэсэн - устгах боломжгүй"
-                                : row._id &&
-                                    !row._id.startsWith("z-") &&
-                                    !row._id.startsWith("g-") &&
-                                    !row._id.includes("-z-")
+                              row.isSystem || row.sourceCollection === "nekhemjlekhiinTuukh"
+                                ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
+                                : row._id
                                   ? "Устгах"
                                   : "Устгах боломжгүй"
                             }
                             disabled={
                               !row._id ||
-                              row._id.startsWith("z-") ||
-                              row._id.startsWith("g-") ||
-                              row._id.includes("-z-") ||
+                              row.sourceCollection === "nekhemjlekhiinTuukh" ||
                               row.isSystem
                             }
                           >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              className={`h-4 w-4 ${row._id && !row._id.startsWith("z-") && !row._id.startsWith("g-") && !row.isSystem ? "!text-red-500" : "text-slate-300 dark:text-slate-600"}`}
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            <Trash2 
+                              className={`h-5 w-5 ${
+                                row._id && 
+                                row.sourceCollection !== "nekhemjlekhiinTuukh" && 
+                                !row.isSystem 
+                                  ? "!text-red-500" 
+                                  : "text-slate-300 dark:text-slate-600"
+                              }`} 
+                            />
                           </button>
                         </td>
                       </tr>
@@ -1396,7 +1391,7 @@ export default function HistoryModal({
                             {formatCurrency(balance)} ₮
                           </td>
                           <td
-                            colSpan={3}
+                            colSpan={4}
                             className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
                           ></td>
                         </tr>

@@ -94,9 +94,20 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
 
         let colWidth: number | undefined = undefined;
         if (columnKey === "ner") colWidth = 200;
-        else if (columnKey === "horoo" || columnKey === "bairniiNer") colWidth = 150;
-        else if (columnKey === "toot" || columnKey === "orts" || columnKey === "davkhar") colWidth = 80;
-        else if (columnKey === "tuluv" || columnKey === "sariinTurees" || columnKey === "baritsaaniiUldegdel") colWidth = 120;
+        else if (columnKey === "horoo" || columnKey === "bairniiNer")
+          colWidth = 150;
+        else if (
+          columnKey === "toot" ||
+          columnKey === "orts" ||
+          columnKey === "davkhar"
+        )
+          colWidth = 80;
+        else if (
+          columnKey === "tuluv" ||
+          columnKey === "sariinTurees" ||
+          columnKey === "baritsaaniiUldegdel"
+        )
+          colWidth = 120;
         else if (columnKey === "gereeniiDugaar") colWidth = 100;
         else colWidth = 120;
 
@@ -110,11 +121,14 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             tuluv: "tuluv",
             gereeniiDugaar: "gereeniiDugaar",
           };
-          const targetKey = keyMap[column?.key || "ognoo"] || (column?.key as string);
+          const targetKey =
+            keyMap[column?.key || "ognoo"] || (column?.key as string);
 
           return {
             title: (
-              <span className="text-gray-900 dark:text-white">
+              <span
+                className={`text-gray-900 dark:text-white ${columnKey === "ner" ? "text-center block" : ""}`}
+              >
                 {column?.label}
               </span>
             ),
@@ -124,7 +138,12 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
             width: colWidth,
             className: headerClassName,
             sorter: true,
-            sortOrder: sortKey === targetKey ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+            sortOrder:
+              sortKey === targetKey
+                ? sortOrder === "asc"
+                  ? "ascend"
+                  : "descend"
+                : null,
             render: (_: any, record: any) => (
               <span className="text-gray-900 dark:text-white">
                 {renderCellValue(record, columnKey)}
@@ -135,7 +154,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
 
         return {
           title: (
-            <span className="text-gray-900 dark:text-white">
+            <span
+              className={`text-gray-900 dark:text-white ${columnKey === "ner" ? "text-center block" : ""}`}
+            >
               {column?.label}
             </span>
           ),
@@ -242,7 +263,9 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
                   gereeniiDugaar: "gereeniiDugaar",
                 };
                 const field = sorter.field || sorter.columnKey;
-                const targetKey = field ? (keyMap[field as string] || (field as string)) : undefined;
+                const targetKey = field
+                  ? keyMap[field as string] || (field as string)
+                  : undefined;
                 toggleSortFor(targetKey || "createdAt", sorter.order);
               }}
             />

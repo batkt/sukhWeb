@@ -504,28 +504,30 @@ export default function GuilgeeTable({
                 bestKnownBalances[gid] ??
                 (historyAggregate || Number(record?.uldegdel ?? 0));
 
-              const residentData = resident ? {
-                ...resident,
-                gereeniiDugaar: dugaar,
-                gereeniiId: gid || record?.gereeniiId || ct?._id,
-              } : {
-                _id: record?.orshinSuugchId,
-                ner: ner,
-                toot: toot,
-                utas: utas,
-                gereeniiDugaar: dugaar,
-                gereeniiId: gid || record?.gereeniiId || ct?._id,
-                ...record,
-              };
+              const residentData = resident
+                ? {
+                    ...resident,
+                    gereeniiDugaar: dugaar,
+                    gereeniiId: gid || record?.gereeniiId || ct?._id,
+                  }
+                : {
+                    _id: record?.orshinSuugchId,
+                    ner: ner,
+                    toot: toot,
+                    utas: utas,
+                    gereeniiDugaar: dugaar,
+                    gereeniiId: gid || record?.gereeniiId || ct?._id,
+                    ...record,
+                  };
 
               return (
-                <div className="flex items-center justify-center gap-1 divide-x divide-gray-200 dark:divide-gray-700">
+                <div className="flex items-center justify-around">
                   <button
-                    onClick={() => onViewInvoice(residentData)}
-                    className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                    title="Нэхэмжлэх харах"
+                    onClick={() => onTransaction(residentData, remainingValue)}
+                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
+                    title="Гүйлгээ хийх"
                   >
-                    <Eye className="w-5 h-5 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
+                    <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
                   </button>
                   <button
                     onClick={() => onViewHistory(residentData)}
@@ -535,11 +537,11 @@ export default function GuilgeeTable({
                     <History className="w-5 h-5 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300" />
                   </button>
                   <button
-                    onClick={() => onTransaction(residentData, remainingValue)}
-                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
-                    title="Гүйлгээ хийх"
+                    onClick={() => onViewInvoice(residentData)}
+                    className="p-1.5 rounded hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                    title="Нэхэмжлэх харах"
                   >
-                    <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
+                    <Eye className="w-5 h-5 text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300" />
                   </button>
                 </div>
               );
