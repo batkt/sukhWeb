@@ -54,6 +54,9 @@ export default function ResidentModal({
       setErrors([]);
     } else {
       setShowConfirmClose(false);
+      // Reset local inputs when modal closes
+      setUldegdelInput("");
+      setZaaltInput("");
     }
   }, [show]);
 
@@ -191,21 +194,12 @@ export default function ResidentModal({
   };
 
   const formatWhileTyping = (val: string) => {
-    const raw = val.replace(/[^0-9.]/g, "");
-    if (!raw) return "";
-
-    const parts = raw.split(".");
-    let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    if (!integerPart && parts.length > 1) integerPart = "0";
+    // Return ONLY the integer part with commas. 
+    // We'll show the .00 as a visual suffix in the UI.
+    const clean = val.replace(/,/g, "");
+    let integerPart = clean.replace(/\D/g, "");
     if (!integerPart) return "";
-
-    if (parts.length > 1) {
-      // User is typing decimals
-      return integerPart + "." + (parts[1] + "00").slice(0, 2);
-    }
-
-    // No decimal point yet, but we want to show .00 live
-    return integerPart + ".00";
+    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   const isEkhniiUldegdelDisabled = React.useMemo(() => {
@@ -223,8 +217,12 @@ export default function ResidentModal({
   // Sync local state when modal opens or editingResident changes
   React.useEffect(() => {
     if (show) {
-      setUldegdelInput(formatWithCommas(newResident.ekhniiUldegdel));
-      setZaaltInput(formatWithCommas(newResident.tsahilgaaniiZaalt));
+      // We only want the integer part for our visual-suffix inputs
+      const f1 = formatWithCommas(newResident.ekhniiUldegdel);
+      setUldegdelInput(f1.split('.')[0] || "");
+      
+      const f2 = formatWithCommas(newResident.tsahilgaaniiZaalt);
+      setZaaltInput(f2.split('.')[0] || "");
     }
   }, [show, editingResident]);
 
@@ -714,35 +712,32 @@ export default function ResidentModal({
                       <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                         Эхний үлдэгдэл
                       </label>
-                      <div className="relative">
+                      <div className="relative group/input">
                         <input
                           type="text"
                           value={uldegdelInput}
                           onChange={(e) => {
                             const inputVal = e.target.value;
-                            const selectionStart = e.target.selectionStart;
-                            
-                            // If user is deleting or typing normally, we need to handle the .00
                             const formatted = formatWhileTyping(inputVal);
-                            
                             setUldegdelInput(formatted);
-                            const num = parseFloat(formatted.replace(/,/g, ""));
+                            
+                            const num = parseFloat(formatted.replace(/,/g, "")) || 0;
                             setNewResident((p: any) => ({
                               ...p,
-                              ekhniiUldegdel: isNaN(num) ? 0 : num,
+                              ekhniiUldegdel: num,
                             }));
-
-                            // Optional: Restore cursor position logic can be complex here
-                            // but for simple .00 suffix, the cursor usually stays at the end of the integer part
                           }}
                           onBlur={() => {
-                            setUldegdelInput(formatWithCommas(uldegdelInput));
+                            if (uldegdelInput) {
+                               setUldegdelInput(formatWithCommas(uldegdelInput));
+                            }
                           }}
-                          className="modern-input w-full pr-extra text-right "
+                          className="modern-input w-full pr-[38px] text-right "
                           placeholder="0.00"
                           disabled={isEkhniiUldegdelDisabled}
                         />
-                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-600 dark:text-[var(--panel-text)] text-xs pointer-events-none"></span>
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                        </span>
                       </div>
                     </div>
 
@@ -771,13 +766,13 @@ export default function ResidentModal({
                         <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
                           Цахилгаан кВт
                         </label>
-                        <input
+                        <div className="relative group/input">
+                         <input
                           type="text"
                           value={zaaltInput}
                           onChange={(e) => {
                             const inputVal = e.target.value;
                             const formatted = formatWhileTyping(inputVal);
-                            
                             setZaaltInput(formatted);
                             setNewResident((p: any) => ({
                               ...p,
@@ -785,11 +780,16 @@ export default function ResidentModal({
                             }));
                           }}
                           onBlur={() => {
-                            setZaaltInput(formatWithCommas(zaaltInput));
+                             if (zaaltInput) {
+                               setZaaltInput(formatWithCommas(zaaltInput));
+                             }
                           }}
-                          className="modern-input w-full text-right "
+                          className="modern-input w-full pr-[38px] text-right "
                           placeholder="0.00"
-                        />
+                         />
+                         <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                         </span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -48,7 +48,7 @@ export default function TransactionModal({
   const [transactionDate, setTransactionDate] = useState(
     new Date().toISOString().split("T")[0],
   );
-  const [amount, setAmount] = useState("0.00");
+  const [amount, setAmount] = useState("");
   const [tailbar, setTailbar] = useState("");
   const [ekhniiUldegdel, setEkhniiUldegdel] = useState(false);
   const [lastShow, setLastShow] = useState(false);
@@ -79,8 +79,8 @@ export default function TransactionModal({
   const isUmnukhEditable = !initialUmnukhVal || Number(initialUmnukhVal) === 0;
 
   const formatAmount = (val: number | string): string => {
-    const num =
-      typeof val === "string" ? parseFloat(String(val).replace(/,/g, "")) : val;
+    const clean = String(val).replace(/,/g, "");
+    const num = parseFloat(clean);
     if (isNaN(num)) return "0.00";
     return num.toLocaleString("en-US", {
       minimumFractionDigits: 2,
@@ -89,27 +89,18 @@ export default function TransactionModal({
   };
 
   const formatWhileTyping = (val: string) => {
-    const raw = val.replace(/[^0-9.]/g, "");
-    if (!raw) return "";
-
-    const parts = raw.split(".");
-    let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    if (!integerPart && parts.length > 1) integerPart = "0";
+    // Return ONLY the integer part with commas. 
+    // We'll show the .00 as a visual suffix in the UI.
+    const clean = val.replace(/,/g, "");
+    let integerPart = clean.replace(/\D/g, "");
     if (!integerPart) return "";
-
-    if (parts.length > 1) {
-      // User is typing decimals
-      return integerPart + "." + (parts[1] + "00").slice(0, 2);
-    }
-
-    // No decimal point yet, but we want to show .00 live
-    return integerPart + ".00";
+    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   const resetForm = () => {
     setTransactionType("avlaga");
     setTransactionDate(new Date().toISOString().split("T")[0]);
-    setAmount("0.00");
+    setAmount("");
     setTailbar("");
     setEkhniiUldegdel(false);
     setAshiglaltZardal("");
@@ -128,7 +119,7 @@ export default function TransactionModal({
 
   // hasChanges: any meaningful user input detected
   const hasChanges =
-    amount !== "0.00" ||
+    (amount !== "" && amount !== "0" && amount !== "0.00") ||
     tailbar.trim() !== "" ||
     umnukhZaalt.trim() !== "" ||
     suuliinZaalt.trim() !== "";
@@ -179,6 +170,7 @@ export default function TransactionModal({
   React.useEffect(() => {
     if (show && !lastShow) {
       resetForm();
+      setAmount(""); // Default to empty instead of "0.00" for placeholder
     }
     setLastShow(show);
   }, [show, lastShow]);
@@ -240,7 +232,8 @@ export default function TransactionModal({
 
       if (res.data?.success && typeof res.data.niitDun === "number") {
         console.log("[CALC] Received response:", res.data);
-        setAmount(formatAmount(res.data.niitDun));
+        const formatted = formatAmount(res.data.niitDun);
+        setAmount(formatted.split('.')[0] || "0");
 
         // Save breakdown for UI display
         setCalcBreakdown({
@@ -289,7 +282,9 @@ export default function TransactionModal({
       (transactionType === "tulult" || transactionType === "avlaga")
     ) {
       const amountToFill = Math.max(0, residentBalance);
-      setAmount(formatAmount(amountToFill));
+      // Only use the integer part for state (span adds .00)
+      const formatted = formatAmount(amountToFill);
+      setAmount(formatted.split(".")[0] || "0");
     }
   };
 
@@ -550,22 +545,28 @@ export default function TransactionModal({
                           </motion.div>
                         )}
                     </div>
-                    <input
-                      type="text"
-                      value={amount}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const formatted = formatWhileTyping(val);
-                        setAmount(formatted);
-                      }}
-                      onDoubleClick={fillAmountWithBalance}
-                      onBlur={() => {
-                        setAmount(formatAmount(amount));
-                      }}
-                      disabled={isProcessing}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold"
-                    />
+                    <div className="relative w-full group/input">
+                      <input
+                        type="text"
+                        value={amount}
+                        onChange={(e) => {
+                          const inputVal = e.target.value;
+                          const formatted = formatWhileTyping(inputVal);
+                          setAmount(formatted);
+                        }}
+                        onDoubleClick={fillAmountWithBalance}
+                        onBlur={() => {
+                          if (amount) {
+                            setAmount(formatAmount(amount));
+                          }
+                        }}
+                        disabled={isProcessing}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -585,37 +586,59 @@ export default function TransactionModal({
                         <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">
                           Өмнөх
                         </label>
-                        <input
-                          type="text"
-                          value={umnukhZaalt}
-                          readOnly={!isUmnukhEditable}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const formatted = formatWhileTyping(val);
-                            setUmnukhZaalt(formatted);
-                          }}
-                          className={`w-full px-3 py-1.5 border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-bold ${
-                            isUmnukhEditable
-                              ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
-                              : "bg-[color:var(--surface-hover)]/60 text-[color:var(--muted-text)]"
-                          }`}
-                        />
+                        <div className="relative group/input">
+                          <input
+                            type="text"
+                            value={umnukhZaalt}
+                            readOnly={!isUmnukhEditable}
+                            onChange={(e) => {
+                              const inputVal = e.target.value;
+                              const formatted = formatWhileTyping(inputVal);
+                              setUmnukhZaalt(formatted);
+                            }}
+                            onBlur={() => {
+                              if (umnukhZaalt) {
+                                setUmnukhZaalt(formatAmount(umnukhZaalt));
+                              }
+                            }}
+                            placeholder="0.00"
+                            className={`w-full px-3 py-1.5 pr-[38px] border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-bold ${
+                              isUmnukhEditable
+                                ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
+                                : "bg-[color:var(--surface-hover)]/60 text-[color:var(--muted-text)]"
+                            }`}
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                            .00
+                          </span>
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">
                           Одоо
                         </label>
-                        <input
-                          type="text"
-                          value={suuliinZaalt}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const formatted = formatWhileTyping(val);
-                            setSuuliinZaalt(formatted);
-                          }}
-                          disabled={isProcessing}
-                          className="w-full px-3 py-1.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 transition-all text-sm text-right font-bold"
-                        />
+                        <div className="relative group/input">
+                          <input
+                            type="text"
+                            value={suuliinZaalt}
+                            onChange={(e) => {
+                              const inputVal = e.target.value;
+                              const formatted = formatWhileTyping(inputVal);
+                              setSuuliinZaalt(formatted);
+                            }}
+                            onBlur={() => {
+                              if (suuliinZaalt) {
+                                setSuuliinZaalt(formatAmount(suuliinZaalt));
+                              }
+                            }}
+                            disabled={isProcessing}
+                            placeholder="0.00"
+                            className="w-full px-3 py-1.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 transition-all text-sm text-right font-bold"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                            .00
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -685,22 +708,30 @@ export default function TransactionModal({
                     <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                       Дүн
                     </label>
-                    <input
-                      type="text"
-                      value={amount}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const formatted = formatWhileTyping(val);
-                        setAmount(formatted);
-                      }}
-                      onDoubleClick={fillAmountWithBalance}
-                      onBlur={() => {
-                        setAmount(formatAmount(amount));
-                      }}
-                      disabled={isProcessing}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold !h-[40px]"
-                    />
+                    <div className="relative w-full group/input">
+                      <input
+                        type="text"
+                        value={amount}
+                        onChange={(e) => {
+                          const inputVal = e.target.value;
+                          const formatted = formatWhileTyping(inputVal);
+                          setAmount(formatted);
+                        }}
+                        onDoubleClick={fillAmountWithBalance}
+                        onBlur={() => {
+                          if (amount) {
+                            const num = parseFloat(amount.replace(/,/g, ""));
+                            setAmount(num.toLocaleString("en-US"));
+                          }
+                        }}
+                        disabled={isProcessing}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold !h-[40px]"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
+                        .00
+                      </span>
+                    </div>
                   </div>
                 </div>
               ) : (

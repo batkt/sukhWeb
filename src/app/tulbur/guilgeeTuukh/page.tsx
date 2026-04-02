@@ -2856,6 +2856,21 @@ export default function DansniiKhuulga() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  <label className="text-[11px] text-theme/60 whitespace-nowrap text-[13px]  tracking-wider font-normal">
+                    Давхар:
+                  </label>
+                  <div className="w-[100px]">
+                    <input
+                      type="number"
+                      min={1}
+                      value={selectedDavkharFilter}
+                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
+                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
+                      placeholder="Бүгд"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
                   <label className="text-[13px] text-theme/60 whitespace-nowrap  tracking-wider font-normal">
                     Тоот:
                   </label>
@@ -2871,21 +2886,7 @@ export default function DansniiKhuulga() {
                 </div>
 
                 {/* Давхар filter */}
-                <div className="flex items-center gap-1.5">
-                  <label className="text-[11px] text-theme/60 whitespace-nowrap text-[13px]  tracking-wider font-normal">
-                    Давхар:
-                  </label>
-                  <div className="w-[100px]">
-                    <input
-                      type="number"
-                      min={1}
-                      value={selectedDavkharFilter}
-                      onChange={(e) => setSelectedDavkharFilter(e.target.value)}
-                      className="w-full h-[40px] px-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]/60 text-[13px] focus:outline-none focus:ring-1 focus:ring-[color:var(--theme)] focus:border-[color:var(--theme)] transition-all"
-                      placeholder="Бүгд"
-                    />
-                  </div>
-                </div>
+               
               </div>
             </div>
 
