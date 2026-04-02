@@ -209,14 +209,20 @@ export default function OrlogoAvlagaPage() {
         ]
       : null,
     async ([, tkn, bId, barId, start, end]) => {
+      const startIso = start ? `${start}T00:00:00.000Z` : undefined;
+      const endIso = end ? `${end}T23:59:59.999Z` : undefined;
+
       const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
-          ...(start ? { ekhlekhOgnoo: start } : {}),
-          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
+          query: JSON.stringify({
+            baiguullagiinId: bId,
+            ...(barId ? { barilgiinId: barId } : {}),
+            ...(startIso && endIso ? { createdAt: { $gte: startIso, $lte: endIso } } : {}),
+          }),
         },
       });
       return resp.data;
@@ -237,6 +243,33 @@ export default function OrlogoAvlagaPage() {
       : null,
     async ([, tkn, bId, barId, start, end]) => {
       const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 20000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const { data: paymentRecordsData, isLoading: isLoadingPayment } = useSWR(
+    token && baiguullagiinId
+      ? [
+          "/gereeniiTulsunAvlaga-oa",
+          token,
+          baiguullagiinId,
+          selectedBuildingId || null,
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
+        ]
+      : null,
+    async ([, tkn, bId, barId, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/gereeniiTulsunAvlaga", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
@@ -300,6 +333,12 @@ export default function OrlogoAvlagaPage() {
         ? receivableData
         : [];
 
+    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
+      ? paymentRecordsData.jagsaalt
+      : Array.isArray(paymentRecordsData)
+        ? paymentRecordsData
+        : [];
+
     const combined = [...invoices];
     const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
     invoices.forEach((it: any) => {
@@ -315,31 +354,21 @@ export default function OrlogoAvlagaPage() {
     receivables.forEach((r: any) => {
       if (!trackingIds.has(String(r._id))) combined.push(r);
     });
-    return combined;
-  }, [historyData, receivableData]);
-
-  const buildingHistoryItems = useMemo(() => {
-    const bid = String(selectedBuildingId || "");
-    if (!bid) return allHistoryItems;
-    const toStr = (v: any) => (v == null ? "" : String(v));
-    return allHistoryItems.filter((it: any) => {
-      const itemBid = toStr(
-        it?.barilgiinId ?? it?.barilga ?? it?.barilgaId ?? it?.branchId,
-      );
-      if (itemBid) return itemBid === bid;
-      const cId = toStr(
-        it?.gereeId ?? it?.gereeniiId ?? it?.kholbosonGereeniiId,
-      );
-      const rId = toStr(it?.orshinSuugchId ?? it?.residentId);
-      const c = cId ? contractsById[cId] : undefined;
-      const r = rId ? residentsById[rId] : undefined;
-      const cbid = toStr(c?.barilgiinId ?? c?.barilga);
-      const rbid = toStr(r?.barilgiinId ?? r?.barilga);
-      if (cbid) return cbid === bid;
-      if (rbid) return rbid === bid;
-      return false;
+    payments.forEach((p: any) => {
+      if (!trackingIds.has(String(p._id))) combined.push(p);
     });
-  }, [allHistoryItems, selectedBuildingId, contractsById, residentsById]);
+    return combined.sort((a: any, b: any) => {
+      const da = new Date(
+        a.tulsunOgnoo || a.ognoo || a.createdAt || 0,
+      ).getTime();
+      const db = new Date(
+        b.tulsunOgnoo || b.ognoo || b.createdAt || 0,
+      ).getTime();
+      return da - db; // Ascending so latest wins in uldegdel maps
+    });
+  }, [historyData, receivableData, paymentRecordsData]);
+
+  const buildingHistoryItems = allHistoryItems;
 
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
@@ -400,7 +429,6 @@ export default function OrlogoAvlagaPage() {
           ? contractsByNumber[gereeDugaar]
           : undefined;
       const r = residentId ? residentsById[residentId] : undefined;
-
       if (!map.has(key)) {
         map.set(key, {
           ...it,
@@ -413,7 +441,42 @@ export default function OrlogoAvlagaPage() {
           _utas: r?.utas ?? it?.utas ?? ct?.utas ?? "",
           _toot: r?.toot ?? ct?.toot ?? it?.toot ?? it?.medeelel?.toot ?? "",
           _davkhar: r?.davkhar ?? ct?.davkhar ?? it?.davkhar ?? "",
+          _periodPaid: 0,
+          _periodTulbur: 0,
         });
+      }
+
+      const existing = map.get(key);
+      const recordIsStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
+      const itemAmount = recordIsStandaloneEkh
+        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+        : Number(
+            it?.tulsunDun ??
+              it?.tulsun ??
+              it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
+
+      const type = String(it?.turul || it?.type || "").toLowerCase();
+      const isPayment =
+        type === "tulult" ||
+        type === "төлбөр" ||
+        type === "төлөлт" ||
+        type === "төлбөрийн баримт" ||
+        type === "tulbur" ||
+        (itemAmount < 0 && !recordIsStandaloneEkh);
+
+      if (isPayment) {
+        existing._periodPaid += Math.abs(itemAmount);
+      } else {
+        existing._periodTulbur += itemAmount;
+        // Also capture embedded payments in invoices (tulsunDun)
+        existing._periodPaid += Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
       }
     });
 
@@ -437,6 +500,8 @@ export default function OrlogoAvlagaPage() {
         _utas: r?.utas ?? ct?.utas ?? "",
         _toot: r?.toot ?? ct?.toot ?? "",
         _davkhar: r?.davkhar ?? ct?.davkhar ?? "",
+        _periodPaid: 0,
+        _periodTulbur: 0,
       });
     });
 
@@ -540,9 +605,13 @@ export default function OrlogoAvlagaPage() {
     String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
 
   const getPaid = (it: any): number => {
+    // Priority: Period-specific paid amount discovery from buildingHistoryItems
+    if (it?._periodPaid !== undefined) return it._periodPaid;
+
     const gid = getGereeId(it);
     const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
     const key = gid || rid;
+    // Fallback to life-to-date summary if history items didn't capture it (less likely but safe)
     return key && paidByGereeId[key] !== undefined ? paidByGereeId[key] : 0;
   };
 
@@ -710,7 +779,7 @@ export default function OrlogoAvlagaPage() {
     }
   };
 
-  const isLoading = isLoadingHistory || isLoadingReceivable;
+  const isLoading = isLoadingHistory || isLoadingReceivable || isLoadingPayment;
   const paginatedList = displayList.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize,
@@ -761,7 +830,7 @@ export default function OrlogoAvlagaPage() {
               Нийт орлого
             </p>
             <p className="text-xl font-bold text-green-700">
-              {formatNumber(totalOrlogo, 2)}{" "}
+              {formatNumber(totalOrlogo, 2)} ₮
             </p>
           </div>
           <div className="border p-3 rounded">
@@ -769,7 +838,7 @@ export default function OrlogoAvlagaPage() {
               Нийт үлдэгдэл
             </p>
             <p className="text-xl font-bold text-red-700">
-              {formatNumber(totalUldegdel, 2)}{" "}
+              {formatNumber(totalUldegdel, 2)} ₮
             </p>
           </div>
         </div>
@@ -818,7 +887,7 @@ export default function OrlogoAvlagaPage() {
             <span className="text-xs text-theme/50">(Гүйцэтгэл)</span>
           </h3>
           <p className="text-2xl text-green-600">
-            {formatNumber(totalOrlogo)}{" "}
+            {formatNumber(totalOrlogo, 2)} ₮
           </p>
           <p className="text-xs text-theme/50 mt-1">
             {paidList.length} оршин суугч
@@ -836,7 +905,7 @@ export default function OrlogoAvlagaPage() {
                 : "text-2xl text-red-600"
             }
           >
-            {formatNumber(totalUldegdel)}{" "}
+            {formatNumber(totalUldegdel, 2)} ₮
           </p>
           <p className="text-xs text-theme/50 mt-1">
             Бүх оршин суугчдын нийт үлдэгдэл
@@ -911,6 +980,8 @@ export default function OrlogoAvlagaPage() {
             modalOpen={modalOpen}
             onModalClose={handleModalClose}
             selectedRecord={selectedRecord}
+            grandTotalPaid={totalOrlogo}
+            grandTotalUldegdel={totalUldegdel}
           />
         </div>
       </div>

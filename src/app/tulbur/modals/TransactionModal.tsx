@@ -88,6 +88,24 @@ export default function TransactionModal({
     });
   };
 
+  const formatWhileTyping = (val: string) => {
+    const raw = val.replace(/[^0-9.]/g, "");
+    if (!raw) return "";
+
+    const parts = raw.split(".");
+    let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    if (!integerPart && parts.length > 1) integerPart = "0";
+    if (!integerPart) return "";
+
+    if (parts.length > 1) {
+      // User is typing decimals
+      return integerPart + "." + (parts[1] + "00").slice(0, 2);
+    }
+
+    // No decimal point yet, but we want to show .00 live
+    return integerPart + ".00";
+  };
+
   const resetForm = () => {
     setTransactionType("avlaga");
     setTransactionDate(new Date().toISOString().split("T")[0]);
@@ -537,14 +555,10 @@ export default function TransactionModal({
                       value={amount}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (/^[0-9.,]*$/.test(val)) {
-                          setAmount(val);
-                        }
+                        const formatted = formatWhileTyping(val);
+                        setAmount(formatted);
                       }}
                       onDoubleClick={fillAmountWithBalance}
-                      onFocus={() => {
-                        setAmount(amount.replace(/,/g, ""));
-                      }}
                       onBlur={() => {
                         setAmount(formatAmount(amount));
                       }}
@@ -577,7 +591,8 @@ export default function TransactionModal({
                           readOnly={!isUmnukhEditable}
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (/^[0-9.,]*$/.test(val)) setUmnukhZaalt(val);
+                            const formatted = formatWhileTyping(val);
+                            setUmnukhZaalt(formatted);
                           }}
                           className={`w-full px-3 py-1.5 border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-bold ${
                             isUmnukhEditable
@@ -595,7 +610,8 @@ export default function TransactionModal({
                           value={suuliinZaalt}
                           onChange={(e) => {
                             const val = e.target.value;
-                            if (/^[0-9.,]*$/.test(val)) setSuuliinZaalt(val);
+                            const formatted = formatWhileTyping(val);
+                            setSuuliinZaalt(formatted);
                           }}
                           disabled={isProcessing}
                           className="w-full px-3 py-1.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 transition-all text-sm text-right font-bold"
@@ -674,14 +690,10 @@ export default function TransactionModal({
                       value={amount}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (/^[0-9.,]*$/.test(val)) {
-                          setAmount(val);
-                        }
+                        const formatted = formatWhileTyping(val);
+                        setAmount(formatted);
                       }}
                       onDoubleClick={fillAmountWithBalance}
-                      onFocus={() => {
-                        setAmount(amount.replace(/,/g, ""));
-                      }}
                       onBlur={() => {
                         setAmount(formatAmount(amount));
                       }}

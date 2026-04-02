@@ -62,6 +62,14 @@ export default function Khynalt() {
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
 
+  const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    effectiveBarilgiinId,
+    dateRange?.[0],
+    dateRange?.[1],
+  );
+
   useEffect(() => setMounted(true), []);
   const shouldFetch = isInitialized && !!token && !!ajiltan?.baiguullagiinId;
 
@@ -630,11 +638,6 @@ export default function Khynalt() {
     ? totalResidents - residentsPaidCountFromTailan
     : residentsUnpaidCount;
 
-  const footerTotals = useTulburFooterTotals(
-    token,
-    ajiltan?.baiguullagiinId ?? null,
-    effectiveBarilgiinId,
-  );
 
   const overdue2m = useMemo(() => {
     if (overdueData?.success) {

@@ -175,10 +175,14 @@ export default function ResidentModal({
   const [uldegdelInput, setUldegdelInput] = React.useState("");
   const [zaaltInput, setZaaltInput] = React.useState("");
 
+  const parseToNumber = (str: string) => {
+    if (typeof str !== "string") return str || 0;
+    return parseFloat(str.replace(/,/g, "")) || 0;
+  };
+
   const formatWithCommas = (val: any) => {
     if (val === undefined || val === null || val === "" || val === 0) return "";
-    const num =
-      typeof val === "string" ? parseFloat(val.replace(/,/g, "")) : val;
+    const num = typeof val === "string" ? parseToNumber(val) : val;
     if (isNaN(num)) return "";
     return num.toLocaleString("en-US", {
       minimumFractionDigits: 2,
@@ -186,17 +190,35 @@ export default function ResidentModal({
     });
   };
 
+  const formatWhileTyping = (val: string) => {
+    const raw = val.replace(/[^0-9.]/g, "");
+    if (!raw) return "";
+
+    const parts = raw.split(".");
+    let integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    if (!integerPart && parts.length > 1) integerPart = "0";
+    if (!integerPart) return "";
+
+    if (parts.length > 1) {
+      // User is typing decimals
+      return integerPart + "." + (parts[1] + "00").slice(0, 2);
+    }
+
+    // No decimal point yet, but we want to show .00 live
+    return integerPart + ".00";
+  };
+
   const isEkhniiUldegdelDisabled = React.useMemo(() => {
     if (!editingResident) return false;
-    const existing = editingResident.ekhniiUldegdel ?? editingResident.medeelel?.ekhniiUldegdel;
+    const existing =
+      editingResident.ekhniiUldegdel ?? editingResident.medeelel?.ekhniiUldegdel;
     const initial = initialSnapshot.current?.ekhniiUldegdel;
     // Disable if original record has non-zero OR if it was non-zero when modal opened (e.g. fetched from history)
-    return (existing != null && Number(existing) !== 0) || (initial != null && Number(initial) !== 0);
+    return (
+      (existing != null && Number(existing) !== 0) ||
+      (initial != null && Number(initial) !== 0)
+    );
   }, [editingResident, show, initialSnapshot.current]);
-
-  const parseToNumber = (str: string) => {
-    return parseFloat(str.replace(/,/g, "")) || 0;
-  };
 
   // Sync local state when modal opens or editingResident changes
   React.useEffect(() => {
@@ -697,19 +719,21 @@ export default function ResidentModal({
                           type="text"
                           value={uldegdelInput}
                           onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^[0-9.,]*$/.test(val)) {
-                              setUldegdelInput(val);
-                              // Also update parent state with raw number for submission
-                              const num = parseFloat(val.replace(/,/g, ""));
-                              setNewResident((p: any) => ({
-                                ...p,
-                                ekhniiUldegdel: isNaN(num) ? undefined : num,
-                              }));
-                            }
-                          }}
-                          onFocus={() => {
-                            setUldegdelInput(uldegdelInput.replace(/,/g, ""));
+                            const inputVal = e.target.value;
+                            const selectionStart = e.target.selectionStart;
+                            
+                            // If user is deleting or typing normally, we need to handle the .00
+                            const formatted = formatWhileTyping(inputVal);
+                            
+                            setUldegdelInput(formatted);
+                            const num = parseFloat(formatted.replace(/,/g, ""));
+                            setNewResident((p: any) => ({
+                              ...p,
+                              ekhniiUldegdel: isNaN(num) ? 0 : num,
+                            }));
+
+                            // Optional: Restore cursor position logic can be complex here
+                            // but for simple .00 suffix, the cursor usually stays at the end of the integer part
                           }}
                           onBlur={() => {
                             setUldegdelInput(formatWithCommas(uldegdelInput));
@@ -751,18 +775,14 @@ export default function ResidentModal({
                           type="text"
                           value={zaaltInput}
                           onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^[0-9.,]*$/.test(val)) {
-                              setZaaltInput(val);
-                              // Keep string in state as it might be used as string key
-                              setNewResident((p: any) => ({
-                                ...p,
-                                tsahilgaaniiZaalt: val.replace(/,/g, ""),
-                              }));
-                            }
-                          }}
-                          onFocus={() => {
-                            setZaaltInput(zaaltInput.replace(/,/g, ""));
+                            const inputVal = e.target.value;
+                            const formatted = formatWhileTyping(inputVal);
+                            
+                            setZaaltInput(formatted);
+                            setNewResident((p: any) => ({
+                              ...p,
+                              tsahilgaaniiZaalt: formatted.replace(/,/g, ""),
+                            }));
                           }}
                           onBlur={() => {
                             setZaaltInput(formatWithCommas(zaaltInput));

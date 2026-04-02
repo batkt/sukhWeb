@@ -36,6 +36,8 @@ interface OrlogoAvlagaTableProps {
   modalOpen: boolean;
   onModalClose: () => void;
   selectedRecord: OrlogoAvlagaItem | null;
+  grandTotalPaid?: number;
+  grandTotalUldegdel?: number;
 }
 
 export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
@@ -54,6 +56,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   modalOpen,
   onModalClose,
   selectedRecord,
+  grandTotalPaid,
+  grandTotalUldegdel,
 }) => {
   const headerClassName =
     "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
@@ -423,16 +427,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             </span>
           ),
         }}
-        summary={(pageData) => {
-          if (pageData.length === 0) return null;
-
-          let totalPaid = 0;
-          let totalUldegdel = 0;
-
-          pageData.forEach((record) => {
-            totalPaid += getPaid(record);
-            totalUldegdel += getUldegdel(record);
-          });
+        summary={() => {
+          const finalPaid = grandTotalPaid ?? 0;
+          const finalUldegdel = grandTotalUldegdel ?? 0;
 
           return (
             <Table.Summary fixed>
@@ -444,7 +441,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   className="bg-gray-50 dark:bg-gray-900"
                 >
                   <span className="font-bold text-gray-900 dark:!text-white force-bold text-[11px]">
-                    Нийт
+                    Нийт (Багцаар)
                   </span>
                 </Table.Summary.Cell>
                 {activeTab === "avlaga" ? (
@@ -455,9 +452,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                       className="bg-gray-50 dark:bg-gray-900"
                     >
                       <span
-                        className={`font-bold force-bold text-[11px] ${totalUldegdel > 0 ? "text-gray-900 dark:!text-white" : totalUldegdel < 0 ? "text-emerald-600 dark:!text-emerald-400" : "text-gray-900 dark:!text-white"}`}
+                        className={`font-bold force-bold text-[11px] ${finalUldegdel > 0 ? "text-red-500" : finalUldegdel < 0 ? "text-emerald-600" : "text-gray-900 dark:!text-white"}`}
                       >
-                        {formatNumber(totalUldegdel, 2)} ₮
+                        {formatNumber(finalUldegdel, 2)} ₮
                       </span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell
@@ -465,8 +462,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                       align="right"
                       className="bg-gray-50 dark:bg-gray-900"
                     >
-                      <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px] dark:!text-white">
-                        {formatNumber(totalPaid, 2)} ₮
+                      <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px]">
+                        {formatNumber(finalPaid, 2)} ₮
                       </span>
                     </Table.Summary.Cell>
                   </>
@@ -476,8 +473,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     align="right"
                     className="bg-gray-50 dark:bg-gray-900"
                   >
-                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px] dark:!text-white">
-                      {formatNumber(totalPaid, 2)} ₮
+                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[11px]">
+                      {formatNumber(finalPaid, 2)} ₮
                     </span>
                   </Table.Summary.Cell>
                 )}

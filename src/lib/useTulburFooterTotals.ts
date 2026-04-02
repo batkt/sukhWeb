@@ -10,7 +10,9 @@ import { useMemo, useEffect, useState, useRef } from "react";
 export function useTulburFooterTotals(
   token: string | null,
   baiguullagiinId: string | null,
-  barilgiinId: string | undefined
+  barilgiinId: string | undefined,
+  startDate?: string | null,
+  endDate?: string | null
 ) {
   const emptyQuery = useMemo(() => ({}), []);
   const { gereeGaralt } = useGereeJagsaalt(
@@ -55,13 +57,15 @@ export function useTulburFooterTotals(
 
   const { data: historyData } = useSWR(
     token && baiguullagiinId
-      ? ["/nekhemjlekhiinTuukh-footer", token, baiguullagiinId, barilgiinId]
+      ? ["/nekhemjlekhiinTuukh-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
       : null,
-    async ([, tkn, bId, barId]) => {
+    async ([, tkn, bId, barId, start, end]) => {
       const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 5000,
           query: { baiguullagiinId: bId, ...(barId ? { barilgiinId: barId } : {}) },
@@ -74,13 +78,35 @@ export function useTulburFooterTotals(
 
   const { data: receivableData } = useSWR(
     token && baiguullagiinId
-      ? ["/gereeniiTulukhAvlaga-footer", token, baiguullagiinId, barilgiinId]
+      ? ["/gereeniiTulukhAvlaga-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
       : null,
-    async ([, tkn, bId, barId]) => {
+    async ([, tkn, bId, barId, start, end]) => {
       const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false }
+  );
+
+  const { data: paymentRecordsData } = useSWR(
+    token && baiguullagiinId
+      ? ["/gereeniiTulsunAvlaga-footer", token, baiguullagiinId, barilgiinId, startDate, endDate]
+      : null,
+    async ([, tkn, bId, barId, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/gereeniiTulsunAvlaga", {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 5000,
         },
@@ -101,6 +127,12 @@ export function useTulburFooterTotals(
       : Array.isArray(receivableData)
         ? receivableData
         : [];
+    const payments = Array.isArray(paymentRecordsData?.jagsaalt)
+      ? paymentRecordsData.jagsaalt
+      : Array.isArray(paymentRecordsData)
+        ? paymentRecordsData
+        : [];
+
     const combined = [...invoices];
     const trackingIds = new Set(invoices.map((it: any) => String(it._id)));
     invoices.forEach((it: any) => {
@@ -113,11 +145,17 @@ export function useTulburFooterTotals(
         if (g?._id) trackingIds.add(String(g._id));
       });
     });
+
     receivables.forEach((r: any) => {
       if (!trackingIds.has(String(r._id))) combined.push(r);
     });
+
+    payments.forEach((p: any) => {
+      if (!trackingIds.has(String(p._id))) combined.push(p);
+    });
+
     return combined;
-  }, [historyData, receivableData]);
+  }, [historyData, receivableData, paymentRecordsData]);
 
   const buildingHistoryItems = useMemo(() => {
     const bid = String(barilgiinId || "");
@@ -146,6 +184,21 @@ export function useTulburFooterTotals(
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
+
+    // Discovery from all contracts (Exhaustive)
+    const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
+    allGerees.forEach((g: any) => {
+      const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
+      const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
+      const key = gereeId || gereeDugaar;
+
+      if (key && !map.has(key)) {
+        map.set(key, {
+          ...g,
+          _gereeniiId: gereeId,
+        });
+      }
+    });
 
     buildingHistoryItems.forEach((it: any) => {
       const zardluud = Array.isArray(it?.medeelel?.zardluud)
@@ -179,7 +232,8 @@ export function useTulburFooterTotals(
         ? String(it.utas[0] || "").trim()
         : String(it?.utas || "").trim();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return;
 
@@ -198,16 +252,14 @@ export function useTulburFooterTotals(
           : "");
 
       if (!map.has(key)) {
-        map.set(key, {
-          ...it,
-          _gereeniiId: resolvedGereeId,
-        });
+        map.set(key, { ...it, _gereeniiId: resolvedGereeId });
+      } else {
+        // Just update the record to include latest fields if needed, but primary values are from gereeGaralt
       }
-      
     });
 
     return Array.from(map.values());
-  }, [buildingHistoryItems, contractsByNumber]);
+  }, [buildingHistoryItems, contractsByNumber, gereeGaralt?.jagsaalt]);
 
   const [paidSummaryByGereeId, setPaidSummaryByGereeId] = useState<Record<string, number>>({});
   const paidRequestedRef = useRef<Set<string>>(new Set());
@@ -220,7 +272,7 @@ export function useTulburFooterTotals(
     paidRequestedRef.current.clear();
     setUldegdelByGereeId({});
     uldegdelRequestedRef.current.clear();
-  }, [historyData, receivableData]);
+  }, [historyData, receivableData, paymentRecordsData, startDate, endDate]);
 
   useEffect(() => {
     if (!token || !baiguullagiinId || deduplicatedResidents.length === 0) return;
@@ -303,6 +355,47 @@ export function useTulburFooterTotals(
     let totalPaid = 0;
     let totalUldegdel = 0;
 
+    const aggregatePaidMap: Record<string, number> = {};
+    buildingHistoryItems.forEach((it: any) => {
+      const gid =
+        (it?.gereeniiId && String(it.gereeniiId)) ||
+        (it?._gereeniiId && String(it._gereeniiId)) ||
+        (it?.gereeniiDugaar &&
+          String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+        "";
+
+      const recordIsStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
+      const itemAmount = recordIsStandaloneEkh
+        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
+        : Number(
+            it?.tulsunDun ??
+              it?.tulsun ??
+              it?.niitTulbur ??
+              it?.niitDun ??
+              it?.total ??
+              it?.tulukhDun ??
+              it?.undsenDun ??
+              it?.dun ??
+              0,
+          ) || 0;
+
+      const type = String(it?.turul || it?.type || "").toLowerCase();
+      const isPayment =
+        type === "tulult" ||
+        type === "төлбөр" ||
+        type === "төлөлт" ||
+        (itemAmount < 0 && !recordIsStandaloneEkh);
+
+      const paidAmt = isPayment
+        ? Math.abs(itemAmount)
+        : Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
+
+      const key_gid = gid || (it?._id && String(it._id)) || "";
+      if (key_gid) {
+        aggregatePaidMap[key_gid] = (aggregatePaidMap[key_gid] || 0) + paidAmt;
+      }
+    });
+
     deduplicatedResidents.forEach((it: any) => {
       const gid =
         (it?.gereeniiId && String(it.gereeniiId)) ||
@@ -311,23 +404,40 @@ export function useTulburFooterTotals(
           String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
         "";
 
-      const paid = gid ? (paidSummaryByGereeId[gid] ?? 0) : 0;
+      const key_gid = gid || (it?._id && String(it._id)) || "";
+      const periodPaid = key_gid ? (aggregatePaidMap[key_gid] ?? 0) : 0;
+
+      // Fallback to lifetime summary only if history items didn't capture a periodPaid
+      const paid = periodPaid || (gid ? (paidSummaryByGereeId[gid] ?? 0) : 0);
       totalPaid += paid;
 
       const ledgerUldegdel = gid != null ? uldegdelByGereeId[gid] : undefined;
-      const ct = gid ? (contractsById[gid] || undefined) : undefined;
-      const uldegdel =
-        ledgerUldegdel != null && Number.isFinite(ledgerUldegdel)
-          ? ledgerUldegdel
-          : ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel))
-          ? Number(ct.uldegdel)
-          : Number(it?.uldegdel ?? 0);
+      const contractUldegdel =
+        gid != null && (contractsById as any)[gid]?.uldegdel != null
+          ? Number((contractsById as any)[gid].uldegdel)
+          : undefined;
 
-      totalUldegdel += uldegdel;
+      const residentUldegdel = Number(it?.uldegdel ?? 0);
+
+      const val =
+        ledgerUldegdel !== undefined && ledgerUldegdel !== null
+          ? ledgerUldegdel
+          : contractUldegdel !== undefined && contractUldegdel !== null
+            ? contractUldegdel
+            : residentUldegdel;
+
+      totalUldegdel += val;
     });
 
     return { totalPaid, totalUldegdel };
-  }, [deduplicatedResidents, contractsByNumber, contractsById, paidSummaryByGereeId, uldegdelByGereeId]);
+  }, [
+    buildingHistoryItems,
+    deduplicatedResidents,
+    contractsByNumber,
+    contractsById,
+    paidSummaryByGereeId,
+    uldegdelByGereeId,
+  ]);
 
   return totals;
 }
