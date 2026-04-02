@@ -63,260 +63,252 @@ const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
   if (!open || !record) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/75 backdrop-blur-md"
         onClick={onClose}
       />
       <div
-        className="relative w-full max-w-4xl bg-[color:var(--surface-bg)] rounded-2xl shadow-2xl border border-[color:var(--surface-border)] overflow-hidden"
+        className="relative w-full max-w-5xl bg-[color:var(--surface-bg)] text-gray-300 rounded-2xl shadow-2xl overflow-hidden border border-gray-700 font-sans"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-950/20 dark:to-indigo-950/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <div>
-                <h3 className="text-xl  text-[color:var(--panel-text)]">
-                  Зассан дэлгэрэнгүй
-                </h3>
-                <p className="text-xs text-theme mt-0.5">
-                  {(() => {
-                    const modelNames: Record<string, string> = {
-                      ajiltan: "Ажилтан",
-                      geree: "Гэрээ",
-                      barilga: "Барилга",
-                      talbai: "Талбай",
-                      orshinSuugch: "Оршин суугч",
-                      nekhemjlekh: "Нэхэмжлэх",
-                      nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                      guilgee: "Гүйлгээ",
-                    };
-                    return modelNames[record.modelName] || record.modelName;
-                  })()}{" "}
-                  - {record.documentId}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]"
-              type="button"
-            >
-              <X className="w-5 h-5 text-theme" />
-            </button>
-          </div>
-        </div>
-
-        <div className="px-6 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm  font-bold text-theme mb-1">
-                Зассан ажилтан
-              </label>
-              <p className="text-sm text-theme">{record.ajiltniiNer || "-"}</p>
-            </div>
-            <div>
-              <label className="block text-sm  text-theme font-bold mb-1">
-                Огноо
-              </label>
-              <p className="text-sm text-[color:var(--panel-text)]">
-                {moment(record.createdAt || record.ognoo).format(
-                  "YYYY-MM-DD HH:mm:ss",
-                )}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm  text-theme font-bold mb-1">
-                Төрөл
-              </label>
-              <p className="text-sm text-[color:var(--panel-text)]">
-                {(() => {
-                  const modelNames: Record<string, string> = {
-                    ajiltan: "Ажилтан",
-                    geree: "Гэрээ",
-                    barilga: "Барилга",
-                    talbai: "Талбай",
-                    orshinSuugch: "Оршин суугч",
-                    nekhemjlekh: "Нэхэмжлэх",
-                    nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                    guilgee: "Гүйлгээ",
-                  };
-                  return (
-                    modelNames[record.modelName] || record.modelName || "-"
-                  );
-                })()}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-sm  text-[color:var(--panel-text)] mb-3">
-              Өөрчлөлтүүд
-            </h4>
-            <div className="space-y-2">
-              {!record.changes || record.changes.length === 0 ? (
-                <p className="text-sm text-[color:var(--muted-text)]">
-                  Өөрчлөлт олдсонгүй
-                </p>
-              ) : (
-                record.changes.map((change, index) => {
-                  const fieldLabels: Record<string, string> = {
-                    ner: "Нэр",
-                    ovog: "Овог",
-                    utas: "Утас",
-                    mail: "Имэйл",
-                    register: "Регистр",
-                    toot: "Тоот",
-                    davkhar: "Давхар",
-                    orts: "Орц",
-                    bairniiNer: "Барилгын нэр",
-                    baiguullagiinNer: "Байгууллагын нэр",
-                    ekhniiUldegdel: "Эхний үлдэгдэл",
-                    tsahilgaaniiZaalt: "Цахилгаан кВт",
-                    tailbar: "Тайлбар",
-                    createdAt: "Үүсгэсэн огноо",
-                    updatedAt: "Шинэчилсэн огноо",
-                    status: "Төлөв",
-                    repliedAt: "Хариулсан огноо",
-                    repliedBy: "Хариулсан ажилтан",
-                    tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
-                    walletUserId: "Wallet ID",
-                    soh: "СӨХ",
-                    nevtrekhNer: "Нэвтрэх нэр",
-                    erkh: "Эрх",
-                    duureg: "Дүүрэг",
-                    horoo: "Хороо",
-                    nuutsUg: "Нууц үг",
-                    baiguullagiinRegister: "Байгууллагын регистр",
-                    niitTulbur: "Нийт нэхэмжилсэн",
-                    tulsunDun: "Нийт төлөн",
-                    uldegdel: "Үлдэгдэл",
-                    uld: "Үлдэгдэл",
-                    paymentHistory: "Төлөлтийн түүх",
-                    medeelel: "Нэмэлт мэдээлэл",
-                    zardluud: "Зардлууд",
-                    guilgeenuud: "Гүйлгээнүүд",
-                  };
-
-                  const excludedFields = ["nuutsUg", "password", "token"];
-                  if (excludedFields.includes(change.field)) return null;
-
-                  const formatValue = (value: any): string => {
-                    if (value === null || value === undefined)
-                      return "(хоосон)";
-                    if (typeof value === "boolean")
-                      return value ? "Тийм" : "Үгүй";
-                    if (value === "pending") return "Хүлээгдэж буй";
-                    if (value === "done") return "Дууссан";
-
-                    const safeStringify = (obj: any): string => {
-                      try {
-                        if (typeof obj !== "object" || obj === null)
-                          return String(obj);
-                        if (Array.isArray(obj)) return `[${obj.length} мөр]`;
-                        if (obj.ner && obj.kod)
-                          return `${obj.ner} (${obj.kod})`;
-
-                        const keys = Object.keys(obj).filter(
-                          (k) => !k.startsWith("_"),
-                        );
-                        if (keys.length === 0) return "{...}";
-                        const summary = keys
-                          .slice(0, 3)
-                          .map((k) => {
-                            const v = obj[k];
-                            const vStr =
-                              typeof v === "object" && v !== null
-                                ? Array.isArray(v)
-                                  ? `[${v.length}]`
-                                  : "{...}"
-                                : String(v);
-                            return `${k}: ${vStr}`;
-                          })
-                          .join(", ");
-                        return summary + (keys.length > 3 ? "..." : "");
-                      } catch {
-                        return "[Объект]";
-                      }
-                    };
-
-                    if (typeof value === "object" && !Array.isArray(value)) {
-                      if (value.ner && value.kod)
-                        return `${value.ner} (${value.kod})`;
-
-                      // Detailed summary for medeelel to avoid [object Object]
-                      if (change.field === "medeelel") {
-                        const parts: string[] = [];
-                        if (Array.isArray(value.zardluud))
-                          parts.push(`Зардал: ${value.zardluud.length}`);
-                        if (Array.isArray(value.guilgeenuud))
-                          parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
-                        if (value.niitTulbur !== undefined)
-                          parts.push(`Нийт: ${value.niitTulbur}`);
-                        if (parts.length > 0) return parts.join(", ");
-                      }
-
-                      return safeStringify(value);
-                    }
-                    if (Array.isArray(value)) {
-                      if (value.length === 0) return "(хоосон)";
-                      if (
-                        change.field === "paymentHistory" ||
-                        change.field === "guilgeenuud" ||
-                        change.field === "zardluud"
-                      ) {
-                        return `${value.length} мөр`;
-                      }
-                      if (typeof value[0] === "object")
-                        return `${value.length} мөр`;
-                      if (value.length <= 5) return value.join(", ");
-                      return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
-                    }
-                    return String(value);
-                  };
-
-                  return (
-                    <div
-                      key={change._id || index}
-                      className="p-3 rounded-2xl border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]"
-                    >
-                      <div className=" text-sm text-[color:var(--panel-text)] mb-2">
-                        {fieldLabels[change.field] || change.field}
-                      </div>
-                      <div className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <div className="text-theme font-bold mb-1">
-                            Хуучин:
-                          </div>
-                          <div className="text-theme break-words">
-                            {formatValue(change.oldValue)}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-theme font-bold mb-1">Шинэ:</div>
-                          <div className="text-theme break-words">
-                            {formatValue(change.newValue)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-end">
-          <Button
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-700/50 flex items-center justify-between">
+          <h3 className="text-base font-semibold text-theme">
+            Дэлгэрэнгүй Мэдээлэл
+          </h3>
+          <button
             onClick={onClose}
-            variant="primary"
-            size="sm"
-            style={{ borderRadius: "0.5rem" }}
+            className="p-1 hover:bg-gray-700/50 rounded-md transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Info Grid */}
+        <div className="px-8 py-6 grid grid-cols-2 gap-y-2 gap-x-12 text-sm">
+          <div className="flex gap-2">
+            <span className="font-bold text-theme min-w-[60px]">Төрөл:</span>
+            <span className="text-theme">
+              {(() => {
+                const modelNames: Record<string, string> = {
+                  ajiltan: "Ажилтан",
+                  geree: "Гэрээ",
+                  barilga: "Барилга",
+                  talbai: "Талбай",
+                  orshinSuugch: "Оршин суугч",
+                  nekhemjlekh: "Нэхэмжлэх",
+                  nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
+                  guilgee: "Гүйлгээ",
+                };
+                return modelNames[record.modelName] || record.modelName;
+              })()}
+            </span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-theme min-w-[120px]">
+              Зассан ажилтан:
+            </span>
+            <span className="text-theme">{record.ajiltniiNer || "-"}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-theme min-w-[60px]">Дугаар:</span>
+            <span className="text-theme">{record.documentId}</span>
+          </div>
+          <div className="flex gap-2">
+            <span className="font-bold text-theme min-w-[120px]">
+              Зассан огноо:
+            </span>
+            <span className="text-theme">
+              {moment(record.createdAt || record.ognoo).format(
+                "YYYY-MM-DD HH:mm",
+              )}
+            </span>
+          </div>
+        </div>
+
+        {/* Changes Table */}
+        <div className="px-8 pb-8">
+          <div className="border border-gray-700/80 rounded overflow-hidden">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-[color:var(--surface-bg)] text-theme">
+                <tr>
+                  <th className="py-2.5 px-4 border-r border-gray-700/80 font-bold text-center w-[20%]">
+                    Талбарын нэр
+                  </th>
+                  <th className="py-2.5 px-4 border-r border-gray-700/80 font-bold text-center w-[40%]">
+                    Өмнөх утга
+                  </th>
+                  <th className="py-2.5 px-4 font-bold text-center w-[40%]">
+                    Шинэ утга
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-[color:var(--surface-bg)]">
+                {!record.changes || record.changes.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="py-8 text-center text-gray-500 italic"
+                    >
+                      Өөрчлөлт олдсонгүй
+                    </td>
+                  </tr>
+                ) : (
+                  record.changes.map((change, index) => {
+                    const fieldLabels: Record<string, string> = {
+                      ner: "Нэр",
+                      ovog: "Овог",
+                      utas: "Утас",
+                      mail: "Имэйл",
+                      email: "Имэйл",
+                      register: "Регистр",
+                      toot: "Тоот",
+                      davkhar: "Давхар",
+                      orts: "Орц",
+                      bairniiNer: "Барилгын нэр",
+                      baiguullagiinNer: "Байгууллагын нэр",
+                      ekhniiUldegdel: "Эхний үлдэгдэл",
+                      ekhniiUldegdelUsgeer: "Эхний үлдэгдэл (үсгээр)",
+                      tsahilgaaniiZaalt: "Цахилгаан кВт (анхны)",
+                      odorZaalt: "Өдрийн заалт",
+                      shonoZaalt: "Шөнийн заалт",
+                      suuliinZaalt: "Сүүлийн заалт",
+                      umnukhZaalt: "Өмнөх заалт",
+                      tailbar: "Тайлбар",
+                      createdAt: "Үүсгэсэн огноо",
+                      updatedAt: "Шинэчилсэн огноо",
+                      status: "Төлөв",
+                      tuluv: "Төлөв",
+                      repliedAt: "Хариулсан огноо",
+                      repliedBy: "Хариулсан ажилтан",
+                      taniltsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
+                      tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
+                      walletUserId: "Wallet ID",
+                      niitTulburOriginal: "Нийт нэхэмжилсэн",
+                      soh: "СӨХ",
+                      globalUldegdel: "Нийт үлдэгдэл",
+                      sohNer: "СӨХ нэр",
+                      nevtrekhNer: "Нэвтрэх нэр",
+                      erkh: "Эрх",
+                      duureg: "Дүүрэг",
+                      horoo: "Хороо",
+                      nuutsUg: "Нууц үг",
+                      baiguullagiinRegister: "Байгууллагын регистр",
+                      niitTulbur: "Нийт нэхэмжилсэн",
+                      tulsunDun: "Нийт төлсөн",
+                      uldegdel: "Үлдэгдэл",
+                      uld: "Үлдэгдэл",
+                      paymentHistory: "Төлөлтийн түүх",
+                      medeelel: "Нэмэлт мэдээлэл",
+                      zardluud: "Зардлууд",
+                      guilgeenuud: "Гүйлгээнүүд",
+                    };
+
+                    const excludedFields = ["nuutsUg", "password", "token"];
+                    if (excludedFields.includes(change.field)) return null;
+
+                    const formatValue = (value: any): string => {
+                      if (value === null || value === undefined)
+                        return "";
+                      if (typeof value === "boolean")
+                        return value ? "Тийм" : "Үгүй";
+                      if (value === "pending") return "Хүлээгдэж буй";
+                      if (value === "done") return "Дууссан";
+
+                      const safeStringify = (obj: any): string => {
+                        try {
+                          if (typeof obj !== "object" || obj === null)
+                            return String(obj);
+                          if (Array.isArray(obj)) return `[${obj.length} мөр]`;
+                          if (obj.ner && obj.kod)
+                            return `${obj.ner} (${obj.kod})`;
+
+                          const keys = Object.keys(obj).filter(
+                            (k) => !k.startsWith("_"),
+                          );
+                          if (keys.length === 0) return "{...}";
+                          const summary = keys
+                              .slice(0, 3)
+                              .map((k) => {
+                                const v = obj[k];
+                                const vStr =
+                                    typeof v === "object" && v !== null
+                                        ? Array.isArray(v)
+                                            ? `[${v.length}]`
+                                            : "{...}"
+                                        : String(v);
+                                return `${k}: ${vStr}`;
+                              })
+                              .join(", ");
+                          return summary + (keys.length > 3 ? "..." : "");
+                        } catch {
+                          return "[Объект]";
+                        }
+                      };
+
+                      if (typeof value === "object" && !Array.isArray(value)) {
+                        if (value.ner && value.kod)
+                          return `${value.ner} (${value.kod})`;
+
+                        if (change.field === "medeelel") {
+                          const parts: string[] = [];
+                          if (Array.isArray(value.zardluud))
+                            parts.push(`Зардал: ${value.zardluud.length}`);
+                          if (Array.isArray(value.guilgeenuud))
+                            parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
+                          if (value.niitTulbur !== undefined)
+                            parts.push(`Нийт: ${value.niitTulbur}`);
+                          if (parts.length > 0) return parts.join(", ");
+                        }
+
+                        return safeStringify(value);
+                      }
+                      if (Array.isArray(value)) {
+                        if (value.length === 0) return "(хоосон)";
+                        if (
+                          change.field === "paymentHistory" ||
+                          change.field === "guilgeenuud" ||
+                          change.field === "zardluud"
+                        ) {
+                          return `${value.length} мөр`;
+                        }
+                        if (typeof value[0] === "object")
+                          return `${value.length} мөр`;
+                        if (value.length <= 5) return value.join(", ");
+                        return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
+                      }
+                      return String(value);
+                    };
+
+                    return (
+                      <tr key={change._id || index} className="border-t border-gray-700/80">
+                        <td className="py-2 px-4 border-r border-gray-700/80 text-center font-semibold text-theme">
+                          {fieldLabels[change.field] || change.field}
+                        </td>
+                        <td className="py-2 px-4 border-r border-gray-700/80 text-center text-theme break-all">
+                          {formatValue(change.oldValue)}
+                        </td>
+                        <td className="py-2 px-4 text-center text-theme break-all">
+                          {formatValue(change.newValue)}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-8 py-4 bg-[color:var(--surface-bg)] flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-1.5 bg-[#00a67d] hover:bg-[#008f6c] text-white text-sm rounded shadow-sm transition-colors"
           >
             Хаах
-          </Button>
+          </button>
         </div>
       </div>
     </div>,

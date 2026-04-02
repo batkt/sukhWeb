@@ -283,7 +283,11 @@ export function useGereeActions(
       tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
       turul: p.turul || "Үндсэн",
       tailbar: p?.tailbar || "",
+<<<<<<< HEAD
       ekhniiUldegdel: ekhniiUldegdel,
+=======
+      ekhniiUldegdel: p.ekhniiUldegdel || 0,
+>>>>>>> 95ae5cc (a)
     });
     setShowResidentModal(true);
   }, [token, baiguullaga, selectedBuildingId, barilgiinId]);

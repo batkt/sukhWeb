@@ -446,14 +446,15 @@ export default function InvoiceModal({
         }
       });
 
-      // Also include receivable transactions (Авлага) as rows in the expense table
+      // Also include receivable transactions (Авлага) and payments as rows in the expense table
       gRows.forEach((g: any) => {
         const t = String(g.turul || "").toLowerCase();
-        if (t === "avlaga" || t === "авлага") {
+        
+        if (t.includes("төлөлт") || t.includes("төлбөр")) {
           const ner = String(
-            g.tailbar || g.medeelel?.tailbar || "Эхний үлдэгдэл",
+            g.tailbar || g.medeelel?.tailbar || "Төлөлт",
           ).trim();
-          const amount = Number(g.dun || g.tulsunDun || 0);
+          const amount = -Math.abs(Number(g.tulsunDun || g.dun || 0));
           if (amount !== 0) {
             const existing = expenseMap.get(ner);
             if (existing) {
@@ -461,6 +462,39 @@ export default function InvoiceModal({
             } else {
               expenseMap.set(ner, { ...g, ner, dun: amount });
             }
+          }
+        } else {
+          // Treat anything else in guilgeenuud as an Avlaga/Charge if it has a positive amount
+          const ner = String(
+            g.tailbar || g.medeelel?.tailbar || "Нэмэлт төлбөр",
+          ).trim();
+          const amount = Number(g.undsenDun || g.tulukhDun || g.dun || 0);
+          if (amount > 0) {
+            const existing = expenseMap.get(ner);
+            if (existing) {
+              existing.dun += amount;
+            } else {
+              expenseMap.set(ner, { ...g, ner, dun: amount });
+            }
+          }
+        }
+      });
+
+      // Include internal paymentHistory as negative rows too
+      const phRows = Array.isArray(selectedInvoice?.paymentHistory) ? selectedInvoice.paymentHistory : [];
+      phRows.forEach((p: any) => {
+        const ner = String(p.tailbar || "Төлөлт").trim();
+        const pt = String(p.turul || "").toLowerCase();
+        const amount = pt.includes("sync") || pt.includes("system")
+          ? Number(p.dun || p.tulsunDun || 0) // Sometimes sync adjustments can be positive or negative
+          : -Math.abs(Number(p.dun || p.tulsunDun || 0));
+
+        if (amount !== 0) {
+          const existing = expenseMap.get(ner);
+          if (existing) {
+            existing.dun += amount;
+          } else {
+            expenseMap.set(ner, { ...p, ner, dun: amount });
           }
         }
       });
@@ -476,6 +510,25 @@ export default function InvoiceModal({
           ner: "Эхний үлдэгдэл",
           dun: ekhniiVal,
           _id: "extra-ekhnii",
+        });
+      }
+
+      // Fallback alignment: if the rows do not sum up exactly to niitTulbur, there are missing charges.
+      // Append a 'Бусад төлбөр' line to ensure mathematical perfection against the official invoice total.
+      let mapTotal = 0;
+      expenseMap.forEach((val) => {
+        mapTotal += Number(val.dun || 0);
+      });
+      const officialNiitTulbur = Number(
+        selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
+      );
+      const diff = officialNiitTulbur - mapTotal;
+      
+      if (officialNiitTulbur !== 0 && Math.abs(diff) > 0) {
+        expenseMap.set("Бусад төлбөр (Авлага)", {
+           ner: "Нэмэлт / Бусад төлбөр",
+           dun: diff,
+           _id: "discrepancy-fill",
         });
       }
 
@@ -963,7 +1016,7 @@ export default function InvoiceModal({
                               colSpan={2}
                               className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-normal"
                             >
-                              {numberToMongolianWords(totalSum)}
+                              {numberToMongolianWords(Number(selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? totalSum))}
                             </td>
                             <td
                               colSpan={2}
@@ -972,7 +1025,7 @@ export default function InvoiceModal({
                               Нийт дүн
                             </td>
                             <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right ">
-                              {formatNumber(totalSum, 2)}
+                              {formatNumber(Number(selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? totalSum), 2)}
                             </td>
                           </tr>
                         </tfoot>

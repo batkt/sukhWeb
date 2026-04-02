@@ -1478,65 +1478,52 @@ export default function DansniiKhuulga() {
 
   // Count cancelled gerees with unpaid invoices/zardal
   const cancelledGereesWithUnpaid = useMemo(() => {
+    // To match the table exactly, we iterate over the same deduplicated residents set used for stats
+    // and apply the "overdue" (cancelled receivable) criteria.
     const cancelledGereeIds = new Set<string>();
+
+    const cancelledGereeIdsFromGereeList = new Set<string>();
+    const cancelledGereeDugaarsFromGereeList = new Set<string>();
     const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
 
-    // Find cancelled gerees
-    const cancelledGerees = allGerees.filter((g: any) => {
-      const status = String(g?.tuluv || g?.status || "").trim();
-      return (
-        status === "Цуцалсан" ||
-        status.toLowerCase() === "цуцалсан" ||
-        status === "tsutlsasan" ||
-        status.toLowerCase() === "tsutlsasan"
-      );
+    allGerees.forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaarsFromGereeList.add(String(g.gereeniiDugaar));
+      }
     });
 
-    // For each cancelled geree, check if it has unpaid invoices/zardal
-    cancelledGerees.forEach((geree: any) => {
-      const gereeId = String(geree?._id || "");
-      const gereeDugaar = String(geree?.gereeniiDugaar || "");
+    deduplicatedResidentsAll.forEach((r: any) => {
+      const gid =
+        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        (r?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
 
-      // Check if there are unpaid invoices linked to this geree
-      const hasUnpaidInvoice = buildingHistoryItems.some((it: any) => {
-        const itGereeId = String(it?.gereeniiId || "");
-        const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const matchesGeree =
-          (gereeId && itGereeId === gereeId) ||
-          (gereeDugaar && itGereeDugaar === gereeDugaar);
+      if (!gid) return;
 
-        if (!matchesGeree) return false;
+      const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
+      const isLinkedToCancelledGeree =
+        cancelledGereeIdsFromGereeList.has(gid) ||
+        (r?.gereeniiDugaar &&
+          cancelledGereeDugaarsFromGereeList.has(String(r.gereeniiDugaar)));
 
-        // Check if invoice has unpaid amount
-        const amount = Number(
-          it?.niitTulbur ??
-            it?.niitDun ??
-            it?.total ??
-            it?.tulukhDun ??
-            it?.undsenDun ??
-            it?.dun ??
-            0,
-        );
-        const isUnpaid = !isPaidLike(it) && amount >= 0.01;
-
-        // Check if invoice has zardal (expenses) that need to be paid
-        const hasZardal =
-          Array.isArray(it?.medeelel?.zardluud) &&
-          it.medeelel.zardluud.length > 0;
-        const hasGuilgee =
-          Array.isArray(it?.medeelel?.guilgeenuud) &&
-          it.medeelel.guilgeenuud.length > 0;
-
-        return isUnpaid && (hasZardal || hasGuilgee || amount >= 0.01);
-      });
-
-      if (hasUnpaidInvoice && gereeId) {
-        cancelledGereeIds.add(gereeId);
+      if (balance >= 0.01 && isLinkedToCancelledGeree) {
+        cancelledGereeIds.add(gid);
       }
     });
 
     return cancelledGereeIds.size;
-  }, [gereeGaralt?.jagsaalt, buildingHistoryItems]);
+  }, [
+    deduplicatedResidentsAll,
+    bestKnownBalances,
+    gereeGaralt?.jagsaalt,
+    contractsByNumber,
+  ]);
 
   // Stats use deduplicatedResidentsAll so dashboard numbers stay fixed when clicking filters
   const stats = useMemo(() => {
@@ -1753,58 +1740,49 @@ export default function DansniiKhuulga() {
         return;
       }
 
-      // Build filters object based on current filters
-      const filters: any = {};
+      // Build exact data set from UI to perfectly match sequence, filtering, and missing resident issues.
+      const tableData = sortedResidents.map((item: any, index: number) => {
+        const gid = String(item?.gereeniiId ?? item?.gereeId ?? "").trim() ||
+          (item?.gereeniiDugaar ? String((contractsByNumber as any)[String(item.gereeniiDugaar)]?._id || "") : "");
 
-      // Date range filter
-      if (ekhlekhOgnoo && ekhlekhOgnoo[0] && ekhlekhOgnoo[1]) {
-        const startDate = new Date(ekhlekhOgnoo[0]);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(ekhlekhOgnoo[1]);
-        endDate.setHours(23, 59, 59, 999);
-        filters.createdAt = {
-          $gte: startDate.toISOString(),
-          $lte: endDate.toISOString(),
+        const currentBalance = bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0);
+        const paidAmount = gid ? (paidSummaryByGereeId[gid] ?? Number(item?._totalTulsun ?? 0)) : Number(item?._totalTulsun ?? 0);
+        const isResidentPaid = currentBalance < 0.01;
+        const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
+        const ekhniiAmt = (item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0);
+
+        return {
+          dugaar: index + 1,
+          ner: item?.ner || "",
+          toot: item?.toot || item?.medeelel?.toot || "",
+          utas: Array.isArray(item?.utas) ? item.utas.join(', ') : (item?.utas || ""),
+          orts: item?.orts || "",
+          davkhar: item?.davkhar || "",
+          gereeniiDugaar: item?.gereeniiDugaar || "",
+          ekhniiUldegdel: parseFloat(String(ekhniiAmt)).toFixed(2),
+          uldegdel: parseFloat(String(currentBalance)).toFixed(2),
+          guitsetgel: parseFloat(String(paidAmount)).toFixed(2),
+          tuluv: odooTuluv
         };
-      }
-
-      // Payment status filter (tuluv)
-      if (tuluvFilter !== "all") {
-        if (tuluvFilter === "paid") {
-          filters.tuluv = "Төлсөн";
-        } else if (tuluvFilter === "unpaid") {
-          filters.tuluv = "Төлөөгүй";
-        } else if (tuluvFilter === "overdue") {
-          filters.tuluv = "Хугацаа хэтэрсэн";
-        }
-      }
-
-      // Building filters (orts, toot, davkhar)
-      if (selectedOrtsFilter) {
-        filters.orts = selectedOrtsFilter;
-      }
-      if (selectedTootFilter) {
-        filters.toot = selectedTootFilter;
-      }
-      if (selectedDavkharFilter) {
-        filters.davkhar = selectedDavkharFilter;
-      }
-
-      // Search term filter
-      if (searchTerm && searchTerm.trim()) {
-        filters.$or = [
-          { ner: { $regex: searchTerm.trim(), $options: "i" } },
-          { utas: { $regex: searchTerm.trim(), $options: "i" } },
-          { gereeniiDugaar: { $regex: searchTerm.trim(), $options: "i" } },
-          { register: { $regex: searchTerm.trim(), $options: "i" } },
-        ];
-      }
+      });
 
       const body: any = {
-        tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt || null,
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
-        ...(Object.keys(filters).length > 0 ? { filters } : {}),
+        data: tableData,
+        headers: [
+          { key: "dugaar", label: "№" },
+          { key: "ner", label: "Нэр" },
+          { key: "toot", label: "Тоот" },
+          { key: "utas", label: "Утас" },
+          { key: "orts", label: "Орц" },
+          { key: "davkhar", label: "Давхар" },
+          { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
+          { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
+          { key: "uldegdel", label: "Үлдэгдэл" },
+          { key: "guitsetgel", label: "Гүйцэтгэл" },
+          { key: "tuluv", label: "Төлөв" }
+        ],
+        fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,
+        sheetName: "Төлбөр тооцоо"
       };
 
       const path = "/nekhemjlekhiinTuukhExcelDownload";
