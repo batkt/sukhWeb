@@ -648,6 +648,15 @@ export default function NemeltTokhirgoo() {
                         className="flex-1"
                       />
                       <Button
+                        id="nemelt-lift-save"
+                        variant="primary"
+                        size="sm"
+                        onClick={handleSaveFloors}
+                        className="whitespace-nowrap"
+                      >
+                        Хадгалах
+                      </Button>
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={handleDeleteAllFloors}

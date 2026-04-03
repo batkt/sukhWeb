@@ -23,6 +23,7 @@ import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
 import { useBuilding } from "@/context/BuildingContext";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
+import deleteMethod from "../../../tools/function/deleteMethod";
 import TusgaiZagvar from "../../../components/selectZagvar/tusgaiZagvar";
 import Button from "@/components/ui/Button";
 
@@ -1561,29 +1562,25 @@ export default function BarilgiinTokhirgoo() {
     }
 
     try {
-      const freshOrg = await fetchFreshOrg();
-      if (!freshOrg) {
-        openErrorOverlay("Байгууллагын мэдээлэл шинэчлэхэд алдаа гарлаа");
-        return;
-      }
-
-      const updatedBarilguud = (freshOrg.barilguud || []).filter(
-        (b: any) => String(b._id) !== String(id),
+      const resp = await deleteMethod(
+        `baiguullaga/${baiguullaga._id}/barilga`,
+        token,
+        id
       );
-      const payload = {
-        ...freshOrg,
-        barilguud: updatedBarilguud,
-      };
 
-      const res = await updateMethod("baiguullaga", token, payload);
-      if (res?.data) {
-        const finalData = res.data.result || res.data;
+      if (resp?.data) {
+        const finalData = resp.data.result || resp.data;
         await baiguullagaMutate(finalData, false);
+      } else {
+        await baiguullagaMutate();
       }
 
       openSuccessOverlay("Барилга устгагдлаа");
 
       // If deleted building was selected, pick first available or clear
+      const freshOrg = await fetchFreshOrg();
+      const updatedBarilguud = freshOrg?.barilguud || [];
+
       if (String(selectedBuildingId) === String(id)) {
         const first = (updatedBarilguud || []).find(
           (b: any) =>
@@ -1594,8 +1591,9 @@ export default function BarilgiinTokhirgoo() {
       }
       setDeleteModalOpen(false);
       setBuildingToDelete(null);
-    } catch (e) {
-      openErrorOverlay("Барилга устгах явцад алдаа гарлаа");
+    } catch (e: any) {
+      const msg = e?.response?.data?.message || e?.message || "Барилга устгах явцад алдаа гарлаа";
+      openErrorOverlay(msg);
     }
   };
 
