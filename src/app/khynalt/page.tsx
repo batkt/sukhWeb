@@ -591,7 +591,11 @@ export default function Khynalt() {
         s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
       0,
     );
-    const finalUnpaid = totalInvoiceAmount - finalPaid + ekhniiUldegdelTotal;
+    // Use global financial balance (total billed - total paid) for primary KPI
+    const finalUnpaid = Math.max(
+      0,
+      totalInvoiceAmount + ekhniiUldegdelTotal - finalPaid,
+    );
 
     const paidArr: number[] = [];
     const unpaidArr: number[] = [];
@@ -620,6 +624,7 @@ export default function Khynalt() {
     buildLabel,
     buildingPaymentSummary,
     ekhniiUldegdelTotal,
+    orlogoAvlagaData,
   ]);
 
   const {
@@ -718,8 +723,8 @@ export default function Khynalt() {
         };
       });
       return {
-        count: items.length,
-        total: unpaidSum,
+        count: new Set(items.map((it: any) => it?.gereeniiDugaar || it?.orshinSuugchId)).size,
+        total: incomeTotals.unpaid,
         items,
       };
     }
@@ -983,7 +988,7 @@ export default function Khynalt() {
     },
     {
       title: "Оршин суугч",
-      value: filteredTotalResidents,
+      value: residentsPaidCount + residentsUnpaidCount,
       color: "from-green-500 to-green-600",
       href: "/geree/orshinSuugch",
       delay: 100,
@@ -999,7 +1004,7 @@ export default function Khynalt() {
     },
     {
       title: "Орлого/Гүйцэтгэл",
-      value: formatCurrency(footerTotals.totalPaid),
+      value: formatCurrency(incomeTotals.paid),
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
       href: "/tulbur",
@@ -1008,7 +1013,7 @@ export default function Khynalt() {
     },
     {
       title: "Үлдэгдэл/Авлага",
-      value: formatCurrency(footerTotals.totalUldegdel),
+      value: formatCurrency(incomeTotals.unpaid),
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
       href: "/tulbur",

@@ -69,7 +69,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         align: "center",
         fixed: "left",
         render: (val: string) => (
-          <span className="text-theme whitespace-nowrap font-medium">
+          <span className="text-theme font-medium break-words">
             {val || "-"}
           </span>
         ),
@@ -83,7 +83,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         fixed: "left",
         render: (val: string) => (
           <span
-            className="text-theme whitespace-nowrap font-medium truncate max-w-[140px]"
+            className="text-theme font-medium break-words max-w-full"
             title={val}
           >
             {val || "-"}
