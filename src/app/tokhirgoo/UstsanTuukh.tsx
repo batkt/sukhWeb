@@ -451,8 +451,8 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
           "/audit/ustgakhTuukh",
           token,
           baiguullaga._id,
-          dateRange[0],
-          dateRange[1],
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
           selectedModel,
         ]
       : null,
@@ -531,8 +531,8 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
 
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (dates: [string | null, string | null]) => {
-    setDateRange(dates);
+  const handleDateChange = (dates: any) => {
+    setDateRange(dates || [null, null]);
     setPage(1);
   };
 

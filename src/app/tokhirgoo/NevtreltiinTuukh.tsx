@@ -60,8 +60,8 @@ export default function NevtreltiinTuukh({
           "/nevtreltiinTuukh",
           token,
           baiguullaga._id,
-          dateRange[0],
-          dateRange[1],
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
           searchTerm,
         ]
       : null,
@@ -115,8 +115,8 @@ export default function NevtreltiinTuukh({
 
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (dates: [string | null, string | null]) => {
-    setDateRange(dates);
+  const handleDateChange = (dates: any) => {
+    setDateRange(dates || [null, null]);
     setPage(1);
   };
 

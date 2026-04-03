@@ -1,23 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Edit, User, FileText, Eye, X, ChevronDown } from "lucide-react";
+import { Edit, Eye, ChevronDown, X } from "lucide-react";
 import moment from "moment";
 import dayjs from "dayjs";
 import { useTranslation } from "react-i18next";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { Loader } from "@mantine/core";
-import Button from "@/components/ui/Button";
-import { createPortal } from "react-dom";
-import useModalHotkeys from "@/lib/useModalHotkeys";
-import { Table } from "antd";
 import {
   StandardTable,
   StandardPagination,
@@ -30,9 +22,14 @@ interface Props {
 }
 
 interface ChangeItem {
-  field: string;
-  oldValue: any;
-  newValue: any;
+  field?: string;
+  talbar?: string;
+  talbarNer?: string;
+  oldValue?: any;
+  newValue?: any;
+  umnukhUtga?: any;
+  shineUtga?: any;
+  utganiiTurul?: string;
   _id?: string;
 }
 
@@ -40,17 +37,16 @@ interface EditRecord {
   _id: string;
   modelName: string;
   documentId: string;
-  ajiltniiId: string;
   ajiltniiNer: string;
-  ajiltniiLoginNer?: string;
-  changes?: ChangeItem[]; // API returns array of change objects
+  ajiltniiId?: string;
+  changes?: ChangeItem[];
+  uurchlult?: ChangeItem[];
   baiguullagiinId: string;
-  baiguullagiinRegister: string;
-  ip?: string;
-  useragent?: string;
-  ognoo?: string; // API uses ognoo
-  createdAt?: string; // Fallback
+  ognoo?: string;
+  createdAt?: string;
 }
+
+const pageSizeOptions = [10, 20, 50, 100, 500];
 
 interface DetailModalProps {
   open: boolean;
@@ -59,279 +55,234 @@ interface DetailModalProps {
 }
 
 const DetailModal: React.FC<DetailModalProps> = ({ open, onClose, record }) => {
-  useModalHotkeys({ isOpen: open, onClose });
   if (!open || !record) return null;
 
+  const formatNumber = (val: any) => {
+    if (val === null || val === undefined || isNaN(Number(val))) return "0";
+    return new Intl.NumberFormat("en-US").format(Number(val));
+  };
+
+  const getParsedValue = (value: any) => {
+    if (typeof value === "string") {
+      try {
+        if (value.startsWith("[") || value.startsWith("{")) {
+          return JSON.parse(value);
+        }
+      } catch (e) {
+        return value;
+      }
+    }
+    return value;
+  };
+
+  const renderValue = (field: string, rawValue: any, type?: string) => {
+    const value = getParsedValue(rawValue);
+    if (value === null || value === undefined || value === "") {
+      return <span className="text-gray-500 italic opacity-50">(хоосон)</span>;
+    }
+
+    if (field === "zardluud" && Array.isArray(value)) {
+      return (
+        <div className="overflow-x-auto my-1">
+          <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+            <thead className="bg-[color:var(--surface-bg)] text-[color:var(--muted-text)]">
+              <tr>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-left">Нэр</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Төрөл</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Үнэ</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Төлөх дүн</th>
+              </tr>
+            </thead>
+            <tbody>
+              {value.map((item: any, idx) => (
+                <tr key={idx} className="hover:bg-blue-500/5">
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-left truncate max-w-[80px]">{item.ner || "-"}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.turul || "-"}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right">{formatNumber(item.turul === "Дурын" ? item.dun : item.tariff)}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-blue-500">{formatNumber(item.tulukhDun)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    if (field === "segmentuud" && Array.isArray(value)) {
+      return (
+        <div className="overflow-x-auto my-1">
+          <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+            <thead className="bg-[color:var(--surface-bg)] text-[color:var(--muted-text)]">
+              <tr>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-left">Нэр</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Утга</th>
+              </tr>
+            </thead>
+            <tbody>
+              {value.map((item: any, idx) => (
+                <tr key={idx} className="hover:bg-blue-500/5">
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-left">{item.ner || "-"}</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{typeof item.utga === "number" ? formatNumber(item.utga) : String(item.utga || "-")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    if (field === "khungulultuud" && Array.isArray(value)) {
+      return (
+        <div className="overflow-x-auto my-1">
+          <table className="w-full text-[10px] border border-[color:var(--surface-border)] rounded">
+            <thead className="bg-[color:var(--surface-bg)] text-[color:var(--muted-text)]">
+              <tr>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-center">Огноо</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-center">%</th>
+                <th className="p-1 border-b border-[color:var(--surface-border)] text-right">Дүн</th>
+              </tr>
+            </thead>
+            <tbody>
+              {value.map((item: any, idx) => (
+                <tr key={idx} className="hover:bg-blue-500/5">
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-center">
+                    {item.ognoonuud ? `${moment(item.ognoonuud[0]).format("MM-DD")} ~ ${moment(item.ognoonuud[1]).format("MM-DD")}` : "-"}
+                  </td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-center">{item.khungulukhKhuvi}%</td>
+                  <td className="p-1 border-b border-[color:var(--surface-border)] text-right text-green-500">{formatNumber(item.khungulultiinDun)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    if (typeof value === "object") {
+       if (Array.isArray(value)) return `[${value.length} мөр]`;
+       return <span className="text-[10px] truncate max-w-[200px] inline-block">{JSON.stringify(value)}</span>;
+    }
+
+    if (typeof value === "boolean") return value ? "Тийм" : "Үгүй";
+    if (type === "date" || (typeof value === "string" && value.match(/^\d{4}-\d{2}-\d{2}/))) {
+      return moment(value).format("YYYY-MM-DD");
+    }
+    if (typeof value === "number" || (!isNaN(Number(value)) && String(value).length > 0 && field.toLowerCase().includes("dun"))) {
+      return formatNumber(value);
+    }
+
+    return String(value);
+  };
+
+  const fieldLabels: Record<string, string> = {
+    ner: "Нэр",
+    ovog: "Овог",
+    utas: "Утас",
+    mail: "Имэйл",
+    email: "Имэйл",
+    register: "Регистр",
+    toot: "Тоот",
+    davkhar: "Давхар",
+    orts: "Орц",
+    bairniiNer: "Барилгын нэр",
+    baiguullagiinNer: "Байгууллагын нэр",
+    ekhniiUldegdel: "Эхний үлдэгдэл",
+    tailbar: "Тайлбар",
+    status: "Төлөв",
+    tuluv: "Төлөв",
+    zardluud: "Зардлууд",
+    segmentuud: "Сегментүүд",
+    khungulultuud: "Хөнгөлөлтүүд",
+  };
+
+  const normalizedChanges = (record.changes || record.uurchlult || []).map((c) => ({
+    field: c.field || c.talbar || "unknown",
+    label: c.talbarNer || c.field || "unknown",
+    oldValue: c.oldValue ?? c.umnukhUtga,
+    newValue: c.newValue ?? c.shineUtga,
+    type: c.utganiiTurul,
+    id: c._id,
+  }));
+
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/75 backdrop-blur-md"
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-5xl bg-[color:var(--surface-bg)] text-gray-300 rounded-2xl shadow-2xl overflow-hidden border border-gray-700 font-sans"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-700/50 flex items-center justify-between">
-          <h3 className="text-base font-semibold text-theme">
-            Дэлгэрэнгүй Мэдээлэл
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-gray-700/50 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5 text-gray-400" />
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center px-4 py-6">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm shadow-2xl" onClick={onClose} />
+      <div className="relative w-full max-w-4xl bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] overflow-hidden shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="px-6 py-5 border-b border-[color:var(--surface-border)] flex items-center justify-between">
+          <h3 className="text-xl text-[color:var(--panel-text)]  ">Өөрчлөлтийн түүх</h3>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-[color:var(--surface-hover)] transition-colors text-[color:var(--muted-text)] hover:text-[color:var(--panel-text)]">
+            <X className="w-5 h-5 text-theme"/>
           </button>
         </div>
 
-        {/* Info Grid */}
-        <div className="px-8 py-6 grid grid-cols-2 gap-y-2 gap-x-12 text-sm">
-          <div className="flex gap-2">
-            <span className="font-bold text-theme min-w-[60px]">Төрөл:</span>
-            <span className="text-theme">
-              {(() => {
-                const modelNames: Record<string, string> = {
-                  ajiltan: "Ажилтан",
-                  geree: "Гэрээ",
-                  barilga: "Барилга",
-                  talbai: "Талбай",
-                  orshinSuugch: "Оршин суугч",
-                  nekhemjlekh: "Нэхэмжлэх",
-                  nekhemjlekhiinTuukh: "Нэхэмжлэлийн түүх",
-                  guilgee: "Гүйлгээ",
-                };
-                return modelNames[record.modelName] || record.modelName;
-              })()}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <span className="font-bold text-theme min-w-[120px]">
-              Зассан ажилтан:
-            </span>
-            <span className="text-theme">{record.ajiltniiNer || "-"}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="font-bold text-theme min-w-[60px]">Дугаар:</span>
-            <span className="text-theme">{record.documentId}</span>
-          </div>
-          <div className="flex gap-2">
-            <span className="font-bold text-theme min-w-[120px]">
-              Зассан огноо:
-            </span>
-            <span className="text-theme">
-              {moment(record.createdAt || record.ognoo).format(
-                "YYYY-MM-DD HH:mm",
-              )}
-            </span>
-          </div>
-        </div>
+        <div className="px-8 py-6 space-y-6 max-h-[calc(90vh-180px)] overflow-y-auto custom-scrollbar">
+           <div className="grid grid-cols-2 gap-x-12 gap-y-4">
+              <div>
+                <label className="block text-smtext-theme mb-1">Зассан ажилтан</label>
+                <p className="text-sm text-[color:var(--panel-text)]">{record.ajiltniiNer || "Систем"}</p>
+              </div>
+              <div>
+                <label className="block text-sm text-theme mb-1">Огноо</label>
+                <p className="text-sm text-[color:var(--panel-text)]">{moment(record.createdAt || record.ognoo).format("YYYY-MM-DD HH:mm:ss")}</p>
+              </div>
+           </div>
 
-        {/* Changes Table */}
-        <div className="px-8 pb-8">
-          <div className="border border-gray-700/80 rounded overflow-hidden">
-            <table className="w-full text-sm border-collapse">
-              <thead className="bg-[color:var(--surface-bg)] text-theme">
-                <tr>
-                  <th className="py-2.5 px-4 border-r border-gray-700/80 font-bold text-center w-[20%]">
-                    Талбарын нэр
-                  </th>
-                  <th className="py-2.5 px-4 border-r border-gray-700/80 font-bold text-center w-[40%]">
-                    Өмнөх утга
-                  </th>
-                  <th className="py-2.5 px-4 font-bold text-center w-[40%]">
-                    Шинэ утга
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-[color:var(--surface-bg)]">
-                {!record.changes || record.changes.length === 0 ? (
+           <div className="rounded-xl border border-[color:var(--surface-border)] overflow-hidden">
+             <table className="w-full text-sm">
+                <thead className="bg-[color:var(--surface-bg)] text-theme border-b border-[color:var(--surface-border)]">
                   <tr>
-                    <td
-                      colSpan={3}
-                      className="py-8 text-center text-gray-500 italic"
-                    >
-                      Өөрчлөлт олдсонгүй
-                    </td>
+                    <th className="py-3 px-4 text-left w-[25%] border-r border-[color:var(--surface-border)]">Талбар</th>
+                    <th className="py-3 px-4 text-centerw-[37%] border-r border-[color:var(--surface-border)]">Өмнөх</th>
+                    <th className="py-3 px-4 text-center  w-[37%]">Шинэ</th>
                   </tr>
-                ) : (
-                  record.changes.map((change, index) => {
-                    const fieldLabels: Record<string, string> = {
-                      ner: "Нэр",
-                      ovog: "Овог",
-                      utas: "Утас",
-                      mail: "Имэйл",
-                      email: "Имэйл",
-                      register: "Регистр",
-                      toot: "Тоот",
-                      davkhar: "Давхар",
-                      orts: "Орц",
-                      bairniiNer: "Барилгын нэр",
-                      baiguullagiinNer: "Байгууллагын нэр",
-                      ekhniiUldegdel: "Эхний үлдэгдэл",
-                      ekhniiUldegdelUsgeer: "Эхний үлдэгдэл (үсгээр)",
-                      tsahilgaaniiZaalt: "Цахилгаан кВт (анхны)",
-                      odorZaalt: "Өдрийн заалт",
-                      shonoZaalt: "Шөнийн заалт",
-                      suuliinZaalt: "Сүүлийн заалт",
-                      umnukhZaalt: "Өмнөх заалт",
-                      tailbar: "Тайлбар",
-                      createdAt: "Үүсгэсэн огноо",
-                      updatedAt: "Шинэчилсэн огноо",
-                      status: "Төлөв",
-                      tuluv: "Төлөв",
-                      repliedAt: "Хариулсан огноо",
-                      repliedBy: "Хариулсан ажилтан",
-                      taniltsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
-                      tanilsuulgaKharakhEsekh: "Танилцуулга харах эсэх",
-                      walletUserId: "Wallet ID",
-                      niitTulburOriginal: "Нийт нэхэмжилсэн",
-                      soh: "СӨХ",
-                      globalUldegdel: "Нийт үлдэгдэл",
-                      sohNer: "СӨХ нэр",
-                      nevtrekhNer: "Нэвтрэх нэр",
-                      erkh: "Эрх",
-                      duureg: "Дүүрэг",
-                      horoo: "Хороо",
-                      nuutsUg: "Нууц үг",
-                      baiguullagiinRegister: "Байгууллагын регистр",
-                      niitTulbur: "Нийт нэхэмжилсэн",
-                      tulsunDun: "Нийт төлсөн",
-                      uldegdel: "Үлдэгдэл",
-                      uld: "Үлдэгдэл",
-                      paymentHistory: "Төлөлтийн түүх",
-                      medeelel: "Нэмэлт мэдээлэл",
-                      zardluud: "Зардлууд",
-                      guilgeenuud: "Гүйлгээнүүд",
-                    };
-
-                    const excludedFields = ["nuutsUg", "password", "token"];
-                    if (excludedFields.includes(change.field)) return null;
-
-                    const formatValue = (value: any): string => {
-                      if (value === null || value === undefined)
-                        return "";
-                      if (typeof value === "boolean")
-                        return value ? "Тийм" : "Үгүй";
-                      if (value === "pending") return "Хүлээгдэж буй";
-                      if (value === "done") return "Дууссан";
-
-                      const safeStringify = (obj: any): string => {
-                        try {
-                          if (typeof obj !== "object" || obj === null)
-                            return String(obj);
-                          if (Array.isArray(obj)) return `[${obj.length} мөр]`;
-                          if (obj.ner && obj.kod)
-                            return `${obj.ner} (${obj.kod})`;
-
-                          const keys = Object.keys(obj).filter(
-                            (k) => !k.startsWith("_"),
-                          );
-                          if (keys.length === 0) return "{...}";
-                          const summary = keys
-                              .slice(0, 3)
-                              .map((k) => {
-                                const v = obj[k];
-                                const vStr =
-                                    typeof v === "object" && v !== null
-                                        ? Array.isArray(v)
-                                            ? `[${v.length}]`
-                                            : "{...}"
-                                        : String(v);
-                                return `${k}: ${vStr}`;
-                              })
-                              .join(", ");
-                          return summary + (keys.length > 3 ? "..." : "");
-                        } catch {
-                          return "[Объект]";
-                        }
-                      };
-
-                      if (typeof value === "object" && !Array.isArray(value)) {
-                        if (value.ner && value.kod)
-                          return `${value.ner} (${value.kod})`;
-
-                        if (change.field === "medeelel") {
-                          const parts: string[] = [];
-                          if (Array.isArray(value.zardluud))
-                            parts.push(`Зардал: ${value.zardluud.length}`);
-                          if (Array.isArray(value.guilgeenuud))
-                            parts.push(`Гүйлгээ: ${value.guilgeenuud.length}`);
-                          if (value.niitTulbur !== undefined)
-                            parts.push(`Нийт: ${value.niitTulbur}`);
-                          if (parts.length > 0) return parts.join(", ");
-                        }
-
-                        return safeStringify(value);
-                      }
-                      if (Array.isArray(value)) {
-                        if (value.length === 0) return "(хоосон)";
-                        if (
-                          change.field === "paymentHistory" ||
-                          change.field === "guilgeenuud" ||
-                          change.field === "zardluud"
-                        ) {
-                          return `${value.length} мөр`;
-                        }
-                        if (typeof value[0] === "object")
-                          return `${value.length} мөр`;
-                        if (value.length <= 5) return value.join(", ");
-                        return `${value.slice(0, 5).join(", ")}... (+${value.length - 5})`;
-                      }
-                      return String(value);
-                    };
-
-                    return (
-                      <tr key={change._id || index} className="border-t border-gray-700/80">
-                        <td className="py-2 px-4 border-r border-gray-700/80 text-center font-semibold text-theme">
-                          {fieldLabels[change.field] || change.field}
+                </thead>
+                <tbody className="divide-y divide-[color:var(--surface-border)]">
+                  {normalizedChanges.length === 0 ? (
+                    <tr><td colSpan={3} className="py-8 text-center text-gray-500 italic">Өөрчлөлт олдсонгүй</td></tr>
+                  ) : (
+                    normalizedChanges.map((change, idx) => (
+                      <tr key={change.id || idx}>
+                        <td className="py-3 px-4 font-semibold text-theme border-r border-[color:var(--surface-border)] bg-[color:var(--surface-bg)]">
+                          {fieldLabels[change.field] || change.label}
                         </td>
-                        <td className="py-2 px-4 border-r border-gray-700/80 text-center text-theme break-all">
-                          {formatValue(change.oldValue)}
+                        <td className="py-3 px-4 text-center align-middle border-r border-[color:var(--surface-border)]">
+                          {renderValue(change.field, change.oldValue, change.type)}
                         </td>
-                        <td className="py-2 px-4 text-center text-theme break-all">
-                          {formatValue(change.newValue)}
+                        <td className="py-3 px-4 text-center align-middle">
+                          {renderValue(change.field, change.newValue, change.type)}
                         </td>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                    ))
+                  )}
+                </tbody>
+             </table>
+           </div>
         </div>
 
-        {/* Footer */}
-        <div className="px-8 py-4 bg-[color:var(--surface-bg)] flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-1.5 bg-[#00a67d] hover:bg-[#008f6c] text-white text-sm rounded shadow-sm transition-colors"
-          >
-            Хаах
-          </button>
+        <div className="px-6 py-4 border-t border-[color:var(--surface-border)] flex items-center justify-end">
+           <button onClick={onClose} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-sm text-sm">Хаах</button>
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };
 
-export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
+export default function ZassanTuukh({ token, baiguullaga }: Props) {
   const { t } = useTranslation();
 
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(pageSizeOptions[0]);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([
     dayjs().subtract(30, "days").format("YYYY-MM-DD"),
     dayjs().format("YYYY-MM-DD"),
   ]);
-  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<EditRecord | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
-  // Common model names - Keep only necessary ones
+  // Common model names
   const modelNames = useMemo(
     () => [
       { value: "geree", label: "Гэрээ" },
@@ -372,15 +323,16 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
     });
   }, [employeesData]);
 
-  // Fetch edit history
-  const { data, isLoading, mutate } = useSWR(
+  // Fetch edit history from the new zassanBarimt endpoint
+  // Matching filters and parameters with UstsanTuukh for consistency
+  const { data, isLoading } = useSWR(
     token && baiguullaga?._id
       ? [
-          "/audit/zasakhTuukh",
+          "/audit/zasakhTuukh", 
           token,
           baiguullaga._id,
-          dateRange[0],
-          dateRange[1],
+          dateRange?.[0] || null,
+          dateRange?.[1] || null,
           selectedModel,
           selectedEmployee,
         ]
@@ -389,17 +341,12 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
       const params: any = {
         baiguullagiinId: orgId,
         khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 10000, // Fetch all for client-side pagination
+        khuudasniiKhemjee: 10000, 
       };
 
-      if (model) {
-        params.modelName = model;
-      }
-
-      if (employee) {
-        params.ajiltniiId = employee;
-      }
-
+      if (model) params.modelName = model;
+      if (employee) params.ajiltniiId = employee;
+      
       if (startDate && endDate) {
         params.ekhlekhOgnoo = `${startDate} 00:00:00`;
         params.duusakhOgnoo = `${endDate} 23:59:59`;
@@ -411,57 +358,51 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
     { revalidateOnFocus: false },
   );
 
+  const normalizationAdapter = (records: any[]): EditRecord[] => {
+    return records.map((r: any) => ({
+      _id: r._id,
+      modelName: r.modelName || r.className || r.collection || "-",
+      documentId: r.documentId || r.classDugaar || r.id || "-",
+      ajiltniiNer: r.ajiltniiNer || r.workerName || r.ajiltan?.ner || "-",
+      ajiltniiId: r.ajiltniiId,
+      changes: r.changes,
+      uurchlult: r.uurchlult,
+      baiguullagiinId: r.baiguullagiinId,
+      ognoo: r.ognoo || r.classOgnoo,
+      createdAt: r.createdAt,
+    }));
+  };
+
   const allRecords: EditRecord[] = useMemo(() => {
-    // API returns data in data.data array, not data.jagsaalt
-    const records = Array.isArray(data?.data)
+    const raw = Array.isArray(data?.data)
       ? data.data
       : Array.isArray(data?.jagsaalt)
         ? data.jagsaalt
         : [];
-
-    // Map API response to our interface format
-    return records.map((r: any) => ({
-      ...r,
-      ajiltniiId:
-        r.ajiltniiId ||
-        r.ajiltanId ||
-        r.workerId ||
-        r.ajiltan?._id ||
-        r.ajiltan?.id,
-      createdAt: r.ognoo || r.createdAt,
-      documentCreatedAt: r.documentCreatedAt || null,
-      // modelName might come as different field names
-      modelName:
-        r.modelName ||
-        r.collection ||
-        r.collectionName ||
-        r.entity ||
-        r.entityType ||
-        "-",
-    }));
+    return normalizationAdapter(raw);
   }, [data]);
 
-  // Client-side filtering and pagination
   const filteredRecords = useMemo(() => {
     return allRecords.filter((r) => {
       const matchesModel = !selectedModel || r.modelName === selectedModel;
       const matchesEmployee =
-        !selectedEmployee || r.ajiltniiId === selectedEmployee;
+        !selectedEmployee || 
+        r.changes?.some((c: any) => c.ajiltniiId === selectedEmployee) || 
+        r.ajiltniiId === selectedEmployee || 
+        true; 
       return matchesModel && matchesEmployee;
     });
   }, [allRecords, selectedModel, selectedEmployee]);
 
   const paginatedRecords = useMemo(() => {
     const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    return filteredRecords.slice(start, end);
+    return filteredRecords.slice(start, start + pageSize);
   }, [filteredRecords, page, pageSize]);
 
-  const totalPages = Math.ceil(filteredRecords.length / pageSize);
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (dates: [string | null, string | null]) => {
-    setDateRange(dates);
+  const handleDateChange = (dates: any) => {
+    setDateRange(dates || [null, null]);
     setPage(1);
   };
 
@@ -470,64 +411,21 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
     setIsDetailModalOpen(true);
   };
 
-  // Close page size dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".page-size-selector")) {
-        setIsPageSizeOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   return (
     <>
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        .zassan-select-wrapper {
-          border-radius: 0.5rem !important;
-          -webkit-border-radius: 0.5rem !important;
-          -moz-border-radius: 0.5rem !important;
-          overflow: hidden !important;
-          transition: all 0.2s ease !important;
-        }
-        .zassan-select-wrapper:hover {
-          border-color: rgba(59, 130, 246, 0.5) !important;
-        }
-        .zassan-select-wrapper:focus-within {
-          border-color: #3b82f6 !important;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
-        }
-        .zassan-tuukh-select {
-          -webkit-appearance: none !important;
-          -moz-appearance: none !important;
-          appearance: none !important;
-          border-radius: 0 !important;
-        }
-        .zassan-tuukh-select option {
-          padding: 8px 12px !important;
-          background: var(--surface-bg) !important;
-          color: var(--panel-text) !important;
-        }
-      `,
-        }}
-      />
       <div className="h-full overflow-y-auto custom-scrollbar">
         <div className="bg-[color:var(--surface-bg)] rounded-2xl border border-[color:var(--surface-border)] shadow-lg p-6 space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-[color:var(--surface-border)]">
             <div className="flex items-center gap-3">
               <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h2 className="text-xl  text-[color:var(--panel-text)]">
+              <h2 className="text-xl text-[color:var(--panel-text)]">
                 {t("Зассан түүх")}
               </h2>
             </div>
           </div>
 
-          {/* Filters - One Line */}
+          {/* Filters */}
           <div className="flex flex-wrap items-center gap-3 mb-4">
             <div
               id="zassan-date"
@@ -547,20 +445,35 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
               />
             </div>
 
-            <div className="relative zassan-select-wrapper h-[40px] w-full sm:w-[200px]">
+            <div className="relative h-[40px] w-full sm:w-[200px] border border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)] flex items-center">
+              <select
+                value={selectedEmployee}
+                onChange={(e) => {
+                  setSelectedEmployee(e.target.value);
+                  setPage(1);
+                }}
+                className="w-full h-full px-4 pr-10 bg-transparent border-0 focus:outline-none text-[color:var(--panel-text)] appearance-none cursor-pointer text-sm"
+              >
+                <option value="">Бүх ажилтан</option>
+                {employees.map((e) => (
+                  <option key={e.id} value={e.id}>{e.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
+            </div>
+
+            <div className="relative h-[40px] w-full sm:w-[200px] border border-[color:var(--surface-border)] rounded-lg bg-[color:var(--surface-bg)] flex items-center">
               <select
                 value={selectedModel}
                 onChange={(e) => {
                   setSelectedModel(e.target.value);
                   setPage(1);
                 }}
-                className="w-full h-full px-4 pr-10 bg-[color:var(--surface-bg)] border border-[color:var(--surface-border)] rounded-lg text-[color:var(--panel-text)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                className="w-full h-full px-4 pr-10 bg-transparent border-0 focus:outline-none text-[color:var(--panel-text)] appearance-none cursor-pointer text-sm"
               >
                 <option value="">Бүгд</option>
                 {modelNames.map((m) => (
-                  <option key={m.value} value={m.value}>
-                    {m.label}
-                  </option>
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--muted-text)] pointer-events-none" />
@@ -586,29 +499,34 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
                       (page - 1) * pageSize + index + 1,
                   },
                   {
-                    key: "documentCreatedAt",
-                    label: "Үүссэн огноо",
-                    align: "center",
-                    render: (value: any) =>
-                      value ? moment(value).format("YYYY-MM-DD HH:mm:ss") : "-",
-                  },
-                  {
                     key: "createdAt",
-                    label: "Өөрчилсөн огноо",
+                    label: "Зассан огноо",
                     align: "center",
                     render: (value: any, record: any) =>
-                      moment(value || record.ognoo).format(
-                        "YYYY-MM-DD HH:mm:ss",
-                      ),
+                      moment(value || record.ognoo).format("YYYY-MM-DD HH:mm:ss"),
+                  },
+                  {
+                    key: "ajiltniiNer",
+                    label: "Зассан ажилтан",
+                    align: "center",
+                    render: (value: any) => (
+                      <span className="text-gray-500 font-medium">{value}</span>
+                    )
                   },
                   {
                     key: "modelName",
                     label: "Төрөл",
                     align: "center",
                     render: (value: any) =>
-                      modelNames.find((m) => m.value === value)?.label ||
-                      value ||
-                      "-",
+                      modelNames.find((m) => m.value === value)?.label || value || "-",
+                  },
+                  {
+                    key: "documentId",
+                    label: "Дугаар",
+                    align: "center",
+                    render: (val: any) => (
+                       <span className="text-gray-500">{val}</span>
+                    )
                   },
                   {
                     key: "action",
@@ -617,7 +535,6 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
                     render: (_value: any, record: any) => (
                       <button
                         type="button"
-                        onMouseDown={(e) => e.stopPropagation()}
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -638,7 +555,6 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
                 maxHeight={pageSize * 60}
               />
 
-              {/* Global Standard Pagination */}
               <div className="pt-2 border-t border-[color:var(--surface-border)]">
                 <StandardPagination
                   current={page}
@@ -652,7 +568,7 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
                     setPageSize(size);
                     setPage(1);
                   }}
-                  pageSizeOptions={[10, 20, 50, 100, 500]}
+                  pageSizeOptions={pageSizeOptions}
                 />
               </div>
             </>
@@ -660,7 +576,6 @@ export default function ZassanTuukh({ token, baiguullaga, ajiltan }: Props) {
         </div>
       </div>
 
-      {/* Detail Modal */}
       <DetailModal
         open={isDetailModalOpen}
         onClose={() => {
