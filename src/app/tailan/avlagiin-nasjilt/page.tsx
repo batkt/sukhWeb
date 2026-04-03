@@ -1,17 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  FileSpreadsheet,
-  Printer,
-} from "lucide-react";
+import { FileSpreadsheet, Printer } from "lucide-react";
 import { useBuilding } from "@/context/BuildingContext";
 import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import uilchilgee from "@/lib/uilchilgee";
-import formatNumber from "../../../../tools/function/formatNumber";
 import dayjs from "dayjs";
 import "dayjs/locale/mn";
 import { useSearch } from "@/context/SearchContext";
@@ -30,81 +24,160 @@ const PrintStyles = () => (
     @media print {
       @page {
         size: A4 landscape;
-        margin: 10mm;
+        margin: 6mm 8mm;
       }
-      body {
+
+      body, html {
         background: white !important;
         color: black !important;
         margin: 0 !important;
         padding: 0 !important;
         height: auto !important;
-        min-height: auto !important;
+        overflow: visible !important;
       }
+
       .no-print {
         display: none !important;
       }
+
       .print-only {
         display: block !important;
-        margin-bottom: 30px;
         width: 100% !important;
+        margin-bottom: 8px !important;
       }
+
       .print-container {
         display: block !important;
-        position: relative !important;
+        position: static !important;
         width: 100% !important;
         height: auto !important;
+        min-height: auto !important;
         overflow: visible !important;
         margin: 0 !important;
         padding: 0 !important;
       }
-      main,
-      div[class*="neu-panel"],
-      div[class*="overflow-y-auto"],
-      div[class*="md:h-"],
-      div[class*="max-h-"] {
+
+      .print-container *,
+      .guilgee-table,
+      
+      .ant-table-wrapper,
+      .ant-spin-nested-loading,
+      .ant-spin-container,
+      .ant-table,
+      .ant-table-container,
+      .ant-table-content,
+      .ant-table-body,
+      .ant-table-header {
         height: auto !important;
         max-height: none !important;
+        min-height: 0 !important;
         overflow: visible !important;
         position: static !important;
         box-shadow: none !important;
         border: none !important;
+        border-radius: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
+        width: 100% !important;
+        background: transparent !important;
+        transform: none !important;
       }
+
+      /* Hide sticky floating header, keep only real thead */
+      .ant-table-header {
+        display: none !important;
+      }
+
+      .ant-table-body thead,
+      .ant-table-body thead tr,
+      .ant-table-body thead th {
+        display: table-header-group !important;
+      }
+
+     
+
+      /* Unfix sticky columns */
+      .ant-table-cell-fix-left,
+      .ant-table-cell-fix-right {
+        position: static !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        z-index: auto !important;
+      }
+
+      .ant-table-tbody {
+        display: table-row-group !important;
+      }
+
+      .ant-table-tbody > tr {
+        display: table-row !important;
+      }
+
+      .ant-table-tbody > tr > td {
+        display: table-cell !important;
+      }
+
       table {
         width: 100% !important;
         border-collapse: collapse !important;
-        table-layout: auto !important;
-        font-size: 8pt !important;
+        table-layout: fixed !important;
+        font-size: 6.5pt !important;
         color: black !important;
       }
-      th,
-      td {
-        border: 1px solid #000 !important;
-        padding: 4px 2px !important;
-        background: transparent !important;
-        color: black !important;
-        text-align: center !important;
-        word-wrap: break-word !important;
+
+      thead {
+        display: table-header-group !important;
+        
       }
-      th {
-        background-color: #f0f0f0 !important;
-        font-weight: bold !important;
-        -webkit-print-color-adjust: exact;
-      }
+
       tr {
         page-break-inside: avoid !important;
       }
-      thead {
-        display: table-header-group !important;
+
+      .ant-table-cell,
+      th,
+      td {
+        border: 0.5px solid #aaa !important;
+        padding: 2px 3px !important;
+        background: transparent !important;
+        color: black !important;
+        word-break: break-word !important;
+        white-space: normal !important;
       }
-      .text-left {
+
+      th,
+      .ant-table-thead > tr > th {
+        background-color: #c4c3c3ff !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      td { text-align: right !important; }
+
+      td:nth-child(1),
+      td:nth-child(2),
+      td:nth-child(3) {
         text-align: left !important;
       }
-      .text-right {
-        text-align: right !important;
-      }
+
+      col:nth-child(1)  { width: 6mm !important; }
+      col:nth-child(2)  { width: 28mm !important; }
+      col:nth-child(3)  { width: 20mm !important; }
+      col:nth-child(4)  { width: 10mm !important; }
+      col:nth-child(5)  { width: 10mm !important; }
+      col:nth-child(6)  { width: 22mm !important; }
+      col:nth-child(7)  { width: 18mm !important; }
+      col:nth-child(8)  { width: 18mm !important; }
+      col:nth-child(9)  { width: 22mm !important; }
+      col:nth-child(10) { width: 20mm !important; }
+      col:nth-child(11) { width: 20mm !important; }
+      col:nth-child(12) { width: 20mm !important; }
+      col:nth-child(13) { width: 20mm !important; }
+      col:nth-child(14) { width: 23mm !important; }
     }
+
     .print-only {
       display: none;
     }
@@ -132,6 +205,7 @@ export default function AvlagiinNasjiltPage() {
   const [pageSize, setPageSize] = useState(200);
   const [isDark, setIsDark] = useState(false);
 
+
   useEffect(() => {
     const checkTheme = () =>
       setIsDark(document.documentElement.classList.contains("dark"));
@@ -144,9 +218,10 @@ export default function AvlagiinNasjiltPage() {
     return () => obs.disconnect();
   }, []);
 
+
+
   const fetchData = async () => {
     if (!selectedBuildingId || !baiguullaga || !token) return;
-
     try {
       setLoading(true);
       const payload = {
@@ -160,7 +235,6 @@ export default function AvlagiinNasjiltPage() {
         view: "detailed",
         search: searchTerm || undefined,
       };
-
       const response = await uilchilgee(token).post(
         "/tailan/avlagiin-nasjilt",
         payload,
@@ -168,7 +242,6 @@ export default function AvlagiinNasjiltPage() {
       const fetchedData =
         response.data?.detailed?.list || response.data?.jagsaalt || [];
       const summaryData = response.data?.summary || null;
-
       setData(Array.isArray(fetchedData) ? fetchedData : []);
       setSummary(summaryData);
     } catch (err: any) {
@@ -180,14 +253,7 @@ export default function AvlagiinNasjiltPage() {
 
   useEffect(() => {
     fetchData();
-  }, [
-    selectedBuildingId,
-    baiguullaga,
-    dateRange,
-    searchTerm,
-    currentPage,
-    pageSize,
-  ]);
+  }, [selectedBuildingId, baiguullaga, dateRange, searchTerm, currentPage, pageSize]);
 
   const exportToExcel = async () => {
     if (!token || !baiguullagiinId)
@@ -229,22 +295,14 @@ export default function AvlagiinNasjiltPage() {
 
   const totals = useMemo(() => {
     const fields = [
-      "undsenDun",
-      "khungulult",
-      "tulsunDun",
-      "uldegdel",
-      "p0_30",
-      "p31_60",
-      "p61_90",
-      "p91_120",
-      "p120plus",
+      "undsenDun", "khungulult", "tulsunDun", "uldegdel",
+      "p0_30", "p31_60", "p61_90", "p91_120", "p120plus",
     ];
     const results: any = {};
     fields.forEach((f) => {
       results[f] = filteredData.reduce(
         (acc, curr: any) =>
-          acc +
-          (Number(curr[f] ?? curr[f === "uldegdel" ? "tulukhDun" : f]) || 0),
+          acc + (Number(curr[f] ?? curr[f === "uldegdel" ? "tulukhDun" : f]) || 0),
         0,
       );
     });
@@ -254,21 +312,19 @@ export default function AvlagiinNasjiltPage() {
   return (
     <ConfigProvider
       theme={{
-        algorithm: isDark
-          ? antdTheme.darkAlgorithm
-          : antdTheme.defaultAlgorithm,
+        algorithm: isDark ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
         token: { borderRadius: 12, colorPrimary: "#10b981" },
       }}
     >
-      <div className="p-4 md:p-6 bg-[color:var(--surface-bg)] min-h-screen flex flex-col gap-4 print-container">
+      <div className="p-4 md:p-6 bg-[color:var(--surface-bg)] h-screen flex flex-col gap-4 print-container overflow-hidden print:block print:h-auto print:overflow-visible print:p-0">
         <PrintStyles />
 
         {/* Print Only Header */}
-        <div className="print-only mb-8 text-center text-black">
+        <div className="print-only text-center text-black">
           <h1 className="text-3xl font-black uppercase tracking-tight">
             Насжилтын тайлан
           </h1>
-          <p className="mt-4 text-xl font-bold">{baiguullaga?.ner}</p>
+          <p className="mt-2 text-xl font-bold">{baiguullaga?.ner}</p>
           <p className="text-sm mt-1">
             Огноо:{" "}
             {dateRange?.[0] && dateRange?.[1]
@@ -277,13 +333,15 @@ export default function AvlagiinNasjiltPage() {
           </p>
         </div>
 
+        {/* Screen title */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print flex-shrink-0">
           <h1 className="text-2xl font-bold text-theme tracking-tight">
             Насжилтын тайлан
           </h1>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 no-print mb-3">
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-3 no-print flex-shrink-0">
           <div
             id="nasjilt-date"
             className="btn-minimal h-[40px] w-full md:w-[320px] flex items-center px-3"
@@ -301,12 +359,12 @@ export default function AvlagiinNasjiltPage() {
               }}
             />
           </div>
-          <button
+          {/* <button
             onClick={() => window.print()}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
           >
             <Printer className="w-4 h-4" /> Хэвлэх
-          </button>
+          </button> */}
           <button
             onClick={exportToExcel}
             className="neu-panel px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-all text-sm"
@@ -315,22 +373,21 @@ export default function AvlagiinNasjiltPage() {
           </button>
         </div>
 
-        <div
-          className="rounded-3xl overflow-hidden neu-panel p-3 bg-white dark:bg-slate-900/50 dark:border-slate-800 border 
-          mb-1 guilgee-table allow-overflow flex flex-col min-h-0
-        "
-        >
+        {/* Table — fills remaining height on screen */}
+        <div className="flex-1 overflow-hidden rounded-3xl neu-panel p-3 bg-white dark:bg-slate-900/50 dark:border-slate-800 border guilgee-table flex flex-col min-h-0 print:block print:overflow-visible print:h-auto print:min-h-auto">
           <AvlagiinNasjiltTable
             data={filteredData as AvlagiinNasjiltItem[]}
             loading={loading}
             page={currentPage}
             pageSize={pageSize}
             totals={totals}
+    
           />
         </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0 mt-2">
-          <div></div>
+        {/* Pagination */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 no-print flex-shrink-0">
+          <div />
           <div className="flex items-center gap-4">
             <PageSongokh
               value={pageSize}
@@ -356,10 +413,7 @@ export default function AvlagiinNasjiltPage() {
                 )}
               </div>
               <button
-                disabled={
-                  currentPage * pageSize >=
-                  (summary?.count || filteredData.length)
-                }
+                disabled={currentPage * pageSize >= (summary?.count || filteredData.length)}
                 onClick={() => setCurrentPage(currentPage + 1)}
                 className="px-4 py-1.5 rounded-2xl text-sm font-bold disabled:opacity-20 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-600 dark:text-slate-300"
               >
