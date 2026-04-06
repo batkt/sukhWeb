@@ -1499,8 +1499,18 @@ export default function DansniiKhuulga() {
         if (sortField === "paid") {
           const gidA = getGid(a);
           const gidB = getGid(b);
-          aVal = gidA ? (paidSummaryByGereeId[gidA] ?? 0) : 0;
-          bVal = gidB ? (paidSummaryByGereeId[gidB] ?? 0) : 0;
+          // Use the same data source as the table display (monthlyDataByGereeId)
+          const monthlyDataA = gidA ? monthlyDataByGereeId?.get(gidA) : null;
+          const monthlyDataB = gidB ? monthlyDataByGereeId?.get(gidB) : null;
+          const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+          aVal =
+            currentPeriod && monthlyDataA?.months?.[currentPeriod]
+              ? Number(monthlyDataA.months[currentPeriod].paid ?? 0)
+              : Number(a?._totalTulsun ?? 0);
+          bVal =
+            currentPeriod && monthlyDataB?.months?.[currentPeriod]
+              ? Number(monthlyDataB.months[currentPeriod].paid ?? 0)
+              : Number(b?._totalTulsun ?? 0);
         } else {
           // Use authoritative balance for sorting
           const gidA = getGid(a);
@@ -1567,6 +1577,8 @@ export default function DansniiKhuulga() {
     residentsById,
     contractsById,
     contractsByNumber,
+    monthlyDataByGereeId,
+    monthlyPeriods,
   ]);
 
   const totalPages = Math.max(
