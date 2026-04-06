@@ -320,10 +320,15 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyPaid = Number(record?._totalTulsun ?? 0);
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+              // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
+              const currentMonthPaid = currentPeriod
+                ? Number(monthlyData?.months?.[currentPeriod]?.paid ?? 0)
+                : Number(record?._totalTulsun ?? 0);
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {formatNumber(monthlyPaid, 2)}
+                  {formatNumber(currentMonthPaid, 2)}
                 </span>
               );
             },
@@ -357,6 +362,26 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
+              // If monthly data is available (date filter active), show month-specific balance
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+              if (currentPeriod && monthlyData?.months?.[currentPeriod]) {
+                const monthData = monthlyData.months[currentPeriod];
+                const monthBalance =
+                  Number(monthData?.billed ?? 0) - Number(monthData?.paid ?? 0);
+                return (
+                  <span
+                    className={
+                      monthBalance < 0.01
+                        ? "!text-emerald-600 dark:!text-emerald-400"
+                        : "!text-red-500 dark:!text-red-400"
+                    }
+                  >
+                    {formatNumber(monthBalance, 2)}
+                  </span>
+                );
+              }
+              // No date filter - show total cumulative balance
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
@@ -662,8 +687,17 @@ export default function GuilgeeTable({
             } else if (col.key === "paid") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  const monthlyPaid = Number(it?._totalTulsun ?? 0);
-                  return sum + monthlyPaid;
+                  const gid = getGereeId(it);
+                  const monthlyData = gid
+                    ? monthlyDataByGereeId?.get(gid)
+                    : null;
+                  const currentPeriod =
+                    monthlyPeriods?.[monthlyPeriods.length - 1];
+                  // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
+                  const currentMonthPaid = currentPeriod
+                    ? Number(monthlyData?.months?.[currentPeriod]?.paid ?? 0)
+                    : Number(it?._totalTulsun ?? 0);
+                  return sum + currentMonthPaid;
                 },
                 0,
               );
@@ -675,13 +709,21 @@ export default function GuilgeeTable({
             } else if (col.key === "uldegdel") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  const gid =
-                    String(it?.gereeniiId || it?.gereeId || "").trim() ||
-                    (it?.gereeniiDugaar &&
-                      String(
-                        contractsByNumber[String(it.gereeniiDugaar)]?._id || "",
-                      )) ||
-                    "";
+                  const gid = getGereeId(it);
+                  // If monthly data is available (date filter active), show month-specific balance
+                  const monthlyData = gid
+                    ? monthlyDataByGereeId?.get(gid)
+                    : null;
+                  const currentPeriod =
+                    monthlyPeriods?.[monthlyPeriods.length - 1];
+                  if (currentPeriod && monthlyData?.months?.[currentPeriod]) {
+                    const monthData = monthlyData.months[currentPeriod];
+                    const monthBalance =
+                      Number(monthData?.billed ?? 0) -
+                      Number(monthData?.paid ?? 0);
+                    return sum + monthBalance;
+                  }
+                  // No date filter - show total cumulative balance
                   const historyAggregate =
                     Number(it?._totalTulbur || 0) -
                     Number(it?._totalTulsun || 0);
