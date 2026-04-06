@@ -631,7 +631,6 @@ export default function GuilgeeTable({
                 </span>
               );
             } else if (col.key === "paid") {
-
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const monthlyPaid = Number(it?._totalTulsun ?? 0);
@@ -709,7 +708,10 @@ export default function GuilgeeTable({
           size="small"
           bordered
           tableLayout="auto"
-          rowKey={(record: any) => record._id || Math.random().toString()}
+          rowKey={(record: any) =>
+            String(record?.gereeniiId || record?.gereeId || "").trim() ||
+            Math.random().toString()
+          }
           rowSelection={
             isCheckboxVisible
               ? {

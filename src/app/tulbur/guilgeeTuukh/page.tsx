@@ -2345,43 +2345,20 @@ export default function DansniiKhuulga() {
 
   const handleToggleSelectAll = (checked: boolean) => {
     if (checked) {
-      // Select all visible items that have a valid gereeniiId
+      // Select all visible items using gereeniiId (contract ID)
       const allIds = paginated
         .map((it: any) => {
-          const gid =
-            (it?.gereeniiId && String(it.gereeniiId)) ||
-            (it?.gereeId && String(it.gereeId)) ||
-            (it?.gereeniiDugaar &&
-              String(
-                (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id ||
-                  "",
-              ));
+          const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
           return gid;
         })
-        .filter((id) => id && id.length > 5); // Filter out invalid IDs
-
-      // Use Set to ensure uniqueness when adding to existing selection if needed,
-      // but "Select All" usually implies "replace selection with all current page" or "add all current page"
-      // Let's implement "Add current page to selection" to match Gmail-style behavior if we want multi-page,
-      // but Geree logic was "Select all currentContracts".
-      // Let's assume user wants to select everything on current page.
+        .filter((id) => id);
 
       setSelectedGereeIds((prev) => Array.from(new Set([...prev, ...allIds])));
     } else {
-      // Deselect all items on current page
+      // Deselect all items on current page using gereeniiId
       const pageIds = new Set(
         paginated
-          .map((it: any) => {
-            const gid =
-              (it?.gereeniiId && String(it.gereeniiId)) ||
-              (it?.gereeId && String(it.gereeId)) ||
-              (it?.gereeniiDugaar &&
-                String(
-                  (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id ||
-                    "",
-                ));
-            return gid;
-          })
+          .map((it: any) => String(it?.gereeniiId || it?.gereeId || "").trim())
           .filter((id) => id),
       );
 
@@ -2401,15 +2378,10 @@ export default function DansniiKhuulga() {
 
   // Manual send invoice handler
   const handleSendInvoices = async () => {
-    // Map transaction IDs to actual contract IDs (gereeniiId)
-    // selectedGereeIds contains _id values from the table rows (sortedResidents data)
-    const mappedGereeIds = sortedResidents
-      .filter((it: any) => selectedGereeIds.includes(it._id))
-      .map((it: any) => String(it.gereeniiId || it.gereeId || "").trim())
-      .filter(Boolean);
-
-    // Deduplicate to send unique contract IDs
-    const uniqueGereeIds = Array.from(new Set(mappedGereeIds));
+    // selectedGereeIds now contains contract IDs (gereeniiId) directly
+    const uniqueGereeIds = Array.from(new Set(selectedGereeIds)).filter(
+      Boolean,
+    );
 
     if (uniqueGereeIds.length === 0) {
       toast.error("Сонгосон гүйлгээнүүдэд холбогдох гэрээ олдсонгүй!");
