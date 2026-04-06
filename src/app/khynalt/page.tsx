@@ -585,16 +585,14 @@ export default function Khynalt() {
       }
     });
 
-    const finalPaid = buildingPaymentSummary?.totalTulsunDun ?? paid;
+    // Synchronize with GuilgeeTuukh's footer totals for consistency
+    const finalPaid = footerTotals.totalPaid;
+    const finalUnpaid = footerTotals.totalUldegdel;
+    
     const totalInvoiceAmount = list.reduce(
       (s, it) =>
         s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
       0,
-    );
-    // Use global financial balance (total billed - total paid) for primary KPI
-    const finalUnpaid = Math.max(
-      0,
-      totalInvoiceAmount + ekhniiUldegdelTotal - finalPaid,
     );
 
     const paidArr: number[] = [];
@@ -809,7 +807,7 @@ export default function Khynalt() {
       labels: pretty,
       datasets: [
         {
-          label: "Төлсөн",
+          label: "Гүйцэтгэл",
           data: incomeSeries.paid,
           borderColor: "#22c55e",
           backgroundColor: "rgba(34,197,94,0.25)",
