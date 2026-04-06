@@ -374,8 +374,34 @@ export default function OrlogoAvlagaPage() {
 
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
-    const contractsWithEkhniiInInvoice = new Set<string>();
 
+    // First, add ALL contracts from gereeGaralt (ensures we have all 109 residents)
+    (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
+      const gereeId = String(ct?._id || "").trim();
+      if (!gereeId) return;
+
+      const residentId = String(ct?.orshinSuugchId || "").trim();
+      const gereeDugaar = String(ct?.gereeniiDugaar || "").trim();
+      const r = residentId ? residentsById[residentId] : undefined;
+
+      map.set(gereeId, {
+        ...ct,
+        _gereeId: gereeId,
+        _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || "",
+        _residentId: residentId,
+        _ner: r?.ner ?? ct?.ner ?? "",
+        _ovog: r?.ovog ?? ct?.ovog ?? "",
+        _utas: r?.utas ?? ct?.utas ?? "",
+        _toot: r?.toot ?? ct?.toot ?? "",
+        _davkhar: r?.davkhar ?? ct?.davkhar ?? "",
+        _ekhniiUldegdel: 0, // Will be calculated from history
+        _periodPaid: 0,
+        _periodTulbur: 0,
+      });
+    });
+
+    // Track contracts that have opening balance in their invoice
+    const contractsWithEkhniiInInvoice = new Set<string>();
     buildingHistoryItems.forEach((it: any) => {
       const zardluud = Array.isArray(it?.medeelel?.zardluud)
         ? it.medeelel.zardluud
@@ -399,6 +425,7 @@ export default function OrlogoAvlagaPage() {
       }
     });
 
+    // Process history items to calculate period amounts and opening balances
     buildingHistoryItems.forEach((it: any) => {
       const residentId = String(it?.orshinSuugchId || "").trim();
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -417,12 +444,13 @@ export default function OrlogoAvlagaPage() {
         gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
       if (!key || key === "||") return;
 
+      // Check if this is a standalone opening balance record
       const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
       if (isStandaloneEkh) {
         const contractHasIt =
           (gereeId && contractsWithEkhniiInInvoice.has(gereeId)) ||
           (gereeDugaar && contractsWithEkhniiInInvoice.has(gereeDugaar));
-        if (contractHasIt) return;
+        if (contractHasIt) return; // Skip if already in invoice
       }
 
       const ct = gereeId
@@ -431,6 +459,7 @@ export default function OrlogoAvlagaPage() {
           ? contractsByNumber[gereeDugaar]
           : undefined;
       const r = residentId ? residentsById[residentId] : undefined;
+
       if (!map.has(key)) {
         map.set(key, {
           ...it,
@@ -443,6 +472,7 @@ export default function OrlogoAvlagaPage() {
           _utas: r?.utas ?? it?.utas ?? ct?.utas ?? "",
           _toot: r?.toot ?? ct?.toot ?? it?.toot ?? it?.medeelel?.toot ?? "",
           _davkhar: r?.davkhar ?? ct?.davkhar ?? it?.davkhar ?? "",
+          _ekhniiUldegdel: 0,
           _periodPaid: 0,
           _periodTulbur: 0,
         });
@@ -473,38 +503,26 @@ export default function OrlogoAvlagaPage() {
         type === "tulbur" ||
         (itemAmount < 0 && !recordIsStandaloneEkh);
 
-      if (isPayment) {
+      // If this is an opening balance record, add to _ekhniiUldegdel
+      if (
+        recordIsStandaloneEkh ||
+        (Array.isArray(it?.medeelel?.zardluud) &&
+          it.medeelel.zardluud.some(
+            (z: any) =>
+              z?.isEkhniiUldegdel === true ||
+              String(z?.ner || "")
+                .toLowerCase()
+                .includes("эхний үлдэгдэл"),
+          ))
+      ) {
+        existing._ekhniiUldegdel += itemAmount;
+      } else if (isPayment) {
         existing._periodPaid += Math.abs(itemAmount);
       } else {
         existing._periodTulbur += itemAmount;
         // Also capture embedded payments in invoices (tulsunDun)
         existing._periodPaid += Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
       }
-    });
-
-    // Add contracts from gereeGaralt that aren't already in the map (no history yet)
-    (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
-      const gereeId = String(ct?._id || "").trim();
-      if (!gereeId) return;
-      if (map.has(gereeId)) return; // Already added from history
-
-      const residentId = String(ct?.orshinSuugchId || "").trim();
-      const gereeDugaar = String(ct?.gereeniiDugaar || "").trim();
-      const r = residentId ? residentsById[residentId] : undefined;
-
-      map.set(gereeId, {
-        ...ct,
-        _gereeId: gereeId,
-        _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || "",
-        _residentId: residentId,
-        _ner: r?.ner ?? ct?.ner ?? "",
-        _ovog: r?.ovog ?? ct?.ovog ?? "",
-        _utas: r?.utas ?? ct?.utas ?? "",
-        _toot: r?.toot ?? ct?.toot ?? "",
-        _davkhar: r?.davkhar ?? ct?.davkhar ?? "",
-        _periodPaid: 0,
-        _periodTulbur: 0,
-      });
     });
 
     return Array.from(map.values());

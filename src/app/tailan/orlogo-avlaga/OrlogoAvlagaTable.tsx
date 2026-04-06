@@ -445,11 +445,11 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             dataSource={filteredLedger}
             columns={ledgerColumns}
             rowKey={(record) => record._id || Math.random().toString()}
-            pagination={{ pageSize: 10, showSizeChanger: false }}
+            pagination={{ pageSize: 20, showSizeChanger: false }}
             size="small"
             bordered
             className="guilgee-table"
-            scroll={{ y: 100 }}
+            scroll={{ y: 500 }}
             rowClassName={(record, index) => `
               ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
               text-gray-900 dark:text-white
@@ -587,7 +587,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         open={modalOpen}
         onCancel={onModalClose}
         footer={null}
-        width={1100}
+        width={1400}
         closeIcon={<X className="w-5 h-5" />}
         className="dark:bg-gray-900"
       >
