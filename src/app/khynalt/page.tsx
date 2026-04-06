@@ -10,7 +10,20 @@ import { isPaidLike, getDefaultDateRange } from "@/lib/utils";
 import { hasPermission } from "@/lib/permissionUtils";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Line } from "react-chartjs-2";
+import { Line, Bar } from "react-chartjs-2";
+import {
+  Building2,
+  Users,
+  FileText,
+  Wallet,
+  AlertTriangle,
+  Ban,
+  TrendingUp,
+  TrendingDown,
+  Download,
+  Printer,
+  RefreshCw,
+} from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
 import {
@@ -23,6 +36,8 @@ import {
   Tooltip,
   Legend,
   ArcElement,
+  BarElement,
+  Filler
 } from "chart.js";
 import useSWR from "swr";
 import formatNumber, {
@@ -38,6 +53,8 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
+  BarElement,
+  Filler
 );
 
 type Dataset = {
@@ -240,6 +257,33 @@ export default function Khynalt() {
     { revalidateOnFocus: false },
   );
 
+  const { data: paymentData } = useSWR(
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
+      ? [
+          "/gereeniiTulsunAvlaga",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).get(url, {
+        params: {
+          baiguullagiinId: bId,
+          ...(barId ? { barilgiinId: barId } : {}),
+          khuudasniiDugaar: 1,
+          khuudasniiKhemjee: 5000,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
   const { data: overdueData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
@@ -333,6 +377,43 @@ export default function Khynalt() {
     { revalidateOnFocus: false },
   );
 
+  const { data: monthlyMatrixData } = useSWR(
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
+      ? [
+          "/tailan/resident-monthly-matrix",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
+        ]
+      : null,
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
+      const resp = await uilchilgee(tkn).post(url, {
+        baiguullagiinId: bId,
+        barilgiinId: barId,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 10000,
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  const matrixTotalBilled = useMemo(() => {
+    if (!monthlyMatrixData?.list || !monthlyMatrixData?.periods) return 0;
+    const periods = monthlyMatrixData.periods;
+    const currentPeriod = periods[periods.length - 1];
+    if (!currentPeriod) return 0;
+
+    return (monthlyMatrixData.list as any[]).reduce((sum, item) => {
+      const billed = Number(item?.months?.[currentPeriod]?.billed ?? 0);
+      return sum + billed;
+    }, 0);
+  }, [monthlyMatrixData]);
+
   const {
     totalOrlogoFromTailan,
     residentsPaidCountFromTailan,
@@ -376,7 +457,7 @@ export default function Khynalt() {
         barilgiinId: barId,
         ekhlekhOgnoo: start,
         duusakhOgnoo: end,
-        view: "delgerengui",
+        view: "detailed",
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 500,
       });
@@ -462,6 +543,12 @@ export default function Khynalt() {
       ? incomeData.jagsaalt
       : Array.isArray(incomeData)
         ? incomeData
+        : [];
+        
+    const paymentList: any[] = Array.isArray(paymentData?.jagsaalt)
+      ? paymentData.jagsaalt
+      : Array.isArray(paymentData)
+        ? paymentData
         : [];
 
     const residentById = new Map<string, any>();
@@ -562,13 +649,39 @@ export default function Khynalt() {
           : it?.barilgiinId || "Тодорхойгүй";
       byBld[barilga] = (byBld[barilga] || 0) + amount;
 
+      // For the time series, map INVOICE creation date ONLY for unpaid/billed amounts
       const created = String(it?.createdAt || it?.ognoo || it?.date || "");
       if (created) {
         const d = new Date(created);
         const key = buildLabel(d);
         const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
-        curr.paid += tulsunInvoice;
+        // We only add unpaid here; paid will be filled accurately from actual payment records below.
         curr.unpaid += uldegdelInvoice;
+        seriesMap.set(key, curr);
+      }
+    });
+
+    // NOW iterate over actual payment records (receipts) to map the PAID time series
+    paymentList.forEach((p) => {
+      const paidAmt = Number(
+        p?.tulsunDun ??
+        p?.tulsun ??
+        p?.niitTulbur ??
+        p?.niitDun ??
+        p?.total ??
+        p?.tulur ??
+        p?.tulukhDun ??
+        p?.undsenDun ??
+        p?.dun ??
+        p?.sariinTurees ??
+        0
+      ) || 0;
+      const tulsunOgnooStr = String(p?.tulsunOgnoo || p?.createdAt || p?.ognoo || p?.date || "");
+      if (tulsunOgnooStr && paidAmt > 0) {
+        const d = new Date(tulsunOgnooStr);
+        const key = buildLabel(d);
+        const curr = seriesMap.get(key) || { paid: 0, unpaid: 0 };
+        curr.paid += paidAmt;
         seriesMap.set(key, curr);
       }
     });
@@ -588,7 +701,7 @@ export default function Khynalt() {
     // Synchronize with GuilgeeTuukh's footer totals for consistency
     const finalPaid = footerTotals.totalPaid;
     const finalUnpaid = footerTotals.totalUldegdel;
-    
+
     const totalInvoiceAmount = list.reduce(
       (s, it) =>
         s + (Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? 0) || 0),
@@ -603,6 +716,11 @@ export default function Khynalt() {
       unpaidArr.push(v.unpaid);
     });
 
+    // Find the latest period with actual data for current month display
+    const sortedPeriods = Array.from(seriesMap.keys()).sort();
+    const latestPeriod = sortedPeriods[sortedPeriods.length - 1];
+    const latestPeriodData = latestPeriod ? seriesMap.get(latestPeriod) : null;
+
     return {
       incomeTotals: { paid: finalPaid, unpaid: finalUnpaid },
       incomeByBuilding: byBld,
@@ -614,9 +732,12 @@ export default function Khynalt() {
         labels: orderedLabels,
         profits: paidArr.map((p, i) => p - unpaidArr[i]),
       },
+      currentMonthTotal: latestPeriodData || { paid: 0, unpaid: 0 },
+      currentMonthLabel: latestPeriod || "",
     };
   }, [
     incomeData,
+    paymentData,
     residents,
     orderedLabels,
     buildLabel,
@@ -632,15 +753,49 @@ export default function Khynalt() {
     incomeSeries,
     expenseSeries,
     profitSeries,
+    currentMonthTotal,
   } = incomeComputed;
 
-  const displayResidentsPaidCount = orlogoAvlagaData
-    ? residentsPaidCountFromTailan
-    : residentsPaidCount;
-  const displayResidentsUnpaidCount = orlogoAvlagaData
-    ? totalResidents - residentsPaidCountFromTailan
-    : residentsUnpaidCount;
+  // Calculate current month total from the actual data periods
+  const currentMonthTotalComputed = useMemo(() => {
+    // If we have matrix data, use that for the billing total as it's more accurate
+    if (matrixTotalBilled > 0) {
+      if (monthlyMatrixData?.list && monthlyMatrixData?.periods) {
+        const periods = monthlyMatrixData.periods;
+        const currentPeriod = periods[periods.length - 1];
+        if (currentPeriod) {
+          let mPaid = 0;
+          let mBilled = 0;
+          (monthlyMatrixData.list as any[]).forEach((item) => {
+            mPaid += Number(item?.months?.[currentPeriod]?.paid ?? 0);
+            mBilled += Number(item?.months?.[currentPeriod]?.billed ?? 0);
+          });
+          return {
+            paid: mPaid,
+            unpaid: Math.max(0, mBilled - mPaid),
+            total: mBilled,
+          };
+        }
+      }
+      return {
+        paid: incomeTotals.paid,
+        unpaid: incomeTotals.unpaid,
+        total: matrixTotalBilled,
+      };
+    }
 
+    const { paid, unpaid } = currentMonthTotal || { paid: 0, unpaid: 0 };
+    // If we have actual current month data, use it
+    if (paid > 0 || unpaid > 0) {
+      return { paid, unpaid, total: paid + unpaid };
+    }
+    // Fallback to incomeTotals if no specific current month data
+    return {
+      paid: incomeTotals.paid,
+      unpaid: incomeTotals.unpaid,
+      total: incomeTotals.paid + incomeTotals.unpaid,
+    };
+  }, [currentMonthTotal, incomeTotals, matrixTotalBilled]);
 
   const overdue2m = useMemo(() => {
     if (overdueData?.success) {
@@ -721,7 +876,9 @@ export default function Khynalt() {
         };
       });
       return {
-        count: new Set(items.map((it: any) => it?.gereeniiDugaar || it?.orshinSuugchId)).size,
+        count: new Set(
+          items.map((it: any) => it?.gereeniiDugaar || it?.orshinSuugchId),
+        ).size,
         total: incomeTotals.unpaid,
         items,
       };
@@ -810,17 +967,23 @@ export default function Khynalt() {
           label: "Гүйцэтгэл",
           data: incomeSeries.paid,
           borderColor: "#22c55e",
-          backgroundColor: "rgba(34,197,94,0.25)",
+          backgroundColor: "rgba(34,197,94,0.15)",
           fill: true,
-          tension: 0.3,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#22c55e",
         },
         {
           label: "Төлөөгүй",
           data: incomeSeries.unpaid,
           borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.2)",
+          backgroundColor: "rgba(239,68,68,0.15)",
           fill: true,
-          tension: 0.3,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#ef4444",
         },
       ],
     };
@@ -837,42 +1000,52 @@ export default function Khynalt() {
       }),
       datasets: [
         {
-          label: "Төлбөр ()",
+          label: "Төлбөр",
           data: top.map((t: { name: string; amount: number }) => t.amount),
           borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.2)",
+          backgroundColor: "rgba(239,68,68,0.15)",
           fill: true,
-          tension: 0.3,
+          tension: 0.4,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: "#ef4444",
         },
       ],
     };
   }, [huurimtlagdsanAvlaga.items]);
 
-  const cancelledReceivablesChartData: Dataset = useMemo(() => {
-    const top = cancelledReceivables.items.slice(0, 10).map((it: any) => ({
-      name:
-        [it?.ovog, it?.ner, it?.toot].filter(Boolean).join(" ") ||
-        it?.gereeniiDugaar ||
-        "-",
-      amount: Number(it?.niitTulbur ?? 0) || 0,
-    }));
+  const tulburSummaryChartData: Dataset = useMemo(() => {
     return {
-      labels: top.map((t: { name: string; amount: number }) => {
-        const s = t.name || "-";
-        return s.length > 12 ? s.slice(0, 11) + "…" : s;
-      }),
+      labels: ["Эхний үлдэгдэл", "Сарын төлбөр", "Төлсөн", "Үлдэгдэл"],
       datasets: [
         {
-          label: "Төлбөр ()",
-          data: top.map((t: { name: string; amount: number }) => t.amount),
-          borderColor: "#f97316",
-          backgroundColor: "rgba(249,115,22,0.2)",
-          fill: true,
-          tension: 0.3,
-        },
+          label: "Дүн",
+          data: [
+            ekhniiUldegdelTotal,
+            currentMonthTotalComputed.total,
+            incomeTotals.paid,
+            incomeTotals.unpaid,
+          ],
+          backgroundColor: [
+            "rgba(100, 116, 139, 0.4)", 
+            "rgba(59, 130, 246, 0.4)",  
+            "rgba(34, 197, 94, 0.4)",   
+            "rgba(239, 68, 68, 0.4)",   
+          ],
+          borderColor: [
+            "rgb(100, 116, 139)",
+            "rgb(59, 130, 246)",
+            "rgb(34, 197, 94)",
+            "rgb(239, 68, 68)",
+          ],
+          borderWidth: 1,
+          barPercentage: 0.5,
+          borderRadius: 6
+        }
       ],
-    };
-  }, [cancelledReceivables.items]);
+      total: incomeTotals.unpaid
+    } as any;
+  }, [ekhniiUldegdelTotal, currentMonthTotalComputed.total, incomeTotals]);
 
   // formatCurrency is imported from tools/function/formatNumber (always 2 decimal places)
 
@@ -919,7 +1092,10 @@ export default function Khynalt() {
     // Total Active should ignore the date range filter, but respect organizational/building filter
     const baseContracts = contracts.filter((c: any) => {
       const buildingField = c?.barilgiinId ?? c?.barilga;
-      return !effectiveBarilgiinId || String(buildingField) === String(effectiveBarilgiinId);
+      return (
+        !effectiveBarilgiinId ||
+        String(buildingField) === String(effectiveBarilgiinId)
+      );
     });
 
     if (!baseContracts?.length) return 0;
@@ -949,7 +1125,9 @@ export default function Khynalt() {
     // Total Cancelled should also ignore the date range filter but respect building filter
     return contracts.filter((c: any) => {
       const buildingField = c?.barilgiinId ?? c?.barilga;
-      const buildingMatch = !effectiveBarilgiinId || String(buildingField) === String(effectiveBarilgiinId);
+      const buildingMatch =
+        !effectiveBarilgiinId ||
+        String(buildingField) === String(effectiveBarilgiinId);
       if (!buildingMatch) return false;
 
       const status = String(c?.tuluv || c?.status || "").trim();
@@ -976,19 +1154,13 @@ export default function Khynalt() {
     (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
 
   const kpiCardsRaw = [
-    {
-      title: "Барилга",
-      value: buildingCount,
-      subtitle: "Нийт барилга",
-      color: "from-indigo-500 to-indigo-600",
-      delay: 0,
-      show: true,
-    },
+    
     {
       title: "Оршин суугч",
       value: residentsPaidCount + residentsUnpaidCount,
       color: "from-green-500 to-green-600",
       href: "/geree/orshinSuugch",
+      icon: Users,
       delay: 100,
       show: showResidents,
     },
@@ -997,8 +1169,18 @@ export default function Khynalt() {
       value: filteredActiveContracts,
       color: "from-blue-500 to-blue-600",
       href: "/geree?status=active",
+      icon: FileText,
       delay: 200,
       show: showContracts,
+    },
+    {
+      title: "Сарын төлбөр",
+      value: formatCurrency(currentMonthTotalComputed.total),
+      subtitle: "Сарын нийт төлбөр",
+      color: "from-indigo-500 to-indigo-600",
+      icon: Building2,
+      delay: 0,
+      show: true,
     },
     {
       title: "Орлого/Гүйцэтгэл",
@@ -1006,6 +1188,7 @@ export default function Khynalt() {
       subtitle: "Төлсөн дүн",
       color: "from-purple-500 to-purple-600",
       href: "/tulbur",
+      icon: Wallet,
       delay: 400,
       show: showTulbur,
     },
@@ -1015,17 +1198,9 @@ export default function Khynalt() {
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
       href: "/tulbur",
+      icon: AlertTriangle,
       delay: 500,
       show: showTulbur,
-    },
-    {
-      title: "Цуцлагдсан гэрээ",
-      value: cancelledGerees.length,
-      subtitle: "Нийт цуцлагдсан",
-      color: "from-orange-500 to-orange-600",
-      href: "/geree?status=cancelled",
-      delay: 600,
-      show: showContracts,
     },
   ];
 
@@ -1064,39 +1239,42 @@ export default function Khynalt() {
             Сайн байна уу{ajiltan?.ner ? `, ${ajiltan.ner}` : ""}
           </h1>
         </div>
-
-        <div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6 w-full flex-shrink-0 py-2"
-          style={{ marginRight: "calc(-2rem - 0.5rem)", paddingRight: 0 }}
-        >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8 pr-4 w-full flex-shrink-0">
           {kpiCards.map((card, index) => {
-            const isCenter = (card as any).centerHeader;
+            const Icon = (card as any).icon;
             const CardContent = (
               <div className="h-full flex flex-col justify-between transition-shadow duration-200">
-                <div className={isCenter ? "flex flex-col items-end" : ""}>
-                  <h3
-                    className={`text-sm text-[color:var(--panel-text)] mb-2 w-full ${isCenter ? "text-center" : ""}`}
-                  >
+                <div className="flex items-start justify-between mb-2">
+                  <h3 className="text-sm font-medium text-[color:var(--panel-text)] opacity-80 truncate pr-2">
                     {card.title}
                   </h3>
-                  <p className="text-2xl force-bold text-[color:var(--panel-text)] mb-1">
+                  {Icon && (
+                    <div
+                      className={`p-2 rounded-full bg-gradient-to-br ${card.color} text-white shadow-md flex-shrink-0`}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-auto">
+                  <p className="text-[1.35rem] font-bold text-[color:var(--panel-text)] leading-tight tracking-tight">
                     {card.value}
                   </p>
+                  {card.subtitle && (
+                    <p className="text-xs text-[color:var(--muted-text)] mt-1">
+                      {card.subtitle}
+                    </p>
+                  )}
                 </div>
-                <p
-                  className={`text-xs text-[color:var(--muted-text)] ${isCenter ? "text-right" : ""}`}
-                >
-                  {card.subtitle}
-                </p>
               </div>
             );
 
-            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-opacity duration-500 cursor-pointer flex-shrink-0 ${
+            const className = `neu-panel allow-overflow rounded-2xl p-4 transition-all duration-300 cursor-pointer flex-shrink-0 hover:scale-[1.02] hover:shadow-lg h-full min-h-[110px] ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`;
             const style = {
               transitionDelay: `${card.delay}ms`,
-              willChange: "opacity, box-shadow",
+              willChange: "opacity, transform",
             };
 
             if (card.href) {
@@ -1146,21 +1324,44 @@ export default function Khynalt() {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                      mode: 'index',
+                      intersect: false,
+                    },
                     plugins: {
                       legend: {
                         position: "top" as const,
-                        labels: { color: chartColors.text },
+                        labels: { 
+                          color: chartColors.text,
+                          usePointStyle: true,
+                          boxWidth: 8,
+                          padding: 20
+                        },
                       },
                       title: { display: false },
+                      tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        usePointStyle: true,
+                      }
                     },
                     scales: {
                       x: {
                         ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
+                        grid: { display: false },
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
+                        grid: { 
+                          color: chartColors.grid,
+                          tickBorderDash: [5, 5]
+                        },
+                        beginAtZero: true
                       },
                     },
                   }}
@@ -1195,21 +1396,44 @@ export default function Khynalt() {
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                      mode: 'index',
+                      intersect: false,
+                    },
                     plugins: {
                       legend: {
                         position: "top" as const,
-                        labels: { color: chartColors.text },
+                        labels: { 
+                          color: chartColors.text,
+                          usePointStyle: true,
+                          boxWidth: 8,
+                          padding: 20
+                        },
                       },
                       title: { display: false },
+                      tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        usePointStyle: true,
+                      }
                     },
                     scales: {
                       x: {
                         ticks: { color: chartColors.text, maxRotation: 45 },
-                        grid: { color: chartColors.grid },
+                        grid: { display: false },
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
+                        grid: { 
+                          color: chartColors.grid,
+                          tickBorderDash: [5, 5]
+                        },
+                        beginAtZero: true
                       },
                     },
                   }}
@@ -1218,7 +1442,7 @@ export default function Khynalt() {
             </div>
           </div>
 
-          {/* Cancelled contract receivables */}
+          {/* Payment Summary Bar Chart */}
           <div
             className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -1232,34 +1456,56 @@ export default function Khynalt() {
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
               <div className="mb-4 flex-shrink-0">
                 <h3 className="text-lg  text-[color:var(--panel-text)]">
-                  Цуцалсан гэрээний авлага
+                  Төлбөрийн хураангуй
                 </h3>
                 <p className="text-sm text-[color:var(--muted-text)] mt-1">
-                  {cancelledReceivables.count} Оршин суугч /{" "}
-                  {formatCurrency(cancelledReceivables.total)}
+                  Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
                 </p>
               </div>
               <div className="flex-1 min-h-0">
-                <Line
-                  data={cancelledReceivablesChartData as any}
+                <Bar
+                  data={tulburSummaryChartData as any}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                      mode: 'index',
+                      intersect: false,
+                    },
                     plugins: {
                       legend: {
                         position: "top" as const,
-                        labels: { color: chartColors.text },
+                        labels: { 
+                          color: chartColors.text,
+                          usePointStyle: true,
+                          boxWidth: 8,
+                          padding: 20
+                        },
                       },
                       title: { display: false },
+                      tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(255,255,255,0.1)',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        usePointStyle: true,
+                      }
                     },
                     scales: {
                       x: {
-                        ticks: { color: chartColors.text, maxRotation: 45 },
-                        grid: { color: chartColors.grid },
+                        ticks: { color: chartColors.text },
+                        grid: { display: false },
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { color: chartColors.grid },
+                        grid: { 
+                          color: chartColors.grid,
+                          tickBorderDash: [5, 5]
+                        },
+                        beginAtZero: true
                       },
                     },
                   }}
