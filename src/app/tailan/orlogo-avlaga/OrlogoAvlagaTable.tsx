@@ -27,7 +27,7 @@ interface OrlogoAvlagaTableProps {
   loading?: boolean;
   page?: number;
   pageSize?: number;
-  activeTab: "tulult" | "avlaga";
+  activeTab: "tulult" | "avlaga" | "all";
   expandedRow?: string | null;
   expandedLedger: any[];
   expandedLoading: boolean;

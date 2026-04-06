@@ -136,7 +136,7 @@ const PrintStyles = () => (
   `}</style>
 );
 
-type TabType = "tulult" | "avlaga";
+type TabType = "avlaga" | "tulult" | "all";
 
 export default function OrlogoAvlagaPage() {
   const { selectedBuildingId } = useBuilding();
@@ -149,7 +149,7 @@ export default function OrlogoAvlagaPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [activeTab, setActiveTab] = useState<TabType>("avlaga");
+  const [activeTab, setActiveTab] = useState<TabType>("all");
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >(getDefaultDateRange);
@@ -698,7 +698,17 @@ export default function OrlogoAvlagaPage() {
     [deduplicatedResidents, uldegdelByGereeId, debouncedFilters, searchTerm],
   );
 
-  const displayList = activeTab === "tulult" ? paidList : avlagaList;
+  const allList = useMemo(
+    () => deduplicatedResidents.filter(matchesFilters),
+    [deduplicatedResidents, debouncedFilters, searchTerm],
+  );
+
+  const displayList =
+    activeTab === "tulult"
+      ? paidList
+      : activeTab === "avlaga"
+        ? avlagaList
+        : allList;
 
   // Calculate grand totals for the new table format
   const totalEkhniiUldegdel = useMemo(
@@ -892,6 +902,7 @@ export default function OrlogoAvlagaPage() {
           <div className="flex gap-2">
             {(
               [
+                ["all", "Бүгд"],
                 ["avlaga", "Авлага"],
                 ["tulult", "Орлого"],
               ] as [TabType, string][]
