@@ -116,7 +116,8 @@ export default function DansniiKhuulga() {
   const emptyQuery = useMemo(() => ({}), []);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const [ekhlekhOgnoo, setEkhlekhOgnoo] = useState<DateRangeValue>(getDefaultDateRange);
+  const [ekhlekhOgnoo, setEkhlekhOgnoo] =
+    useState<DateRangeValue>(getDefaultDateRange);
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
@@ -253,7 +254,12 @@ export default function DansniiKhuulga() {
         minWidth: 110,
       },
       { key: "uldegdel", label: "Үлдэгдэл", align: "end", minWidth: 110 },
-      { key: "sariinTurees", label: "Сарын төлбөр", align: "end", minWidth: 110 },
+      {
+        key: "sariinTurees",
+        label: "Сарын төлбөр",
+        align: "end",
+        minWidth: 110,
+      },
       { key: "paid", label: "Гүйцэтгэл", align: "end", minWidth: 110 },
       { key: "tuluv", label: "Төлөв", align: "start", minWidth: 110 },
       {
@@ -422,7 +428,6 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
       ? historyData.jagsaalt
@@ -490,11 +495,15 @@ export default function DansniiKhuulga() {
       return d >= s && d <= e;
     });
 
-    // CRITICAL: Sort by date ASCENDING so that forEach(it => balances[gid] = it.uldegdel) 
+    // CRITICAL: Sort by date ASCENDING so that forEach(it => balances[gid] = it.uldegdel)
     // will always leave the LATEST balance in the map.
     return filtered.sort((a, b) => {
-      const da = new Date(a?.tulsunOgnoo || a?.ognoo || a?.createdAt || 0).getTime();
-      const db = new Date(b?.tulsunOgnoo || b?.ognoo || b?.createdAt || 0).getTime();
+      const da = new Date(
+        a?.tulsunOgnoo || a?.ognoo || a?.createdAt || 0,
+      ).getTime();
+      const db = new Date(
+        b?.tulsunOgnoo || b?.ognoo || b?.createdAt || 0,
+      ).getTime();
       return da - db;
     });
   }, [historyData, receivableData, paymentRecordsData, ekhlekhOgnoo]);
@@ -938,7 +947,9 @@ export default function DansniiKhuulga() {
         if (!matchesSearch(augmented, searchTerm)) return;
       }
 
-      const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
+      const gereeId = String(
+        g?._id || g?.gereeniiId || g?.gereeId || "",
+      ).trim();
       const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
       const key = gereeId || gereeDugaar;
       if (key) residentKeysFromProfile.add(key);
@@ -1178,7 +1189,9 @@ export default function DansniiKhuulga() {
     const cancelledGereeIds = new Set<string>();
     const cancelledGereeDugaars = new Set<string>();
     allGerees.forEach((g: any) => {
-      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
       if (status === "цуцалсан" || status === "tsutlsasan") {
         if (g?._id) cancelledGereeIds.add(String(g._id));
         if (g?.gereeniiDugaar)
@@ -1191,7 +1204,9 @@ export default function DansniiKhuulga() {
         String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
         (r?._id && String(r._id)) ||
         (r?.gereeniiDugaar &&
-          String((contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "")) ||
+          String(
+            (contractsByNumber as any)[String(r.gereeniiDugaar)]?._id || "",
+          )) ||
         "";
 
       const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
@@ -1203,7 +1218,8 @@ export default function DansniiKhuulga() {
       const isPartiallyPaid = !isResidentPaid && paid > 0.1;
       const isLinkedToCancelledGeree =
         (gid && cancelledGereeIds.has(gid)) ||
-        (r?.gereeniiDugaar && cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
+        (r?.gereeniiDugaar &&
+          cancelledGereeDugaars.has(String(r.gereeniiDugaar)));
 
       if (tuluvFilter === "paid") return isResidentPaid;
       if (tuluvFilter === "unpaid")
@@ -1265,7 +1281,9 @@ export default function DansniiKhuulga() {
         if (!matchesSearch(augmented, searchTerm)) return;
       }
 
-      const gereeId = String(g?._id || g?.gereeniiId || g?.gereeId || "").trim();
+      const gereeId = String(
+        g?._id || g?.gereeniiId || g?.gereeId || "",
+      ).trim();
       const gereeDugaar = String(g?.gereeniiDugaar || "").trim();
       const key = gereeId || gereeDugaar;
       if (key) {
@@ -1656,7 +1674,9 @@ export default function DansniiKhuulga() {
     const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
 
     allGerees.forEach((g: any) => {
-      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
       if (status === "цуцалсан" || status === "tsutlsasan") {
         if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
         if (g?.gereeniiDugaar)
@@ -1703,7 +1723,9 @@ export default function DansniiKhuulga() {
     const allGerees = (gereeGaralt?.jagsaalt || []) as any[];
 
     allGerees.forEach((g: any) => {
-      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      const status = String(g?.tuluv || g?.status || "")
+        .trim()
+        .toLowerCase();
       if (status === "цуцалсан" || status === "tsutlsasan") {
         if (g?._id) cancelledGereeIdsFromGereeList.add(String(g._id));
         if (g?.gereeniiDugaar)
@@ -1935,27 +1957,39 @@ export default function DansniiKhuulga() {
 
       // Build exact data set from UI to perfectly match sequence, filtering, and missing resident issues.
       const tableData = sortedResidents.map((item: any, index: number) => {
-        const gid = String(item?.gereeniiId ?? item?.gereeId ?? "").trim() ||
-          (item?.gereeniiDugaar ? String((contractsByNumber as any)[String(item.gereeniiDugaar)]?._id || "") : "");
+        const gid =
+          String(item?.gereeniiId ?? item?.gereeId ?? "").trim() ||
+          (item?.gereeniiDugaar
+            ? String(
+                (contractsByNumber as any)[String(item.gereeniiDugaar)]?._id ||
+                  "",
+              )
+            : "");
 
-        const currentBalance = bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0);
-        const paidAmount = gid ? (paidSummaryByGereeId[gid] ?? Number(item?._totalTulsun ?? 0)) : Number(item?._totalTulsun ?? 0);
+        const currentBalance =
+          bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0);
+        const paidAmount = gid
+          ? (paidSummaryByGereeId[gid] ?? Number(item?._totalTulsun ?? 0))
+          : Number(item?._totalTulsun ?? 0);
         const isResidentPaid = currentBalance < 0.01;
         const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
-        const ekhniiAmt = (item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0);
+        const ekhniiAmt =
+          item?.ekhniiUldegdel ?? item?._ekhniiUldegdelAmount ?? 0;
 
         return {
           dugaar: index + 1,
           ner: item?.ner || "",
           toot: item?.toot || item?.medeelel?.toot || "",
-          utas: Array.isArray(item?.utas) ? item.utas.join(', ') : (item?.utas || ""),
+          utas: Array.isArray(item?.utas)
+            ? item.utas.join(", ")
+            : item?.utas || "",
           orts: item?.orts || "",
           davkhar: item?.davkhar || "",
           gereeniiDugaar: item?.gereeniiDugaar || "",
           ekhniiUldegdel: parseFloat(String(ekhniiAmt)).toFixed(2),
           uldegdel: parseFloat(String(currentBalance)).toFixed(2),
           guitsetgel: parseFloat(String(paidAmount)).toFixed(2),
-          tuluv: odooTuluv
+          tuluv: odooTuluv,
         };
       });
 
@@ -1972,10 +2006,10 @@ export default function DansniiKhuulga() {
           { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
           { key: "uldegdel", label: "Үлдэгдэл" },
           { key: "guitsetgel", label: "Гүйцэтгэл" },
-          { key: "tuluv", label: "Төлөв" }
+          { key: "tuluv", label: "Төлөв" },
         ],
         fileName: `tolborder_jagsaalt_${new Date().toISOString().split("T")[0]}`,
-        sheetName: "Төлбөр тооцоо"
+        sheetName: "Төлбөр тооцоо",
       };
 
       const path = "/nekhemjlekhiinTuukhExcelDownload";
@@ -2368,8 +2402,8 @@ export default function DansniiKhuulga() {
   // Manual send invoice handler
   const handleSendInvoices = async () => {
     // Map transaction IDs to actual contract IDs (gereeniiId)
-    // selectedGereeIds actually contains transaction/_id values from the table rows
-    const mappedGereeIds = allHistoryItems
+    // selectedGereeIds contains _id values from the table rows (sortedResidents data)
+    const mappedGereeIds = sortedResidents
       .filter((it: any) => selectedGereeIds.includes(it._id))
       .map((it: any) => String(it.gereeniiId || it.gereeId || "").trim())
       .filter(Boolean);
@@ -2776,17 +2810,23 @@ export default function DansniiKhuulga() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
-              const getFilterValue = (
-                title: string,
-              ): "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue" | null => {
-                if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
-                  return "all";
-                if (title === "Төлсөн") return "paid";
-                if (title === "Төлөөгүй") return "unpaid";
-                if (title === "Төлөлт дутуу") return "partiallyPaid";
-                if (title === "Цуцалсан гэрээний авлага") return "overdue";
-                return null;
-              };
+            const getFilterValue = (
+              title: string,
+            ):
+              | "all"
+              | "paid"
+              | "unpaid"
+              | "partiallyPaid"
+              | "overdue"
+              | null => {
+              if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
+                return "all";
+              if (title === "Төлсөн") return "paid";
+              if (title === "Төлөөгүй") return "unpaid";
+              if (title === "Төлөлт дутуу") return "partiallyPaid";
+              if (title === "Цуцалсан гэрээний авлага") return "overdue";
+              return null;
+            };
 
             const filterValue = getFilterValue(stat.title);
             const isActive = filterValue && tuluvFilter === filterValue;
@@ -2886,7 +2926,6 @@ export default function DansniiKhuulga() {
                 </div>
 
                 {/* Давхар filter */}
-               
               </div>
             </div>
 
@@ -2896,17 +2935,17 @@ export default function DansniiKhuulga() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     transition={{ duration: 0.3 }}
-                      onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
+                    onClick={() => setIsZaaltDropdownOpen(!isZaaltDropdownOpen)}
                     className="btn-minimal inline-flex items-center gap-1 h-[40px] px-2"
-                      id="zaalt-btn"
-                    >
+                    id="zaalt-btn"
+                  >
                     <FileSpreadsheet className="w-5 h-5" />
-                      <span className="hidden">Заалт</span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform ${
-                          isZaaltDropdownOpen ? "rotate-180" : ""
-                        }`}
-                      />
+                    <span className="hidden">Заалт</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        isZaaltDropdownOpen ? "rotate-180" : ""
+                      }`}
+                    />
                   </motion.button>
                 </Tooltip>
 
@@ -3086,7 +3125,10 @@ export default function DansniiKhuulga() {
               onTransaction={(residentData: any, remainingValue: number) => {
                 setSelectedTransactionResident({
                   ...residentData,
-                  gereeniiId: getGereeId(residentData) || residentData?.gereeniiId || residentData?.gereeId,
+                  gereeniiId:
+                    getGereeId(residentData) ||
+                    residentData?.gereeniiId ||
+                    residentData?.gereeId,
                   uldegdel: remainingValue,
                 });
                 setIsTransactionModalOpen(true);
