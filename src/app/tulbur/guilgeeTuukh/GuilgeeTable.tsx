@@ -69,7 +69,11 @@ export default function GuilgeeTable({
         const baseColumn = {
           key: col.key,
           dataIndex: col.key,
-          title: <span className="text-inherit">{col.label}</span>,
+          title: (
+            <span className="text-inherit text-center w-full block">
+              {col.label}
+            </span>
+          ),
           width: col.minWidth || col.width,
           minWidth: col.minWidth,
           align: col.align || "center",
@@ -146,7 +150,7 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-center block text-gray-900 dark:text-white">
                   {String(ct?.toot || residentToot || record?.toot || "-")}
                 </span>
               );
@@ -195,7 +199,9 @@ export default function GuilgeeTable({
                 return "-";
               })();
               return (
-                <span className="text-gray-900 dark:text-white">{utas}</span>
+                <span className="text-center block text-gray-900 dark:text-white">
+                  {utas}
+                </span>
               );
             },
           };
@@ -277,7 +283,7 @@ export default function GuilgeeTable({
                   contractsByNumber[String(record.gereeniiDugaar)]) ||
                 undefined;
               return (
-                <span className="text-gray-900 dark:text-white">
+                <span className="text-center block text-gray-900 dark:text-white">
                   {String(record?.gereeniiDugaar || ct?.gereeniiDugaar || "-")}
                 </span>
               );
@@ -591,7 +597,7 @@ export default function GuilgeeTable({
         <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
           {/* Empty cell for checkbox column alignment */}
           {isCheckboxVisible && (
-            <Table.Summary.Cell index={0} className="text-center">
+            <Table.Summary.Cell index={0} className="text-center text">
               -
             </Table.Summary.Cell>
           )}
