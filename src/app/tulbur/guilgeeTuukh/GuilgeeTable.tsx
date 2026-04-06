@@ -708,10 +708,7 @@ export default function GuilgeeTable({
           size="small"
           bordered
           tableLayout="auto"
-          rowKey={(record: any) =>
-            String(record?.gereeniiId || record?.gereeId || "").trim() ||
-            Math.random().toString()
-          }
+          rowKey={(record: any) => record._id || Math.random().toString()}
           rowSelection={
             isCheckboxVisible
               ? {
