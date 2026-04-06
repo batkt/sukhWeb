@@ -221,7 +221,9 @@ export default function OrlogoAvlagaPage() {
           query: JSON.stringify({
             baiguullagiinId: bId,
             ...(barId ? { barilgiinId: barId } : {}),
-            ...(startIso && endIso ? { createdAt: { $gte: startIso, $lte: endIso } } : {}),
+            ...(startIso && endIso
+              ? { createdAt: { $gte: startIso, $lte: endIso } }
+              : {}),
           }),
         },
       });
@@ -679,6 +681,28 @@ export default function OrlogoAvlagaPage() {
   );
 
   const displayList = activeTab === "tulult" ? paidList : avlagaList;
+
+  // Calculate grand totals for the new table format
+  const totalEkhniiUldegdel = useMemo(
+    () =>
+      deduplicatedResidents
+        .filter(matchesFilters)
+        .reduce(
+          (s, it) =>
+            s + Number(it?._ekhniiUldegdelAmount ?? it?._ekhniiUldegdel ?? 0),
+          0,
+        ),
+    [deduplicatedResidents, searchTerm, debouncedFilters],
+  );
+
+  const totalTulbur = useMemo(
+    () =>
+      deduplicatedResidents
+        .filter(matchesFilters)
+        .reduce((s, it) => s + Number(it?._periodTulbur ?? 0), 0),
+    [deduplicatedResidents, searchTerm, debouncedFilters],
+  );
+
   const totalOrlogo = useMemo(
     () =>
       deduplicatedResidents
@@ -844,7 +868,7 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-6 no-print">
+      <div className="flex justify-between items-center  mb-6 no-print">
         <div className="flex items-center gap-6">
           <h1 className="text-2xl font-bold">Орлого авлагын товчоо</h1>
           <div className="flex gap-2">
@@ -982,6 +1006,9 @@ export default function OrlogoAvlagaPage() {
             selectedRecord={selectedRecord}
             grandTotalPaid={totalOrlogo}
             grandTotalUldegdel={totalUldegdel}
+            grandTotalEkhniiUldegdel={totalEkhniiUldegdel}
+            grandTotalTulbur={totalTulbur}
+            dateRange={dateRange}
           />
         </div>
       </div>
