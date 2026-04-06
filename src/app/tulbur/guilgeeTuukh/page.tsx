@@ -428,6 +428,53 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
+  // Fetch resident monthly matrix data for displaying current month's payment
+  const { data: monthlyMatrixData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          "/tailan/resident-monthly-matrix",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+          ekhlekhOgnoo?.[0] || null,
+          ekhlekhOgnoo?.[1] || null,
+        ]
+      : null,
+    async ([url, tkn, orgId, branch, start, end]) => {
+      const resp = await uilchilgee(tkn).post(url, {
+        baiguullagiinId: orgId,
+        barilgiinId: branch || undefined,
+        ekhlekhOgnoo: start || undefined,
+        duusakhOgnoo: end || undefined,
+        khuudasniiDugaar: 1,
+        khuudasniiKhemjee: 10000, // Fetch all residents
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
+  );
+
+  // Transform monthly matrix data into a Map for easy lookup by gereeniiId
+  const monthlyDataByGereeId = useMemo(() => {
+    const map = new Map<string, any>();
+    const list = Array.isArray(monthlyMatrixData?.list)
+      ? monthlyMatrixData.list
+      : [];
+    list.forEach((item: any) => {
+      if (item?.gereeniiId) {
+        map.set(String(item.gereeniiId), item);
+      }
+    });
+    return map;
+  }, [monthlyMatrixData]);
+
+  // Extract periods array from the API response
+  const monthlyPeriods = useMemo(() => {
+    return Array.isArray(monthlyMatrixData?.periods)
+      ? monthlyMatrixData.periods
+      : [];
+  }, [monthlyMatrixData]);
+
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
       ? historyData.jagsaalt
@@ -3085,6 +3132,8 @@ export default function DansniiKhuulga() {
               rowsPerPage={rowsPerPage}
               deduplicatedResidents={deduplicatedResidents}
               getGereeId={getGereeId}
+              monthlyDataByGereeId={monthlyDataByGereeId}
+              monthlyPeriods={monthlyPeriods}
               maxHeight="calc(100vh - 550px)"
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);

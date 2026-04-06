@@ -27,6 +27,8 @@ interface GuilgeeTableProps {
   rowsPerPage: number;
   deduplicatedResidents: any[];
   getGereeId: (it: any) => string;
+  monthlyDataByGereeId?: Map<string, any>;
+  monthlyPeriods?: string[];
   onViewInvoice: (resident: any) => void;
   onViewHistory: (resident: any) => void;
   onTransaction: (resident: any, remainingValue: number) => void;
@@ -51,6 +53,8 @@ export default function GuilgeeTable({
   rowsPerPage,
   deduplicatedResidents,
   getGereeId,
+  monthlyDataByGereeId,
+  monthlyPeriods,
   onViewInvoice,
   onViewHistory,
   onTransaction,
@@ -330,11 +334,18 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              // Show current month's pay amount (total charge)
-              const monthlyPay = Number(record?._totalTulbur ?? 0);
+              // Get current month's payment from monthly data matrix
+              const gid = getGereeId(record);
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              // Get the latest period (current month)
+              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+              // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
+              const currentMonthPay = currentPeriod
+                ? Number(monthlyData?.months?.[currentPeriod]?.billed ?? 0)
+                : Number(record?._totalTulbur ?? 0);
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {formatNumber(monthlyPay, 2)}
+                  {formatNumber(currentMonthPay, 2)}
                 </span>
               );
             },
@@ -570,6 +581,8 @@ export default function GuilgeeTable({
     bestKnownBalances,
     getGereeId,
     deduplicatedResidents,
+    monthlyDataByGereeId,
+    monthlyPeriods,
   ]);
 
   // Handle table change (sorting)
@@ -627,7 +640,17 @@ export default function GuilgeeTable({
             } else if (col.key === "sariinTurees") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  return sum + Number(it?._totalTulbur ?? 0);
+                  const gid = getGereeId(it);
+                  const monthlyData = gid
+                    ? monthlyDataByGereeId?.get(gid)
+                    : null;
+                  const currentPeriod =
+                    monthlyPeriods?.[monthlyPeriods.length - 1];
+                  // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
+                  const currentMonthPay = currentPeriod
+                    ? Number(monthlyData?.months?.[currentPeriod]?.billed ?? 0)
+                    : Number(it?._totalTulbur ?? 0);
+                  return sum + currentMonthPay;
                 },
                 0,
               );
