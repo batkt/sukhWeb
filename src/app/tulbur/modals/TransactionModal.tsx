@@ -89,12 +89,39 @@ export default function TransactionModal({
   };
 
   const formatWhileTyping = (val: string) => {
-    // Return ONLY the integer part with commas. 
-    // We'll show the .00 as a visual suffix in the UI.
-    const clean = val.replace(/,/g, "");
-    let integerPart = clean.replace(/\D/g, "");
-    if (!integerPart) return "";
-    return integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    const clean = val.replace(/,/g, "").replace(/[^\d.]/g, "");
+    const dotIdx = clean.indexOf(".");
+    let intRaw: string;
+    let fracRaw: string;
+    const endsWithDot = clean.endsWith(".") && clean.split(".").length <= 2;
+
+    if (dotIdx === -1) {
+      intRaw = clean;
+      fracRaw = "";
+    } else {
+      intRaw = clean.slice(0, dotIdx);
+      fracRaw = clean.slice(dotIdx + 1).replace(/\./g, "");
+    }
+
+    const intDigits = intRaw.replace(/\D/g, "");
+    const intFormatted = intDigits
+      ? intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+      : "";
+
+    if (dotIdx !== -1 && fracRaw === "" && endsWithDot) {
+      return intFormatted + ".";
+    }
+
+    if (!intDigits && fracRaw !== "") {
+      return "." + fracRaw.replace(/\D/g, "").slice(0, 10);
+    }
+
+    if (fracRaw !== "") {
+      const fd = fracRaw.replace(/\D/g, "").slice(0, 10);
+      return intFormatted + "." + fd;
+    }
+
+    return intFormatted;
   };
 
   const resetForm = () => {
@@ -233,7 +260,7 @@ export default function TransactionModal({
       if (res.data?.success && typeof res.data.niitDun === "number") {
         console.log("[CALC] Received response:", res.data);
         const formatted = formatAmount(res.data.niitDun);
-        setAmount(formatted.split('.')[0] || "0");
+        setAmount(formatted.split(".")[0] || "0");
 
         // Save breakdown for UI display
         setCalcBreakdown({
@@ -564,8 +591,7 @@ export default function TransactionModal({
                         placeholder="0.00"
                         className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold"
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                      </span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium"></span>
                     </div>
                   </div>
                 )}
@@ -720,8 +746,7 @@ export default function TransactionModal({
                         onDoubleClick={fillAmountWithBalance}
                         onBlur={() => {
                           if (amount) {
-                            const num = parseFloat(amount.replace(/,/g, ""));
-                            setAmount(num.toLocaleString("en-US"));
+                            setAmount(formatAmount(amount));
                           }
                         }}
                         disabled={isProcessing}
