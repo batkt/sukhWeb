@@ -1964,7 +1964,7 @@ export default function DansniiKhuulga() {
 
       const cd = (response.headers?.["content-disposition"] ||
         response.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "zaalt_template.xlsx";
+      let filename = "Заалтын загвар.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
@@ -2020,7 +2020,7 @@ export default function DansniiKhuulga() {
       // Try to infer filename from headers or fallback
       const cd = (response.headers?.["content-disposition"] ||
         response.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "zaalt_data.xlsx";
+      let filename = "Заалтын жагсаалт.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
@@ -2184,7 +2184,7 @@ export default function DansniiKhuulga() {
       // Try to infer filename from headers or fallback
       const cd = (resp.headers?.["content-disposition"] ||
         resp.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = `nekhemjlekhiinTuukh_${new Date().toISOString().split("T")[0]}.xlsx`;
+      let filename = `Нэхэмжлэлийн түүх тайлан_${new Date().toISOString().split("T")[0]}.xlsx`;
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
         filename = decodeURIComponent(
           cd.match(/filename\*=UTF-8''([^;]+)/i)![1],

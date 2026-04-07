@@ -44,50 +44,360 @@ export function useGereeActions(
   sortKey?: string,
   setSortKey?: (key: any) => void,
   sortOrder?: "asc" | "desc",
-  setSortOrder?: (order: "asc" | "desc") => void
+  setSortOrder?: (order: "asc" | "desc") => void,
 ) {
   const { mutate } = useSWRConfig();
 
-  const handleCreateResident = useCallback(async (e: React.FormEvent, newResident: any, editingResident: any) => {
-    e.preventDefault();
+  const handleCreateResident = useCallback(
+    async (e: React.FormEvent, newResident: any, editingResident: any) => {
+      e.preventDefault();
 
-    if (!isValidName(newResident.ner) || (String(newResident.ovog || "").trim() !== "" && !isValidName(newResident.ovog))) {
-      openErrorOverlay("Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой). Овог хоосон байж болно.");
-      return;
-    }
-    
-    const _newResReg = String(newResident.register || "").trim();
-    if (_newResReg !== "" && !isValidRegister(newResident.register)) {
-      openErrorOverlay(explainRegisterRule());
-      return;
-    }
-    
-    if (!areValidPhones(newResident.utas || [])) {
-      openErrorOverlay(explainPhoneRule());
-      return;
-    }
+      if (
+        !isValidName(newResident.ner) ||
+        (String(newResident.ovog || "").trim() !== "" &&
+          !isValidName(newResident.ovog))
+      ) {
+        openErrorOverlay(
+          "Нэр зөвхөн үсгээр бичигдсэн байх ёстой (тоо болон тусгай тэмдэгт хориотой). Овог хоосон байж болно.",
+        );
+        return;
+      }
 
-    try {
-      const firstPhone = Array.isArray(newResident.utas)
-        ? newResident.utas.find((p: any) => String(p || "").trim() !== "") || ""
-        : String(newResident.utas || "");
+      const _newResReg = String(newResident.register || "").trim();
+      if (_newResReg !== "" && !isValidRegister(newResident.register)) {
+        openErrorOverlay(explainRegisterRule());
+        return;
+      }
 
-      // Find the selected building from baiguullaga
-      const effectiveBid = selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
-      const selectedBarilga = baiguullaga?.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBid));
+      if (!areValidPhones(newResident.utas || [])) {
+        openErrorOverlay(explainPhoneRule());
+        return;
+      }
 
-      // Unit validation: Ensure the toot exists in the building configuration
-      const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud;
-      if (davkhariinToonuud && typeof davkhariinToonuud === 'object') {
-        const o = String(newResident.orts || "").trim();
-        const f = String(newResident.davkhar || "").trim();
-        const key = composeKey ? composeKey(o, f) : f;
-        
-        // Use the same splitting logic as the data layer
+      try {
+        const firstPhone = Array.isArray(newResident.utas)
+          ? newResident.utas.find((p: any) => String(p || "").trim() !== "") ||
+            ""
+          : String(newResident.utas || "");
+
+        // Find the selected building from baiguullaga
+        const effectiveBid =
+          selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
+        const selectedBarilga = baiguullaga?.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBid),
+        );
+
+        // Unit validation: Ensure the toot exists in the building configuration
+        const davkhariinToonuud = selectedBarilga?.tokhirgoo?.davkhariinToonuud;
+        if (davkhariinToonuud && typeof davkhariinToonuud === "object") {
+          const o = String(newResident.orts || "").trim();
+          const f = String(newResident.davkhar || "").trim();
+          const key = composeKey ? composeKey(o, f) : f;
+
+          // Use the same splitting logic as the data layer
+          const getUnitsAsArray = (val: any): string[] => {
+            if (Array.isArray(val)) {
+              return val.flatMap((v) =>
+                String(v)
+                  .split(/[\s,;|]+/)
+                  .filter(Boolean),
+              );
+            }
+            if (typeof val === "string")
+              return val.split(/[\s,;|]+/).filter(Boolean);
+            return [];
+          };
+
+          const validUnits = [
+            ...getUnitsAsArray(davkhariinToonuud[key]),
+            ...getUnitsAsArray(davkhariinToonuud[f]),
+          ];
+
+          if (validUnits.length > 0) {
+            const inputToot = String(newResident.toot || "").trim();
+            // Normalize comparison to handle special characters consistently with getTootOptions
+            const normalize = (s: string) =>
+              String(s || "").replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, "");
+            const normInput = normalize(inputToot);
+
+            const exists = validUnits.some(
+              (u: any) => normalize(String(u)).trim() === normInput,
+            );
+            if (!exists) {
+              openErrorOverlay(
+                `"${inputToot}" тоот тухайн давхарт бүртгэлгүй байна. Тоот бүртгэлээс шалгана уу.`,
+              );
+              return false;
+            }
+          }
+        }
+
+        const payload: any = {
+          ner: newResident.ner,
+          ovog: newResident.ovog,
+          register: newResident.register,
+          utas: firstPhone,
+          email: newResident.mail,
+          mail: newResident.mail,
+          khayag: newResident.khayag,
+          turul: newResident.turul,
+          baiguullagiinId: ajiltan?.baiguullagiinId,
+          baiguullagiinNer: baiguullaga?.ner,
+          erkh: "OrshinSuugch",
+          taniltsuulgaKharakhEsekh: true,
+          // Building & Apartment Information
+          toot: newResident.toot || "",
+          davkhar: newResident.davkhar || "",
+          orts: newResident.orts || "1", // Default to "1" if not provided
+          barilgiinId: selectedBarilga?._id || effectiveBid || "",
+          bairniiNer: selectedBarilga?.ner || "",
+          // Financial Information
+          ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
+          tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || "",
+          // Additional
+          tailbar: newResident.tailbar || "",
+          // Address (if available from selectedBarilga)
+          duureg: newResident.duureg || selectedBarilga?.duureg || "",
+          horoo: newResident.horoo || selectedBarilga?.horoo || "",
+          soh: selectedBarilga?.tokhirgoo?.sohNer || "",
+          sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
+        };
+
+        if (editingResident?._id) {
+          await updateMethod("orshinSuugch", token || "", {
+            ...payload,
+            _id: editingResident._id,
+          });
+        } else {
+          await createMethod("orshinSuugchBurtgey", token || "", payload);
+        }
+
+        openSuccessOverlay(
+          editingResident?._id
+            ? "Оршин суугчийн мэдээлэл засагдлаа"
+            : "Оршин суугч нэмэгдлээ",
+        );
+
+        // Ensure all resident-related lists refresh immediately across the app
+        try {
+          mutate(
+            (key: any) =>
+              Array.isArray(key) &&
+              (key[0] === "/orshinSuugch" || key[0] === "/geree"),
+            undefined,
+            { revalidate: true },
+          );
+        } catch (_e) {
+          // Best-effort cache refresh; ignore errors here
+        }
+
+        return true;
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+        return false;
+      }
+    },
+    [
+      token,
+      ajiltan,
+      baiguullaga,
+      selectedBuildingIdForActions,
+      barilgiinId,
+      selectedBuildingId,
+      composeKey,
+      mutate,
+    ],
+  );
+
+  const handleDeleteResident = useCallback(
+    async (p: any) => {
+      if (!token) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+      }
+
+      let residentId: string | undefined = undefined;
+      if (p && typeof p === "object") {
+        if (p._id !== undefined && p._id !== null) {
+          residentId = String(p._id).trim();
+        } else if (p.id !== undefined && p.id !== null) {
+          residentId = String(p.id).trim();
+        }
+      }
+
+      if (
+        !residentId ||
+        residentId === "" ||
+        residentId === "undefined" ||
+        residentId === "null"
+      ) {
+        openErrorOverlay("Оршин суугчийн ID олдсонгүй эсвэл буруу байна");
+        return;
+      }
+
+      try {
+        await deleteMethod("orshinSuugch", token, residentId);
+        openSuccessOverlay("Устгагдлаа");
+        return true;
+      } catch (e) {
+        openErrorOverlay("Устгахад алдаа гарлаа");
+        return false;
+      }
+    },
+    [token],
+  );
+
+  const handleEditResident = useCallback(
+    async (
+      p: any,
+      setEditingResident: any,
+      setNewResident: any,
+      setShowResidentModal: any,
+    ) => {
+      setEditingResident(p);
+
+      let ekhniiUldegdel = p.ekhniiUldegdel ?? p.medeelel?.ekhniiUldegdel ?? 0;
+
+      // If ekhniiUldegdel is 0, attempt to fetch from invoice history
+      if (ekhniiUldegdel === 0 && token && baiguullaga?._id) {
+        try {
+          const resp = await uilchilgee(token).get("/nekhemjlekhiinTuukh", {
+            params: {
+              baiguullagiinId: baiguullaga._id,
+              barilgiinId: selectedBuildingId || barilgiinId || null,
+              khuudasniiDugaar: 1,
+              khuudasniiKhemjee: 100,
+            },
+          });
+
+          const list = Array.isArray(resp.data?.jagsaalt)
+            ? resp.data.jagsaalt
+            : Array.isArray(resp.data)
+              ? resp.data
+              : [];
+
+          // Find the latest invoice for this resident
+          const residentInvoices = list.filter((item: any) => {
+            const pNer = String(p.ner || "")
+              .trim()
+              .toLowerCase();
+            const pOvog = String(p.ovog || "")
+              .trim()
+              .toLowerCase();
+            const iNer = String(item.ner || "")
+              .trim()
+              .toLowerCase();
+            const iOvog = String(item.ovog || "")
+              .trim()
+              .toLowerCase();
+
+            return (
+              (iNer === pNer && iOvog === pOvog) ||
+              (item.register &&
+                p.register &&
+                String(item.register).trim() === String(p.register).trim())
+            );
+          });
+
+          if (residentInvoices.length > 0) {
+            const latest = residentInvoices[0];
+            const zardluud = latest.medeelel?.zardluud || latest.zardluud || [];
+
+            const ekhniiRow = zardluud.find((z: any) => {
+              const name = String(z.ner || z.name || "").toLowerCase();
+              return (
+                z.isEkhniiUldegdel === true ||
+                name.includes("эхний үлдэгдэл") ||
+                name.includes("starting balance")
+              );
+            });
+
+            if (ekhniiRow) {
+              const val = Number(ekhniiRow.dun || ekhniiRow.tariff || 0);
+              if (val > 0) {
+                ekhniiUldegdel = val;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch ekhniiUldegdel from history:", error);
+        }
+      }
+
+      setNewResident({
+        ovog: p.ovog || "",
+        ner: p.ner || "",
+        register: p.register || "",
+        utas: Array.isArray(p.utas)
+          ? p.utas.map((u: any) => String(u))
+          : p.utas
+            ? [String(p.utas)]
+            : [""],
+        mail: p.mail || p.email || "",
+        khayag: p.khayag || "",
+        aimag: p.aimag || "Улаанбаатар",
+        duureg: p.duureg || "",
+        horoo: p.horoo || "",
+        orts: p.orts || "",
+        toot: p.toot || "",
+        davkhar: p.davkhar || "",
+        tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
+        turul: p.turul || "Үндсэн",
+        tailbar: p?.tailbar || "",
+        ekhniiUldegdel: p.ekhniiUldegdel || 0,
+      });
+      setShowResidentModal(true);
+    },
+    [token, baiguullaga, selectedBuildingId, barilgiinId],
+  );
+
+  const composeKeyFn = useCallback(
+    (orts: string, floor: string) => {
+      if (composeKey) return composeKey(orts, floor);
+      const f = String(floor || "").trim();
+      const o = String(orts || "").trim();
+      return o ? `${o}::${f}` : f;
+    },
+    [composeKey],
+  );
+
+  const addUnit = useCallback(
+    async (floor: string, values: string[]) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Мэдээлэл дутуу байна");
+        return;
+      }
+
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return;
+      }
+
+      setIsSavingUnits?.(true);
+      try {
+        // Fetch latest baiguullaga without building filters
+        const orgResp = await uilchilgee(token).get(
+          `/baiguullaga/${baiguullaga._id}`,
+          {
+            headers: { "X-Org-Only": "1" },
+          },
+        );
+        const org = orgResp.data;
+        const barilga = org.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        if (!barilga) {
+          openErrorOverlay("Барилга олдсонгүй");
+          return;
+        }
+
         const getUnitsAsArray = (val: any): string[] => {
           if (Array.isArray(val)) {
             return val.flatMap((v) =>
-              String(v).split(/[\s,;|]+/).filter(Boolean)
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
             );
           }
           if (typeof val === "string")
@@ -95,475 +405,315 @@ export function useGereeActions(
           return [];
         };
 
-        const validUnits = [
-          ...getUnitsAsArray(davkhariinToonuud[key]),
-          ...getUnitsAsArray(davkhariinToonuud[f])
-        ];
+        const key = composeKeyFn(selectedOrts || "", floor);
+        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+          string,
+          any
+        >;
+        const currentUnits = getUnitsAsArray(existing[key]);
 
-        if (validUnits.length > 0) {
-          const inputToot = String(newResident.toot || "").trim();
-          // Normalize comparison to handle special characters consistently with getTootOptions
-          const normalize = (s: string) => String(s || "").replace(/[^0-9A-Za-zА-Яа-яӨөҮүёЁ-]/g, "");
-          const normInput = normalize(inputToot);
-          
-          const exists = validUnits.some((u: any) => normalize(String(u)).trim() === normInput);
-          if (!exists) {
-            openErrorOverlay(`"${inputToot}" тоот тухайн давхарт бүртгэлгүй байна. Тоот бүртгэлээс шалгана уу.`);
-            return false;
-          }
-        }
-      }
-
-      const payload: any = {
-        ner: newResident.ner,
-        ovog: newResident.ovog,
-        register: newResident.register,
-        utas: firstPhone,
-        email: newResident.mail,
-        mail: newResident.mail,
-        khayag: newResident.khayag,
-        turul: newResident.turul,
-        baiguullagiinId: ajiltan?.baiguullagiinId,
-        baiguullagiinNer: baiguullaga?.ner,
-        erkh: "OrshinSuugch",
-        taniltsuulgaKharakhEsekh: true,
-        // Building & Apartment Information
-        toot: newResident.toot || "",
-        davkhar: newResident.davkhar || "",
-        orts: newResident.orts || "1", // Default to "1" if not provided
-        barilgiinId: selectedBarilga?._id || effectiveBid || "",
-        bairniiNer: selectedBarilga?.ner || "",
-        // Financial Information
-        ekhniiUldegdel: newResident.ekhniiUldegdel || 0,
-        tsahilgaaniiZaalt: newResident.tsahilgaaniiZaalt || "",
-        // Additional
-        tailbar: newResident.tailbar || "",
-        // Address (if available from selectedBarilga)
-        duureg: newResident.duureg || selectedBarilga?.duureg || "",
-        horoo: newResident.horoo || selectedBarilga?.horoo || "",
-        soh: selectedBarilga?.tokhirgoo?.sohNer || "",
-        sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
-      };
-
-      if (editingResident?._id) {
-        await updateMethod("orshinSuugch", token || "", {
-          ...payload,
-          _id: editingResident._id,
-        });
-      } else {
-        await createMethod("orshinSuugchBurtgey", token || "", payload);
-      }
-
-      openSuccessOverlay(editingResident?._id ? "Оршин суугчийн мэдээлэл засагдлаа" : "Оршин суугч нэмэгдлээ");
-
-      // Ensure all resident-related lists refresh immediately across the app
-      try {
-        mutate(
-          (key: any) =>
-            Array.isArray(key) &&
-            (key[0] === "/orshinSuugch" || key[0] === "/geree"),
-          undefined,
-          { revalidate: true }
+        // Add new units, avoiding duplicates
+        const newUnits = Array.from(
+          new Set([...currentUnits, ...values.map(String)]),
         );
-      } catch (_e) {
-        // Best-effort cache refresh; ignore errors here
+
+        const updatedBarilguud = org.barilguud.map((b: any) => {
+          if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
+          return {
+            ...b,
+            tokhirgoo: {
+              ...(b.tokhirgoo || {}),
+              davkhariinToonuud: {
+                ...existing,
+                [key]: newUnits,
+              },
+            },
+          };
+        });
+
+        const payload = {
+          ...org,
+          barilguud: updatedBarilguud,
+        };
+
+        await updateMethod("baiguullaga", token, payload);
+        await baiguullagaMutate?.();
+        openSuccessOverlay("Тоот нэмэгдлээ");
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsSavingUnits?.(false);
+      }
+    },
+    [
+      token,
+      baiguullaga,
+      selectedBuildingId,
+      barilgiinId,
+      baiguullagaMutate,
+      setIsSavingUnits,
+      selectedOrts,
+      composeKeyFn,
+    ],
+  );
+
+  const deleteUnit = useCallback(
+    async (floor: string, unit: string) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Мэдээлэл дутуу байна");
+        return;
       }
 
-      return true;
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-      return false;
-    }
-  }, [token, ajiltan, baiguullaga, selectedBuildingIdForActions, barilgiinId, selectedBuildingId, composeKey, mutate]);
-
-  const handleDeleteResident = useCallback(async (p: any) => {
-    if (!token) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
-
-    let residentId: string | undefined = undefined;
-    if (p && typeof p === "object") {
-      if (p._id !== undefined && p._id !== null) {
-        residentId = String(p._id).trim();
-      } else if (p.id !== undefined && p.id !== null) {
-        residentId = String(p.id).trim();
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return;
       }
-    }
 
-    if (!residentId || residentId === "" || residentId === "undefined" || residentId === "null") {
-      openErrorOverlay("Оршин суугчийн ID олдсонгүй эсвэл буруу байна");
-      return;
-    }
-
-    try {
-      await deleteMethod("orshinSuugch", token, residentId);
-      openSuccessOverlay("Устгагдлаа");
-      return true;
-    } catch (e) {
-      openErrorOverlay("Устгахад алдаа гарлаа");
-      return false;
-    }
-  }, [token]);
-
-  const handleEditResident = useCallback(async (p: any, setEditingResident: any, setNewResident: any, setShowResidentModal: any) => {
-    setEditingResident(p);
-    
-    let ekhniiUldegdel = p.ekhniiUldegdel ?? p.medeelel?.ekhniiUldegdel ?? 0;
-
-    // If ekhniiUldegdel is 0, attempt to fetch from invoice history
-    if (ekhniiUldegdel === 0 && token && baiguullaga?._id) {
+      setIsSavingUnits?.(true);
       try {
-        const resp = await uilchilgee(token).get("/nekhemjlekhiinTuukh", {
-          params: {
-            baiguullagiinId: baiguullaga._id,
-            barilgiinId: selectedBuildingId || barilgiinId || null,
-            khuudasniiDugaar: 1,
-            khuudasniiKhemjee: 100,
+        const orgResp = await uilchilgee(token).get(
+          `/baiguullaga/${baiguullaga._id}`,
+          {
+            headers: { "X-Org-Only": "1" },
           },
-        });
-        
-        const list = Array.isArray(resp.data?.jagsaalt)
-          ? resp.data.jagsaalt
-          : Array.isArray(resp.data)
-          ? resp.data
-          : [];
-          
-        // Find the latest invoice for this resident
-        const residentInvoices = list.filter((item: any) => {
-          const pNer = String(p.ner || "").trim().toLowerCase();
-          const pOvog = String(p.ovog || "").trim().toLowerCase();
-          const iNer = String(item.ner || "").trim().toLowerCase();
-          const iOvog = String(item.ovog || "").trim().toLowerCase();
-          
-          return (
-             (iNer === pNer && iOvog === pOvog) ||
-             (item.register && p.register && String(item.register).trim() === String(p.register).trim())
-          );
-        });
-        
-        if (residentInvoices.length > 0) {
-          const latest = residentInvoices[0];
-          const zardluud = latest.medeelel?.zardluud || latest.zardluud || [];
-          
-          const ekhniiRow = zardluud.find((z: any) => {
-             const name = String(z.ner || z.name || "").toLowerCase();
-             return (
-                z.isEkhniiUldegdel === true ||
-                name.includes("эхний үлдэгдэл") ||
-                name.includes("starting balance")
-             );
+        );
+        const org = orgResp.data;
+        const barilga = org.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        if (!barilga) {
+          openErrorOverlay("Барилга олдсонгүй");
+          return;
+        }
+
+        const getUnitsAsArray = (val: any): string[] => {
+          if (Array.isArray(val)) {
+            return val.flatMap((v) =>
+              String(v)
+                .split(/[\s,;|]+/)
+                .filter(Boolean),
+            );
+          }
+          if (typeof val === "string")
+            return val.split(/[\s,;|]+/).filter(Boolean);
+          return [];
+        };
+
+        const key = composeKeyFn(selectedOrts || "", floor);
+        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+          string,
+          any
+        >;
+        const currentUnits = getUnitsAsArray(existing[key]);
+        const unitStr = String(unit).trim();
+        const updatedUnits = currentUnits.filter(
+          (u: string) => String(u).trim() !== unitStr,
+        );
+
+        if (currentUnits.length === updatedUnits.length) {
+          openErrorOverlay("Тоот олдсонгүй");
+          return;
+        }
+
+        // Check if there are active contracts for this unit
+        if (contracts && Array.isArray(contracts)) {
+          const hasActiveContract = contracts.some((c: any) => {
+            const isCancelled =
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("цуцалсан") ||
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("идэвхгүй") ||
+              String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
+            const isActive = !isCancelled;
+
+            if (!isActive) return false;
+
+            const cFloor = String(c.davkhar || "").trim();
+            const cToot = String(c.toot || "").trim();
+            const cOrts = String(c.orts || "").trim();
+            const selOrts = String(selectedOrts || "").trim();
+
+            const floorMatch = cFloor === String(floor).trim();
+            const tootMatch = cToot === unitStr;
+            const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
+
+            return floorMatch && tootMatch && ortsMatch;
           });
-          
-          if (ekhniiRow) {
-             const val = Number(ekhniiRow.dun || ekhniiRow.tariff || 0);
-             if (val > 0) {
-                ekhniiUldegdel = val;
-             }
+
+          if (hasActiveContract) {
+            openErrorOverlay(
+              "Энэ тоот дээр идэвхтэй гэрээ байна. Устгах боломжгүй.",
+            );
+            return;
           }
         }
-      } catch (error) {
-        console.error("Failed to fetch ekhniiUldegdel from history:", error);
-      }
-    }
 
-    setNewResident({
-      ovog: p.ovog || "",
-      ner: p.ner || "",
-      register: p.register || "",
-      utas: Array.isArray(p.utas) ? p.utas.map((u: any) => String(u)) : p.utas ? [String(p.utas)] : [""],
-      mail: p.mail || p.email || "",
-      khayag: p.khayag || "",
-      aimag: p.aimag || "Улаанбаатар",
-      duureg: p.duureg || "",
-      horoo: p.horoo || "",
-      orts: p.orts || "",
-      toot: p.toot || "",
-      davkhar: p.davkhar || "",
-      tsahilgaaniiZaalt: p.tsahilgaaniiZaalt || "",
-      turul: p.turul || "Үндсэн",
-      tailbar: p?.tailbar || "",
-      ekhniiUldegdel: p.ekhniiUldegdel || 0,
-    });
-    setShowResidentModal(true);
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId]);
-
-  const composeKeyFn = useCallback((orts: string, floor: string) => {
-    if (composeKey) return composeKey(orts, floor);
-    const f = String(floor || "").trim();
-    const o = String(orts || "").trim();
-    return o ? `${o}::${f}` : f;
-  }, [composeKey]);
-
-  const addUnit = useCallback(async (floor: string, values: string[]) => {
-    if (!token || !baiguullaga?._id) {
-      openErrorOverlay("Мэдээлэл дутуу байна");
-      return;
-    }
-
-    const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-    if (!effectiveBarilgiinId) {
-      openErrorOverlay("Барилга сонгоогүй байна");
-      return;
-    }
-
-    setIsSavingUnits?.(true);
-    try {
-
-      // Fetch latest baiguullaga without building filters
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
-        headers: { "X-Org-Only": "1" },
-      });
-      const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
-      if (!barilga) {
-        openErrorOverlay("Барилга олдсонгүй");
-        return;
-      }
-
-      const getUnitsAsArray = (val: any): string[] => {
-        if (Array.isArray(val)) {
-          return val.flatMap((v) =>
-            String(v).split(/[\s,;|]+/).filter(Boolean)
-          );
-        }
-        if (typeof val === "string")
-          return val.split(/[\s,;|]+/).filter(Boolean);
-        return [];
-      };
-
-      const key = composeKeyFn(selectedOrts || "", floor);
-      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>;
-      const currentUnits = getUnitsAsArray(existing[key]);
-      
-      // Add new units, avoiding duplicates
-      const newUnits = Array.from(new Set([...currentUnits, ...values.map(String)]));
-
-      const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
-        return {
-          ...b,
-          tokhirgoo: {
-            ...(b.tokhirgoo || {}),
-            davkhariinToonuud: {
-              ...existing,
-              [key]: newUnits,
+        const updatedBarilguud = org.barilguud.map((b: any) => {
+          if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
+          return {
+            ...b,
+            tokhirgoo: {
+              ...(b.tokhirgoo || {}),
+              davkhariinToonuud: {
+                ...existing,
+                [key]: updatedUnits,
+              },
             },
-          },
-        };
-      });
-
-      const payload = {
-        ...org,
-        barilguud: updatedBarilguud,
-      };
-
-      await updateMethod("baiguullaga", token, payload);
-      await baiguullagaMutate?.();
-      openSuccessOverlay("Тоот нэмэгдлээ");
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-    } finally {
-      setIsSavingUnits?.(false);
-    }
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn]);
-
-  const deleteUnit = useCallback(async (floor: string, unit: string) => {
-    if (!token || !baiguullaga?._id) {
-      openErrorOverlay("Мэдээлэл дутуу байна");
-      return;
-    }
-
-    const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-    if (!effectiveBarilgiinId) {
-      openErrorOverlay("Барилга сонгоогүй байна");
-      return;
-    }
-
-    setIsSavingUnits?.(true);
-    try {
-
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
-        headers: { "X-Org-Only": "1" },
-      });
-      const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
-      if (!barilga) {
-        openErrorOverlay("Барилга олдсонгүй");
-        return;
-      }
-
-      const getUnitsAsArray = (val: any): string[] => {
-        if (Array.isArray(val)) {
-          return val.flatMap((v) =>
-            String(v).split(/[\s,;|]+/).filter(Boolean)
-          );
-        }
-        if (typeof val === "string")
-          return val.split(/[\s,;|]+/).filter(Boolean);
-        return [];
-      };
-
-      const key = composeKeyFn(selectedOrts || "", floor);
-      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, any>;
-      const currentUnits = getUnitsAsArray(existing[key]);
-      const unitStr = String(unit).trim();
-      const updatedUnits = currentUnits.filter((u: string) => String(u).trim() !== unitStr);
-
-      if (currentUnits.length === updatedUnits.length) {
-        openErrorOverlay("Тоот олдсонгүй");
-        return;
-      }
-
-      // Check if there are active contracts for this unit
-      if (contracts && Array.isArray(contracts)) {
-        const hasActiveContract = contracts.some((c: any) => {
-          const isCancelled = String(c.tuluv || c.status || "").toLowerCase().includes("цуцалсан") || 
-                             String(c.tuluv || c.status || "").toLowerCase().includes("идэвхгүй") ||
-                             String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
-          const isActive = !isCancelled;
-          
-          if (!isActive) return false;
-
-          const cFloor = String(c.davkhar || "").trim();
-          const cToot = String(c.toot || "").trim();
-          const cOrts = String(c.orts || "").trim();
-          const selOrts = String(selectedOrts || "").trim();
-
-          const floorMatch = cFloor === String(floor).trim();
-          const tootMatch = cToot === unitStr;
-          const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
-
-          return floorMatch && tootMatch && ortsMatch;
+          };
         });
 
-        if (hasActiveContract) {
-          openErrorOverlay("Энэ тоот дээр идэвхтэй гэрээ байна. Устгах боломжгүй.");
+        const payload = {
+          ...org,
+          barilguud: updatedBarilguud,
+        };
+
+        await updateMethod("baiguullaga", token, payload);
+        await baiguullagaMutate?.();
+        openSuccessOverlay("Тоот устгагдлаа");
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsSavingUnits?.(false);
+      }
+    },
+    [
+      token,
+      baiguullaga,
+      selectedBuildingId,
+      barilgiinId,
+      baiguullagaMutate,
+      setIsSavingUnits,
+      selectedOrts,
+      composeKeyFn,
+      contracts,
+    ],
+  );
+
+  const deleteFloor = useCallback(
+    async (floor: string) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Мэдээлэл дутуу байна");
+        return;
+      }
+
+      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+      if (!effectiveBarilgiinId) {
+        openErrorOverlay("Барилга сонгоогүй байна");
+        return;
+      }
+
+      setIsSavingUnits?.(true);
+      try {
+        const orgResp = await uilchilgee(token).get(
+          `/baiguullaga/${baiguullaga._id}`,
+          {
+            headers: { "X-Org-Only": "1" },
+          },
+        );
+        const org = orgResp.data;
+        const barilga = org.barilguud?.find(
+          (b: any) => String(b._id || b.id) === String(effectiveBarilgiinId),
+        );
+        if (!barilga) {
+          openErrorOverlay("Барилга олдсонгүй");
           return;
         }
-      }
 
-      const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
-        return {
-          ...b,
-          tokhirgoo: {
-            ...(b.tokhirgoo || {}),
-            davkhariinToonuud: {
-              ...existing,
-              [key]: updatedUnits,
-            },
-          },
-        };
-      });
+        const key = composeKeyFn(selectedOrts || "", floor);
+        const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<
+          string,
+          string[]
+        >;
 
-      const payload = {
-        ...org,
-        barilguud: updatedBarilguud,
-      };
+        if (
+          !existing[key] ||
+          (Array.isArray(existing[key]) && existing[key].length === 0)
+        ) {
+          openErrorOverlay("Давхар олдсонгүй эсвэл хэдийнэ устгагдсан байна");
+          return;
+        }
 
-      await updateMethod("baiguullaga", token, payload);
-      await baiguullagaMutate?.();
-      openSuccessOverlay("Тоот устгагдлаа");
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-    } finally {
-      setIsSavingUnits?.(false);
-    }
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn, contracts]);
+        // Check if there are any active contracts on this floor
+        if (contracts && Array.isArray(contracts)) {
+          const floorUnits = Array.isArray(existing[key]) ? existing[key] : [];
+          const hasActiveContract = contracts.some((c: any) => {
+            const isCancelled =
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("цуцалсан") ||
+              String(c.tuluv || c.status || "")
+                .toLowerCase()
+                .includes("идэвхгүй") ||
+              String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
+            const isActive = !isCancelled;
 
-  const deleteFloor = useCallback(async (floor: string) => {
-    if (!token || !baiguullaga?._id) {
-      openErrorOverlay("Мэдээлэл дутуу байна");
-      return;
-    }
+            if (!isActive) return false;
 
-    const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-    if (!effectiveBarilgiinId) {
-      openErrorOverlay("Барилга сонгоогүй байна");
-      return;
-    }
+            const cFloor = String(c.davkhar || "").trim();
+            const cOrts = String(c.orts || "").trim();
+            const selOrts = String(selectedOrts || "").trim();
 
-    setIsSavingUnits?.(true);
-    try {
+            const floorMatch = cFloor === String(floor).trim();
+            const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
 
-      const orgResp = await uilchilgee(token).get(`/baiguullaga/${baiguullaga._id}`, {
-        headers: { "X-Org-Only": "1" },
-      });
-      const org = orgResp.data;
-      const barilga = org.barilguud?.find((b: any) => String(b._id || b.id) === String(effectiveBarilgiinId));
-      if (!barilga) {
-        openErrorOverlay("Барилга олдсонгүй");
-        return;
-      }
+            if (floorMatch && ortsMatch) {
+              const cToot = String(c.toot || "").trim();
+              return floorUnits.some((u) => String(u).trim() === cToot);
+            }
+            return false;
+          });
 
-      const key = composeKeyFn(selectedOrts || "", floor);
-      const existing = (barilga.tokhirgoo?.davkhariinToonuud || {}) as Record<string, string[]>;
-      
-      if (!existing[key] || (Array.isArray(existing[key]) && existing[key].length === 0)) {
-        openErrorOverlay("Давхар олдсонгүй эсвэл хэдийнэ устгагдсан байна");
-        return;
-      }
-
-      // Check if there are any active contracts on this floor
-      if (contracts && Array.isArray(contracts)) {
-        const floorUnits = Array.isArray(existing[key]) ? existing[key] : [];
-        const hasActiveContract = contracts.some((c: any) => {
-          const isCancelled = String(c.tuluv || c.status || "").toLowerCase().includes("цуцалсан") || 
-                             String(c.tuluv || c.status || "").toLowerCase().includes("идэвхгүй") ||
-                             String(c.tuluv || c.status || "").toLowerCase() === "tsutlsasan";
-          const isActive = !isCancelled;
-
-          if (!isActive) return false;
-
-          const cFloor = String(c.davkhar || "").trim();
-          const cOrts = String(c.orts || "").trim();
-          const selOrts = String(selectedOrts || "").trim();
-
-          const floorMatch = cFloor === String(floor).trim();
-          const ortsMatch = !selOrts || cOrts === "" || cOrts === selOrts;
-
-          if (floorMatch && ortsMatch) {
-             const cToot = String(c.toot || "").trim();
-             return floorUnits.some(u => String(u).trim() === cToot);
+          if (hasActiveContract) {
+            openErrorOverlay(
+              "Энэ давхарт идэвхтэй гэрээтэй тоот байна. Устгах боломжгүй.",
+            );
+            return;
           }
-          return false;
+        }
+
+        const updated = { ...existing };
+        delete updated[key];
+
+        const updatedBarilguud = org.barilguud.map((b: any) => {
+          if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
+          return {
+            ...b,
+            tokhirgoo: {
+              ...(b.tokhirgoo || {}),
+              davkhariinToonuud: updated,
+            },
+          };
         });
 
-        if (hasActiveContract) {
-          openErrorOverlay("Энэ давхарт идэвхтэй гэрээтэй тоот байна. Устгах боломжгүй.");
-          return;
-        }
-      }
-
-      const updated = { ...existing };
-      delete updated[key];
-
-      const updatedBarilguud = org.barilguud.map((b: any) => {
-        if (String(b._id || b.id) !== String(effectiveBarilgiinId)) return b;
-        return {
-          ...b,
-          tokhirgoo: {
-            ...(b.tokhirgoo || {}),
-            davkhariinToonuud: updated,
-          },
+        const payload = {
+          ...org,
+          barilguud: updatedBarilguud,
         };
-      });
 
-      const payload = {
-        ...org,
-        barilguud: updatedBarilguud,
-      };
-
-      await updateMethod("baiguullaga", token, payload);
-      await baiguullagaMutate?.();
-      openSuccessOverlay("Давхрын тоотууд устгагдлаа");
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-    } finally {
-      setIsSavingUnits?.(false);
-    }
-  }, [token, baiguullaga, selectedBuildingId, barilgiinId, baiguullagaMutate, setIsSavingUnits, selectedOrts, composeKeyFn, contracts]);
+        await updateMethod("baiguullaga", token, payload);
+        await baiguullagaMutate?.();
+        openSuccessOverlay("Давхрын тоотууд устгагдлаа");
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsSavingUnits?.(false);
+      }
+    },
+    [
+      token,
+      baiguullaga,
+      selectedBuildingId,
+      barilgiinId,
+      baiguullagaMutate,
+      setIsSavingUnits,
+      selectedOrts,
+      composeKeyFn,
+      contracts,
+    ],
+  );
 
   const handleShowResidentModal = useCallback(() => {
     setEditingResident?.(null);
@@ -626,10 +776,13 @@ export function useGereeActions(
       const blob = new Blob([resp.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
-      const cd = (resp.headers?.["content-disposition"] || resp.headers?.["Content-Disposition"]) as string | undefined;
-      let filename = "orshin_suugch.xlsx";
+      const cd = (resp.headers?.["content-disposition"] ||
+        resp.headers?.["Content-Disposition"]) as string | undefined;
+      let filename = "Оршин суугчийн жагсаалт.xlsx";
       if (cd && /filename\*=UTF-8''([^;]+)/i.test(cd)) {
-        filename = decodeURIComponent(cd.match(/filename\*=UTF-8''([^;]+)/i)![1]);
+        filename = decodeURIComponent(
+          cd.match(/filename\*=UTF-8''([^;]+)/i)![1],
+        );
       } else if (cd && /filename="?([^";]+)"?/i.test(cd)) {
         filename = cd.match(/filename="?([^";]+)"?/i)![1];
       }
@@ -661,7 +814,9 @@ export function useGereeActions(
       const resp = await uilchilgee(token).get("/orshinSuugchExcelTemplate", {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+          ...(effectiveBarilgiinId
+            ? { barilgiinId: effectiveBarilgiinId }
+            : {}),
         },
         responseType: "blob" as any,
       });
@@ -672,7 +827,7 @@ export function useGereeActions(
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "orshin_suugch_template.xlsx";
+      link.download = "Оршин суугчийн загвар.xlsx";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -689,51 +844,70 @@ export function useGereeActions(
     residentExcelInputRef?.current?.click();
   }, [residentExcelInputRef]);
 
-  const onResidentsExcelFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onResidentsExcelFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
-      return;
-    }
-
-    setIsUploadingResidents?.(true);
-    try {
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      const form = new FormData();
-      form.append("excelFile", file);
-      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
-      if (effectiveBarilgiinId) {
-        form.append("barilgiinId", effectiveBarilgiinId);
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
+        return;
       }
 
-      const resp: any = await uilchilgee(token).post("/orshinSuugchExcelImport", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      setIsUploadingResidents?.(true);
+      try {
+        const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+        const form = new FormData();
+        form.append("excelFile", file);
+        form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+        if (effectiveBarilgiinId) {
+          form.append("barilgiinId", effectiveBarilgiinId);
+        }
 
-      const data = resp?.data;
-      const failed = data?.result?.failed;
-      if (Array.isArray(failed) && failed.length > 0) {
-        const detailLines = failed.map((f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`);
-        const details = detailLines.join("\n");
-        const topMsg = data?.message || "Импортын явцад зарим мөр алдаатай байна";
-        openErrorOverlay(`${topMsg}\n${details}`);
-      } else {
-        openSuccessOverlay("Загвар амжилттай орууллаа.");
-        if (baiguullagaMutate) {
-          await baiguullagaMutate();
+        const resp: any = await uilchilgee(token).post(
+          "/orshinSuugchExcelImport",
+          form,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+
+        const data = resp?.data;
+        const failed = data?.result?.failed;
+        if (Array.isArray(failed) && failed.length > 0) {
+          const detailLines = failed.map(
+            (f: any) =>
+              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
+          );
+          const details = detailLines.join("\n");
+          const topMsg =
+            data?.message || "Импортын явцад зарим мөр алдаатай байна";
+          openErrorOverlay(`${topMsg}\n${details}`);
+        } else {
+          openSuccessOverlay("Загвар амжилттай орууллаа.");
+          if (baiguullagaMutate) {
+            await baiguullagaMutate();
+          }
+        }
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsUploadingResidents?.(false);
+        if (residentExcelInputRef?.current) {
+          residentExcelInputRef.current.value = "";
         }
       }
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-    } finally {
-      setIsUploadingResidents?.(false);
-      if (residentExcelInputRef?.current) {
-        residentExcelInputRef.current.value = "";
-      }
-    }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId, setIsUploadingResidents, residentExcelInputRef, baiguullagaMutate]);
+    },
+    [
+      token,
+      ajiltan,
+      selectedBuildingId,
+      barilgiinId,
+      setIsUploadingResidents,
+      residentExcelInputRef,
+      baiguullagaMutate,
+    ],
+  );
 
   const handleDownloadUnitsTemplate = useCallback(async () => {
     if (!token || !ajiltan?.baiguullagiinId) {
@@ -747,7 +921,9 @@ export function useGereeActions(
       const resp = await uilchilgee(token).get("/tootBurtgelExcelTemplate", {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
-          ...(effectiveBarilgiinId ? { barilgiinId: effectiveBarilgiinId } : {}),
+          ...(effectiveBarilgiinId
+            ? { barilgiinId: effectiveBarilgiinId }
+            : {}),
         },
         responseType: "blob" as any,
       });
@@ -775,274 +951,336 @@ export function useGereeActions(
     unitExcelInputRef?.current?.click();
   }, [unitExcelInputRef]);
 
-  const onUnitsExcelFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const onUnitsExcelFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    if (!token || !ajiltan?.baiguullagiinId) {
-      openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
-      return;
-    }
-    
-    setIsUploadingUnits?.(true);
-    try {
-      const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      const form = new FormData();
-      form.append("excelFile", file);
-      form.append("baiguullagiinId", ajiltan.baiguullagiinId);
-      if (effectiveBarilgiinId) {
-        form.append("barilgiinId", effectiveBarilgiinId);
-      }
-
-      const resp: any = await uilchilgee(token).post("/tootBurtgelExcelImport", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      const data = resp?.data;
-      const failed = data?.result?.failed;
-      if (Array.isArray(failed) && failed.length > 0) {
-        const detailLines = failed.map((f: any) => `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`);
-        const details = detailLines.join("\n");
-        const topMsg = data?.message || "Импортын явцад зарим мөр алдаатай байна";
-        openErrorOverlay(`${topMsg}\n${details}`);
-      } else {
-        openSuccessOverlay("Загвар амжилттай орууллаа.");
-        if (baiguullagaMutate) {
-          await baiguullagaMutate();
-        }
-      }
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-    } finally {
-      setIsUploadingUnits?.(false);
-      if (unitExcelInputRef?.current) {
-        unitExcelInputRef.current.value = "";
-      }
-    }
-  }, [token, ajiltan, selectedBuildingId, barilgiinId, setIsUploadingUnits, unitExcelInputRef, baiguullagaMutate]);
-
-  // Preview invoice handler
-  const handlePreviewInvoice = useCallback(async (contract: any) => {
-    if (!token || !baiguullaga?._id) {
-      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
-      return;
-    }
-
-    try {
-      const effectiveBarilgiinId = selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
-      
-      // Build query params
-      const params: Record<string, string> = {
-        gereeId: contract._id,
-        baiguullagiinId: baiguullaga._id,
-      };
-      
-      if (effectiveBarilgiinId) {
-        params.barilgiinId = effectiveBarilgiinId;
-      }
-      
-      // Get current month and year as default
-      const now = new Date();
-      params.targetMonth = String(now.getMonth() + 1);
-      params.targetYear = String(now.getFullYear());
-      
-      const queryString = new URLSearchParams(params).toString();
-      
-      const response = await uilchilgee(token).get(`/preview?${queryString}`);
-      
-      if (response.data) {
-        // Set invoice preview data and show modal
-        if (setInvoicePreviewData) {
-          setInvoicePreviewData(response.data);
-        }
-        if (setShowInvoicePreviewModal) {
-          setShowInvoicePreviewModal(true);
-        }
-      }
-    } catch (error: any) {
-      const msg = getErrorMessage(error);
-      openErrorOverlay(`Нэхэмжлэхийн урьдчилсан харалт татахад алдаа гарлаа: ${msg}`);
-    }
-  }, [token, baiguullaga, selectedBuildingIdForActions, selectedBuildingId, barilgiinId, setInvoicePreviewData, setShowInvoicePreviewModal]);
-
-  // Manual send invoice handler
-  const handleSendInvoices = useCallback(async (selectedContractIds: string[]) => {
-    if (!token || !baiguullaga?._id) {
-      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
-      return;
-    }
-
-    if (!selectedContractIds || selectedContractIds.length === 0) {
-      openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
-      return;
-    }
-
-    try {
-      // Get current month and year as default
-      const now = new Date();
-      
-      const body = {
-        gereeIds: selectedContractIds,
-        baiguullagiinId: baiguullaga._id,
-        override: false,
-        targetMonth: now.getMonth() + 1,
-        targetYear: now.getFullYear(),
-      };
-      
-      const response = await uilchilgee(token).post("/manualSend", body);
-      
-      if (response.data?.success) {
-        const message = response.data.message || `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
-        openSuccessOverlay(message);
-        
-        // If there are errors, show them
-        if (response.data.data?.errors > 0 && response.data.data?.errorsList?.length > 0) {
-          const errorMessages = response.data.data.errorsList
-            .map((err: any) => `${err.gereeniiDugaar || 'Гэрээ'}: ${err.error}`)
-            .join('\n');
-          openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
-        }
-      }
-    } catch (error: any) {
-      const msg = getErrorMessage(error);
-      openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
-    }
-  }, [token, baiguullaga]);
-
-  const handleCreateOrUpdateEmployee = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!token || !ajiltan?.baiguullagiinId) {
-      console.error("Missing token or baiguullagiinId");
-      openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
-      return;
-    }
-
-    // We need to get newEmployee from the component state
-    // Since we can't access it directly here, we'll need to pass it through the form
-    // For now, let's create a workaround by getting the data from the event target
-    const form = e.target as HTMLFormElement;
-    const formElements = form.elements as any;
-    
-    const employeeData: any = {
-      ovog: formElements.ovog?.value || "",
-      ner: formElements.ner?.value || "",
-      utas: formElements.utas?.value || "",
-      email: formElements.email?.value || "",
-      albanTushaal: formElements.albanTushaal?.value || "",
-      ajildOrsonOgnoo: formElements.ajildOrsonOgnoo?.value || "",
-      nevtrekhNer: formElements.nevtrekhNer?.value || "",
-      nuutsUg: formElements.nuutsUg?.value || "",
-    };
-
-    try {
-      // Get the effective building ID with fallback logic
-      let effectiveBarilgiinId = selectedBuildingId || barilgiinId;
-      
-      // If no building is selected, try to get the first available building from baiguullaga
-      if (!effectiveBarilgiinId && baiguullaga?.barilguud?.length > 0) {
-        effectiveBarilgiinId = baiguullaga.barilguud[0]._id;
-      }
-      
-      // Validate that we have a building ID
-      if (!effectiveBarilgiinId) {
-        console.error("No building ID available");
-        openErrorOverlay("Барилга сонгоно уу эсвэл байгууллагад барилга нэмнэ үү");
+      if (!token || !ajiltan?.baiguullagiinId) {
+        openErrorOverlay("Нэвтэрсэн эсэхээ шалгана уу");
         return;
       }
-      
-      // IMPORTANT: Backend model expects 'barilguud' as an array, not 'barilgiinId'
-      const payload = {
-        ...employeeData,
-        baiguullagiinId: ajiltan.baiguullagiinId,
-        baiguullagiinNer: baiguullaga?.ner || "",
-        // Send barilguud as array (backend model expects this)
-        // Ensure we always have at least one building
-        barilguud: [effectiveBarilgiinId],
-        erkh: "Ajiltan",
+
+      setIsUploadingUnits?.(true);
+      try {
+        const effectiveBarilgiinId = selectedBuildingId || barilgiinId;
+        const form = new FormData();
+        form.append("excelFile", file);
+        form.append("baiguullagiinId", ajiltan.baiguullagiinId);
+        if (effectiveBarilgiinId) {
+          form.append("barilgiinId", effectiveBarilgiinId);
+        }
+
+        const resp: any = await uilchilgee(token).post(
+          "/tootBurtgelExcelImport",
+          form,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          },
+        );
+
+        const data = resp?.data;
+        const failed = data?.result?.failed;
+        if (Array.isArray(failed) && failed.length > 0) {
+          const detailLines = failed.map(
+            (f: any) =>
+              `Мөр ${f.row || "?"}: ${f.error || f.message || "Алдаа"}`,
+          );
+          const details = detailLines.join("\n");
+          const topMsg =
+            data?.message || "Импортын явцад зарим мөр алдаатай байна";
+          openErrorOverlay(`${topMsg}\n${details}`);
+        } else {
+          openSuccessOverlay("Загвар амжилттай орууллаа.");
+          if (baiguullagaMutate) {
+            await baiguullagaMutate();
+          }
+        }
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+      } finally {
+        setIsUploadingUnits?.(false);
+        if (unitExcelInputRef?.current) {
+          unitExcelInputRef.current.value = "";
+        }
+      }
+    },
+    [
+      token,
+      ajiltan,
+      selectedBuildingId,
+      barilgiinId,
+      setIsUploadingUnits,
+      unitExcelInputRef,
+      baiguullagaMutate,
+    ],
+  );
+
+  // Preview invoice handler
+  const handlePreviewInvoice = useCallback(
+    async (contract: any) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+        return;
+      }
+
+      try {
+        const effectiveBarilgiinId =
+          selectedBuildingIdForActions || selectedBuildingId || barilgiinId;
+
+        // Build query params
+        const params: Record<string, string> = {
+          gereeId: contract._id,
+          baiguullagiinId: baiguullaga._id,
+        };
+
+        if (effectiveBarilgiinId) {
+          params.barilgiinId = effectiveBarilgiinId;
+        }
+
+        // Get current month and year as default
+        const now = new Date();
+        params.targetMonth = String(now.getMonth() + 1);
+        params.targetYear = String(now.getFullYear());
+
+        const queryString = new URLSearchParams(params).toString();
+
+        const response = await uilchilgee(token).get(`/preview?${queryString}`);
+
+        if (response.data) {
+          // Set invoice preview data and show modal
+          if (setInvoicePreviewData) {
+            setInvoicePreviewData(response.data);
+          }
+          if (setShowInvoicePreviewModal) {
+            setShowInvoicePreviewModal(true);
+          }
+        }
+      } catch (error: any) {
+        const msg = getErrorMessage(error);
+        openErrorOverlay(
+          `Нэхэмжлэхийн урьдчилсан харалт татахад алдаа гарлаа: ${msg}`,
+        );
+      }
+    },
+    [
+      token,
+      baiguullaga,
+      selectedBuildingIdForActions,
+      selectedBuildingId,
+      barilgiinId,
+      setInvoicePreviewData,
+      setShowInvoicePreviewModal,
+    ],
+  );
+
+  // Manual send invoice handler
+  const handleSendInvoices = useCallback(
+    async (selectedContractIds: string[]) => {
+      if (!token || !baiguullaga?._id) {
+        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+        return;
+      }
+
+      if (!selectedContractIds || selectedContractIds.length === 0) {
+        openErrorOverlay("Нэхэмжлэх илгээх гэрээ сонгоно уу");
+        return;
+      }
+
+      try {
+        // Get current month and year as default
+        const now = new Date();
+
+        const body = {
+          gereeIds: selectedContractIds,
+          baiguullagiinId: baiguullaga._id,
+          override: false,
+          targetMonth: now.getMonth() + 1,
+          targetYear: now.getFullYear(),
+        };
+
+        const response = await uilchilgee(token).post("/manualSend", body);
+
+        if (response.data?.success) {
+          const message =
+            response.data.message ||
+            `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
+          openSuccessOverlay(message);
+
+          // If there are errors, show them
+          if (
+            response.data.data?.errors > 0 &&
+            response.data.data?.errorsList?.length > 0
+          ) {
+            const errorMessages = response.data.data.errorsList
+              .map(
+                (err: any) => `${err.gereeniiDugaar || "Гэрээ"}: ${err.error}`,
+              )
+              .join("\n");
+            openErrorOverlay(`Зарим алдаа гарлаа:\n${errorMessages}`);
+          }
+        }
+      } catch (error: any) {
+        const msg = getErrorMessage(error);
+        openErrorOverlay(`Нэхэмжлэх илгээхэд алдаа гарлаа: ${msg}`);
+      }
+    },
+    [token, baiguullaga],
+  );
+
+  const handleCreateOrUpdateEmployee = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!token || !ajiltan?.baiguullagiinId) {
+        console.error("Missing token or baiguullagiinId");
+        openErrorOverlay("Нэвтэрч орсон хэрэглэгч олдсонгүй");
+        return;
+      }
+
+      // We need to get newEmployee from the component state
+      // Since we can't access it directly here, we'll need to pass it through the form
+      // For now, let's create a workaround by getting the data from the event target
+      const form = e.target as HTMLFormElement;
+      const formElements = form.elements as any;
+
+      const employeeData: any = {
+        ovog: formElements.ovog?.value || "",
+        ner: formElements.ner?.value || "",
+        utas: formElements.utas?.value || "",
+        email: formElements.email?.value || "",
+        albanTushaal: formElements.albanTushaal?.value || "",
+        ajildOrsonOgnoo: formElements.ajildOrsonOgnoo?.value || "",
+        nevtrekhNer: formElements.nevtrekhNer?.value || "",
+        nuutsUg: formElements.nuutsUg?.value || "",
       };
 
-      // Check if we're editing (form has _id hidden input)
-      const isEditing = formElements._id?.value;
-      
-      if (isEditing) {
-        // Update existing employee (Pattern matching orshinSuugch logic)
-        const id = formElements._id.value;
-        
-        // Prepare payload with _id for updateMethod (which will extract it for URL and strip it from body)
-        const updatePayload = { ...payload, _id: id };
-        
-        // Remove username/password for edit mode as requested
-        delete updatePayload.nevtrekhNer;
-        delete updatePayload.nuutsUg;
+      try {
+        // Get the effective building ID with fallback logic
+        let effectiveBarilgiinId = selectedBuildingId || barilgiinId;
 
-        await updateMethod("ajiltan", token, updatePayload);
-        openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");
-      } else {
-        // Create new employee
-        await createMethod("ajiltan", token, payload);
-        openSuccessOverlay("Ажилтан нэмэгдлээ");
+        // If no building is selected, try to get the first available building from baiguullaga
+        if (!effectiveBarilgiinId && baiguullaga?.barilguud?.length > 0) {
+          effectiveBarilgiinId = baiguullaga.barilguud[0]._id;
+        }
+
+        // Validate that we have a building ID
+        if (!effectiveBarilgiinId) {
+          console.error("No building ID available");
+          openErrorOverlay(
+            "Барилга сонгоно уу эсвэл байгууллагад барилга нэмнэ үү",
+          );
+          return;
+        }
+
+        // IMPORTANT: Backend model expects 'barilguud' as an array, not 'barilgiinId'
+        const payload = {
+          ...employeeData,
+          baiguullagiinId: ajiltan.baiguullagiinId,
+          baiguullagiinNer: baiguullaga?.ner || "",
+          // Send barilguud as array (backend model expects this)
+          // Ensure we always have at least one building
+          barilguud: [effectiveBarilgiinId],
+          erkh: "Ajiltan",
+        };
+
+        // Check if we're editing (form has _id hidden input)
+        const isEditing = formElements._id?.value;
+
+        if (isEditing) {
+          // Update existing employee (Pattern matching orshinSuugch logic)
+          const id = formElements._id.value;
+
+          // Prepare payload with _id for updateMethod (which will extract it for URL and strip it from body)
+          const updatePayload = { ...payload, _id: id };
+
+          // Remove username/password for edit mode as requested
+          delete updatePayload.nevtrekhNer;
+          delete updatePayload.nuutsUg;
+
+          await updateMethod("ajiltan", token, updatePayload);
+          openSuccessOverlay("Ажилтны мэдээлэл засагдлаа");
+        } else {
+          // Create new employee
+          await createMethod("ajiltan", token, payload);
+          openSuccessOverlay("Ажилтан нэмэгдлээ");
+        }
+
+        setShowEmployeeModal?.(false);
+        setEditingEmployee?.(null);
+        setNewEmployee?.({
+          ovog: "",
+          ner: "",
+          register: "",
+          utas: "",
+          email: "",
+          albanTushaal: "",
+          ajildOrsonOgnoo: "",
+          nevtrekhNer: "",
+          nuutsUg: "",
+        });
+      } catch (err) {
+        console.error("Error creating/updating employee:", err);
+        openErrorOverlay(getErrorMessage(err));
       }
-      
-      setShowEmployeeModal?.(false);
-      setEditingEmployee?.(null);
+    },
+    [
+      token,
+      ajiltan,
+      baiguullaga,
+      selectedBuildingId,
+      barilgiinId,
+      setShowEmployeeModal,
+      setEditingEmployee,
+      setNewEmployee,
+    ],
+  );
+
+  const handleEditEmployee = useCallback(
+    (employee: any) => {
+      setEditingEmployee?.(employee);
       setNewEmployee?.({
-        ovog: "",
-        ner: "",
-        register: "",
-        utas: "",
-        email: "",
-        albanTushaal: "",
-        ajildOrsonOgnoo: "",
-        nevtrekhNer: "",
-        nuutsUg: "",
+        _id: employee._id,
+        ovog: employee.ovog || "",
+        ner: employee.ner || "",
+        register: employee.register || "",
+        utas: employee.utas || "",
+        email: employee.email || "",
+        albanTushaal: employee.albanTushaal || "",
+        ajildOrsonOgnoo: employee.ajildOrsonOgnoo || "",
+        nevtrekhNer: employee.nevtrekhNer || "",
+        nuutsUg: "", // Don't pre-fill password
+        erkh: employee.erkh || "Ajiltan",
       });
-    } catch (err) {
-      console.error("Error creating/updating employee:", err);
-      openErrorOverlay(getErrorMessage(err));
-    }
-  }, [token, ajiltan, baiguullaga, selectedBuildingId, barilgiinId, setShowEmployeeModal, setEditingEmployee, setNewEmployee]);
+      setShowEmployeeModal?.(true);
+    },
+    [setEditingEmployee, setNewEmployee, setShowEmployeeModal],
+  );
 
-  const handleEditEmployee = useCallback((employee: any) => {
-    setEditingEmployee?.(employee);
-    setNewEmployee?.({
-      _id: employee._id,
-      ovog: employee.ovog || "",
-      ner: employee.ner || "",
-      register: employee.register || "",
-      utas: employee.utas || "",
-      email: employee.email || "",
-      albanTushaal: employee.albanTushaal || "",
-      ajildOrsonOgnoo: employee.ajildOrsonOgnoo || "",
-      nevtrekhNer: employee.nevtrekhNer || "",
-      nuutsUg: "", // Don't pre-fill password
-      erkh: employee.erkh || "Ajiltan",
-    });
-    setShowEmployeeModal?.(true);
-  }, [setEditingEmployee, setNewEmployee, setShowEmployeeModal]);
+  const handleDeleteEmployee = useCallback(
+    async (employee: any) => {
+      if (!token) {
+        openErrorOverlay("Нэвтрэх шаардлагатай");
+        return;
+      }
 
-  const handleDeleteEmployee = useCallback(async (employee: any) => {
-    if (!token) {
-      openErrorOverlay("Нэвтрэх шаардлагатай");
-      return;
-    }
+      if (!employee?._id) {
+        openErrorOverlay("Ажилтны ID олдсонгүй");
+        return;
+      }
 
-    if (!employee?._id) {
-      openErrorOverlay("Ажилтны ID олдсонгүй");
-      return;
-    }
+      try {
+        await deleteMethod("ajiltan", token, employee._id);
+        openSuccessOverlay("Ажилтан устгагдлаа");
+        return true;
+      } catch (err) {
+        openErrorOverlay(getErrorMessage(err));
+        return false;
+      }
+    },
+    [token],
+  );
 
-    try {
-      await deleteMethod("ajiltan", token, employee._id);
-      openSuccessOverlay("Ажилтан устгагдлаа");
-      return true;
-    } catch (err) {
-      openErrorOverlay(getErrorMessage(err));
-      return false;
-    }
-  }, [token]);
-  
-  
   return {
     handleCreateResident,
     handleDeleteResident,
@@ -1068,16 +1306,19 @@ export function useGereeActions(
     handlePreviewTemplate: (_id: string) => {},
     handleEditTemplate: (_id: string) => {},
     handleDeleteTemplate: (_id: string) => {},
-    toggleSortFor: useCallback((key: any, order?: "ascend" | "descend" | null) => {
-      if (!setSortKey || !setSortOrder) return;
-      if (order === undefined || order === null) {
-        setSortKey("createdAt");
-        setSortOrder("desc");
-      } else {
-        setSortKey(key);
-        setSortOrder(order === "ascend" ? "asc" : "desc");
-      }
-    }, [setSortKey, setSortOrder]),
+    toggleSortFor: useCallback(
+      (key: any, order?: "ascend" | "descend" | null) => {
+        if (!setSortKey || !setSortOrder) return;
+        if (order === undefined || order === null) {
+          setSortKey("createdAt");
+          setSortOrder("desc");
+        } else {
+          setSortKey(key);
+          setSortOrder(order === "ascend" ? "asc" : "desc");
+        }
+      },
+      [setSortKey, setSortOrder],
+    ),
     handleSendInvoices,
     handlePreviewInvoice,
     deleteUnit,
