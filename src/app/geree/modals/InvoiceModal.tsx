@@ -481,10 +481,23 @@ export default function InvoiceModal({
       });
 
       // Include internal paymentHistory as negative rows too
-      const phRows = Array.isArray(selectedInvoice?.paymentHistory) ? selectedInvoice.paymentHistory : [];
+      const phRows = Array.isArray(selectedInvoice?.paymentHistory)
+        ? selectedInvoice.paymentHistory
+        : [];
       phRows.forEach((p: any) => {
         const ner = String(p.tailbar || "Төлөлт").trim();
         const pt = String(p.turul || "").toLowerCase();
+        // Backend rule: ignore system_sync adjustments for "paid/remaining" math.
+        // Keep the underlying records in DB, but don't let them affect invoice totals in UI.
+        if (
+          pt === "system_sync" ||
+          pt.includes("system_sync") ||
+          pt.includes("sync_neg") ||
+          pt.includes("sync_pos") ||
+          pt === "sync"
+        ) {
+          return;
+        }
         const amount = pt.includes("sync") || pt.includes("system")
           ? Number(p.dun || p.tulsunDun || 0) // Sometimes sync adjustments can be positive or negative
           : -Math.abs(Number(p.dun || p.tulsunDun || 0));
@@ -675,6 +688,15 @@ export default function InvoiceModal({
     });
   }, [invoices, searchTerm, dateRange]);
 
+  // Contract-wide remaining across ALL invoices shown in the list (invoice-scoped uldegdel summed).
+  // This makes the "Үлдэгдэл" in invoice screen reflect all months, not only the latest invoice.
+  const totalInvoiceUldegdel = useMemo(() => {
+    return (filteredInvoices || []).reduce((sum: number, inv: any) => {
+      const v = Number(inv?.uldegdel ?? 0);
+      return sum + (Number.isFinite(v) ? v : 0);
+    }, 0);
+  }, [filteredInvoices]);
+
   const totalSum = useMemo(
     () => expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0),
     [expenseRows],
@@ -724,6 +746,21 @@ export default function InvoiceModal({
                   placeholder="Эхлэх огноо ... Дуусах огноо"
                   className="w-full text-xs"
                 />
+              </div>
+              <div className="flex items-center justify-between rounded-xl px-3 py-2 bg-[color:var(--surface-hover)]/60 border border-[color:var(--surface-border)]">
+                <span className="text-[11px] text-[color:var(--panel-text)] opacity-80 font-medium">
+                  Нийт үлдэгдэл (бүх нэхэмжлэх)
+                </span>
+                <span
+                  className={
+                    "text-sm font-bold " +
+                    (totalInvoiceUldegdel < 0.01
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400")
+                  }
+                >
+                  {formatNumber(totalInvoiceUldegdel, 2)}
+                </span>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60" />

@@ -323,24 +323,13 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-              // Only use matrix when this contract has a row for that period (same rule as Үлдэгдэл).
-              // If ognoony shuultuur is on but matrix omits the geree, fall back to API/history totals.
-              const monthSlice =
-                currentPeriod && monthlyData?.months?.[currentPeriod] != null
-                  ? monthlyData.months[currentPeriod]
-                  : null;
               const fallbackPaid = gid
                 ? (paidSummaryByGereeId[gid] ??
                   Number(record?._totalTulsun ?? 0))
                 : Number(record?._totalTulsun ?? 0);
-              // Огнооны шүүлттэй үед matrix-ийн paid алдаатай 0 гарч болно; түүхэнд ирсэн мөрийн нийлбэр л зөв
               const paidDisplay = historyScopedByDate
                 ? Number(record?._totalTulsun ?? 0)
-                : monthSlice
-                  ? Number(monthSlice.paid ?? 0)
-                  : fallbackPaid;
+                : fallbackPaid;
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -382,31 +371,13 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              // If monthly data is available (date filter active), show month-specific balance
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-              if (currentPeriod && monthlyData?.months?.[currentPeriod]) {
-                const monthData = monthlyData.months[currentPeriod];
-                const monthBalance =
-                  Number(monthData?.billed ?? 0) - Number(monthData?.paid ?? 0);
-                return (
-                  <span
-                    className={
-                      monthBalance < 0.01
-                        ? "!text-emerald-600 dark:!text-emerald-400"
-                        : "!text-red-500 dark:!text-red-400"
-                    }
-                  >
-                    {formatNumber(monthBalance, 2)}
-                  </span>
-                );
-              }
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue =
-                bestKnownBalances[gid] ??
-                (historyAggregate || Number(record?.uldegdel ?? 0));
+              const remainingValue = historyScopedByDate
+                ? historyAggregate
+                : (bestKnownBalances[gid] ??
+                  (historyAggregate || Number(record?.uldegdel ?? 0)));
               return (
                 <span
                   className={
@@ -430,9 +401,10 @@ export default function GuilgeeTable({
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue =
-                bestKnownBalances[gid] ??
-                (historyAggregate || Number(record?.uldegdel ?? 0));
+              const remainingValue = historyScopedByDate
+                ? historyAggregate
+                : (bestKnownBalances[gid] ??
+                  (historyAggregate || Number(record?.uldegdel ?? 0)));
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
@@ -563,9 +535,10 @@ export default function GuilgeeTable({
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
-              const remainingValue =
-                bestKnownBalances[gid] ??
-                (historyAggregate || Number(record?.uldegdel ?? 0));
+              const remainingValue = historyScopedByDate
+                ? historyAggregate
+                : (bestKnownBalances[gid] ??
+                  (historyAggregate || Number(record?.uldegdel ?? 0)));
 
               const residentData = resident
                 ? {
@@ -718,22 +691,9 @@ export default function GuilgeeTable({
                     return sum + Number(it?._totalTulsun ?? 0);
                   }
                   const gid = getGereeId(it);
-                  const monthlyData = gid
-                    ? monthlyDataByGereeId?.get(gid)
-                    : null;
-                  const currentPeriod =
-                    monthlyPeriods?.[monthlyPeriods.length - 1];
-                  const monthSlice =
-                    currentPeriod &&
-                    monthlyData?.months?.[currentPeriod] != null
-                      ? monthlyData.months[currentPeriod]
-                      : null;
-                  const v = monthSlice
-                    ? Number(monthSlice.paid ?? 0)
-                    : gid
-                      ? (paidSummaryByGereeId[gid] ??
-                        Number(it?._totalTulsun ?? 0))
-                      : Number(it?._totalTulsun ?? 0);
+                  const v = gid
+                    ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
+                    : Number(it?._totalTulsun ?? 0);
                   return sum + v;
                 },
                 0,
@@ -747,25 +707,13 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  const monthlyData = gid
-                    ? monthlyDataByGereeId?.get(gid)
-                    : null;
-                  const currentPeriod =
-                    monthlyPeriods?.[monthlyPeriods.length - 1];
-                  if (currentPeriod && monthlyData?.months?.[currentPeriod]) {
-                    const monthData = monthlyData.months[currentPeriod];
-                    const monthBalance =
-                      Number(monthData?.billed ?? 0) -
-                      Number(monthData?.paid ?? 0);
-                    return sum + monthBalance;
-                  }
-                  // No date filter - show total cumulative balance
                   const historyAggregate =
                     Number(it?._totalTulbur || 0) -
                     Number(it?._totalTulsun || 0);
-                  const balance =
-                    bestKnownBalances[gid] ??
-                    (historyAggregate || Number(it?.uldegdel ?? 0));
+                  const balance = historyScopedByDate
+                    ? historyAggregate
+                    : (bestKnownBalances[gid] ??
+                      (historyAggregate || Number(it?.uldegdel ?? 0)));
                   return sum + balance;
                 },
                 0,
@@ -856,9 +804,10 @@ export default function GuilgeeTable({
             const historyAggregate =
               Number(record?._totalTulbur || 0) -
               Number(record?._totalTulsun || 0);
-            const remainingValue =
-              bestKnownBalances[gid] ??
-              (historyAggregate || Number(record?.uldegdel ?? 0));
+            const remainingValue = historyScopedByDate
+              ? historyAggregate
+              : (bestKnownBalances[gid] ??
+                (historyAggregate || Number(record?.uldegdel ?? 0)));
             const itForTuluv = {
               ...record,
               uldegdel: remainingValue,

@@ -510,13 +510,25 @@ export default function HistoryModal({
         }
 
         // 1.5. Add Цахилгаан from tsahilgaanNekhemjlekh if it exists and is not already in zardluud
+        // IMPORTANT: only when there is explicit meter-reading input (заалт).
+        // This prevents showing "Цахилгаан" row when no заалт was entered.
         // Check for exact "Цахилгаан" (not "Дундын өмчлөл Цахилгаан")
         const hasTsahilgaanInZardluud = zardluud.some((z: any) => {
           const ner = String(z.ner || "").trim();
           // Only match exact "Цахилгаан", not partial matches like "Дундын өмчлөл Цахилгаан"
           return ner === "Цахилгаан";
         });
-        if (!hasTsahilgaanInZardluud && item.tsahilgaanNekhemjlekh) {
+        const zaaltMeta = item?.medeelel?.zaalt;
+        const hasExplicitZaaltInput =
+          Number(zaaltMeta?.zoruu ?? 0) > 0 ||
+          Number(zaaltMeta?.zaaltDun ?? 0) > 0 ||
+          zaaltMeta?.umnukhZaalt != null ||
+          zaaltMeta?.suuliinZaalt != null;
+        if (
+          !hasTsahilgaanInZardluud &&
+          item.tsahilgaanNekhemjlekh &&
+          hasExplicitZaaltInput
+        ) {
           const tsahilgaanAmt = Number(item.tsahilgaanNekhemjlekh);
           if (tsahilgaanAmt > 0) {
             const rowId = `${item._id}-tsahilgaan`;

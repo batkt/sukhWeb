@@ -67,9 +67,17 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
 
+const toMonthKey = (v?: string | null) => {
+  const s = String(v || "").trim();
+  if (!s) return "";
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : "";
+};
+
 // Pure utility moved outside to prevent hoisting issues
 function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
   return (
+    (it?._gereeniiId && String(it._gereeniiId)) ||
     (it?.gereeniiId && String(it.gereeniiId)) ||
     (it?.gereeId && String(it.gereeId)) ||
     (it?.gereeniiDugaar &&
@@ -123,6 +131,34 @@ export default function DansniiKhuulga() {
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
+
+  const effectiveDateFilter = useMemo(() => {
+    const rawStart = String(ekhlekhOgnoo?.[0] ?? "").trim();
+    const rawEnd = String(ekhlekhOgnoo?.[1] ?? "").trim();
+    const hasDateFilter = Boolean(rawStart || rawEnd);
+
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const selectedMonthKey =
+      startKey && endKey && startKey === endKey
+        ? startKey
+        : startKey || endKey || "";
+
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    const isCurrentMonthFilter = Boolean(
+      hasDateFilter && selectedMonthKey && selectedMonthKey === currentMonthKey,
+    );
+
+    return {
+      hasDateFilter,
+      isCurrentMonthFilter,
+      start: hasDateFilter && !isCurrentMonthFilter ? rawStart || undefined : undefined,
+      end: hasDateFilter && !isCurrentMonthFilter ? rawEnd || undefined : undefined,
+    };
+  }, [ekhlekhOgnoo]);
 
   useEffect(() => {
     const t = searchParams.get("tuluv");
@@ -371,8 +407,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          ekhlekhOgnoo?.[0] || null,
-          ekhlekhOgnoo?.[1] || null,
+          effectiveDateFilter.start || null,
+          effectiveDateFilter.end || null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -380,8 +416,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start || undefined,
-          duusakhOgnoo: end || undefined,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -398,8 +434,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          ekhlekhOgnoo?.[0] || null,
-          ekhlekhOgnoo?.[1] || null,
+          effectiveDateFilter.start || null,
+          effectiveDateFilter.end || null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -407,8 +443,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start || undefined,
-          duusakhOgnoo: end || undefined,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -425,8 +461,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          ekhlekhOgnoo?.[0] || null,
-          ekhlekhOgnoo?.[1] || null,
+          effectiveDateFilter.start || null,
+          effectiveDateFilter.end || null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -434,8 +470,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start || undefined,
-          duusakhOgnoo: end || undefined,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -453,16 +489,16 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          ekhlekhOgnoo?.[0] || null,
-          ekhlekhOgnoo?.[1] || null,
+          effectiveDateFilter.start || null,
+          effectiveDateFilter.end || null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: orgId,
         barilgiinId: branch || undefined,
-        ekhlekhOgnoo: start || undefined,
-        duusakhOgnoo: end || undefined,
+        ekhlekhOgnoo: start,
+        duusakhOgnoo: end,
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000, // Fetch all residents
       });
@@ -494,13 +530,8 @@ export default function DansniiKhuulga() {
 
   /** Нэг ч огноо сонгогдоогүй бол бүх түүх; сонгосон бол API-ийн жагсаалт таслагдсан */
   const historyScopedByDate = useMemo(
-    () =>
-      Boolean(
-        ekhlekhOgnoo &&
-        (String(ekhlekhOgnoo[0] ?? "").trim() ||
-          String(ekhlekhOgnoo[1] ?? "").trim()),
-      ),
-    [ekhlekhOgnoo],
+    () => Boolean(effectiveDateFilter.hasDateFilter && !effectiveDateFilter.isCurrentMonthFilter),
+    [effectiveDateFilter],
   );
 
   const allHistoryItems = useMemo(() => {
@@ -658,6 +689,7 @@ export default function DansniiKhuulga() {
   // we use the same "Current Balance" for a resident, regardless of which transaction row we are looking at.
   const bestKnownBalances = useMemo(() => {
     const balances: Record<string, number> = {};
+    const invoiceRootTotalsByGid: Record<string, number> = {};
 
     const rowDateMs = (it: any) =>
       new Date(it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0).getTime();
@@ -693,11 +725,19 @@ export default function DansniiKhuulga() {
 
     sortedAsc.forEach((it: any) => {
       const gid =
+        String(it?._gereeniiId || "").trim() ||
         String(it?.gereeniiId || it?.gereeId || "").trim() ||
         (it?.gereeniiDugaar &&
           String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
         "";
       if (!gid) return;
+      if (isNekhemjlekhiinTuukhInvoiceRoot(it)) {
+        const invUld = Number(it?.uldegdel ?? 0);
+        if (Number.isFinite(invUld)) {
+          invoiceRootTotalsByGid[gid] =
+            Number(invoiceRootTotalsByGid[gid] ?? 0) + invUld;
+        }
+      }
       if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
         if (!isNekhemjlekhiinTuukhInvoiceRoot(it)) {
           balances[gid] = Number(it.uldegdel);
@@ -705,12 +745,21 @@ export default function DansniiKhuulga() {
       }
     });
 
-    // 3. Ledger = бүх түүхийн сүүл — огнооны шүүлттэй үед бүү давхарлуул.
-    if (!historyScopedByDate) {
-      Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
-        if (val != null) balances[gid] = val;
-      });
-    }
+    // 2.5. Нэхэмжлэхийн root мөрүүдийн үлдэгдлийг нийлбэрлэж (сар бүрийн нийлбэр) харуулна.
+    // Ингэснээр /tulbur дээр зөвхөн хамгийн сүүлийн мөрийн үлдэгдэл биш,
+    // тухайн гэрээний бүх нэхэмжлэхийн нийт үлдэгдэл харагдана.
+    Object.entries(invoiceRootTotalsByGid).forEach(([gid, sum]) => {
+      balances[gid] = sum;
+    });
+
+    // 3. Ledger = бүх түүхийн сүүл (contract-wide source of truth).
+    // Огнооны шүүлт асаалттай байсан ч үндсэн хүснэгтийн "Үлдэгдэл"-ийг
+    // нэг ижил логикоор харуулахын тулд ledger latest-ийг тэргүүнд ашиглана.
+    Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
+      // /tulbur main дээр contract-wide үнэнийг (history-ledger latest uldegdel) тэргүүнд ашиглана.
+      // Invoice-root нийлбэр нь fallback байна.
+      if (val != null) balances[gid] = val;
+    });
 
     return balances;
   }, [
