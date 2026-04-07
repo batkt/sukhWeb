@@ -1027,21 +1027,36 @@ export default function Khynalt() {
     };
   }, [incomeSeries]);
 
-  const huurimtlagdsanAvlagaChartData: Dataset = useMemo(() => {
+  const huurimtlagdsanAvlagaLineChart = useMemo(() => {
     const topItems = huurimtlagdsanAvlaga.items.slice(0, 10);
-    const labelFromToot = (it: any) => {
-      const toot = String(
-        it?.toot ?? it?.medeelel?.toot ?? it?.tootDugaar ?? "",
-      ).trim();
-      const raw =
-        toot ||
-        String(it?.gereeniiDugaar ?? it?.dugaalaltDugaar ?? "").trim() ||
-        "-";
-      const full = `Тоот: ${raw}`;
-      return full.length > 16 ? full.slice(0, 15) + "…" : full;
+    /** API заримдаа toot-д «Тоот: 122» гэж бүтнээр нь ирүүлдэг */
+    const stripTootLabelPrefix = (s: string) =>
+      s
+        .replace(/^Тоот\s*[:：]\s*/i, "")
+        .replace(/^toot\s*[:：]\s*/i, "")
+        .trim();
+    const rawKeyForItem = (it: any) => {
+      const toot = stripTootLabelPrefix(
+        String(it?.toot ?? it?.medeelel?.toot ?? it?.tootDugaar ?? "").trim(),
+      );
+      const fromToot = toot;
+      const fromGeree = stripTootLabelPrefix(
+        String(it?.gereeniiDugaar ?? it?.dugaalaltDugaar ?? "").trim(),
+      );
+      return fromToot || fromGeree || "-";
     };
-    return {
-      labels: topItems.map(labelFromToot),
+    /** Доод тэнхлэг — зөвхөн тоо/дугаар, «Тоот:» үггүй */
+    const axisLabel = (it: any) => {
+      const raw = rawKeyForItem(it);
+      return raw.length > 12 ? raw.slice(0, 11) + "…" : raw;
+    };
+    const tooltipTitleAt = (idx: number) => {
+      const it = topItems[idx];
+      if (!it) return "";
+      return `Тоот: ${rawKeyForItem(it)}`;
+    };
+    const chartData = {
+      labels: topItems.map(axisLabel),
       datasets: [
         {
           label: "Төлбөр",
@@ -1058,7 +1073,8 @@ export default function Khynalt() {
           pointBackgroundColor: "#ef4444",
         },
       ],
-    };
+    } as unknown as Dataset;
+    return { chartData, tooltipTitleAt };
   }, [huurimtlagdsanAvlaga.items]);
 
   const tulburSummaryChartData: Dataset = useMemo(() => {
@@ -1367,190 +1383,205 @@ export default function Khynalt() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">
-          <div
-            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-            style={{
-              transitionDelay: "600ms",
-              willChange: "opacity, box-shadow",
-            }}
-          >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                  Орлого
-                </h3>
-              </div>
-              <div className="relative min-h-0 flex-1 w-full">
-                <Line
-                  data={incomeLineData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                      mode: "index",
-                      intersect: false,
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      title: { display: false },
-                      tooltip: {
-                        backgroundColor: "rgba(15, 23, 42, 0.9)",
-                        titleColor: "#fff",
-                        bodyColor: "#e2e8f0",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        usePointStyle: true,
+            <div
+              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
+              style={{
+                transitionDelay: "600ms",
+                willChange: "opacity, box-shadow",
+              }}
+            >
+              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                    Орлого
+                  </h3>
+                </div>
+                <div className="relative min-h-0 flex-1 w-full">
+                  <Line
+                    data={incomeLineData as any}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: "index",
+                        intersect: false,
                       },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: chartColors.text },
-                        grid: { display: false },
-                      },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: {
-                          color: chartColors.grid,
-                          tickBorderDash: [5, 5],
+                      plugins: {
+                        legend: { display: false },
+                        title: { display: false },
+                        tooltip: {
+                          backgroundColor: "rgba(15, 23, 42, 0.9)",
+                          titleColor: "#fff",
+                          bodyColor: "#e2e8f0",
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderWidth: 1,
+                          padding: 12,
+                          cornerRadius: 8,
+                          usePointStyle: true,
                         },
-                        beginAtZero: true,
                       },
-                    },
-                  }}
-                />
+                      scales: {
+                        x: {
+                          ticks: { color: chartColors.text },
+                          grid: { display: false },
+                        },
+                        y: {
+                          ticks: { color: chartColors.text },
+                          grid: {
+                            color: chartColors.grid,
+                            tickBorderDash: [5, 5],
+                          },
+                          beginAtZero: true,
+                        },
+                      },
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          <div
-            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-            style={{
-              transitionDelay: "700ms",
-              willChange: "opacity, box-shadow",
-            }}
-          >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                  Авлага
-                </h3>
-                <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
-                  {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
-                  {formatCurrency(huurimtlagdsanAvlaga.total)}
-                </p>
-              </div>
-              <div className="relative min-h-0 flex-1 w-full">
-                <Line
-                  data={huurimtlagdsanAvlagaChartData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                      mode: "index",
-                      intersect: false,
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      title: { display: false },
-                      tooltip: {
-                        backgroundColor: "rgba(15, 23, 42, 0.9)",
-                        titleColor: "#fff",
-                        bodyColor: "#e2e8f0",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        usePointStyle: true,
+            <div
+              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
+              style={{
+                transitionDelay: "700ms",
+                willChange: "opacity, box-shadow",
+              }}
+            >
+              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                    Авлага
+                  </h3>
+                  <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
+                    {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
+                    {formatCurrency(huurimtlagdsanAvlaga.total)}
+                  </p>
+                </div>
+                <div className="relative min-h-0 flex-1 w-full">
+                  <Line
+                    data={huurimtlagdsanAvlagaLineChart.chartData as any}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: "index",
+                        intersect: false,
                       },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: chartColors.text, maxRotation: 45 },
-                        grid: { display: false },
-                      },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: {
-                          color: chartColors.grid,
-                          tickBorderDash: [5, 5],
+                      plugins: {
+                        legend: { display: false },
+                        title: { display: false },
+                        tooltip: {
+                          backgroundColor: "rgba(15, 23, 42, 0.9)",
+                          titleColor: "#fff",
+                          bodyColor: "#e2e8f0",
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderWidth: 1,
+                          padding: 12,
+                          cornerRadius: 8,
+                          usePointStyle: true,
+                          callbacks: {
+                            title: (items) => {
+                              const idx = items[0]?.dataIndex;
+                              if (idx == null) return "";
+                              return huurimtlagdsanAvlagaLineChart.tooltipTitleAt(
+                                idx,
+                              );
+                            },
+                          },
                         },
-                        beginAtZero: true,
                       },
-                    },
-                  }}
-                />
+                      scales: {
+                        x: {
+                          ticks: { color: chartColors.text, maxRotation: 45 },
+                          grid: { display: false },
+                        },
+                        y: {
+                          ticks: { color: chartColors.text },
+                          grid: {
+                            color: chartColors.grid,
+                            tickBorderDash: [5, 5],
+                          },
+                          beginAtZero: true,
+                        },
+                      },
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Payment Summary Bar Chart */}
-          <div
-            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
-              mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-            }`}
-            style={{
-              transitionDelay: "800ms",
-              willChange: "opacity, box-shadow",
-            }}
-          >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
-                  Төлбөрийн хураангуй
-                </h3>
-                <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
-                  Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
-                </p>
-              </div>
-              <div className="relative min-h-0 flex-1 w-full">
-                <Bar
-                  data={tulburSummaryChartData as any}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                      mode: "index",
-                      intersect: false,
-                    },
-                    plugins: {
-                      legend: { display: false },
-                      title: { display: false },
-                      tooltip: {
-                        backgroundColor: "rgba(15, 23, 42, 0.9)",
-                        titleColor: "#fff",
-                        bodyColor: "#e2e8f0",
-                        borderColor: "rgba(255,255,255,0.1)",
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        usePointStyle: true,
+            {/* Payment Summary Bar Chart */}
+            <div
+              className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-4"
+              }`}
+              style={{
+                transitionDelay: "800ms",
+                willChange: "opacity, box-shadow",
+              }}
+            >
+              <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+                <div className="mb-2 flex shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
+                    Төлбөрийн хураангуй
+                  </h3>
+                  <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
+                    Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
+                  </p>
+                </div>
+                <div className="relative min-h-0 flex-1 w-full">
+                  <Bar
+                    data={tulburSummaryChartData as any}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      interaction: {
+                        mode: "index",
+                        intersect: false,
                       },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: chartColors.text },
-                        grid: { display: false },
-                      },
-                      y: {
-                        ticks: { color: chartColors.text },
-                        grid: {
-                          color: chartColors.grid,
-                          tickBorderDash: [5, 5],
+                      plugins: {
+                        legend: { display: false },
+                        title: { display: false },
+                        tooltip: {
+                          backgroundColor: "rgba(15, 23, 42, 0.9)",
+                          titleColor: "#fff",
+                          bodyColor: "#e2e8f0",
+                          borderColor: "rgba(255,255,255,0.1)",
+                          borderWidth: 1,
+                          padding: 12,
+                          cornerRadius: 8,
+                          usePointStyle: true,
                         },
-                        beginAtZero: true,
                       },
-                    },
-                  }}
-                />
+                      scales: {
+                        x: {
+                          ticks: { color: chartColors.text },
+                          grid: { display: false },
+                        },
+                        y: {
+                          ticks: { color: chartColors.text },
+                          grid: {
+                            color: chartColors.grid,
+                            tickBorderDash: [5, 5],
+                          },
+                          beginAtZero: true,
+                        },
+                      },
+                    }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
           </div>
         </div>
       </div>
