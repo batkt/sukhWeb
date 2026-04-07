@@ -29,6 +29,8 @@ interface GuilgeeTableProps {
   getGereeId: (it: any) => string;
   monthlyDataByGereeId?: Map<string, any>;
   monthlyPeriods?: string[];
+  /** When set, жагсаалтын түүх огноогоор таслагдсан — гүйцэтгэл/сарын төлбөрийг matrix биш `_totalTulsun`/`_totalTulbur`-аас */
+  historyScopedByDate?: boolean;
   onViewInvoice: (resident: any) => void;
   onViewHistory: (resident: any) => void;
   onTransaction: (resident: any, remainingValue: number) => void;
@@ -55,6 +57,7 @@ export default function GuilgeeTable({
   getGereeId,
   monthlyDataByGereeId,
   monthlyPeriods,
+  historyScopedByDate = false,
   onViewInvoice,
   onViewHistory,
   onTransaction,
@@ -322,13 +325,25 @@ export default function GuilgeeTable({
               const gid = getGereeId(record);
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
               const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-              // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
-              const currentMonthPaid = currentPeriod
-                ? Number(monthlyData?.months?.[currentPeriod]?.paid ?? 0)
+              // Only use matrix when this contract has a row for that period (same rule as Үлдэгдэл).
+              // If ognoony shuultuur is on but matrix omits the geree, fall back to API/history totals.
+              const monthSlice =
+                currentPeriod && monthlyData?.months?.[currentPeriod] != null
+                  ? monthlyData.months[currentPeriod]
+                  : null;
+              const fallbackPaid = gid
+                ? (paidSummaryByGereeId[gid] ??
+                  Number(record?._totalTulsun ?? 0))
                 : Number(record?._totalTulsun ?? 0);
+              // Огнооны шүүлттэй үед matrix-ийн paid алдаатай 0 гарч болно; түүхэнд ирсэн мөрийн нийлбэр л зөв
+              const paidDisplay = historyScopedByDate
+                ? Number(record?._totalTulsun ?? 0)
+                : monthSlice
+                  ? Number(monthSlice.paid ?? 0)
+                  : fallbackPaid;
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {formatNumber(currentMonthPaid, 2)}
+                  {formatNumber(paidDisplay, 2)}
                 </span>
               );
             },
@@ -344,13 +359,18 @@ export default function GuilgeeTable({
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
               // Get the latest period (current month)
               const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-              // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
-              const currentMonthPay = currentPeriod
-                ? Number(monthlyData?.months?.[currentPeriod]?.billed ?? 0)
-                : Number(record?._totalTulbur ?? 0);
+              const monthSlice =
+                currentPeriod && monthlyData?.months?.[currentPeriod] != null
+                  ? monthlyData.months[currentPeriod]
+                  : null;
+              const billedDisplay = historyScopedByDate
+                ? Number(record?._totalTulbur ?? 0)
+                : monthSlice
+                  ? Number(monthSlice.billed ?? 0)
+                  : Number(record?._totalTulbur ?? 0);
               return (
                 <span className="text-gray-900 dark:text-white">
-                  {formatNumber(currentMonthPay, 2)}
+                  {formatNumber(billedDisplay, 2)}
                 </span>
               );
             },
@@ -381,7 +401,6 @@ export default function GuilgeeTable({
                   </span>
                 );
               }
-              // No date filter - show total cumulative balance
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
@@ -608,6 +627,7 @@ export default function GuilgeeTable({
     deduplicatedResidents,
     monthlyDataByGereeId,
     monthlyPeriods,
+    historyScopedByDate,
   ]);
 
   // Handle table change (sorting)
@@ -665,17 +685,24 @@ export default function GuilgeeTable({
             } else if (col.key === "sariinTurees") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
+                  if (historyScopedByDate) {
+                    return sum + Number(it?._totalTulbur ?? 0);
+                  }
                   const gid = getGereeId(it);
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
                     : null;
                   const currentPeriod =
                     monthlyPeriods?.[monthlyPeriods.length - 1];
-                  // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
-                  const currentMonthPay = currentPeriod
-                    ? Number(monthlyData?.months?.[currentPeriod]?.billed ?? 0)
+                  const monthSlice =
+                    currentPeriod &&
+                    monthlyData?.months?.[currentPeriod] != null
+                      ? monthlyData.months[currentPeriod]
+                      : null;
+                  const v = monthSlice
+                    ? Number(monthSlice.billed ?? 0)
                     : Number(it?._totalTulbur ?? 0);
-                  return sum + currentMonthPay;
+                  return sum + v;
                 },
                 0,
               );
@@ -687,17 +714,27 @@ export default function GuilgeeTable({
             } else if (col.key === "paid") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
+                  if (historyScopedByDate) {
+                    return sum + Number(it?._totalTulsun ?? 0);
+                  }
                   const gid = getGereeId(it);
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
                     : null;
                   const currentPeriod =
                     monthlyPeriods?.[monthlyPeriods.length - 1];
-                  // API returns: months: { "2026-01": { billed: 80000, paid: 80000, status: "Төлсөн" } }
-                  const currentMonthPaid = currentPeriod
-                    ? Number(monthlyData?.months?.[currentPeriod]?.paid ?? 0)
-                    : Number(it?._totalTulsun ?? 0);
-                  return sum + currentMonthPaid;
+                  const monthSlice =
+                    currentPeriod &&
+                    monthlyData?.months?.[currentPeriod] != null
+                      ? monthlyData.months[currentPeriod]
+                      : null;
+                  const v = monthSlice
+                    ? Number(monthSlice.paid ?? 0)
+                    : gid
+                      ? (paidSummaryByGereeId[gid] ??
+                        Number(it?._totalTulsun ?? 0))
+                      : Number(it?._totalTulsun ?? 0);
+                  return sum + v;
                 },
                 0,
               );
@@ -710,7 +747,6 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  // If monthly data is available (date filter active), show month-specific balance
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
                     : null;

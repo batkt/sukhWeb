@@ -13,16 +13,16 @@ import Link from "next/link";
 import { Line, Bar } from "react-chartjs-2";
 import {
   Building2,
-  Users,
-  FileText,
   Wallet,
-  AlertTriangle,
+  CircleDollarSign,
   Ban,
   TrendingUp,
   TrendingDown,
   Download,
   Printer,
   RefreshCw,
+  Users,
+  UserCheck,
 } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useBuilding } from "@/context/BuildingContext";
@@ -37,7 +37,7 @@ import {
   Legend,
   ArcElement,
   BarElement,
-  Filler
+  Filler,
 } from "chart.js";
 import useSWR from "swr";
 import formatNumber, {
@@ -54,7 +54,7 @@ ChartJS.register(
   Tooltip,
   Legend,
   BarElement,
-  Filler
+  Filler,
 );
 
 type Dataset = {
@@ -152,37 +152,6 @@ export default function Khynalt() {
 
   const totalResidents =
     Number(orshinSuugchGaralt?.niitMur) || residents.length;
-  const totalContracts = Number(gereeGaralt?.niitMur) || contracts.length;
-  const totalEmployees = Number(ajilchdiinGaralt?.niitMur) || employees.length;
-  const totalBuildings = useMemo(() => {
-    const set = new Set<string>();
-    residents.forEach((r: any) => {
-      const bid = r?.barilgiinId ?? r?.barilga;
-      if (bid) set.add(String(bid));
-    });
-    return set.size;
-  }, [residents]);
-
-  const { activeContracts, expiringSoonPercent } = useMemo(() => {
-    if (!contracts?.length)
-      return { activeContracts: 0, expiringSoonPercent: 0 };
-    const now = new Date();
-    const in30Days = new Date();
-    in30Days.setDate(now.getDate() + 30);
-    let active = 0;
-    let expiringSoon = 0;
-    contracts.forEach((g: any) => {
-      const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
-      if (!end || end >= now) active += 1;
-      if (end && end >= now && end <= in30Days) expiringSoon += 1;
-    });
-    return {
-      activeContracts: active,
-      expiringSoonPercent: Math.round(
-        (expiringSoon / Math.max(1, contracts.length)) * 100,
-      ),
-    };
-  }, [contracts]);
 
   const { start: rangeStart, end: rangeEnd } = useMemo(() => {
     const range = dateRange || getDefaultDateRange();
@@ -459,7 +428,7 @@ export default function Khynalt() {
         duusakhOgnoo: end,
         view: "detailed",
         khuudasniiDugaar: 1,
-        khuudasniiKhemjee: 500,
+        khuudasniiKhemjee: 5000,
       });
       return resp.data;
     },
@@ -544,7 +513,7 @@ export default function Khynalt() {
       : Array.isArray(incomeData)
         ? incomeData
         : [];
-        
+
     const paymentList: any[] = Array.isArray(paymentData?.jagsaalt)
       ? paymentData.jagsaalt
       : Array.isArray(paymentData)
@@ -663,20 +632,23 @@ export default function Khynalt() {
 
     // NOW iterate over actual payment records (receipts) to map the PAID time series
     paymentList.forEach((p) => {
-      const paidAmt = Number(
-        p?.tulsunDun ??
-        p?.tulsun ??
-        p?.niitTulbur ??
-        p?.niitDun ??
-        p?.total ??
-        p?.tulur ??
-        p?.tulukhDun ??
-        p?.undsenDun ??
-        p?.dun ??
-        p?.sariinTurees ??
-        0
-      ) || 0;
-      const tulsunOgnooStr = String(p?.tulsunOgnoo || p?.createdAt || p?.ognoo || p?.date || "");
+      const paidAmt =
+        Number(
+          p?.tulsunDun ??
+            p?.tulsun ??
+            p?.niitTulbur ??
+            p?.niitDun ??
+            p?.total ??
+            p?.tulur ??
+            p?.tulukhDun ??
+            p?.undsenDun ??
+            p?.dun ??
+            p?.sariinTurees ??
+            0,
+        ) || 0;
+      const tulsunOgnooStr = String(
+        p?.tulsunOgnoo || p?.createdAt || p?.ognoo || p?.date || "",
+      );
       if (tulsunOgnooStr && paidAmt > 0) {
         const d = new Date(tulsunOgnooStr);
         const key = buildLabel(d);
@@ -748,8 +720,6 @@ export default function Khynalt() {
 
   const {
     incomeTotals,
-    residentsPaidCount,
-    residentsUnpaidCount,
     incomeSeries,
     expenseSeries,
     profitSeries,
@@ -807,6 +777,74 @@ export default function Khynalt() {
     }
     return { count: 0, total: 0, items: [] };
   }, [overdueData]);
+
+  /**
+   * Төлөлтийн "өргөн" — нэг гэрээнд олон удаа төлсөн тохиолдлыг нэгтгэж,
+   * хугацаанд хэдэн өөр гэрээ/айл мөнгө төлсөн, мөнгө хэдэн өдөр тараагдан орсоныг харуулна.
+   */
+  const paymentEngagementStats = useMemo(() => {
+    const list = Array.isArray(paymentData?.jagsaalt)
+      ? paymentData.jagsaalt
+      : [];
+    let transactionCount = 0;
+    let totalSum = 0;
+    const payerKeys = new Set<string>();
+    const dayTotals = new Map<string, number>();
+
+    list.forEach((p: any, idx: number) => {
+      const amt =
+        Number(
+          p?.tulsunDun ??
+            p?.tulsun ??
+            p?.niitTulbur ??
+            p?.niitDun ??
+            p?.total ??
+            p?.tulur ??
+            p?.tulukhDun ??
+            p?.undsenDun ??
+            p?.dun ??
+            p?.sariinTurees ??
+            0,
+        ) || 0;
+      if (amt <= 0) return;
+
+      transactionCount += 1;
+      totalSum += amt;
+
+      const gid = String(p?.gereeniiId ?? p?.gereeId ?? "").trim();
+      const dugar = String(p?.gereeniiDugaar ?? "").trim();
+      const resId = String(p?.orshinSuugchId ?? p?.residentId ?? "").trim();
+      payerKeys.add(gid || dugar || resId || `tx:${String(p?._id ?? idx)}`);
+
+      const rawDate = String(
+        p?.tulsunOgnoo ?? p?.createdAt ?? p?.ognoo ?? p?.date ?? "",
+      );
+      const dayKey = rawDate.slice(0, 10);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dayKey)) {
+        dayTotals.set(dayKey, (dayTotals.get(dayKey) || 0) + amt);
+      }
+    });
+
+    let peakDay = "";
+    let peakDaySum = 0;
+    dayTotals.forEach((s, d) => {
+      if (s > peakDaySum) {
+        peakDaySum = s;
+        peakDay = d;
+      }
+    });
+
+    const uniquePayers = payerKeys.size;
+    return {
+      transactionCount,
+      totalSum,
+      uniquePayers,
+      avgPerPayer: uniquePayers > 0 ? totalSum / uniquePayers : 0,
+      activePaymentDays: dayTotals.size,
+      peakDay,
+      peakDaySum,
+    };
+  }, [paymentData]);
 
   const avlagaAgingMap = useMemo(() => {
     const list =
@@ -990,18 +1028,27 @@ export default function Khynalt() {
   }, [incomeSeries]);
 
   const huurimtlagdsanAvlagaChartData: Dataset = useMemo(() => {
-    const top = huurimtlagdsanAvlaga.items.slice(0, 10).map((it: any) => ({
-      amount: Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
-    }));
+    const topItems = huurimtlagdsanAvlaga.items.slice(0, 10);
+    const labelFromToot = (it: any) => {
+      const toot = String(
+        it?.toot ?? it?.medeelel?.toot ?? it?.tootDugaar ?? "",
+      ).trim();
+      const raw =
+        toot ||
+        String(it?.gereeniiDugaar ?? it?.dugaalaltDugaar ?? "").trim() ||
+        "-";
+      const full = `Тоот: ${raw}`;
+      return full.length > 16 ? full.slice(0, 15) + "…" : full;
+    };
     return {
-      labels: top.map((t: { name: string; amount: number }) => {
-        const s = t.name || "";
-        return s.length > 12 ? s.slice(0, 11) + "…" : s;
-      }),
+      labels: topItems.map(labelFromToot),
       datasets: [
         {
           label: "Төлбөр",
-          data: top.map((t: { name: string; amount: number }) => t.amount),
+          data: topItems.map(
+            (it: any) =>
+              Number(it?.amount ?? it?.uldegdel ?? it?.niitTulbur ?? 0) || 0,
+          ),
           borderColor: "#ef4444",
           backgroundColor: "rgba(239,68,68,0.15)",
           fill: true,
@@ -1027,23 +1074,23 @@ export default function Khynalt() {
             incomeTotals.unpaid,
           ],
           backgroundColor: [
-            "rgba(100, 116, 139, 0.4)", 
-            "rgba(59, 130, 246, 0.4)",  
-            "rgba(34, 197, 94, 0.4)",   
-            "rgba(239, 68, 68, 0.4)",   
+            "rgba(148, 163, 184, 0.55)",
+            "rgba(148, 163, 184, 0.55)",
+            "rgba(34, 197, 94, 0.45)",
+            "rgba(239, 68, 68, 0.45)",
           ],
           borderColor: [
-            "rgb(100, 116, 139)",
-            "rgb(59, 130, 246)",
+            "rgb(148, 163, 184)",
+            "rgb(148, 163, 184)",
             "rgb(34, 197, 94)",
             "rgb(239, 68, 68)",
           ],
           borderWidth: 1,
           barPercentage: 0.5,
-          borderRadius: 6
-        }
+          borderRadius: 6,
+        },
       ],
-      total: incomeTotals.unpaid
+      total: incomeTotals.unpaid,
     } as any;
   }, [ekhniiUldegdelTotal, currentMonthTotalComputed.total, incomeTotals]);
 
@@ -1088,38 +1135,6 @@ export default function Khynalt() {
     });
     return set.size;
   }, [baiguullaga, residents]);
-  const filteredActiveContracts = (() => {
-    // Total Active should ignore the date range filter, but respect organizational/building filter
-    const baseContracts = contracts.filter((c: any) => {
-      const buildingField = c?.barilgiinId ?? c?.barilga;
-      return (
-        !effectiveBarilgiinId ||
-        String(buildingField) === String(effectiveBarilgiinId)
-      );
-    });
-
-    if (!baseContracts?.length) return 0;
-    const now = new Date();
-    let active = 0;
-    baseContracts.forEach((g: any) => {
-      const status = String(g?.tuluv || g?.status || "").trim();
-      const isCancelled =
-        status === "Цуцалсан" ||
-        status.toLowerCase() === "цуцалсан" ||
-        status === "tsutlsasan" ||
-        status.toLowerCase() === "tsutlsasan" ||
-        status === "Идэвхгүй" ||
-        status.toLowerCase() === "идэвхгүй";
-
-      if (isCancelled) return;
-
-      const end = g?.duusakhOgnoo ? new Date(g.duusakhOgnoo) : null;
-      const isExpired = end ? end < now : false;
-
-      if (!isExpired) active += 1;
-    });
-    return active;
-  })();
 
   const cancelledGerees = useMemo(() => {
     // Total Cancelled should also ignore the date range filter but respect building filter
@@ -1142,36 +1157,39 @@ export default function Khynalt() {
     });
   }, [contracts, effectiveBarilgiinId]);
 
-  const showContracts =
-    ajiltan &&
-    (hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree"));
-  const showResidents =
-    ajiltan &&
-    (hasPermission(ajiltan, "/geree/orshinSuugch") ||
-      hasPermission(ajiltan, "geree.orshinSuugch"));
   const showTulbur =
     ajiltan &&
     (hasPermission(ajiltan, "/tulbur") || hasPermission(ajiltan, "tulbur"));
 
+  /** KPI `color` (Tailwind gradient classes) → SVG stroke gradient stops */
+  const kpiIconGradientStops: Record<string, [string, string]> = {
+    "from-amber-500 to-orange-600": ["#f59e0b", "#ea580c"],
+    "from-emerald-500 to-teal-600": ["#10b981", "#0d9488"],
+    "from-indigo-500 to-indigo-600": ["#6366f1", "#4f46e5"],
+    "from-purple-500 to-purple-600": ["#a855f7", "#9333ea"],
+    "from-red-500 to-red-600": ["#ef4444", "#dc2626"],
+  };
+
   const kpiCardsRaw = [
-    
     {
-      title: "Оршин суугч",
-      value: residentsPaidCount + residentsUnpaidCount,
-      color: "from-green-500 to-green-600",
-      href: "/geree/orshinSuugch",
+      title: "2+ сар төлөөгүй",
+      value: formatNumber(footerTotals.tuluvUnpaidCount ?? 0, 0),
+      subtitle: "Төлбөр төлөгдөөгүй",
+      color: "from-amber-500 to-orange-600",
+      href: "/tulbur?tuluv=unpaid",
       icon: Users,
       delay: 100,
-      show: showResidents,
+      show: showTulbur,
     },
     {
-      title: "Идэвхтэй гэрээ",
-      value: filteredActiveContracts,
-      color: "from-blue-500 to-blue-600",
-      href: "/geree?status=active",
-      icon: FileText,
+      title: "Төлөлт орсон гэрээ",
+      value: formatNumber(paymentEngagementStats.uniquePayers, 0),
+      subtitle: "Гүйлгээ хийгдсэн",
+      color: "from-emerald-500 to-teal-600",
+      href: "/tulbur",
+      icon: UserCheck,
       delay: 200,
-      show: showContracts,
+      show: showTulbur,
     },
     {
       title: "Сарын төлбөр",
@@ -1198,7 +1216,7 @@ export default function Khynalt() {
       subtitle: "Үлдэгдэл дүн",
       color: "from-red-500 to-red-600",
       href: "/tulbur",
-      icon: AlertTriangle,
+      icon: CircleDollarSign,
       delay: 500,
       show: showTulbur,
     },
@@ -1243,28 +1261,53 @@ export default function Khynalt() {
           {kpiCards.map((card, index) => {
             const Icon = (card as any).icon;
             const CardContent = (
-              <div className="h-full flex flex-col justify-between transition-shadow duration-200">
-                <div className="flex items-start justify-between mb-2">
+              <div className="h-full min-h-[110px] flex flex-col transition-shadow duration-200">
+                <div className="flex items-start justify-between mb-2 flex-shrink-0">
                   <h3 className="text-sm font-medium text-[color:var(--panel-text)] opacity-80 truncate pr-2">
                     {card.title}
                   </h3>
-                  {Icon && (
-                    <div
-                      className={`p-2 rounded-full bg-gradient-to-br ${card.color} text-white shadow-md flex-shrink-0`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
-                  )}
+                  {Icon &&
+                    (() => {
+                      const stops = kpiIconGradientStops[
+                        (card as { color: string }).color
+                      ] ?? ["#64748b", "#64748b"];
+                      const gradId = `kpi-icon-grad-${index}`;
+                      return (
+                        <div className="relative flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                          <svg
+                            width="0"
+                            height="0"
+                            className="absolute"
+                            aria-hidden
+                          >
+                            <defs>
+                              <linearGradient
+                                id={gradId}
+                                x1="0%"
+                                y1="0%"
+                                x2="100%"
+                                y2="100%"
+                              >
+                                <stop offset="0%" stopColor={stops[0]} />
+                                <stop offset="100%" stopColor={stops[1]} />
+                              </linearGradient>
+                            </defs>
+                          </svg>
+                          <Icon
+                            className="w-5 h-5"
+                            stroke={`url(#${gradId})`}
+                          />
+                        </div>
+                      );
+                    })()}
                 </div>
-                <div className="mt-auto">
-                  <p className="text-[1.35rem] font-bold text-[color:var(--panel-text)] leading-tight tracking-tight">
+                <div className="flex-1 flex flex-col justify-end min-h-0">
+                  <p className="text-[1.35rem] font-bold text-[color:var(--panel-text)] leading-none tracking-tight tabular-nums whitespace-nowrap overflow-hidden text-ellipsis">
                     {card.value}
                   </p>
-                  {card.subtitle && (
-                    <p className="text-xs text-[color:var(--muted-text)] mt-1">
-                      {card.subtitle}
-                    </p>
-                  )}
+                  <p className="text-xs text-[color:var(--muted-text)] mt-1 min-h-[1.25rem] leading-tight">
+                    {(card as { subtitle?: string }).subtitle ?? "\u00a0"}
+                  </p>
                 </div>
               </div>
             );
@@ -1298,57 +1341,70 @@ export default function Khynalt() {
           })}
         </div>
 
-        <div
-          className="grid grid-cols-1 lg:grid-cols-3 gap-8 pr-4 py-2 w-full min-w-0"
-          style={{ height: "240px" }}
-        >
+        <div className="w-full min-w-0 pr-4 py-2 space-y-5">
+          <div className="flex flex-row flex-nowrap items-center justify-center gap-8 sm:gap-12 py-1 text-sm text-[color:var(--panel-text)]">
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"
+                aria-hidden
+              />
+              Гүйцэтгэл
+            </span>
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500"
+                aria-hidden
+              />
+              Төлөөгүй
+            </span>
+            <span className="inline-flex items-center gap-2 whitespace-nowrap">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full bg-slate-400"
+                aria-hidden
+              />
+              Дүн
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full min-w-0 items-stretch">
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
             style={{
               transitionDelay: "600ms",
               willChange: "opacity, box-shadow",
-              height: "240px",
             }}
           >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
-              <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg  text-[color:var(--panel-text)]">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
                   Орлого
                 </h3>
               </div>
-              <div className="flex-1 min-h-0">
+              <div className="relative min-h-0 flex-1 w-full">
                 <Line
                   data={incomeLineData as any}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
-                      mode: 'index',
+                      mode: "index",
                       intersect: false,
                     },
                     plugins: {
-                      legend: {
-                        position: "top" as const,
-                        labels: { 
-                          color: chartColors.text,
-                          usePointStyle: true,
-                          boxWidth: 8,
-                          padding: 20
-                        },
-                      },
+                      legend: { display: false },
                       title: { display: false },
                       tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleColor: "#fff",
+                        bodyColor: "#e2e8f0",
+                        borderColor: "rgba(255,255,255,0.1)",
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
                         usePointStyle: true,
-                      }
+                      },
                     },
                     scales: {
                       x: {
@@ -1357,11 +1413,11 @@ export default function Khynalt() {
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { 
+                        grid: {
                           color: chartColors.grid,
-                          tickBorderDash: [5, 5]
+                          tickBorderDash: [5, 5],
                         },
-                        beginAtZero: true
+                        beginAtZero: true,
                       },
                     },
                   }}
@@ -1371,56 +1427,47 @@ export default function Khynalt() {
           </div>
 
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
             style={{
               transitionDelay: "700ms",
               willChange: "opacity, box-shadow",
-              height: "240px",
             }}
           >
             <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
-              <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg  text-[color:var(--panel-text)]">
+              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
                   Авлага
                 </h3>
-                <p className="text-sm text-[color:var(--muted-text)] mt-1">
+                <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
                   {huurimtlagdsanAvlaga.count} Оршин суугч /{" "}
                   {formatCurrency(huurimtlagdsanAvlaga.total)}
                 </p>
               </div>
-              <div className="flex-1 min-h-0">
+              <div className="relative min-h-0 flex-1 w-full">
                 <Line
                   data={huurimtlagdsanAvlagaChartData as any}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
-                      mode: 'index',
+                      mode: "index",
                       intersect: false,
                     },
                     plugins: {
-                      legend: {
-                        position: "top" as const,
-                        labels: { 
-                          color: chartColors.text,
-                          usePointStyle: true,
-                          boxWidth: 8,
-                          padding: 20
-                        },
-                      },
+                      legend: { display: false },
                       title: { display: false },
                       tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleColor: "#fff",
+                        bodyColor: "#e2e8f0",
+                        borderColor: "rgba(255,255,255,0.1)",
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
                         usePointStyle: true,
-                      }
+                      },
                     },
                     scales: {
                       x: {
@@ -1429,11 +1476,11 @@ export default function Khynalt() {
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { 
+                        grid: {
                           color: chartColors.grid,
-                          tickBorderDash: [5, 5]
+                          tickBorderDash: [5, 5],
                         },
-                        beginAtZero: true
+                        beginAtZero: true,
                       },
                     },
                   }}
@@ -1444,55 +1491,46 @@ export default function Khynalt() {
 
           {/* Payment Summary Bar Chart */}
           <div
-            className={`neu-panel allow-overflow rounded-3xl p-4 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col ${
+            className={`neu-panel allow-overflow rounded-3xl p-5 transition-opacity duration-500 cursor-pointer min-w-0 flex flex-col h-[300px] ${
               mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             }`}
             style={{
               transitionDelay: "800ms",
               willChange: "opacity, box-shadow",
-              height: "240px",
             }}
           >
-            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200 ">
-              <div className="mb-4 flex-shrink-0">
-                <h3 className="text-lg  text-[color:var(--panel-text)]">
+            <div className="flex flex-col flex-1 min-h-0 transition-shadow duration-200">
+              <div className="mb-3 flex min-h-[2.75rem] shrink-0 flex-row flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h3 className="text-lg font-medium leading-snug text-[color:var(--panel-text)] shrink-0">
                   Төлбөрийн хураангуй
                 </h3>
-                <p className="text-sm text-[color:var(--muted-text)] mt-1">
+                <p className="min-w-0 max-w-full text-right text-sm leading-snug text-[color:var(--muted-text)] tabular-nums sm:max-w-[70%] sm:whitespace-nowrap">
                   Нийт гүйцэтгэл: {formatCurrency(incomeTotals.paid)}
                 </p>
               </div>
-              <div className="flex-1 min-h-0">
+              <div className="relative min-h-0 flex-1 w-full">
                 <Bar
                   data={tulburSummaryChartData as any}
                   options={{
                     responsive: true,
                     maintainAspectRatio: false,
                     interaction: {
-                      mode: 'index',
+                      mode: "index",
                       intersect: false,
                     },
                     plugins: {
-                      legend: {
-                        position: "top" as const,
-                        labels: { 
-                          color: chartColors.text,
-                          usePointStyle: true,
-                          boxWidth: 8,
-                          padding: 20
-                        },
-                      },
+                      legend: { display: false },
                       title: { display: false },
                       tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#e2e8f0',
-                        borderColor: 'rgba(255,255,255,0.1)',
+                        backgroundColor: "rgba(15, 23, 42, 0.9)",
+                        titleColor: "#fff",
+                        bodyColor: "#e2e8f0",
+                        borderColor: "rgba(255,255,255,0.1)",
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
                         usePointStyle: true,
-                      }
+                      },
                     },
                     scales: {
                       x: {
@@ -1501,17 +1539,18 @@ export default function Khynalt() {
                       },
                       y: {
                         ticks: { color: chartColors.text },
-                        grid: { 
+                        grid: {
                           color: chartColors.grid,
-                          tickBorderDash: [5, 5]
+                          tickBorderDash: [5, 5],
                         },
-                        beginAtZero: true
+                        beginAtZero: true,
                       },
                     },
                   }}
                 />
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>

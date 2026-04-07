@@ -351,17 +351,74 @@ export function useTulburFooterTotals(
     });
   }, [token, baiguullagiinId, barilgiinId, deduplicatedResidents, contractsByNumber]);
 
+  /** guilgeeTuukh `bestKnownBalances` — гэрээ → түүхийн сүүлийн үлдэгдэл → ledger */
+  const bestKnownBalances = useMemo(() => {
+    const balances: Record<string, number> = {};
+
+    Object.values(contractsById).forEach((c: any) => {
+      const id = String(c?._id || "").trim();
+      if (!id) return;
+      if (c?.uldegdel != null) balances[id] = Number(c.uldegdel);
+    });
+
+    const sorted = [...allHistoryItems].sort((a: any, b: any) => {
+      const da = new Date(
+        a.ognoo || a.tulsunOgnoo || a.createdAt || 0,
+      ).getTime();
+      const db = new Date(
+        b.ognoo || b.tulsunOgnoo || b.createdAt || 0,
+      ).getTime();
+      return db - da;
+    });
+
+    const seenGid = new Set<string>();
+    sorted.forEach((it: any) => {
+      const gid =
+        String(it?.gereeniiId || it?.gereeId || "").trim() ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+      if (gid && !seenGid.has(gid)) {
+        seenGid.add(gid);
+        if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
+          balances[gid] = Number(it.uldegdel);
+        }
+      }
+    });
+
+    Object.entries(uldegdelByGereeId).forEach(([id, val]) => {
+      if (val != null && Number.isFinite(val)) balances[id] = val;
+    });
+
+    return balances;
+  }, [allHistoryItems, contractsById, contractsByNumber, uldegdelByGereeId]);
+
   const totals = useMemo(() => {
     let totalPaid = 0;
     let totalUldegdel = 0;
+    let tuluvUnpaidCount = 0;
+
+    const cancelledGereeIds = new Set<string>();
+    const cancelledGereeDugaars = new Set<string>();
+    ((gereeGaralt?.jagsaalt || []) as any[]).forEach((g: any) => {
+      const status = String(g?.tuluv || g?.status || "").trim().toLowerCase();
+      if (status === "цуцалсан" || status === "tsutlsasan") {
+        if (g?._id) cancelledGereeIds.add(String(g._id));
+        if (g?.gereeniiDugaar)
+          cancelledGereeDugaars.add(String(g.gereeniiDugaar));
+      }
+    });
 
     const aggregatePaidMap: Record<string, number> = {};
     buildingHistoryItems.forEach((it: any) => {
       const gid =
-        (it?.gereeniiId && String(it.gereeniiId)) ||
-        (it?._gereeniiId && String(it._gereeniiId)) ||
+        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
         (it?.gereeniiDugaar &&
-          String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
         "";
 
       const recordIsStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
@@ -398,38 +455,54 @@ export function useTulburFooterTotals(
 
     deduplicatedResidents.forEach((it: any) => {
       const gid =
-        (it?.gereeniiId && String(it.gereeniiId)) ||
-        (it?._gereeniiId && String(it._gereeniiId)) ||
+        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
         (it?.gereeniiDugaar &&
-          String((contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "")) ||
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        (it?._id && String(it._id)) ||
         "";
 
-      const key_gid = gid || (it?._id && String(it._id)) || "";
-      const periodPaid = key_gid ? (aggregatePaidMap[key_gid] ?? 0) : 0;
-
-      // Fallback to lifetime summary only if history items didn't capture a periodPaid
-      const paid = periodPaid || (gid ? (paidSummaryByGereeId[gid] ?? 0) : 0);
+      const periodPaid = gid ? (aggregatePaidMap[gid] ?? 0) : 0;
+      const hasExplicitRowTulsun =
+        it?._totalTulsun != null &&
+        it?._totalTulsun !== "" &&
+        Number.isFinite(Number(it._totalTulsun));
+      const rowTulsunNum = hasExplicitRowTulsun
+        ? Number(it._totalTulsun)
+        : undefined;
+      // Төлбөр stats: tulsunSummary, дараа нь жагсаалтын _totalTulsun, эцэст түүхийн нийлбэр
+      const paid = gid
+        ? (paidSummaryByGereeId[gid] ??
+            (rowTulsunNum !== undefined ? rowTulsunNum : periodPaid))
+        : rowTulsunNum !== undefined
+          ? rowTulsunNum
+          : periodPaid;
       totalPaid += paid;
 
-      const ledgerUldegdel = gid != null ? uldegdelByGereeId[gid] : undefined;
-      const contractUldegdel =
-        gid != null && (contractsById as any)[gid]?.uldegdel != null
-          ? Number((contractsById as any)[gid].uldegdel)
-          : undefined;
+      const balance = gid
+        ? (bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0))
+        : Number(it?.uldegdel ?? 0);
+      totalUldegdel += balance;
 
-      const residentUldegdel = Number(it?.uldegdel ?? 0);
+      // guilgeeTuukh stats — "Төлөөгүй"
+      const isResidentPaid = balance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paid > 0.1;
+      const isLinkedToCancelledGeree =
+        cancelledGereeIds.has(gid) ||
+        (it?.gereeniiDugaar &&
+          cancelledGereeDugaars.has(String(it.gereeniiDugaar)));
 
-      const val =
-        ledgerUldegdel !== undefined && ledgerUldegdel !== null
-          ? ledgerUldegdel
-          : contractUldegdel !== undefined && contractUldegdel !== null
-            ? contractUldegdel
-            : residentUldegdel;
-
-      totalUldegdel += val;
+      if (
+        !isResidentPaid &&
+        !isPartiallyPaid &&
+        !isLinkedToCancelledGeree
+      ) {
+        tuluvUnpaidCount += 1;
+      }
     });
 
-    return { totalPaid, totalUldegdel };
+    return { totalPaid, totalUldegdel, tuluvUnpaidCount };
   }, [
     buildingHistoryItems,
     deduplicatedResidents,
@@ -437,6 +510,8 @@ export function useTulburFooterTotals(
     contractsById,
     paidSummaryByGereeId,
     uldegdelByGereeId,
+    gereeGaralt?.jagsaalt,
+    bestKnownBalances,
   ]);
 
   return totals;

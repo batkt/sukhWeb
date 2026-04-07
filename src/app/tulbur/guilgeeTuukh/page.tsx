@@ -48,6 +48,7 @@ import {
   getDefaultDateRange,
 } from "@/lib/utils";
 import { useRegisterTourSteps, type DriverStep } from "@/context/TourContext";
+import { useSearchParams } from "next/navigation";
 import { useBuilding } from "@/context/BuildingContext";
 import { useSocket } from "@/context/SocketContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
@@ -91,6 +92,7 @@ const ModalPortal = ({ children }: { children: React.ReactNode }) => {
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
 
 export default function DansniiKhuulga() {
+  const searchParams = useSearchParams();
   const { mutate } = useSWRConfig();
   const socket = useSocket();
   const [page, setPage] = useState(1);
@@ -121,6 +123,20 @@ export default function DansniiKhuulga() {
   const [tuluvFilter, setTuluvFilter] = useState<
     "all" | "paid" | "unpaid" | "partiallyPaid" | "overdue"
   >("all");
+
+  useEffect(() => {
+    const t = searchParams.get("tuluv");
+    if (
+      t === "unpaid" ||
+      t === "paid" ||
+      t === "partiallyPaid" ||
+      t === "overdue" ||
+      t === "all"
+    ) {
+      setTuluvFilter(t);
+    }
+  }, [searchParams]);
+
   const [selectedOrtsFilter, setSelectedOrtsFilter] = useState<string>("");
   const [selectedTootFilter, setSelectedTootFilter] = useState<string>("");
   const [selectedDavkharFilter, setSelectedDavkharFilter] =
@@ -280,6 +296,7 @@ export default function DansniiKhuulga() {
       "davkhar",
       "tulbur",
       "ekhniiUldegdel",
+      "sariinTurees",
       "tuluv",
       "lastLog",
     ];
@@ -474,6 +491,17 @@ export default function DansniiKhuulga() {
       ? monthlyMatrixData.periods
       : [];
   }, [monthlyMatrixData]);
+
+  /** Нэг ч огноо сонгогдоогүй бол бүх түүх; сонгосон бол API-ийн жагсаалт таслагдсан */
+  const historyScopedByDate = useMemo(
+    () =>
+      Boolean(
+        ekhlekhOgnoo &&
+          (String(ekhlekhOgnoo[0] ?? "").trim() ||
+            String(ekhlekhOgnoo[1] ?? "").trim()),
+      ),
+    [ekhlekhOgnoo],
+  );
 
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
@@ -1203,13 +1231,36 @@ export default function DansniiKhuulga() {
         ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
       }
 
+      // Match deduplicatedResidentsAll: төлөлт rows add to paid, not charges; prefer tulsunDun for paid amount.
+      let chargeForRow: number;
+      let paidForRow: number;
+      if (isStandaloneEkhniiUldegdel) {
+        chargeForRow = itemAmount;
+        paidForRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
+      } else {
+        const type = String(it?.turul || it?.type || "").toLowerCase();
+        const isPayment =
+          type === "tulult" ||
+          type === "төлбөр" ||
+          type === "төлөлт" ||
+          (itemAmount < 0 && !isStandaloneEkhniiUldegdel);
+        const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
+        if (isPayment) {
+          chargeForRow = 0;
+          paidForRow = fromTulsun || Math.abs(itemAmount);
+        } else {
+          chargeForRow = Math.abs(itemAmount);
+          paidForRow = fromTulsun;
+        }
+      }
+
       if (!map.has(key)) {
         // First occurrence - store as base record
         map.set(key, {
           ...it,
           _historyCount: 1,
-          _totalTulbur: itemAmount,
-          _totalTulsun: Number(it?.tulsunDun ?? 0) || 0,
+          _totalTulbur: chargeForRow,
+          _totalTulsun: paidForRow,
           _hasEkhniiUldegdel:
             isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0,
           _ekhniiUldegdelAmount: ekhniiUldegdelDelta,
@@ -1218,8 +1269,8 @@ export default function DansniiKhuulga() {
         // Aggregate values
         const existing = map.get(key);
         existing._historyCount += 1;
-        existing._totalTulbur += itemAmount;
-        existing._totalTulsun += Number(it?.tulsunDun ?? 0) || 0;
+        existing._totalTulbur += chargeForRow;
+        existing._totalTulsun += paidForRow;
         if (isStandaloneEkhniiUldegdel || ekhniiUldegdelDelta !== 0) {
           existing._hasEkhniiUldegdel = true;
           existing._ekhniiUldegdelAmount =
@@ -1282,6 +1333,14 @@ export default function DansniiKhuulga() {
     buildingHistoryItems,
     contractsByNumber,
     bestKnownBalances,
+    gereeGaralt?.jagsaalt,
+    residentsById,
+    selectedOrtsFilter,
+    selectedDavkharFilter,
+    selectedTootFilter,
+    searchTerm,
+    tuluvFilter,
+    paidSummaryByGereeId,
   ]);
 
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
@@ -1439,9 +1498,10 @@ export default function DansniiKhuulga() {
       }
 
       const chargeAmt = isPayment ? 0 : Math.abs(itemAmount);
+      const fromTulsunRow = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
       const paidAmt = isPayment
-        ? Math.abs(itemAmount)
-        : Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
+        ? fromTulsunRow || Math.abs(itemAmount)
+        : fromTulsunRow;
 
       if (!map.has(key)) {
         map.set(key, {
@@ -1497,20 +1557,34 @@ export default function DansniiKhuulga() {
 
       if (sortField === "uldegdel" || sortField === "paid") {
         if (sortField === "paid") {
-          const gidA = getGid(a);
-          const gidB = getGid(b);
-          // Use the same data source as the table display (monthlyDataByGereeId)
-          const monthlyDataA = gidA ? monthlyDataByGereeId?.get(gidA) : null;
-          const monthlyDataB = gidB ? monthlyDataByGereeId?.get(gidB) : null;
-          const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-          aVal =
-            currentPeriod && monthlyDataA?.months?.[currentPeriod]
-              ? Number(monthlyDataA.months[currentPeriod].paid ?? 0)
-              : Number(a?._totalTulsun ?? 0);
-          bVal =
-            currentPeriod && monthlyDataB?.months?.[currentPeriod]
-              ? Number(monthlyDataB.months[currentPeriod].paid ?? 0)
-              : Number(b?._totalTulsun ?? 0);
+          if (historyScopedByDate) {
+            aVal = Number(a?._totalTulsun ?? 0);
+            bVal = Number(b?._totalTulsun ?? 0);
+          } else {
+            const gidA = getGid(a);
+            const gidB = getGid(b);
+            const monthlyDataA = gidA ? monthlyDataByGereeId?.get(gidA) : null;
+            const monthlyDataB = gidB ? monthlyDataByGereeId?.get(gidB) : null;
+            const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+            const sliceA =
+              currentPeriod && monthlyDataA?.months?.[currentPeriod] != null
+                ? monthlyDataA.months[currentPeriod]
+                : null;
+            const sliceB =
+              currentPeriod && monthlyDataB?.months?.[currentPeriod] != null
+                ? monthlyDataB.months[currentPeriod]
+                : null;
+            aVal = sliceA
+              ? Number(sliceA.paid ?? 0)
+              : gidA
+                ? (paidSummaryByGereeId[gidA] ?? Number(a?._totalTulsun ?? 0))
+                : Number(a?._totalTulsun ?? 0);
+            bVal = sliceB
+              ? Number(sliceB.paid ?? 0)
+              : gidB
+                ? (paidSummaryByGereeId[gidB] ?? Number(b?._totalTulsun ?? 0))
+                : Number(b?._totalTulsun ?? 0);
+          }
         } else {
           // Use authoritative balance for sorting
           const gidA = getGid(a);
@@ -1579,6 +1653,7 @@ export default function DansniiKhuulga() {
     contractsByNumber,
     monthlyDataByGereeId,
     monthlyPeriods,
+    historyScopedByDate,
   ]);
 
   const totalPages = Math.max(
@@ -3146,6 +3221,7 @@ export default function DansniiKhuulga() {
               getGereeId={getGereeId}
               monthlyDataByGereeId={monthlyDataByGereeId}
               monthlyPeriods={monthlyPeriods}
+              historyScopedByDate={historyScopedByDate}
               maxHeight="calc(100vh - 550px)"
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);
