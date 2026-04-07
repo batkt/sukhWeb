@@ -497,8 +497,8 @@ export default function DansniiKhuulga() {
     () =>
       Boolean(
         ekhlekhOgnoo &&
-          (String(ekhlekhOgnoo[0] ?? "").trim() ||
-            String(ekhlekhOgnoo[1] ?? "").trim()),
+        (String(ekhlekhOgnoo[0] ?? "").trim() ||
+          String(ekhlekhOgnoo[1] ?? "").trim()),
       ),
     [ekhlekhOgnoo],
   );
@@ -659,52 +659,65 @@ export default function DansniiKhuulga() {
   const bestKnownBalances = useMemo(() => {
     const balances: Record<string, number> = {};
 
-    // 1. Initialize with contract/resident data
-    Object.values(contractsById).forEach((c: any) => {
-      const gid = String(c._id);
-      if (c.uldegdel != null) balances[gid] = Number(c.uldegdel);
-    });
+    const rowDateMs = (it: any) =>
+      new Date(it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0).getTime();
 
-    // 2. Override with the latest transaction's uldegdel (often more current than contract list)
-    // Sort allHistoryItems by date (latest first) to pick the freshest balance
-    const sorted = [...allHistoryItems].sort((a: any, b: any) => {
-      const da = new Date(
-        a.ognoo || a.tulsunOgnoo || a.createdAt || 0,
-      ).getTime();
-      const db = new Date(
-        b.ognoo || b.tulsunOgnoo || b.createdAt || 0,
-      ).getTime();
-      return db - da;
-    });
+    /**
+     * Нэхэмжлэхийн бүтэн баримт (nekhemjlekhiinTuukh): uldegdel нь ихэвчлэн төлөгдсөний дараах
+     * нэгтгэсэн дүн. Жагсаалтад gereeniiTulukhAvlaga / TulsunAvlaga-ийн мөрүүдтэй хамт
+     * ирэхэд ижил өдөрт эрэмбэлэгдэж сүүлд орж бодит гүйлгээний үлдэгдлийг (жишээ нь -501) 0 болгоно.
+     */
+    const isNekhemjlekhiinTuukhInvoiceRoot = (it: any) => {
+      const hasNekhDugaar = Boolean(
+        String(it?.nekhemjlekhiinDugaar ?? "").trim(),
+      );
+      const z = it?.medeelel?.zardluud;
+      const hasZardluud = Array.isArray(z) && z.length > 0;
+      return hasNekhDugaar && hasZardluud;
+    };
 
-    const seenGid = new Set<string>();
-    sorted.forEach((it: any) => {
+    // 1. Одоогийн гэрээний үлдэгдэл — огнооны шүүлттэй үед бүү ашигла: таслагдсан түүхтэй зөрнө.
+    if (!historyScopedByDate) {
+      Object.values(contractsById).forEach((c: any) => {
+        const gid = String(c._id);
+        if (c.uldegdel != null) balances[gid] = Number(c.uldegdel);
+      });
+    }
+
+    // 2. Түүхийн мөрнөөс uldegdel: хугацааны дарааллаар (өсөх) явж, uldegdel байх бүрт шинэчилнэ.
+    // Өмнө нь хамгийн шинэ мөрийг эхлээд үзээд seenGid тавьдаг байсан — төлөлтийн мөрөнд uldegdel
+    // байхгүй үед хуучин мөр шалгагдахгүй, гэрээний одоогийн дүн үлддэг байсан.
+    const sortedAsc = [...allHistoryItems].sort(
+      (a: any, b: any) => rowDateMs(a) - rowDateMs(b),
+    );
+
+    sortedAsc.forEach((it: any) => {
       const gid =
         String(it?.gereeniiId || it?.gereeId || "").trim() ||
         (it?.gereeniiDugaar &&
           String(contractsByNumber[String(it.gereeniiDugaar)]?._id || "")) ||
         "";
-      if (gid && !seenGid.has(gid)) {
-        seenGid.add(gid);
-        if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
+      if (!gid) return;
+      if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
+        if (!isNekhemjlekhiinTuukhInvoiceRoot(it)) {
           balances[gid] = Number(it.uldegdel);
         }
       }
     });
 
-    // 3. Absolute priority: Ledger balances (lazily loaded via deep fetch)
-    Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
-      if (val != null) balances[gid] = val;
-    });
-
-    // 4. Removed rounding to preserve precision for the 0.Map (allows small residuals to be visible)
-    // Precise epsilon checks will handle status categorization.
+    // 3. Ledger = бүх түүхийн сүүл — огнооны шүүлттэй үед бүү давхарлуул.
+    if (!historyScopedByDate) {
+      Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
+        if (val != null) balances[gid] = val;
+      });
+    }
 
     return balances;
   }, [
     allHistoryItems,
     contractsById,
     contractsByNumber,
+    historyScopedByDate,
     latestRowUldegdelByGereeId,
     paidSummaryByGereeId,
   ]);
