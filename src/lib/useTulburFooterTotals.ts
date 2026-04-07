@@ -227,34 +227,30 @@ export function useTulburFooterTotals(
       const residentId = String(it?.orshinSuugchId || "").trim();
       const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
       const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      
+      const resGid = gereeId || (gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id ? String((contractsByNumber as any)[gereeDugaar]._id) : "");
+      
       const ner = String(it?.ner || "").trim().toLowerCase();
       const utas = Array.isArray(it?.utas)
         ? String(it.utas[0] || "").trim()
         : String(it?.utas || "").trim();
       const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key =
-        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      
+      // PRIORITIZE CONTRACT ID (GID) TO PREVENT DUPLICATES
+      const key = resGid || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
 
       if (!key || key === "||") return;
 
       const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
       if (isStandaloneEkhniiUldegdel) {
         const contractHasEkhniiUldegdelInInvoice =
-          (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
+          (resGid && contractsWithEkhniiUldegdelInInvoice.has(resGid)) ||
           (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
         if (contractHasEkhniiUldegdelInInvoice) return;
       }
 
-      const resolvedGereeId =
-        gereeId ||
-        (gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id
-          ? String((contractsByNumber as any)[gereeDugaar]._id)
-          : "");
-
       if (!map.has(key)) {
-        map.set(key, { ...it, _gereeniiId: resolvedGereeId });
-      } else {
-        // Just update the record to include latest fields if needed, but primary values are from gereeGaralt
+        map.set(key, { ...it, _gereeniiId: resGid });
       }
     });
 
@@ -443,13 +439,22 @@ export function useTulburFooterTotals(
         type === "төлөлт" ||
         (itemAmount < 0 && !recordIsStandaloneEkh);
 
+      // Match GuilgeeTuukh logic: Absolute value for payments to reach the 51,155.00₮ authoritative total.
       const paidAmt = isPayment
         ? Math.abs(itemAmount)
         : Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
 
       const key_gid = gid || (it?._id && String(it._id)) || "";
       if (key_gid) {
-        aggregatePaidMap[key_gid] = (aggregatePaidMap[key_gid] || 0) + paidAmt;
+        // If it's a standalone payment record, add it.
+        // If it's an invoice, we only add its tulsunDun if it HAS NO sub-transactions 
+        // to avoid double-counting with the payment records themselves.
+        const guilgeenuud = it?.medeelel?.guilgeenuud || it?.guilgeenuud || [];
+        const hasGuilgeenuud = Array.isArray(guilgeenuud) && guilgeenuud.length > 0;
+
+        if (isPayment || !hasGuilgeenuud) {
+           aggregatePaidMap[key_gid] = (aggregatePaidMap[key_gid] || 0) + paidAmt;
+        }
       }
     });
 

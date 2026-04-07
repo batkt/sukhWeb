@@ -311,9 +311,17 @@ function LayoutContent({ children }: { children: ReactNode }) {
       <SearchProvider>
         <BuildingProvider>
           <RequestScopeSync />
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-          <SuccessOverlayHost />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton 
+            toastOptions={{
+              classNames: {
+                toast: "cursor-pointer transition-all hover:scale-[1.02]",
+                closeButton: "!left-0 !right-auto !-translate-x-1/2 !-translate-y-1/2"
+              }
+            }}
+          />
           <ErrorOverlayHost />
 
           {/* Global loading overlay */}

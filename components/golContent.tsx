@@ -119,14 +119,29 @@ export default function GolContent({ children }: GolContentProps) {
           toast("Таны шинэ мэдэгдэл ирлээ", {
             description: "Шинэ мэдэгдэл харахын тулд жагсаалтыг шалгана уу.",
             duration: 4000,
+            action: {
+              label: "Харах",
+              onClick: () => {
+                if (payload?.data?._id) router.push(`/medegdel?id=${payload.data._id}`);
+                else router.push("/medegdel");
+              }
+            }
           });
         }
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
       if (payload?.type === "medegdelUserReply") {
+        const replyId = payload?.data?._id || payload?.data?.medegdelId;
         toast("Шинэ чат мессеж ирлээ", {
           description: "Харилцаанд шинэ хариу орсон байна.",
           duration: 4000,
+          action: {
+            label: "Харах",
+            onClick: () => {
+              if (replyId) router.push(`/medegdel/sanalKhuselt?id=${replyId}`);
+              else router.push("/medegdel/sanalKhuselt");
+            }
+          }
         });
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
       }
@@ -134,12 +149,20 @@ export default function GolContent({ children }: GolContentProps) {
         const win = typeof window !== "undefined" ? (window as any) : undefined;
         const sendingReply = win?.__medegdelSendingReply === true;
         const replyId = payload?.data?._id != null ? String(payload.data._id) : null;
+        const medId = payload?.data?.medegdelId || replyId;
         const lastSentId = win?.__medegdelLastSentReplyId;
         const sentByMe = sendingReply || (replyId && lastSentId === replyId);
         if (!sentByMe) {
           toast("Шинэ чат мессеж ирлээ", {
             description: "Харилцаанд шинэ хариу орсон байна.",
             duration: 4000,
+            action: {
+              label: "Харах",
+              onClick: () => {
+                if (medId) router.push(`/medegdel/sanalKhuselt?id=${medId}`);
+                else router.push("/medegdel/sanalKhuselt");
+              }
+            }
           });
         }
         mutate((k: unknown) => Array.isArray(k) && k[0] === "/medegdel/unreadCount", undefined, { revalidate: true });
