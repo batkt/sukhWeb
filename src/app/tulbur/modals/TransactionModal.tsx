@@ -45,6 +45,7 @@ export default function TransactionModal({
   const [messageApi, contextHolder] = message.useMessage();
   const modalRef = React.useRef<HTMLDivElement>(null);
   const constraintsRef = React.useRef<HTMLDivElement>(null);
+  const amountInputRef = React.useRef<HTMLInputElement>(null);
   const dragControls = useDragControls();
   const [transactionType, setTransactionType] =
     useState<TransactionData["type"]>("avlaga");
@@ -127,6 +128,34 @@ export default function TransactionModal({
     }
 
     return intFormatted;
+  };
+
+  const getCursorPosByNonCommaCount = (val: string, nonCommaCount: number) => {
+    if (nonCommaCount <= 0) return 0;
+    let seen = 0;
+    for (let i = 0; i < val.length; i++) {
+      if (val[i] !== ",") seen++;
+      if (seen >= nonCommaCount) return i + 1;
+    }
+    return val.length;
+  };
+
+  const handleAmountInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const cursor = e.target.selectionStart ?? raw.length;
+    const nonCommaBeforeCursor = raw.slice(0, cursor).replace(/,/g, "").length;
+    const formatted = formatWhileTyping(raw);
+    setAmount(formatted);
+
+    requestAnimationFrame(() => {
+      const el = amountInputRef.current;
+      if (!el || document.activeElement !== el) return;
+      const nextPos = getCursorPosByNonCommaCount(
+        formatted,
+        nonCommaBeforeCursor,
+      );
+      el.setSelectionRange(nextPos, nextPos);
+    });
   };
 
   const resetForm = () => {
@@ -572,14 +601,10 @@ export default function TransactionModal({
                       <div className="relative w-full group/input">
                         <input
                           type="text"
+                          ref={amountInputRef}
                           value={amount}
                           inputMode="decimal"
-                          onChange={(e) => {
-                            const formatted = formatWhileTyping(
-                              e.target.value,
-                            );
-                            setAmount(formatted);
-                          }}
+                          onChange={handleAmountInputChange}
                           onBlur={() => {
                             if (amount) setAmount(formatAmount(amount));
                           }}
@@ -667,12 +692,9 @@ export default function TransactionModal({
                     <div className="relative w-full group/input">
                       <input
                         type="text"
+                        ref={amountInputRef}
                         value={amount}
-                        onChange={(e) => {
-                          const inputVal = e.target.value;
-                          const formatted = formatWhileTyping(inputVal);
-                          setAmount(formatted);
-                        }}
+                        onChange={handleAmountInputChange}
                         onDoubleClick={
                           transactionType === "tulult"
                             ? fillAmountWithBalance

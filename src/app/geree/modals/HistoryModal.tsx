@@ -28,6 +28,7 @@ import formatNumber, {
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
+import { ModalPortal } from "../../../../components/golContent";
 
 interface HistoryModalProps {
   show: boolean;
@@ -190,6 +191,7 @@ export default function HistoryModal({
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceModalResident, setInvoiceModalResident] = useState<any>(null);
+  const hasInitializedDateRangeRef = useRef(false);
 
   useModalHotkeys({
     isOpen: show,
@@ -1138,17 +1140,26 @@ export default function HistoryModal({
   const pageRangeEnd = pageDateRange?.[1] ?? null;
 
   useEffect(() => {
+    if (!show) {
+      hasInitializedDateRangeRef.current = false;
+      return;
+    }
     if (show && contract) {
       setData([]);
       setGlobalUldegdel(null);
-      if (pageRangeStart || pageRangeEnd) {
-        setDateRange([pageRangeStart, pageRangeEnd]);
-      } else {
-        setDateRange([null, null]);
+      // Pre-fill from the parent page date filter only once when opening.
+      // After that, keep the modal datepicker fully user-controlled.
+      if (!hasInitializedDateRangeRef.current) {
+        if (pageRangeStart || pageRangeEnd) {
+          setDateRange([pageRangeStart, pageRangeEnd]);
+        } else {
+          setDateRange([null, null]);
+        }
+        hasInitializedDateRangeRef.current = true;
       }
       fetchData();
     }
-  }, [show, contract, pageRangeStart, pageRangeEnd]);
+  }, [show, contract]);
 
   const filteredData = useMemo(() => {
     const parseInputDateMs = (v: any, isEnd: boolean) => {
@@ -1202,19 +1213,20 @@ export default function HistoryModal({
   if (!show) return null;
 
   return (
-    <AnimatePresence>
-      <PrintStyles />
-      <div
-        ref={constraintsRef}
-        className="fixed inset-0 z-[9999999] overflow-y-auto custom-scrollbar"
-      >
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-transparent no-print"
-          onClick={onClose}
-        />
+    <ModalPortal>
+      <AnimatePresence>
+        <PrintStyles />
+        <div
+          ref={constraintsRef}
+          className="fixed inset-0 z-[9999999] overflow-y-auto custom-scrollbar"
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-transparent no-print"
+            onClick={onClose}
+          />
 
         <motion.div
           ref={modalRef}
@@ -1226,7 +1238,7 @@ export default function HistoryModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
+          className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-[95vw] max-w-[1400px] h-[82vh] max-h-[82vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Section */}
@@ -1637,7 +1649,8 @@ export default function HistoryModal({
             barilgiinId={barilgiinId}
           />
         </motion.div>
-      </div>
-    </AnimatePresence>
+        </div>
+      </AnimatePresence>
+    </ModalPortal>
   );
 }
