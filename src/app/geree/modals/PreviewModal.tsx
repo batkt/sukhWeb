@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 
@@ -12,6 +12,8 @@ interface PreviewModalProps {
 }
 
 export default function PreviewModal({ show, onClose, template }: PreviewModalProps) {
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   useModalHotkeys({ isOpen: show, onClose });
   if (!show) return null;
 
@@ -19,25 +21,35 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between mb-4 cursor-move select-none"
+            >
               <h3 className="text-xl  text-slate-900">
                 Загварын урьдчилсан харалт
               </h3>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="p-2 hover:bg-gray-300 rounded-2xl transition-colors"
                 aria-label="Хаах"

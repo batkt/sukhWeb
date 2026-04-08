@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import formatNumber from "../../../../tools/function/formatNumber";
 import useModalHotkeys from "@/lib/useModalHotkeys";
@@ -13,6 +13,8 @@ interface InvoicePreviewModalProps {
 }
 
 export default function InvoicePreviewModal({ show, onClose, invoiceData }: InvoicePreviewModalProps) {
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   useModalHotkeys({ isOpen: show, onClose });
   if (!show || !invoiceData?.preview) return null;
 
@@ -38,23 +40,32 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[1000]"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="fixed left-1/2 top-1/2 z-[1100] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
           >
             <div className="invoice-modal h-full flex flex-col">
             {/* Header – match Үйлчилгээний нэхэмжлэх style */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50 print-break no-print rounded-t-3xl cursor-move select-none"
+            >
               <div>
                 <h3 className="text-xl  text-slate-800">
                 Нэхэмжлэхийн урьдчилсан харалт
@@ -65,6 +76,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
               </div>
               <div className="flex items-center gap-4">
                 <button
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
                   className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   aria-label="Хаах"

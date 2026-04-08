@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -25,6 +25,8 @@ export default function EmployeeModal({
   onSubmit,
 }: EmployeeModalProps) {
   const employeeRef = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
 
   useModalHotkeys({
     isOpen: show,
@@ -38,25 +40,35 @@ export default function EmployeeModal({
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             ref={employeeRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none"
+            >
               <h2 className="text-2xl text-slate-900 dark:text-white">
                 {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
               </h2>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-2xl transition-colors"
                 aria-label="Хаах"

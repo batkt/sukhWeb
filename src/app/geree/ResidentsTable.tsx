@@ -35,6 +35,8 @@ interface ResidentsTableProps {
   onEdit?: (resident: ResidentItem) => void;
   onDelete?: (resident: ResidentItem) => void;
   onSort?: (key: SortKey, order?: "ascend" | "descend" | null) => void;
+  /** Viewport-based scroll height (same idea as /tulbur) */
+  maxHeight?: string | number;
 }
 
 export const ResidentsTable: React.FC<ResidentsTableProps> = ({
@@ -48,6 +50,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   onEdit,
   onDelete,
   onSort,
+  maxHeight = "calc(100vh - 420px)",
 }) => {
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
@@ -247,7 +250,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
-        scroll={{ x: "max-content", y: 320 }}
+        scroll={{ x: "max-content", y: maxHeight as any }}
         rowClassName={(record, index) => `
         ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
         text-gray-900 dark:text-white

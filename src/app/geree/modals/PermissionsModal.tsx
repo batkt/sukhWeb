@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { ALL_PERMISSIONS, PermissionItem } from "@/lib/permissions";
@@ -24,6 +24,8 @@ export default function PermissionsModal({
 }: PermissionsModalProps) {
   // ... existing refs and state ...
   const modalRef = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [initialPermissions, setInitialPermissions] = useState<string[]>([]);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -300,22 +302,31 @@ export default function PermissionsModal({
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4"
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             ref={modalRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface w-[800px] max-w-[95vw] h-[650px] max-h-[90vh] rounded-xl shadow-2xl p-0 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b border-[color:var(--surface-border)]">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-3 border-b border-[color:var(--surface-border)] cursor-move select-none"
+            >
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 dark:text-blue-400 shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -328,6 +339,7 @@ export default function PermissionsModal({
                 </div>
               </div>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="p-1 hover:bg-[color:var(--hover-bg)] rounded-lg transition-colors shrink-0"
                 aria-label="Хаах"

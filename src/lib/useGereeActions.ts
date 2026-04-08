@@ -1102,10 +1102,31 @@ export function useGereeActions(
         const response = await uilchilgee(token).post("/manualSend", body);
 
         if (response.data?.success) {
+          const createdCount = Number(response.data?.data?.created ?? 0) || 0;
           const message =
             response.data.message ||
-            `${response.data.data?.created || 0} нэхэмжлэх амжилттай үүсгэгдлээ`;
+            `${createdCount} нэхэмжлэх амжилттай үүсгэгдлээ`;
           openSuccessOverlay(message);
+          if (createdCount <= 0) {
+            openErrorOverlay(
+              "Шинэ нэхэмжлэх үүсээгүй байна (created = 0). Давхар үүсгэх тохиргоо (override) эсвэл тухайн сар аль хэдийн үүссэн эсэхийг шалгана уу.",
+            );
+          }
+
+          // Notify any open invoice UIs to refresh their history lists.
+          // (E.g. InvoiceModal sidebar should show the newly created "version" immediately.)
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("sukh:invoices-sent", {
+                detail: {
+                  baiguullagiinId: baiguullaga._id,
+                  gereeIds: selectedContractIds,
+                  created: createdCount,
+                  at: Date.now(),
+                },
+              }),
+            );
+          }
 
           // If there are errors, show them
           if (

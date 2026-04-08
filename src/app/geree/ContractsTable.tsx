@@ -32,6 +32,8 @@ interface ContractsTableProps {
   rowsPerPage: number;
   setCurrentPage: (page: number) => void;
   setRowsPerPage: (size: number) => void;
+  /** Viewport-based scroll height (same idea as /tulbur) */
+  maxHeight?: string | number;
 }
 
 export const ContractsTable: React.FC<ContractsTableProps> = ({
@@ -55,6 +57,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
   rowsPerPage,
   setCurrentPage,
   setRowsPerPage,
+  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<any> = useMemo(() => {
     const baseColumns: ColumnsType<any> = [
@@ -221,7 +224,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
               size="small"
               bordered
               className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-300"
-              scroll={{ x: "max-content", y: 400 }}
+              scroll={{ x: "max-content", y: maxHeight as any }}
               rowClassName={(record, index) => `
                 ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
                 text-gray-900 dark:text-white

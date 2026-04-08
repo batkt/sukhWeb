@@ -2,7 +2,7 @@
 
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import formatNumber, {
@@ -322,6 +322,8 @@ export default function InvoiceModal({
   barilgiinId,
   refreshTrigger = 0,
 }: InvoiceModalProps) {
+  const dragControls = useDragControls();
+  const constraintsRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   useModalHotkeys({
     isOpen,
@@ -405,6 +407,23 @@ export default function InvoiceModal({
     refreshTrigger,
   ]);
 
+  // When invoices are manually sent/created elsewhere, refresh the versions list live.
+  useEffect(() => {
+    if (!isOpen) return;
+    if (typeof window === "undefined") return;
+
+    const handler = (e: any) => {
+      // Refresh unconditionally while modal is open.
+      // (Some screens send ids as contractId/gereeId, while InvoiceModal may only know residentId;
+      // gating this can incorrectly block refresh.)
+      fetchInvoices();
+    };
+
+    window.addEventListener("sukh:invoices-sent", handler as any);
+    return () =>
+      window.removeEventListener("sukh:invoices-sent", handler as any);
+  }, [isOpen, token, baiguullagiinId, selectedBuildingId, barilgiinId]);
+
   const [expenseRows, setExpenseRows] = useState<any[]>([]);
   const [paymentRows, setPaymentRows] = useState<any[]>([]);
   const [totalPaidFromApi, setTotalPaidFromApi] = useState<number | null>(null);
@@ -446,71 +465,51 @@ export default function InvoiceModal({
         }
       });
 
-      // Also include receivable transactions (Авлага) and payments as rows in the expense table
+      // Also include receivable transactions (Авлага) as rows in the expense table.
+      // IMPORTANT: Payments must NOT be mixed into invoice charges; we show them separately
+      // and compute a unified paid/remaining that matches "Нийт дүн".
       gRows.forEach((g: any) => {
         const t = String(g.turul || "").toLowerCase();
-        
-        if (t.includes("төлөлт") || t.includes("төлбөр")) {
-          const ner = String(
-            g.tailbar || g.medeelel?.tailbar || "Төлөлт",
-          ).trim();
-          const amount = -Math.abs(Number(g.tulsunDun || g.dun || 0));
-          if (amount !== 0) {
-            const existing = expenseMap.get(ner);
-            if (existing) {
-              existing.dun += amount;
-            } else {
-              expenseMap.set(ner, { ...g, ner, dun: amount });
-            }
-          }
-        } else {
-          // Treat anything else in guilgeenuud as an Avlaga/Charge if it has a positive amount
-          const ner = String(
-            g.tailbar || g.medeelel?.tailbar || "Нэмэлт төлбөр",
-          ).trim();
-          const amount = Number(g.undsenDun || g.tulukhDun || g.dun || 0);
-          if (amount > 0) {
-            const existing = expenseMap.get(ner);
-            if (existing) {
-              existing.dun += amount;
-            } else {
-              expenseMap.set(ner, { ...g, ner, dun: amount });
-            }
-          }
-        }
-      });
 
-      // Include internal paymentHistory as negative rows too
-      const phRows = Array.isArray(selectedInvoice?.paymentHistory)
-        ? selectedInvoice.paymentHistory
-        : [];
-      phRows.forEach((p: any) => {
-        const ner = String(p.tailbar || "Төлөлт").trim();
-        const pt = String(p.turul || "").toLowerCase();
-        // Backend rule: ignore system_sync adjustments for "paid/remaining" math.
-        // Keep the underlying records in DB, but don't let them affect invoice totals in UI.
-        if (
-          pt === "system_sync" ||
-          pt.includes("system_sync") ||
-          pt.includes("sync_neg") ||
-          pt.includes("sync_pos") ||
-          pt === "sync"
-        ) {
-          return;
-        }
-        const amount = pt.includes("sync") || pt.includes("system")
-          ? Number(p.dun || p.tulsunDun || 0) // Sometimes sync adjustments can be positive or negative
-          : -Math.abs(Number(p.dun || p.tulsunDun || 0));
-
-        if (amount !== 0) {
+        // Treat anything non-payment in guilgeenuud as an Avlaga/Charge if it has a positive amount
+        if (t.includes("төлөлт") || t.includes("төлбөр")) return;
+        const ner = String(
+          g.tailbar || g.medeelel?.tailbar || "Нэмэлт төлбөр",
+        ).trim();
+        const amount = Number(g.undsenDun || g.tulukhDun || g.dun || 0);
+        if (amount > 0) {
           const existing = expenseMap.get(ner);
           if (existing) {
             existing.dun += amount;
           } else {
-            expenseMap.set(ner, { ...p, ner, dun: amount });
+            expenseMap.set(ner, { ...g, ner, dun: amount });
           }
         }
       });
+
+      // Include internal paymentHistory as PAYMENT rows (do not affect charges table)
+      const phRows = Array.isArray(selectedInvoice?.paymentHistory)
+        ? selectedInvoice.paymentHistory
+        : [];
+      const paymentMap = new Map<string, any>();
+      const addPaymentRow = (
+        ognoo: any,
+        tailbar: any,
+        amount: any,
+        id: any,
+      ) => {
+        const amt = Math.abs(Number(amount ?? 0));
+        if (!Number.isFinite(amt) || amt === 0) return;
+        const key = String(
+          id || `${String(tailbar || "Төлөлт")}::${String(ognoo || "")}`,
+        );
+        paymentMap.set(key, {
+          _id: id || key,
+          ognoo,
+          tailbar: String(tailbar || "Төлөлт").trim(),
+          dun: amt,
+        });
+      };
 
       // Ensure ekhnii uldegdel is shown if provided but missing from rows
       const ekhniiVal = Number(
@@ -536,12 +535,12 @@ export default function InvoiceModal({
         selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
       );
       const diff = officialNiitTulbur - mapTotal;
-      
+
       if (officialNiitTulbur !== 0 && Math.abs(diff) > 0) {
         expenseMap.set("Бусад төлбөр (Авлага)", {
-           ner: "Нэмэлт / Бусад төлбөр",
-           dun: diff,
-           _id: "discrepancy-fill",
+          ner: "Авлага",
+          dun: diff,
+          _id: "discrepancy-fill",
         });
       }
 
@@ -621,7 +620,7 @@ export default function InvoiceModal({
 
       setExpenseRows(Array.from(expenseMap.values()));
 
-      const pRows = gRows
+      const pRowsFromGuilgee = gRows
         .filter((g: any) => {
           const t = String(g.turul || "").toLowerCase();
           return (
@@ -634,9 +633,32 @@ export default function InvoiceModal({
           _id: g._id || `pay-${idx}`,
           ognoo: g.ognoo || g.tulsunOgnoo || g.createdAt,
           tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
-          dun: Number(g.tulsunDun || g.dun || 0),
+          dun: Math.abs(Number(g.tulsunDun || g.dun || 0)),
         }));
-      setPaymentRows(pRows);
+
+      // paymentHistory rows
+      phRows.forEach((p: any) => {
+        const pt = String(p.turul || "").toLowerCase();
+        if (
+          pt === "system_sync" ||
+          pt.includes("system_sync") ||
+          pt.includes("sync_neg") ||
+          pt.includes("sync_pos") ||
+          pt === "sync"
+        ) {
+          return;
+        }
+        addPaymentRow(
+          p.ognoo || p.tulsunOgnoo || p.createdAt,
+          p.tailbar || "Төлөлт",
+          p.dun || p.tulsunDun || 0,
+          p._id,
+        );
+      });
+      pRowsFromGuilgee.forEach((r: any) =>
+        addPaymentRow(r.ognoo, r.tailbar, r.dun, r._id),
+      );
+      setPaymentRows(Array.from(paymentMap.values()));
 
       // We can still fetch the total paid summary if needed, but the row data MUST come from the invoice
       const gereeId =
@@ -697,9 +719,30 @@ export default function InvoiceModal({
     }, 0);
   }, [filteredInvoices]);
 
-  const totalSum = useMemo(
-    () => expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0),
-    [expenseRows],
+  const invoiceTotal = useMemo(() => {
+    const official = Number(
+      selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
+    );
+    if (Number.isFinite(official) && official !== 0) return official;
+    return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
+  }, [selectedInvoice, expenseRows]);
+
+  const paidTotal = useMemo(() => {
+    return (paymentRows || []).reduce((s: number, r: any) => {
+      const v = Number(r?.dun ?? 0);
+      return s + (Number.isFinite(v) ? Math.abs(v) : 0);
+    }, 0);
+  }, [paymentRows]);
+
+  // For display: don't show "paid > total" on the invoice itself
+  const paidDisplay = useMemo(
+    () => Math.min(invoiceTotal, paidTotal),
+    [invoiceTotal, paidTotal],
+  );
+
+  const remainingDisplay = useMemo(
+    () => Math.max(0, invoiceTotal - paidTotal),
+    [invoiceTotal, paidTotal],
   );
   const currentUldegdel = useMemo(
     () => Number(resident?.uldegdel ?? 0),
@@ -712,413 +755,442 @@ export default function InvoiceModal({
     <ModalPortal>
       <PrintStyles />
       <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] no-print"
+        className="fixed inset-0 bg-transparent z-[9999] no-print"
         onClick={onClose}
       />
       <div
-        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] h-[90vh] bg-[color:var(--surface-bg)] dark:border dark:border-[color:var(--surface-border)] rounded-2xl shadow-2xl overflow-hidden z-[9999] flex flex-col pointer-events-auto"
-        onClick={(e) => e.stopPropagation()}
-        ref={containerRef}
+        ref={constraintsRef}
+        className="fixed inset-0 z-[9999] pointer-events-none"
       >
-        {/* Modal Title Bar */}
-        <div className="px-6 py-4 flex justify-between items-center bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] no-print">
-          <h2 className="text-xl font-bold text-theme dark:text-white">
-            Нэхэмжлэлийн түүх
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-emerald-900/30 rounded-full transition-colors"
+        <motion.div
+          className="pointer-events-auto w-[95vw] max-w-[1400px] h-[90vh] bg-[color:var(--surface-bg)] dark:border dark:border-[color:var(--surface-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+          ref={containerRef}
+          initial={false}
+          drag
+          dragListener={false}
+          dragControls={dragControls}
+          dragConstraints={constraintsRef}
+          dragMomentum={false}
+          style={{ margin: "auto" }}
+        >
+          {/* Modal Title Bar */}
+          <div
+            onPointerDown={(e) => dragControls.start(e)}
+            className="px-6 py-4 flex justify-between items-center bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)] no-print cursor-move select-none"
           >
-            <X className="w-6 h-6 text-[color:var(--panel-text)]" />
-          </button>
-        </div>
+            <h2 className="text-xl font-bold text-theme dark:text-white">
+              Нэхэмжлэлийн түүх
+            </h2>
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={onClose}
+              className="p-2 hover:bg-[color:var(--surface-hover)] dark:hover:bg-emerald-900/30 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6 text-[color:var(--panel-text)]" />
+            </button>
+          </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* LEFT SIDEBAR - INVOICE LIST */}
-          <div className="w-[400px] flex flex-col border-r border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 no-print">
-            {/* Sidebar Filters */}
-            <div className="p-4 space-y-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
-              <div className="flex gap-2">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={setDateRange}
-                  placeholder="Эхлэх огноо ... Дуусах огноо"
-                  className="w-full text-xs"
-                />
+          <div className="flex-1 flex overflow-hidden">
+            {/* LEFT SIDEBAR - INVOICE LIST */}
+            <div className="w-[400px] flex flex-col border-r border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 no-print">
+              {/* Sidebar Filters */}
+              <div className="p-4 space-y-3 bg-[color:var(--surface-bg)] border-b border-[color:var(--surface-border)]">
+                <div className="flex gap-2">
+                  <StandardDatePicker
+                    isRange={true}
+                    value={dateRange}
+                    onChange={setDateRange}
+                    placeholder="Эхлэх огноо ... Дуусах огноо"
+                    className="w-full text-xs"
+                  />
+                </div>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)]" />
+                  <input
+                    type="text"
+                    placeholder="Хайх /Ажилтан/"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 text-sm bg-[color:var(--surface-hover)] dark:bg-gray-800 text-theme dark:text-white border-none rounded-lg focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
+                  />
+                </div>
               </div>
-              <div className="flex items-center justify-between rounded-xl px-3 py-2 bg-[color:var(--surface-hover)]/60 border border-[color:var(--surface-border)]">
-                <span className="text-[11px] text-[color:var(--panel-text)] opacity-80 font-medium">
-                  Нийт үлдэгдэл (бүх нэхэмжлэх)
-                </span>
-                <span
-                  className={
-                    "text-sm font-bold " +
-                    (totalInvoiceUldegdel < 0.01
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400")
-                  }
-                >
-                  {formatNumber(totalInvoiceUldegdel, 2)}
-                </span>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[color:var(--panel-text)] opacity-60" />
-                <input
-                  type="text"
-                  placeholder="Хайх /Ажилтан/"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 text-sm bg-[color:var(--surface-hover)] dark:bg-gray-800 text-theme dark:text-white border-none rounded-lg focus:ring-2 focus:ring-[color:var(--theme)] transition-all"
-                />
+
+              {/* Sidebar List */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+                {loadingInvoices ? (
+                  <div className="flex flex-col items-center justify-center h-40 text-slate-400">
+                    <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-2" />
+                    <span className="text-xs">Уншиж байна...</span>
+                  </div>
+                ) : filteredInvoices.length > 0 ? (
+                  filteredInvoices.map((inv) => (
+                    <button
+                      key={inv._id}
+                      onClick={() => setSelectedInvoice(inv)}
+                      className={`w-full p-4 rounded-xl text-left border transition-all ${
+                        selectedInvoice?._id === inv._id
+                          ? "neu-panel shadow-md border-[color:var(--theme)]/20"
+                          : "bg-transparent border-transparent hover:bg-[color:var(--surface-hover)] hover:border-[color:var(--surface-border)] text-theme dark:text-white"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <span className="text-sm font-bold text-theme dark:text-white">
+                          {inv.zagvar ||
+                            inv.nekhemjlekhiinTurul ||
+                            "Үндсэн загвар"}
+                        </span>
+                        <span className="text-sm font-bold text-theme dark:text-white">
+                          {formatNumber(inv.niitTulbur || inv.niitDun || 0, 2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div className="text-[11px] text-[color:var(--panel-text)]  font-medium">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <Calendar className="w-3 h-3" />
+                            {inv.ognoo
+                              ? new Date(inv.ognoo).toLocaleString("mn-MN")
+                              : "-"}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-[color:var(--theme)] font-semibold">
+                          {inv.ajiltanNer || "CAdmin"}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-slate-400 text-sm">
+                    Мэдээлэл олдсонгүй
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Sidebar List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-              {loadingInvoices ? (
-                <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                  <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-2" />
-                  <span className="text-xs">Уншиж байна...</span>
-                </div>
-              ) : filteredInvoices.length > 0 ? (
-                filteredInvoices.map((inv) => (
-                  <button
-                    key={inv._id}
-                    onClick={() => setSelectedInvoice(inv)}
-                    className={`w-full p-4 rounded-xl text-left border transition-all ${
-                      selectedInvoice?._id === inv._id
-                        ? "neu-panel shadow-md border-[color:var(--theme)]/20"
-                        : "bg-transparent border-transparent hover:bg-[color:var(--surface-hover)] hover:border-[color:var(--surface-border)] text-theme dark:text-white"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-bold text-theme dark:text-white">
-                        {inv.zagvar ||
-                          inv.nekhemjlekhiinTurul ||
-                          "Үндсэн загвар"}
-                      </span>
-                      <span className="text-sm font-bold text-theme dark:text-white">
-                        {formatNumber(inv.niitTulbur || inv.niitDun || 0, 2)}
-                      </span>
+            {/* RIGHT CONTENT - INVOICE DETAILS */}
+            <div className="flex-1 flex flex-col bg-[color:var(--surface-bg)] overflow-hidden relative">
+              <PrintStyles />
+              {selectedInvoice ? (
+                <div className="invoice-modal flex-1 flex flex-col overflow-hidden">
+                  {/* Invoice Header Details */}
+                  <div className="p-6 bg-[color:var(--surface-hover)]/30 no-print border-b border-[color:var(--surface-border)]">
+                    <div className="grid grid-cols-2 gap-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[color:var(--panel-text)] ">
+                          Гэрээний дугаар:
+                        </span>
+                        <span className=" text-theme dark:text-white">
+                          {selectedInvoice?.gereeniiDugaar ||
+                            resident?.gereeniiId ||
+                            "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[color:var(--panel-text)] ">
+                          Нэр:
+                        </span>
+                        <span className=" text-theme dark:text-white">
+                          {resident?.ovog} {resident?.ner}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[color:var(--panel-text)] ">
+                          Тоот:
+                        </span>
+                        <span className=" text-theme dark:text-white">
+                          {resident?.toot || "-"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[color:var(--panel-text)] ">
+                          Утас:
+                        </span>
+                        <span className=" text-theme dark:text-white">
+                          {resident?.utas || "-"}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-end">
-                      <div className="text-[11px] text-[color:var(--panel-text)] opacity-80 font-medium">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <Calendar className="w-3 h-3" />
-                          {inv.ognoo
-                            ? new Date(inv.ognoo).toLocaleString("mn-MN")
-                            : "-"}
+                  </div>
+
+                  {/* PDF/Printable Content Area */}
+                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white dark:bg-gray-900 font-noto">
+                    <div className="max-w-[1000px] mx-auto text-[11px] text-theme dark:text-white leading-tight">
+                      {/* Top Labels */}
+
+                      {/* Invoice Title */}
+                      <div className="text-center mb-6">
+                        <h2 className="text-sm font-bold uppercase">
+                          №{" "}
+                          {selectedInvoice?.nekhemjlekhiinDugaar ||
+                            invNumber(selectedInvoice)}
+                        </h2>
+                      </div>
+
+                      {/* Sender & Payer Grid */}
+                      <div className="grid grid-cols-2 gap-12 mb-8">
+                        {/* Sender (Нэхэмжлэгч) */}
+                        <div className="space-y-1">
+                          <div className="font-bold text-[12px] mb-2 text-center  pb-1">
+                            Нэхэмжлэгч:
+                          </div>
+                          <div className="grid grid-cols-[120px_1fr] gap-x-2">
+                            <span className="text-[color:var(--panel-text)]">
+                              Байгууллагын нэр:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {baiguullaga?.ner || "Computer Mall"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Хаяг:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {baiguullaga?.khayag || "sukhbaatar 9th district"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Утас, Факс:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {Array.isArray(baiguullaga?.utas)
+                                ? baiguullaga.utas[0]
+                                : baiguullaga?.utas || "70107010"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              И-мэйл:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {baiguullaga?.email || "-"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Банкны нэр:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {String(baiguullaga?.bankNer || "").trim() || "-"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Банкны дансны №:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {String(baiguullaga?.dans || "").trim() || "-"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Данс эзэмшигч:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {String(
+                                baiguullaga?.dotoodNer ||
+                                  baiguullaga?.ner ||
+                                  "",
+                              ).trim() || "-"}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Payer (Төлөгч) */}
+                        <div className="space-y-1">
+                          <div className="font-bold text-[12px] mb-2 text-center  pb-1">
+                            Төлөгч:
+                          </div>
+                          <div className="grid grid-cols-[120px_1fr] gap-x-2">
+                            <span className="text-[color:var(--panel-text)]">
+                              Оршин суугч:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {resident?.ovog} {resident?.ner}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Тоот:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {resident?.toot ? `${resident.toot} тоот` : "-"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Гэрээний №:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {selectedInvoice?.gereeniiDugaar ||
+                                resident?.gereeniiId ||
+                                "-"}
+                            </span>
+
+                            <span className="text-[color:var(--panel-text)]">
+                              Нэхэмжилсэн огноо:
+                            </span>
+                            <span className=" text-right text-theme dark:text-white">
+                              {formatDate(selectedInvoice?.ognoo)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span className="text-[11px] text-[color:var(--theme)] font-semibold">
-                        {inv.ajiltanNer || "CAdmin"}
-                      </span>
+
+                      {/* Formal Document Table */}
+                      <div className="border border-[color:var(--surface-border)] overflow-hidden mb-4">
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] font-bold text-center">
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-8">
+                                №
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-48">
+                                Материал
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
+                                Өмнөх заалт
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
+                                Сүүлийн заалт
+                              </td>
+                              {/* <td className="border-r border-slate-200 py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-24">
+                                Дүн
+                              </td>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-[color:var(--surface-border)]">
+                            {expenseRows.map((row, idx) => {
+                              const total = Number(row.dun || 0);
+                              const discount = Number(row.khungulult || 0);
+
+                              return (
+                                <tr
+                                  key={row._id}
+                                  className="text-center border-b border-[color:var(--surface-border)] last:border-0"
+                                >
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
+                                    {idx + 1}
+                                  </td>
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-left">
+                                    {row.ner}
+                                  </td>
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
+                                    {(() => {
+                                      const val = row.umnukh || row.umnukhZaalt;
+                                      return val != null && val !== ""
+                                        ? formatNumber(val, 2)
+                                        : "";
+                                    })()}
+                                  </td>
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
+                                    {(() => {
+                                      const val =
+                                        row.suuliin || row.suuliinZaalt;
+                                      return val != null && val !== ""
+                                        ? formatNumber(val, 2)
+                                        : "";
+                                    })()}
+                                  </td>
+                                  {/* <td className="border-r border-slate-200 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
+                                  <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right font-medium">
+                                    {formatNumber(total, 2)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 force-bold">
+                              <td
+                                colSpan={2}
+                                className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-normal"
+                              >
+                                {numberToMongolianWords(Number(invoiceTotal))}
+                              </td>
+                              <td
+                                colSpan={2}
+                                className="border-r font-bold-f border-[color:var(--surface-border)] py-2 px-2 text-center "
+                              >
+                                Нийт дүн
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right ">
+                                {formatNumber(Number(invoiceTotal), 2)}
+                              </td>
+                            </tr>
+                            <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/10">
+                              <td
+                                colSpan={4}
+                                className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
+                              >
+                                Төлсөн дүн
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
+                                {formatNumber(Number(paidDisplay), 2)}
+                              </td>
+                            </tr>
+                            <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/10">
+                              <td
+                                colSpan={4}
+                                className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
+                              >
+                                Үлдэгдэл
+                              </td>
+                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
+                                {formatNumber(Number(remainingDisplay), 2)}
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+
+                      {/* Signatures & Stamp Area */}
+                      <div className="flex justify-between items-start mt-4">
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2">
+                            <span className="w-24 text-[color:var(--panel-text)] ">
+                              Хүлээн авсан:
+                            </span>
+                            <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
+                              /{resident?.ovog?.charAt(0)}. {resident?.ner}/
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-24 text-[color:var(--panel-text)] ">
+                              Нэхэмжлэл бичсэн:
+                            </span>
+                            <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
+                              {selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </button>
-                ))
+                  </div>
+
+                  {/* Content Footer / Actions */}
+                  <div className="p-6 border-t border-[color:var(--surface-border)] flex justify-end gap-3 bg-[color:var(--surface-bg)] no-print">
+                    <Button
+                      onClick={onClose}
+                      variant="secondary"
+                      className="px-6"
+                    >
+                      Хаах
+                    </Button>
+                    <Button
+                      onClick={() => window.print()}
+                      variant="primary"
+                      className="px-8 no-print shadow-[color:var(--theme)]/20"
+                    >
+                      Хэвлэх
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <div className="text-center py-10 text-slate-400 text-sm">
-                  Мэдээлэл олдсонгүй
+                <div className="flex-1 flex flex-col items-center justify-center text-[color:var(--panel-text)] ">
+                  <Eye className="w-16 h-16 mb-4 " />
+                  <p className="text-lg font-medium">Нэхэмжлэх сонгоно уу</p>
                 </div>
               )}
             </div>
           </div>
-
-          {/* RIGHT CONTENT - INVOICE DETAILS */}
-          <div className="flex-1 flex flex-col bg-[color:var(--surface-bg)] overflow-hidden relative">
-            <PrintStyles />
-            {selectedInvoice ? (
-              <div className="invoice-modal flex-1 flex flex-col overflow-hidden">
-                {/* Invoice Header Details */}
-                <div className="p-6 bg-[color:var(--surface-hover)]/30 no-print border-b border-[color:var(--surface-border)]">
-                  <div className="grid grid-cols-2 gap-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">
-                        Гэрээний дугаар:
-                      </span>
-                      <span className="font-bold text-theme dark:text-white">
-                        {selectedInvoice?.gereeniiDugaar ||
-                          resident?.gereeniiId ||
-                          "-"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">
-                        Нэр:
-                      </span>
-                      <span className="font-bold text-theme dark:text-white">
-                        {resident?.ovog} {resident?.ner}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">
-                        Тоот:
-                      </span>
-                      <span className="font-bold text-theme dark:text-white">
-                        {resident?.toot || "-"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[color:var(--panel-text)] opacity-70">
-                        Утас:
-                      </span>
-                      <span className="font-bold text-theme dark:text-white">
-                        {resident?.utas || "-"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* PDF/Printable Content Area */}
-                <div className="flex-1 overflow-y-auto p-10 custom-scrollbar bg-white dark:bg-gray-900 font-noto">
-                  <div className="max-w-[1000px] mx-auto text-[11px] text-theme dark:text-white leading-tight">
-                    {/* Top Labels */}
-
-                    {/* Invoice Title */}
-                    <div className="text-center mb-6">
-                      <h2 className="text-sm font-bold uppercase">
-                        №{" "}
-                        {selectedInvoice?.nekhemjlekhiinDugaar ||
-                          invNumber(selectedInvoice)}
-                      </h2>
-                    </div>
-
-                    {/* Sender & Payer Grid */}
-                    <div className="grid grid-cols-2 gap-12 mb-8">
-                      {/* Sender (Нэхэмжлэгч) */}
-                      <div className="space-y-1">
-                        <div className="font-bold text-[12px] mb-2 text-center  pb-1">
-                          Нэхэмжлэгч:
-                        </div>
-                        <div className="grid grid-cols-[120px_1fr] gap-x-2">
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Байгууллагын нэр:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {baiguullaga?.ner || "Computer Mall"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Хаяг:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {baiguullaga?.khayag || "sukhbaatar 9th district"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Утас, Факс:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {Array.isArray(baiguullaga?.utas)
-                              ? baiguullaga.utas[0]
-                              : baiguullaga?.utas || "70107010"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            И-мэйл:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {baiguullaga?.email || "-"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Банкны нэр:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {baiguullaga?.bankNer || "Хаан банк"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Банкны дансны №:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {baiguullaga?.dans || "MN320005005620095719"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Данс эзэмшигч:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            ЦЭГЦТЭЙ НАЙРАМДАЛ ПРОПЕРТИ
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Payer (Төлөгч) */}
-                      <div className="space-y-1">
-                        <div className="font-bold text-[12px] mb-2 text-center  pb-1">
-                          Төлөгч:
-                        </div>
-                        <div className="grid grid-cols-[120px_1fr] gap-x-2">
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Оршин суугч:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {resident?.ovog} {resident?.ner}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Тоот:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {resident?.toot ? `${resident.toot} тоот` : "-"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Гэрээний №:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {selectedInvoice?.gereeniiDugaar ||
-                              resident?.gereeniiId ||
-                              "-"}
-                          </span>
-
-                          <span className="text-[color:var(--panel-text)] opacity-70">
-                            Нэхэмжилсэн огноо:
-                          </span>
-                          <span className="font-bold text-right text-theme dark:text-white">
-                            {formatDate(selectedInvoice?.ognoo)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Formal Document Table */}
-                    <div className="border border-[color:var(--surface-border)] overflow-hidden mb-4">
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-[color:var(--surface-hover)]/50 border-b border-[color:var(--surface-border)] font-bold text-center">
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-8">
-                              №
-                            </td>
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-48">
-                              Материал
-                            </td>
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
-                              Өмнөх заалт
-                            </td>
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-1 w-16">
-                              Сүүлийн заалт
-                            </td>
-                            {/* <td className="border-r border-slate-200 py-2 px-2 text-right w-24">Хөнгөлөлт</td> */}
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center w-24">
-                              Дүн
-                            </td>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[color:var(--surface-border)]">
-                          {expenseRows.map((row, idx) => {
-                            const total = Number(row.dun || 0);
-                            const discount = Number(row.khungulult || 0);
-
-                            return (
-                              <tr
-                                key={row._id}
-                                className="text-center border-b border-[color:var(--surface-border)] last:border-0"
-                              >
-                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
-                                  {idx + 1}
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-left">
-                                  {row.ner}
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
-                                  {(() => {
-                                    const val = row.umnukh || row.umnukhZaalt;
-                                    return val != null && val !== ""
-                                      ? formatNumber(val, 2)
-                                      : "";
-                                  })()}
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-1">
-                                  {(() => {
-                                    const val = row.suuliin || row.suuliinZaalt;
-                                    return val != null && val !== ""
-                                      ? formatNumber(val, 2)
-                                      : "";
-                                  })()}
-                                </td>
-                                {/* <td className="border-r border-slate-200 py-1.5 px-2 text-right">{discount > 0 ? formatNumber(discount, 2) : "0.00"}</td> */}
-                                <td className="border-r border-[color:var(--surface-border)] py-1.5 px-2 text-right font-medium">
-                                  {formatNumber(total, 2)}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/30 force-bold">
-                            <td
-                              colSpan={2}
-                              className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-normal"
-                            >
-                              {numberToMongolianWords(Number(selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? totalSum))}
-                            </td>
-                            <td
-                              colSpan={2}
-                              className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center "
-                            >
-                              Нийт дүн
-                            </td>
-                            <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right ">
-                              {formatNumber(Number(selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? totalSum), 2)}
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-
-                    {/* Signatures & Stamp Area */}
-                    <div className="flex justify-between items-start mt-4">
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">
-                            Хүлээн авсан:
-                          </span>
-                          <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
-                            /{resident?.ovog?.charAt(0)}. {resident?.ner}/
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-24 text-[color:var(--panel-text)] opacity-70">
-                            Нэхэмжлэл бичсэн:
-                          </span>
-                          <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
-                            {selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content Footer / Actions */}
-                <div className="p-6 border-t border-[color:var(--surface-border)] flex justify-end gap-3 bg-[color:var(--surface-bg)] no-print">
-                  <Button
-                    onClick={onClose}
-                    variant="secondary"
-                    className="px-6"
-                  >
-                    Хаах
-                  </Button>
-                  <Button
-                    onClick={() => window.print()}
-                    variant="primary"
-                    className="px-8 no-print shadow-[color:var(--theme)]/20"
-                  >
-                    Хэвлэх
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-[color:var(--panel-text)] opacity-40">
-                <Eye className="w-16 h-16 mb-4 opacity-20" />
-                <p className="text-lg font-medium">Нэхэмжлэх сонгоно уу</p>
-              </div>
-            )}
-          </div>
-        </div>
+        </motion.div>
       </div>
     </ModalPortal>
   );

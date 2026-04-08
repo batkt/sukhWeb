@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
@@ -38,6 +38,8 @@ export default function ContractModal({
   baiguullaga,
 }: ContractModalProps) {
   const contractRef = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   
   useModalHotkeys({
     isOpen: show,
@@ -51,25 +53,35 @@ export default function ContractModal({
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             ref={contractRef}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative overflow-y-auto custom-scrollbar modal-surface modal-responsive w-full max-w-4xl md:max-w-5xl lg:max-w-6xl h-[70vh] max-h-[70vh] rounded-2xl shadow-2xl p-0 flex flex-col"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between px-6 py-4 border-b cursor-move select-none"
+            >
               <h2 className="text-2xl  text-slate-900">
                 {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
               </h2>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                 aria-label="Хаах"

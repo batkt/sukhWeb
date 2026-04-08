@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import TusgaiZagvar from "../../../../components/selectZagvar/tusgaiZagvar";
@@ -43,6 +43,8 @@ export default function ResidentModal({
   onSubmit,
 }: ResidentModalProps) {
   const residentRef = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   const [errors, setErrors] = React.useState<string[]>([]);
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
 
@@ -403,22 +405,31 @@ export default function ResidentModal({
       <AnimatePresence>
         <ModalPortal>
           <motion.div
+            ref={constraintsRef}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           >
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-transparent" />
             <motion.div
               ref={residentRef}
               initial={{ scale: 0.96, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.96, opacity: 0, y: 20 }}
               transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
+              drag
+              dragListener={false}
+              dragControls={dragControls}
+              dragConstraints={constraintsRef}
+              dragMomentum={false}
               onClick={(e) => e.stopPropagation()}
               className="relative modal-surface modal-responsive sm:w-full sm:max-w-2xl rounded-xl shadow-2xl p-0 flex flex-col max-h-[85vh] overflow-hidden"
             >
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent">
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="flex items-center justify-between px-4 py-3 border-b border-gray-200/50 dark:border-gray-700/50 bg-gradient-to-r from-transparent via-white/5 to-transparent cursor-move select-none"
+              >
                 <div className="flex items-center gap-3">
                   <svg
                     className="w-5 h-5 text-slate-600 dark:text-slate-400"
@@ -440,6 +451,7 @@ export default function ResidentModal({
                   </h2>
                 </div>
                 <button
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={requestClose}
                   className="p-1.5 rounded-lg transition-all duration-200  active:scale-95"
                   aria-label="Хаах"

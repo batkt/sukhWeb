@@ -24,6 +24,8 @@ interface UnitsTableProps {
   onDeleteFloor?: (floor: string) => void;
   sortKey?: string;
   sortOrder?: "asc" | "desc";
+  /** Viewport-based scroll height (same idea as /tulbur) */
+  maxHeight?: string | number;
 }
 
 export const UnitsTable: React.FC<UnitsTableProps> = ({
@@ -37,6 +39,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
   onDeleteFloor,
   sortKey,
   sortOrder,
+  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<FloorItem> = useMemo(
     () => [
@@ -50,13 +53,20 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
           (page - 1) * pageSize + index + 1,
       },
       {
-        title: <span className="text-slate-900 dark:text-slate-200">Нийт тоот</span>,
+        title: (
+          <span className="text-slate-900 dark:text-slate-200">Нийт тоот</span>
+        ),
         dataIndex: "units",
         key: "unitsCount",
         align: "center",
         width: 100,
         sorter: true,
-        sortOrder: (sortKey === "unitsCount" || sortKey === "units") ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "unitsCount" || sortKey === "units"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         className: "text-slate-900 dark:text-slate-200 font-medium",
         render: (units: string[]) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
@@ -71,7 +81,12 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         align: "center",
         width: 100,
         sorter: true,
-        sortOrder: sortKey === "orts" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "orts"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         className: "text-slate-900 dark:text-slate-200",
         render: (val: string) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
@@ -80,13 +95,20 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         ),
       },
       {
-        title: <span className="text-slate-900 dark:text-slate-200">Давхар</span>,
+        title: (
+          <span className="text-slate-900 dark:text-slate-200">Давхар</span>
+        ),
         dataIndex: "floor",
         key: "floor",
         align: "center",
         width: 120,
         sorter: true,
-        sortOrder: sortKey === "floor" ? (sortOrder === "asc" ? "ascend" : "descend") : null,
+        sortOrder:
+          sortKey === "floor"
+            ? sortOrder === "asc"
+              ? "ascend"
+              : "descend"
+            : null,
         className: "text-slate-900 dark:text-slate-200",
         render: (val: string) => (
           <span className="text-slate-900 dark:text-slate-200 whitespace-nowrap">
@@ -95,14 +117,16 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         ),
       },
       {
-        title: <span className="text-slate-900 dark:text-slate-200">Тоотууд</span>,
+        title: (
+          <span className="text-slate-900 dark:text-slate-200">Тоотууд</span>
+        ),
         dataIndex: "filteredUnits",
         key: "filteredUnits",
         className: "text-slate-900 dark:text-slate-200",
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 italic uppercase tracking-wider">
+              <span className="text-10px text-slate-400 dark:text-slate-500 italic ">
                 Хоосон
               </span>
             );
@@ -157,7 +181,9 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         },
       },
       {
-        title: <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>,
+        title: (
+          <span className="text-slate-900 dark:text-slate-200">Үйлдэл</span>
+        ),
         key: "action",
         align: "center",
         width: 120,
@@ -209,10 +235,13 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         className="guilgee-table"
         onChange={(_: any, __: any, sorter: any) => {
           if (actions?.toggleSortFor) {
-            actions.toggleSortFor(sorter.field || sorter.columnKey, sorter.order);
+            actions.toggleSortFor(
+              sorter.field || sorter.columnKey,
+              sorter.order,
+            );
           }
         }}
-        scroll={{ x: "max-content", y: 320 }}
+        scroll={{ x: "max-content", y: maxHeight as any }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-slate-900/40" : "bg-slate-50 dark:bg-slate-800/40"}
           text-slate-900 dark:text-slate-200

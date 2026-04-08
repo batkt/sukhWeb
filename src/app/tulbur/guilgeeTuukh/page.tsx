@@ -74,6 +74,17 @@ const toMonthKey = (v?: string | null) => {
   return m ? `${m[1]}-${m[2]}` : "";
 };
 
+/** Гүйлгээний "бизнесийн" огноо: эхлээд ognoo (төлөлтийг сарын төлбөрт оруулах өдөр), дараа нь tulsunOgnoo/createdAt */
+function itemPrimaryDateMs(it: any): number {
+  const raw = it?.ognoo;
+  if (raw != null && String(raw).trim() !== "") {
+    const t = new Date(raw).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  const t2 = new Date(it?.tulsunOgnoo || it?.createdAt || 0).getTime();
+  return Number.isNaN(t2) ? 0 : t2;
+}
+
 // Pure utility moved outside to prevent hoisting issues
 function getGereeIdPure(it: any, contractsByNumber: Record<string, any>) {
   return (
@@ -159,6 +170,22 @@ export default function DansniiKhuulga() {
       end: hasDateFilter && !isCurrentMonthFilter ? rawEnd || undefined : undefined,
     };
   }, [ekhlekhOgnoo]);
+
+  const historyScopedByDate = useMemo(
+    () =>
+      Boolean(
+        effectiveDateFilter.hasDateFilter &&
+          !effectiveDateFilter.isCurrentMonthFilter,
+      ),
+    [effectiveDateFilter],
+  );
+
+  const apiHistoryDateStart = historyScopedByDate
+    ? undefined
+    : effectiveDateFilter.start;
+  const apiHistoryDateEnd = historyScopedByDate
+    ? undefined
+    : effectiveDateFilter.end;
 
   useEffect(() => {
     const t = searchParams.get("tuluv");
@@ -407,8 +434,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          effectiveDateFilter.start || null,
-          effectiveDateFilter.end || null,
+          apiHistoryDateStart ?? null,
+          apiHistoryDateEnd ?? null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -416,8 +443,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start,
-          duusakhOgnoo: end,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -434,8 +461,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          effectiveDateFilter.start || null,
-          effectiveDateFilter.end || null,
+          apiHistoryDateStart ?? null,
+          apiHistoryDateEnd ?? null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -443,8 +470,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start,
-          duusakhOgnoo: end,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -461,8 +488,8 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          effectiveDateFilter.start || null,
-          effectiveDateFilter.end || null,
+          apiHistoryDateStart ?? null,
+          apiHistoryDateEnd ?? null,
         ]
       : null,
     async ([url, tkn, orgId, branch, start, end]) => {
@@ -470,8 +497,8 @@ export default function DansniiKhuulga() {
         params: {
           baiguullagiinId: orgId,
           barilgiinId: branch || undefined,
-          ekhlekhOgnoo: start,
-          duusakhOgnoo: end,
+          ekhlekhOgnoo: start || undefined,
+          duusakhOgnoo: end || undefined,
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -481,7 +508,33 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-  // Fetch resident monthly matrix data for displaying current month's payment
+  // Fetch resident monthly matrix data for "сарын үлдэгдэл"
+  // Backend requires baiguullagiinId, ekhlekhOgnoo, duusakhOgnoo.
+  // If user selected a month via date picker, use that month; otherwise fallback to current month.
+  const monthlyMatrixRange = useMemo(() => {
+    const [rawStart, rawEnd] = ekhlekhOgnoo || [];
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const selectedMonthKey =
+      startKey && endKey && startKey === endKey
+        ? startKey
+        : startKey || endKey || "";
+
+    const now = new Date();
+    const fallbackMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    const monthKey = selectedMonthKey || fallbackMonthKey;
+
+    const [yy, mm] = monthKey.split("-").map((v) => parseInt(v, 10));
+    const monthIdx = Number.isFinite(mm) ? mm - 1 : now.getMonth();
+    const yearVal = Number.isFinite(yy) ? yy : now.getFullYear();
+
+    const start = new Date(yearVal, monthIdx, 1, 0, 0, 0, 0);
+    const end = new Date(yearVal, monthIdx + 1, 0, 23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString(), monthKey };
+  }, [ekhlekhOgnoo]);
+
   const { data: monthlyMatrixData } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
@@ -489,16 +542,15 @@ export default function DansniiKhuulga() {
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId || null,
-          effectiveDateFilter.start || null,
-          effectiveDateFilter.end || null,
+          monthlyMatrixRange.monthKey, // key only (avoid timezone jitter)
         ]
       : null,
-    async ([url, tkn, orgId, branch, start, end]) => {
+    async ([url, tkn, orgId, branch]) => {
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: orgId,
         barilgiinId: branch || undefined,
-        ekhlekhOgnoo: start,
-        duusakhOgnoo: end,
+        ekhlekhOgnoo: monthlyMatrixRange.start,
+        duusakhOgnoo: monthlyMatrixRange.end,
         khuudasniiDugaar: 1,
         khuudasniiKhemjee: 10000, // Fetch all residents
       });
@@ -527,12 +579,6 @@ export default function DansniiKhuulga() {
       ? monthlyMatrixData.periods
       : [];
   }, [monthlyMatrixData]);
-
-  /** Нэг ч огноо сонгогдоогүй бол бүх түүх; сонгосон бол API-ийн жагсаалт таслагдсан */
-  const historyScopedByDate = useMemo(
-    () => Boolean(effectiveDateFilter.hasDateFilter && !effectiveDateFilter.isCurrentMonthFilter),
-    [effectiveDateFilter],
-  );
 
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
@@ -595,23 +641,15 @@ export default function DansniiKhuulga() {
     const e = endObj ? new Date(endObj).getTime() : Number.POSITIVE_INFINITY;
 
     const filtered = combined.filter((it: any) => {
-      const d = new Date(
-        it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0,
-      ).getTime();
+      const d = itemPrimaryDateMs(it);
       return d >= s && d <= e;
     });
 
     // CRITICAL: Sort by date ASCENDING so that forEach(it => balances[gid] = it.uldegdel)
     // will always leave the LATEST balance in the map.
-    return filtered.sort((a, b) => {
-      const da = new Date(
-        a?.tulsunOgnoo || a?.ognoo || a?.createdAt || 0,
-      ).getTime();
-      const db = new Date(
-        b?.tulsunOgnoo || b?.ognoo || b?.createdAt || 0,
-      ).getTime();
-      return da - db;
-    });
+    return filtered.sort(
+      (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
+    );
   }, [historyData, receivableData, paymentRecordsData, ekhlekhOgnoo]);
 
   const { gereeGaralt } = useGereeJagsaalt(
@@ -691,8 +729,7 @@ export default function DansniiKhuulga() {
     const balances: Record<string, number> = {};
     const invoiceRootTotalsByGid: Record<string, number> = {};
 
-    const rowDateMs = (it: any) =>
-      new Date(it?.tulsunOgnoo || it?.ognoo || it?.createdAt || 0).getTime();
+    const rowDateMs = (it: any) => itemPrimaryDateMs(it);
 
     /**
      * Нэхэмжлэхийн бүтэн баримт (nekhemjlekhiinTuukh): uldegdel нь ихэвчлэн төлөгдсөний дараах
@@ -708,7 +745,7 @@ export default function DansniiKhuulga() {
       return hasNekhDugaar && hasZardluud;
     };
 
-    // 1. Одоогийн гэрээний үлдэгдэл — огнооны шүүлттэй үед бүү ашигла: таслагдсан түүхтэй зөрнө.
+    // 1. Одоогийн гэрээний үлдэгдэл — өмнөх сарын шүүлттэй үед бүү ашигла (таслагдсан түүхтэй зөрнө).
     if (!historyScopedByDate) {
       Object.values(contractsById).forEach((c: any) => {
         const gid = String(c._id);
@@ -753,11 +790,7 @@ export default function DansniiKhuulga() {
     });
 
     // 3. Ledger = бүх түүхийн сүүл (contract-wide source of truth).
-    // Огнооны шүүлт асаалттай байсан ч үндсэн хүснэгтийн "Үлдэгдэл"-ийг
-    // нэг ижил логикоор харуулахын тулд ledger latest-ийг тэргүүнд ашиглана.
     Object.entries(latestRowUldegdelByGereeId).forEach(([gid, val]) => {
-      // /tulbur main дээр contract-wide үнэнийг (history-ledger latest uldegdel) тэргүүнд ашиглана.
-      // Invoice-root нийлбэр нь fallback байна.
       if (val != null) balances[gid] = val;
     });
 
@@ -768,8 +801,24 @@ export default function DansniiKhuulga() {
     contractsByNumber,
     historyScopedByDate,
     latestRowUldegdelByGereeId,
-    paidSummaryByGereeId,
   ]);
+
+  /** Хүснэгт/Excel: өмнөх сар сонгосон үед тухайн хугацааны сүүлийн ledger үлдэгдэл; статистикт bestKnownBalances хэвээр */
+  const tableDisplayBalances = useMemo(() => {
+    if (!historyScopedByDate) return bestKnownBalances;
+    const balances: Record<string, number> = {};
+    const sortedAsc = [...allHistoryItems].sort(
+      (a: any, b: any) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
+    );
+    sortedAsc.forEach((it: any) => {
+      const gid = getGereeIdPure(it, contractsByNumber);
+      if (!gid) return;
+      if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
+        balances[gid] = Number(it.uldegdel);
+      }
+    });
+    return balances;
+  }, [historyScopedByDate, allHistoryItems, contractsByNumber, bestKnownBalances]);
 
   // Filter by paid/unpaid + Орц + Давхар
   const filteredItems = useMemo(() => {
@@ -803,9 +852,8 @@ export default function DansniiKhuulga() {
           )) ||
         "";
 
-      // Use the Definitive Balance Map
       const currentBalance =
-        bestKnownBalances[gid] ?? Number(it?.uldegdel ?? 0);
+        tableDisplayBalances[gid] ?? Number(it?.uldegdel ?? 0);
 
       const paidAmount = gid
         ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
@@ -923,7 +971,7 @@ export default function DansniiKhuulga() {
     selectedDavkharFilter,
     selectedTootFilter,
     latestRowUldegdelByGereeId,
-    bestKnownBalances,
+    tableDisplayBalances,
   ]);
 
   // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
@@ -1018,7 +1066,6 @@ export default function DansniiKhuulga() {
     selectedOrtsFilter,
     selectedDavkharFilter,
     selectedTootFilter,
-    bestKnownBalances,
   ]);
 
   const totalSum = useMemo(() => {
@@ -1361,7 +1408,7 @@ export default function DansniiKhuulga() {
 
     return result.filter((r) => {
       const gid =
-        String(r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
+        String(r?._gereeniiId ?? r?.gereeniiId ?? r?.gereeId ?? "").trim() ||
         (r?._id && String(r._id)) ||
         (r?.gereeniiDugaar &&
           String(
@@ -1369,10 +1416,16 @@ export default function DansniiKhuulga() {
           )) ||
         "";
 
-      const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
-      const paid = gid
-        ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
-        : Number(r?._totalTulsun ?? 0);
+      const scopedAgg =
+        Number(r?._totalTulbur || 0) - Number(r?._totalTulsun || 0);
+      const balance = historyScopedByDate
+        ? (tableDisplayBalances[gid] ?? scopedAgg)
+        : (bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0));
+      const paid = historyScopedByDate
+        ? Number(r?._totalTulsun ?? 0)
+        : gid
+          ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
+          : Number(r?._totalTulsun ?? 0);
 
       const isResidentPaid = balance < 0.01;
       const isPartiallyPaid = !isResidentPaid && paid > 0.1;
@@ -1403,6 +1456,8 @@ export default function DansniiKhuulga() {
     searchTerm,
     tuluvFilter,
     paidSummaryByGereeId,
+    historyScopedByDate,
+    tableDisplayBalances,
   ]);
 
   // Full resident set (no tuluvFilter) - for stats so dashboard numbers stay fixed when clicking filters
@@ -1592,7 +1647,6 @@ export default function DansniiKhuulga() {
     filteredItemsAll,
     buildingHistoryItems,
     contractsByNumber,
-    bestKnownBalances,
     gereeGaralt?.jagsaalt,
     residentsById,
     searchTerm,
@@ -1609,6 +1663,7 @@ export default function DansniiKhuulga() {
       let aVal: any, bVal: any;
 
       const getGid = (it: any) =>
+        (it?._gereeniiId && String(it._gereeniiId)) ||
         (it?.gereeniiId && String(it.gereeniiId)) ||
         (it?.gereeId && String(it.gereeId)) ||
         (it?.gereeniiDugaar &&
@@ -1619,40 +1674,40 @@ export default function DansniiKhuulga() {
 
       if (sortField === "uldegdel" || sortField === "paid") {
         if (sortField === "paid") {
-          if (historyScopedByDate) {
-            aVal = Number(a?._totalTulsun ?? 0);
-            bVal = Number(b?._totalTulsun ?? 0);
-          } else {
-            const gidA = getGid(a);
-            const gidB = getGid(b);
-            const monthlyDataA = gidA ? monthlyDataByGereeId?.get(gidA) : null;
-            const monthlyDataB = gidB ? monthlyDataByGereeId?.get(gidB) : null;
-            const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-            const sliceA =
-              currentPeriod && monthlyDataA?.months?.[currentPeriod] != null
-                ? monthlyDataA.months[currentPeriod]
-                : null;
-            const sliceB =
-              currentPeriod && monthlyDataB?.months?.[currentPeriod] != null
-                ? monthlyDataB.months[currentPeriod]
-                : null;
-            aVal = sliceA
-              ? Number(sliceA.paid ?? 0)
-              : gidA
-                ? (paidSummaryByGereeId[gidA] ?? Number(a?._totalTulsun ?? 0))
-                : Number(a?._totalTulsun ?? 0);
-            bVal = sliceB
-              ? Number(sliceB.paid ?? 0)
-              : gidB
-                ? (paidSummaryByGereeId[gidB] ?? Number(b?._totalTulsun ?? 0))
-                : Number(b?._totalTulsun ?? 0);
-          }
-        } else {
-          // Use authoritative balance for sorting
           const gidA = getGid(a);
           const gidB = getGid(b);
-          aVal = bestKnownBalances[gidA] ?? Number(a?.uldegdel ?? 0);
-          bVal = bestKnownBalances[gidB] ?? Number(b?.uldegdel ?? 0);
+          const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+          const paidVal = (it: any, gid: string) => {
+            if (gid && currentPeriod) {
+              const md = monthlyDataByGereeId?.get(gid);
+              const sl =
+                md?.months?.[currentPeriod] != null
+                  ? md.months[currentPeriod]
+                  : null;
+              if (sl != null) return Number(sl.paid ?? 0);
+            }
+            if (historyScopedByDate)
+              return Number(it?._totalTulsun ?? 0);
+            return gid
+              ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
+              : Number(it?._totalTulsun ?? 0);
+          };
+          aVal = paidVal(a, gidA);
+          bVal = paidVal(b, gidB);
+        } else {
+          const gidA = getGid(a);
+          const gidB = getGid(b);
+          const aggA =
+            Number(a?._totalTulbur || 0) - Number(a?._totalTulsun || 0);
+          const aggB =
+            Number(b?._totalTulbur || 0) - Number(b?._totalTulsun || 0);
+          if (historyScopedByDate) {
+            aVal = tableDisplayBalances[gidA] ?? aggA;
+            bVal = tableDisplayBalances[gidB] ?? aggB;
+          } else {
+            aVal = bestKnownBalances[gidA] ?? Number(a?.uldegdel ?? 0);
+            bVal = bestKnownBalances[gidB] ?? Number(b?.uldegdel ?? 0);
+          }
         }
       } else if (sortField === "toot") {
         const getTootVal = (it: any) => {
@@ -1710,6 +1765,8 @@ export default function DansniiKhuulga() {
     sortField,
     sortOrder,
     paidSummaryByGereeId,
+    bestKnownBalances,
+    tableDisplayBalances,
     residentsById,
     contractsById,
     contractsByNumber,
@@ -2162,11 +2219,30 @@ export default function DansniiKhuulga() {
               )
             : "");
 
-        const currentBalance =
-          bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0);
-        const paidAmount = gid
-          ? (paidSummaryByGereeId[gid] ?? Number(item?._totalTulsun ?? 0))
-          : Number(item?._totalTulsun ?? 0);
+        const historyAgg =
+          Number(item?._totalTulbur || 0) - Number(item?._totalTulsun || 0);
+        const currentBalance = historyScopedByDate
+          ? (tableDisplayBalances[gid] ?? historyAgg)
+          : (bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0));
+        const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+        const matrixRow =
+          gid && currentPeriod
+            ? monthlyDataByGereeId?.get(gid)
+            : undefined;
+        const monthSlice =
+          currentPeriod &&
+          matrixRow?.months?.[currentPeriod] != null
+            ? matrixRow.months[currentPeriod]
+            : null;
+        const paidAmount =
+          monthSlice != null
+            ? Number(monthSlice.paid ?? 0)
+            : historyScopedByDate
+              ? Number(item?._totalTulsun ?? 0)
+              : gid
+                ? (paidSummaryByGereeId[gid] ??
+                  Number(item?._totalTulsun ?? 0))
+                : Number(item?._totalTulsun ?? 0);
         const isResidentPaid = currentBalance < 0.01;
         const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
         const ekhniiAmt =
@@ -3270,7 +3346,7 @@ export default function DansniiKhuulga() {
               contractsByNumber={contractsByNumber}
               residentsById={residentsById}
               paidSummaryByGereeId={paidSummaryByGereeId}
-              bestKnownBalances={bestKnownBalances}
+              bestKnownBalances={tableDisplayBalances}
               sortField={sortField}
               sortOrder={sortOrder}
               onSortChange={(field: string | null, order: "asc" | "desc") => {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Shield, Check } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import useModalHotkeys from "@/lib/useModalHotkeys";
 
 interface RBACModalProps {
@@ -25,6 +25,8 @@ const MENU_ITEMS = [
 ];
 
 export default function RBACModal({ show, onClose, employee, onSave }: RBACModalProps) {
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
   useModalHotkeys({ isOpen: show, onClose });
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -75,22 +77,33 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
   return (
     <AnimatePresence>
       {show && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div
+          ref={constraintsRef}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-transparent"
             onClick={onClose}
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)]"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between p-6 border-b border-[color:var(--surface-border)] bg-gradient-to-r from-blue-500/10 to-purple-500/10 cursor-move select-none"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
                   <Shield className="w-5 h-5 text-blue-500" />
@@ -103,6 +116,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
                 </div>
               </div>
               <button
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
                 className="p-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
               >

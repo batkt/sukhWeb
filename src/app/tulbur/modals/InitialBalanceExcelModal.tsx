@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X, Upload, Download, FileSpreadsheet } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
@@ -26,6 +26,8 @@ export default function InitialBalanceExcelModal({
 }: InitialBalanceExcelModalProps) {
   const { token } = useAuth();
   const modalRef = useRef<HTMLDivElement>(null);
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0],
@@ -111,12 +113,15 @@ export default function InitialBalanceExcelModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+      <div
+        ref={constraintsRef}
+        className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+      >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/40 backdrop-blur-[2px]"
+          className="absolute inset-0 bg-transparent"
           onClick={onClose}
         />
 
@@ -125,10 +130,32 @@ export default function InitialBalanceExcelModal({
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          drag
+          dragListener={false}
+          dragControls={dragControls}
+          dragConstraints={constraintsRef}
+          dragMomentum={false}
           className="relative bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[560px] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">
+            {/* Draggable Title Bar */}
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="-mt-2 mb-6 px-1 py-1 flex items-center justify-between cursor-move select-none"
+            >
+              <div className="text-sm font-semibold text-slate-800 dark:text-white">
+                Эхний үлдэгдэл импорт (Excel)
+              </div>
+              <Button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={onClose}
+                variant="ghost"
+                className="p-2 rounded-full"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </Button>
+            </div>
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-3">
                 <input
@@ -138,13 +165,6 @@ export default function InitialBalanceExcelModal({
                   className="px-4 py-2 border border-gray-200 dark:border-slate-700 bg-transparent rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 />
               </div>
-              <Button
-                onClick={onClose}
-                variant="ghost"
-                className="p-2 rounded-full"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </Button>
             </div>
 
             <div

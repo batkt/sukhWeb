@@ -29,7 +29,7 @@ interface GuilgeeTableProps {
   getGereeId: (it: any) => string;
   monthlyDataByGereeId?: Map<string, any>;
   monthlyPeriods?: string[];
-  /** When set, жагсаалтын түүх огноогоор таслагдсан — гүйцэтгэл/сарын төлбөрийг matrix биш `_totalTulsun`/`_totalTulbur`-аас */
+  /** When set, жагсаалтын түүх огноогоор таслагдсан — matrix-т мөр байвал тухайн сарын billed/paid ашиглана */
   historyScopedByDate?: boolean;
   onViewInvoice: (resident: any) => void;
   onViewHistory: (resident: any) => void;
@@ -323,13 +323,23 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const currentPeriod =
+                monthlyPeriods?.[monthlyPeriods.length - 1];
+              const monthSlice =
+                currentPeriod && monthlyData?.months?.[currentPeriod] != null
+                  ? monthlyData.months[currentPeriod]
+                  : null;
               const fallbackPaid = gid
                 ? (paidSummaryByGereeId[gid] ??
                   Number(record?._totalTulsun ?? 0))
                 : Number(record?._totalTulsun ?? 0);
-              const paidDisplay = historyScopedByDate
-                ? Number(record?._totalTulsun ?? 0)
-                : fallbackPaid;
+              const paidDisplay =
+                monthSlice != null
+                  ? Number(monthSlice.paid ?? 0)
+                  : historyScopedByDate
+                    ? Number(record?._totalTulsun ?? 0)
+                    : fallbackPaid;
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -343,18 +353,16 @@ export default function GuilgeeTable({
           return {
             ...baseColumn,
             render: (_: any, record: any) => {
-              // Get current month's payment from monthly data matrix
               const gid = getGereeId(record);
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              // Get the latest period (current month)
-              const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
+              const currentPeriod =
+                monthlyPeriods?.[monthlyPeriods.length - 1];
               const monthSlice =
                 currentPeriod && monthlyData?.months?.[currentPeriod] != null
                   ? monthlyData.months[currentPeriod]
                   : null;
-              const billedDisplay = historyScopedByDate
-                ? Number(record?._totalTulbur ?? 0)
-                : monthSlice
+              const billedDisplay =
+                monthSlice != null
                   ? Number(monthSlice.billed ?? 0)
                   : Number(record?._totalTulbur ?? 0);
               return (
@@ -375,7 +383,7 @@ export default function GuilgeeTable({
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
               const remainingValue = historyScopedByDate
-                ? historyAggregate
+                ? (bestKnownBalances[gid] ?? historyAggregate)
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
               return (
@@ -398,17 +406,28 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
+              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
+              const currentPeriod =
+                monthlyPeriods?.[monthlyPeriods.length - 1];
+              const monthSlice =
+                currentPeriod && monthlyData?.months?.[currentPeriod] != null
+                  ? monthlyData.months[currentPeriod]
+                  : null;
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
               const remainingValue = historyScopedByDate
-                ? historyAggregate
+                ? (bestKnownBalances[gid] ?? historyAggregate)
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
+              const paidForTuluv =
+                monthSlice != null
+                  ? Number(monthSlice.paid ?? 0)
+                  : Number(record?._totalTulsun ?? 0);
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
-                _paidFromSummary: Number(record?._totalTulsun ?? 0),
+                _paidFromSummary: paidForTuluv,
               };
               let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
               if (
@@ -536,7 +555,7 @@ export default function GuilgeeTable({
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
               const remainingValue = historyScopedByDate
-                ? historyAggregate
+                ? (bestKnownBalances[gid] ?? historyAggregate)
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
 
@@ -658,9 +677,6 @@ export default function GuilgeeTable({
             } else if (col.key === "sariinTurees") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  if (historyScopedByDate) {
-                    return sum + Number(it?._totalTulbur ?? 0);
-                  }
                   const gid = getGereeId(it);
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
@@ -672,9 +688,10 @@ export default function GuilgeeTable({
                     monthlyData?.months?.[currentPeriod] != null
                       ? monthlyData.months[currentPeriod]
                       : null;
-                  const v = monthSlice
-                    ? Number(monthSlice.billed ?? 0)
-                    : Number(it?._totalTulbur ?? 0);
+                  const v =
+                    monthSlice != null
+                      ? Number(monthSlice.billed ?? 0)
+                      : Number(it?._totalTulbur ?? 0);
                   return sum + v;
                 },
                 0,
@@ -687,13 +704,26 @@ export default function GuilgeeTable({
             } else if (col.key === "paid") {
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
-                  if (historyScopedByDate) {
-                    return sum + Number(it?._totalTulsun ?? 0);
-                  }
                   const gid = getGereeId(it);
-                  const v = gid
-                    ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
-                    : Number(it?._totalTulsun ?? 0);
+                  const monthlyData = gid
+                    ? monthlyDataByGereeId?.get(gid)
+                    : null;
+                  const currentPeriod =
+                    monthlyPeriods?.[monthlyPeriods.length - 1];
+                  const monthSlice =
+                    currentPeriod &&
+                    monthlyData?.months?.[currentPeriod] != null
+                      ? monthlyData.months[currentPeriod]
+                      : null;
+                  const v =
+                    monthSlice != null
+                      ? Number(monthSlice.paid ?? 0)
+                      : historyScopedByDate
+                        ? Number(it?._totalTulsun ?? 0)
+                        : gid
+                          ? (paidSummaryByGereeId[gid] ??
+                            Number(it?._totalTulsun ?? 0))
+                          : Number(it?._totalTulsun ?? 0);
                   return sum + v;
                 },
                 0,
@@ -711,7 +741,7 @@ export default function GuilgeeTable({
                     Number(it?._totalTulbur || 0) -
                     Number(it?._totalTulsun || 0);
                   const balance = historyScopedByDate
-                    ? historyAggregate
+                    ? (bestKnownBalances[gid] ?? historyAggregate)
                     : (bestKnownBalances[gid] ??
                       (historyAggregate || Number(it?.uldegdel ?? 0)));
                   return sum + balance;
@@ -805,7 +835,7 @@ export default function GuilgeeTable({
               Number(record?._totalTulbur || 0) -
               Number(record?._totalTulsun || 0);
             const remainingValue = historyScopedByDate
-              ? historyAggregate
+              ? (bestKnownBalances[gid] ?? historyAggregate)
               : (bestKnownBalances[gid] ??
                 (historyAggregate || Number(record?.uldegdel ?? 0)));
             const itForTuluv = {

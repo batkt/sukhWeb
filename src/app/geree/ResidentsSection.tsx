@@ -59,6 +59,7 @@ const ResidentsSection: React.FC<ResidentsSectionProps> = ({
               sortKey={sortKey}
               sortOrder={sortOrder}
               tuluvByResidentId={tuluvByResidentId}
+              maxHeight="calc(100vh - 460px)"
               onEdit={onEditResident}
               onDelete={onRequestDeleteResident}
               onSort={(key, order) => toggleSortFor?.(key, order)}

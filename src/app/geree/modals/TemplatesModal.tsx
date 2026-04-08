@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { Eye, Edit, Trash2 } from "lucide-react";
@@ -26,6 +26,8 @@ export default function TemplatesModal({
   onCreateNew,
 }: TemplatesModalProps) {
   const list2Ref = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
 
   useModalHotkeys({
     isOpen: show,
@@ -39,28 +41,38 @@ export default function TemplatesModal({
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[100] flex items-center justify-center p-4"
           onClick={onClose}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             ref={list2Ref}
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface modal-responsive sm:w-full sm:max-w-4xl rounded-2xl shadow-2xl p-6"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="flex items-center justify-between mb-4 cursor-move select-none"
+            >
               <h3 className="text-xl  text-slate-900">Гэрээний Загвар</h3>
               <div className="flex items-center gap-2">
                 <button onClick={onCreateNew} className="btn-minimal btn-save">
                   Шинэ загвар
                 </button>
                 <button
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
                   className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
                   aria-label="Хаах"

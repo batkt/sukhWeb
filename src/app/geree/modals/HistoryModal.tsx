@@ -20,7 +20,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import uilchilgee from "@/lib/uilchilgee";
 import formatNumber, {
   formatCurrency,
@@ -171,6 +171,8 @@ export default function HistoryModal({
   onRefresh,
 }: HistoryModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const constraintsRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LedgerEntry[]>([]);
   const [globalUldegdel, setGlobalUldegdel] = useState<number | null>(null);
@@ -1099,16 +1101,39 @@ export default function HistoryModal({
   }, [show, contract]);
 
   const filteredData = useMemo(() => {
-    let result = data;
-    if (dateRange && (dateRange[0] || dateRange[1])) {
-      const [start, end] = dateRange;
-      const s = start ? new Date(start).getTime() : -Infinity;
-      const e = end ? new Date(end).getTime() : Infinity;
-      result = data.filter((item) => {
-        const d = new Date(item.ognoo).getTime();
-        return d >= s && d <= e;
-      });
-    }
+    const parseInputDateMs = (v: any, isEnd: boolean) => {
+      const raw = String(v ?? "").trim();
+      if (!raw) return isEnd ? Infinity : -Infinity;
+      // Support both "YYYY-MM-DD" and "YYYY.MM.DD"
+      const normalized = raw.replaceAll(".", "-");
+      const dt = new Date(normalized);
+      if (Number.isNaN(dt.getTime())) return isEnd ? Infinity : -Infinity;
+      if (isEnd) dt.setHours(23, 59, 59, 999);
+      else dt.setHours(0, 0, 0, 0);
+      return dt.getTime();
+    };
+
+    const parseRowDateMs = (v: any) => {
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const normalized = raw.replaceAll(".", "-");
+      const dt = new Date(normalized);
+      const t = dt.getTime();
+      return Number.isNaN(t) ? 0 : t;
+    };
+
+    const [start, end] = dateRange || [null, null];
+    const s = parseInputDateMs(start, false);
+    const e = parseInputDateMs(end, true);
+
+    const result =
+      start || end
+        ? data.filter((item) => {
+            const d = parseRowDateMs(item.ognoo);
+            return d >= s && d <= e;
+          })
+        : data;
+
     // Reverse to show newest first (data is stored oldest-first)
     return [...result].reverse();
   }, [data, dateRange]);
@@ -1129,12 +1154,15 @@ export default function HistoryModal({
   return (
     <AnimatePresence>
       <PrintStyles />
-      <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-2 sm:p-4 overflow-y-auto custom-scrollbar">
+      <div
+        ref={constraintsRef}
+        className="fixed inset-0 z-[9999999] flex items-center justify-center p-2 sm:p-4 overflow-y-auto custom-scrollbar"
+      >
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/40 backdrop-blur-sm no-print"
+          className="absolute inset-0 bg-transparent no-print"
           onClick={onClose}
         />
 
@@ -1143,11 +1171,19 @@ export default function HistoryModal({
           initial={{ scale: 0.95, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: 20 }}
+          drag
+          dragListener={false}
+          dragControls={dragControls}
+          dragConstraints={constraintsRef}
+          dragMomentum={false}
           className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Section */}
-          <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50">
+          <div
+            onPointerDown={(e) => dragControls.start(e)}
+            className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50 cursor-move select-none"
+          >
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
@@ -1198,7 +1234,16 @@ export default function HistoryModal({
                 <StandardDatePicker
                   isRange={true}
                   value={dateRange}
-                  onChange={setDateRange}
+                  onChange={(_date: any, dateString: any) => {
+                    if (Array.isArray(dateString)) {
+                      setDateRange([
+                        dateString[0] ? String(dateString[0]) : null,
+                        dateString[1] ? String(dateString[1]) : null,
+                      ]);
+                    } else {
+                      setDateRange([null, null]);
+                    }
+                  }}
                   size="small"
                   placeholder="Огноо"
                   classNames={{

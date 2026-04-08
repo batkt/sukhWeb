@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { X } from "lucide-react";
@@ -30,6 +30,8 @@ export default function PaymentModal({
   onSubmit,
 }: PaymentModalProps) {
   const paymentRef = React.useRef<HTMLDivElement | null>(null);
+  const constraintsRef = React.useRef<HTMLDivElement | null>(null);
+  const dragControls = useDragControls();
 
   useModalHotkeys({
     isOpen: show,
@@ -43,13 +45,14 @@ export default function PaymentModal({
     <AnimatePresence>
       <ModalPortal>
         <motion.div
+          ref={constraintsRef}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         >
           <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            className="absolute inset-0 bg-transparent"
             onClick={onClose}
           />
           <motion.div
@@ -58,13 +61,22 @@ export default function PaymentModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface w-[280px] min-h-[320px] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           >
-            <div className="relative px-5 pt-5 pb-4">
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="relative px-5 pt-5 pb-4 cursor-move select-none"
+            >
               <div className="absolute top-3 right-3">
                 <button
                   type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={onClose}
                   className="p-1.5 rounded-full hover:bg-slate-100 transition-colors"
                 >

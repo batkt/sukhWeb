@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import { Table, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { X } from "lucide-react";
+import { motion, useDragControls } from "framer-motion";
 import formatNumber from "../../../../tools/function/formatNumber";
 
 export interface OrlogoAvlagaItem {
@@ -68,6 +69,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   grandTotalTulbur,
   dateRange,
 }) => {
+  const dragControls = useDragControls();
+
   const headerClassName =
     "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
 
@@ -420,7 +423,10 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
 
     return (
       <div className="p-4">
-        <div className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700">
+        <div
+          onPointerDown={(e) => dragControls.start(e)}
+          className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700 cursor-move select-none"
+        >
           <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
             Дэлгэрэнгүй мэдээлэл
           </h4>
@@ -588,8 +594,19 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         onCancel={onModalClose}
         footer={null}
         width={1400}
+        maskStyle={{ background: "transparent" }}
         closeIcon={<X className="w-5 h-5" />}
         className="dark:bg-gray-900"
+        modalRender={(node) => (
+          <motion.div
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragMomentum={false}
+          >
+            {node}
+          </motion.div>
+        )}
       >
         {modalContent()}
       </Modal>

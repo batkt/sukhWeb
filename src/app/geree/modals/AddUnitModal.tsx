@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
@@ -25,6 +25,8 @@ export default function AddUnitModal({
   setValue,
   onSubmit,
 }: AddUnitModalProps) {
+  const dragControls = useDragControls();
+  const constraintsRef = React.useRef<HTMLDivElement>(null);
   const [showConfirmClose, setShowConfirmClose] = React.useState(false);
 
   const hasChanges = value.trim() !== "";
@@ -89,18 +91,29 @@ export default function AddUnitModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          ref={constraintsRef}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-transparent" />
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
             className="relative modal-surface modal-responsive w-full max-w-md rounded-2xl shadow-2xl p-6"
           >
             <div className="text-center">
-              <h3 className="text-lg  text-slate-900 mb-2">Тоот нэмэх</h3>
+              <h3
+                onPointerDown={(e) => dragControls.start(e)}
+                className="text-lg text-slate-900 mb-2 cursor-move select-none"
+              >
+                Тоот нэмэх
+              </h3>
               <p className="text-sm text-slate-500 mb-4">
                 {floor ? `${floor}-р давхарт шинэ тоот нэмнэ үү.` : "Давхар сонгоогүй байна."}
               </p>

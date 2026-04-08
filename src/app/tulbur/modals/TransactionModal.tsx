@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { X } from "lucide-react";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import uilchilgee from "@/lib/uilchilgee";
@@ -43,6 +43,8 @@ export default function TransactionModal({
 }: TransactionModalProps) {
   const [messageApi, contextHolder] = message.useMessage();
   const modalRef = React.useRef<HTMLDivElement>(null);
+  const constraintsRef = React.useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const [transactionType, setTransactionType] =
     useState<TransactionData["type"]>("avlaga");
   const [transactionDate, setTransactionDate] = useState(
@@ -304,14 +306,10 @@ export default function TransactionModal({
   };
 
   const fillAmountWithBalance = () => {
-    if (
-      residentBalance !== null &&
-      (transactionType === "tulult" || transactionType === "avlaga")
-    ) {
+    if (residentBalance !== null && transactionType === "tulult") {
       const amountToFill = Math.max(0, residentBalance);
-      // Only use the integer part for state (span adds .00)
-      const formatted = formatAmount(amountToFill);
-      setAmount(formatted.split(".")[0] || "0");
+      // Keep decimals (2dp) when auto-filling from balance
+      setAmount(formatAmount(amountToFill));
     }
   };
 
@@ -404,13 +402,16 @@ export default function TransactionModal({
   return (
     <>
       <AnimatePresence>
-        <div className="fixed inset-0 z-[20000] flex items-center justify-center p-4">
+        <div
+          ref={constraintsRef}
+          className="fixed inset-0 z-[20000] flex items-center justify-center p-4"
+        >
           {contextHolder}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-transparent"
             onClick={requestClose}
           />
 
@@ -420,9 +421,32 @@ export default function TransactionModal({
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
             className="relative modal-surface rounded-2xl shadow-2xl w-[700px] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Draggable Title Bar */}
+            <div
+              onPointerDown={(e) => dragControls.start(e)}
+              className="px-6 py-3 border-b border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] flex items-center justify-between cursor-move select-none"
+            >
+              <div className="text-sm font-semibold text-[color:var(--panel-text)]">
+                Гүйлгээ хийх
+              </div>
+              <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={requestClose}
+                className="p-2 rounded-full hover:bg-[color:var(--surface-hover)] transition-colors"
+                title="Хаах"
+              >
+                <X className="w-5 h-5 text-[color:var(--muted-text)]" />
+              </button>
+            </div>
+
             {/* Body */}
             <div className="flex-1 px-6 py-5 space-y-5 bg-[color:var(--surface-bg)] overflow-y-auto">
               {/* Resident Info Card */}
@@ -581,7 +605,11 @@ export default function TransactionModal({
                           const formatted = formatWhileTyping(inputVal);
                           setAmount(formatted);
                         }}
-                        onDoubleClick={fillAmountWithBalance}
+                        onDoubleClick={
+                          transactionType === "tulult"
+                            ? fillAmountWithBalance
+                            : undefined
+                        }
                         onBlur={() => {
                           if (amount) {
                             setAmount(formatAmount(amount));
@@ -743,7 +771,6 @@ export default function TransactionModal({
                           const formatted = formatWhileTyping(inputVal);
                           setAmount(formatted);
                         }}
-                        onDoubleClick={fillAmountWithBalance}
                         onBlur={() => {
                           if (amount) {
                             setAmount(formatAmount(amount));
