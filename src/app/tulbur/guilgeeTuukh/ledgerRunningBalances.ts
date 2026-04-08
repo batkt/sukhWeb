@@ -158,10 +158,15 @@ export function computeLedgerRunningBalancesByGereeId(
         ) || 0;
 
     const type = String(it?.turul || it?.type || "").toLowerCase();
+    const khelber = String(it?.khelber || "").toLowerCase();
+    const source = String(it?.sourceCollection || "").toLowerCase();
     const isPayment =
       type === "tulult" ||
       type === "төлбөр" ||
       type === "төлөлт" ||
+      khelber === "төлөлт" ||
+      khelber === "tulult" ||
+      source === "gereeniitulsunavlaga" ||
       (itemAmount < 0 && !isStandaloneEkhnii);
     const fromTulsun = Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
 

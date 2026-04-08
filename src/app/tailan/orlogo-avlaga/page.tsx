@@ -377,6 +377,16 @@ export default function OrlogoAvlagaPage() {
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
+  const itemPrimaryDateMs = (it: any): number => {
+    const raw = it?.ognoo;
+    if (raw != null && String(raw).trim() !== "") {
+      const t = new Date(raw).getTime();
+      if (!Number.isNaN(t)) return t;
+    }
+    const t2 = new Date(it?.tulsunOgnoo || it?.createdAt || 0).getTime();
+    return Number.isNaN(t2) ? 0 : t2;
+  };
+
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
       ? historyData.jagsaalt
@@ -388,7 +398,6 @@ export default function OrlogoAvlagaPage() {
       : Array.isArray(receivableData)
         ? receivableData
         : [];
-
     const payments = Array.isArray(paymentRecordsData?.jagsaalt)
       ? paymentRecordsData.jagsaalt
       : Array.isArray(paymentRecordsData)
@@ -407,31 +416,47 @@ export default function OrlogoAvlagaPage() {
         if (g?._id) trackingIds.add(String(g._id));
       });
     });
+
     receivables.forEach((r: any) => {
       if (!trackingIds.has(String(r._id))) combined.push(r);
     });
     payments.forEach((p: any) => {
       if (!trackingIds.has(String(p._id))) combined.push(p);
     });
-    return combined.sort((a: any, b: any) => {
-      const da = new Date(
-        a.tulsunOgnoo || a.ognoo || a.createdAt || 0,
-      ).getTime();
-      const db = new Date(
-        b.tulsunOgnoo || b.ognoo || b.createdAt || 0,
-      ).getTime();
-      return da - db; // Ascending so latest wins in uldegdel maps
+
+    // Date filtering (Client Side)
+    const [start, end] = dateRange || [];
+    if (!start && !end) return combined;
+
+    const startMs = start ? new Date(start).setHours(0, 0, 0, 0) : Number.NEGATIVE_INFINITY;
+    const endMs = end ? new Date(end).setHours(23, 59, 59, 999) : Number.POSITIVE_INFINITY;
+
+    const filtered = combined.filter((it: any) => {
+      const d = itemPrimaryDateMs(it);
+      return d >= startMs && d <= endMs;
     });
-  }, [historyData, receivableData, paymentRecordsData]);
+
+    return filtered.sort((a: any, b: any) => {
+      const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
+      if (d !== 0) return d;
+      return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
+    });
+  }, [historyData, receivableData, paymentRecordsData, dateRange]);
 
   const buildingHistoryItems = allHistoryItems;
-  
+
   const ledgerBalances = useMemo(() => {
-    return computeLedgerRunningBalancesByGereeId(buildingHistoryItems, contractsByNumber);
+    return computeLedgerRunningBalancesByGereeId(
+      buildingHistoryItems,
+      contractsByNumber,
+    );
   }, [buildingHistoryItems, contractsByNumber]);
 
   const ledgerPaidTable = useMemo(() => {
-    return aggregateLedgerTulsunByGereeId(buildingHistoryItems, contractsByNumber);
+    return aggregateLedgerTulsunByGereeId(
+      buildingHistoryItems,
+      contractsByNumber,
+    );
   }, [buildingHistoryItems, contractsByNumber]);
 
   const deduplicatedResidents = useMemo(() => {
@@ -797,38 +822,7 @@ export default function OrlogoAvlagaPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="neu-panel p-4 rounded-xl">
-          <h3 className="mb-2">
-            Нийт орлого{" "}
-            <span className="text-xs text-theme/50">(Гүйцэтгэл)</span>
-          </h3>
-          <p className="text-2xl text-green-600">
-            {formatNumber(totalOrlogo, 2)} ₮
-          </p>
-          <p className="text-xs text-theme/50 mt-1">
-            {paidList.length} оршин суугч
-          </p>
-        </div>
-        <div className="neu-panel p-4 rounded-xl">
-          <h3 className="mb-2">
-            Нийт үлдэгдэл{" "}
-            <span className="text-xs text-theme/50">(Үлдэгдэл)</span>
-          </h3>
-          <p
-            className={
-              totalUldegdel < 0
-                ? "text-2xl text-emerald-600"
-                : "text-2xl text-red-600"
-            }
-          >
-            {formatNumber(totalUldegdel, 2)} ₮
-          </p>
-          <p className="text-xs text-theme/50 mt-1">
-            Бүх оршин суугчдын нийт үлдэгдэл
-          </p>
-        </div>
-      </div>
+      {/* Dashboard Totals removed as requested */}
 
       <div className="flex flex-wrap gap-4 items-center no-print mb-4">
         <div

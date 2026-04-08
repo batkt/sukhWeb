@@ -155,112 +155,23 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       {
         title: (
           <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-            Эхний үлдэгдэл
+            Төлсөн
           </span>
         ),
-        key: "ekhniiUldegdel",
-        width: 120,
+        key: "paid",
+        width: 150,
         align: "right",
         className: headerClassName,
         render: (_: any, record: OrlogoAvlagaItem) => {
-          const ekhnii = Number(record._ekhniiUldegdel ?? 0);
-          return (
-            <span className="text-gray-900 dark:text-white text-[13px]">
-              {formatNumber(ekhnii, 2)}
-            </span>
-          );
-        },
-      },
-      {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-            Гүйлгээ
-          </span>
-        ),
-        children: [
-          {
-            title: (
-              <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-                Төлөх дүн
-              </span>
-            ),
-            key: "tulbur",
-            width: 120,
-            align: "right",
-            className: headerClassName,
-            render: (_: any, record: OrlogoAvlagaItem) => {
-              const tulbur = Number(record._periodTulbur ?? 0);
-              return (
-                <button
-                  type="button"
-                  onClick={() => onRowClick(record)}
-                  className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
-                >
-                  <span className="text-blue-600 dark:text-blue-400 font-medium text-[13px]">
-                    {formatNumber(tulbur, 2)}
-                  </span>
-                </button>
-              );
-            },
-          },
-          {
-            title: (
-              <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-                Төлсөн
-              </span>
-            ),
-            key: "paid",
-            width: 120,
-            align: "right",
-            className: headerClassName,
-            render: (_: any, record: OrlogoAvlagaItem) => {
-              const paid = Number(record._periodPaid ?? getPaid(record));
-              return (
-                <button
-                  type="button"
-                  onClick={() => onRowClick(record)}
-                  className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
-                >
-                  <span className="text-green-600 dark:text-green-400 font-medium text-[13px]">
-                    {formatNumber(paid, 2)}
-                  </span>
-                </button>
-              );
-            },
-          },
-        ],
-      },
-      {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-            Эцсийн үлдэгдэл
-          </span>
-        ),
-        key: "uldegdel",
-        width: 120,
-        align: "right",
-        className: headerClassName,
-        render: (_: any, record: OrlogoAvlagaItem) => {
-          const ekhnii = Number(record._ekhniiUldegdel ?? 0);
-          const tulbur = Number(record._periodTulbur ?? 0);
           const paid = Number(record._periodPaid ?? getPaid(record));
-          const uldegdel = record._finalUldegdel !== undefined ? Number(record._finalUldegdel) : (ekhnii + tulbur - paid);
           return (
             <button
               type="button"
               onClick={() => onRowClick(record)}
               className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
             >
-              <span
-                className={
-                  uldegdel > 0
-                    ? "text-red-500 dark:text-red-400 font-medium text-[13px]"
-                    : uldegdel < 0
-                      ? "text-emerald-600 dark:text-emerald-400 font-medium text-[13px]"
-                      : "text-gray-900 dark:text-white text-[13px]"
-                }
-              >
-                {formatNumber(uldegdel, 2)}
+              <span className="text-green-600 dark:text-green-400 font-bold text-[14px]">
+                {formatNumber(paid, 2)}
               </span>
             </button>
           );
@@ -522,10 +433,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           ),
         }}
         summary={() => {
-          const finalEkhnii = grandTotalEkhniiUldegdel ?? 0;
-          const finalTulbur = grandTotalTulbur ?? 0;
           const finalPaid = grandTotalPaid ?? 0;
-          const finalUldegdel = finalEkhnii + finalTulbur - finalPaid;
 
           return (
             <Table.Summary fixed>
@@ -545,43 +453,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="right"
                   className="bg-gray-50 dark:bg-gray-900 py-2"
                 >
-                  <span className="font-bold text-gray-900 dark:!text-white force-bold text-[13px]">
-                    {formatNumber(finalEkhnii, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell
-                  index={2}
-                  align="right"
-                  className="bg-gray-50 dark:bg-gray-900 py-2"
-                >
-                  <span className="font-bold text-blue-600 dark:!text-white force-bold text-[13px]">
-                    {formatNumber(finalTulbur, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell
-                  index={3}
-                  align="right"
-                  className="bg-gray-50 dark:bg-gray-900 py-2"
-                >
-                  <span className="font-bold text-green-600 dark:!text-white force-bold text-[13px]">
+                  <span className="font-bold text-green-600 dark:!text-white force-bold text-[14px]">
                     {formatNumber(finalPaid, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell
-                  index={4}
-                  align="right"
-                  className="bg-gray-50 dark:bg-gray-900 py-2"
-                >
-                  <span
-                    className={`font-bold force-bold text-[13px] dark:!text-white ${
-                      finalUldegdel > 0
-                        ? "text-red-500"
-                        : finalUldegdel < 0
-                          ? "text-emerald-600"
-                          : "text-gray-900 dark:!text-white"
-                    }`}
-                  >
-                    {formatNumber(finalUldegdel, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
               </Table.Summary.Row>
