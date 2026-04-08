@@ -88,7 +88,7 @@ export default function ZagvarEditorModal({
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[1100] flex flex-col bg-[color:var(--surface-bg)]">
+      <div className="fixed inset-0 z-[12000] flex flex-col bg-[color:var(--surface-bg)]">
         <div className="absolute top-4 right-4 z-10">
           <button
             type="button"

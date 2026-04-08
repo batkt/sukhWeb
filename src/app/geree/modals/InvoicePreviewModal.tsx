@@ -44,7 +44,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000]"
+          className="fixed inset-0 z-[12000]"
           onClick={onClose}
         >
           <div className="absolute inset-0 bg-transparent" />
@@ -58,7 +58,7 @@ export default function InvoicePreviewModal({ show, onClose, invoiceData }: Invo
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[1100] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-[1800px] h-[95vh] max-h-[95vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
           >
             <div className="invoice-modal h-full flex flex-col">
             {/* Header – match Үйлчилгээний нэхэмжлэх style */}

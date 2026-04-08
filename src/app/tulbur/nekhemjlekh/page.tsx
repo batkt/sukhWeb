@@ -1842,7 +1842,7 @@ export default function InvoicingZardluud() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998]"
+                className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
                 onClick={() => setIsHistoryOpen(false)}
               />
               <motion.div
@@ -1850,7 +1850,7 @@ export default function InvoicingZardluud() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="fixed left-1/2 top-1/2 z-[9999] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
+                className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[900px] max-h-[90vh] modal-surface modal-responsive rounded-3xl shadow-2xl overflow-hidden pointer-events-auto"
                 onClick={(e) => e.stopPropagation()}
                 ref={historyRef}
                 role="dialog"

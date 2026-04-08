@@ -49,7 +49,7 @@ export default function PaymentModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999]"
+          className="fixed inset-0 z-[12000]"
         >
           <div
             className="absolute inset-0 bg-transparent"
@@ -67,7 +67,7 @@ export default function PaymentModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[10000] -translate-x-1/2 -translate-y-1/2 modal-surface w-[280px] min-h-[320px] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface w-[280px] min-h-[320px] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}

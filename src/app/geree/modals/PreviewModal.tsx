@@ -25,7 +25,7 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[1000]"
+          className="fixed inset-0 z-[12000]"
           onClick={onClose}
         >
           <div className="absolute inset-0 bg-transparent" />
@@ -39,7 +39,7 @@ export default function PreviewModal({ show, onClose, template }: PreviewModalPr
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[1100] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl modal-surface modal-responsive rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl modal-surface modal-responsive rounded-2xl shadow-2xl p-6 overflow-auto max-h-[80vh]"
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}

@@ -117,7 +117,7 @@ export default function InitialBalanceExcelModal({
       <ModalPortal>
       <div
         ref={constraintsRef}
-        className="fixed inset-0 z-[10000]"
+        className="fixed inset-0 z-[12000]"
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -137,7 +137,7 @@ export default function InitialBalanceExcelModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[10001] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">

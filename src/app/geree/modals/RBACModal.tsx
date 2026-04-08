@@ -81,7 +81,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
         <ModalPortal>
         <div
           ref={constraintsRef}
-          className="fixed inset-0 z-50"
+          className="fixed inset-0 z-[12000]"
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -100,7 +100,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)]"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)]"
           >
             {/* Header */}
             <div

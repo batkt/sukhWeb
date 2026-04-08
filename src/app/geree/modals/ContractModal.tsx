@@ -57,7 +57,7 @@ export default function ContractModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[9999]"
+          className="fixed inset-0 z-[12000]"
         >
           <div className="absolute inset-0 bg-transparent" />
           <motion.div
@@ -71,7 +71,7 @@ export default function ContractModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[10000] -translate-x-1/2 -translate-y-1/2 overflow-y-auto custom-scrollbar modal-surface modal-responsive w-[95vw] max-w-4xl md:max-w-5xl lg:max-w-6xl h-[70vh] max-h-[70vh] rounded-2xl shadow-2xl p-0 flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 overflow-y-auto custom-scrollbar modal-surface modal-responsive w-[95vw] max-w-4xl md:max-w-5xl lg:max-w-6xl h-[70vh] max-h-[70vh] rounded-2xl shadow-2xl p-0 flex flex-col"
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}

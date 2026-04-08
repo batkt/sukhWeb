@@ -417,7 +417,7 @@ export default function TransactionModal({
         <AnimatePresence>
           <div
             ref={constraintsRef}
-            className="fixed inset-0 z-[20000]"
+            className="fixed inset-0 z-[12000]"
           >
           {contextHolder}
           <motion.div
@@ -439,7 +439,7 @@ export default function TransactionModal({
             dragControls={dragControls}
             dragConstraints={constraintsRef}
             dragMomentum={false}
-            className="fixed left-1/2 top-1/2 z-[20001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Draggable Title Bar */}
@@ -550,7 +550,7 @@ export default function TransactionModal({
               {/* Form Content */}
               {transactionType === "ashiglalt" ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4 items-end">
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                         Огноо
@@ -562,6 +562,33 @@ export default function TransactionModal({
                         disabled={isProcessing}
                         className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
                       />
+                    </div>
+                    <div className="space-y-1.5 relative group">
+                      <div className="flex justify-between items-end mb-1.5">
+                        <label className="block text-xs text-[color:var(--panel-text)]">
+                          Дүн
+                        </label>
+                      </div>
+                      <div className="relative w-full group/input">
+                        <input
+                          type="text"
+                          value={amount}
+                          inputMode="decimal"
+                          onChange={(e) => {
+                            const formatted = formatWhileTyping(
+                              e.target.value,
+                            );
+                            setAmount(formatted);
+                          }}
+                          onBlur={() => {
+                            if (amount) setAmount(formatAmount(amount));
+                          }}
+                          disabled={isProcessing}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium" />
+                      </div>
                     </div>
                   </div>
 
@@ -582,32 +609,6 @@ export default function TransactionModal({
                       <option value="">Сонгоно уу</option>
                       <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
                     </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <input
-                      type="text"
-                      value={amount}
-                      inputMode="decimal"
-                      onChange={(e) => {
-                        // Keep ashiglalt input responsive while typing
-                        const inputVal = e.target.value
-                          .replace(/,/g, "")
-                          .replace(/[^\d.]/g, "");
-                        const parts = inputVal.split(".");
-                        const normalized =
-                          parts.length > 2
-                            ? `${parts[0]}.${parts.slice(1).join("")}`
-                            : inputVal;
-                        setAmount(normalized);
-                      }}
-                      onBlur={() => {
-                        if (amount) setAmount(formatAmount(amount));
-                      }}
-                      disabled={isProcessing}
-                      placeholder="0.00"
-                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right text-lg font-semibold"
-                    />
                   </div>
 
                   <div className="flex items-center justify-between">

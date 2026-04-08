@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearch } from "@/context/SearchContext";
 import useSWR, { useSWRConfig } from "swr";
 import { createPortal } from "react-dom";
@@ -245,42 +245,6 @@ export default function DansniiKhuulga() {
   >({});
   const latestRowUldegdelRequestedRef = useRef<Set<string>>(new Set());
 
-  // Socket: revalidate data when payment, avlaga, or delete happens (from any tab/source)
-  useEffect(() => {
-    const baiguullagiinId = ajiltan?.baiguullagiinId;
-    if (!socket || !baiguullagiinId) return;
-    const event = `tulburUpdated:${baiguullagiinId}`;
-    const handler = () => {
-      mutate(
-        (key: any) => {
-          if (!Array.isArray(key)) return false;
-          const prefix = String(key[0] || "");
-          return (
-            prefix === "/nekhemjlekhiinTuukh" ||
-            prefix.startsWith("/nekhemjlekhiinTuukh-") ||
-            prefix === "/gereeniiTulukhAvlaga" ||
-            prefix.startsWith("/gereeniiTulukhAvlaga-") ||
-            prefix === "/gereeniiTulsunAvlaga" ||
-            prefix.startsWith("/gereeniiTulsunAvlaga-") ||
-            prefix === "/geree" ||
-            prefix === "/orshinSuugch"
-          );
-        },
-        undefined,
-        { revalidate: true },
-      );
-      setPaidSummaryByGereeId({});
-      requestedGereeIdsRef.current.clear();
-      setLatestRowUldegdelByGereeId({});
-      latestRowUldegdelRequestedRef.current.clear();
-      setInvoiceRefreshTrigger((t) => t + 1);
-    };
-    socket.on(event, handler);
-    return () => {
-      socket.off(event, handler);
-    };
-  }, [socket, ajiltan?.baiguullagiinId, mutate]);
-
   // Selection state for "Send Invoice"
   const [selectedGereeIds, setSelectedGereeIds] = useState<string[]>([]);
   const [isSendingInvoices, setIsSendingInvoices] = useState(false);
@@ -436,7 +400,11 @@ export default function DansniiKhuulga() {
   // History modal removed; showing org-scoped list directly
 
   // Fetch org-scoped payment history
-  const { data: historyData, isLoading: isLoadingHistory } = useSWR(
+  const {
+    data: historyData,
+    isLoading: isLoadingHistory,
+    mutate: mutateHistory,
+  } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
           "/nekhemjlekhiinTuukh",
@@ -463,7 +431,7 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-  const { data: receivableData } = useSWR(
+  const { data: receivableData, mutate: mutateReceivable } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
           "/gereeniiTulukhAvlaga",
@@ -490,7 +458,7 @@ export default function DansniiKhuulga() {
     { revalidateOnFocus: false },
   );
 
-  const { data: paymentRecordsData } = useSWR(
+  const { data: paymentRecordsData, mutate: mutatePaymentRecords } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
           "/gereeniiTulsunAvlaga",
@@ -544,7 +512,7 @@ export default function DansniiKhuulga() {
     return { start: start.toISOString(), end: end.toISOString(), monthKey };
   }, [ekhlekhOgnoo]);
 
-  const { data: monthlyMatrixData } = useSWR(
+  const { data: monthlyMatrixData, mutate: mutateMonthlyMatrix } = useSWR(
     token && ajiltan?.baiguullagiinId
       ? [
           "/tailan/resident-monthly-matrix",
@@ -567,6 +535,50 @@ export default function DansniiKhuulga() {
     },
     { revalidateOnFocus: false },
   );
+
+  /** Жагсаалтын SWR түлхүүрүүдийг шууд revalidate — global mutate заримдаа бүрэн ажиллахгүй (тусгайлбал ашиглалт) */
+  const revalidateTulburCaches = useCallback(async () => {
+    await Promise.all([
+      mutateHistory?.(),
+      mutateReceivable?.(),
+      mutatePaymentRecords?.(),
+      mutateMonthlyMatrix?.(),
+    ]);
+    await mutate(
+      (key: any) => {
+        if (!Array.isArray(key)) return false;
+        const prefix = String(key[0] || "");
+        return prefix === "/geree" || prefix === "/orshinSuugch";
+      },
+      undefined,
+      { revalidate: true },
+    );
+  }, [
+    mutate,
+    mutateHistory,
+    mutateReceivable,
+    mutatePaymentRecords,
+    mutateMonthlyMatrix,
+  ]);
+
+  // Socket: revalidate data when payment, avlaga, ashiglalt, or delete happens (from any tab/source)
+  useEffect(() => {
+    const baiguullagiinId = ajiltan?.baiguullagiinId;
+    if (!socket || !baiguullagiinId) return;
+    const event = `tulburUpdated:${baiguullagiinId}`;
+    const handler = () => {
+      void revalidateTulburCaches();
+      setPaidSummaryByGereeId({});
+      requestedGereeIdsRef.current.clear();
+      setLatestRowUldegdelByGereeId({});
+      latestRowUldegdelRequestedRef.current.clear();
+      setInvoiceRefreshTrigger((t) => t + 1);
+    };
+    socket.on(event, handler);
+    return () => {
+      socket.off(event, handler);
+    };
+  }, [socket, ajiltan?.baiguullagiinId, revalidateTulburCaches]);
 
   // Transform monthly matrix data into a Map for easy lookup by gereeniiId
   const monthlyDataByGereeId = useMemo(() => {
@@ -2470,6 +2482,13 @@ export default function DansniiKhuulga() {
         return;
       }
 
+      const isTransactionHttpOk = (r: any) =>
+        r &&
+        typeof r.status === "number" &&
+        r.status >= 200 &&
+        r.status < 300 &&
+        r.data?.success !== false;
+
       // Only mark as paid when transaction type is "tulult" (Төлөлт)
       // For other types (avlaga, ashiglalt), create a transaction record without marking as paid
       if (data.type === "tulult") {
@@ -2492,7 +2511,7 @@ export default function DansniiKhuulga() {
           createdAt: new Date().toISOString(),
         });
 
-        if (response.data.success || response.status === 200) {
+        if (isTransactionHttpOk(response)) {
           toast.success("Төлөлт амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
@@ -2508,26 +2527,7 @@ export default function DansniiKhuulga() {
             });
           }
 
-          // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
-          mutate(
-            (key: any) => {
-              if (!Array.isArray(key)) return false;
-              const prefix = String(key[0] || "");
-              return (
-                prefix === "/nekhemjlekhiinTuukh" ||
-                prefix.startsWith("/nekhemjlekhiinTuukh-") ||
-                prefix === "/geree" ||
-                prefix === "/orshinSuugch" ||
-                prefix === "/gereeniiTulukhAvlaga" ||
-                prefix.startsWith("/gereeniiTulukhAvlaga-") ||
-                prefix === "/gereeniiTulsunAvlaga" ||
-                prefix.startsWith("/gereeniiTulsunAvlaga-") ||
-                prefix === "/tailan/resident-monthly-matrix"
-              );
-            },
-            undefined,
-            { revalidate: true },
-          );
+          await revalidateTulburCaches();
           setInvoiceRefreshTrigger((t) => t + 1);
 
           // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
@@ -2559,6 +2559,10 @@ export default function DansniiKhuulga() {
         }
       } else {
         // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
+        // Ашиглалт: нэхэмжлэхийн guilgeenuudForNekhemjlekh-тай ижил — дүнг tulsunDun-д (tulukhDun=0)
+        const isAshiglalt = data.type === "ashiglalt";
+        // Сервер заримдаа dun-г шууд tulukhDun-д тавьдаг тул ашиглалт дээр dun=0,
+        // дүнг зөвхөн tulsunDun-аар дамжуулна (guilgeenuudForNekhemjlekh-тай нийцнэ).
         const response = await uilchilgee(token).post(
           "/gereeniiGuilgeeKhadgalya",
           {
@@ -2566,8 +2570,17 @@ export default function DansniiKhuulga() {
             barilgiinId: effectiveBarilgiinId,
             tukhainBaaziinKholbolt: ajiltan?.tukhainBaaziinKholbolt,
             turul: data.type,
-            tulukhDun: data.amount,
-            dun: data.amount,
+            ...(isAshiglalt
+              ? {
+                  tulukhDun: 0,
+                  tulsunDun: data.amount,
+                  dun: 0,
+                }
+              : {
+                  tulukhDun: data.amount,
+                  tulsunDun: 0,
+                  dun: data.amount,
+                }),
             orshinSuugchId: data.residentId,
             gereeniiId: data.gereeniiId,
             tailbar:
@@ -2582,11 +2595,7 @@ export default function DansniiKhuulga() {
           },
         );
 
-        if (
-          response.data.success ||
-          response.status === 200 ||
-          response.status === 201
-        ) {
+        if (isTransactionHttpOk(response)) {
           toast.success("Гүйлгээ амжилттай бүртгэгдлээ");
           setIsTransactionModalOpen(false);
           setSelectedTransactionResident(null);
@@ -2602,26 +2611,7 @@ export default function DansniiKhuulga() {
             });
           }
 
-          // Global Revalidation: Refresh history, contracts, residents, and all receivable datasets
-          mutate(
-            (key: any) => {
-              if (!Array.isArray(key)) return false;
-              const prefix = String(key[0] || "");
-              return (
-                prefix === "/nekhemjlekhiinTuukh" ||
-                prefix.startsWith("/nekhemjlekhiinTuukh-") ||
-                prefix === "/geree" ||
-                prefix === "/orshinSuugch" ||
-                prefix === "/gereeniiTulukhAvlaga" ||
-                prefix.startsWith("/gereeniiTulukhAvlaga-") ||
-                prefix === "/gereeniiTulsunAvlaga" ||
-                prefix.startsWith("/gereeniiTulsunAvlaga-") ||
-                prefix === "/tailan/resident-monthly-matrix"
-              );
-            },
-            undefined,
-            { revalidate: true },
-          );
+          await revalidateTulburCaches();
           setInvoiceRefreshTrigger((t) => t + 1);
 
           // Refresh the resident object so invoice "Үлдэгдэл" updates instantly
@@ -3445,14 +3435,14 @@ export default function DansniiKhuulga() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[2000]"
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[12000]"
               onClick={() => setIsKhungulultOpen(false)}
             />
             <motion.div
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl modal-surface modal-responsive"
+              className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1100px] rounded-3xl overflow-hidden shadow-2xl modal-surface modal-responsive"
               onClick={(e) => e.stopPropagation()}
               ref={khungulultRef}
             >

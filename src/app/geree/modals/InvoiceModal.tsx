@@ -755,15 +755,15 @@ export default function InvoiceModal({
     <ModalPortal>
       <PrintStyles />
       <div
-        className="fixed inset-0 bg-transparent z-[9999] no-print"
+        className="fixed inset-0 bg-transparent z-[12000] no-print"
         onClick={onClose}
       />
       <div
         ref={constraintsRef}
-        className="fixed inset-0 z-[9999] pointer-events-none"
+        className="fixed inset-0 z-[12000] pointer-events-none"
       >
         <motion.div
-          className="pointer-events-auto fixed left-1/2 top-1/2 z-[10000] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] h-[90vh] bg-[color:var(--surface-bg)] dark:border dark:border-[color:var(--surface-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+          className="pointer-events-auto fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-[1400px] h-[90vh] bg-[color:var(--surface-bg)] dark:border dark:border-[color:var(--surface-border)] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
           ref={containerRef}
           initial={false}

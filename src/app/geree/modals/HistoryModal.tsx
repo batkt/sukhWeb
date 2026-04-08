@@ -575,10 +575,37 @@ export default function HistoryModal({
             : [];
 
         guilgeenuud.forEach((g: any) => {
-          const amt = Number(g.tulukhDun || 0);
-          const paid = Number(g.tulsunDun || 0);
+          const chargeAmt =
+            Number(
+              g.tulukhDun ?? g.dun ?? g.niitDun ?? g.niitTulbur ?? 0,
+            ) || 0;
+          const paidAmt = Number(g.tulsunDun ?? g.tulsun ?? 0) || 0;
+          const guilgeeTurul = String(g.turul || "").toLowerCase();
+          const isAshiglaltGuilgee = guilgeeTurul === "ashiglalt";
 
-          if (amt > 0) {
+          // Ашиглалт: API заримдаа зөвхөн dun дамжуулж tulukhDun хоосон — дүнг төлсөн баганад (төслийн бусад хэсэгтэй ижил)
+          if (isAshiglaltGuilgee && chargeAmt > 0) {
+            const rowId = g._id?.toString() || `g-ashiglalt-${Math.random()}`;
+            flatLedger.push({
+              _id: rowId,
+              parentInvoiceId: item._id,
+              ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ner: "Ашиглалт",
+              tulukhDun: 0,
+              tulsunDun: chargeAmt,
+              uldegdel: 0,
+              isSystem: false,
+              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              khelber: "Төлбөр",
+              tailbar: g.tailbar || "Ашиглалт",
+              burtgesenOgnoo: g.createdAt || item.createdAt || "-",
+              sourceCollection: "nekhemjlekhiinTuukh",
+            });
+            if (g._id) processedIds.add(g._id.toString());
+            return;
+          }
+
+          if (chargeAmt > 0) {
             const rowId = g._id?.toString() || `g-charge-${Math.random()}`;
             const isEkhniiUldegdel = g.ekhniiUldegdelEsekh === true;
             let rowTailbar = g.tailbar || "Гараар нэмсэн авлага";
@@ -605,7 +632,7 @@ export default function HistoryModal({
               parentInvoiceId: item._id,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
               ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : "Авлага",
-              tulukhDun: amt,
+              tulukhDun: chargeAmt,
               tulsunDun: 0,
               uldegdel: 0,
               isSystem: false,
@@ -617,14 +644,14 @@ export default function HistoryModal({
             });
             if (g._id) processedIds.add(g._id.toString());
           }
-          if (paid > 0) {
+          if (paidAmt > 0) {
             const rowId = `${item._id}-g-paid-${g._id?.toString() || Math.random()}`;
             flatLedger.push({
               _id: rowId,
               ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
               ner: "Төлөлт",
               tulukhDun: 0,
-              tulsunDun: paid,
+              tulsunDun: paidAmt,
               uldegdel: 0,
               isSystem: false,
               ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
@@ -942,11 +969,23 @@ export default function HistoryModal({
           if (backendLedger.length > 0 && hasUldegdel) {
             // Use backend ledger with uldegdel from each row - NO calculation, use backend values directly
             const mapped = backendLedger.map((r: any) => {
+              let tulukhDun = Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
+              let tulsunDun =
+                Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
+              const rowTurul = String(r.turul || "").toLowerCase();
+              if (
+                rowTurul === "ashiglalt" &&
+                tulukhDun > 0 &&
+                tulsunDun === 0
+              ) {
+                tulsunDun = tulukhDun;
+                tulukhDun = 0;
+              }
               const entry: LedgerEntry = {
                 ognoo: r.ognoo || "",
                 ner: r.ner || "",
-                tulukhDun: Number(r.tulukhDun ?? 0),
-                tulsunDun: Number(r.tulsunDun ?? 0),
+                tulukhDun,
+                tulsunDun,
                 uldegdel: Number(r.uldegdel ?? 0), // Use uldegdel directly from backend - NO calculation
                 isSystem: r.isSystem ?? false,
                 ajiltan: r.ajiltan,

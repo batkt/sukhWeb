@@ -92,7 +92,7 @@ export default function AddUnitModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           ref={constraintsRef}
-          className="fixed inset-0 z-[9999]"
+          className="fixed inset-0 z-[12000]"
         >
           <div className="absolute inset-0 bg-transparent" />
           <motion.div
@@ -105,7 +105,7 @@ export default function AddUnitModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[10000] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md modal-surface modal-responsive rounded-2xl shadow-2xl p-6"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md modal-surface modal-responsive rounded-2xl shadow-2xl p-6"
           >
             <div className="text-center">
               <h3
