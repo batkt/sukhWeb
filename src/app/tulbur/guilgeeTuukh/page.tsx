@@ -2520,6 +2520,12 @@ export default function DansniiKhuulga() {
           if (data.gereeniiId) {
             const gid = data.gereeniiId;
             requestedGereeIdsRef.current.delete(gid);
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
             setPaidSummaryByGereeId((prev) => {
               const updated = { ...prev };
               delete (updated as any)[gid];
@@ -2561,6 +2567,14 @@ export default function DansniiKhuulga() {
         // Other transaction types (avlaga, ashiglalt): create a transaction record without marking as paid
         // Ашиглалт: нэхэмжлэхийн guilgeenuudForNekhemjlekh-тай ижил — дүнг tulsunDun-д (tulukhDun=0)
         const isAshiglalt = data.type === "ashiglalt";
+        const baseTailbar =
+          data.tailbar ||
+          (data.ekhniiUldegdel
+            ? `Эхний үлдэгдэл - ${data.date}`
+            : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Цахилгаан" : data.type} - ${data.date}`);
+        const normalizedTailbar = isAshiglalt
+          ? String(baseTailbar).replace(/^(ашиглалт|ashiglalt)/i, "Цахилгаан")
+          : baseTailbar;
         // Сервер заримдаа dun-г шууд tulukhDun-д тавьдаг тул ашиглалт дээр dun=0,
         // дүнг зөвхөн tulsunDun-аар дамжуулна (guilgeenuudForNekhemjlekh-тай нийцнэ).
         const response = await uilchilgee(token).post(
@@ -2583,11 +2597,7 @@ export default function DansniiKhuulga() {
                 }),
             orshinSuugchId: data.residentId,
             gereeniiId: data.gereeniiId,
-            tailbar:
-              data.tailbar ||
-              (data.ekhniiUldegdel
-                ? `Эхний үлдэгдэл - ${data.date}`
-                : `${data.type === "avlaga" ? "Авлага" : data.type === "ashiglalt" ? "Ашиглалт" : data.type} - ${data.date}`),
+            tailbar: normalizedTailbar,
             ognoo: data.date,
             ...(data.ekhniiUldegdel && { ekhniiUldegdelEsekh: true }), // Only include when checked
             createdBy: ajiltan._id,
@@ -2604,6 +2614,12 @@ export default function DansniiKhuulga() {
           if (data.gereeniiId) {
             const gid = data.gereeniiId;
             requestedGereeIdsRef.current.delete(gid);
+            latestRowUldegdelRequestedRef.current.delete(gid);
+            setLatestRowUldegdelByGereeId((prev) => {
+              const updated = { ...prev };
+              delete (updated as any)[gid];
+              return updated;
+            });
             setPaidSummaryByGereeId((prev) => {
               const updated = { ...prev };
               delete (updated as any)[gid];

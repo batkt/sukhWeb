@@ -191,7 +191,6 @@ export default function HistoryModal({
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceModalResident, setInvoiceModalResident] = useState<any>(null);
-  const hasInitializedDateRangeRef = useRef(false);
 
   useModalHotkeys({
     isOpen: show,
@@ -578,9 +577,7 @@ export default function HistoryModal({
 
         guilgeenuud.forEach((g: any) => {
           const chargeAmt =
-            Number(
-              g.tulukhDun ?? g.dun ?? g.niitDun ?? g.niitTulbur ?? 0,
-            ) || 0;
+            Number(g.tulukhDun ?? g.dun ?? g.niitDun ?? g.niitTulbur ?? 0) || 0;
           const paidAmt = Number(g.tulsunDun ?? g.tulsun ?? 0) || 0;
           const guilgeeTurul = String(g.turul || "").toLowerCase();
           const isAshiglaltGuilgee = guilgeeTurul === "ashiglalt";
@@ -794,6 +791,12 @@ export default function HistoryModal({
         // Include ekhniiUldegdel even when negative (credit); other receivables need amt > 0
         if ((rec.ekhniiUldegdelEsekh === true && amt !== 0) || amt > 0) {
           const isEkhniiUldegdel = rec.ekhniiUldegdelEsekh === true;
+          const rawRecName = String(rec.zardliinNer || rec.ner || "").trim();
+          const rawRecNameLc = rawRecName.toLowerCase();
+          const displayRecName =
+            rawRecNameLc === "ашиглалт" || rawRecNameLc === "ashiglalt"
+              ? "Цахилгаан"
+              : rawRecName || "Авлага";
           let rowTailbar =
             rec.tailbar || rec.zardliinNer || "Гараар нэмсэн авлага";
 
@@ -815,9 +818,7 @@ export default function HistoryModal({
           flatLedger.push({
             _id: rec._id,
             ognoo: recDate,
-            ner: isEkhniiUldegdel
-              ? "Эхний үлдэгдэл"
-              : rec.zardliinNer || "Авлага",
+            ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : displayRecName,
             tulukhDun: amt,
             tulsunDun: 0,
             uldegdel: 0,
@@ -971,9 +972,9 @@ export default function HistoryModal({
           if (backendLedger.length > 0 && hasUldegdel) {
             // Use backend ledger with uldegdel from each row - NO calculation, use backend values directly
             const mapped = backendLedger.map((r: any) => {
-              let tulukhDun = Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
-              let tulsunDun =
-                Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
+              let tulukhDun =
+                Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
+              let tulsunDun = Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
               const rowTurul = String(r.turul || "").toLowerCase();
               if (
                 rowTurul === "ashiglalt" &&
@@ -1138,60 +1139,55 @@ export default function HistoryModal({
 
   const pageRangeStart = pageDateRange?.[0] ?? null;
   const pageRangeEnd = pageDateRange?.[1] ?? null;
+  const contractId = contract?.gereeniiId || contract?._id || null;
 
   useEffect(() => {
     if (!show) {
-      hasInitializedDateRangeRef.current = false;
       return;
     }
     if (show && contract) {
       setData([]);
       setGlobalUldegdel(null);
-      // Pre-fill from the parent page date filter only once when opening.
-      // After that, keep the modal datepicker fully user-controlled.
-      if (!hasInitializedDateRangeRef.current) {
-        if (pageRangeStart || pageRangeEnd) {
-          setDateRange([pageRangeStart, pageRangeEnd]);
-        } else {
-          setDateRange([null, null]);
-        }
-        hasInitializedDateRangeRef.current = true;
+      // Sync from parent using stable keys (contractId + pageDateRange),
+      // so outside page filter works without being reset by object identity changes.
+      if (pageRangeStart || pageRangeEnd) {
+        setDateRange([pageRangeStart, pageRangeEnd]);
+      } else {
+        setDateRange([null, null]);
       }
       fetchData();
     }
-  }, [show, contract]);
+  }, [show, contractId, pageRangeStart, pageRangeEnd]);
 
   const filteredData = useMemo(() => {
-    const parseInputDateMs = (v: any, isEnd: boolean) => {
+    const normalizeToDateKey = (v: any): string | null => {
       const raw = String(v ?? "").trim();
-      if (!raw) return isEnd ? Infinity : -Infinity;
-      // Support both "YYYY-MM-DD" and "YYYY.MM.DD"
-      const normalized = raw.replaceAll(".", "-");
-      const dt = new Date(normalized);
-      if (Number.isNaN(dt.getTime())) return isEnd ? Infinity : -Infinity;
-      if (isEnd) dt.setHours(23, 59, 59, 999);
-      else dt.setHours(0, 0, 0, 0);
-      return dt.getTime();
-    };
-
-    const parseRowDateMs = (v: any) => {
-      const raw = String(v ?? "").trim();
-      if (!raw) return 0;
-      const normalized = raw.replaceAll(".", "-");
-      const dt = new Date(normalized);
-      const t = dt.getTime();
-      return Number.isNaN(t) ? 0 : t;
+      if (!raw) return null;
+      // Accept ISO and dotted/slashed forms, then keep only date part.
+      const normalized = raw.replace(/[./]/g, "-");
+      const datePart = normalized.includes("T")
+        ? normalized.split("T")[0]
+        : normalized.split(" ")[0];
+      const m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (!m) return null;
+      const yyyy = m[1];
+      const mm = String(Number(m[2])).padStart(2, "0");
+      const dd = String(Number(m[3])).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd}`;
     };
 
     const [start, end] = dateRange || [null, null];
-    const s = parseInputDateMs(start, false);
-    const e = parseInputDateMs(end, true);
+    const startKey = normalizeToDateKey(start);
+    const endKey = normalizeToDateKey(end);
 
     const result =
-      start || end
+      startKey || endKey
         ? data.filter((item) => {
-            const d = parseRowDateMs(item.ognoo);
-            return d >= s && d <= e;
+            const rowKey = normalizeToDateKey(item.ognoo);
+            if (!rowKey) return false;
+            if (startKey && rowKey < startKey) return false;
+            if (endKey && rowKey > endKey) return false;
+            return true;
           })
         : data;
 
@@ -1228,427 +1224,447 @@ export default function HistoryModal({
             onClick={onClose}
           />
 
-        <motion.div
-          ref={modalRef}
-          initial={{ scale: 0.95, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.95, opacity: 0, y: 20 }}
-          drag
-          dragListener={false}
-          dragControls={dragControls}
-          dragConstraints={constraintsRef}
-          dragMomentum={false}
-          className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-[95vw] max-w-[1400px] h-[82vh] max-h-[82vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {/* Header Section */}
-          <div
-            onPointerDown={(e) => dragControls.start(e)}
-            className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50 cursor-move select-none"
+          <motion.div
+            ref={modalRef}
+            initial={{ scale: 0.95, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            drag
+            dragListener={false}
+            dragControls={dragControls}
+            dragConstraints={constraintsRef}
+            dragMomentum={false}
+            className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-[95vw] max-w-[1400px] h-[82vh] max-h-[82vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
-                  Хуулга
-                </h2>
-                <div className="text-[13px] text-slate-400">
-                  {contract?.ovog} {contract?.ner} • {data.length} мөр
+            {/* Header Section */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50 select-none">
+              <div
+                onPointerDown={(e) => dragControls.start(e)}
+                className="flex justify-between items-start mb-4 cursor-move"
+              >
+                <div>
+                  <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
+                    Хуулга
+                  </h2>
+                  <div className="text-[13px] text-slate-400">
+                    {contract?.ovog} {contract?.ner} • {data.length} мөр
+                  </div>
                 </div>
+                <button
+                  onClick={onClose}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg no-print"
+                >
+                  ✕
+                </button>
               </div>
+
+              {/* Info Cards - Compact Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                {[
+                  { label: "Гэрээ", value: contract?.gereeniiDugaar || "-" },
+                  { label: "Тоот", value: contract?.toot || "-" },
+                  { label: "Нэр", value: contract?.ner || "-" },
+                  {
+                    label: "Утас",
+                    value: Array.isArray(contract?.utas)
+                      ? contract.utas[0]
+                      : contract?.utas || "-",
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800"
+                  >
+                    <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
+                      {item.label}
+                    </span>
+                    <span className="text-[13px]  text-slate-700 dark:text-slate-200 truncate block">
+                      {item.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Date Filter - Compact */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div
+                  className="w-full sm:w-[220px]"
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <StandardDatePicker
+                    isRange={true}
+                    value={dateRange}
+                    getPopupContainer={() => document.body}
+                    popupStyle={{ zIndex: 10000050 }}
+                    onChange={(date: any, dateString: any) => {
+                      if (Array.isArray(date)) {
+                        setDateRange([
+                          date[0]?.isValid?.()
+                            ? date[0].format("YYYY-MM-DD")
+                            : null,
+                          date[1]?.isValid?.()
+                            ? date[1].format("YYYY-MM-DD")
+                            : null,
+                        ]);
+                      } else if (Array.isArray(dateString)) {
+                        setDateRange([
+                          dateString[0] ? String(dateString[0]) : null,
+                          dateString[1] ? String(dateString[1]) : null,
+                        ]);
+                      } else {
+                        setDateRange([null, null]);
+                      }
+                    }}
+                    size="small"
+                    placeholder="Огноо"
+                    classNames={{
+                      input: "border-none h-8 text-[13px] ",
+                    }}
+                  />
+                </div>
+                {(dateRange?.[0] || dateRange?.[1]) && (
+                  <button
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => setDateRange([null, null])}
+                    className="text-[10px]  text-rose-500 hover:underline"
+                  >
+                    Арилгах
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Table Section - Scrollable */}
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              <table className="w-full text-[13px]">
+                <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
+                  <tr className="border-b border-slate-100 dark:border-slate-800">
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                      Огноо
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell font-medium">
+                      Ажилтан
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                      Төлөх дүн
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                      Төлсөн дүн
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                      Үлдэгдэл
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
+                      Хэлбэр
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
+                      Тайлбар
+                    </th>
+                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell font-medium">
+                      Бүртгэсэн огноо
+                    </th>
+                    <th className="py-2 px-3 text-center text-[9px]  text-slate-400 uppercase w-28 font-medium">
+                      Үйлдэл
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td colSpan={9} className="py-3 px-2">
+                          <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : filteredData.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="py-12 text-center">
+                        <span className="text-slate-400 text-[13px]">
+                          Мэдээлэл олдсонгүй
+                        </span>
+                      </td>
+                    </tr>
+                  ) : (
+                    <>
+                      {filteredData.map((row, idx) => (
+                        <tr
+                          key={row._id || idx}
+                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
+                        >
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                            {row.ognoo.split("T")[0].replace(/-/g, ".")}
+                          </td>
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
+                            {row.isSystem ? "Систем" : row.ajiltan}
+                          </td>
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                            {formatCurrency(row.tulukhDun)}
+                          </td>
+                          <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
+                            {formatCurrency(row.tulsunDun)}
+                          </td>
+                          <td
+                            className={`py-2 px-2 text-[13px] border-r text-right underline whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
+                          >
+                            {typeof row.uldegdel === "number"
+                              ? formatCurrency(row.uldegdel)
+                              : row.uldegdel != null
+                                ? formatCurrency(Number(row.uldegdel))
+                                : "-"}
+                          </td>
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
+                            {row.khelber || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
+                            {row.tailbar || "-"}
+                          </td>
+                          <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                            {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
+                              ? new Date(row.burtgesenOgnoo).toLocaleString(
+                                  "mn-MN",
+                                  { hour12: false },
+                                )
+                              : "-"}
+                          </td>
+                          <td className="py-2 px-3 text-center flex items-center justify-center">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const isDeletable =
+                                  row._id &&
+                                  row.sourceCollection !==
+                                    "nekhemjlekhiinTuukh" &&
+                                  !row.isSystem;
+
+                                if (isDeletable && row._id) {
+                                  handleDeleteClick(
+                                    row._id,
+                                    row.ner || row.khelber || "",
+                                  );
+                                }
+                              }}
+                              className={`p-2 transition-all rounded-lg ${
+                                row._id &&
+                                row.sourceCollection !==
+                                  "nekhemjlekhiinTuukh" &&
+                                !row.isSystem
+                                  ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                                  : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
+                              }`}
+                              title={
+                                row.isSystem ||
+                                row.sourceCollection === "nekhemjlekhiinTuukh"
+                                  ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
+                                  : row._id
+                                    ? "Устгах"
+                                    : "Устгах боломжгүй"
+                              }
+                              disabled={
+                                !row._id ||
+                                row.sourceCollection ===
+                                  "nekhemjlekhiinTuukh" ||
+                                row.isSystem
+                              }
+                            >
+                              <Trash2
+                                className={`h-5 w-5 ${
+                                  row._id &&
+                                  row.sourceCollection !==
+                                    "nekhemjlekhiinTuukh" &&
+                                  !row.isSystem
+                                    ? "!text-red-500"
+                                    : "text-slate-300 dark:text-slate-600"
+                                }`}
+                              />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Total Summary Row - uldegdel from main page data */}
+                      {(() => {
+                        const totalCharges = filteredData.reduce(
+                          (sum, row) => sum + (row.tulukhDun || 0),
+                          0,
+                        );
+                        const totalPayments = filteredData.reduce(
+                          (sum, row) => sum + (row.tulsunDun || 0),
+                          0,
+                        );
+                        // Use latest row's uldegdel (first row since data is reversed - newest first)
+                        // Fall back to globalUldegdel or contract.uldegdel if no rows
+                        const latestRowUldegdel =
+                          filteredData.length > 0 &&
+                          filteredData[0]?.uldegdel != null
+                            ? Number(filteredData[0].uldegdel)
+                            : globalUldegdel != null
+                              ? globalUldegdel
+                              : Number(contract?.uldegdel ?? 0);
+                        const balance = latestRowUldegdel;
+                        const balanceClass =
+                          balance < 0.01
+                            ? "!text-emerald-600 dark:!text-emerald-400"
+                            : "!text-red-500 dark:!text-red-400";
+                        return (
+                          <tr className="bg-slate-100 dark:bg-slate-800/50">
+                            <td
+                              colSpan={2}
+                              className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
+                            >
+                              Нийт
+                            </td>
+                            <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                              {formatCurrency(totalCharges)} ₮
+                            </td>
+                            <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                              {formatCurrency(totalPayments)} ₮
+                            </td>
+                            <td
+                              className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
+                            >
+                              {formatCurrency(balance)} ₮
+                            </td>
+                            <td
+                              colSpan={4}
+                              className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
+                            ></td>
+                          </tr>
+                        );
+                      })()}
+                    </>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer - Compact */}
+            <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
               <button
                 onClick={onClose}
-                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg no-print"
+                className="ant-btn w-20 ant-btn-default no-print"
               >
-                ✕
+                Хаах
+              </button>
+              <button
+                onClick={handlePrint}
+                className="ant-btn w-20 ant-btn-primary no-print"
+              >
+                Хэвлэх
               </button>
             </div>
 
-            {/* Info Cards - Compact Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-              {[
-                { label: "Гэрээ", value: contract?.gereeniiDugaar || "-" },
-                { label: "Тоот", value: contract?.toot || "-" },
-                { label: "Нэр", value: contract?.ner || "-" },
-                {
-                  label: "Утас",
-                  value: Array.isArray(contract?.utas)
-                    ? contract.utas[0]
-                    : contract?.utas || "-",
-                },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800"
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+              {deleteConfirm.show && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[100000] flex items-center justify-center bg-black/50 rounded-2xl sm:rounded-3xl"
+                  onClick={handleDeleteCancel}
                 >
-                  <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
-                    {item.label}
-                  </span>
-                  <span className="text-[13px]  text-slate-700 dark:text-slate-200 truncate block">
-                    {item.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Date Filter - Compact */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="w-full sm:w-[220px]">
-                <StandardDatePicker
-                  isRange={true}
-                  value={dateRange}
-                  onChange={(_date: any, dateString: any) => {
-                    if (Array.isArray(dateString)) {
-                      setDateRange([
-                        dateString[0] ? String(dateString[0]) : null,
-                        dateString[1] ? String(dateString[1]) : null,
-                      ]);
-                    } else {
-                      setDateRange([null, null]);
-                    }
-                  }}
-                  size="small"
-                  placeholder="Огноо"
-                  classNames={{
-                    input: "border-none h-8 text-[13px] ",
-                  }}
-                />
-              </div>
-              {(dateRange?.[0] || dateRange?.[1]) && (
-                <button
-                  onClick={() => setDateRange([null, null])}
-                  className="text-[10px]  text-rose-500 hover:underline"
-                >
-                  Арилгах
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Table Section - Scrollable */}
-          <div className="flex-1 overflow-auto custom-scrollbar">
-            <table className="w-full text-[13px]">
-              <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
-                <tr className="border-b border-slate-100 dark:border-slate-800">
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                    Огноо
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell font-medium">
-                    Ажилтан
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                    Төлөх дүн
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                    Төлсөн дүн
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                    Үлдэгдэл
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
-                    Хэлбэр
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
-                    Тайлбар
-                  </th>
-                  <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell font-medium">
-                    Бүртгэсэн огноо
-                  </th>
-                  <th className="py-2 px-3 text-center text-[9px]  text-slate-400 uppercase w-28 font-medium">
-                    Үйлдэл
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan={9} className="py-3 px-2">
-                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
-                      </td>
-                    </tr>
-                  ))
-                ) : filteredData.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-12 text-center">
-                      <span className="text-slate-400 text-[13px]">
-                        Мэдээлэл олдсонгүй
-                      </span>
-                    </td>
-                  </tr>
-                ) : (
-                  <>
-                    {filteredData.map((row, idx) => (
-                      <tr
-                        key={row._id || idx}
-                        className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-                      >
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
-                          {row.ognoo.split("T")[0].replace(/-/g, ".")}
-                        </td>
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
-                          {row.isSystem ? "Систем" : row.ajiltan}
-                        </td>
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                          {formatCurrency(row.tulukhDun)}
-                        </td>
-                        <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
-                          {formatCurrency(row.tulsunDun)}
-                        </td>
-                        <td
-                          className={`py-2 px-2 text-[13px] border-r text-right underline whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="text-center">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 !text-red-500 dark:!text-red-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
                         >
-                          {typeof row.uldegdel === "number"
-                            ? formatCurrency(row.uldegdel)
-                            : row.uldegdel != null
-                               ? formatCurrency(Number(row.uldegdel))
-                               : "-"}
-                        </td>
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
-                          {row.khelber || "-"}
-                        </td>
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
-                          {row.tailbar || "-"}
-                        </td>
-                        <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
-                          {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
-                            ? new Date(row.burtgesenOgnoo).toLocaleString(
-                                "mn-MN",
-                                { hour12: false },
-                              )
-                            : "-"}
-                        </td>
-                        <td className="py-2 px-3 text-center flex items-center justify-center">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const isDeletable = 
-                                row._id && 
-                                row.sourceCollection !== "nekhemjlekhiinTuukh" && 
-                                !row.isSystem;
-                                
-                              if (isDeletable && row._id) {
-                                handleDeleteClick(
-                                  row._id,
-                                  row.ner || row.khelber || "",
-                                );
-                              }
-                            }}
-                            className={`p-2 transition-all rounded-lg ${
-                              row._id && 
-                              row.sourceCollection !== "nekhemjlekhiinTuukh" && 
-                              !row.isSystem 
-                                ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer" 
-                                : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
-                            }`}
-                            title={
-                              row.isSystem || row.sourceCollection === "nekhemjlekhiinTuukh"
-                                ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
-                                : row._id
-                                  ? "Устгах"
-                                  : "Устгах боломжгүй"
-                            }
-                            disabled={
-                              !row._id ||
-                              row.sourceCollection === "nekhemjlekhiinTuukh" ||
-                              row.isSystem
-                            }
-                          >
-                            <Trash2 
-                              className={`h-5 w-5 ${
-                                row._id && 
-                                row.sourceCollection !== "nekhemjlekhiinTuukh" && 
-                                !row.isSystem 
-                                  ? "!text-red-500" 
-                                  : "text-slate-300 dark:text-slate-600"
-                              }`} 
-                            />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Total Summary Row - uldegdel from main page data */}
-                    {(() => {
-                      const totalCharges = filteredData.reduce(
-                        (sum, row) => sum + (row.tulukhDun || 0),
-                        0,
-                      );
-                      const totalPayments = filteredData.reduce(
-                        (sum, row) => sum + (row.tulsunDun || 0),
-                        0,
-                      );
-                      // Use latest row's uldegdel (first row since data is reversed - newest first)
-                      // Fall back to globalUldegdel or contract.uldegdel if no rows
-                      const latestRowUldegdel =
-                        filteredData.length > 0 &&
-                        filteredData[0]?.uldegdel != null
-                          ? Number(filteredData[0].uldegdel)
-                          : globalUldegdel != null
-                            ? globalUldegdel
-                            : Number(contract?.uldegdel ?? 0);
-                      const balance = latestRowUldegdel;
-                      const balanceClass =
-                        balance < 0.01
-                          ? "!text-emerald-600 dark:!text-emerald-400"
-                          : "!text-red-500 dark:!text-red-400";
-                      return (
-                        <tr className="bg-slate-100 dark:bg-slate-800/50">
-                          <td
-                            colSpan={2}
-                            className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
-                          >
-                            Нийт
-                          </td>
-                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                            {formatCurrency(totalCharges)} ₮
-                          </td>
-                          <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                            {formatCurrency(totalPayments)} ₮
-                          </td>
-                          <td
-                            className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
-                          >
-                            {formatCurrency(balance)} ₮
-                          </td>
-                          <td
-                            colSpan={4}
-                            className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
-                          ></td>
-                        </tr>
-                      );
-                    })()}
-                  </>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Footer - Compact */}
-          <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-            <button
-              onClick={onClose}
-              className="ant-btn w-20 ant-btn-default no-print"
-            >
-              Хаах
-            </button>
-            <button
-              onClick={handlePrint}
-              className="ant-btn w-20 ant-btn-primary no-print"
-            >
-              Хэвлэх
-            </button>
-          </div>
-
-          {/* Delete Confirmation Modal */}
-          <AnimatePresence>
-            {deleteConfirm.show && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-[100000] flex items-center justify-center bg-black/50 rounded-2xl sm:rounded-3xl"
-                onClick={handleDeleteCancel}
-              >
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="text-center">
-                    <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 !text-red-500 dark:!text-red-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg  text-slate-800 dark:text-white mb-2">
+                        Устгах уу?
+                      </h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                        Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ
+                        үйлдлийг буцаах боломжгүй.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleDeleteCancel}
+                          className="ant-btn ant-btn-default flex-1"
+                        >
+                          Хаах
+                        </button>
+                        <button
+                          onClick={handleDeleteConfirm}
+                          className="ant-btn ant-btn-danger flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+                        >
+                          Устгах
+                        </button>
+                      </div>
                     </div>
-                    <h3 className="text-lg  text-slate-800 dark:text-white mb-2">
-                      Устгах уу?
-                    </h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                      Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ үйлдлийг
-                      буцаах боломжгүй.
-                    </p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={handleDeleteCancel}
-                        className="ant-btn ant-btn-default flex-1"
-                      >
-                        Хаах
-                      </button>
-                      <button
-                        onClick={handleDeleteConfirm}
-                        className="ant-btn ant-btn-danger flex-1 bg-rose-600 hover:bg-rose-700 text-white"
-                      >
-                        Устгах
-                      </button>
-                    </div>
-                  </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
 
-          {/* Success Overlay */}
-          <AnimatePresence>
-            {deleteSuccess && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-[100001] flex items-center justify-center bg-black/30 rounded-2xl sm:rounded-3xl"
-              >
+            {/* Success Overlay */}
+            <AnimatePresence>
+              {deleteSuccess && (
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.8, opacity: 0 }}
-                  className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-[100001] flex items-center justify-center bg-black/30 rounded-2xl sm:rounded-3xl"
                 >
-                  <div className="text-center">
-                    <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl"
+                  >
+                    <div className="text-center">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      </div>
+                      <p className="text-lg  text-slate-800 dark:text-white">
+                        Амжилттай устгалаа!
+                      </p>
                     </div>
-                    <p className="text-lg  text-slate-800 dark:text-white">
-                      Амжилттай устгалаа!
-                    </p>
-                  </div>
+                  </motion.div>
                 </motion.div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
 
-          <InvoiceModal
-            isOpen={showInvoiceModal}
-            onClose={() => setShowInvoiceModal(false)}
-            resident={invoiceModalResident}
-            baiguullagiinId={baiguullagiinId || ""}
-            token={token || ""}
-            barilgiinId={barilgiinId}
-          />
-        </motion.div>
+            <InvoiceModal
+              isOpen={showInvoiceModal}
+              onClose={() => setShowInvoiceModal(false)}
+              resident={invoiceModalResident}
+              baiguullagiinId={baiguullagiinId || ""}
+              token={token || ""}
+              barilgiinId={barilgiinId}
+            />
+          </motion.div>
         </div>
       </AnimatePresence>
     </ModalPortal>
