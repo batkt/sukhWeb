@@ -58,7 +58,7 @@ export default function CredentialsModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100]"
         >
           <div className="absolute inset-0 bg-transparent" onClick={onClose} />
           <motion.div
@@ -71,7 +71,8 @@ export default function CredentialsModal({
             dragControls={dragControls}
             dragConstraints={constraintsRef}
             dragMomentum={false}
-            className="relative neu-panel rounded-2xl shadow-2xl p-0 flex flex-col w-full max-w-md overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+            className="fixed left-1/2 top-1/2 z-[110] -translate-x-1/2 -translate-y-1/2 neu-panel rounded-2xl shadow-2xl p-0 flex flex-col w-[95vw] max-w-md overflow-hidden"
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}

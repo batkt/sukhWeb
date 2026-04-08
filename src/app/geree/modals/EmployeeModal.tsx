@@ -44,7 +44,7 @@ export default function EmployeeModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100]"
         >
           <div className="absolute inset-0 bg-transparent" />
           <motion.div
@@ -58,7 +58,7 @@ export default function EmployeeModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="relative modal-surface modal-responsive sm:w-full sm:max-w-3xl rounded-2xl shadow-2xl p-0 flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[110] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl modal-surface modal-responsive rounded-2xl shadow-2xl p-0 flex flex-col"
           >
             <div
               onPointerDown={(e) => dragControls.start(e)}

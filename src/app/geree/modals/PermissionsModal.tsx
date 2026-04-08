@@ -306,7 +306,7 @@ export default function PermissionsModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4"
+          className="fixed inset-0 z-[100]"
         >
           <div className="absolute inset-0 bg-transparent" />
           <motion.div
@@ -320,7 +320,7 @@ export default function PermissionsModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="relative modal-surface w-[800px] max-w-[95vw] h-[650px] max-h-[90vh] rounded-xl shadow-2xl p-0 flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[110] -translate-x-1/2 -translate-y-1/2 modal-surface w-[800px] max-w-[95vw] h-[650px] max-h-[90vh] rounded-xl shadow-2xl p-0 flex flex-col"
           >
             {/* Header */}
             <div

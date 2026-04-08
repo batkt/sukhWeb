@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Shield, Check } from "lucide-react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import useModalHotkeys from "@/lib/useModalHotkeys";
+import { ModalPortal } from "../../../../components/golContent";
 
 interface RBACModalProps {
   show: boolean;
@@ -77,9 +78,10 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
   return (
     <AnimatePresence>
       {show && (
+        <ModalPortal>
         <div
           ref={constraintsRef}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50"
         >
           <motion.div
             initial={{ opacity: 0 }}
@@ -97,7 +99,8 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
             dragControls={dragControls}
             dragConstraints={constraintsRef}
             dragMomentum={false}
-            className="relative w-full max-w-2xl bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)]"
+            onClick={(e) => e.stopPropagation()}
+            className="fixed left-1/2 top-1/2 z-[60] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-2xl bg-[color:var(--surface-bg)] rounded-3xl shadow-2xl overflow-hidden border border-[color:var(--surface-border)]"
           >
             {/* Header */}
             <div
@@ -226,6 +229,7 @@ export default function RBACModal({ show, onClose, employee, onSave }: RBACModal
             </div>
           </motion.div>
         </div>
+        </ModalPortal>
       )}
     </AnimatePresence>
   );

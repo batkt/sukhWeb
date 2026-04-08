@@ -8,6 +8,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import Button from "@/components/ui/Button";
 import { ConfirmCloseDialog } from "@/components/ui/ConfirmCloseDialog";
+import { ModalPortal } from "../../../../components/golContent";
 
 interface TransactionModalProps {
   show: boolean;
@@ -412,11 +413,12 @@ export default function TransactionModal({
 
   return (
     <>
-      <AnimatePresence>
-        <div
-          ref={constraintsRef}
-          className="fixed inset-0 z-[20000] flex items-center justify-center p-4"
-        >
+      <ModalPortal>
+        <AnimatePresence>
+          <div
+            ref={constraintsRef}
+            className="fixed inset-0 z-[20000]"
+          >
           {contextHolder}
           <motion.div
             initial={{ opacity: 0 }}
@@ -437,7 +439,7 @@ export default function TransactionModal({
             dragControls={dragControls}
             dragConstraints={constraintsRef}
             dragMomentum={false}
-            className="relative modal-surface rounded-2xl shadow-2xl w-[700px] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
+            className="fixed left-1/2 top-1/2 z-[20001] -translate-x-1/2 -translate-y-1/2 modal-surface rounded-2xl shadow-2xl w-[min(700px,95vw)] h-[70vh] flex flex-col border border-[color:var(--surface-border)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Draggable Title Bar */}
@@ -728,7 +730,8 @@ export default function TransactionModal({
             </div>
           </motion.div>
         </div>
-      </AnimatePresence>
+        </AnimatePresence>
+      </ModalPortal>
 
       <ConfirmCloseDialog
         open={showConfirmClose}

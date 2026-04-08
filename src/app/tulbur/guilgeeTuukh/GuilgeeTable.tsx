@@ -6,6 +6,7 @@ import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
+import { resolveTotalPaidFromLedgerThenApi } from "./guilgeePaidDisplay";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -333,16 +334,17 @@ export default function GuilgeeTable({
                 monthlyPeriods,
                 matrixMonthKey,
               );
-              const fallbackPaid = gid
-                ? (paidSummaryByGereeId[gid] ??
-                  Number(record?._totalTulsun ?? 0))
-                : Number(record?._totalTulsun ?? 0);
+              // Matrix "paid" = тухайн сарын л түүх — зөвхөн өмнөх сар сонгосон үед. Бусад үед ledger `_totalTulsun` > API.
               const paidDisplay =
-                monthSlice != null
+                historyScopedByDate && monthSlice != null
                   ? Number(monthSlice.paid ?? 0)
                   : historyScopedByDate
                     ? Number(record?._totalTulsun ?? 0)
-                    : fallbackPaid;
+                    : resolveTotalPaidFromLedgerThenApi(
+                        record,
+                        gid || undefined,
+                        paidSummaryByGereeId,
+                      );
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -422,9 +424,13 @@ export default function GuilgeeTable({
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
               const paidForTuluv =
-                monthSlice != null
+                historyScopedByDate && monthSlice != null
                   ? Number(monthSlice.paid ?? 0)
-                  : Number(record?._totalTulsun ?? 0);
+                  : resolveTotalPaidFromLedgerThenApi(
+                      record,
+                      gid || undefined,
+                      paidSummaryByGereeId,
+                    );
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
@@ -714,14 +720,15 @@ export default function GuilgeeTable({
                     matrixMonthKey,
                   );
                   const v =
-                    monthSlice != null
+                    historyScopedByDate && monthSlice != null
                       ? Number(monthSlice.paid ?? 0)
                       : historyScopedByDate
                         ? Number(it?._totalTulsun ?? 0)
-                        : gid
-                          ? (paidSummaryByGereeId[gid] ??
-                            Number(it?._totalTulsun ?? 0))
-                          : Number(it?._totalTulsun ?? 0);
+                        : resolveTotalPaidFromLedgerThenApi(
+                            it,
+                            gid || undefined,
+                            paidSummaryByGereeId,
+                          );
                   return sum + v;
                 },
                 0,

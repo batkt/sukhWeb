@@ -8,6 +8,7 @@ import uilchilgee from "@/lib/uilchilgee";
 import { message } from "antd";
 import { useAuth } from "@/lib/useAuth";
 import Button from "@/components/ui/Button";
+import { ModalPortal } from "../../../../components/golContent";
 
 interface InitialBalanceExcelModalProps {
   show: boolean;
@@ -113,9 +114,10 @@ export default function InitialBalanceExcelModal({
 
   return (
     <AnimatePresence>
+      <ModalPortal>
       <div
         ref={constraintsRef}
-        className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+        className="fixed inset-0 z-[10000]"
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -135,7 +137,7 @@ export default function InitialBalanceExcelModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="relative bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[560px] overflow-hidden"
+          className="fixed left-1/2 top-1/2 z-[10001] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl w-[min(560px,95vw)] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <div className="p-8">
@@ -242,6 +244,7 @@ export default function InitialBalanceExcelModal({
           </div>
         </motion.div>
       </div>
+      </ModalPortal>
     </AnimatePresence>
   );
 }

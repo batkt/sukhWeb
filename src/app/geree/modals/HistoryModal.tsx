@@ -1167,7 +1167,7 @@ export default function HistoryModal({
       <PrintStyles />
       <div
         ref={constraintsRef}
-        className="fixed inset-0 z-[9999999] flex items-center justify-center p-2 sm:p-4 overflow-y-auto custom-scrollbar"
+        className="fixed inset-0 z-[9999999] overflow-y-auto custom-scrollbar"
       >
         <motion.div
           initial={{ opacity: 0 }}
@@ -1187,7 +1187,7 @@ export default function HistoryModal({
           dragControls={dragControls}
           dragConstraints={constraintsRef}
           dragMomentum={false}
-          className="relative bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
+          className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-[95vw] sm:max-w-[1500px] md:max-w-[1800px] min-h-[0vh] max-h-[85vh] sm:max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header Section */}

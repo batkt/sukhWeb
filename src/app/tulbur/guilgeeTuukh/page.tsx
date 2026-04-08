@@ -65,6 +65,10 @@ import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
 import { computeLedgerRunningBalancesByGereeId } from "./ledgerRunningBalances";
+import {
+  aggregateLedgerTulsunByGereeId,
+  resolveTotalPaidFromLedgerThenApi,
+} from "./guilgeePaidDisplay";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -828,6 +832,16 @@ export default function DansniiKhuulga() {
     );
   }, [historyScopedByDate, allHistoryItems, contractsByNumber, bestKnownBalances]);
 
+  /** Гэрээ тус бүрийн түүхээс нийлбэрлэсэн төлсөн дүн (жагсаалт/шүүлтэнд API-аас өмнө) */
+  const ledgerPaidTotalByGereeId = useMemo(
+    () =>
+      aggregateLedgerTulsunByGereeId(
+        buildingHistoryItems,
+        contractsByNumber,
+      ),
+    [buildingHistoryItems, contractsByNumber],
+  );
+
   // Filter by paid/unpaid + Орц + Давхар
   const filteredItems = useMemo(() => {
     // Get cancelled geree IDs for filtering
@@ -864,8 +878,12 @@ export default function DansniiKhuulga() {
         tableDisplayBalances[gid] ?? Number(it?.uldegdel ?? 0);
 
       const paidAmount = gid
-        ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
-        : Number(it?._totalTulsun ?? 0);
+        ? resolveTotalPaidFromLedgerThenApi(
+            { _totalTulsun: ledgerPaidTotalByGereeId[gid] ?? 0 },
+            gid,
+            paidSummaryByGereeId,
+          )
+        : 0;
 
       // Use a consistent epsilon (0.01 MNT) for balance checks
       // Any balance >= 0.01 MNT is considered unpaid.
@@ -980,6 +998,8 @@ export default function DansniiKhuulga() {
     selectedTootFilter,
     latestRowUldegdelByGereeId,
     tableDisplayBalances,
+    ledgerPaidTotalByGereeId,
+    paidSummaryByGereeId,
   ]);
 
   // Same as filteredItems but WITHOUT tuluvFilter - for stats (dashboard numbers stay fixed)
@@ -1435,9 +1455,11 @@ export default function DansniiKhuulga() {
         : (bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0));
       const paid = historyScopedByDate
         ? Number(r?._totalTulsun ?? 0)
-        : gid
-          ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
-          : Number(r?._totalTulsun ?? 0);
+        : resolveTotalPaidFromLedgerThenApi(
+            r,
+            gid || undefined,
+            paidSummaryByGereeId,
+          );
 
       const isResidentPaid = balance < 0.01;
       const isPartiallyPaid = !isResidentPaid && paid > 0.1;
@@ -1689,7 +1711,7 @@ export default function DansniiKhuulga() {
           const gidA = getGid(a);
           const gidB = getGid(b);
           const paidVal = (it: any, gid: string) => {
-            if (gid) {
+            if (historyScopedByDate && gid) {
               const md = monthlyDataByGereeId?.get(gid);
               const sl = pickMonthSlice(
                 md,
@@ -1700,9 +1722,11 @@ export default function DansniiKhuulga() {
             }
             if (historyScopedByDate)
               return Number(it?._totalTulsun ?? 0);
-            return gid
-              ? (paidSummaryByGereeId[gid] ?? Number(it?._totalTulsun ?? 0))
-              : Number(it?._totalTulsun ?? 0);
+            return resolveTotalPaidFromLedgerThenApi(
+              it,
+              gid || undefined,
+              paidSummaryByGereeId,
+            );
           };
           aVal = paidVal(a, gidA);
           bVal = paidVal(b, gidB);
@@ -1810,7 +1834,8 @@ export default function DansniiKhuulga() {
     if (
       !token ||
       !ajiltan?.baiguullagiinId ||
-      deduplicatedResidentsAll.length === 0
+      deduplicatedResidentsAll.length === 0 ||
+      !historyScopedByDate
     )
       return;
 
@@ -1851,6 +1876,7 @@ export default function DansniiKhuulga() {
     ajiltan?.baiguullagiinId,
     deduplicatedResidentsAll,
     contractsByNumber,
+    historyScopedByDate,
   ]);
 
   // Fetch latest row uldegdel from history ledger API for each contract
@@ -2011,9 +2037,11 @@ export default function DansniiKhuulga() {
           "";
 
         const balance = bestKnownBalances[gid] ?? Number(r?.uldegdel ?? 0);
-        const paid = gid
-          ? (paidSummaryByGereeId[gid] ?? Number(r?._totalTulsun ?? 0))
-          : Number(r?._totalTulsun ?? 0);
+        const paid = resolveTotalPaidFromLedgerThenApi(
+          r,
+          gid || undefined,
+          paidSummaryByGereeId,
+        );
 
         const isResidentPaid = balance < 0.01;
         const isPartiallyPaid = !isResidentPaid && paid > 0.1;
@@ -2244,14 +2272,15 @@ export default function DansniiKhuulga() {
           monthlyMatrixRange.monthKey,
         );
         const paidAmount =
-          monthSlice != null
+          historyScopedByDate && monthSlice != null
             ? Number(monthSlice.paid ?? 0)
             : historyScopedByDate
               ? Number(item?._totalTulsun ?? 0)
-              : gid
-                ? (paidSummaryByGereeId[gid] ??
-                  Number(item?._totalTulsun ?? 0))
-                : Number(item?._totalTulsun ?? 0);
+              : resolveTotalPaidFromLedgerThenApi(
+                  item,
+                  gid || undefined,
+                  paidSummaryByGereeId,
+                );
         const isResidentPaid = currentBalance < 0.01;
         const odooTuluv = isResidentPaid ? "Төлсөн" : "Төлөөгүй";
         const ekhniiAmt =
@@ -2490,7 +2519,10 @@ export default function DansniiKhuulga() {
                 prefix === "/geree" ||
                 prefix === "/orshinSuugch" ||
                 prefix === "/gereeniiTulukhAvlaga" ||
-                prefix.startsWith("/gereeniiTulukhAvlaga-")
+                prefix.startsWith("/gereeniiTulukhAvlaga-") ||
+                prefix === "/gereeniiTulsunAvlaga" ||
+                prefix.startsWith("/gereeniiTulsunAvlaga-") ||
+                prefix === "/tailan/resident-monthly-matrix"
               );
             },
             undefined,
@@ -2581,7 +2613,10 @@ export default function DansniiKhuulga() {
                 prefix === "/geree" ||
                 prefix === "/orshinSuugch" ||
                 prefix === "/gereeniiTulukhAvlaga" ||
-                prefix.startsWith("/gereeniiTulukhAvlaga-")
+                prefix.startsWith("/gereeniiTulukhAvlaga-") ||
+                prefix === "/gereeniiTulsunAvlaga" ||
+                prefix.startsWith("/gereeniiTulsunAvlaga-") ||
+                prefix === "/tailan/resident-monthly-matrix"
               );
             },
             undefined,
