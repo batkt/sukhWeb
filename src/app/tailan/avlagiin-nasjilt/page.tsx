@@ -13,11 +13,11 @@ import { ConfigProvider, theme as antdTheme } from "antd";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
 import PageSongokh from "components/selectZagvar/pageSongokh";
+import formatNumber from "tools/function/formatNumber";
 import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
 } from "./AvlagiinNasjiltTable";
-import { getDefaultDateRange } from "@/lib/utils";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -197,10 +197,7 @@ export default function AvlagiinNasjiltPage() {
   const [data, setData] = useState<AvlagiinNasjiltItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState<any>(null);
-  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>(() => {
-    const [start, end] = getDefaultDateRange();
-    return [new Date(start), new Date(end)];
-  });
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(200);
   const [isDark, setIsDark] = useState(false);
@@ -224,17 +221,23 @@ export default function AvlagiinNasjiltPage() {
     if (!selectedBuildingId || !baiguullaga || !token) return;
     try {
       setLoading(true);
-      const payload = {
+      const hasDateRange = dateRange?.[0] && dateRange?.[1];
+      const payload: any = {
         baiguullagiinId: baiguullaga._id,
         barilgiinId: selectedBuildingId,
-        duusakhOgnoo: dateRange?.[1]
-          ? dayjs(dateRange[1]).format("YYYY-MM-DD 23:59:59")
-          : undefined,
         khuudasniiDugaar: currentPage,
         khuudasniiKhemjee: pageSize,
         view: "detailed",
         search: searchTerm || undefined,
       };
+      // When date range is selected, send ekhlekhOgnoo/duusakhOgnoo for filtering
+      // The backend uses duusakhOgnoo as refDate for aging calculation
+      if (hasDateRange) {
+        payload.ekhlekhOgnoo = dayjs(dateRange[0]).format("YYYY-MM-DD 00:00:00");
+        payload.duusakhOgnoo = dayjs(dateRange[1]).format("YYYY-MM-DD 23:59:59");
+      }
+      // When no date range is selected, don't send dates - backend shows all unpaid
+      // and uses today as refDate by default
       const response = await uilchilgee(token).post(
         "/tailan/avlagiin-nasjilt",
         payload,
@@ -260,15 +263,18 @@ export default function AvlagiinNasjiltPage() {
       return toast.error("Хэрэглэгчийн мэдээлэл олдсонгүй");
     const toastId = toast.loading("Excel файл бэлтгэж байна...");
     try {
-      const payload = {
+      const hasDateRange = dateRange?.[0] && dateRange?.[1];
+      const payload: any = {
         report: "avlagiin-nasjilt",
         baiguullagiinId: baiguullaga?._id,
         barilgiinId: selectedBuildingId,
-        duusakhOgnoo: dateRange?.[1]
-          ? dayjs(dateRange[1]).format("YYYY-MM-DD")
-          : undefined,
+        duusakhOgnoo: dayjs().format("YYYY-MM-DD"),
         search: searchTerm || undefined,
       };
+      if (hasDateRange) {
+        payload.ekhlekhOgnoo = dayjs(dateRange[0]).format("YYYY-MM-DD");
+        payload.duusakhOgnoo = dayjs(dateRange[1]).format("YYYY-MM-DD");
+      }
       const resp = await uilchilgee(token).post("/tailan/export", payload, {
         responseType: "blob" as any,
       });
@@ -296,7 +302,7 @@ export default function AvlagiinNasjiltPage() {
   const totals = useMemo(() => {
     const fields = [
       "undsenDun", "khungulult", "tulsunDun", "uldegdel",
-      "p0_30", "p31_60", "p61_90", "p91_120", "p120plus",
+      "p0_30", "p31_60", "p61_90", "p120plus",
     ];
     const results: any = {};
     fields.forEach((f) => {
@@ -335,10 +341,16 @@ export default function AvlagiinNasjiltPage() {
 
         {/* Screen title */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 no-print flex-shrink-0">
-          <h1 className="text-2xl font-bold text-theme tracking-tight">
-            Насжилтын тайлан
-          </h1>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-2xl font-bold text-theme tracking-tight">
+              Насжилтын тайлан
+            </h1>
+            <p className="text-sm text-theme/60">
+              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(summary?.total || 0, 0)} ₮ авлага
+            </p>
+          </div>
         </div>
+
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-3 no-print flex-shrink-0">

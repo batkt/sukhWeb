@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import formatNumber from "../../../../tools/function/formatNumber";
+import formatNumber from "tools/function/formatNumber";
 
 export interface AvlagiinNasjiltItem {
   _id: string;
@@ -20,7 +20,6 @@ export interface AvlagiinNasjiltItem {
   p0_30: number;
   p31_60: number;
   p61_90: number;
-  p91_120: number;
   p120plus: number;
   [key: string]: any;
 }
@@ -38,7 +37,6 @@ interface AvlagiinNasjiltTableProps {
     p0_30: number;
     p31_60: number;
     p61_90: number;
-    p91_120: number;
     p120plus: number;
   };
 }
@@ -211,20 +209,6 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         ),
       },
       {
-        title: "91-120",
-        dataIndex: "p91_120",
-        key: "p91_120",
-        width: 80,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.avlaga91, 2)}
-            </span>
-          </div>
-        ),
-      },
-      {
         title: "120+",
         dataIndex: "p120plus",
         key: "p120plus",
@@ -300,11 +284,6 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={8} align="right">
-                  <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p91_120, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={9} align="right">
                   <span className="force-bold text-theme/70">
                     {formatNumber(totals.p120plus, 2)} ₮
                   </span>
