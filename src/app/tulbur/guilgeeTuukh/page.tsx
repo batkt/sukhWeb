@@ -63,6 +63,8 @@ import InvoiceModal from "../../geree/modals/InvoiceModal";
 import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
+import { pickMonthSlice } from "./guilgeeMonthMatrix";
+import { computeLedgerRunningBalancesByGereeId } from "./ledgerRunningBalances";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -148,44 +150,26 @@ export default function DansniiKhuulga() {
     const rawEnd = String(ekhlekhOgnoo?.[1] ?? "").trim();
     const hasDateFilter = Boolean(rawStart || rawEnd);
 
-    const startKey = toMonthKey(rawStart);
-    const endKey = toMonthKey(rawEnd);
-    const selectedMonthKey =
-      startKey && endKey && startKey === endKey
-        ? startKey
-        : startKey || endKey || "";
-
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${String(
-      now.getMonth() + 1,
-    ).padStart(2, "0")}`;
-    const isCurrentMonthFilter = Boolean(
-      hasDateFilter && selectedMonthKey && selectedMonthKey === currentMonthKey,
-    );
-
+    // Always pass the picker range to APIs when set — including "одоогийн сар".
+    // Skipping dates for the current month made the backend return unscoped rows while
+    // the UI still filtered client-side, and forced historyScopedByDate off so Үлдэгдэл /
+    // Гүйцэтгэл showed lifetime totals instead of the selected month.
     return {
       hasDateFilter,
-      isCurrentMonthFilter,
-      start: hasDateFilter && !isCurrentMonthFilter ? rawStart || undefined : undefined,
-      end: hasDateFilter && !isCurrentMonthFilter ? rawEnd || undefined : undefined,
+      start: hasDateFilter ? rawStart || undefined : undefined,
+      end: hasDateFilter ? rawEnd || undefined : undefined,
     };
   }, [ekhlekhOgnoo]);
 
+  /** True whenever a date range is active (any month, including the current one). */
   const historyScopedByDate = useMemo(
-    () =>
-      Boolean(
-        effectiveDateFilter.hasDateFilter &&
-          !effectiveDateFilter.isCurrentMonthFilter,
-      ),
+    () => Boolean(effectiveDateFilter.hasDateFilter),
     [effectiveDateFilter],
   );
 
-  const apiHistoryDateStart = historyScopedByDate
-    ? undefined
-    : effectiveDateFilter.start;
-  const apiHistoryDateEnd = historyScopedByDate
-    ? undefined
-    : effectiveDateFilter.end;
+  // Always pass selected date range to APIs so changing month triggers re-fetch.
+  const apiHistoryDateStart = effectiveDateFilter.start;
+  const apiHistoryDateEnd = effectiveDateFilter.end;
 
   useEffect(() => {
     const t = searchParams.get("tuluv");
@@ -803,21 +787,13 @@ export default function DansniiKhuulga() {
     latestRowUldegdelByGereeId,
   ]);
 
-  /** Хүснэгт/Excel: өмнөх сар сонгосон үед тухайн хугацааны сүүлийн ledger үлдэгдэл; статистикт bestKnownBalances хэвээр */
+  /** Хүснэгт/Excel: огноогоор шүүсэн хугацаанд Хуулга-тай ижил running balance (zardluud задалсан сүүлийн үлдэгдэл) */
   const tableDisplayBalances = useMemo(() => {
     if (!historyScopedByDate) return bestKnownBalances;
-    const balances: Record<string, number> = {};
-    const sortedAsc = [...allHistoryItems].sort(
-      (a: any, b: any) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
+    return computeLedgerRunningBalancesByGereeId(
+      allHistoryItems,
+      contractsByNumber,
     );
-    sortedAsc.forEach((it: any) => {
-      const gid = getGereeIdPure(it, contractsByNumber);
-      if (!gid) return;
-      if (it?.uldegdel != null && Number.isFinite(Number(it.uldegdel))) {
-        balances[gid] = Number(it.uldegdel);
-      }
-    });
-    return balances;
   }, [historyScopedByDate, allHistoryItems, contractsByNumber, bestKnownBalances]);
 
   // Filter by paid/unpaid + Орц + Давхар
@@ -1089,6 +1065,10 @@ export default function DansniiKhuulga() {
   // is always included even when filtered out. Filter which residents to show via filteredItems.
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
+    // Always aggregate from buildingHistoryItems (API + client date range + building).
+    // filteredItems also applies төлөв — using it here double-applies filters and breaks
+    // per-period _totalTulbur/_totalTulsun (Үлдэгдэл / Гүйцэтгэл).
+    const ledgerForAggregation = buildingHistoryItems;
 
     // Build set of resident keys that pass the static filters (orts, davkhar, search, toot)
     const residentKeysFromProfile = new Set<string>();
@@ -1187,7 +1167,7 @@ export default function DansniiKhuulga() {
     // FIRST PASS: Identify contracts/residents that have INVOICES containing ekhniiUldegdel in their zardluud
     const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
 
-    buildingHistoryItems.forEach((it: any) => {
+    ledgerForAggregation.forEach((it: any) => {
       // Check if this is an invoice (has zardluud or medeelel.zardluud)
       const zardluud = Array.isArray(it?.medeelel?.zardluud)
         ? it.medeelel.zardluud
@@ -1228,7 +1208,7 @@ export default function DansniiKhuulga() {
 
     // SECOND PASS: Build deduplicated residents from buildingHistoryItems (all data for correct totals)
     // Only include residents that have at least one item in filteredItems
-    buildingHistoryItems.forEach((it: any) => {
+    ledgerForAggregation.forEach((it: any) => {
       // Create a unique key for each resident
       const residentId = String(it?.orshinSuugchId || "").trim();
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -1446,6 +1426,7 @@ export default function DansniiKhuulga() {
   }, [
     filteredItems,
     buildingHistoryItems,
+    historyScopedByDate,
     contractsByNumber,
     bestKnownBalances,
     gereeGaralt?.jagsaalt,
@@ -1456,7 +1437,6 @@ export default function DansniiKhuulga() {
     searchTerm,
     tuluvFilter,
     paidSummaryByGereeId,
-    historyScopedByDate,
     tableDisplayBalances,
   ]);
 
@@ -1676,14 +1656,14 @@ export default function DansniiKhuulga() {
         if (sortField === "paid") {
           const gidA = getGid(a);
           const gidB = getGid(b);
-          const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
           const paidVal = (it: any, gid: string) => {
-            if (gid && currentPeriod) {
+            if (gid) {
               const md = monthlyDataByGereeId?.get(gid);
-              const sl =
-                md?.months?.[currentPeriod] != null
-                  ? md.months[currentPeriod]
-                  : null;
+              const sl = pickMonthSlice(
+                md,
+                monthlyPeriods,
+                monthlyMatrixRange.monthKey,
+              );
               if (sl != null) return Number(sl.paid ?? 0);
             }
             if (historyScopedByDate)
@@ -1772,6 +1752,7 @@ export default function DansniiKhuulga() {
     contractsByNumber,
     monthlyDataByGereeId,
     monthlyPeriods,
+    monthlyMatrixRange.monthKey,
     historyScopedByDate,
   ]);
 
@@ -2224,16 +2205,12 @@ export default function DansniiKhuulga() {
         const currentBalance = historyScopedByDate
           ? (tableDisplayBalances[gid] ?? historyAgg)
           : (bestKnownBalances[gid] ?? Number(item?.uldegdel ?? 0));
-        const currentPeriod = monthlyPeriods?.[monthlyPeriods.length - 1];
-        const matrixRow =
-          gid && currentPeriod
-            ? monthlyDataByGereeId?.get(gid)
-            : undefined;
-        const monthSlice =
-          currentPeriod &&
-          matrixRow?.months?.[currentPeriod] != null
-            ? matrixRow.months[currentPeriod]
-            : null;
+        const matrixRow = gid ? monthlyDataByGereeId?.get(gid) : undefined;
+        const monthSlice = pickMonthSlice(
+          matrixRow,
+          monthlyPeriods,
+          monthlyMatrixRange.monthKey,
+        );
         const paidAmount =
           monthSlice != null
             ? Number(monthSlice.paid ?? 0)
@@ -3359,6 +3336,7 @@ export default function DansniiKhuulga() {
               getGereeId={getGereeId}
               monthlyDataByGereeId={monthlyDataByGereeId}
               monthlyPeriods={monthlyPeriods}
+              matrixMonthKey={monthlyMatrixRange.monthKey}
               historyScopedByDate={historyScopedByDate}
               maxHeight="calc(100vh - 550px)"
               onViewInvoice={(residentData: any) => {
@@ -3454,6 +3432,7 @@ export default function DansniiKhuulga() {
         token={token}
         baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
         barilgiinId={selectedBuildingId || barilgiinId || null}
+        pageDateRange={ekhlekhOgnoo}
         onRefresh={() => {
           // Clear cache and revalidate all relevant data
           mutate(

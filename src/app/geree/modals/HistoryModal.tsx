@@ -37,6 +37,8 @@ interface HistoryModalProps {
   baiguullagiinId: string | null;
   barilgiinId?: string | null;
   onRefresh?: () => void;
+  /** When opening from /tulbur (etc.), pre-fill the ledger date filter so it matches the list page. */
+  pageDateRange?: [string | null, string | null] | undefined;
 }
 
 interface LedgerEntry {
@@ -169,6 +171,7 @@ export default function HistoryModal({
   baiguullagiinId,
   barilgiinId,
   onRefresh,
+  pageDateRange,
 }: HistoryModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const constraintsRef = useRef<HTMLDivElement>(null);
@@ -1092,13 +1095,21 @@ export default function HistoryModal({
     setDeleteConfirm({ show: false, id: "", type: "" });
   };
 
+  const pageRangeStart = pageDateRange?.[0] ?? null;
+  const pageRangeEnd = pageDateRange?.[1] ?? null;
+
   useEffect(() => {
     if (show && contract) {
       setData([]);
       setGlobalUldegdel(null);
+      if (pageRangeStart || pageRangeEnd) {
+        setDateRange([pageRangeStart, pageRangeEnd]);
+      } else {
+        setDateRange([null, null]);
+      }
       fetchData();
     }
-  }, [show, contract]);
+  }, [show, contract, pageRangeStart, pageRangeEnd]);
 
   const filteredData = useMemo(() => {
     const parseInputDateMs = (v: any, isEnd: boolean) => {

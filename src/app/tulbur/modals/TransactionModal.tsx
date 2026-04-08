@@ -75,6 +75,8 @@ export default function TransactionModal({
   const [isFetchingBalance, setIsFetchingBalance] = useState(false);
   const [isFetchingLatest, setIsFetchingLatest] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
+  // Simplified ashiglalt UI: keep amount fully manual, disable legacy auto-calc side effects.
+  const useLegacyAshiglaltCalculator = false;
 
   // Determine if umnukhZaalt is editable (if initial value is 0 or undefined)
   const initialUmnukhVal = resident?.umnukhZaalt ?? resident?.suuliinZaalt;
@@ -206,13 +208,20 @@ export default function TransactionModal({
 
   React.useEffect(() => {
     if (
+      useLegacyAshiglaltCalculator &&
       show &&
       transactionType === "ashiglalt" &&
       ashiglaltZardal === "tsakhilgaan_kv"
     ) {
       fetchLatestZaalt();
     }
-  }, [show, transactionType, ashiglaltZardal, resident?._id]);
+  }, [
+    show,
+    transactionType,
+    ashiglaltZardal,
+    resident?._id,
+    useLegacyAshiglaltCalculator,
+  ]);
 
   useModalHotkeys({
     isOpen: show,
@@ -323,6 +332,7 @@ export default function TransactionModal({
   // Auto-calculate when user finishes typing or changes toggles
   React.useEffect(() => {
     if (
+      useLegacyAshiglaltCalculator &&
       show &&
       transactionType === "ashiglalt" &&
       ashiglaltZardal === "tsakhilgaan_kv" &&
@@ -341,6 +351,7 @@ export default function TransactionModal({
     umnukhZaalt,
     suuliinZaalt,
     show,
+    useLegacyAshiglaltCalculator,
   ]);
 
   const handleSubmit = async () => {
@@ -534,25 +545,27 @@ export default function TransactionModal({
                 )}
               </AnimatePresence>
 
-              {/* Date Input */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                    Огноо
-                  </label>
-                  <input
-                    type="date"
-                    value={transactionDate}
-                    onChange={(e) => setTransactionDate(e.target.value)}
-                    disabled={isProcessing}
-                    className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
-                  />
-                </div>
+              {/* Form Content */}
+              {transactionType === "ashiglalt" ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4 items-end">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                        Огноо
+                      </label>
+                      <input
+                        type="date"
+                        value={transactionDate}
+                        onChange={(e) => setTransactionDate(e.target.value)}
+                        disabled={isProcessing}
+                        className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                      />
+                    </div>
+                  </div>
 
-                {transactionType === "ashiglalt" ? (
                   <div className="space-y-1.5">
                     <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Ашиглалтын зардал
+                      Зардлын төрөл
                     </label>
                     <select
                       value={ashiglaltZardal}
@@ -568,7 +581,60 @@ export default function TransactionModal({
                       <option value="tsakhilgaan_kv">Цахилгаан кВ</option>
                     </select>
                   </div>
-                ) : (
+
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      value={amount}
+                      inputMode="decimal"
+                      onChange={(e) => {
+                        // Keep ashiglalt input responsive while typing
+                        const inputVal = e.target.value
+                          .replace(/,/g, "")
+                          .replace(/[^\d.]/g, "");
+                        const parts = inputVal.split(".");
+                        const normalized =
+                          parts.length > 2
+                            ? `${parts[0]}.${parts.slice(1).join("")}`
+                            : inputVal;
+                        setAmount(normalized);
+                      }}
+                      onBlur={() => {
+                        if (amount) setAmount(formatAmount(amount));
+                      }}
+                      disabled={isProcessing}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right text-lg font-semibold"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-[color:var(--muted-text)]">
+                      Суурь хураамж:{" "}
+                      {(calcBreakdown?.suuriKhuraamj ?? 0).toLocaleString(
+                        "en-US",
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
+                      Огноо
+                    </label>
+                    <input
+                      type="date"
+                      value={transactionDate}
+                      onChange={(e) => setTransactionDate(e.target.value)}
+                      disabled={isProcessing}
+                      className="w-full px-3 py-2.5 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm"
+                    />
+                  </div>
                   <div className="space-y-1.5 relative group">
                     <div className="flex justify-between items-end mb-1.5">
                       <label className="block text-xs text-[color:var(--panel-text)]">
@@ -581,12 +647,11 @@ export default function TransactionModal({
                             animate={{ opacity: 1, x: 0 }}
                             onDoubleClick={fillAmountWithBalance}
                             title="Хоёр товшиж дүнг оруулах"
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none
-                          ${
-                            isFetchingBalance
-                              ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse"
-                              : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
-                          }`}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-2xl border cursor-pointer transition-all select-none ${
+                              isFetchingBalance
+                                ? "bg-gray-100 text-gray-400 border-gray-200 animate-pulse"
+                                : "bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100 active:scale-95"
+                            }`}
                           >
                             Үлдэгдэл:{" "}
                             {residentBalance.toLocaleString("en-US", {
@@ -617,176 +682,15 @@ export default function TransactionModal({
                         }}
                         disabled={isProcessing}
                         placeholder="0.00"
-                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold"
+                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-right tracking-wide text-lg font-semibold"
                       />
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium"></span>
                     </div>
                   </div>
-                )}
-              </div>
-
-              {/* Ashiglalt Details (Redesigned) */}
-              {transactionType === "ashiglalt" &&
-                ashiglaltZardal === "tsakhilgaan_kv" && (
-                  <div className="bg-[color:var(--surface-hover)]/40 p-3.5 rounded-2xl border border-[color:var(--surface-border)] space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-[color:var(--panel-text)] tracking-tight">
-                        Заалт оруулах
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">
-                          Өмнөх
-                        </label>
-                        <div className="relative group/input">
-                          <input
-                            type="text"
-                            value={umnukhZaalt}
-                            readOnly={!isUmnukhEditable}
-                            onChange={(e) => {
-                              const inputVal = e.target.value;
-                              const formatted = formatWhileTyping(inputVal);
-                              setUmnukhZaalt(formatted);
-                            }}
-                            onBlur={() => {
-                              if (umnukhZaalt) {
-                                setUmnukhZaalt(formatAmount(umnukhZaalt));
-                              }
-                            }}
-                            placeholder="0.00"
-                            className={`w-full px-3 py-1.5 pr-[38px] border border-[color:var(--surface-border)] rounded-2xl focus:outline-none transition-all text-sm text-right font-bold ${
-                              isUmnukhEditable
-                                ? "bg-[color:var(--surface-bg)] text-[color:var(--panel-text)]"
-                                : "bg-[color:var(--surface-hover)]/60 text-[color:var(--muted-text)]"
-                            }`}
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                            .00
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-[color:var(--muted-text)] ml-1">
-                          Одоо
-                        </label>
-                        <div className="relative group/input">
-                          <input
-                            type="text"
-                            value={suuliinZaalt}
-                            onChange={(e) => {
-                              const inputVal = e.target.value;
-                              const formatted = formatWhileTyping(inputVal);
-                              setSuuliinZaalt(formatted);
-                            }}
-                            onBlur={() => {
-                              if (suuliinZaalt) {
-                                setSuuliinZaalt(formatAmount(suuliinZaalt));
-                              }
-                            }}
-                            disabled={isProcessing}
-                            placeholder="0.00"
-                            className="w-full px-3 py-1.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 transition-all text-sm text-right font-bold"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                            .00
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5 border-t border-[color:var(--surface-border)]/60">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[color:var(--muted-text)]">
-                          Суурь хураамж:
-                        </span>
-                        <span className="text-xs font-bold text-[color:var(--panel-text)]">
-                          {calcBreakdown?.suuriKhuraamj
-                            ? calcBreakdown.suuriKhuraamj.toLocaleString()
-                            : "0"}
-                        </span>
-                      </div>
-
-                      <label className="flex items-center gap-2 cursor-pointer group ml-auto select-none">
-                        <span className="text-[10px] font-bold text-[color:var(--muted-text)] group-hover:text-[color:var(--theme)] transition-colors">
-                          Нэхэмжлэх дээр харах эсэх
-                        </span>
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            className="sr-only"
-                            checked={showUsageOnInvoice}
-                            onChange={() =>
-                              setShowUsageOnInvoice(!showUsageOnInvoice)
-                            }
-                          />
-                          <div
-                            className={`block w-9 h-5 rounded-full transition-colors duration-200 ease-in-out ${
-                              showUsageOnInvoice
-                                ? "neu-panel-2"
-                                : "bg-zinc-200 dark:bg-zinc-700"
-                            }`}
-                          />
-                          <div
-                            className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform duration-200 ease-in-out shadow-sm ${
-                              showUsageOnInvoice
-                                ? "translate-x-4"
-                                : "translate-x-0"
-                            }`}
-                          />
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-              {/* Tailbar & Amount (Conditionally Rendered) */}
-              {transactionType === "ashiglalt" ? (
-                <div className="grid grid-cols-2 gap-4 items-start">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Тайлбар
-                    </label>
-                    <textarea
-                      value={tailbar}
-                      onChange={(e) => setTailbar(e.target.value)}
-                      disabled={isProcessing}
-                      placeholder="Гүйлгээний утга..."
-                      rows={2}
-                      className="w-full px-3 py-2 border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm resize-none h-[40px]"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
-                      Дүн
-                    </label>
-                    <div className="relative w-full group/input">
-                      <input
-                        type="text"
-                        value={amount}
-                        onChange={(e) => {
-                          const inputVal = e.target.value;
-                          const formatted = formatWhileTyping(inputVal);
-                          setAmount(formatted);
-                        }}
-                        onBlur={() => {
-                          if (amount) {
-                            setAmount(formatAmount(amount));
-                          }
-                        }}
-                        disabled={isProcessing}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2.5 pr-[38px] border border-[color:var(--surface-border)] bg-[color:var(--surface-bg)] text-[color:var(--panel-text)] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[color:var(--theme)]/20 focus:border-[color:var(--theme)] transition-all text-sm text-right tracking-wide text-lg font-semibold !h-[40px]"
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-xs pointer-events-none select-none font-medium">
-                        .00
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              ) : (
+              )}
+
+              {transactionType !== "ashiglalt" && (
                 <div className="space-y-1.5">
                   <label className="block text-xs text-[color:var(--panel-text)] mb-1.5">
                     Тайлбар

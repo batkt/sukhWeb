@@ -5,6 +5,7 @@ import { Table } from "antd";
 import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
+import { pickMonthSlice } from "./guilgeeMonthMatrix";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -29,6 +30,8 @@ interface GuilgeeTableProps {
   getGereeId: (it: any) => string;
   monthlyDataByGereeId?: Map<string, any>;
   monthlyPeriods?: string[];
+  /** YYYY-MM from the date picker — must match matrix `months` keys for the selected month */
+  matrixMonthKey?: string;
   /** When set, жагсаалтын түүх огноогоор таслагдсан — matrix-т мөр байвал тухайн сарын billed/paid ашиглана */
   historyScopedByDate?: boolean;
   onViewInvoice: (resident: any) => void;
@@ -57,6 +60,7 @@ export default function GuilgeeTable({
   getGereeId,
   monthlyDataByGereeId,
   monthlyPeriods,
+  matrixMonthKey,
   historyScopedByDate = false,
   onViewInvoice,
   onViewHistory,
@@ -324,12 +328,11 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const currentPeriod =
-                monthlyPeriods?.[monthlyPeriods.length - 1];
-              const monthSlice =
-                currentPeriod && monthlyData?.months?.[currentPeriod] != null
-                  ? monthlyData.months[currentPeriod]
-                  : null;
+              const monthSlice = pickMonthSlice(
+                monthlyData,
+                monthlyPeriods,
+                matrixMonthKey,
+              );
               const fallbackPaid = gid
                 ? (paidSummaryByGereeId[gid] ??
                   Number(record?._totalTulsun ?? 0))
@@ -355,12 +358,11 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const currentPeriod =
-                monthlyPeriods?.[monthlyPeriods.length - 1];
-              const monthSlice =
-                currentPeriod && monthlyData?.months?.[currentPeriod] != null
-                  ? monthlyData.months[currentPeriod]
-                  : null;
+              const monthSlice = pickMonthSlice(
+                monthlyData,
+                monthlyPeriods,
+                matrixMonthKey,
+              );
               const billedDisplay =
                 monthSlice != null
                   ? Number(monthSlice.billed ?? 0)
@@ -407,12 +409,11 @@ export default function GuilgeeTable({
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
               const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const currentPeriod =
-                monthlyPeriods?.[monthlyPeriods.length - 1];
-              const monthSlice =
-                currentPeriod && monthlyData?.months?.[currentPeriod] != null
-                  ? monthlyData.months[currentPeriod]
-                  : null;
+              const monthSlice = pickMonthSlice(
+                monthlyData,
+                monthlyPeriods,
+                matrixMonthKey,
+              );
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
@@ -619,6 +620,7 @@ export default function GuilgeeTable({
     deduplicatedResidents,
     monthlyDataByGereeId,
     monthlyPeriods,
+    matrixMonthKey,
     historyScopedByDate,
   ]);
 
@@ -681,13 +683,11 @@ export default function GuilgeeTable({
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
                     : null;
-                  const currentPeriod =
-                    monthlyPeriods?.[monthlyPeriods.length - 1];
-                  const monthSlice =
-                    currentPeriod &&
-                    monthlyData?.months?.[currentPeriod] != null
-                      ? monthlyData.months[currentPeriod]
-                      : null;
+                  const monthSlice = pickMonthSlice(
+                    monthlyData,
+                    monthlyPeriods,
+                    matrixMonthKey,
+                  );
                   const v =
                     monthSlice != null
                       ? Number(monthSlice.billed ?? 0)
@@ -708,13 +708,11 @@ export default function GuilgeeTable({
                   const monthlyData = gid
                     ? monthlyDataByGereeId?.get(gid)
                     : null;
-                  const currentPeriod =
-                    monthlyPeriods?.[monthlyPeriods.length - 1];
-                  const monthSlice =
-                    currentPeriod &&
-                    monthlyData?.months?.[currentPeriod] != null
-                      ? monthlyData.months[currentPeriod]
-                      : null;
+                  const monthSlice = pickMonthSlice(
+                    monthlyData,
+                    monthlyPeriods,
+                    matrixMonthKey,
+                  );
                   const v =
                     monthSlice != null
                       ? Number(monthSlice.paid ?? 0)
