@@ -244,7 +244,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           const ekhnii = Number(record._ekhniiUldegdel ?? 0);
           const tulbur = Number(record._periodTulbur ?? 0);
           const paid = Number(record._periodPaid ?? getPaid(record));
-          const uldegdel = ekhnii + tulbur - paid;
+          const uldegdel = record._finalUldegdel !== undefined ? Number(record._finalUldegdel) : (ekhnii + tulbur - paid);
           return (
             <button
               type="button"

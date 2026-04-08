@@ -19,6 +19,9 @@ import PageSongokh from "../../../../components/selectZagvar/pageSongokh";
 import { FileSpreadsheet, Printer } from "lucide-react";
 import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
 import toast from "react-hot-toast";
+import { pickMonthSlice } from "../../tulbur/guilgeeTuukh/guilgeeMonthMatrix";
+import { computeLedgerRunningBalancesByGereeId } from "../../tulbur/guilgeeTuukh/ledgerRunningBalances";
+import { aggregateLedgerTulsunByGereeId } from "../../tulbur/guilgeeTuukh/guilgeePaidDisplay";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -175,12 +178,63 @@ export default function OrlogoAvlagaPage() {
     ajiltan?.baiguullagiinId ?? null,
     effectiveBarilgiinId,
   );
-  const [paidByGereeId, setPaidByGereeId] = useState<Record<string, number>>(
-    {},
+
+  const toMonthKey = (v?: string | null) => {
+    if (!v) return "";
+    const [y, m] = v.split("-");
+    if (!y || !m) return "";
+    return `${y}-${m.padStart(2, "0")}`;
+  };
+
+  const monthlyMatrixRange = useMemo(() => {
+    const [rawStart, rawEnd] = dateRange || [];
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const selectedMonthKey =
+      startKey && endKey && startKey === endKey
+        ? startKey
+        : startKey || endKey || "";
+
+    const now = new Date();
+    const fallbackMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+    const monthKey = selectedMonthKey || fallbackMonthKey;
+
+    const [yy, mm] = monthKey.split("-").map((v) => parseInt(v, 10));
+    const monthIdx = Number.isFinite(mm) ? mm - 1 : now.getMonth();
+    const yearVal = Number.isFinite(yy) ? yy : now.getFullYear();
+
+    const start = new Date(yearVal, monthIdx, 1, 0, 0, 0, 0);
+    const end = new Date(yearVal, monthIdx + 1, 0, 23, 59, 59, 999);
+    return { start: start.toISOString(), end: end.toISOString(), monthKey };
+  }, [dateRange]);
+
+  const { data: monthlyMatrixData } = useSWR(
+    token && ajiltan?.baiguullagiinId
+      ? [
+          "/tailan/resident-monthly-matrix",
+          token,
+          ajiltan.baiguullagiinId,
+          effectiveBarilgiinId || null,
+          monthlyMatrixRange.start,
+          monthlyMatrixRange.end,
+        ]
+      : null,
+    async ([, tkn, orgId, branch, start, end]) => {
+      const resp = await uilchilgee(tkn).get("/tailan/resident-monthly-matrix", {
+        params: {
+          baiguullagiinId: orgId,
+          barilgiinId: branch || undefined,
+          ekhlekhOgnoo: start,
+          duusakhOgnoo: end,
+        },
+      });
+      return resp.data;
+    },
+    { revalidateOnFocus: false },
   );
-  const [uldegdelByGereeId, setUldegdelByGereeId] = useState<
-    Record<string, number | null>
-  >({});
+
   const paidRequestedRef = useRef<Set<string>>(new Set());
   const uldegdelRequestedRef = useRef<Set<string>>(new Set());
 
@@ -371,280 +425,90 @@ export default function OrlogoAvlagaPage() {
   }, [historyData, receivableData, paymentRecordsData]);
 
   const buildingHistoryItems = allHistoryItems;
+  
+  const ledgerBalances = useMemo(() => {
+    return computeLedgerRunningBalancesByGereeId(buildingHistoryItems, contractsByNumber);
+  }, [buildingHistoryItems, contractsByNumber]);
+
+  const ledgerPaidTable = useMemo(() => {
+    return aggregateLedgerTulsunByGereeId(buildingHistoryItems, contractsByNumber);
+  }, [buildingHistoryItems, contractsByNumber]);
 
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
-    // First, add ALL contracts from gereeGaralt (ensures we have all 109 residents)
+    // Process each resident to pull sync'd values from the matrix and ledger
     (gereeGaralt?.jagsaalt || []).forEach((ct: any) => {
-      const gereeId = String(ct?._id || "").trim();
-      if (!gereeId) return;
+      const gid = String(ct?._id || "").trim();
+      if (!gid) return;
 
       const residentId = String(ct?.orshinSuugchId || "").trim();
-      const gereeDugaar = String(ct?.gereeniiDugaar || "").trim();
       const r = residentId ? residentsById[residentId] : undefined;
 
-      map.set(gereeId, {
+      // 1. Төлөх дүн (Billed) from Matrix Month Slice
+      const matrixSlice = pickMonthSlice(
+        monthlyMatrixData,
+        monthlyMatrixData?.periods,
+        monthlyMatrixRange.monthKey,
+      );
+      const rowSlice = matrixSlice?.[gid] || matrixSlice?.[ct.gereeniiDugaar];
+      const periodBilled = Number(rowSlice?.niitTulukhDun ?? 0);
+
+      // 2. Төлсөн (Paid) from Ledger aggregation
+      const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
+
+      // 3. Эцсийн үлдэгдэл (Final Balance) from Running Ledger
+      const finalBal =
+        ledgerBalances[gid] != null
+          ? Number(ledgerBalances[gid])
+          : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
+
+      // 4. Эхний үлдэгдэл (Opening Balance) derived mathematically
+      // Formula: Opening = Final - PeriodActivity
+      // Activity = Billed - Paid
+      // Opening = Final - (Billed - Paid) = Final + Paid - Billed
+      const ekhBal = finalBal + periodPaid - periodBilled;
+
+      map.set(gid, {
         ...ct,
-        _gereeId: gereeId,
-        _gereeDugaar: gereeDugaar || ct?.gereeniiDugaar || "",
+        _gereeId: gid,
+        _gereeDugaar: ct?.gereeniiDugaar || "",
         _residentId: residentId,
         _ner: r?.ner ?? ct?.ner ?? "",
         _ovog: r?.ovog ?? ct?.ovog ?? "",
         _utas: r?.utas ?? ct?.utas ?? "",
         _toot: r?.toot ?? ct?.toot ?? "",
         _davkhar: r?.davkhar ?? ct?.davkhar ?? "",
-        _ekhniiUldegdel: 0, // Will be calculated from history
-        _periodPaid: 0,
-        _periodTulbur: 0,
+        _ekhniiUldegdel: Math.round(ekhBal * 100) / 100,
+        _periodPaid: Math.round(periodPaid * 100) / 100,
+        _periodTulbur: Math.round(periodBilled * 100) / 100,
+        _finalUldegdel: Math.round(finalBal * 100) / 100,
       });
-    });
-
-    // Track contracts that have opening balance in their invoice
-    const contractsWithEkhniiInInvoice = new Set<string>();
-    buildingHistoryItems.forEach((it: any) => {
-      const zardluud = Array.isArray(it?.medeelel?.zardluud)
-        ? it.medeelel.zardluud
-        : Array.isArray(it?.zardluud)
-          ? it.zardluud
-          : [];
-      const hasEkhUld = zardluud.some((z: any) => {
-        const ner = String(z?.ner || "").toLowerCase();
-        return (
-          (z?.isEkhniiUldegdel === true ||
-            ner.includes("эхний үлдэгдэл") ||
-            ner.includes("ekhniuldegdel")) &&
-          Number(z?.dun || z?.tariff || 0) !== 0
-        );
-      });
-      if (hasEkhUld) {
-        const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
-        const gd = String(it?.gereeniiDugaar || "").trim();
-        if (gid) contractsWithEkhniiInInvoice.add(gid);
-        if (gd) contractsWithEkhniiInInvoice.add(gd);
-      }
-    });
-
-    // Process history items to calculate period amounts and opening balances
-    buildingHistoryItems.forEach((it: any) => {
-      const residentId = String(it?.orshinSuugchId || "").trim();
-      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
-      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
-      if (!gereeId && gereeDugaar && contractsByNumber[gereeDugaar]?._id) {
-        gereeId = String(contractsByNumber[gereeDugaar]._id);
-      }
-      const ner = String(it?.ner || "")
-        .trim()
-        .toLowerCase();
-      const utas = Array.isArray(it?.utas)
-        ? String(it.utas[0] || "").trim()
-        : String(it?.utas || "").trim();
-      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
-      const key =
-        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
-      if (!key || key === "||") return;
-
-      // Check if this is a standalone opening balance record
-      const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
-      if (isStandaloneEkh) {
-        const contractHasIt =
-          (gereeId && contractsWithEkhniiInInvoice.has(gereeId)) ||
-          (gereeDugaar && contractsWithEkhniiInInvoice.has(gereeDugaar));
-        if (contractHasIt) return; // Skip if already in invoice
-      }
-
-      const ct = gereeId
-        ? contractsById[gereeId]
-        : gereeDugaar
-          ? contractsByNumber[gereeDugaar]
-          : undefined;
-      const r = residentId ? residentsById[residentId] : undefined;
-
-      if (!map.has(key)) {
-        map.set(key, {
-          ...it,
-          _gereeId: gereeId,
-          _gereeDugaar:
-            gereeDugaar || ct?.gereeniiDugaar || it?.gereeniiDugaar || "",
-          _residentId: residentId,
-          _ner: r?.ner ?? it?.ner ?? ct?.ner ?? "",
-          _ovog: r?.ovog ?? it?.ovog ?? ct?.ovog ?? "",
-          _utas: r?.utas ?? it?.utas ?? ct?.utas ?? "",
-          _toot: r?.toot ?? ct?.toot ?? it?.toot ?? it?.medeelel?.toot ?? "",
-          _davkhar: r?.davkhar ?? ct?.davkhar ?? it?.davkhar ?? "",
-          _ekhniiUldegdel: 0,
-          _periodPaid: 0,
-          _periodTulbur: 0,
-        });
-      }
-
-      const existing = map.get(key);
-      const recordIsStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
-      const itemAmount = recordIsStandaloneEkh
-        ? Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0
-        : Number(
-            it?.tulsunDun ??
-              it?.tulsun ??
-              it?.niitTulbur ??
-              it?.niitDun ??
-              it?.total ??
-              it?.tulukhDun ??
-              it?.undsenDun ??
-              it?.dun ??
-              0,
-          ) || 0;
-
-      const type = String(it?.turul || it?.type || "").toLowerCase();
-      const isPayment =
-        type === "tulult" ||
-        type === "төлбөр" ||
-        type === "төлөлт" ||
-        type === "төлбөрийн баримт" ||
-        type === "tulbur" ||
-        (itemAmount < 0 && !recordIsStandaloneEkh);
-
-      // If this is an opening balance record, add to _ekhniiUldegdel
-      if (
-        recordIsStandaloneEkh ||
-        (Array.isArray(it?.medeelel?.zardluud) &&
-          it.medeelel.zardluud.some(
-            (z: any) =>
-              z?.isEkhniiUldegdel === true ||
-              String(z?.ner || "")
-                .toLowerCase()
-                .includes("эхний үлдэгдэл"),
-          ))
-      ) {
-        existing._ekhniiUldegdel += itemAmount;
-      } else if (isPayment) {
-        existing._periodPaid += Math.abs(itemAmount);
-      } else {
-        existing._periodTulbur += itemAmount;
-        // Also capture embedded payments in invoices (tulsunDun)
-        existing._periodPaid += Number(it?.tulsunDun ?? it?.tulsun ?? 0) || 0;
-      }
     });
 
     return Array.from(map.values());
   }, [
     buildingHistoryItems,
+    ledgerBalances,
+    ledgerPaidTable,
+    monthlyMatrixData,
+    monthlyMatrixRange.monthKey,
     contractsByNumber,
     contractsById,
     residentsById,
     gereeGaralt,
   ]);
 
-  useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0)
-      return;
-    deduplicatedResidents.forEach((it: any) => {
-      const gid = String(
-        it?._gereeId || it?.gereeniiId || it?.gereeId || "",
-      ).trim();
-      const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
-      const queryKey = gid || rid;
-      if (
-        !queryKey ||
-        paidRequestedRef.current.has(queryKey) ||
-        paidByGereeId[queryKey] !== undefined
-      )
-        return;
-      paidRequestedRef.current.add(queryKey);
-      uilchilgee(token)
-        .post("/tulsunSummary", {
-          baiguullagiinId,
-          ...(gid ? { gereeniiId: gid } : { orshinSuugchId: rid }),
-        })
-        .then((resp) => {
-          const total =
-            Number(
-              resp.data?.totalTulsunDun ?? resp.data?.totalInvoicePayment ?? 0,
-            ) || 0;
-          setPaidByGereeId((prev) => ({ ...prev, [queryKey]: total }));
-        })
-        .catch(() => {
-          paidRequestedRef.current.delete(queryKey);
-        });
-    });
-  }, [token, baiguullagiinId, deduplicatedResidents]);
-
-  useEffect(() => {
-    if (!token || !baiguullagiinId || deduplicatedResidents.length === 0)
-      return;
-    deduplicatedResidents.forEach((it: any) => {
-      const gid = it?._gereeId || "";
-      if (!gid || uldegdelRequestedRef.current.has(gid)) return;
-      const existing = uldegdelByGereeId[gid];
-      if (
-        existing !== undefined &&
-        existing !== null &&
-        Number.isFinite(existing)
-      )
-        return;
-      uldegdelRequestedRef.current.add(gid);
-      uilchilgee(token)
-        .get(`/geree/${gid}/history-ledger`, {
-          params: {
-            baiguullagiinId,
-            ...(selectedBuildingId ? { barilgiinId: selectedBuildingId } : {}),
-            _t: Date.now(),
-          },
-        })
-        .then((resp) => {
-          const ledger = Array.isArray(resp.data?.jagsaalt)
-            ? resp.data.jagsaalt
-            : Array.isArray(resp.data?.ledger)
-              ? resp.data.ledger
-              : Array.isArray(resp.data)
-                ? resp.data
-                : [];
-          const latestRow =
-            ledger.length > 0 ? ledger[ledger.length - 1] : null;
-          const val =
-            latestRow?.uldegdel != null &&
-            Number.isFinite(Number(latestRow.uldegdel))
-              ? Number(latestRow.uldegdel)
-              : null;
-          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: val }));
-        })
-        .catch(() => {
-          uldegdelRequestedRef.current.delete(gid);
-          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: null }));
-        });
-    });
-  }, [token, baiguullagiinId, selectedBuildingId, deduplicatedResidents]);
-
-  useEffect(() => {
-    setPaidByGereeId({});
-    setUldegdelByGereeId({});
-    paidRequestedRef.current.clear();
-    uldegdelRequestedRef.current.clear();
-  }, [selectedBuildingId, baiguullagiinId, dateRange]);
 
   const getGereeId = (it: any) =>
     String(it?._gereeId || it?.gereeniiId || it?.gereeId || "").trim();
 
   const getPaid = (it: any): number => {
-    // Priority: Period-specific paid amount discovery from buildingHistoryItems
-    if (it?._periodPaid !== undefined) return it._periodPaid;
-
-    const gid = getGereeId(it);
-    const rid = String(it?._residentId || it?.orshinSuugchId || "").trim();
-    const key = gid || rid;
-    // Fallback to life-to-date summary if history items didn't capture it (less likely but safe)
-    return key && paidByGereeId[key] !== undefined ? paidByGereeId[key] : 0;
+    return Number(it?._periodPaid ?? 0);
   };
 
   const getUldegdel = (it: any): number => {
-    const gid = getGereeId(it);
-    if (gid) {
-      const val = uldegdelByGereeId[gid];
-      if (val != null && Number.isFinite(val)) return val;
-      const ct = contractsById[gid];
-      if (ct?.uldegdel != null && Number.isFinite(Number(ct.uldegdel)))
-        return Number(ct.uldegdel);
-    }
-    return Number(it?.uldegdel ?? 0);
+    return Number(it?._finalUldegdel ?? it?.uldegdel ?? 0);
   };
 
   const matchesFilters = (it: any): boolean => {
@@ -688,14 +552,14 @@ export default function OrlogoAvlagaPage() {
       deduplicatedResidents.filter(
         (it) => matchesFilters(it) && getPaid(it) > 0,
       ),
-    [deduplicatedResidents, paidByGereeId, debouncedFilters, searchTerm],
+    [deduplicatedResidents, debouncedFilters, searchTerm],
   );
   const avlagaList = useMemo(
     () =>
       deduplicatedResidents.filter(
         (it) => matchesFilters(it) && getUldegdel(it) > 0,
       ),
-    [deduplicatedResidents, uldegdelByGereeId, debouncedFilters, searchTerm],
+    [deduplicatedResidents, debouncedFilters, searchTerm],
   );
 
   const allList = useMemo(
@@ -736,7 +600,7 @@ export default function OrlogoAvlagaPage() {
       deduplicatedResidents
         .filter(matchesFilters)
         .reduce((s, it) => s + getPaid(it), 0),
-    [deduplicatedResidents, paidByGereeId, searchTerm, debouncedFilters],
+    [deduplicatedResidents, searchTerm, debouncedFilters],
   );
 
   const totalUldegdel = useMemo(
@@ -744,7 +608,7 @@ export default function OrlogoAvlagaPage() {
       deduplicatedResidents
         .filter(matchesFilters)
         .reduce((s, it) => s + getUldegdel(it), 0),
-    [deduplicatedResidents, uldegdelByGereeId, searchTerm, debouncedFilters],
+    [deduplicatedResidents, searchTerm, debouncedFilters],
   );
   const handleRowClick = async (it: any) => {
     setSelectedRecord(it);
