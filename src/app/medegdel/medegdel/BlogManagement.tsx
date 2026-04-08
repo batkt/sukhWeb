@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Input, Modal, notification, Card, Popconfirm } from "antd";
+import { Input, Modal, notification, Popconfirm } from "antd";
 import Button from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { SearchIcon, Plus, ImagePlus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
@@ -13,7 +13,6 @@ import { openErrorOverlay } from "@/components/ui/ErrorOverlay";
 import useSWR from "swr";
 import Aos from "aos";
 import { StandardPagination } from "@/components/ui/StandardTable";
-import ExpandableCardDemo from "@/components/ui/expandable-card-demo-grid";
 
 interface BlogReaction {
   emoji: string;
@@ -250,68 +249,62 @@ export default function BlogManagement() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="pb-4">
-              <ExpandableCardDemo
-                cards={paginatedBlogs.map(blog => ({
-                  _id: blog._id,
-                  title: blog.title,
-                  description: new Date(blog.createdAt).toLocaleDateString(),
-                  src: blog.images && blog.images.length > 0 ? getImageUrl(blog.images[0]) : "/placeholder-blog.png",
-                  previewContent: blog.content,
-                  content: () => (
-                    <div className="space-y-4">
-                      {/* Detailed Content */}
-                      <div className="flex flex-col gap-4">
-                        <p className="whitespace-pre-wrap leading-relaxed text-neutral-700 dark:text-neutral-300">
+            <div className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5">
+              <div className="max-h-[calc(100vh-360px)] overflow-auto custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedBlogs.map((blog) => (
+                    <article
+                      key={blog._id}
+                      className="h-[380px] rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col"
+                    >
+                      <div className="h-1/2 bg-slate-100">
+                        <img
+                          src={
+                            blog.images && blog.images.length > 0
+                              ? getImageUrl(blog.images[0])
+                              : "/placeholder-blog.png"
+                          }
+                          alt={blog.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="h-1/2 bg-white border-t border-slate-200 p-4 flex flex-col">
+                        <h3 className="text-sm font-medium text-slate-900 line-clamp-1 mb-1">{blog.title}</h3>
+                        <p className="text-[11px] text-slate-500 mb-2">
+                          {new Date(blog.createdAt).toLocaleString("mn-MN")}
+                        </p>
+                        <p className="text-sm text-slate-600 line-clamp-3 flex-1">
                           {blog.content}
                         </p>
-                        
-                        {/* Reactions in expanded view */}
-                        {(blog.reactions && blog.reactions.length > 0) && (
-                          <div className="flex flex-wrap gap-2 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                            {blog.reactions.map((r, i) => (
-                              <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 shadow-sm">
-                                <span className="text-base">{r.emoji}</span>
-                                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">{r.count}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-3 pt-4 border-t border-neutral-100 dark:border-neutral-800">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenModal(blog);
-                          }}
-                          className="flex items-center gap-2"
-                        >
-                          <Edit2 size={14} /> Засах
-                        </Button>
-                        <Popconfirm
-                          title="Устгах уу?"
-                          onConfirm={() => handleDelete(blog._id)}
-                          okText="Тийм"
-                          cancelText="Үгүй"
-                        >
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-2"
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleOpenModal(blog)}
+                            className="h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                            title="Засах"
                           >
-                            <Trash2 size={14} /> Устгах
-                          </Button>
-                        </Popconfirm>
+                            <Edit2 size={14} />
+                            Засах
+                          </button>
+                          <Popconfirm
+                            title="Устгах уу?"
+                            onConfirm={() => handleDelete(blog._id)}
+                            okText="Тийм"
+                            cancelText="Үгүй"
+                          >
+                            <button
+                              className="h-8 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                              title="Устгах"
+                            >
+                              <Trash2 size={14} />
+                              Устгах
+                            </button>
+                          </Popconfirm>
+                        </div>
                       </div>
-                    </div>
-                  ),
-                  originalData: blog
-                }))}
-              />
+                    </article>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <StandardPagination

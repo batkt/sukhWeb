@@ -11,6 +11,8 @@ import formatNumber, {
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { useBuilding } from "@/context/BuildingContext";
 import useBaiguullaga from "@/lib/useBaiguullaga";
+import useJagsaalt from "@/lib/useJagsaalt";
+import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
 import { Search, Calendar, Printer, X, Eye } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
@@ -312,6 +314,61 @@ function numberToMongolianWords(n: number): string {
   return result.charAt(0).toUpperCase() + result.slice(1);
 }
 
+/** `/dans` мөр + байгууллага — нэхэмжлэгчийн хэсэгт харуулах утгууд */
+function buildNekhemjlekhiinSenderDisplay(
+  dansRow: any | null,
+  baiguullaga: any | null | undefined,
+) {
+  const d = dansRow;
+  const b = baiguullaga;
+  const pickStr = (...vals: (string | null | undefined)[]) => {
+    for (const v of vals) {
+      const s = v != null ? String(v).trim() : "";
+      if (s) return s;
+    }
+    return "";
+  };
+  const pickUtas = (u: any) => {
+    if (u == null) return "";
+    if (Array.isArray(u)) return String(u[0] ?? "").trim();
+    return String(u).trim();
+  };
+  const bankLabel = (code: unknown) => {
+    const c = String(code || "").trim();
+    if (c === "khanbank") return "Хаан банк";
+    if (c === "tdb") return "ХХБ";
+    return c;
+  };
+  const bankNer =
+    pickStr(d?.bankNer, d?.bankniinNer) ||
+    bankLabel(d?.bank) ||
+    pickStr(b?.bankNer);
+
+  return {
+    ner: pickStr(d?.baiguullagiinNer, d?.ner, d?.dansniiNer, b?.ner) || "-",
+    khayag: pickStr(d?.khayag, d?.hayag, b?.khayag) || "-",
+    utas:
+      pickStr(
+        pickUtas(d?.utas),
+        d?.utasFaks,
+        d?.faks,
+        pickUtas(b?.utas),
+      ) || "-",
+    email: pickStr(d?.email, b?.email) || "-",
+    bankNer: bankNer || "-",
+    dans: pickStr(d?.dugaar, d?.dans, b?.dans) || "-",
+    dotoodNer:
+      pickStr(
+        d?.ezemshigch,
+        d?.dansEzemshigch,
+        d?.dotoodNer,
+        d?.ner,
+        b?.dotoodNer,
+        b?.ner,
+      ) || "-",
+  };
+}
+
 export default function InvoiceModal({
   isOpen,
   onClose,
@@ -333,6 +390,33 @@ export default function InvoiceModal({
 
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+
+  const dansOrgQuery = useMemo(() => {
+    const q: Record<string, any> = {};
+    if (baiguullagiinId) q.baiguullagiinId = baiguullagiinId;
+    q.barilgiinId = selectedBuildingId || barilgiinId || null;
+    return q;
+  }, [baiguullagiinId, selectedBuildingId, barilgiinId]);
+
+  const { jagsaalt: dansJagsaalt } = useJagsaalt<any>(
+    isOpen && baiguullagiinId ? DANS_ENDPOINT : "",
+    dansOrgQuery,
+    { createdAt: -1 },
+    undefined,
+    [],
+    token,
+  );
+
+  const nekhemjlekhiinSender = useMemo(
+    () =>
+      buildNekhemjlekhiinSenderDisplay(
+        Array.isArray(dansJagsaalt) && dansJagsaalt.length > 0
+          ? dansJagsaalt[0]
+          : null,
+        baiguullaga,
+      ),
+    [dansJagsaalt, baiguullaga],
+  );
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
@@ -939,55 +1023,49 @@ export default function InvoiceModal({
                               Байгууллагын нэр:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {baiguullaga?.ner || "Computer Mall"}
+                              {nekhemjlekhiinSender.ner}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               Хаяг:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {baiguullaga?.khayag || "sukhbaatar 9th district"}
+                              {nekhemjlekhiinSender.khayag}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               Утас, Факс:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {Array.isArray(baiguullaga?.utas)
-                                ? baiguullaga.utas[0]
-                                : baiguullaga?.utas || "70107010"}
+                              {nekhemjlekhiinSender.utas}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               И-мэйл:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {baiguullaga?.email || "-"}
+                              {nekhemjlekhiinSender.email}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               Банкны нэр:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {String(baiguullaga?.bankNer || "").trim() || "-"}
+                              {nekhemjlekhiinSender.bankNer}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               Банкны дансны №:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {String(baiguullaga?.dans || "").trim() || "-"}
+                              {nekhemjlekhiinSender.dans}
                             </span>
 
                             <span className="text-[color:var(--panel-text)]">
                               Данс эзэмшигч:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {String(
-                                baiguullaga?.dotoodNer ||
-                                  baiguullaga?.ner ||
-                                  "",
-                              ).trim() || "-"}
+                              {nekhemjlekhiinSender.dotoodNer}
                             </span>
                           </div>
                         </div>

@@ -328,23 +328,15 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const monthSlice = pickMonthSlice(
-                monthlyData,
-                monthlyPeriods,
-                matrixMonthKey,
-              );
-              // Matrix "paid" = тухайн сарын л түүх — зөвхөн өмнөх сар сонгосон үед. Бусад үед ledger `_totalTulsun` > API.
-              const paidDisplay =
-                historyScopedByDate && monthSlice != null
-                  ? Number(monthSlice.paid ?? 0)
-                  : historyScopedByDate
-                    ? Number(record?._totalTulsun ?? 0)
-                    : resolveTotalPaidFromLedgerThenApi(
-                        record,
-                        gid || undefined,
-                        paidSummaryByGereeId,
-                      );
+              // Огноогоор тасалсан үед Гүйцэтгэл = `buildingHistoryItems`-аас нийлбэрлэсэн `_totalTulsun` (Хуулгатай ижил).
+              // `/tailan/resident-monthly-matrix`-ийн `paid` заримдаа 0/хоцорсон тул энд ашиглахгүй.
+              const paidDisplay = historyScopedByDate
+                ? Number(record?._totalTulsun ?? 0)
+                : resolveTotalPaidFromLedgerThenApi(
+                    record,
+                    gid || undefined,
+                    paidSummaryByGereeId,
+                  );
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -410,12 +402,6 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              const monthlyData = gid ? monthlyDataByGereeId?.get(gid) : null;
-              const monthSlice = pickMonthSlice(
-                monthlyData,
-                monthlyPeriods,
-                matrixMonthKey,
-              );
               const historyAggregate =
                 Number(record?._totalTulbur || 0) -
                 Number(record?._totalTulsun || 0);
@@ -423,14 +409,13 @@ export default function GuilgeeTable({
                 ? (bestKnownBalances[gid] ?? historyAggregate)
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
-              const paidForTuluv =
-                historyScopedByDate && monthSlice != null
-                  ? Number(monthSlice.paid ?? 0)
-                  : resolveTotalPaidFromLedgerThenApi(
-                      record,
-                      gid || undefined,
-                      paidSummaryByGereeId,
-                    );
+              const paidForTuluv = historyScopedByDate
+                ? Number(record?._totalTulsun ?? 0)
+                : resolveTotalPaidFromLedgerThenApi(
+                    record,
+                    gid || undefined,
+                    paidSummaryByGereeId,
+                  );
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
@@ -711,24 +696,13 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  const monthlyData = gid
-                    ? monthlyDataByGereeId?.get(gid)
-                    : null;
-                  const monthSlice = pickMonthSlice(
-                    monthlyData,
-                    monthlyPeriods,
-                    matrixMonthKey,
-                  );
-                  const v =
-                    historyScopedByDate && monthSlice != null
-                      ? Number(monthSlice.paid ?? 0)
-                      : historyScopedByDate
-                        ? Number(it?._totalTulsun ?? 0)
-                        : resolveTotalPaidFromLedgerThenApi(
-                            it,
-                            gid || undefined,
-                            paidSummaryByGereeId,
-                          );
+                  const v = historyScopedByDate
+                    ? Number(it?._totalTulsun ?? 0)
+                    : resolveTotalPaidFromLedgerThenApi(
+                        it,
+                        gid || undefined,
+                        paidSummaryByGereeId,
+                      );
                   return sum + v;
                 },
                 0,

@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Input, Modal, notification, Card, Space, Popconfirm } from "antd";
+import { Input, Modal, notification, Popconfirm } from "antd";
 import Button from "@/components/ui/Button";
-import { motion, AnimatePresence } from "framer-motion";
-import { SearchIcon, Plus, ImagePlus, X, Edit2, Trash2, Heart, MessageSquare, Loader2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { SearchIcon, Plus, X, Edit2, Trash2, MessageSquare, Loader2 } from "lucide-react";
 import uilchilgee, { getApiUrl } from "@/lib/uilchilgee";
 import { useAuth } from "@/lib/useAuth";
 import { useBuilding } from "@/context/BuildingContext";
@@ -52,6 +52,17 @@ export default function BlogNiitlelPage() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const attachInputRef = useRef<HTMLInputElement>(null);
   const [attachPreviewUrls, setAttachPreviewUrls] = useState<string[]>([]);
+  const [existingImagesBackup, setExistingImagesBackup] = useState<string[]>([]);
+  const [autoReplacedExisting, setAutoReplacedExisting] = useState(false);
+  const clearNewAttachments = () => {
+    attachPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    setAttachPreviewUrls([]);
+    setAttachImages([]);
+  };
+  const closeModal = () => {
+    clearNewAttachments();
+    setIsModalOpen(false);
+  };
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -86,16 +97,26 @@ export default function BlogNiitlelPage() {
       setTitle(blog.title);
       setContent(blog.content);
       setExistingImages(blog.images || []);
+      setExistingImagesBackup(blog.images || []);
+      setAutoReplacedExisting(false);
     } else {
       setEditingBlog(null);
       setTitle("");
       setContent("");
       setExistingImages([]);
+      setExistingImagesBackup([]);
+      setAutoReplacedExisting(false);
     }
     setAttachImages([]);
     setAttachPreviewUrls([]);
     setIsModalOpen(true);
   };
+  useEffect(() => {
+    return () => {
+      attachPreviewUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = async () => {
     if (!title.trim() || !content.trim()) {
@@ -138,7 +159,7 @@ export default function BlogNiitlelPage() {
       }
 
       openSuccessOverlay(editingBlog ? "Нийтлэл шинэчлэгдлээ" : "Нийтлэл амжилттай нэмэгдлээ");
-      setIsModalOpen(false);
+      closeModal();
       revalidateBlogs();
     } catch (err) {
       console.error("Error saving blog:", err);
@@ -164,6 +185,21 @@ export default function BlogNiitlelPage() {
     blog.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
     blog.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const pagedBlogs = filteredBlogs.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+  useEffect(() => {
+    if (!isModalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter" && !loading) {
+        e.preventDefault();
+        void handleSave();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isModalOpen, loading, title, content, attachImages, existingImages, editingBlog]);
 
   return (
     <div className="min-h-0 flex flex-col p-4 sm:p-6 md:p-8">
@@ -213,79 +249,65 @@ export default function BlogNiitlelPage() {
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-8">
-              <AnimatePresence>
-                {filteredBlogs.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((blog) => (
-                  <motion.div
-                    key={blog._id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                  >
-                    <Card
-                      hoverable
-                      className="rounded-2xl border-0 neu-panel overflow-hidden group h-full flex flex-col"
-                      cover={
-                        blog.images && blog.images.length > 0 ? (
-                          <div className="h-48 overflow-hidden relative">
-                            <img
-                              src={blog.images[0]}
-                              alt={blog.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </div>
-                        ) : (
-                          <div className="h-48 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                            <ImagePlus className="w-8 h-8 text-slate-300" />
-                          </div>
-                        )
-                      }
-                      actions={[
-                        <button key="edit" onClick={() => handleOpenModal(blog)} className="w-full flex justify-center py-2 hover:text-theme transition-colors">
-                          <Edit2 size={16} />
-                        </button>,
-                        <Popconfirm
-                          key="delete"
-                          title="Нийтлэлийг устгах уу?"
-                          onConfirm={() => handleDelete(blog._id)}
-                          okText="Тийм"
-                          cancelText="Үгүй"
-                          placement="topRight"
-                        >
-                          <button className="w-full flex justify-center py-2 hover:text-red-500 transition-colors">
-                            <Trash2 size={16} />
-                          </button>
-                        </Popconfirm>
-                      ]}
-                    >
-                      <div className="flex flex-col h-full">
-                        <h3 className="text-base  line-clamp-1 mb-2 text-theme">{blog.title}</h3>
-                        <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">{blog.content}</p>
-                        
-                        <div className="flex items-center justify-between mt-auto">
-                          <div className="flex -space-x-1">
-                            {(blog.reactions || []).slice(0, 3).map((r, i) => (
-                              <span key={i} className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-xs border border-white dark:border-slate-900">
-                                {r.emoji}
-                              </span>
-                            ))}
-                            {blog.reactions && blog.reactions.length > 0 && (
-                              <span className="text-[10px] text-slate-400 ml-2 flex items-center">
-                                {blog.reactions.reduce((acc, r) => acc + r.count, 0)} reactions
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-[10px] text-slate-400">
-                            {new Date(blog.createdAt).toLocaleDateString()}
-                          </span>
+            <div className="table-surface rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 sm:p-5 mb-4">
+              <div className="max-h-[calc(100vh-320px)] overflow-auto custom-scrollbar">
+                {pagedBlogs.length === 0 ? (
+                  <div className="py-16 text-center text-sm text-slate-500">
+                    Нийтлэл олдсонгүй
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {pagedBlogs.map((blog) => (
+                      <article
+                        key={blog._id}
+                        className="h-[380px] rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm flex flex-col"
+                      >
+                        <div className="h-1/2 bg-slate-100">
+                          <img
+                            src={blog.images?.[0] || "/placeholder-blog.png"}
+                            alt={blog.title}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                        <div className="h-1/2 bg-white border-t border-slate-200 p-4 flex flex-col">
+                          <h3 className="text-sm font-medium text-slate-900 line-clamp-1 mb-1">{blog.title}</h3>
+                          <p className="text-[11px] text-slate-500 mb-2">
+                            {new Date(blog.createdAt).toLocaleString("mn-MN")}
+                          </p>
+                          <p className="text-sm text-slate-600 line-clamp-3 flex-1">
+                            {blog.content}
+                          </p>
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleOpenModal(blog)}
+                              className="h-8 px-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                              title="Засах"
+                            >
+                              <Edit2 size={14} />
+                              Засах
+                            </button>
+                            <Popconfirm
+                              title="Нийтлэлийг устгах уу?"
+                              onConfirm={() => handleDelete(blog._id)}
+                              okText="Тийм"
+                              cancelText="Үгүй"
+                              placement="topRight"
+                            >
+                              <button
+                                className="h-8 px-3 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors inline-flex items-center gap-1.5 text-xs"
+                                title="Устгах"
+                              >
+                                <Trash2 size={14} />
+                                Устгах
+                              </button>
+                            </Popconfirm>
+                          </div>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <StandardPagination
@@ -304,16 +326,19 @@ export default function BlogNiitlelPage() {
       <Modal
         title={editingBlog ? "Нийтлэл засах" : "Шинэ нийтлэл"}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={closeModal}
         footer={[
-          <Button key="cancel" onClick={() => setIsModalOpen(false)} className="rounded-lg h-10">Хаах</Button>,
-          <Button key="save" type="primary" loading={loading} onClick={handleSave} className="rounded-lg h-10 bg-theme">Хадгалах</Button>
+          <Button key="cancel" onClick={closeModal} className="rounded-lg h-10">Хаах</Button>,
+          <Button key="save" type="primary" loading={loading} onClick={handleSave} className="rounded-lg h-10 bg-theme">Хадгалах (Ctrl+Enter)</Button>
         ]}
         width={600}
         className="[&_.ant-modal-content]:rounded-3xl [&_.ant-modal-header]:bg-transparent"
         destroyOnHidden
       >
         <div className="flex flex-col gap-5 pt-4">
+          <div className="text-xs text-slate-500">
+            {editingBlog ? "Засварлах горим" : "Шинэ нийтлэл"} - зураг устгах/цэвэрлэхийг доорх товчоор нэг дор хийж болно.
+          </div>
           <div>
             <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Гарчиг</label>
             <Input
@@ -336,7 +361,41 @@ export default function BlogNiitlelPage() {
           </div>
 
           <div>
-            <label className="block text-sm  text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Зураг</label>
+            <div className="flex items-center justify-between mb-1.5 ml-1">
+              <label className="block text-sm text-slate-700 dark:text-slate-300">Зураг</label>
+              <div className="flex items-center gap-2">
+                {autoReplacedExisting && existingImagesBackup.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExistingImages(existingImagesBackup);
+                      setAutoReplacedExisting(false);
+                    }}
+                    className="text-[11px] text-blue-600 hover:underline"
+                  >
+                    Буцаах
+                  </button>
+                )}
+                {existingImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setExistingImages([])}
+                    className="text-[11px] text-rose-500 hover:underline"
+                  >
+                    Хуучин зургуудыг цэвэрлэх
+                  </button>
+                )}
+                {attachImages.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={clearNewAttachments}
+                    className="text-[11px] text-rose-500 hover:underline"
+                  >
+                    Шинэ зургуудыг цэвэрлэх
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3">
               {/* Existing Images */}
               {existingImages.map((url, idx) => (
@@ -357,7 +416,6 @@ export default function BlogNiitlelPage() {
                   <img src={url} alt="" className="w-full h-full object-cover rounded-xl border border-slate-200 dark:border-white/10" />
                   <button
                     onClick={() => {
-                      URL.revokeObjectURL(url);
                       setAttachPreviewUrls(p => p.filter((_, i) => i !== idx));
                       setAttachImages(p => p.filter((_, i) => i !== idx));
                     }}
@@ -387,6 +445,13 @@ export default function BlogNiitlelPage() {
                   if (files?.length) {
                     const newFiles = Array.from(files);
                     const newUrls = newFiles.map(f => URL.createObjectURL(f));
+                    // Edit workflow simplification:
+                    // selecting new image(s) auto-replaces old ones to avoid manual delete clicks.
+                    if (editingBlog && existingImages.length > 0) {
+                      setExistingImagesBackup(existingImages);
+                      setExistingImages([]);
+                      setAutoReplacedExisting(true);
+                    }
                     setAttachPreviewUrls(p => [...p, ...newUrls]);
                     setAttachImages(p => [...p, ...newFiles]);
                   }

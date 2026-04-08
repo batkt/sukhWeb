@@ -4,7 +4,26 @@
  * (жишээ нь 8,347.83) invoice-ийн нэгтгэсэн uldegdel (65,000)-аас ялгарна.
  */
 
-function itemPrimaryDateMs(it: any): number {
+/**
+ * Жагсаалт/шүүлт болон Хуулгатай ойртуулах: төлөлтийн мөрөнд эхлээд `tulsunOgnoo` (бодит төлсөн өдөр),
+ * дараа нь `ognoo`. Ингэхгүй бол `ognoo` нь нэхэмжлэхийн огноо байж сарын шүүлтээс гадагш үлдэнэ.
+ */
+export function itemPrimaryDateMs(it: any): number {
+  const type = String(it?.turul || it?.type || "").toLowerCase();
+  const isPayment =
+    type === "tulult" || type === "төлбөр" || type === "төлөлт";
+  if (isPayment) {
+    if (it?.tulsunOgnoo != null && String(it.tulsunOgnoo).trim() !== "") {
+      const tPay = new Date(it.tulsunOgnoo).getTime();
+      if (!Number.isNaN(tPay)) return tPay;
+    }
+    if (it?.ognoo != null && String(it.ognoo).trim() !== "") {
+      const tOg = new Date(it.ognoo).getTime();
+      if (!Number.isNaN(tOg)) return tOg;
+    }
+    const tCr = new Date(it?.createdAt || 0).getTime();
+    return Number.isNaN(tCr) ? 0 : tCr;
+  }
   const raw = it?.ognoo;
   if (raw != null && String(raw).trim() !== "") {
     const t = new Date(raw).getTime();

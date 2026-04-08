@@ -2,6 +2,9 @@
  * Resolve the correct month bucket from /tailan/resident-monthly-matrix.
  * Prefer the month that matches the list page date filter (matrixMonthKey),
  * not always periods[periods.length - 1] (which can point at the wrong month).
+ *
+ * Анхаар: `paid` талбар нь заримдаа түүхтэй зөрөх тул жагсаалтын «Гүйцэтгэл» баганад ашиглахгүй
+ * (тэнд `_totalTulsun` / ledger ашиглана). Энд голчлон `billed` болон сарын тайлангийн харгалзуулалтад зориулна.
  */
 export function pickMonthSlice(
   monthlyData: any | null | undefined,
