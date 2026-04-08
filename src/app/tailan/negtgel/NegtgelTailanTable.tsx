@@ -2,7 +2,7 @@
 
 import React, { useMemo } from "react";
 import { Table, Tooltip } from "antd";
-import formatNumber from "../../../../tools/function/formatNumber";
+import formatNumber from "tools/function/formatNumber";
 
 export interface ZardalItem {
   ner?: string;
@@ -231,18 +231,19 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       });
     });
 
-    // Fixed right total column
+    // Add Absolute Balance column (Authoritative balance)
     base.push({
-      title: "Нийт",
+      title: "Нийт үлдэгдэл",
       className: headerClassName,
-      dataIndex: "niitTulukhDun",
-      key: "niitTulukhDun",
-      width: 120,
+      dataIndex: "niitUldegdel",
+      key: "niitUldegdel",
+      width: 140,
       ellipsis: true,
       align: "center" as const,
+      fixed: "right" as const,
       render: (e: number) => (
         <div className="text-right">
-          <span className="font-semibold text-green-600 dark:text-green-400 text-[13px] dark:!text-white">
+          <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">
             {formatNumber(e, 2)}
           </span>
         </div>

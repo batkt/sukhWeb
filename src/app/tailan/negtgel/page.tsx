@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/useAuth";
 import useBaiguullaga from "@/lib/useBaiguullaga";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { StandardPagination } from "@/components/ui/StandardTable";
-import formatNumber from "../../../../tools/function/formatNumber";
+import formatNumber from "tools/function/formatNumber";
 import { FileSpreadsheet } from "lucide-react";
 import { getDefaultDateRange } from "@/lib/utils";
 import useSWR from "swr";
@@ -149,7 +149,6 @@ export default function NegtgelTailanPage() {
         <h1 className="text-2xl font-bold">Нэгтгэл тайлан</h1>
       </div>
 
-      {/* ── Summary cards ───────────────────────────────────────── */}
 
       {/* ── Filters ─────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3 items-center no-print mb-4">
