@@ -548,7 +548,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="right"
                   className="bg-gray-50 dark:bg-gray-900 py-2"
                 >
-                  <span className="font-bold text-blue-600 dark:text-blue-400 force-bold text-[13px]">
+                  <span className="font-bold text-blue-600 dark:!text-white force-bold text-[13px]">
                     {formatNumber(finalTulbur, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
@@ -557,7 +557,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="right"
                   className="bg-gray-50 dark:bg-gray-900 py-2"
                 >
-                  <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px]">
+                  <span className="font-bold text-green-600 dark:!text-white force-bold text-[13px]">
                     {formatNumber(finalPaid, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
@@ -567,7 +567,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   className="bg-gray-50 dark:bg-gray-900 py-2"
                 >
                   <span
-                    className={`font-bold force-bold text-[13px] ${
+                    className={`font-bold force-bold text-[13px] dark:!text-white ${
                       finalUldegdel > 0
                         ? "text-red-500"
                         : finalUldegdel < 0
