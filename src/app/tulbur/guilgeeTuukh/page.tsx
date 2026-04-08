@@ -64,7 +64,6 @@ import InitialBalanceExcelModal from "../modals/InitialBalanceExcelModal";
 import { useGereeActions } from "@/lib/useGereeActions";
 import { StandardPagination } from "@/components/ui/StandardTable";
 import {
-  computeLedgerRunningBalancesByGereeId,
   itemPrimaryDateMs,
 } from "./ledgerRunningBalances";
 import {
@@ -735,30 +734,22 @@ export default function DansniiKhuulga() {
   }, [allHistoryItems, effectiveBarilgiinId, contractsById, residentsById]);
 
   /**
-   * Хүснэгт/Excel-ийн Үлдэгдэл.
-   * - Тасалсан хугацаа: зөвхөн ledger (Хуулга).
-   * - Бүх түүх (одоогийн сар): Хуулгатай ижил `computeLedgerRunningBalancesByGereeId` + гэрээний анхны uldegdel
-   *   (nekhemjlekhiin/авлага/төлөлтийн түр холимог + /history-ledger-ээр сөрөг дүн гардаг байсныг хасна).
+   * Хүснэгт/Excel-ийн Үлдэгдэл:
+   * 1) /geree/:id/history-ledger-ийн хамгийн сүүлийн мөрийн uldegdel (илүү найдвартай)
+   * 2) contract.u ldegdel (fallback)
    */
   const tableDisplayBalances = useMemo(() => {
-    const ledger = computeLedgerRunningBalancesByGereeId(
-      allHistoryItems,
-      contractsByNumber,
-    );
-    if (historyScopedByDate) {
-      return ledger;
-    }
     const out: Record<string, number> = {};
     Object.values(contractsById).forEach((c: any) => {
       if (c?._id != null && c.uldegdel != null) {
         out[String(c._id)] = Number(c.uldegdel);
       }
     });
-    Object.entries(ledger).forEach(([gid, v]) => {
-      if (Number.isFinite(v)) out[gid] = v;
+    Object.entries(latestRowUldegdelByGereeId).forEach(([gid, v]) => {
+      if (v != null && Number.isFinite(v)) out[gid] = v;
     });
     return out;
-  }, [historyScopedByDate, allHistoryItems, contractsByNumber, contractsById]);
+  }, [contractsById, latestRowUldegdelByGereeId]);
 
   /** Гэрээ тус бүрийн түүхээс нийлбэрлэсэн төлсөн дүн (жагсаалт/шүүлтэнд API-аас өмнө) */
   const ledgerPaidTotalByGereeId = useMemo(
