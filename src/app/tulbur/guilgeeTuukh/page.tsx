@@ -150,20 +150,41 @@ export default function DansniiKhuulga() {
     const rawEnd = String(ekhlekhOgnoo?.[1] ?? "").trim();
     const hasDateFilter = Boolean(rawStart || rawEnd);
 
-    // Always pass the picker range to APIs when set — including "одоогийн сар".
-    // Skipping dates for the current month made the backend return unscoped rows while
-    // the UI still filtered client-side, and forced historyScopedByDate off so Үлдэгдэл /
-    // Гүйцэтгэл showed lifetime totals instead of the selected month.
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    // Одоогийн календарын сар (эхлэл–төгсгөл нэг сард): бүх түүхийн өгөгдөл (API + жагсаалт).
+    // Өмнөх сарууд (жишээ нь 4-р сар сонгосон ч одоо 5-р сар болсон): зөвхөн тухайн сарын өгөгдөл.
+    const isLatestMonthView = Boolean(
+      hasDateFilter &&
+        rawStart &&
+        rawEnd &&
+        startKey &&
+        endKey &&
+        startKey === endKey &&
+        startKey === currentMonthKey,
+    );
+
     return {
       hasDateFilter,
-      start: hasDateFilter ? rawStart || undefined : undefined,
-      end: hasDateFilter ? rawEnd || undefined : undefined,
+      isLatestMonthView,
+      start:
+        hasDateFilter && !isLatestMonthView ? rawStart || undefined : undefined,
+      end: hasDateFilter && !isLatestMonthView ? rawEnd || undefined : undefined,
     };
   }, [ekhlekhOgnoo]);
 
-  /** True whenever a date range is active (any month, including the current one). */
+  /** Өмнөх сар/огноогоор тасалсан үед л үнэн — одоогийн сар = бүх түүх тул false */
   const historyScopedByDate = useMemo(
-    () => Boolean(effectiveDateFilter.hasDateFilter),
+    () =>
+      Boolean(
+        effectiveDateFilter.hasDateFilter &&
+          !effectiveDateFilter.isLatestMonthView,
+      ),
     [effectiveDateFilter],
   );
 
@@ -615,6 +636,11 @@ export default function DansniiKhuulga() {
 
     if (!ekhlekhOgnoo || (!ekhlekhOgnoo[0] && !ekhlekhOgnoo[1]))
       return combined;
+    if (effectiveDateFilter.isLatestMonthView) {
+      return [...combined].sort(
+        (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
+      );
+    }
     const [start, end] = ekhlekhOgnoo;
     const startObj = start ? new Date(start) : null;
     if (startObj) startObj.setHours(0, 0, 0, 0);
@@ -634,7 +660,13 @@ export default function DansniiKhuulga() {
     return filtered.sort(
       (a, b) => itemPrimaryDateMs(a) - itemPrimaryDateMs(b),
     );
-  }, [historyData, receivableData, paymentRecordsData, ekhlekhOgnoo]);
+  }, [
+    historyData,
+    receivableData,
+    paymentRecordsData,
+    ekhlekhOgnoo,
+    effectiveDateFilter.isLatestMonthView,
+  ]);
 
   const { gereeGaralt } = useGereeJagsaalt(
     emptyQuery,
@@ -3432,7 +3464,9 @@ export default function DansniiKhuulga() {
         token={token}
         baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
         barilgiinId={selectedBuildingId || barilgiinId || null}
-        pageDateRange={ekhlekhOgnoo}
+        pageDateRange={
+          effectiveDateFilter.isLatestMonthView ? undefined : ekhlekhOgnoo
+        }
         onRefresh={() => {
           // Clear cache and revalidate all relevant data
           mutate(
