@@ -1958,11 +1958,16 @@ export default function DansniiKhuulga() {
           (r?._id && String(r._id)) ||
           "";
 
-        const balance = tableDisplayBalances[gid] ?? Number(r?.uldegdel ?? 0);
+        const scopedAgg =
+          Number(r?._totalTulbur || 0) - Number(r?._totalTulsun || 0);
+        const balance =
+          tableDisplayBalances[gid] ??
+          (historyScopedByDate ? scopedAgg : Number(r?.uldegdel ?? 0));
 
+        const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
         const isResidentPaid = balance < 0.01;
+        const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
 
-        // Check if this resident is linked to a cancelled contract (to exclude from Unpaid count)
         const isLinkedToCancelledGeree =
           cancelledGereeIdsFromGereeList.has(gid) ||
           (r?.gereeniiDugaar &&
@@ -1970,7 +1975,9 @@ export default function DansniiKhuulga() {
 
         if (isResidentPaid) {
           acc.paid++;
-        } else if (!isLinkedToCancelledGeree) {
+        } else if (isLinkedToCancelledGeree) {
+          // «Цуцалсан гэрээний авлага» тусад нь — энд бүлэглэхгүй
+        } else if (!isPartiallyPaid) {
           acc.unpaid++;
         }
         return acc;
@@ -1990,6 +1997,8 @@ export default function DansniiKhuulga() {
     contractsByNumber,
     residentsById,
     tableDisplayBalances,
+    monthPaidByGereeId,
+    historyScopedByDate,
   ]);
 
   const zaaltTemplateTatak = async () => {
