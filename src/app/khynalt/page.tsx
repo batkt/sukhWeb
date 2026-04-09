@@ -436,19 +436,23 @@ export default function Khynalt() {
   );
 
   const { data: tulukhAvlagaData } = useSWR(
-    token && ajiltan?.baiguullagiinId
+    token && ajiltan?.baiguullagiinId && rangeStart && rangeEnd
       ? [
           "/gereeniiTulukhAvlaga",
           token,
           ajiltan.baiguullagiinId,
           effectiveBarilgiinId,
+          rangeStart,
+          rangeEnd,
         ]
       : null,
-    async ([url, tkn, bId, barId]): Promise<any> => {
+    async ([url, tkn, bId, barId, start, end]): Promise<any> => {
       const resp = await uilchilgee(tkn).get(url, {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
+          ...(start ? { ekhlekhOgnoo: start } : {}),
+          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 5000,
         },
@@ -458,15 +462,7 @@ export default function Khynalt() {
     { revalidateOnFocus: false },
   );
 
-  const ekhniiUldegdelTotal = useMemo(() => {
-    const list = Array.isArray(tulukhAvlagaData?.jagsaalt)
-      ? tulukhAvlagaData.jagsaalt
-      : [];
-
-    return list
-      .filter((item: any) => item.ekhniiUldegdelEsekh === true)
-      .reduce((sum: number, item: any) => sum + Number(item.uldegdel || 0), 0);
-  }, [tulukhAvlagaData]);
+  const ekhniiUldegdelTotal = Number(footerTotals.totalEkhniiUldegdel ?? 0);
 
   const [chartColors, setChartColors] = useState({
     text: "#0f172a", // light default
@@ -1090,14 +1086,16 @@ export default function Khynalt() {
             incomeTotals.unpaid,
           ],
           backgroundColor: [
+            // Эхний үлдэгдэл (slate)
             "rgba(148, 163, 184, 0.55)",
-            "rgba(148, 163, 184, 0.55)",
+            // Сарын төлбөр (blue)
+            "rgba(59, 130, 246, 0.40)",
             "rgba(34, 197, 94, 0.45)",
             "rgba(239, 68, 68, 0.45)",
           ],
           borderColor: [
             "rgb(148, 163, 184)",
-            "rgb(148, 163, 184)",
+            "rgb(59, 130, 246)",
             "rgb(34, 197, 94)",
             "rgb(239, 68, 68)",
           ],

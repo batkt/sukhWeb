@@ -395,6 +395,7 @@ export function useTulburFooterTotals(
     let totalPaid = 0;
     let totalUldegdel = 0;
     let tuluvUnpaidCount = 0;
+    let totalEkhniiUldegdel = 0;
 
     const cancelledGereeIds = new Set<string>();
     const cancelledGereeDugaars = new Set<string>();
@@ -406,6 +407,106 @@ export function useTulburFooterTotals(
           cancelledGereeDugaars.add(String(g.gereeniiDugaar));
       }
     });
+
+    // Match guilgeeTuukh эхний үлдэгдэл aggregation as closely as possible.
+    const contractsWithEkhniiUldegdelInInvoice = new Set<string>();
+    buildingHistoryItems.forEach((it: any) => {
+      const zardluud = Array.isArray(it?.medeelel?.zardluud)
+        ? it.medeelel.zardluud
+        : Array.isArray(it?.zardluud)
+          ? it.zardluud
+          : [];
+      const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+        ? it.medeelel.guilgeenuud
+        : Array.isArray(it?.guilgeenuud)
+          ? it.guilgeenuud
+          : [];
+      const hasEkhniiUldegdelInZardluud = zardluud.some((z: any) => {
+        const ner = String(z?.ner || "").toLowerCase();
+        const isEkhUld =
+          z?.isEkhniiUldegdel === true ||
+          ner.includes("эхний үлдэгдэл") ||
+          ner.includes("ekhniuldegdel") ||
+          ner.includes("ekhnii uldegdel");
+        const amt = Number(z?.dun ?? z?.tariff ?? 0);
+        return isEkhUld && amt !== 0;
+      });
+      const hasEkhniiUldegdelInGuilgee = guilgeenuud.some((g: any) => {
+        if (g?.ekhniiUldegdelEsekh !== true) return false;
+        const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
+        return amt !== 0;
+      });
+      if (hasEkhniiUldegdelInZardluud || hasEkhniiUldegdelInGuilgee) {
+        const gid = String(it?.gereeniiId || it?.gereeId || "").trim();
+        const dugaar = String(it?.gereeniiDugaar || "").trim();
+        if (gid) contractsWithEkhniiUldegdelInInvoice.add(gid);
+        if (dugaar) contractsWithEkhniiUldegdelInInvoice.add(dugaar);
+      }
+    });
+    const ekhniiByKey = new Map<string, number>();
+    buildingHistoryItems.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      if (!gereeId && gereeDugaar && (contractsByNumber as any)[gereeDugaar]?._id) {
+        gereeId = String((contractsByNumber as any)[gereeDugaar]._id);
+      }
+      const ner = String(it?.ner || "").trim().toLowerCase();
+      const utas = Array.isArray(it?.utas)
+        ? String(it.utas[0] || "").trim()
+        : String(it?.utas || "").trim();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key = gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      if (!key || key === "||") return;
+
+      const isStandaloneEkhniiUldegdel = it?.ekhniiUldegdelEsekh === true;
+      const standaloneAmount =
+        Number(it?.undsenDun ?? it?.tulukhDun ?? it?.uldegdel ?? 0) || 0;
+      if (isStandaloneEkhniiUldegdel) {
+        const contractHasEkhniiUldegdelInInvoice =
+          (gereeId && contractsWithEkhniiUldegdelInInvoice.has(gereeId)) ||
+          (gereeDugaar && contractsWithEkhniiUldegdelInInvoice.has(gereeDugaar));
+        if (contractHasEkhniiUldegdelInInvoice && standaloneAmount >= 0) return;
+      }
+
+      let ekhniiUldegdelDelta = isStandaloneEkhniiUldegdel ? standaloneAmount : 0;
+      if (!isStandaloneEkhniiUldegdel) {
+        const zardluud = Array.isArray(it?.medeelel?.zardluud)
+          ? it.medeelel.zardluud
+          : Array.isArray(it?.zardluud)
+            ? it.zardluud
+            : [];
+        const guilgeenuud = Array.isArray(it?.medeelel?.guilgeenuud)
+          ? it.medeelel.guilgeenuud
+          : Array.isArray(it?.guilgeenuud)
+            ? it.guilgeenuud
+            : [];
+        const fromZardluud = zardluud.reduce((s: number, z: any) => {
+          const ner = String(z?.ner || "").toLowerCase();
+          const isEkh =
+            z?.isEkhniiUldegdel === true ||
+            ner.includes("эхний үлдэгдэл") ||
+            ner.includes("ekhniuldegdel") ||
+            ner.includes("ekhnii uldegdel");
+          if (!isEkh) return s;
+          const amt = Number(z?.dun ?? z?.tariff ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        const fromGuilgee = guilgeenuud.reduce((s: number, g: any) => {
+          if (g?.ekhniiUldegdelEsekh !== true) return s;
+          const amt = Number(g?.tulukhDun ?? g?.undsenDun ?? 0);
+          return s + (amt !== 0 ? amt : 0);
+        }, 0);
+        ekhniiUldegdelDelta = fromZardluud + fromGuilgee;
+      }
+      if (ekhniiUldegdelDelta !== 0) {
+        ekhniiByKey.set(key, (ekhniiByKey.get(key) || 0) + ekhniiUldegdelDelta);
+      }
+    });
+    totalEkhniiUldegdel = Array.from(ekhniiByKey.values()).reduce(
+      (s, v) => s + Number(v || 0),
+      0,
+    );
 
     const aggregatePaidMap: Record<string, number> = {};
     buildingHistoryItems.forEach((it: any) => {
@@ -507,7 +608,7 @@ export function useTulburFooterTotals(
       }
     });
 
-    return { totalPaid, totalUldegdel, tuluvUnpaidCount };
+    return { totalPaid, totalUldegdel, tuluvUnpaidCount, totalEkhniiUldegdel };
   }, [
     buildingHistoryItems,
     deduplicatedResidents,
