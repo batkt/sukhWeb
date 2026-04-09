@@ -1959,10 +1959,8 @@ export default function DansniiKhuulga() {
           "";
 
         const balance = tableDisplayBalances[gid] ?? Number(r?.uldegdel ?? 0);
-        const paid = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
 
         const isResidentPaid = balance < 0.01;
-        const isPartiallyPaid = !isResidentPaid && paid > 0.1;
 
         // Check if this resident is linked to a cancelled contract (to exclude from Unpaid count)
         const isLinkedToCancelledGeree =
@@ -1972,27 +1970,23 @@ export default function DansniiKhuulga() {
 
         if (isResidentPaid) {
           acc.paid++;
-        } else if (isPartiallyPaid) {
-          acc.partial++;
         } else if (!isLinkedToCancelledGeree) {
           acc.unpaid++;
         }
         return acc;
       },
-      { paid: 0, partial: 0, unpaid: 0 },
+      { paid: 0, unpaid: 0 },
     );
 
     return [
       { title: "Оршин суугч", value: residentCount },
       { title: "Цуцалсан гэрээний авлага", value: cancelledGereesWithUnpaid },
       { title: "Төлсөн", value: counts.paid },
-      { title: "Төлөлт дутуу", value: counts.partial },
       { title: "Төлөөгүй", value: counts.unpaid },
     ];
   }, [
     deduplicatedResidentsAll,
     cancelledGereesWithUnpaid,
-    monthPaidByGereeId,
     contractsByNumber,
     residentsById,
     tableDisplayBalances,
@@ -2980,7 +2974,7 @@ export default function DansniiKhuulga() {
       </div> */}
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((stat, idx) => {
             // Map stat titles to filter values
             const getFilterValue = (
@@ -2989,14 +2983,12 @@ export default function DansniiKhuulga() {
               | "all"
               | "paid"
               | "unpaid"
-              | "partiallyPaid"
               | "overdue"
               | null => {
               if (title === "Оршин суугч" || title === "Нийт гүйлгээ")
                 return "all";
               if (title === "Төлсөн") return "paid";
               if (title === "Төлөөгүй") return "unpaid";
-              if (title === "Төлөлт дутуу") return "partiallyPaid";
               if (title === "Цуцалсан гэрээний авлага") return "overdue";
               return null;
             };

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import {
   Download,
   Eye,
@@ -61,6 +67,15 @@ interface LedgerEntry {
     | "gereeniiTulsunAvlaga"
     | "gereeniiTulukhAvlaga";
 }
+
+type LedgerDetailSelection =
+  | { kind: "row"; row: LedgerEntry }
+  | {
+      kind: "total";
+      balance: number;
+      totalCharges: number;
+      totalPayments: number;
+    };
 
 /** ISO instant → UTC өдрийн YYYY-MM-DD (жишээ нь 2026-02-01T04:00:00.000Z → 2026-02-01, Америкийн TZ-д local Date-ээр 1.31 болдоггүй) */
 function ledgerInstantToUtcYmd(raw: unknown): string | null {
@@ -136,6 +151,208 @@ function formatLedgerOgnooCell(raw: unknown): string {
   const ymd = ledgerInstantToUtcYmd(raw);
   if (!ymd) return String(raw ?? "").trim() || "-";
   return ymd.replace(/-/g, ".");
+}
+
+function roundLedgerRunningStep(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function compareLedgerEntriesChrono(a: LedgerEntry, b: LedgerEntry): number {
+  const dA = new Date(a.ognoo || 0);
+  const dB = new Date(b.ognoo || 0);
+  const dayA = new Date(
+    dA.getFullYear(),
+    dA.getMonth(),
+    dA.getDate(),
+  ).getTime();
+  const dayB = new Date(
+    dB.getFullYear(),
+    dB.getMonth(),
+    dB.getDate(),
+  ).getTime();
+  if (dayA !== dayB) return dayA - dayB;
+
+  const timeA = new Date(
+    a.burtgesenOgnoo && a.burtgesenOgnoo !== "-"
+      ? a.burtgesenOgnoo
+      : a.ognoo || 0,
+  ).getTime();
+  const timeB = new Date(
+    b.burtgesenOgnoo && b.burtgesenOgnoo !== "-"
+      ? b.burtgesenOgnoo
+      : b.ognoo || 0,
+  ).getTime();
+  if (timeA !== timeB) return timeA - timeB;
+
+  return String(a._id || "").localeCompare(String(b._id || ""));
+}
+
+function ledgerEntryYmKey(row: LedgerEntry): string {
+  const ymd = ledgerRowKeyMatchingDisplayColumn(row.ognoo);
+  if (ymd && ymd.length >= 7) return ymd.slice(0, 7);
+  return "—";
+}
+
+function formatYmDisplayLabel(ym: string): string {
+  if (ym === "—") return "Огноо тодорхойгүй";
+  const [y, mo] = ym.split("-");
+  return y && mo ? `${y}.${mo}` : ym;
+}
+
+type LedgerMonthBreakdownRow = {
+  ym: string;
+  displayMonth: string;
+  tulukh: number;
+  tulsun: number;
+  balanceStart: number;
+  balanceEnd: number;
+};
+
+/** Бүх гүйлгээг хуанлийн дарааллаар сар бүрээр нэгтгэж, үлдэгдлийг мөр мөрөөр тооцно. */
+function buildLedgerMonthBreakdown(
+  entries: LedgerEntry[],
+): LedgerMonthBreakdownRow[] {
+  const sorted = [...entries].sort(compareLedgerEntriesChrono);
+  const monthOrder: string[] = [];
+  const monthRows = new Map<string, LedgerEntry[]>();
+  for (const row of sorted) {
+    const ym = ledgerEntryYmKey(row);
+    if (!monthRows.has(ym)) {
+      monthRows.set(ym, []);
+      monthOrder.push(ym);
+    }
+    monthRows.get(ym)!.push(row);
+  }
+
+  let running = 0;
+  const out: LedgerMonthBreakdownRow[] = [];
+
+  for (const ym of monthOrder) {
+    const rows = monthRows.get(ym) || [];
+    const balanceStart = roundLedgerRunningStep(running);
+    let tulukh = 0;
+    let tulsun = 0;
+    for (const row of rows) {
+      const tTul = Number(row.tulukhDun || 0);
+      const tTsu = Number(row.tulsunDun || 0);
+      tulukh += tTul;
+      tulsun += tTsu;
+      running = roundLedgerRunningStep(running + tTul - tTsu);
+    }
+    out.push({
+      ym,
+      displayMonth: formatYmDisplayLabel(ym),
+      tulukh: roundLedgerRunningStep(tulukh),
+      tulsun: roundLedgerRunningStep(tulsun),
+      balanceStart,
+      balanceEnd: running,
+    });
+  }
+
+  return out;
+}
+
+function LedgerMonthlyBreakdownTable({
+  rows,
+  highlightYm,
+  scopeLabel,
+}: {
+  rows: LedgerMonthBreakdownRow[];
+  highlightYm?: string | null;
+  scopeLabel: string;
+}) {
+  if (rows.length === 0) {
+    return (
+      <p className="text-[12px] text-slate-500 dark:text-slate-400">
+        Сарын задрал харахад хангалттай гүйлгээ алга.
+      </p>
+    );
+  }
+
+  const totalTulukh = roundLedgerRunningStep(
+    rows.reduce((s, r) => s + r.tulukh, 0),
+  );
+  const totalTulsun = roundLedgerRunningStep(
+    rows.reduce((s, r) => s + r.tulsun, 0),
+  );
+  const finalUldegdel = rows[rows.length - 1]?.balanceEnd ?? 0;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[11px] font-normal text-slate-600 dark:text-slate-300">
+        {scopeLabel}
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-slate-100 dark:border-slate-800">
+        <table className="w-full text-[11px] sm:text-[12px] border-collapse min-w-[340px] font-normal">
+          <thead>
+            <tr className="bg-slate-50 dark:bg-slate-800/60 text-left text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th className="py-2 px-2 font-normal whitespace-nowrap">Сар</th>
+              <th className="py-2 px-2 font-normal text-right whitespace-nowrap">
+                Өмнөх үлдэгдэл
+              </th>
+              <th className="py-2 px-2 font-normal text-right whitespace-nowrap">
+                Төлөх нийт
+              </th>
+              <th className="py-2 px-2 font-normal text-right whitespace-nowrap">
+                Төлсөн нийт
+              </th>
+              <th className="py-2 px-2 font-normal text-right whitespace-nowrap">
+                Сарын эцсийн үлдэгдэл
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+            {rows.map((r) => {
+              const hi = highlightYm && r.ym === highlightYm;
+              return (
+                <tr
+                  key={r.ym}
+                  className={
+                    hi
+                      ? "bg-sky-50/90 dark:bg-sky-950/35 ring-1 ring-inset ring-sky-300/60 dark:ring-sky-700/50"
+                      : "hover:bg-slate-50/50 dark:hover:bg-slate-800/20"
+                  }
+                >
+                  <td className="py-1.5 px-2 text-slate-700 dark:text-slate-200 whitespace-nowrap font-normal">
+                    {r.displayMonth}
+                  </td>
+                  <td className="py-1.5 px-2 text-right tabular-nums text-slate-600 dark:text-slate-300 font-normal">
+                    {formatCurrency(r.balanceStart)} ₮
+                  </td>
+                  <td className="py-1.5 px-2 text-right tabular-nums text-slate-700 dark:text-slate-200 font-normal">
+                    {formatCurrency(r.tulukh)} ₮
+                  </td>
+                  <td className="py-1.5 px-2 text-right tabular-nums text-slate-700 dark:text-slate-200 font-normal">
+                    {formatCurrency(r.tulsun)} ₮
+                  </td>
+                  <td className="py-1.5 px-2 text-right tabular-nums text-slate-800 dark:text-slate-100 font-normal">
+                    {formatCurrency(r.balanceEnd)} ₮
+                  </td>
+                </tr>
+              );
+            })}
+            <tr className="bg-slate-100 dark:bg-slate-800/50 border-t-2 border-slate-300 dark:border-slate-600">
+              <td
+                colSpan={2}
+                className="py-2 px-2 text-right text-slate-700 dark:text-slate-200 border-t-2 border-slate-300 dark:border-slate-600 font-normal"
+              >
+                Нийт
+              </td>
+              <td className="py-2 px-2 text-right tabular-nums text-slate-700 dark:text-slate-200 whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 font-normal">
+                {formatCurrency(totalTulukh)} ₮
+              </td>
+              <td className="py-2 px-2 text-right tabular-nums text-slate-700 dark:text-slate-200 whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 font-normal">
+                {formatCurrency(totalTulsun)} ₮
+              </td>
+              <td className="py-2 px-2 text-right tabular-nums text-slate-700 dark:text-slate-200 whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 font-normal">
+                {formatCurrency(finalUldegdel)} ₮
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 /** Бүртгэсэн / гүйлгээ хийсэн ажилтны нэр — API өөр өөр талбар ашиглана (history-ledger мөр ч орно). */
@@ -286,10 +503,20 @@ export default function HistoryModal({
   const [deleteSuccess, setDeleteSuccess] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceModalResident, setInvoiceModalResident] = useState<any>(null);
+  const [ledgerDetailSelection, setLedgerDetailSelection] =
+    useState<LedgerDetailSelection | null>(null);
+
+  const handleModalClose = useCallback(() => {
+    if (ledgerDetailSelection) {
+      setLedgerDetailSelection(null);
+      return;
+    }
+    onClose();
+  }, [ledgerDetailSelection, onClose]);
 
   useModalHotkeys({
     isOpen: show,
-    onClose,
+    onClose: handleModalClose,
     container: modalRef.current,
   });
 
@@ -298,16 +525,13 @@ export default function HistoryModal({
 
     /** Гэрээний Mongo _id — invoice/payment мөрнөөс нээхэд `contract._id` нь гэрээний id биш байж болно */
     const explicitGereeId = String(
-      contract?.gereeniiId ||
-        contract?.gereeId ||
-        contract?._gereeniiId ||
-        "",
+      contract?.gereeniiId || contract?.gereeId || contract?._gereeniiId || "",
     ).trim();
     const looksLikeNekhemjlekhiinRow = Boolean(
       contract?.medeelel?.zardluud ||
-        contract?.medeelel?.guilgeenuud ||
-        (Array.isArray(contract?.zardluud) && contract.zardluud.length > 0) ||
-        (Array.isArray(contract?.guilgeenuud) && contract.guilgeenuud.length > 0),
+      contract?.medeelel?.guilgeenuud ||
+      (Array.isArray(contract?.zardluud) && contract.zardluud.length > 0) ||
+      (Array.isArray(contract?.guilgeenuud) && contract.guilgeenuud.length > 0),
     );
     const contractIdToFetch =
       explicitGereeId ||
@@ -1259,10 +1483,7 @@ export default function HistoryModal({
   /** Түлхүүр: гэрээний id байхгүй үед (жагсаалтын invoice-мөр) ч мөрийн солигдолтыг илрүүлнэ */
   const contractId =
     String(
-      contract?.gereeniiId ||
-        contract?.gereeId ||
-        contract?._gereeniiId ||
-        "",
+      contract?.gereeniiId || contract?.gereeId || contract?._gereeniiId || "",
     ).trim() ||
     (contract?.gereeniiDugaar
       ? `dugaar:${String(contract.gereeniiDugaar).trim()}`
@@ -1272,9 +1493,11 @@ export default function HistoryModal({
 
   useEffect(() => {
     if (!show) {
+      setLedgerDetailSelection(null);
       return;
     }
     if (show && contract) {
+      setLedgerDetailSelection(null);
       setData([]);
       setGlobalUldegdel(null);
       setModalDateFilterFromUser(false);
@@ -1332,6 +1555,27 @@ export default function HistoryModal({
     return [...result].reverse();
   }, [data, dateRange, pageDateRange, modalDateFilterFromUser]);
 
+  /** Хуулгын бүх ачаалсан мөр — сарын задралд (шүүлтээс үл хамаарна) */
+  const monthlyBreakdownFull = useMemo(
+    () => buildLedgerMonthBreakdown(data),
+    [data],
+  );
+
+  /** Шүүлттэй хугацааны мөрүүд, хуанлийн дараалал (хуучин → шинэ) */
+  const chronologicalFilteredEntries = useMemo(() => {
+    return [...filteredData].reverse();
+  }, [filteredData]);
+
+  const monthlyBreakdownFiltered = useMemo(
+    () => buildLedgerMonthBreakdown(chronologicalFilteredEntries),
+    [chronologicalFilteredEntries],
+  );
+
+  const ledgerDetailHighlightYm =
+    ledgerDetailSelection?.kind === "row"
+      ? ledgerEntryYmKey(ledgerDetailSelection.row)
+      : null;
+
   const handleOpenInvoiceModal = (row: LedgerEntry) => {
     // We need to pass the resident data to InvoiceModal
     // HistoryModal already has contract which is usually the resident
@@ -1358,7 +1602,7 @@ export default function HistoryModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-transparent no-print"
-            onClick={onClose}
+            onClick={handleModalClose}
           />
 
           <motion.div
@@ -1371,440 +1615,596 @@ export default function HistoryModal({
             dragControls={dragControls}
             dragConstraints={constraintsRef}
             dragMomentum={false}
-            className="fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl w-[95vw] max-w-[1400px] h-[82vh] max-h-[82vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 history-print-container"
+            className={`fixed left-1/2 top-1/2 z-[10000000] -translate-x-1/2 -translate-y-1/2 flex gap-2 sm:gap-3 items-stretch max-h-[min(90vh,920px)] h-[min(90vh,920px)] lg:h-[82vh] lg:max-h-[82vh] ${
+              ledgerDetailSelection
+                ? "flex-col lg:flex-row w-[min(98vw,1720px)] max-w-[1720px]"
+                : "flex-row w-[95vw] max-w-[1400px]"
+            }`}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header Section */}
-            <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50 select-none">
-              <div
-                onPointerDown={(e) => dragControls.start(e)}
-                className="flex justify-between items-start mb-4 cursor-move"
-              >
-                <div>
-                  <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
-                    Хуулга
-                  </h2>
-                  <div className="text-[13px] text-slate-400">
-                    {contract?.ovog} {contract?.ner} • {data.length} мөр
-                  </div>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg no-print"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Info Cards - Compact Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
-                {[
-                  { label: "Гэрээ", value: contract?.gereeniiDugaar || "-" },
-                  { label: "Тоот", value: contract?.toot || "-" },
-                  { label: "Нэр", value: contract?.ner || "-" },
-                  {
-                    label: "Утас",
-                    value: Array.isArray(contract?.utas)
-                      ? contract.utas[0]
-                      : contract?.utas || "-",
-                  },
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800"
-                  >
-                    <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
-                      {item.label}
-                    </span>
-                    <span className="text-[13px]  text-slate-700 dark:text-slate-200 truncate block">
-                      {item.value}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Date Filter - Compact */}
-              <div className="flex items-center gap-2 flex-wrap">
+            <div
+              className={`flex flex-col overflow-hidden min-h-0 min-w-0 bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 history-print-container ${
+                ledgerDetailSelection
+                  ? "flex-1 min-h-[42%] lg:min-h-0 lg:basis-[min(52%,780px)]"
+                  : "w-full flex-1"
+              }`}
+            >
+              {/* Header Section */}
+              <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800/50 select-none">
                 <div
-                  className="w-full sm:w-[220px]"
-                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => dragControls.start(e)}
+                  className="flex justify-between items-start mb-4 cursor-move"
                 >
-                  <StandardDatePicker
-                    isRange={true}
-                    value={dateRange}
-                    getPopupContainer={() => document.body}
-                    popupStyle={{ zIndex: 10000050 }}
-                    onChange={(date: any, dateString: any) => {
-                      setModalDateFilterFromUser(true);
-                      if (Array.isArray(date)) {
-                        setDateRange([
-                          date[0]?.isValid?.()
-                            ? date[0].format("YYYY-MM-DD")
-                            : null,
-                          date[1]?.isValid?.()
-                            ? date[1].format("YYYY-MM-DD")
-                            : null,
-                        ]);
-                      } else if (Array.isArray(dateString)) {
-                        setDateRange([
-                          dateString[0] ? String(dateString[0]) : null,
-                          dateString[1] ? String(dateString[1]) : null,
-                        ]);
-                      } else {
-                        setDateRange([null, null]);
-                      }
-                    }}
-                    size="small"
-                    placeholder="Огноо"
-                    classNames={{
-                      input: "border-none h-8 text-[13px] ",
-                    }}
-                  />
-                </div>
-                {(dateRange?.[0] || dateRange?.[1]) && (
+                  <div>
+                    <h2 className="text-lg sm:text-xl  text-slate-800 dark:text-white">
+                      Хуулга
+                    </h2>
+                    <div className="text-[13px] text-slate-400">
+                      {contract?.ovog} {contract?.ner} • {data.length} мөр
+                    </div>
+                  </div>
                   <button
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => {
-                      setModalDateFilterFromUser(true);
-                      setDateRange([null, null]);
-                    }}
-                    className="text-[10px]  text-rose-500 hover:underline"
+                    onClick={onClose}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg no-print"
                   >
-                    Арилгах
+                    ✕
                   </button>
-                )}
-              </div>
-            </div>
+                </div>
 
-            {/* Table Section - Scrollable */}
-            <div className="flex-1 overflow-auto custom-scrollbar">
-              <table className="w-full text-[13px]">
-                <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
-                  <tr className="border-b border-slate-100 dark:border-slate-800">
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                      Огноо
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell font-medium">
-                      Ажилтан
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                      Төлөх дүн
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                      Төлсөн дүн
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
-                      Үлдэгдэл
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
-                      Хэлбэр
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
-                      Тайлбар
-                    </th>
-                    <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell font-medium">
-                      Бүртгэсэн огноо
-                    </th>
-                    <th className="py-2 px-3 text-center text-[9px]  text-slate-400 uppercase w-28 font-medium">
-                      Үйлдэл
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
-                  {loading ? (
-                    Array.from({ length: 5 }).map((_, i) => (
-                      <tr key={i} className="animate-pulse">
-                        <td colSpan={9} className="py-3 px-2">
-                          <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
+                {/* Info Cards - Compact Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                  {[
+                    { label: "Гэрээ", value: contract?.gereeniiDugaar || "-" },
+                    { label: "Тоот", value: contract?.toot || "-" },
+                    { label: "Нэр", value: contract?.ner || "-" },
+                    {
+                      label: "Утас",
+                      value: Array.isArray(contract?.utas)
+                        ? contract.utas[0]
+                        : contract?.utas || "-",
+                    },
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-slate-300 dark:bg-slate-800/40 px-3 py-2 rounded-2xl border border-slate-100 dark:border-slate-800"
+                    >
+                      <span className="text-[9px]  text-slate-400 uppercase tracking-wider block">
+                        {item.label}
+                      </span>
+                      <span className="text-[13px]  text-slate-700 dark:text-slate-200 truncate block">
+                        {item.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Date Filter - Compact */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div
+                    className="w-full sm:w-[220px]"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <StandardDatePicker
+                      isRange={true}
+                      value={dateRange}
+                      getPopupContainer={() => document.body}
+                      popupStyle={{ zIndex: 10000050 }}
+                      onChange={(date: any, dateString: any) => {
+                        setModalDateFilterFromUser(true);
+                        if (Array.isArray(date)) {
+                          setDateRange([
+                            date[0]?.isValid?.()
+                              ? date[0].format("YYYY-MM-DD")
+                              : null,
+                            date[1]?.isValid?.()
+                              ? date[1].format("YYYY-MM-DD")
+                              : null,
+                          ]);
+                        } else if (Array.isArray(dateString)) {
+                          setDateRange([
+                            dateString[0] ? String(dateString[0]) : null,
+                            dateString[1] ? String(dateString[1]) : null,
+                          ]);
+                        } else {
+                          setDateRange([null, null]);
+                        }
+                      }}
+                      size="small"
+                      placeholder="Огноо"
+                      classNames={{
+                        input: "border-none h-8 text-[13px] ",
+                      }}
+                    />
+                  </div>
+                  {(dateRange?.[0] || dateRange?.[1]) && (
+                    <button
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => {
+                        setModalDateFilterFromUser(true);
+                        setDateRange([null, null]);
+                      }}
+                      className="text-[10px]  text-rose-500 hover:underline"
+                    >
+                      Арилгах
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Table Section - Scrollable */}
+              <div className="flex-1 overflow-auto custom-scrollbar">
+                <table className="w-full text-[13px]">
+                  <thead className="sticky top-0 z-10 bg-white dark:bg-[#0f172a]">
+                    <tr className="border-b border-slate-100 dark:border-slate-800">
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                        Огноо
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden sm:table-cell font-medium">
+                        Ажилтан
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                        Төлөх дүн
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                        Төлсөн дүн
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase font-medium">
+                        Үлдэгдэл
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
+                        Хэлбэр
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden md:table-cell font-medium">
+                        Тайлбар
+                      </th>
+                      <th className="py-2 px-2 text-center text-[9px] border-r  text-slate-400 uppercase hidden lg:table-cell font-medium">
+                        Бүртгэсэн огноо
+                      </th>
+                      <th className="py-2 px-3 text-center text-[9px]  text-slate-400 uppercase w-28 font-medium">
+                        Үйлдэл
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                    {loading ? (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <tr key={i} className="animate-pulse">
+                          <td colSpan={9} className="py-3 px-2">
+                            <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded w-full"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : filteredData.length === 0 ? (
+                      <tr>
+                        <td colSpan={9} className="py-12 text-center">
+                          <span className="text-slate-400 text-[13px]">
+                            Мэдээлэл олдсонгүй
+                          </span>
                         </td>
                       </tr>
-                    ))
-                  ) : filteredData.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="py-12 text-center">
-                        <span className="text-slate-400 text-[13px]">
-                          Мэдээлэл олдсонгүй
-                        </span>
-                      </td>
-                    </tr>
-                  ) : (
-                    <>
-                      {filteredData.map((row, idx) => (
-                        <tr
-                          key={row._id || idx}
-                          className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
-                        >
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
-                            {formatLedgerOgnooCell(row.ognoo)}
-                          </td>
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
-                            {row.isSystem ? "Систем" : row.ajiltan}
-                          </td>
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
-                            {formatCurrency(row.tulukhDun)}
-                          </td>
-                          <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
-                            {formatCurrency(row.tulsunDun)}
-                          </td>
-                          <td
-                            className={`py-2 px-2 text-[13px] border-r text-right underline whitespace-nowrap ${(row.uldegdel ?? 0) < 0.01 ? "!text-emerald-600 dark:!text-emerald-400" : "!text-red-500 dark:!text-red-400"}`}
+                    ) : (
+                      <>
+                        {filteredData.map((row, idx) => (
+                          <tr
+                            key={row._id || idx}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                           >
-                            {typeof row.uldegdel === "number"
-                              ? formatCurrency(row.uldegdel)
-                              : row.uldegdel != null
-                                ? formatCurrency(Number(row.uldegdel))
-                                : "-"}
-                          </td>
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
-                            {row.khelber || "-"}
-                          </td>
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
-                            {row.tailbar || "-"}
-                          </td>
-                          <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
-                            {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
-                              ? new Date(row.burtgesenOgnoo).toLocaleString(
-                                  "mn-MN",
-                                  { hour12: false },
-                                )
-                              : "-"}
-                          </td>
-                          <td className="py-2 px-3 text-center flex items-center justify-center">
-                            <button
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
+                              {formatLedgerOgnooCell(row.ognoo)}
+                            </td>
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
+                              {row.isSystem ? "Систем" : row.ajiltan}
+                            </td>
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 text-right whitespace-nowrap">
+                              {formatCurrency(row.tulukhDun)}
+                            </td>
+                            <td className="py-2 px-2 text-right border-r whitespace-nowrap text-slate-700 dark:text-slate-200">
+                              {formatCurrency(row.tulsunDun)}
+                            </td>
+                            <td
+                              role="button"
+                              tabIndex={0}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const isDeletable =
-                                  row._id &&
-                                  row.sourceCollection !==
-                                    "nekhemjlekhiinTuukh" &&
-                                  !row.isSystem;
-
-                                if (isDeletable && row._id) {
-                                  handleDeleteClick(
-                                    row._id,
-                                    row.ner || row.khelber || "",
-                                  );
+                                setLedgerDetailSelection({ kind: "row", row });
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  setLedgerDetailSelection({
+                                    kind: "row",
+                                    row,
+                                  });
                                 }
                               }}
-                              className={`p-2 transition-all rounded-lg ${
-                                row._id &&
-                                row.sourceCollection !==
-                                  "nekhemjlekhiinTuukh" &&
-                                !row.isSystem
-                                  ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
-                                  : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
-                              }`}
-                              title={
-                                row.isSystem ||
-                                row.sourceCollection === "nekhemjlekhiinTuukh"
-                                  ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
-                                  : row._id
-                                    ? "Устгах"
-                                    : "Устгах боломжгүй"
-                              }
-                              disabled={
-                                !row._id ||
-                                row.sourceCollection ===
-                                  "nekhemjlekhiinTuukh" ||
-                                row.isSystem
-                              }
+                              className={`py-2 px-2 text-[13px] border-r text-right whitespace-nowrap cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-100/90 dark:hover:bg-slate-800/50 transition-colors ${(row.uldegdel ?? 0) < 0.01 ? "no-underline !text-emerald-600 dark:!text-emerald-400" : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400"}`}
+                              title="Дэлгэрэнгүй харах"
                             >
-                              <Trash2
-                                className={`h-5 w-5 ${
+                              {typeof row.uldegdel === "number"
+                                ? formatCurrency(row.uldegdel)
+                                : row.uldegdel != null
+                                  ? formatCurrency(Number(row.uldegdel))
+                                  : "-"}
+                            </td>
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell text-center">
+                              {row.khelber || "-"}
+                            </td>
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell">
+                              {row.tailbar || "-"}
+                            </td>
+                            <td className="py-2 px-2 text-[13px] border-r text-slate-400 dark:text-slate-500 hidden lg:table-cell whitespace-nowrap text-center">
+                              {row.burtgesenOgnoo && row.burtgesenOgnoo !== "-"
+                                ? new Date(row.burtgesenOgnoo).toLocaleString(
+                                    "mn-MN",
+                                    { hour12: false },
+                                  )
+                                : "-"}
+                            </td>
+                            <td className="py-2 px-3 text-center flex items-center justify-center">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const isDeletable =
+                                    row._id &&
+                                    row.sourceCollection !==
+                                      "nekhemjlekhiinTuukh" &&
+                                    !row.isSystem;
+
+                                  if (isDeletable && row._id) {
+                                    handleDeleteClick(
+                                      row._id,
+                                      row.ner || row.khelber || "",
+                                    );
+                                  }
+                                }}
+                                className={`p-2 transition-all rounded-lg ${
                                   row._id &&
                                   row.sourceCollection !==
                                     "nekhemjlekhiinTuukh" &&
                                   !row.isSystem
-                                    ? "!text-red-500"
-                                    : "text-slate-300 dark:text-slate-600"
+                                    ? "!text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer"
+                                    : "text-gray-200 dark:text-gray-800 cursor-not-allowed opacity-50"
                                 }`}
-                              />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                      {/* Total Summary Row - uldegdel from main page data */}
-                      {(() => {
-                        const totalCharges = filteredData.reduce(
-                          (sum, row) => sum + (row.tulukhDun || 0),
-                          0,
-                        );
-                        const totalPayments = filteredData.reduce(
-                          (sum, row) => sum + (row.tulsunDun || 0),
-                          0,
-                        );
-                        // Use latest row's uldegdel (first row since data is reversed - newest first)
-                        // Fall back to globalUldegdel or contract.uldegdel if no rows
-                        const latestRowUldegdel =
-                          filteredData.length > 0 &&
-                          filteredData[0]?.uldegdel != null
-                            ? Number(filteredData[0].uldegdel)
-                            : globalUldegdel != null
-                              ? globalUldegdel
-                              : Number(contract?.uldegdel ?? 0);
-                        const balance = latestRowUldegdel;
-                        const balanceClass =
-                          balance < 0.01
-                            ? "!text-emerald-600 dark:!text-emerald-400"
-                            : "!text-red-500 dark:!text-red-400";
-                        return (
-                          <tr className="bg-slate-100 dark:bg-slate-800/50">
-                            <td
-                              colSpan={2}
-                              className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
-                            >
-                              Нийт
+                                title={
+                                  row.isSystem ||
+                                  row.sourceCollection === "nekhemjlekhiinTuukh"
+                                    ? "Системээс эсвэл нэхэмжлэхээс үүсгэсэн - устгах боломжгүй"
+                                    : row._id
+                                      ? "Устгах"
+                                      : "Устгах боломжгүй"
+                                }
+                                disabled={
+                                  !row._id ||
+                                  row.sourceCollection ===
+                                    "nekhemjlekhiinTuukh" ||
+                                  row.isSystem
+                                }
+                              >
+                                <Trash2
+                                  className={`h-5 w-5 ${
+                                    row._id &&
+                                    row.sourceCollection !==
+                                      "nekhemjlekhiinTuukh" &&
+                                    !row.isSystem
+                                      ? "!text-red-500"
+                                      : "text-slate-300 dark:text-slate-600"
+                                  }`}
+                                />
+                              </button>
                             </td>
-                            <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                              {formatCurrency(totalCharges)} ₮
-                            </td>
-                            <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
-                              {formatCurrency(totalPayments)} ₮
-                            </td>
-                            <td
-                              className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 ${balanceClass}`}
-                            >
-                              {formatCurrency(balance)} ₮
-                            </td>
-                            <td
-                              colSpan={4}
-                              className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
-                            ></td>
                           </tr>
-                        );
-                      })()}
-                    </>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        ))}
+                        {/* Total Summary Row - uldegdel from main page data */}
+                        {(() => {
+                          const totalCharges = filteredData.reduce(
+                            (sum, row) => sum + (row.tulukhDun || 0),
+                            0,
+                          );
+                          const totalPayments = filteredData.reduce(
+                            (sum, row) => sum + (row.tulsunDun || 0),
+                            0,
+                          );
+                          // Use latest row's uldegdel (first row since data is reversed - newest first)
+                          // Fall back to globalUldegdel or contract.uldegdel if no rows
+                          const latestRowUldegdel =
+                            filteredData.length > 0 &&
+                            filteredData[0]?.uldegdel != null
+                              ? Number(filteredData[0].uldegdel)
+                              : globalUldegdel != null
+                                ? globalUldegdel
+                                : Number(contract?.uldegdel ?? 0);
+                          const balance = latestRowUldegdel;
+                          const balanceClass =
+                            balance < 0.01
+                              ? "no-underline !text-emerald-600 dark:!text-emerald-400"
+                              : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400";
+                          return (
+                            <tr className="bg-slate-100 dark:bg-slate-800/50">
+                              <td
+                                colSpan={2}
+                                className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
+                              >
+                                Нийт
+                              </td>
+                              <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                                {formatCurrency(totalCharges)} ₮
+                              </td>
+                              <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600">
+                                {formatCurrency(totalPayments)} ₮
+                              </td>
+                              <td
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLedgerDetailSelection({
+                                    kind: "total",
+                                    balance,
+                                    totalCharges,
+                                    totalPayments,
+                                  });
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    setLedgerDetailSelection({
+                                      kind: "total",
+                                      balance,
+                                      totalCharges,
+                                      totalPayments,
+                                    });
+                                  }
+                                }}
+                                className={`sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px] text-right whitespace-nowrap border-t-2 border-slate-300 dark:border-slate-600 cursor-pointer rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/80 hover:bg-slate-200/90 dark:hover:bg-slate-700/50 transition-colors ${balanceClass}`}
+                                title="Дэлгэрэнгүй харах"
+                              >
+                                {formatCurrency(balance)} ₮
+                              </td>
+                              <td
+                                colSpan={4}
+                                className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
+                              ></td>
+                            </tr>
+                          );
+                        })()}
+                      </>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
-            {/* Footer - Compact */}
-            <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
-              <button
-                onClick={onClose}
-                className="ant-btn w-20 ant-btn-default no-print"
-              >
-                Хаах
-              </button>
-              <button
-                onClick={handlePrint}
-                className="ant-btn w-20 ant-btn-primary no-print"
-              >
-                Хэвлэх
-              </button>
-            </div>
-
-            {/* Delete Confirmation Modal */}
-            <AnimatePresence>
-              {deleteConfirm.show && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-[100000] flex items-center justify-center bg-black/50 rounded-2xl sm:rounded-3xl"
-                  onClick={handleDeleteCancel}
+              {/* Footer - Compact */}
+              <div className="p-3 sm:p-4 bg-slate-50/50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+                <button
+                  onClick={onClose}
+                  className="ant-btn w-20 ant-btn-default no-print"
                 >
+                  Хаах
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="ant-btn w-20 ant-btn-primary no-print"
+                >
+                  Хэвлэх
+                </button>
+              </div>
+
+              {/* Delete Confirmation Modal */}
+              <AnimatePresence>
+                {deleteConfirm.show && (
                   <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
-                    onClick={(e) => e.stopPropagation()}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[100000] flex items-center justify-center bg-black/50 rounded-2xl sm:rounded-3xl"
+                    onClick={handleDeleteCancel}
                   >
-                    <div className="text-center">
-                      <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6 !text-red-500 dark:!text-red-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.9, opacity: 0 }}
+                      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl max-w-md w-full mx-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="text-center">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center mb-4">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6 !text-red-500 dark:!text-red-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </div>
+                        <h3 className="text-lg  text-slate-800 dark:text-white mb-2">
+                          Устгах уу?
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                          Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ
+                          үйлдлийг буцаах боломжгүй.
+                        </p>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleDeleteCancel}
+                            className="ant-btn ant-btn-default flex-1"
+                          >
+                            Хаах
+                          </button>
+                          <button
+                            onClick={handleDeleteConfirm}
+                            className="ant-btn ant-btn-danger flex-1 bg-rose-600 hover:bg-rose-700 text-white"
+                          >
+                            Устгах
+                          </button>
+                        </div>
                       </div>
-                      <h3 className="text-lg  text-slate-800 dark:text-white mb-2">
-                        Устгах уу?
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Success Overlay */}
+              <AnimatePresence>
+                {deleteSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-[100001] flex items-center justify-center bg-black/30 rounded-2xl sm:rounded-3xl"
+                  >
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.8, opacity: 0 }}
+                      className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl"
+                    >
+                      <div className="text-center">
+                        <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        </div>
+                        <p className="text-lg  text-slate-800 dark:text-white">
+                          Амжилттай устгалаа!
+                        </p>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <InvoiceModal
+                isOpen={showInvoiceModal}
+                onClose={() => setShowInvoiceModal(false)}
+                resident={invoiceModalResident}
+                baiguullagiinId={baiguullagiinId || ""}
+                token={token || ""}
+                barilgiinId={barilgiinId}
+              />
+            </div>
+
+            <AnimatePresence>
+              {ledgerDetailSelection && (
+                <motion.div
+                  key="ledger-uldegdel-detail"
+                  initial={{ opacity: 0, x: 28 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 28 }}
+                  transition={{ type: "spring", stiffness: 320, damping: 32 }}
+                  className="no-print flex flex-col overflow-hidden min-h-0 min-w-0 flex-none w-full max-h-[48%] lg:max-h-none lg:w-[min(48vw,580px)] lg:max-w-[min(94vw,620px)] bg-white dark:bg-[#0f172a] rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800"
+                >
+                  <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/50 flex justify-between items-start gap-2 shrink-0">
+                    <div>
+                      <h3 className="text-base sm:text-lg text-slate-800 dark:text-white ">
+                        Үлдэгдэл
                       </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
-                        Та энэ гүйлгээг устгахдаа итгэлтэй байна уу? Энэ
-                        үйлдлийг буцаах боломжгүй.
+                      <p className="text-[12px] text-slate-400 mt-0.5">
+                        {ledgerDetailSelection.kind === "row"
+                          ? "Сарын задрал (сонгосон мөрийн үлдэгдэл)"
+                          : "Сарын задрал (шүүлттэй нийт)"}
                       </p>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={handleDeleteCancel}
-                          className="ant-btn ant-btn-default flex-1"
-                        >
-                          Хаах
-                        </button>
-                        <button
-                          onClick={handleDeleteConfirm}
-                          className="ant-btn ant-btn-danger flex-1 bg-rose-600 hover:bg-rose-700 text-white"
-                        >
-                          Устгах
-                        </button>
-                      </div>
                     </div>
-                  </motion.div>
+                    <button
+                      type="button"
+                      onClick={() => setLedgerDetailSelection(null)}
+                      className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-lg shrink-0"
+                      aria-label="Хаах"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar p-4 sm:p-5 space-y-4">
+                    {ledgerDetailSelection.kind === "row" ? (
+                      <>
+                        <div
+                          className={`rounded-2xl px-4 py-3 border border-slate-100 dark:border-slate-800 ${
+                            (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/25"
+                              : "bg-rose-50/80 dark:bg-rose-950/20"
+                          }`}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">
+                            Үлдэгдэл дүн
+                          </div>
+                          <div
+                            className={`text-xl sm:text-2xl font-semibold tabular-nums ${
+                              (ledgerDetailSelection.row.uldegdel ?? 0) < 0.01
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {formatCurrency(
+                              Number(ledgerDetailSelection.row.uldegdel ?? 0),
+                            )}{" "}
+                            ₮
+                          </div>
+                        </div>
+                        <LedgerMonthlyBreakdownTable
+                          rows={monthlyBreakdownFull}
+                          highlightYm={ledgerDetailHighlightYm}
+                          scopeLabel="Бүх сар — төлөх / төлсөн нийлбэр ба үлдэгдлийн алхам"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <div
+                          className={`rounded-2xl px-4 py-3 border border-slate-100 dark:border-slate-800 ${
+                            ledgerDetailSelection.balance < 0.01
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/25"
+                              : "bg-rose-50/80 dark:bg-rose-950/20"
+                          }`}
+                        >
+                          <div className="text-[10px] uppercase tracking-wider text-slate-400 mb-1">
+                            Үлдэгдэл (хамгийн сүүлийн мөр)
+                          </div>
+                          <div
+                            className={`text-xl sm:text-2xl font-semibold tabular-nums ${
+                              ledgerDetailSelection.balance < 0.01
+                                ? "text-emerald-700 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            {formatCurrency(ledgerDetailSelection.balance)} ₮
+                          </div>
+                        </div>
+                        <LedgerMonthlyBreakdownTable
+                          rows={monthlyBreakdownFiltered}
+                          scopeLabel="Шүүлттэй хугацаа — сар бүрийн төлөх / төлсөн ба үлдэгдэл"
+                        />
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed border border-slate-100 dark:border-slate-800/80 rounded-xl px-3 py-2.5 bg-slate-50/80 dark:bg-slate-800/40">
+                          Дээрх хүснэгт нь зөвхөн хуулгын одоогийн{" "}
+                          <span className="font-medium text-slate-600 dark:text-slate-300">
+                            огнооны шүүлтэнд орсон
+                          </span>{" "}
+                          мөрүүдээр сар бүр төлөх, төлсөн дүнг нэгтгэж,
+                          үлдэгдлийг ижил дүрмээр (мөр мөрөөр төлөх − төлсөн)
+                          тооцсон дүнгүүд юм. Хүснэгтийн «Нийт» мөрийн үлдэгдэл
+                          нь шинэ мөрнөөс уншигдсан утгатай таарна.
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Success Overlay */}
-            <AnimatePresence>
-              {deleteSuccess && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-[100001] flex items-center justify-center bg-black/30 rounded-2xl sm:rounded-3xl"
-                >
-                  <motion.div
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-xl"
-                  >
-                    <div className="text-center">
-                      <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-3">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-6 w-6 text-emerald-600 dark:text-emerald-400"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <p className="text-lg  text-slate-800 dark:text-white">
-                        Амжилттай устгалаа!
-                      </p>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <InvoiceModal
-              isOpen={showInvoiceModal}
-              onClose={() => setShowInvoiceModal(false)}
-              resident={invoiceModalResident}
-              baiguullagiinId={baiguullagiinId || ""}
-              token={token || ""}
-              barilgiinId={barilgiinId}
-            />
           </motion.div>
         </div>
       </AnimatePresence>

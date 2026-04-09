@@ -686,9 +686,7 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  const v = gid
-                    ? Number(monthPaidByGereeId[gid] ?? 0)
-                    : 0;
+                  const v = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
                   return sum + v;
                 },
                 0,
@@ -806,9 +804,7 @@ export default function GuilgeeTable({
             const itForTuluv = {
               ...record,
               uldegdel: remainingValue,
-              _paidFromSummary: gid
-                ? Number(monthPaidByGereeId[gid] ?? 0)
-                : 0,
+              _paidFromSummary: gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0,
             };
             let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
             if (record?.tuluv === "Цуцалсан" || record?.status === "Цуцалсан") {
