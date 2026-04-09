@@ -9,6 +9,7 @@ import { StandardPagination } from "@/components/ui/StandardTable";
 import formatNumber from "tools/function/formatNumber";
 import { FileSpreadsheet } from "lucide-react";
 import { getDefaultDateRange } from "@/lib/utils";
+import dayjs from "dayjs";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
 import { useSearch } from "@/context/SearchContext";
@@ -28,9 +29,7 @@ export default function NegtgelTailanPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [dateRange, setDateRange] = useState<
-    [string | null, string | null] | undefined
-  >(getDefaultDateRange);
+  const [dateRange, setDateRange] = useState<[any, any] | undefined>(getDefaultDateRange);
   const [searchText, setSearchText] = useState("");
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
@@ -79,11 +78,14 @@ export default function NegtgelTailanPage() {
       page,
       limit,
     ]: any) => {
+      const s = start ? dayjs(start).format("YYYY-MM-DD") : "";
+      const e = end ? dayjs(end).format("YYYY-MM-DD") : "";
+
       const resp = await uilchilgee(tkn).post(url, {
         baiguullagiinId: bId,
         ...(barId ? { barilgiinId: barId } : {}),
-        ekhlekhOgnoo: `${start} 00:00:00`,
-        duusakhOgnoo: `${end} 23:59:59`,
+        ekhlekhOgnoo: s ? `${s} 00:00:00` : undefined,
+        duusakhOgnoo: e ? `${e} 23:59:59` : undefined,
         search: search || globalSearch || undefined,
         khuudasniiDugaar: page,
         khuudasniiKhemjee: limit,
@@ -159,7 +161,7 @@ export default function NegtgelTailanPage() {
           <StandardDatePicker
             isRange={true}
             value={dateRange}
-            onChange={(dates, dateStrings) => setDateRange(dateStrings)}
+            onChange={setDateRange}
             allowClear
             placeholder="Огноо сонгох"
             classNames={{

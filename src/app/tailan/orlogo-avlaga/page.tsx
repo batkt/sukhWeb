@@ -20,8 +20,11 @@ import { FileSpreadsheet, Printer } from "lucide-react";
 import { OrlogoAvlagaTable, OrlogoAvlagaItem } from "./OrlogoAvlagaTable";
 import toast from "react-hot-toast";
 import { pickMonthSlice } from "../../tulbur/guilgeeTuukh/guilgeeMonthMatrix";
-import { computeLedgerRunningBalancesByGereeId } from "../../tulbur/guilgeeTuukh/ledgerRunningBalances";
 import { aggregateLedgerTulsunByGereeId } from "../../tulbur/guilgeeTuukh/guilgeePaidDisplay";
+import {
+  itemPrimaryDateMs,
+  computeLedgerRunningBalancesByGereeId,
+} from "../../tulbur/guilgeeTuukh/ledgerRunningBalances";
 
 const PrintStyles = () => (
   <style jsx global>{`
@@ -139,7 +142,17 @@ const PrintStyles = () => (
   `}</style>
 );
 
+import dayjs from "dayjs";
+
 type TabType = "avlaga" | "tulult" | "all";
+type DateRangeValue = [any, any] | undefined;
+
+const toMonthKey = (v?: any) => {
+  const s = v ? (typeof v === "string" ? v : dayjs(v).format("YYYY-MM")) : "";
+  if (!s) return "";
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}` : "";
+};
 
 export default function OrlogoAvlagaPage() {
   const { selectedBuildingId } = useBuilding();
@@ -153,9 +166,7 @@ export default function OrlogoAvlagaPage() {
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
   const [activeTab, setActiveTab] = useState<TabType>("all");
-  const [dateRange, setDateRange] = useState<
-    [string | null, string | null] | undefined
-  >(getDefaultDateRange);
+  const [dateRange, setDateRange] = useState<DateRangeValue>(getDefaultDateRange);
   const { searchTerm } = useSearch();
   const [filters, setFilters] = useState({
     orshinSuugch: "",
@@ -169,6 +180,7 @@ export default function OrlogoAvlagaPage() {
   const [pageSize, setPageSize] = useState(200);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [expandedLedger, setExpandedLedger] = useState<any[]>([]);
+  const [expandedGlobalUldegdel, setExpandedGlobalUldegdel] = useState<number | null>(null);
   const [expandedLoading, setExpandedLoading] = useState(false);
   const [expandedError, setExpandedError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -179,12 +191,35 @@ export default function OrlogoAvlagaPage() {
     effectiveBarilgiinId,
   );
 
-  const toMonthKey = (v?: string | null) => {
-    if (!v) return "";
-    const [y, m] = v.split("-");
-    if (!y || !m) return "";
-    return `${y}-${m.padStart(2, "0")}`;
-  };
+  const effectiveDateFilter = useMemo(() => {
+    const rawStart = dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : "";
+    const rawEnd = dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : "";
+    const hasDateFilter = Boolean(rawStart || rawEnd);
+
+    const startKey = toMonthKey(rawStart);
+    const endKey = toMonthKey(rawEnd);
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(
+      now.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    const isLatestMonthView = Boolean(
+      hasDateFilter &&
+        rawStart &&
+        rawEnd &&
+        startKey &&
+        endKey &&
+        startKey === endKey &&
+        startKey === currentMonthKey,
+    );
+
+    return {
+      hasDateFilter,
+      isLatestMonthView,
+      start: rawStart || undefined,
+      end: rawEnd || undefined,
+    };
+  }, [dateRange]);
 
   const monthlyMatrixRange = useMemo(() => {
     const [rawStart, rawEnd] = dateRange || [];
@@ -258,14 +293,9 @@ export default function OrlogoAvlagaPage() {
           token,
           baiguullagiinId,
           selectedBuildingId || null,
-          dateRange?.[0] || null,
-          dateRange?.[1] || null,
         ]
       : null,
-    async ([, tkn, bId, barId, start, end]) => {
-      const startIso = start ? `${start}T00:00:00.000Z` : undefined;
-      const endIso = end ? `${end}T23:59:59.999Z` : undefined;
-
+    async ([, tkn, bId, barId]) => {
       const resp = await uilchilgee(tkn).get("/nekhemjlekhiinTuukh", {
         params: {
           baiguullagiinId: bId,
@@ -275,9 +305,6 @@ export default function OrlogoAvlagaPage() {
           query: JSON.stringify({
             baiguullagiinId: bId,
             ...(barId ? { barilgiinId: barId } : {}),
-            ...(startIso && endIso
-              ? { createdAt: { $gte: startIso, $lte: endIso } }
-              : {}),
           }),
         },
       });
@@ -293,17 +320,13 @@ export default function OrlogoAvlagaPage() {
           token,
           baiguullagiinId,
           selectedBuildingId || null,
-          dateRange?.[0] || null,
-          dateRange?.[1] || null,
         ]
       : null,
-    async ([, tkn, bId, barId, start, end]) => {
+    async ([, tkn, bId, barId]) => {
       const resp = await uilchilgee(tkn).get("/gereeniiTulukhAvlaga", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
-          ...(start ? { ekhlekhOgnoo: start } : {}),
-          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -320,17 +343,13 @@ export default function OrlogoAvlagaPage() {
           token,
           baiguullagiinId,
           selectedBuildingId || null,
-          dateRange?.[0] || null,
-          dateRange?.[1] || null,
         ]
       : null,
-    async ([, tkn, bId, barId, start, end]) => {
+    async ([, tkn, bId, barId]) => {
       const resp = await uilchilgee(tkn).get("/gereeniiTulsunAvlaga", {
         params: {
           baiguullagiinId: bId,
           ...(barId ? { barilgiinId: barId } : {}),
-          ...(start ? { ekhlekhOgnoo: start } : {}),
-          ...(end ? { duusakhOgnoo: end } : {}),
           khuudasniiDugaar: 1,
           khuudasniiKhemjee: 20000,
         },
@@ -377,15 +396,7 @@ export default function OrlogoAvlagaPage() {
     return map;
   }, [orshinSuugchGaralt?.jagsaalt]);
 
-  const itemPrimaryDateMs = (it: any): number => {
-    const raw = it?.ognoo;
-    if (raw != null && String(raw).trim() !== "") {
-      const t = new Date(raw).getTime();
-      if (!Number.isNaN(t)) return t;
-    }
-    const t2 = new Date(it?.tulsunOgnoo || it?.createdAt || 0).getTime();
-    return Number.isNaN(t2) ? 0 : t2;
-  };
+
 
   const allHistoryItems = useMemo(() => {
     const invoices = Array.isArray(historyData?.jagsaalt)
@@ -425,11 +436,17 @@ export default function OrlogoAvlagaPage() {
     });
 
     // Date filtering (Client Side)
-    const [start, end] = dateRange || [];
-    if (!start && !end) return combined;
+    if (!effectiveDateFilter.hasDateFilter || effectiveDateFilter.isLatestMonthView) {
+      return [...combined].sort((a: any, b: any) => {
+        const d = itemPrimaryDateMs(a) - itemPrimaryDateMs(b);
+        if (d !== 0) return d;
+        return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
+      });
+    }
 
-    const startMs = start ? new Date(start).setHours(0, 0, 0, 0) : Number.NEGATIVE_INFINITY;
-    const endMs = end ? new Date(end).setHours(23, 59, 59, 999) : Number.POSITIVE_INFINITY;
+    const { start, end } = effectiveDateFilter;
+    const startMs = start ? dayjs(start).startOf("day").valueOf() : Number.NEGATIVE_INFINITY;
+    const endMs = end ? dayjs(end).endOf("day").valueOf() : Number.POSITIVE_INFINITY;
 
     const filtered = combined.filter((it: any) => {
       const d = itemPrimaryDateMs(it);
@@ -441,7 +458,7 @@ export default function OrlogoAvlagaPage() {
       if (d !== 0) return d;
       return String(a?._id ?? "").localeCompare(String(b?._id ?? ""));
     });
-  }, [historyData, receivableData, paymentRecordsData, dateRange]);
+  }, [historyData, receivableData, paymentRecordsData, effectiveDateFilter]);
 
   const buildingHistoryItems = allHistoryItems;
 
@@ -662,6 +679,7 @@ export default function OrlogoAvlagaPage() {
             ? resp.data
             : [];
       setExpandedLedger(ledger);
+      setExpandedGlobalUldegdel(resp.data?.globalUldegdel ?? null);
     } catch (e: any) {
       setExpandedError(e?.response?.data?.aldaa || e.message || "Алдаа гарлаа");
     } finally {
@@ -673,6 +691,7 @@ export default function OrlogoAvlagaPage() {
     setModalOpen(false);
     setSelectedRecord(null);
     setExpandedLedger([]);
+    setExpandedGlobalUldegdel(null);
     setExpandedError(null);
   };
 
@@ -685,17 +704,35 @@ export default function OrlogoAvlagaPage() {
     const toastId = toast.loading("Excel файл бэлтгэж байна...");
 
     try {
+      // Create data similar to what's displayed in the table
+      const tableData = displayList.map((it, idx) => {
+        const fullName = [it._ovog, it._ner].filter(Boolean).join(" ") || "-";
+        
+        return {
+          index: idx + 1,
+          ner: fullName,
+          gereeniiDugaar: it._gereeDugaar || it.gereeniiDugaar || "-",
+          davkhar: it._davkhar || "-",
+          toot: it._toot || "-",
+          paid: parseFloat(String(getPaid(it))).toFixed(2),
+        };
+      });
+
       const body = {
-        report: "orlogo-tovchoo",
-        baiguullagiinId,
-        barilgiinId: selectedBuildingId || undefined,
-        ekhlekhOgnoo: dateRange?.[0] || undefined,
-        duusakhOgnoo: dateRange?.[1] || undefined,
-        activeTab: activeTab, // Pass current tab context
-        ...filters,
+        data: tableData,
+        headers: [
+          { key: "index", label: "№" },
+          { key: "ner", label: "Харилцагчийн нэр" },
+          { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
+          { key: "davkhar", label: "Давхар" },
+          { key: "toot", label: "Тоот" },
+          { key: "paid", label: "Төлсөн" },
+        ],
+        fileName: `${activeTab === "tulult" ? "orlogo" : "avlaga"}_report_${new Date().toISOString().split("T")[0]}`,
+        sheetName: "Орлого авлагын тайлан",
       };
 
-      const resp = await uilchilgee(token).post("/tailan/export", body, {
+      const resp = await uilchilgee(token).post("/nekhemjlekhiinTuukhExcelDownload", body, {
         responseType: "blob" as any,
       });
 
@@ -706,7 +743,7 @@ export default function OrlogoAvlagaPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const filename = `${activeTab === "tulult" ? "orlogo" : "avlaga"}_report_${new Date().toISOString().split("T")[0]}.xlsx`;
+      const filename = `${body.fileName}.xlsx`;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
@@ -832,7 +869,7 @@ export default function OrlogoAvlagaPage() {
           <StandardDatePicker
             isRange={true}
             value={dateRange}
-            onChange={(dates, dateStrings) => setDateRange(dateStrings)}
+            onChange={setDateRange}
             allowClear
             placeholder="Огноо сонгох"
             classNames={{
@@ -882,6 +919,7 @@ export default function OrlogoAvlagaPage() {
             pageSize={pageSize}
             activeTab={activeTab}
             expandedLedger={expandedLedger}
+            expandedGlobalUldegdel={expandedGlobalUldegdel}
             expandedLoading={expandedLoading}
             expandedError={expandedError}
             getPaid={getPaid}

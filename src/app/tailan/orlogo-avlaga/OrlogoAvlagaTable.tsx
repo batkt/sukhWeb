@@ -31,6 +31,7 @@ interface OrlogoAvlagaTableProps {
   activeTab: "tulult" | "avlaga" | "all";
   expandedRow?: string | null;
   expandedLedger: any[];
+  expandedGlobalUldegdel: number | null;
   expandedLoading: boolean;
   expandedError: string | null;
   getPaid: (item: any) => number;
@@ -54,6 +55,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   pageSize = 200,
   activeTab,
   expandedLedger,
+  expandedGlobalUldegdel,
   expandedLoading,
   expandedError,
   getPaid,
@@ -318,6 +320,23 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           );
         },
       },
+      {
+        title: (
+          <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+            Үлдэгдэл
+          </span>
+        ),
+        dataIndex: "uldegdel",
+        key: "uldegdel",
+        width: 120,
+        align: "right",
+        className: headerClassName,
+        render: (val: any) => (
+          <span className="text-gray-900 dark:text-white text-[13px]">
+            {formatNumber(Number(val) || 0, 2)}
+          </span>
+        ),
+      },
     ];
 
     // Calculate totals for summary row (using filtered data)
@@ -392,6 +411,20 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     </span>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
+                {expandedGlobalUldegdel !== null && (
+                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20 font-bold">
+                    <Table.Summary.Cell index={0} colSpan={3} align="right">
+                      <span className="font-bold text-red-600 dark:text-red-400 text-[13px]">
+                        Нийт үлдэгдэл:
+                      </span>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} colSpan={2} align="right">
+                      <span className="font-bold text-red-600 dark:text-red-400 text-[15px]">
+                        {formatNumber(expandedGlobalUldegdel, 2)} ₮
+                      </span>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
               </Table.Summary>
             )}
           />

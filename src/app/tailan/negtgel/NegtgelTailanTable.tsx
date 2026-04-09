@@ -32,6 +32,7 @@ export interface NegtgelTailanItem {
   niitTulukhDun?: number;
   niitTulsunDun?: number;
   niitUldegdel?: number;
+  globalUldegdel?: number;
   invoiceToo?: number;
   avlaga: AvlagaItem[];
 }
@@ -241,13 +242,16 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       ellipsis: true,
       align: "center" as const,
       fixed: "right" as const,
-      render: (e: number) => (
-        <div className="text-right">
-          <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">
-            {formatNumber(e, 2)}
-          </span>
-        </div>
-      ),
+      render: (_: any, record: NegtgelTailanItem) => {
+        const val = record.globalUldegdel ?? record.niitUldegdel ?? 0;
+        return (
+          <div className="text-right">
+            <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">
+              {formatNumber(val, 2)}
+            </span>
+          </div>
+        );
+      },
     });
 
     return base;
@@ -279,6 +283,42 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             Мэдээлэл алга байна
           </span>
         ),
+      }}
+      summary={(pageData) => {
+        let totalUldegdel = 0;
+        pageData.forEach((record) => {
+          totalUldegdel += Number(record.globalUldegdel ?? record.niitUldegdel ?? 0);
+        });
+
+        return (
+          <Table.Summary fixed>
+            <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800 font-bold">
+              <Table.Summary.Cell index={0} colSpan={4} align="center">
+                <span className="font-bold text-gray-900 dark:text-white text-[13px]">
+                  Нийт
+                </span>
+              </Table.Summary.Cell>
+              {/* Skip month columns */}
+              {months.map((ym) => {
+                const typesInMonth = avlagaTypes.filter((v) => v.ognoo === ym);
+                return typesInMonth.map((_, idx) => (
+                  <Table.Summary.Cell
+                    key={`${ym}-${idx}`}
+                    index={idx + 4}
+                    align="right"
+                  >
+                    {/* Optionally sum these categories if needed, but the user only asked for niit uldegdel */}
+                  </Table.Summary.Cell>
+                ));
+              })}
+              <Table.Summary.Cell index={999} align="right">
+                <span className="font-bold text-red-600 dark:text-red-400 text-[13px]">
+                  {formatNumber(totalUldegdel, 2)}
+                </span>
+              </Table.Summary.Cell>
+            </Table.Summary.Row>
+          </Table.Summary>
+        );
       }}
       pagination={false}
     />
