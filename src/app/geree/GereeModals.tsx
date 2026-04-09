@@ -349,6 +349,12 @@ export default function GereeModals() {
         baiguullagiinId={baiguullaga?._id || null}
         barilgiinId={data.selectedBarilga?._id || null}
         onRefresh={() => data.gereeJagsaaltMutate?.()}
+        printedByAjiltan={ajiltan ?? null}
+        baiguullagiinNer={
+          (baiguullaga?.ner && String(baiguullaga.ner).trim()) ||
+          (baiguullaga?.dotoodNer && String(baiguullaga.dotoodNer).trim()) ||
+          null
+        }
       />
     </>
   );

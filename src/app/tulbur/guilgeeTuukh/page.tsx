@@ -3378,9 +3378,15 @@ export default function DansniiKhuulga() {
         token={token}
         baiguullagiinId={ajiltan?.baiguullagiinId ?? null}
         barilgiinId={selectedBuildingId || barilgiinId || null}
-        pageDateRange={
-          effectiveDateFilter.isLatestMonthView ? undefined : ekhlekhOgnoo
+        printedByAjiltan={ajiltan ?? null}
+        baiguullagiinNer={
+          (baiguullaga?.ner && String(baiguullaga.ner).trim()) ||
+          (baiguullaga?.dotoodNer && String(baiguullaga.dotoodNer).trim()) ||
+          null
         }
+        /* Хуулга modal нь жагсаалтын сонгосон сар/огнооны шүүлтийг үргэлж ашиглана.
+         * isLatestMonthView үед undefined өгөх нь modal-д шүүлт алга болгож бүх мөр харуулдаг байсан. */
+        pageDateRange={ekhlekhOgnoo}
         onRefresh={() => {
           // Clear cache and revalidate all relevant data
           mutate(
