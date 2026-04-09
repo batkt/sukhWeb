@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table } from "antd";
-import type { ColumnsType } from "antd/es/table";
 import formatNumber from "tools/function/formatNumber";
 
 export interface AvlagiinNasjiltItem {
@@ -39,6 +37,11 @@ interface AvlagiinNasjiltTableProps {
     p61_90: number;
     p120plus: number;
   };
+  authoritativeTotals?: {
+    totalPaid: number;
+    totalUldegdel: number;
+    totalBilled: number;
+  };
 }
 
 export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
@@ -47,279 +50,216 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
   page = 1,
   pageSize = 200,
   totals,
+  authoritativeTotals,
 }) => {
-  const columns: ColumnsType<AvlagiinNasjiltItem> = useMemo(
-    () => [
-      {
-        title: "№",
-        key: "index",
-        width: 50,
-        align: "center",
-        fixed: "left",
-        render: (_: any, __: any, index: number) =>
-          (page - 1) * pageSize + index + 1,
-      },
-      {
-        title: "Гэрээ",
-        dataIndex: "gereeniiDugaar",
-        key: "gereeniiDugaar",
-        width: 100,
-        align: "center",
-        fixed: "left",
-        render: (val: string) => (
-          <span className="text-theme font-medium break-words">
-            {val || "-"}
-          </span>
-        ),
-        sorter: (a, b) => (a.gereeniiDugaar || "").localeCompare(b.gereeniiDugaar || ""),
-      },
-      {
-        title: "Оршин суугч",
-        dataIndex: "ner",
-        key: "ner",
-        width: 150,
-        align: "center",
-        fixed: "left",
-        render: (val: string) => {
-          if (!val) return "-";
-          const parts = val.trim().split(/\s+/);
-          if (parts.length >= 2) {
-            const abbreviated = parts[0] ? `${parts[0].charAt(0)}.` : "";
-            const fullName = [abbreviated, parts.slice(1).join(" ")].filter(Boolean).join(" ");
-            return (
-              <span className="text-theme font-medium break-words max-w-full" title={val}>
-                {fullName}
-              </span>
-            );
-          }
-          return (
-            <span className="text-theme font-medium break-words max-w-full" title={val}>
-              {val}
-            </span>
-          );
-        },
-        sorter: (a, b) => (a.ner || "").localeCompare(b.ner || ""),
-      },
-      {
-        title: "Давхар",
-        dataIndex: "davkhar",
-        key: "davkhar",
-        width: 70,
-        align: "center",
-        render: (val: string) => (
-          <span className="text-theme whitespace-nowrap">{val || "-"}</span>
-        ),
-        sorter: (a, b) => (Number(a.davkhar) || 0) - (Number(b.davkhar) || 0) || String(a.davkhar).localeCompare(String(b.davkhar)),
-      },
-      {
-        title: "Тоот",
-        dataIndex: "toot",
-        key: "toot",
-        width: 70,
-        align: "center",
-        render: (val: string, record: AvlagiinNasjiltItem) => (
-          <span className="text-theme whitespace-nowrap">
-            {val || record.talbainDugaar || "-"}
-          </span>
-        ),
-        sorter: (a, b) => {
-          const tA = a.toot || a.talbainDugaar || "";
-          const tB = b.toot || b.talbainDugaar || "";
-          return Number(tA) - Number(tB) || String(tA).localeCompare(String(tB));
-        },
-      },
-      {
-        title: "Нийт",
-        dataIndex: "undsenDun",
-        key: "undsenDun",
-        width: 100,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.niitDun, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.undsenDun ?? a.niitDun ?? 0) - (b.undsenDun ?? b.niitDun ?? 0),
-      },
-      // {
-      //   title: "Хөнгөлөлт",
-      //   dataIndex: "khungulult",
-      //   key: "khungulult",
-      //   width: 100,
-      //   align: "center",
-      //   render: (val: number) => (
-      //     <div className="text-right">
-      //       <span className="text-theme/60 whitespace-nowrap">
-      //         {formatNumber(val, 2)}
-      //       </span>
-      //     </div>
-      //   ),
-      // },
-      {
-        title: "Төлсөн",
-        dataIndex: "tulsunDun",
-        key: "tulsunDun",
-        width: 100,
-        align: "center",
-        render: (val: number) => (
-          <div className="text-right">
-            <span className="text-emerald-600 whitespace-nowrap">
-              {formatNumber(val, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.tulsunDun ?? 0) - (b.tulsunDun ?? 0),
-      },
-      {
-        title: "Авлага",
-        dataIndex: "uldegdel",
-        key: "uldegdel",
-        width: 100,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-red-500 font-bold whitespace-nowrap">
-              {formatNumber(val ?? record.tulukhDun, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.uldegdel ?? a.tulukhDun ?? 0) - (b.uldegdel ?? b.tulukhDun ?? 0),
-      },
-      {
-        title: "0-30",
-        dataIndex: "p0_30",
-        key: "p0_30",
-        width: 80,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.avalaga0, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.p0_30 ?? a.avalaga0 ?? 0) - (b.p0_30 ?? b.avalaga0 ?? 0),
-      },
-      {
-        title: "31-60",
-        dataIndex: "p31_60",
-        key: "p31_60",
-        width: 80,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.avlaga31, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.p31_60 ?? a.avlaga31 ?? 0) - (b.p31_60 ?? b.avlaga31 ?? 0),
-      },
-      {
-        title: "61-90",
-        dataIndex: "p61_90",
-        key: "p61_90",
-        width: 80,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.avlaga61, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.p61_90 ?? a.avlaga61 ?? 0) - (b.p61_90 ?? b.avlaga61 ?? 0),
-      },
-      {
-        title: "120+",
-        dataIndex: "p120plus",
-        key: "p120plus",
-        width: 80,
-        align: "center",
-        render: (val: number, record: AvlagiinNasjiltItem) => (
-          <div className="text-right">
-            <span className="text-theme whitespace-nowrap">
-              {formatNumber(val ?? record.avlaga120, 2)}
-            </span>
-          </div>
-        ),
-        sorter: (a, b) => (a.p120plus ?? a.avlaga120 ?? 0) - (b.p120plus ?? b.avlaga120 ?? 0),
-      },
-    ],
-    [page, pageSize],
-  );
+
+  const columns = useMemo(() => [
+    { key: "index", label: "№", width: "50px", align: "center" as const, fixed: true },
+    { key: "gereeniiDugaar", label: "Гэрээ", width: "100px", align: "center" as const, fixed: true },
+    { key: "ner", label: "Оршин суугч", width: "160px", align: "left" as const, fixed: true },
+    { key: "davkhar", label: "Давхар", width: "70px", align: "center" as const },
+    { key: "toot", label: "Тоот", width: "70px", align: "center" as const },
+    { key: "undsenDun", label: "₮ Төлөх", width: "120px", align: "right" as const },
+    { key: "tulsunDun", label: "Төлсөн", width: "120px", align: "right" as const },
+    { key: "uldegdel", label: "Нийт үлдэгдэл", width: "140px", align: "right" as const },
+    { key: "p0_30", label: "0-30", width: "100px", align: "right" as const },
+    { key: "p31_60", label: "31-60", width: "100px", align: "right" as const },
+    { key: "p61_90", label: "61-90", width: "100px", align: "right" as const },
+    { key: "p120plus", label: "120+", width: "100px", align: "right" as const },
+  ], []);
+
+  const formatNer = (val: string) => {
+    if (!val) return "-";
+    const parts = val.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      const abbreviated = parts[0] ? `${parts[0].charAt(0)}.` : "";
+      return [abbreviated, parts.slice(1).join(" ")].filter(Boolean).join(" ");
+    }
+    return val;
+  };
+
+  const getCellValue = (record: AvlagiinNasjiltItem, key: string, index: number) => {
+    switch (key) {
+      case "index":
+        return (page - 1) * pageSize + index + 1;
+      case "ner":
+        return formatNer(record.ner);
+      case "gereeniiDugaar":
+        return record.gereeniiDugaar || "-";
+      case "davkhar":
+        return record.davkhar || "-";
+      case "toot":
+        return record.toot || record.talbainDugaar || "-";
+      case "undsenDun":
+        return formatNumber(record.undsenDun ?? record.niitDun ?? 0, 2);
+      case "tulsunDun":
+        return formatNumber(record.tulsunDun ?? 0, 2);
+      case "uldegdel":
+        return formatNumber(record.uldegdel ?? record.tulukhDun ?? 0, 2);
+      case "p0_30":
+        return formatNumber(record.p0_30 ?? record.avalaga0 ?? 0, 2);
+      case "p31_60":
+        return formatNumber(record.p31_60 ?? record.avlaga31 ?? 0, 2);
+      case "p61_90":
+        return formatNumber(record.p61_90 ?? record.avlaga61 ?? 0, 2);
+      case "p120plus":
+        return formatNumber(record.p120plus ?? record.avlaga120 ?? 0, 2);
+      default:
+        return "-";
+    }
+  };
+
+  const getCellClassName = (key: string) => {
+    if (key === "tulsunDun") return "text-emerald-600 dark:text-emerald-400";
+    if (key === "uldegdel") return "text-red-500 dark:text-red-400";
+    return "text-gray-900 dark:text-white";
+  };
+
+  const getTotalValue = (key: string) => {
+    switch (key) {
+      case "undsenDun": {
+        const totalPaid = authoritativeTotals?.totalPaid ?? 0;
+        const totalUldegdel = authoritativeTotals?.totalUldegdel ?? 0;
+        return formatNumber(totalPaid + totalUldegdel, 2);
+      }
+      case "tulsunDun": return formatNumber(authoritativeTotals?.totalPaid ?? totals?.tulsunDun ?? 0, 2);
+      case "uldegdel": return formatNumber(authoritativeTotals?.totalUldegdel ?? totals?.uldegdel ?? 0, 2);
+      case "p0_30": return formatNumber(totals?.p0_30 || 0, 2);
+      case "p31_60": return formatNumber(totals?.p31_60 || 0, 2);
+      case "p61_90": return formatNumber(totals?.p61_90 || 0, 2);
+      case "p120plus": return formatNumber(totals?.p120plus || 0, 2);
+      default: return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">Уншиж байна...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <span className="text-sm text-gray-500 dark:text-gray-400">Мэдээлэл олдсонгүй</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="guilgee-table-wrap">
-      <Table
-        dataSource={data}
-        columns={columns}
-        rowKey={(record) => record._id || Math.random().toString()}
-        pagination={false}
-        size="small"
-        bordered
-        loading={loading}
-        className="guilgee-table"
-        scroll={{ x: "max-content" }}
-        locale={{ emptyText: "Мэдээлэл олдсонгүй" }}
-        summary={() =>
-          totals && data.length > 0 ? (
-            <Table.Summary fixed="bottom">
-              <Table.Summary.Row>
-                <Table.Summary.Cell index={0} colSpan={5} align="center">
-                  <span className="force-bold text-theme tracking-wider">
-                    Нийт
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="right">
-                  <span className="force-bold text-theme">
-                    {formatNumber(totals.undsenDun, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                {/* Skip commented out Khungulult column cell if we want to align, or keep it if Table logic handles it */}
-                {/* Commenting this cell out too to match the header */}
-                {/* <Table.Summary.Cell index={2} align="right">
-                  <span className="force-bold text-theme/60">
-                    {formatNumber(totals.khungulult, 2)} ₮
-                  </span>
-                </Table.Summary.Cell> */}
-                <Table.Summary.Cell index={3} align="right">
-                  <span className="force-bold text-emerald-600">
-                    {formatNumber(totals.tulsunDun, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={4} align="right">
-                  <span className="force-bold text-red-500">
-                    {formatNumber(totals.uldegdel, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={5} align="right">
-                  <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p0_30, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={6} align="right">
-                  <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p31_60, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={7} align="right">
-                  <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p61_90, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={8} align="right">
-                  <span className="force-bold text-theme/70">
-                    {formatNumber(totals.p120plus, 2)} ₮
-                  </span>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            </Table.Summary>
-          ) : null
-        }
-      />
+    <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+      <div
+        className="overflow-auto custom-scrollbar"
+        style={{ maxHeight: "calc(100vh - 280px)" }}
+      >
+        <table className="w-full border-collapse" style={{ minWidth: "1200px" }}>
+          {/* Header */}
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-gray-50 dark:bg-gray-800/90 backdrop-blur-sm">
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  className={`
+                    px-3 py-3 text-[13px] font-bold tracking-tight whitespace-nowrap
+                    border-b-2 border-gray-200 dark:border-gray-600
+                    text-gray-700 dark:text-gray-200
+                    ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
+                    ${col.fixed ? "sticky left-0 z-30 bg-gray-50 dark:bg-gray-800" : ""}
+                  `}
+                  style={{
+                    width: col.width,
+                    minWidth: col.width,
+                    ...(col.fixed && col.key === "gereeniiDugaar" ? { left: "50px" } : {}),
+                    ...(col.fixed && col.key === "ner" ? { left: "150px" } : {}),
+                  }}
+                >
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+
+          {/* Body */}
+          <tbody>
+            {data.map((record, index) => (
+              <tr
+                key={record._id || `row-${index}`}
+                className={`
+                  transition-colors duration-100
+                  ${index % 2 === 0
+                    ? "bg-white dark:bg-gray-900"
+                    : "bg-gray-50/50 dark:bg-gray-800/30"
+                  }
+                  hover:bg-blue-50/60 dark:hover:bg-blue-900/15
+                `}
+              >
+                {columns.map((col) => (
+                  <td
+                    key={col.key}
+                    className={`
+                      px-3 py-2.5 text-[13px] font-medium whitespace-nowrap
+                      border-b border-gray-100 dark:border-gray-800
+                      ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
+                      ${getCellClassName(col.key)}
+                      ${col.fixed ? "sticky left-0 z-10 bg-inherit" : ""}
+                    `}
+                    style={{
+                      width: col.width,
+                      minWidth: col.width,
+                      ...(col.fixed && col.key === "gereeniiDugaar" ? { left: "50px" } : {}),
+                      ...(col.fixed && col.key === "ner" ? { left: "150px" } : {}),
+                    }}
+                  >
+                    {getCellValue(record, col.key, index)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+
+          {/* Footer */}
+          {data.length > 0 && (
+            <tfoot className="sticky bottom-0 z-20">
+              <tr className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-sm border-t-2 border-gray-300 dark:border-gray-600">
+                {columns.map((col) => {
+                  const totalVal = getTotalValue(col.key);
+                  const isFirstGroup = ["index", "gereeniiDugaar", "ner", "davkhar", "toot"].includes(col.key);
+
+                  return (
+                    <td
+                      key={col.key}
+                      className={`
+                        px-3 py-3 text-[13px] font-bold whitespace-nowrap
+                        ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
+                        ${col.key === "tulsunDun" ? "text-emerald-600 dark:text-emerald-400" : ""}
+                        ${col.key === "uldegdel" ? "text-red-500 dark:text-red-400" : ""}
+                        ${!["tulsunDun", "uldegdel"].includes(col.key) ? "text-gray-900 dark:text-white" : ""}
+                        ${col.fixed ? "sticky left-0 z-30 bg-gray-100 dark:bg-gray-800" : ""}
+                      `}
+                      style={{
+                        width: col.width,
+                        minWidth: col.width,
+                        ...(col.fixed && col.key === "gereeniiDugaar" ? { left: "50px" } : {}),
+                        ...(col.fixed && col.key === "ner" ? { left: "150px" } : {}),
+                      }}
+                    >
+                      {col.key === "index" ? "" :
+                       col.key === "ner" ? "Нийт" :
+                       isFirstGroup ? "" :
+                       totalVal || ""}
+                    </td>
+                  );
+                })}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      </div>
     </div>
   );
 };

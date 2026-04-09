@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Table, Tooltip } from "antd";
+import { Tooltip } from "antd";
 import formatNumber from "tools/function/formatNumber";
 
 export interface ZardalItem {
@@ -40,12 +40,13 @@ export interface NegtgelTailanItem {
 interface NegtgelTailanTableProps {
   data: NegtgelTailanItem[];
   loading: boolean;
+  authoritativeTotalUldegdel?: number;
 }
 
-const headerClassName =
-  "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
+const headerTitleClassName = "text-gray-900 dark:text-white text-center block text-[13px] font-bold tracking-tight";
+const cellClassName = "text-[13px] text-gray-900 dark:text-white font-medium";
 
-export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
+export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }: NegtgelTailanTableProps) {
   // Build the unique month list and avlaga type list from the data
   const { months, avlagaTypes } = useMemo(() => {
     const monthSet = new Set<string>();
@@ -56,7 +57,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
 
     (Array.isArray(data) ? data : []).forEach((row) => {
       (row.avlaga || []).forEach((b) => {
-        const ym = b.ognoo ? b.ognoo.slice(0, 7) : ""; // "YYYY-MM"
+        const ym = b.ognoo ? b.ognoo.slice(0, 7) : "";
         if (!ym) return;
         monthSet.add(ym);
 
@@ -69,7 +70,6 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
           if (z.dun <= 0) return;
           const zName = z.ner || z.turul || "Бусад";
 
-          // "Менежмент нэгж" special case
           if (zName.includes("Менежментийн төлбөр")) {
             const key = `${ym}|Менежмент нэгж`;
             if (!avlagaMap.has(key)) {
@@ -100,261 +100,226 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
     return { months, avlagaTypes };
   }, [data]);
 
-  const columns = useMemo(() => {
-    const base: any[] = [
-      {
-        title: "№",
-        key: "index",
-        align: "center" as const,
-        width: 50,
-        className: headerClassName,
-        fixed: "left" as const,
-        render: (_: any, __: any, index: number) => index + 1,
-      },
+  // Build dynamic column definitions
+  const dynamicColumns = useMemo(() => {
+    const cols: { key: string; label: string; monthGroup?: string; width: string; getValue: (record: NegtgelTailanItem) => number }[] = [];
 
-      {
-        title: "Харилцагч нэр",
-        key: "ner",
-        className: headerClassName,
-        width: 160,
-        align: "center" as const,
-        ellipsis: true,
-        fixed: "left" as const,
-        render: (_: any, record: NegtgelTailanItem) => {
-          const ovog = String(record._id?.ovog || record.ovog || "").trim();
-          const ner = String(record._id?.ner || record.ner || "").trim();
-          const abbreviated = ovog ? `${ovog.charAt(0)}.` : "";
-          const fullName = [abbreviated, ner].filter(Boolean).join(" ");
-          return (
-            <span className="text-gray-900 dark:text-white text-[13px]">
-              {fullName || "-"}
-            </span>
-          );
-        },
-        sorter: (a: any, b: any) => {
-          const nameA = [a._id?.ovog, a._id?.ner].filter(Boolean).join(" ");
-          const nameB = [b._id?.ovog, b._id?.ner].filter(Boolean).join(" ");
-          return nameA.localeCompare(nameB, "mn-MN");
-        },
-      },
-      {
-        title: "Тоот",
-        className: headerClassName,
-        key: "toot",
-        width: 80,
-        ellipsis: true,
-        align: "center" as const,
-        fixed: "left" as const,
-        render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-gray-900 dark:text-white text-[13px]">
-            {record._id?.toot || record.toot || "-"}
-          </span>
-        ),
-        sorter: (a: any, b: any) => {
-          const tA = a._id?.toot || a.toot || "";
-          const tB = b._id?.toot || b.toot || "";
-          return Number(tA) - Number(tB) || String(tA).localeCompare(String(tB));
-        },
-      },
-      {
-        title: "Утас",
-        className: headerClassName,
-        key: "utas",
-        width: 110,
-        ellipsis: true,
-        align: "center" as const,
-        fixed: "left" as const,
-        render: (_: any, record: NegtgelTailanItem) => {
-          const u = record._id?.utas || record.utas;
-          return (
-            <span className="text-gray-900 dark:text-white text-[13px]">
-              {Array.isArray(u) ? u[0] || "-" : u || "-"}
-            </span>
-          );
-        },
-        sorter: (a: any, b: any) => {
-          const uA = String(Array.isArray(a._id?.utas) ? a._id.utas[0] : a._id?.utas || a.utas || "");
-          const uB = String(Array.isArray(b._id?.utas) ? b._id.utas[0] : b._id?.utas || b.utas || "");
-          return uA.localeCompare(uB);
-        },
-      },
-    ];
-
-    // Dynamic month group columns
     months.forEach((ym) => {
-      const children = avlagaTypes
-        .filter((v) => v.ognoo === ym)
-        .map((assessment) => {
-          const getAssessValue = (record: NegtgelTailanItem) => {
-            const values = record.avlaga;
-            if (!Array.isArray(values)) return 0;
-            let total = 0;
-            values.forEach((b) => {
-              if (b.ognoo?.slice(0, 7) === ym) {
-                const zardluud =
-                  Array.isArray(b.zardluud) && b.zardluud.length > 0
-                    ? b.zardluud
-                    : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
+      const typesInMonth = avlagaTypes.filter((v) => v.ognoo === ym);
+      typesInMonth.forEach((assessment) => {
+        const getAssessValue = (record: NegtgelTailanItem) => {
+          const values = record.avlaga;
+          if (!Array.isArray(values)) return 0;
+          let total = 0;
+          values.forEach((b) => {
+            if (b.ognoo?.slice(0, 7) === ym) {
+              const zardluud =
+                Array.isArray(b.zardluud) && b.zardluud.length > 0
+                  ? b.zardluud
+                  : [{ ner: b.tailbar, dun: b.tulukhDun, turul: "Бусад" }];
 
-                zardluud.forEach((z) => {
-                  if (z.dun <= 0) return;
-                  const zName = z.ner || z.turul || "Бусад";
+              zardluud.forEach((z) => {
+                if (z.dun <= 0) return;
+                const zName = z.ner || z.turul || "Бусад";
+                if (assessment.tailbar === "Менежмент нэгж" && zName.includes("Менежментийн төлбөр")) {
+                  total += z.dun;
+                } else if (zName === assessment.tailbar) {
+                  total += z.dun;
+                }
+              });
+            }
+          });
+          const isSpecialCategory = assessment.tailbar === "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
+          return isSpecialCategory ? total * 0.4 : total;
+        };
 
-                  // Check if it is special management fee condition
-                  if (
-                    assessment.tailbar === "Менежмент нэгж" &&
-                    zName.includes("Менежментийн төлбөр")
-                  ) {
-                    total += z.dun;
-                  } else if (zName === assessment.tailbar) {
-                    total += z.dun;
-                  }
-                });
-              }
-            });
-
-            const isSpecialCategory =
-              assessment.tailbar ===
-              "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
-            return isSpecialCategory ? total * 0.4 : total;
-          };
-
-          return {
-            title: (
-              <Tooltip title={assessment.tailbar}>
-                <div className="w-full break-words whitespace-normal px-1 py-1 text-center font-normal">
-                  {assessment.tailbar}
-                </div>
-              </Tooltip>
-            ),
-            className: headerClassName,
-            key: `${ym}|${assessment.tailbar}`,
-            align: "center" as const,
-            width: 160,
-            onHeaderCell: () => ({
-              style: { minWidth: 160, maxWidth: 160, padding: "4px 0" },
-            }),
-            ellipsis: true,
-            render: (_: any, record: NegtgelTailanItem) => {
-              const displayTotal = getAssessValue(record);
-              const isSpecialCategory =
-                assessment.tailbar ===
-                "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
-
-              return displayTotal > 0 || isSpecialCategory ? (
-                <div className="text-right">
-                  <span className="text-gray-900 dark:text-white text-[13px]">
-                    {formatNumber(displayTotal, 2)}
-                  </span>
-                </div>
-              ) : null;
-            },
-            sorter: (a: any, b: any) => getAssessValue(a) - getAssessValue(b),
-          };
+        cols.push({
+          key: `${ym}|${assessment.tailbar}`,
+          label: assessment.tailbar,
+          monthGroup: ym,
+          width: "140px",
+          getValue: getAssessValue,
         });
-
-      base.push({
-        title: ym,
-        key: ym,
-        className: headerClassName,
-        align: "center" as const,
-        children,
       });
     });
 
-    // Add Absolute Balance column (Authoritative balance)
-    base.push({
-      title: "Нийт үлдэгдэл",
-      className: headerClassName,
-      dataIndex: "niitUldegdel",
-      key: "niitUldegdel",
-      width: 140,
-      ellipsis: true,
-      align: "center" as const,
-      render: (_: any, record: NegtgelTailanItem) => {
-        const val = record.globalUldegdel ?? record.niitUldegdel ?? 0;
-        return (
-          <div className="text-right">
-            <span className="font-semibold text-red-600 dark:text-red-400 text-[13px]">
-              {formatNumber(val, 2)}
-            </span>
-          </div>
-        );
-      },
-      sorter: (a: any, b: any) => {
-        const vA = a.globalUldegdel ?? a.niitUldegdel ?? 0;
-        const vB = b.globalUldegdel ?? b.niitUldegdel ?? 0;
-        return vA - vB;
-      },
-    });
-
-    return base;
+    return cols;
   }, [months, avlagaTypes]);
 
-  return (
-    <Table
-      dataSource={data}
-      columns={columns}
-      loading={loading}
-      rowKey={(record) =>
-        `${record._id?.gereeniiId || ""}-${record._id?.toot || "" || record.toot || ""}-${record.ner || ""}`
-      }
-      size="small"
-      bordered
-      scroll={{ x: "max-content" }}
-      tableLayout="fixed"
-      className="guilgee-table"
-      rowClassName={(_, index) =>
-        `${
-          index % 2 === 0
-            ? "bg-white dark:bg-gray-800"
-            : "bg-gray-50 dark:bg-gray-700/50"
-        } text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200`
-      }
-      locale={{
-        emptyText: (
-          <span className="text-gray-500 dark:text-gray-400">
-            Мэдээлэл алга байна
-          </span>
-        ),
-      }}
-      summary={(pageData) => {
-        let totalUldegdel = 0;
-        pageData.forEach((record) => {
-          totalUldegdel += Number(record.globalUldegdel ?? record.niitUldegdel ?? 0);
-        });
+  // Use authoritative total from parent if available; fallback to local calculation
+  const localTotalUldegdel = useMemo(() => {
+    return (Array.isArray(data) ? data : []).reduce(
+      (s, record) => s + Number(record.niitTulukhDun ?? record.globalUldegdel ?? record.niitUldegdel ?? 0), 0
+    );
+  }, [data]);
 
-        return (
-          <Table.Summary fixed>
-            <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800 font-bold">
-              <Table.Summary.Cell index={0} colSpan={4} align="center">
-                <span className="font-bold text-gray-900 dark:text-white text-[13px]">
-                  Нийт
-                </span>
-              </Table.Summary.Cell>
-              {/* Skip month columns */}
-              {months.map((ym) => {
-                const typesInMonth = avlagaTypes.filter((v) => v.ognoo === ym);
-                return typesInMonth.map((_, idx) => (
-                  <Table.Summary.Cell
-                    key={`${ym}-${idx}`}
-                    index={idx + 4}
-                    align="right"
-                  >
-                    {/* Optionally sum these categories if needed, but the user only asked for niit uldegdel */}
-                  </Table.Summary.Cell>
-                ));
-              })}
-              <Table.Summary.Cell index={999} align="right">
-                <span className="font-bold text-red-600 dark:text-red-400 text-[13px]">
-                  {formatNumber(totalUldegdel, 2)}
-                </span>
-              </Table.Summary.Cell>
-            </Table.Summary.Row>
-          </Table.Summary>
-        );
-      }}
-      pagination={false}
-    />
+  const totalUldegdel = authoritativeTotalUldegdel ?? localTotalUldegdel;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-gray-500 dark:text-gray-400">Уншиж байна...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-48 bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
+        <span className="text-sm text-gray-500 dark:text-gray-400">Мэдээлэл алга байна</span>
+      </div>
+    );
+  }
+
+  // Calculate min table width
+  const baseWidth = 50 + 160 + 80 + 110 + 140; // №, name, toot, utas, uldegdel
+  const dynamicWidth = dynamicColumns.length * 140;
+  const minTableWidth = baseWidth + dynamicWidth;
+
+  // Group months for header
+  const monthGroups = months.map((ym) => ({
+    ym,
+    colCount: avlagaTypes.filter((v) => v.ognoo === ym).length,
+  }));
+
+  return (
+    <div className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden">
+      <div
+        className="overflow-auto custom-scrollbar"
+        style={{ maxHeight: "calc(100vh - 280px)" }}
+      >
+        <table className="w-full border-collapse" style={{ minWidth: `${minTableWidth}px` }}>
+          {/* Two-row header: month groups + individual columns */}
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-gray-100 dark:bg-gray-800/95 backdrop-blur-sm">
+              <th colSpan={4} className="px-3 py-2 text-[12px] font-bold text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 sticky left-0 z-40">
+                Харилцагч
+              </th>
+              {/* Month groups */}
+              {monthGroups.map((mg) => (
+                <th
+                  key={mg.ym}
+                  colSpan={mg.colCount}
+                  className="px-3 py-2 text-[12px] font-bold text-center text-gray-600 dark:text-gray-300 border-b border-r border-gray-200 dark:border-gray-600"
+                >
+                  {mg.ym}
+                </th>
+              ))}
+              {/* Uldegdel */}
+              <th className="px-3 py-2 text-[12px] font-bold text-center text-red-600 dark:text-red-400 border-b border-gray-200 dark:border-gray-600 sticky right-0 z-40 bg-gray-100 dark:bg-gray-800">
+                Үлдэгдэл
+              </th>
+            </tr>
+
+            {/* Detail columns row */}
+            <tr className="bg-gray-50 dark:bg-gray-800/90 backdrop-blur-sm">
+              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky left-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "50px", minWidth: "50px" }}>
+                №
+              </th>
+              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "160px", minWidth: "160px", left: "50px" }}>
+                Нэр
+              </th>
+              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "80px", minWidth: "80px", left: "210px" }}>
+                Тоот
+              </th>
+              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-r border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "110px", minWidth: "110px", left: "290px" }}>
+                Утас
+              </th>
+              {/* Dynamic columns */}
+              {dynamicColumns.map((col) => (
+                <th
+                  key={col.key}
+                  className="px-2 py-2.5 text-[11px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 max-w-[140px] truncate"
+                  style={{ width: col.width, minWidth: "120px" }}
+                  title={col.label}
+                >
+                  <Tooltip title={col.label}>
+                    <span className="truncate block">{col.label}</span>
+                  </Tooltip>
+                </th>
+              ))}
+              {/* Нийт үлдэгдэл */}
+              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-l-2 border-gray-200 dark:border-gray-600 text-red-600 dark:text-red-400 sticky right-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "140px", minWidth: "140px" }}>
+                Нийт үлдэгдэл
+              </th>
+            </tr>
+          </thead>
+
+          {/* Body */}
+          <tbody>
+            {data.map((record, index) => {
+              const ovog = String(record._id?.ovog || record.ovog || "").trim();
+              const ner = String(record._id?.ner || record.ner || "").trim();
+              const abbreviated = ovog ? `${ovog.charAt(0)}.` : "";
+              const fullName = [abbreviated, ner].filter(Boolean).join(" ") || "-";
+              const toot = record._id?.toot || record.toot || "-";
+              const u = record._id?.utas || record.utas;
+              const utas = Array.isArray(u) ? u[0] || "-" : u || "-";
+              // 'Нийт үлдэгдэл' in this view should show the total charges (Billed) without payments, as requested
+              const globalBal = Number(record.niitTulukhDun ?? record.globalUldegdel ?? record.niitUldegdel ?? 0);
+
+              return (
+                <tr
+                  key={`${record._id?.gereeniiId || ""}-${toot}-${ner}`}
+                  className={`
+                    transition-colors duration-100
+                    ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"}
+                    hover:bg-blue-50 dark:hover:bg-blue-900/40 group
+                  `}
+                >
+                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center border-b border-gray-100 dark:border-gray-800 sticky left-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "50px" }}>
+                    {index + 1}
+                  </td>
+                  <td className={`px-3 py-2.5 text-[13px] font-medium text-left whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "160px", left: "50px" }}>
+                    {fullName}
+                  </td>
+                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "80px", left: "210px" }}>
+                    {toot}
+                  </td>
+                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center whitespace-nowrap border-b border-r border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "110px", left: "290px" }}>
+                    {utas}
+                  </td>
+                  {/* Dynamic value columns */}
+                  {dynamicColumns.map((col) => {
+                    const val = col.getValue(record);
+                    return (
+                      <td
+                        key={col.key}
+                        className="px-2 py-2.5 text-[13px] font-medium text-right whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white"
+                        style={{ width: col.width, minWidth: "120px" }}
+                      >
+                        {val > 0 ? formatNumber(val, 2) : ""}
+                      </td>
+                    );
+                  })}
+                  {/* Нийт үлдэгдэл */}
+                  <td className={`px-3 py-2.5 text-[13px] font-bold text-right whitespace-nowrap border-b border-l-2 border-gray-100 dark:border-gray-800 text-red-600 dark:text-red-400 sticky right-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "140px" }}>
+                    {formatNumber(globalBal, 2)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+
+          {/* Footer */}
+          <tfoot className="sticky bottom-0 z-20">
+            <tr className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-sm border-t-2 border-gray-300 dark:border-gray-600 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+              <td colSpan={4} className="px-3 py-3 text-[13px] font-bold text-center text-gray-900 dark:text-white sticky left-0 z-30 bg-gray-100 dark:bg-gray-800">
+                Нийт
+              </td>
+              {dynamicColumns.map((col) => (
+                <td key={col.key} className="px-2 py-3 text-[13px] border-gray-200 dark:border-gray-600" />
+              ))}
+              <td className="px-3 py-3 text-[13px] font-bold text-right text-red-600 dark:text-red-400 border-l-2 border-gray-200 dark:border-gray-600 sticky right-0 z-30 bg-gray-100 dark:bg-gray-800">
+                {formatNumber(totalUldegdel, 2)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
   );
 }

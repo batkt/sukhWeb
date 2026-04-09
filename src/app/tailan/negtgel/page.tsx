@@ -12,6 +12,7 @@ import { getDefaultDateRange } from "@/lib/utils";
 import dayjs from "dayjs";
 import useSWR from "swr";
 import uilchilgee from "@/lib/uilchilgee";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import { useSearch } from "@/context/SearchContext";
 import {
   NegtgelTailanTable,
@@ -34,6 +35,15 @@ export default function NegtgelTailanPage() {
   const { searchTerm } = useSearch();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(100);
+
+  // Authoritative totals from the same source as the tulbur page
+  const footerTotals = useTulburFooterTotals(
+    token,
+    baiguullagiinId,
+    selectedBuildingId || undefined,
+    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
+    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
+  );
 
   // ── Data fetching ────────────────────────────────────────────────────────
   const swrKey = useMemo(() => {
@@ -145,7 +155,7 @@ export default function NegtgelTailanPage() {
   };
 
   return (
-    <div className="p-6 bg-[color:var(--surface-bg)] h-[calc(100vh-80px)] overflow-y-auto w-full custom-scrollbar">
+    <div className="p-6 bg-[color:var(--surface-bg)] min-h-full h-auto w-full custom-scrollbar">
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex justify-between items-center mb-6 no-print">
         <h1 className="text-2xl font-bold">Нэгтгэл тайлан</h1>
@@ -180,10 +190,8 @@ export default function NegtgelTailanPage() {
       </div>
 
       {/* ── Table ───────────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl w-full">
-        <div className="rounded-3xl p-3 allow-overflow">
-          <NegtgelTailanTable data={pagedData} loading={isLoading} />
-        </div>
+      <div className="w-full no-print">
+        <NegtgelTailanTable data={pagedData} loading={isLoading} authoritativeTotalUldegdel={(footerTotals.totalUldegdel || 0) + (footerTotals.totalPaid || 0)} />
       </div>
 
       {/* ── Pagination ──────────────────────────────────────────── */}

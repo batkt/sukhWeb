@@ -625,6 +625,9 @@ export default function GuilgeeTable({
     // Calculate index offset for summary cells when checkbox is visible
     const checkboxOffset = isCheckboxVisible ? 1 : 0;
 
+    console.log("%c📊 [DASHBOARD SUMMARY] Starting calculation...", "color: purple; font-weight: bold;");
+    const dashboardTotals = { paid: 0, balance: 0, billed: 0, residents: deduplicatedResidents.length };
+
     return (
       <Table.Summary fixed="bottom">
         <Table.Summary.Row className="bg-gray-50 dark:bg-gray-800">
@@ -711,6 +714,7 @@ export default function GuilgeeTable({
                 },
                 0,
               );
+              dashboardTotals.balance = total;
               content = (
                 <span
                   className={
@@ -744,6 +748,16 @@ export default function GuilgeeTable({
       </Table.Summary>
     );
   };
+
+  console.info("%c📊 [DASHBOARD SUMMARY] FINAL:", "color: purple; font-weight: bold;", { 
+    residents: deduplicatedResidents.length,
+    paid: Object.values(monthPaidByGereeId).reduce((a, b) => a + (b || 0), 0),
+    balance: deduplicatedResidents.reduce((s, it) => {
+       const gid = getGereeId(it);
+       const historyAggregate = Number(it?._totalTulbur || 0) - Number(it?._totalTulsun || 0);
+       return s + (bestKnownBalances[gid] ?? (historyScopedByDate ? historyAggregate : (historyAggregate || Number(it?.uldegdel ?? 0))));
+    }, 0)
+  });
 
   return (
     <div className="w-full overflow-hidden">

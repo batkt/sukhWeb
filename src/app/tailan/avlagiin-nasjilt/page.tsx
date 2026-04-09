@@ -14,6 +14,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import toast from "react-hot-toast";
 import PageSongokh from "components/selectZagvar/pageSongokh";
 import formatNumber from "tools/function/formatNumber";
+import { useTulburFooterTotals } from "@/lib/useTulburFooterTotals";
 import {
   AvlagiinNasjiltTable,
   AvlagiinNasjiltItem,
@@ -202,6 +203,14 @@ export default function AvlagiinNasjiltPage() {
   const [pageSize, setPageSize] = useState(200);
   const [isDark, setIsDark] = useState(false);
 
+  const footerTotals = useTulburFooterTotals(
+    token,
+    ajiltan?.baiguullagiinId ?? null,
+    selectedBuildingId || undefined,
+    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
+    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
+  );
+
 
   useEffect(() => {
     const checkTheme = () =>
@@ -322,7 +331,7 @@ export default function AvlagiinNasjiltPage() {
         token: { borderRadius: 12, colorPrimary: "#10b981" },
       }}
     >
-      <div className="p-4 md:p-6 bg-[color:var(--surface-bg)] h-screen flex flex-col gap-4 print-container overflow-hidden print:block print:h-auto print:overflow-visible print:p-0">
+      <div className="p-4 md:p-6 bg-[color:var(--surface-bg)] min-h-full h-auto flex flex-col gap-4 print-container overflow-hidden print:block print:h-auto print:overflow-visible print:p-0">
         <PrintStyles />
 
         {/* Print Only Header */}
@@ -346,7 +355,7 @@ export default function AvlagiinNasjiltPage() {
               Насжилтын тайлан
             </h1>
             <p className="text-sm text-theme/60">
-              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(summary?.total || 0, 0)} ₮ авлага
+              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(footerTotals?.totalUldegdel || 0, 0)} ₮ авлага
             </p>
           </div>
         </div>
@@ -385,15 +394,15 @@ export default function AvlagiinNasjiltPage() {
           </button>
         </div>
 
-        {/* Table — fills remaining height on screen */}
-        <div className="flex-1 overflow-hidden rounded-3xl neu-panel p-3 bg-white dark:bg-slate-900/50 dark:border-slate-800 border guilgee-table flex flex-col min-h-0 print:block print:overflow-visible print:h-auto print:min-h-auto">
+        {/* ── Table ───────────────────────────────────────────────── */}
+        <div className="w-full no-print">
           <AvlagiinNasjiltTable
             data={filteredData as AvlagiinNasjiltItem[]}
             loading={loading}
             page={currentPage}
             pageSize={pageSize}
             totals={totals}
-    
+            authoritativeTotals={footerTotals}
           />
         </div>
 

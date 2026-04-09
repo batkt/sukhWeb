@@ -189,6 +189,8 @@ export default function OrlogoAvlagaPage() {
     token,
     ajiltan?.baiguullagiinId ?? null,
     effectiveBarilgiinId,
+    dateRange?.[0] ? dayjs(dateRange[0]).format("YYYY-MM-DD") : null,
+    dateRange?.[1] ? dayjs(dateRange[1]).format("YYYY-MM-DD") : null
   );
 
   const effectiveDateFilter = useMemo(() => {
@@ -462,19 +464,11 @@ export default function OrlogoAvlagaPage() {
 
   const buildingHistoryItems = allHistoryItems;
 
-  const ledgerBalances = useMemo(() => {
-    return computeLedgerRunningBalancesByGereeId(
-      buildingHistoryItems,
-      contractsByNumber,
-    );
-  }, [buildingHistoryItems, contractsByNumber]);
-
-  const ledgerPaidTable = useMemo(() => {
-    return aggregateLedgerTulsunByGereeId(
-      buildingHistoryItems,
-      contractsByNumber,
-    );
-  }, [buildingHistoryItems, contractsByNumber]);
+  // Use authoritative per-contract data from useTulburFooterTotals
+  // This ensures identical numbers with the tulbur/guilgeeTuukh page
+  const ledgerBalances = footerTotals.uldegdelByGereeId;
+  const ledgerPaidTable = footerTotals.paidByGereeId;
+  const ledgerBilledTable = footerTotals.billedByGereeId;
 
 
 
@@ -489,8 +483,8 @@ export default function OrlogoAvlagaPage() {
       const residentId = String(ct?.orshinSuugchId || "").trim();
       const r = residentId ? residentsById[residentId] : undefined;
 
-      // 1. Төлөх дүн (Billed) from Contract standard price
-      const periodBilled = Number(ct?.gereeniiTulukhDun ?? 0);
+      // 1. Төлөх дүн (Billed) from Ledger aggregation
+      const periodBilled = Number(ledgerBilledTable[gid] ?? 0);
 
       // 2. Төлсөн (Paid) from Ledger aggregation
       const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
@@ -501,11 +495,8 @@ export default function OrlogoAvlagaPage() {
           ? Number(ledgerBalances[gid])
           : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
 
-      // 4. Эхний үлдэгдэл (Opening Balance) derived mathematically
-      // Formula: Opening = Final - PeriodActivity
-      // Activity = Billed - Paid
-      // Opening = Final - (Billed - Paid) = Final + Paid - Billed
-      const ekhBal = finalBal + periodPaid - periodBilled;
+      // 4. Эхний үлдэгдэл (Opening Balance) to match Negtgel Нийт үлдэгдэл: Paid + Balance
+      const ekhBal = periodPaid + finalBal;
 
       map.set(gid, {
         ...ct,
@@ -612,7 +603,12 @@ export default function OrlogoAvlagaPage() {
         ? avlagaList
         : allList;
 
-  // Calculate grand totals for the new table format
+  // Use authoritative grand totals from useTulburFooterTotals (same as tulbur page)
+  const totalOrlogo = footerTotals.totalPaid;
+  const totalUldegdel = footerTotals.totalUldegdel;
+  const totalTulbur = footerTotals.totalBilled;
+
+  // Per-row derived totals for display
   const totalEkhniiUldegdel = useMemo(
     () =>
       deduplicatedResidents
@@ -625,29 +621,6 @@ export default function OrlogoAvlagaPage() {
     [deduplicatedResidents, searchTerm, debouncedFilters],
   );
 
-  const totalTulbur = useMemo(
-    () =>
-      deduplicatedResidents
-        .filter(matchesFilters)
-        .reduce((s, it) => s + Number(it?._periodTulbur ?? 0), 0),
-    [deduplicatedResidents, searchTerm, debouncedFilters],
-  );
-
-  const totalOrlogo = useMemo(
-    () =>
-      deduplicatedResidents
-        .filter(matchesFilters)
-        .reduce((s, it) => s + getPaid(it), 0),
-    [deduplicatedResidents, searchTerm, debouncedFilters],
-  );
-
-  const totalUldegdel = useMemo(
-    () =>
-      deduplicatedResidents
-        .filter(matchesFilters)
-        .reduce((s, it) => s + getUldegdel(it), 0),
-    [deduplicatedResidents, searchTerm, debouncedFilters],
-  );
   const handleRowClick = async (it: any) => {
     setSelectedRecord(it);
     setModalOpen(true);
@@ -793,7 +766,7 @@ export default function OrlogoAvlagaPage() {
   }
 
   return (
-    <div className="p-6 print-container bg-white dark:bg-gray-900 min-h-screen w-full">
+    <div className="p-6 print-container bg-white dark:bg-gray-900 min-h-full h-auto w-full">
       <PrintStyles />
 
       {/* Print-only Header */}
@@ -928,8 +901,8 @@ export default function OrlogoAvlagaPage() {
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-2xl w-full">
-        <div className="rounded-3xl p-3 allow-overflow">
+      {/* ── Table ───────────────────────────────────────────────── */}
+      <div className="w-full no-print">
           <OrlogoAvlagaTable
             data={paginatedList as OrlogoAvlagaItem[]}
             loading={isLoading}
@@ -953,7 +926,6 @@ export default function OrlogoAvlagaPage() {
             grandTotalTulbur={totalTulbur}
             dateRange={dateRange}
           />
-        </div>
       </div>
 
       <div className="flex items-center justify-between no-print mt-3">

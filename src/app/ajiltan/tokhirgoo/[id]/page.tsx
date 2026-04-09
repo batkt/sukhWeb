@@ -27,11 +27,11 @@ export default function EmployeeSettingsPage() {
 
   // Settings permissions (previously in Тохиргоо section)
   const SETTINGS_PERMISSIONS = [
-    { id: "tokhirgoo.barilga", label: "Барилгийн тохиргоо" },
+    { id: "tokhirgoo.barilga", label: "Барилгын тохиргоо" },
     { id: "tokhirgoo.ashiglaltiinZardal", label: "Ашиглалтын зардал" },
     { id: "tokhirgoo.baaz", label: "Бааз" },
     { id: "tokhirgoo.dans", label: "Данс" },
-    { id: "tokhirgoo.ebarimt", label: "Э-баримт" },
+    { id: "tokhirgoo.ebarimt", label: "И-баримт" },
     { id: "tokhirgoo.email", label: "И-мэйл" },
     { id: "tokhirgoo.medegdel", label: "Мэдэгдэл" },
     { id: "tokhirgoo.nemelt", label: "Нэмэлт" },
