@@ -1916,17 +1916,10 @@ export default function HistoryModal({
       setLedgerDetailSelection(null);
       setData([]);
       setGlobalUldegdel(null);
-      setModalDateFilterFromUser(false);
-      // Sync from parent using stable keys (contractId + pageDateRange),
-      // so outside page filter works without being reset by object identity changes.
-      if (pageRangeStart != null || pageRangeEnd != null) {
-        setDateRange([
-          coercePickerValueToYmd(pageRangeStart),
-          coercePickerValueToYmd(pageRangeEnd),
-        ]);
-      } else {
-        setDateRange([null, null]);
-      }
+      // Хуулга modal эхний нээлтэд огноо автоматаар бүү сонго.
+      // [null, null] + modalDateFilterFromUser=true => pageDateRange fallback-ийг унтраана.
+      setModalDateFilterFromUser(true);
+      setDateRange([null, null]);
       fetchData();
     }
   }, [show, contractId, pageRangeStart, pageRangeEnd]);
