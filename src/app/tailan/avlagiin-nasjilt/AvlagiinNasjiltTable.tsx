@@ -71,6 +71,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             {val || "-"}
           </span>
         ),
+        sorter: (a, b) => (a.gereeniiDugaar || "").localeCompare(b.gereeniiDugaar || ""),
       },
       {
         title: "Оршин суугч",
@@ -79,14 +80,25 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         width: 150,
         align: "center",
         fixed: "left",
-        render: (val: string) => (
-          <span
-            className="text-theme font-medium break-words max-w-full"
-            title={val}
-          >
-            {val || "-"}
-          </span>
-        ),
+        render: (val: string) => {
+          if (!val) return "-";
+          const parts = val.trim().split(/\s+/);
+          if (parts.length >= 2) {
+            const abbreviated = parts[0] ? `${parts[0].charAt(0)}.` : "";
+            const fullName = [abbreviated, parts.slice(1).join(" ")].filter(Boolean).join(" ");
+            return (
+              <span className="text-theme font-medium break-words max-w-full" title={val}>
+                {fullName}
+              </span>
+            );
+          }
+          return (
+            <span className="text-theme font-medium break-words max-w-full" title={val}>
+              {val}
+            </span>
+          );
+        },
+        sorter: (a, b) => (a.ner || "").localeCompare(b.ner || ""),
       },
       {
         title: "Давхар",
@@ -97,6 +109,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         render: (val: string) => (
           <span className="text-theme whitespace-nowrap">{val || "-"}</span>
         ),
+        sorter: (a, b) => (Number(a.davkhar) || 0) - (Number(b.davkhar) || 0) || String(a.davkhar).localeCompare(String(b.davkhar)),
       },
       {
         title: "Тоот",
@@ -109,6 +122,11 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             {val || record.talbainDugaar || "-"}
           </span>
         ),
+        sorter: (a, b) => {
+          const tA = a.toot || a.talbainDugaar || "";
+          const tB = b.toot || b.talbainDugaar || "";
+          return Number(tA) - Number(tB) || String(tA).localeCompare(String(tB));
+        },
       },
       {
         title: "Нийт",
@@ -123,21 +141,22 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.undsenDun ?? a.niitDun ?? 0) - (b.undsenDun ?? b.niitDun ?? 0),
       },
-      {
-        title: "Хөнгөлөлт",
-        dataIndex: "khungulult",
-        key: "khungulult",
-        width: 100,
-        align: "center",
-        render: (val: number) => (
-          <div className="text-right">
-            <span className="text-theme/60 whitespace-nowrap">
-              {formatNumber(val, 2)}
-            </span>
-          </div>
-        ),
-      },
+      // {
+      //   title: "Хөнгөлөлт",
+      //   dataIndex: "khungulult",
+      //   key: "khungulult",
+      //   width: 100,
+      //   align: "center",
+      //   render: (val: number) => (
+      //     <div className="text-right">
+      //       <span className="text-theme/60 whitespace-nowrap">
+      //         {formatNumber(val, 2)}
+      //       </span>
+      //     </div>
+      //   ),
+      // },
       {
         title: "Төлсөн",
         dataIndex: "tulsunDun",
@@ -151,6 +170,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.tulsunDun ?? 0) - (b.tulsunDun ?? 0),
       },
       {
         title: "Авлага",
@@ -165,6 +185,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.uldegdel ?? a.tulukhDun ?? 0) - (b.uldegdel ?? b.tulukhDun ?? 0),
       },
       {
         title: "0-30",
@@ -179,6 +200,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.p0_30 ?? a.avalaga0 ?? 0) - (b.p0_30 ?? b.avalaga0 ?? 0),
       },
       {
         title: "31-60",
@@ -193,6 +215,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.p31_60 ?? a.avlaga31 ?? 0) - (b.p31_60 ?? b.avlaga31 ?? 0),
       },
       {
         title: "61-90",
@@ -207,6 +230,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.p61_90 ?? a.avlaga61 ?? 0) - (b.p61_90 ?? b.avlaga61 ?? 0),
       },
       {
         title: "120+",
@@ -221,6 +245,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
             </span>
           </div>
         ),
+        sorter: (a, b) => (a.p120plus ?? a.avlaga120 ?? 0) - (b.p120plus ?? b.avlaga120 ?? 0),
       },
     ],
     [page, pageSize],
@@ -237,7 +262,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 480 }}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "Мэдээлэл олдсонгүй" }}
         summary={() =>
           totals && data.length > 0 ? (
@@ -253,11 +278,13 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                     {formatNumber(totals.undsenDun, 2)} ₮
                   </span>
                 </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="right">
+                {/* Skip commented out Khungulult column cell if we want to align, or keep it if Table logic handles it */}
+                {/* Commenting this cell out too to match the header */}
+                {/* <Table.Summary.Cell index={2} align="right">
                   <span className="force-bold text-theme/60">
                     {formatNumber(totals.khungulult, 2)} ₮
                   </span>
-                </Table.Summary.Cell>
+                </Table.Summary.Cell> */}
                 <Table.Summary.Cell index={3} align="right">
                   <span className="force-bold text-emerald-600">
                     {formatNumber(totals.tulsunDun, 2)} ₮

@@ -120,11 +120,22 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
         align: "center" as const,
         ellipsis: true,
         fixed: "left" as const,
-        render: (_: any, record: NegtgelTailanItem) => (
-          <span className="text-gray-900 dark:text-white text-[13px]">
-            {record._id?.ovog || ""} {record._id?.ner || record.ner || "-"}
-          </span>
-        ),
+        render: (_: any, record: NegtgelTailanItem) => {
+          const ovog = String(record._id?.ovog || record.ovog || "").trim();
+          const ner = String(record._id?.ner || record.ner || "").trim();
+          const abbreviated = ovog ? `${ovog.charAt(0)}.` : "";
+          const fullName = [abbreviated, ner].filter(Boolean).join(" ");
+          return (
+            <span className="text-gray-900 dark:text-white text-[13px]">
+              {fullName || "-"}
+            </span>
+          );
+        },
+        sorter: (a: any, b: any) => {
+          const nameA = [a._id?.ovog, a._id?.ner].filter(Boolean).join(" ");
+          const nameB = [b._id?.ovog, b._id?.ner].filter(Boolean).join(" ");
+          return nameA.localeCompare(nameB, "mn-MN");
+        },
       },
       {
         title: "Тоот",
@@ -139,6 +150,11 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             {record._id?.toot || record.toot || "-"}
           </span>
         ),
+        sorter: (a: any, b: any) => {
+          const tA = a._id?.toot || a.toot || "";
+          const tB = b._id?.toot || b.toot || "";
+          return Number(tA) - Number(tB) || String(tA).localeCompare(String(tB));
+        },
       },
       {
         title: "Утас",
@@ -156,6 +172,11 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             </span>
           );
         },
+        sorter: (a: any, b: any) => {
+          const uA = String(Array.isArray(a._id?.utas) ? a._id.utas[0] : a._id?.utas || a.utas || "");
+          const uB = String(Array.isArray(b._id?.utas) ? b._id.utas[0] : b._id?.utas || b.utas || "");
+          return uA.localeCompare(uB);
+        },
       },
     ];
 
@@ -163,26 +184,10 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
     months.forEach((ym) => {
       const children = avlagaTypes
         .filter((v) => v.ognoo === ym)
-        .map((assessment) => ({
-          title: (
-            <Tooltip title={assessment.tailbar}>
-              <div className="w-full break-words whitespace-normal px-1 py-1 text-center">
-                {assessment.tailbar}
-              </div>
-            </Tooltip>
-          ),
-          className: headerClassName,
-          dataIndex: "avlaga",
-          key: `${ym}|${assessment.tailbar}`,
-          align: "center" as const,
-          width: 160,
-          onHeaderCell: () => ({
-            style: { minWidth: 160, maxWidth: 160, padding: "4px 0" },
-          }),
-          ellipsis: true,
-          render: (values: AvlagaItem[], record: NegtgelTailanItem) => {
-            if (!Array.isArray(values)) return null;
-
+        .map((assessment) => {
+          const getAssessValue = (record: NegtgelTailanItem) => {
+            const values = record.avlaga;
+            if (!Array.isArray(values)) return 0;
             let total = 0;
             values.forEach((b) => {
               if (b.ognoo?.slice(0, 7) === ym) {
@@ -200,7 +205,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
                     assessment.tailbar === "Менежмент нэгж" &&
                     zName.includes("Менежментийн төлбөр")
                   ) {
-                    total += z.dun; // Can't divide by talbainKhemjee as it doesn't exist anymore in the API, we will just sum.
+                    total += z.dun;
                   } else if (zName === assessment.tailbar) {
                     total += z.dun;
                   }
@@ -211,17 +216,42 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             const isSpecialCategory =
               assessment.tailbar ===
               "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
-            const displayTotal = isSpecialCategory ? total * 0.4 : total;
+            return isSpecialCategory ? total * 0.4 : total;
+          };
 
-            return displayTotal > 0 || isSpecialCategory ? (
-              <div className="text-right">
-                <span className="text-gray-900 dark:text-white text-[13px]">
-                  {formatNumber(displayTotal, 2)}
-                </span>
-              </div>
-            ) : null;
-          },
-        }));
+          return {
+            title: (
+              <Tooltip title={assessment.tailbar}>
+                <div className="w-full break-words whitespace-normal px-1 py-1 text-center font-normal">
+                  {assessment.tailbar}
+                </div>
+              </Tooltip>
+            ),
+            className: headerClassName,
+            key: `${ym}|${assessment.tailbar}`,
+            align: "center" as const,
+            width: 160,
+            onHeaderCell: () => ({
+              style: { minWidth: 160, maxWidth: 160, padding: "4px 0" },
+            }),
+            ellipsis: true,
+            render: (_: any, record: NegtgelTailanItem) => {
+              const displayTotal = getAssessValue(record);
+              const isSpecialCategory =
+                assessment.tailbar ===
+                "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
+
+              return displayTotal > 0 || isSpecialCategory ? (
+                <div className="text-right">
+                  <span className="text-gray-900 dark:text-white text-[13px]">
+                    {formatNumber(displayTotal, 2)}
+                  </span>
+                </div>
+              ) : null;
+            },
+            sorter: (a: any, b: any) => getAssessValue(a) - getAssessValue(b),
+          };
+        });
 
       base.push({
         title: ym,
@@ -241,7 +271,6 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       width: 140,
       ellipsis: true,
       align: "center" as const,
-      fixed: "right" as const,
       render: (_: any, record: NegtgelTailanItem) => {
         const val = record.globalUldegdel ?? record.niitUldegdel ?? 0;
         return (
@@ -251,6 +280,11 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
             </span>
           </div>
         );
+      },
+      sorter: (a: any, b: any) => {
+        const vA = a.globalUldegdel ?? a.niitUldegdel ?? 0;
+        const vB = b.globalUldegdel ?? b.niitUldegdel ?? 0;
+        return vA - vB;
       },
     });
 
@@ -267,7 +301,7 @@ export function NegtgelTailanTable({ data, loading }: NegtgelTailanTableProps) {
       }
       size="small"
       bordered
-      scroll={{ x: "max-content", y: "calc(100vh - 350px)" }}
+      scroll={{ x: "max-content" }}
       tableLayout="fixed"
       className="guilgee-table"
       rowClassName={(_, index) =>

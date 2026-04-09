@@ -100,11 +100,22 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         key: "ner",
         width: 180,
         className: headerClassName,
-        render: (_: any, record: OrlogoAvlagaItem) => (
-          <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">
-            {[record._ovog, record._ner].filter(Boolean).join(" ") || "-"}
-          </span>
-        ),
+        render: (_: any, record: OrlogoAvlagaItem) => {
+          const ovogFull = String(record._ovog || "").trim();
+          const ner = String(record._ner || "").trim();
+          const abbreviated = ovogFull ? `${ovogFull.charAt(0)}.` : "";
+          const fullName = [abbreviated, ner].filter(Boolean).join(" ");
+          return (
+            <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">
+              {fullName || "-"}
+            </span>
+          );
+        },
+        sorter: (a, b) => {
+          const nameA = [a._ovog, a._ner].filter(Boolean).join(" ");
+          const nameB = [b._ovog, b._ner].filter(Boolean).join(" ");
+          return nameA.localeCompare(nameB, "mn-MN");
+        },
       },
       {
         title: (
@@ -121,6 +132,10 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             {record._gereeDugaar || record.gereeniiDugaar || "-"}
           </span>
         ),
+        sorter: (a, b) =>
+          String(a._gereeDugaar || a.gereeniiDugaar || "").localeCompare(
+            String(b._gereeDugaar || b.gereeniiDugaar || ""),
+          ),
       },
       {
         title: (
@@ -137,6 +152,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             {record._davkhar || "-"}
           </span>
         ),
+        sorter: (a, b) =>
+          Number(a._davkhar || 0) - Number(b._davkhar || 0) ||
+          String(a._davkhar || "").localeCompare(String(b._davkhar || "")),
       },
       {
         title: (
@@ -153,6 +171,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             {record._toot || "-"}
           </span>
         ),
+        sorter: (a, b) =>
+          Number(a._toot || 0) - Number(b._toot || 0) ||
+          String(a._toot || "").localeCompare(String(b._toot || "")),
       },
     ];
 
@@ -183,6 +204,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   </button>
                 );
               },
+              sorter: (a, b) =>
+                Number(a._periodPaid ?? 0) - Number(b._periodPaid ?? 0),
             },
           ]
         : [
@@ -201,6 +224,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   {formatNumber(record._ekhniiUldegdel ?? 0, 2)}
                 </span>
               ),
+              sorter: (a, b) =>
+                Number(a._ekhniiUldegdel ?? 0) - Number(b._ekhniiUldegdel ?? 0),
             },
             {
               title: (
@@ -217,6 +242,8 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   {formatNumber(record._periodTulbur ?? 0, 2)}
                 </span>
               ),
+              sorter: (a, b) =>
+                Number(a._periodTulbur ?? 0) - Number(b._periodTulbur ?? 0),
             },
             {
               title: (
@@ -236,12 +263,14 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     onClick={() => onRowClick(record)}
                     className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1 w-full justify-end"
                   >
-                    <span className="text-green-600 dark:text-green-400 font-bold text-[13px]">
+                    <span className="text-green-600 dark:text-white text-[13px]">
                       {formatNumber(paid, 2)}
                     </span>
                   </button>
                 );
               },
+              sorter: (a, b) =>
+                Number(a._periodPaid ?? 0) - Number(b._periodPaid ?? 0),
             },
             {
               title: (
@@ -254,10 +283,12 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               align: "right",
               className: headerClassName,
               render: (_: any, record: OrlogoAvlagaItem) => (
-                <span className="text-red-600 dark:text-red-400 font-bold text-[13px]">
+                <span className="text-red-600 dark:text-red-400 text-[13px]">
                   {formatNumber(record._finalUldegdel ?? getUldegdel(record), 2)}
                 </span>
               ),
+              sorter: (a, b) =>
+                Number(a._finalUldegdel ?? 0) - Number(b._finalUldegdel ?? 0),
             },
           ];
 
@@ -478,17 +509,17 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
               <Table.Summary fixed>
                 <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800 font-bold">
                   <Table.Summary.Cell index={0} colSpan={3} align="center">
-                    <span className="font-bold text-gray-900 dark:text-white text-[13px]">
+                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">
                       Нийт
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <span className="font-bold text-gray-900 dark:text-white text-[13px]">
+                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">
                       {formatNumber(totalTulukh, 2)}
                     </span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="right">
-                    <span className="font-bold text-gray-900 dark:text-white text-[13px]">
+                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">
                       {formatNumber(totalTulsun, 2)}
                     </span>
                   </Table.Summary.Cell>
@@ -531,7 +562,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table"
-        scroll={{ x: "max-content", y: 300 }}
+        scroll={{ x: "max-content" }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
           text-gray-900 dark:text-white
@@ -572,7 +603,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     align="right"
                     className="bg-gray-50 dark:bg-gray-900 py-3"
                   >
-                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px]">
+                    <span className="font-bold text-green-600 dark:!text-white force-bold text-[13px]">
                       {formatNumber(finalPaid, 2)}
                     </span>
                   </Table.Summary.Cell>
@@ -617,7 +648,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="right"
                   className="bg-gray-50 dark:bg-gray-900 py-3"
                 >
-                  <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px]">
+                  <span className="font-bold text-green-600 dark:!text-white force-bold text-[13px]">
                     {formatNumber(finalPaid, 2)}
                   </span>
                 </Table.Summary.Cell>
@@ -626,7 +657,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   align="right"
                   className="bg-gray-50 dark:bg-gray-900 py-3"
                 >
-                  <span className="font-bold text-red-600 dark:text-red-400 force-bold text-[13px]">
+                  <span className="font-bold text-red-600 dark:!text-red-400 force-bold text-[13px]">
                     {formatNumber(finalUldegdel, 2)}
                   </span>
                 </Table.Summary.Cell>
