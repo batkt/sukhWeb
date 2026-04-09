@@ -232,7 +232,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
               {dynamicColumns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-2 py-2.5 text-[11px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 max-w-[140px] truncate"
+                  className="px-2 py-2.5 text-[11px] text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 max-w-[140px] truncate"
                   style={{ width: col.width, minWidth: "120px" }}
                   title={col.label}
                 >
@@ -270,16 +270,16 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
                     hover:bg-blue-50 dark:hover:bg-blue-900/40 group
                   `}
                 >
-                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center border-b border-gray-100 dark:border-gray-800 sticky left-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "50px" }}>
+                  <td className={`px-3 py-2.5 text-[13px]  text-center border-b border-gray-100 dark:border-gray-800 sticky left-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "50px" }}>
                     {index + 1}
                   </td>
-                  <td className={`px-3 py-2.5 text-[13px] font-medium text-left whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "160px", left: "50px" }}>
+                  <td className={`px-3 py-2.5 text-[13px]  text-left whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "160px", left: "50px" }}>
                     {fullName}
                   </td>
-                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "80px", left: "210px" }}>
+                  <td className={`px-3 py-2.5 text-[13px]  text-center whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "80px", left: "210px" }}>
                     {toot}
                   </td>
-                  <td className={`px-3 py-2.5 text-[13px] font-medium text-center whitespace-nowrap border-b border-r border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "110px", left: "290px" }}>
+                  <td className={`px-3 py-2.5 text-[13px]  text-center whitespace-nowrap border-b border-r border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "110px", left: "290px" }}>
                     {utas}
                   </td>
                   {/* Dynamic value columns */}
@@ -288,7 +288,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
                     return (
                       <td
                         key={col.key}
-                        className="px-2 py-2.5 text-[13px] font-medium text-right whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white"
+                        className="px-2 py-2.5 text-[13px]  text-right whitespace-nowrap border-b border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white"
                         style={{ width: col.width, minWidth: "120px" }}
                       >
                         {val > 0 ? formatNumber(val, 2) : ""}
