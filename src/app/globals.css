@@ -817,7 +817,7 @@
     margin: 0;
     overflow: visible !important;
   }
-  
+
   /* Disable sticky/fixed columns in print to prevent overlapping */
   .ant-table-cell-fix-left,
   .ant-table-cell-fix-right {
@@ -842,7 +842,6 @@
     font-size: 11px !important;
   }
 }
-
 
 /* Dark themes: make inputs and dropdowns black surfaces with white text */
 [data-theme="dark-black"] input,
@@ -4477,6 +4476,16 @@ a:active {
 .guilgee-table .ant-table-thead > tr > th {
   padding: 2px 4px !important;
   font-size: 11px !important;
+}
+
+/* Барилгын тоот — guilgee-table 11px vs chip 13px / Хоосон 10px зөрүүг нэгтгэх */
+.units-table.guilgee-table .ant-table-cell,
+.units-table .ant-table-cell {
+  font-size: 12px !important;
+}
+.units-table.guilgee-table .ant-table-thead > tr > th,
+.units-table .ant-table-thead > tr > th {
+  font-size: 12px !important;
 }
 
 /* Bordered table */

@@ -126,7 +126,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         render: (filteredUnits: string[], record: FloorItem) => {
           if (!filteredUnits || filteredUnits.length === 0) {
             return (
-              <span className="text-10px text-slate-400 dark:text-slate-500 italic ">
+              <span className="italic text-slate-400 dark:text-slate-500">
                 Хоосон
               </span>
             );
@@ -152,7 +152,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                     }`}
                   >
                     <span
-                      className={`text-[13px] font-semibold ${
+                      className={`font-semibold ${
                         hasActive
                           ? "text-emerald-700 dark:text-emerald-400"
                           : "text-slate-600 dark:text-slate-300"
@@ -171,7 +171,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
                         onDeleteUnit?.(record.floor, unitStr);
                       }}
                     >
-                      <span className="text-[10px] leading-none mb-0.5">×</span>
+                      <span className="text-xs leading-none">×</span>
                     </button>
                   </div>
                 );
@@ -232,7 +232,7 @@ export const UnitsTable: React.FC<UnitsTableProps> = ({
         size="small"
         bordered
         loading={loading}
-        className="guilgee-table"
+        className="guilgee-table units-table"
         onChange={(_: any, __: any, sorter: any) => {
           if (actions?.toggleSortFor) {
             actions.toggleSortFor(

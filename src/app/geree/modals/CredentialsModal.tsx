@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import { ModalPortal } from "../../../../components/golContent";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
+import Button from "@/components/ui/Button";
 
 interface CredentialsModalProps {
   show: boolean;
@@ -81,23 +82,31 @@ export default function CredentialsModal({
               <h2 className="text-xl  text-slate-900 dark:text-white">
                 Нэвтрэх эрх солих
               </h2>
-              <button
+              <Button
+                variant="text"
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={onClose}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                className="!h-10 !w-10 !min-w-[2.5rem] shrink-0 !rounded-full !p-0 hover:!bg-gray-100 dark:hover:!bg-gray-800"
                 aria-label="Хаах"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-gray-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+                title="Хаах"
+                icon={
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-gray-500 dark:text-slate-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                }
+              />
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -132,22 +141,25 @@ export default function CredentialsModal({
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-6">
-                <button
-                  type="button"
+              <div className="flex justify-end gap-2 pt-6">
+                <Button
+                  htmlType="button"
                   onClick={onClose}
-                  className="px-6 py-2.5 text-sm  text-gray-600 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                  variant="secondary"
+                  className="min-w-[100px]"
                   disabled={isSaving}
                 >
                   Хаах
-                </button>
-                <button
-                  type="submit"
+                </Button>
+                <Button
+                  htmlType="submit"
+                  variant="primary"
+                  className="min-w-[100px]"
                   disabled={isSaving}
-                  className="px-8 py-2.5 text-sm  text-white bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all disabled:opacity-50"
+                  isLoading={isSaving}
                 >
-                  {isSaving ? "Хадгалж байна..." : "Хадгалах"}
-                </button>
+                  Хадгалах
+                </Button>
               </div>
             </form>
           </motion.div>

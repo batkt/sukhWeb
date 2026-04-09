@@ -47,7 +47,7 @@ export default function DeleteConfirmModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md modal-surface modal-responsive rounded-2xl shadow-2xl p-6"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-md modal-surface modal-responsive rounded-2xl shadow-2xl p-6 text-[0.95rem] leading-normal"
           >
             <div
               className="text-center cursor-move select-none"
@@ -56,8 +56,8 @@ export default function DeleteConfirmModal({
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
                 <Trash2 className="h-6 w-6 text-red-600" />
               </div>
-              <h3 className="text-lg  text-slate-900 mb-2">{title}</h3>
-              <p className="text-sm text-slate-500 mb-6">{message}</p>
+              <h3 className="font-semibold mb-2">{title}</h3>
+              <p className="mb-6 font-normal opacity-85">{message}</p>
               <div className="flex justify-center gap-3">
                 <button
                   type="button"

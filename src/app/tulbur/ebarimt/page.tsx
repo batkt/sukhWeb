@@ -499,7 +499,7 @@ export default function Ebarimt() {
                 <div className="relative rounded-2xl p-5 overflow-hidden">
                   <div className="flex flex-col items-center justify-center text-center">
                     <div
-                      className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme dark:!text-white ${stat.title === "Нийт дүн" ? "force-bold" : ""}`}
+                      className={`text-3xl mb-1 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-theme dark:!text-white ${stat.title === "Нийт дүн"}`}
                     >
                       {stat.value}
                     </div>
