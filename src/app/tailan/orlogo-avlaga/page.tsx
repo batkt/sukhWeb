@@ -476,6 +476,8 @@ export default function OrlogoAvlagaPage() {
     );
   }, [buildingHistoryItems, contractsByNumber]);
 
+
+
   const deduplicatedResidents = useMemo(() => {
     const map = new Map<string, any>();
 
@@ -487,14 +489,8 @@ export default function OrlogoAvlagaPage() {
       const residentId = String(ct?.orshinSuugchId || "").trim();
       const r = residentId ? residentsById[residentId] : undefined;
 
-      // 1. Төлөх дүн (Billed) from Matrix Month Slice
-      const matrixSlice = pickMonthSlice(
-        monthlyMatrixData,
-        monthlyMatrixData?.periods,
-        monthlyMatrixRange.monthKey,
-      );
-      const rowSlice = matrixSlice?.[gid] || matrixSlice?.[ct.gereeniiDugaar];
-      const periodBilled = Number(rowSlice?.niitTulukhDun ?? 0);
+      // 1. Төлөх дүн (Billed) from Contract standard price
+      const periodBilled = Number(ct?.gereeniiTulukhDun ?? 0);
 
       // 2. Төлсөн (Paid) from Ledger aggregation
       const periodPaid = Number(ledgerPaidTable[gid] ?? 0);
@@ -708,26 +704,48 @@ export default function OrlogoAvlagaPage() {
       const tableData = displayList.map((it, idx) => {
         const fullName = [it._ovog, it._ner].filter(Boolean).join(" ") || "-";
         
-        return {
+        const row: any = {
           index: idx + 1,
           ner: fullName,
           gereeniiDugaar: it._gereeDugaar || it.gereeniiDugaar || "-",
           davkhar: it._davkhar || "-",
           toot: it._toot || "-",
-          paid: parseFloat(String(getPaid(it))).toFixed(2),
         };
+
+        if (activeTab !== "tulult") {
+          row.ekhniiUldegdel = parseFloat(String(it._ekhniiUldegdel ?? 0)).toFixed(2);
+          row.periodTulbur = parseFloat(String(it._periodTulbur ?? it.gereeniiTulukhDun ?? 0)).toFixed(2);
+          row.paid = parseFloat(String(getPaid(it))).toFixed(2);
+          row.uldegdel = parseFloat(String(it._finalUldegdel ?? getUldegdel(it))).toFixed(2);
+        } else {
+          row.paid = parseFloat(String(getPaid(it))).toFixed(2);
+        }
+
+        return row;
       });
+
+      const headers = [
+        { key: "index", label: "№" },
+        { key: "ner", label: "Харилцагчийн нэр" },
+        { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
+        { key: "davkhar", label: "Давхар" },
+        { key: "toot", label: "Тоот" },
+      ];
+
+      if (activeTab !== "tulult") {
+        headers.push(
+          { key: "ekhniiUldegdel", label: "Эхний үлдэгдэл" },
+          { key: "periodTulbur", label: "Төлөх дүн" },
+          { key: "paid", label: "Төлсөн" },
+          { key: "uldegdel", label: "Эцсийн үлдэгдэл" },
+        );
+      } else {
+        headers.push({ key: "paid", label: "Төлсөн" });
+      }
 
       const body = {
         data: tableData,
-        headers: [
-          { key: "index", label: "№" },
-          { key: "ner", label: "Харилцагчийн нэр" },
-          { key: "gereeniiDugaar", label: "Гэрээний дугаар" },
-          { key: "davkhar", label: "Давхар" },
-          { key: "toot", label: "Тоот" },
-          { key: "paid", label: "Төлсөн" },
-        ],
+        headers,
         fileName: `${activeTab === "tulult" ? "orlogo" : "avlaga"}_report_${new Date().toISOString().split("T")[0]}`,
         sheetName: "Орлого авлагын тайлан",
       };
