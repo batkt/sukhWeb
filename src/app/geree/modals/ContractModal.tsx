@@ -77,7 +77,7 @@ export default function ContractModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="flex items-center justify-between px-6 py-4 border-b cursor-move select-none"
             >
-              <h2 className="text-2xl  text-slate-900">
+              <h2 className="text-lg text-slate-900">
                 {editingContract ? "Гэрээ засах" : "Шинэ гэрээ байгуулах"}
               </h2>
               <button

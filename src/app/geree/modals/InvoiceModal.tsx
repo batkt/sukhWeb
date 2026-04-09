@@ -359,12 +359,11 @@ function buildNekhemjlekhiinSenderDisplay(
     dans: pickStr(d?.dugaar, d?.dans, b?.dans) || "-",
     dotoodNer:
       pickStr(
+        d?.dansniiNer,
         d?.ezemshigch,
         d?.dansEzemshigch,
         d?.dotoodNer,
-        d?.ner,
         b?.dotoodNer,
-        b?.ner,
       ) || "-",
   };
 }

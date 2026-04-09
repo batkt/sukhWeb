@@ -64,7 +64,7 @@ export default function EmployeeModal({
               onPointerDown={(e) => dragControls.start(e)}
               className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none"
             >
-              <h2 className="text-2xl text-slate-900 dark:text-white">
+              <h2 className="text-lg text-slate-900 dark:text-white">
                 {editingEmployee ? "Ажилтан засах" : "Ажилтан нэмэх"}
               </h2>
               <button
@@ -198,6 +198,8 @@ export default function EmployeeModal({
                     placeholder="Огноо сонгох"
                     className="w-full"
                     allowClear
+                    getPopupContainer={() => employeeRef.current || document.body}
+                    popupStyle={{ zIndex: 13010 }}
                     classNames={{
                       input:
                         "text-slate-900 dark:text-white bg-white dark:bg-gray-800 neu-panel neu-calendar placeholder:text-slate-400 !h-[50px] !py-2 !w-[420px]",

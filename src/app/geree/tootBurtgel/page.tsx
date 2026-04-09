@@ -12,7 +12,10 @@ export default function TootBurtgelPage() {
 
   useEffect(() => {
     if (ajiltan) {
+      const hasGereeBase =
+        hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
       const allowed =
+        hasGereeBase ||
         hasPermission(ajiltan, "/geree/tootBurtgel") ||
         hasPermission(ajiltan, "geree.tootBurtgel");
       if (!allowed) {

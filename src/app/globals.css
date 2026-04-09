@@ -4478,6 +4478,12 @@ a:active {
   font-size: 11px !important;
 }
 
+/* Keep Гэрээ/Оршин суугч table body heights identical */
+.geree-equal-height .ant-table-body {
+  height: calc(100vh - 460px) !important;
+  max-height: calc(100vh - 460px) !important;
+}
+
 /* Барилгын тоот — guilgee-table 11px vs chip 13px / Хоосон 10px зөрүүг нэгтгэх */
 .units-table.guilgee-table .ant-table-cell,
 .units-table .ant-table-cell {

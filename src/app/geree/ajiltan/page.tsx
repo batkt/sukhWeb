@@ -12,7 +12,12 @@ export default function AjiltanPage() {
 
   useEffect(() => {
     if (ajiltan) {
-      const allowed = hasPermission(ajiltan, "/geree/ajiltan") || hasPermission(ajiltan, "geree.ajiltan");
+      const hasGereeBase =
+        hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
+      const allowed =
+        hasGereeBase ||
+        hasPermission(ajiltan, "/geree/ajiltan") ||
+        hasPermission(ajiltan, "geree.ajiltan");
       if (!allowed) {
         router.push("/geree");
       }

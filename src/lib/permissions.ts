@@ -20,10 +20,21 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Гэрээ",
     description: "Гэрээний мэдээлэл харах, засах эрх",
     children: [
-      { id: "geree.kharakh", label: "Харах", description: "Гэрээ харах" },
-      { id: "geree.nemekh", label: "Нэмэх", description: "Гэрээ нэмэх" },
-      { id: "geree.zasakh", label: "Засах", description: "Гэрээ засах" },
-      { id: "geree.ustgakh", label: "Устгах", description: "Гэрээ устгах" },
+      {
+        id: "geree.orshinSuugch",
+        label: "Оршин суугч",
+        description: "Оршин суугч харах эрх",
+      },
+      {
+        id: "geree.tootBurtgel",
+        label: "Тоот бүртгэл",
+        description: "Тоот бүртгэл харах эрх",
+      },
+      {
+        id: "geree.ajiltan",
+        label: "Ажилтан",
+        description: "Ажилтан харах эрх",
+      },
     ],
   },
   {
@@ -31,10 +42,26 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Төлбөр",
     description: "Төлбөрийн мэдээлэл харах эрх",
     children: [
-      { id: "tulbur.nekhemjlekh", label: "Нэхэмжлэх", description: "Нэхэмжлэх харах" },
-      { id: "tulbur.khungulult", label: "Хөнгөлөлт", description: "Хөнгөлөлт удирдах" },
-      { id: "tulbur.guilgeeTuukh", label: "Гүйлгээний түүх", description: "Гүйлгээний түүх харах" },
-      { id: "tulbur.ebarimt", label: "Э-баримт", description: "Э-баримт харах" },
+      {
+        id: "tulbur.nekhemjlekh",
+        label: "Нэхэмжлэх",
+        description: "Нэхэмжлэх харах",
+      },
+      {
+        id: "tulbur.khungulult",
+        label: "Хөнгөлөлт",
+        description: "Хөнгөлөлт удирдах",
+      },
+      {
+        id: "tulbur.guilgeeTuukh",
+        label: "Гүйлгээний түүх",
+        description: "Гүйлгээний түүх харах",
+      },
+      {
+        id: "tulbur.ebarimt",
+        label: "Э-баримт",
+        description: "Э-баримт харах",
+      },
     ],
   },
   {
@@ -42,9 +69,21 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Тайлан",
     description: "Тайлангийн мэдээлэл харах эрх",
     children: [
-      { id: "tailan.orlogoAvlaga", label: "Авлагын товчоо", description: "Авлагын товчооны тайлан" },
-      { id: "tailan.sariinTulbur", label: "Нэгтгэл тайлан", description: "Нэгтгэл тайлан" },
-      { id: "tailan.avlagiinNasjilt", label: "Авлагийн насжилт", description: "Авлагийн насжилт" },
+      {
+        id: "tailan.orlogoAvlaga",
+        label: "Авлагын товчоо",
+        description: "Авлагын товчооны тайлан",
+      },
+      {
+        id: "tailan.sariinTulbur",
+        label: "Нэгтгэл тайлан",
+        description: "Нэгтгэл тайлан",
+      },
+      {
+        id: "tailan.avlagiinNasjilt",
+        label: "Авлагийн насжилт",
+        description: "Авлагийн насжилт",
+      },
     ],
   },
   {
@@ -52,8 +91,16 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Мэдэгдэл",
     description: "Мэдэгдэл харах, илгээх эрх",
     children: [
-      { id: "medegdel.medegdel", label: "Мэдэгдэл", description: "Мэдэгдэл харах" },
-      { id: "medegdel.sanalKhuselt", label: "Санал хүсэлт", description: "Санал хүсэлт харах" },
+      {
+        id: "medegdel.medegdel",
+        label: "Мэдэгдэл",
+        description: "Мэдэгдэл харах",
+      },
+      {
+        id: "medegdel.sanalKhuselt",
+        label: "Санал хүсэлт",
+        description: "Санал хүсэлт харах",
+      },
     ],
   },
   {
@@ -61,19 +108,34 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
     label: "Зогсоол",
     description: "Зогсоолын мэдээлэл харах эрх",
     children: [
-      { id: "zogsool.jagsaalt", label: "Жагсаалт", description: "Зогсоолын жагсаалт" },
-      { id: "zogsool.camera", label: "Камер касс", description: "Камер касс харах" },
-      { id: "zogsool.cameraKhyanalt", label: "Камерын хяналт", description: "Камерын хяналт" },
-      { id: "zogsool.orshinSuugch", label: "Оршин суугч", description: "Оршин суугчийн мэдээлэл" },
+      {
+        id: "zogsool.jagsaalt",
+        label: "Жагсаалт",
+        description: "Зогсоолын жагсаалт",
+      },
+      {
+        id: "zogsool.camera",
+        label: "Камер касс",
+        description: "Камер касс харах",
+      },
+      {
+        id: "zogsool.cameraKhyanalt",
+        label: "Камерын хяналт",
+        description: "Камерын хяналт",
+      },
+      {
+        id: "zogsool.orshinSuugch",
+        label: "Оршин суугч",
+        description: "Оршин суугчийн мэдээлэл",
+      },
     ],
   },
 ];
 
-
 // Helper function to get all permission IDs (flat list)
 export function getAllPermissionIds(): string[] {
   const ids: string[] = [];
-  
+
   function traverse(items: PermissionItem[]) {
     for (const item of items) {
       ids.push(item.id);
@@ -82,7 +144,7 @@ export function getAllPermissionIds(): string[] {
       }
     }
   }
-  
+
   traverse(ALL_PERMISSIONS);
   return ids;
 }
@@ -104,23 +166,23 @@ export function getPermissionLabel(permissionId: string): string {
     }
     return null;
   }
-  
+
   return findLabel(ALL_PERMISSIONS) || permissionId;
 }
 
 // Helper function to get parent permission ID
 export function getParentPermissionId(permissionId: string): string | null {
-  const parts = permissionId.split('.');
+  const parts = permissionId.split(".");
   if (parts.length > 1) {
     parts.pop();
-    return parts.join('.');
+    return parts.join(".");
   }
   return null;
 }
 
 export function getChildPermissionIds(permissionId: string): string[] {
   const ids: string[] = [];
-  
+
   function findAndTraverse(items: PermissionItem[]): boolean {
     for (const item of items) {
       if (item.id === permissionId) {
@@ -141,7 +203,7 @@ export function getChildPermissionIds(permissionId: string): string[] {
     }
     return false;
   }
-  
+
   findAndTraverse(ALL_PERMISSIONS);
   return ids;
 }

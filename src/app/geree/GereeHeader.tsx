@@ -110,15 +110,19 @@ export default function GereeHeader({
     }
   }, [ajiltan]);
 
+  const hasGereeBase =
+    hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
+  const showContracts = hasGereeBase;
   const showResidents =
+    hasGereeBase ||
     hasPermission(ajiltan, "/geree/orshinSuugch") ||
     hasPermission(ajiltan, "geree.orshinSuugch");
-  const showContracts =
-    hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
   const showUnits =
+    hasGereeBase ||
     hasPermission(ajiltan, "/geree/tootBurtgel") ||
     hasPermission(ajiltan, "geree.tootBurtgel");
   const showEmployees =
+    hasGereeBase ||
     hasPermission(ajiltan, "/geree/ajiltan") ||
     hasPermission(ajiltan, "geree.ajiltan");
 

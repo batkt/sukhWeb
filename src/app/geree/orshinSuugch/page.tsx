@@ -12,7 +12,10 @@ export default function OrshinSuugchPage() {
 
   useEffect(() => {
     if (ajiltan) {
+      const hasGereeBase =
+        hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
       const allowed =
+        hasGereeBase ||
         hasPermission(ajiltan, "/geree/orshinSuugch") ||
         hasPermission(ajiltan, "geree.orshinSuugch");
       if (!allowed) {

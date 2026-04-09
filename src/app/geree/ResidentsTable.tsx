@@ -237,39 +237,41 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   );
 
   return (
-    <div className="guilgee-table-wrap bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <Table
-        dataSource={data}
-        columns={columns}
-        rowKey={(record) =>
-          record._id ||
-          `res_${String(typeof record.ner === "object" ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`
-        }
-        pagination={false}
-        size="small"
-        bordered
-        loading={loading}
-        className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
-        scroll={{ x: "max-content", y: maxHeight as any }}
-        rowClassName={(record, index) => `
+    <div className="w-full overflow-hidden">
+      <div className="w-full overflow-x-auto hide-scrollbar">
+        <Table
+          dataSource={data}
+          columns={columns}
+          rowKey={(record) =>
+            record._id ||
+            `res_${String(typeof record.ner === "object" ? record.ner?.ner : record.ner)}_${record.toot}_${record.utas}`
+          }
+          pagination={false}
+          size="small"
+          bordered
+          loading={loading}
+          className="guilgee-table geree-equal-height min-w-[1000px] dark:bg-gray-900 dark:text-gray-100"
+          scroll={{ x: "max-content", y: maxHeight as any }}
+          rowClassName={(record, index) => `
         ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
         text-gray-900 dark:text-white
         hover:bg-gray-100 dark:hover:bg-gray-600
         transition-colors duration-200
       `}
-        locale={{
-          emptyText: (
-            <span className="text-gray-500 dark:text-gray-400">
-              Хайсан мэдээлэл алга байна
-            </span>
-          ),
-        }}
-        onChange={(_: any, __: any, sorter: any) => {
-          if (onSort) {
-            onSort((sorter.field || sorter.columnKey) as SortKey, sorter.order);
-          }
-        }}
-      />
+          locale={{
+            emptyText: (
+              <span className="text-gray-500 dark:text-gray-400">
+                Хайсан мэдээлэл алга байна
+              </span>
+            ),
+          }}
+          onChange={(_: any, __: any, sorter: any) => {
+            if (onSort) {
+              onSort((sorter.field || sorter.columnKey) as SortKey, sorter.order);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 };

@@ -223,7 +223,7 @@ export const ContractsTable: React.FC<ContractsTableProps> = ({
               pagination={false}
               size="small"
               bordered
-              className="guilgee-table min-w-[1000px] dark:bg-gray-900 dark:text-gray-300"
+              className="guilgee-table geree-equal-height min-w-[1000px] dark:bg-gray-900 dark:text-gray-300"
               scroll={{ x: "max-content", y: maxHeight as any }}
               rowClassName={(record, index) => `
                 ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
