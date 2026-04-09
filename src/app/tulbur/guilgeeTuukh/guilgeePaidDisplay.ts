@@ -1,15 +1,20 @@
+import { itemPrimaryDateMs } from "./ledgerRunningBalances";
+
 /**
- * Нийт төлсөн дүн: түүхийн мөрнөөс нийлбэрлэсэн `_totalTulsun` нь олон төлөлтийг оролцуулна.
- * `/tulsunSummary` заримдаа нэг хугацааны дүн буцаадаг тул эхлээд ledger, дараа нь API.
+ * Сонгосон хугацааны `itemPrimaryDateMs`-аар шүүж, тухайн хугацаанд төлсөн дүнг гэрээгээр нийлбэрлэнэ.
+ * «Гүйцэтгэл» багана: бүх түүхийн харагдац ч зөвхөн сонгосон сарын төлөлтүүд.
  */
-export function resolveTotalPaidFromLedgerThenApi(
-  record: { _totalTulsun?: number } | any,
-  gid: string | undefined,
-  paidSummaryByGereeId: Record<string, number>,
-): number {
-  const ledger = Number(record?._totalTulsun ?? 0);
-  if (ledger > 0.01) return ledger;
-  return gid ? (paidSummaryByGereeId[gid] ?? 0) : 0;
+export function aggregateLedgerTulsunByGereeIdInRange(
+  items: any[],
+  contractsByNumber: Record<string, any>,
+  rangeStartMs: number,
+  rangeEndMs: number,
+): Record<string, number> {
+  const filtered = items.filter((it) => {
+    const ms = itemPrimaryDateMs(it);
+    return ms >= rangeStartMs && ms <= rangeEndMs;
+  });
+  return aggregateLedgerTulsunByGereeId(filtered, contractsByNumber);
 }
 
 function gereeIdFromItem(

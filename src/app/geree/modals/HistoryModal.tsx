@@ -29,6 +29,7 @@ import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import { useModalHotkeys } from "@/lib/useModalHotkeys";
 import InvoiceModal from "./InvoiceModal";
 import { ModalPortal } from "../../../../components/golContent";
+import { ledgerFilterYmdKey } from "@/app/tulbur/guilgeeTuukh/ledgerRunningBalances";
 
 interface HistoryModalProps {
   show: boolean;
@@ -59,6 +60,98 @@ interface LedgerEntry {
     | "nekhemjlekhiinTuukh"
     | "gereeniiTulsunAvlaga"
     | "gereeniiTulukhAvlaga";
+}
+
+/** ISO instant → UTC өдрийн YYYY-MM-DD (жишээ нь 2026-02-01T04:00:00.000Z → 2026-02-01, Америкийн TZ-д local Date-ээр 1.31 болдоггүй) */
+function ledgerInstantToUtcYmd(raw: unknown): string | null {
+  if (raw == null || raw === "") return null;
+  if (raw instanceof Date) {
+    const t = raw.getTime();
+    if (Number.isNaN(t)) return null;
+    const y = raw.getUTCFullYear();
+    const m = String(raw.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(raw.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(raw).trim();
+  if (!s) return null;
+  const dm = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (dm) {
+    return `${dm[1]}-${String(Number(dm[2])).padStart(2, "0")}-${String(Number(dm[3])).padStart(2, "0")}`;
+  }
+  const t = new Date(s).getTime();
+  if (Number.isNaN(t)) return null;
+  const x = new Date(t);
+  return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, "0")}-${String(x.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** RangePicker заримдаа Dayjs дамжуулдаг; жагсаалтын `setState`-ээр string биш орсон ч шүүлт зөв ажиллана. */
+function coercePickerValueToYmd(v: unknown): string | null {
+  if (v == null || v === "") return null;
+  if (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as { format?: (f: string) => string }).format === "function"
+  ) {
+    try {
+      const x = (v as { format: (f: string) => string }).format("YYYY-MM-DD");
+      return x && String(x).trim() ? String(x).trim() : null;
+    } catch {
+      return null;
+    }
+  }
+  if (v instanceof Date && !Number.isNaN(v.getTime())) {
+    const y = v.getFullYear();
+    const m = String(v.getMonth() + 1).padStart(2, "0");
+    const d = String(v.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const s = String(v ?? "").trim();
+  return s.length ? s : null;
+}
+
+function ymdEndOfCalendarMonth(ymd: string): string {
+  const parts = ymd.split("-");
+  const ys = Number(parts[0]);
+  const ms = Number(parts[1]);
+  const last = new Date(ys, ms, 0).getDate();
+  return `${ys}-${String(ms).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+}
+
+function ymdStartOfCalendarMonth(ymd: string): string {
+  const [ys, ms] = ymd.split("-").map((x) => Number(x));
+  return `${ys}-${String(ms).padStart(2, "0")}-01`;
+}
+
+/** Хүснэгтийн «Огноо» (`formatLedgerOgnooCell`)той ижил эхний дүрэм — prefix vs UTC зөрүүгээр 4-р сарын мөр 3-р сарын шүүлтэнд ордоггүй. */
+function ledgerRowKeyMatchingDisplayColumn(ognoo: unknown): string | null {
+  return ledgerInstantToUtcYmd(ognoo) ?? ledgerFilterYmdKey(ognoo);
+}
+
+function normalizeLedgerOgnooStorage(raw: unknown): string {
+  return ledgerInstantToUtcYmd(raw) ?? String(raw ?? "").trim();
+}
+
+function formatLedgerOgnooCell(raw: unknown): string {
+  const ymd = ledgerInstantToUtcYmd(raw);
+  if (!ymd) return String(raw ?? "").trim() || "-";
+  return ymd.replace(/-/g, ".");
+}
+
+/** Бүртгэсэн / гүйлгээ хийсэн ажилтны нэр — API өөр өөр талбар ашиглана (history-ledger мөр ч орно). */
+function coalesceRegisteredAjiltan(doc: any, fallback = "Admin"): string {
+  const candidates = [
+    doc?.ajiltan,
+    doc?.burtgesenAjiltaniiNer,
+    doc?.guilgeeKhiisenAjiltniiNer,
+    doc?.maililgeesenAjiltniiNer,
+  ];
+  for (const c of candidates) {
+    const s = String(c ?? "").trim();
+    if (s) return s;
+  }
+  const fb = String(fallback ?? "").trim();
+  return fb || "Admin";
 }
 
 const PrintStyles = () => (
@@ -183,6 +276,8 @@ export default function HistoryModal({
   const [dateRange, setDateRange] = useState<
     [string | null, string | null] | undefined
   >([null, null]);
+  /** true: зөвхөн modal-ын сонголт (Арилгах = бүх түүх); false: хоосон үед pageDateRange-аар шүүх */
+  const [modalDateFilterFromUser, setModalDateFilterFromUser] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     show: boolean;
     id: string;
@@ -201,7 +296,24 @@ export default function HistoryModal({
   const fetchData = async () => {
     if (!token || !baiguullagiinId || !contract) return;
 
-    const contractIdToFetch = contract?.gereeniiId || contract?._id;
+    /** Гэрээний Mongo _id — invoice/payment мөрнөөс нээхэд `contract._id` нь гэрээний id биш байж болно */
+    const explicitGereeId = String(
+      contract?.gereeniiId ||
+        contract?.gereeId ||
+        contract?._gereeniiId ||
+        "",
+    ).trim();
+    const looksLikeNekhemjlekhiinRow = Boolean(
+      contract?.medeelel?.zardluud ||
+        contract?.medeelel?.guilgeenuud ||
+        (Array.isArray(contract?.zardluud) && contract.zardluud.length > 0) ||
+        (Array.isArray(contract?.guilgeenuud) && contract.guilgeenuud.length > 0),
+    );
+    const contractIdToFetch =
+      explicitGereeId ||
+      (!looksLikeNekhemjlekhiinRow && contract?._id
+        ? String(contract._id).trim()
+        : "");
 
     // Silent Auto-Sync: Recalculate global balance on backend before fetching (if endpoint exists)
     // This is completely silent - no errors logged
@@ -278,11 +390,8 @@ export default function HistoryModal({
       const freshContract = contractResp?.data;
 
       // Extract all possible identifiers from the contract/resident object
-      const contractId = String(contract?._id || "").trim();
-      const residentId = String(
-        contract?.orshinSuugchId || contract?._id || "",
-      ).trim();
-      const gereeniiId = String(contract?.gereeniiId || "").trim();
+      const residentId = String(contract?.orshinSuugchId || "").trim();
+      const gereeniiId = explicitGereeId;
       const gereeDugaar = String(contract?.gereeniiDugaar || "").trim();
       const toot = String(contract?.toot || "").trim();
       const ner = String(contract?.ner || "")
@@ -406,11 +515,12 @@ export default function HistoryModal({
       );
 
       contractItemsToProcess.forEach((item: any) => {
-        const itemDate =
+        const itemDate = normalizeLedgerOgnooStorage(
           item.ognoo ||
-          item.nekhemjlekhiinOgnoo ||
-          item.createdAt ||
-          new Date().toISOString();
+            item.nekhemjlekhiinOgnoo ||
+            item.createdAt ||
+            new Date().toISOString(),
+        );
         // Use only employee fields - never item.ner (resident name) or createdBy?.ner (may be resident)
         const ajiltan =
           item.burtgesenAjiltaniiNer ||
@@ -594,7 +704,7 @@ export default function HistoryModal({
               tulsunDun: chargeAmt,
               uldegdel: 0,
               isSystem: false,
-              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              ajiltan: coalesceRegisteredAjiltan(g, ajiltan),
               khelber: "Төлбөр",
               tailbar: g.tailbar || "Ашиглалт",
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
@@ -611,9 +721,9 @@ export default function HistoryModal({
 
             if (isEkhniiUldegdel) {
               const prefix = "Эхний үлдэгдэл";
-              const dateStr = (g.ognoo || g.guilgeeKhiisenOgnoo || itemDate)
-                .split("T")[0]
-                .replace(/-/g, ".");
+              const dateStr = formatLedgerOgnooCell(
+                g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              );
               if (rowTailbar && !rowTailbar.includes(prefix)) {
                 rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
               } else if (!rowTailbar) {
@@ -629,13 +739,15 @@ export default function HistoryModal({
             flatLedger.push({
               _id: rowId,
               parentInvoiceId: item._id,
-              ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ognoo: normalizeLedgerOgnooStorage(
+                g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ),
               ner: isEkhniiUldegdel ? "Эхний үлдэгдэл" : "Авлага",
               tulukhDun: chargeAmt,
               tulsunDun: 0,
               uldegdel: 0,
               isSystem: false,
-              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              ajiltan: coalesceRegisteredAjiltan(g, ajiltan),
               khelber: "Авлага",
               tailbar: rowTailbar,
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
@@ -647,13 +759,15 @@ export default function HistoryModal({
             const rowId = `${item._id}-g-paid-${g._id?.toString() || Math.random()}`;
             flatLedger.push({
               _id: rowId,
-              ognoo: g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ognoo: normalizeLedgerOgnooStorage(
+                g.ognoo || g.guilgeeKhiisenOgnoo || itemDate,
+              ),
               ner: "Төлөлт",
               tulukhDun: 0,
               tulsunDun: paidAmt,
               uldegdel: 0,
               isSystem: false,
-              ajiltan: g.guilgeeKhiisenAjiltniiNer || ajiltan,
+              ajiltan: coalesceRegisteredAjiltan(g, ajiltan),
               khelber: g.khelber || "Төлбөр",
               tailbar: g.tailbar || "-",
               burtgesenOgnoo: g.createdAt || item.createdAt || "-",
@@ -780,8 +894,10 @@ export default function HistoryModal({
           return;
         }
 
-        const recDate = rec.ognoo || rec.createdAt || new Date().toISOString();
-        const ajiltan = rec.guilgeeKhiisenAjiltniiNer || "Admin";
+        const recDate = normalizeLedgerOgnooStorage(
+          rec.ognoo || rec.createdAt || new Date().toISOString(),
+        );
+        const ajiltan = coalesceRegisteredAjiltan(rec);
         // For ekhniiUldegdel, use undsenDun (original amount) for the charge - payments are tracked separately
         const amt =
           rec.ekhniiUldegdelEsekh === true
@@ -802,7 +918,7 @@ export default function HistoryModal({
 
           if (isEkhniiUldegdel) {
             const prefix = "Эхний үлдэгдэл";
-            const dateStr = recDate.split("T")[0].replace(/-/g, ".");
+            const dateStr = recDate.replace(/-/g, ".");
             if (rowTailbar && !rowTailbar.includes(prefix)) {
               rowTailbar = `${prefix} - ${rowTailbar} - ${dateStr}`;
             } else if (!rowTailbar) {
@@ -845,9 +961,10 @@ export default function HistoryModal({
         )
           return;
 
-        const paymentDate =
-          payment.ognoo || payment.createdAt || new Date().toISOString();
-        const ajiltan = payment.guilgeeKhiisenAjiltniiNer || "Admin";
+        const paymentDate = normalizeLedgerOgnooStorage(
+          payment.ognoo || payment.createdAt || new Date().toISOString(),
+        );
+        const ajiltan = coalesceRegisteredAjiltan(payment);
         const tulsunDun = Number(payment.tulsunDun || 0);
         const turul = payment.turul || "tulbur";
 
@@ -985,13 +1102,13 @@ export default function HistoryModal({
                 tulukhDun = 0;
               }
               const entry: LedgerEntry = {
-                ognoo: r.ognoo || "",
+                ognoo: normalizeLedgerOgnooStorage(r.ognoo || ""),
                 ner: r.ner || "",
                 tulukhDun,
                 tulsunDun,
                 uldegdel: Number(r.uldegdel ?? 0), // Use uldegdel directly from backend - NO calculation
                 isSystem: r.isSystem ?? false,
-                ajiltan: r.ajiltan,
+                ajiltan: coalesceRegisteredAjiltan(r),
                 khelber: r.khelber,
                 tailbar: r.tailbar,
                 burtgesenOgnoo: r.burtgesenOgnoo,
@@ -1139,7 +1256,19 @@ export default function HistoryModal({
 
   const pageRangeStart = pageDateRange?.[0] ?? null;
   const pageRangeEnd = pageDateRange?.[1] ?? null;
-  const contractId = contract?.gereeniiId || contract?._id || null;
+  /** Түлхүүр: гэрээний id байхгүй үед (жагсаалтын invoice-мөр) ч мөрийн солигдолтыг илрүүлнэ */
+  const contractId =
+    String(
+      contract?.gereeniiId ||
+        contract?.gereeId ||
+        contract?._gereeniiId ||
+        "",
+    ).trim() ||
+    (contract?.gereeniiDugaar
+      ? `dugaar:${String(contract.gereeniiDugaar).trim()}`
+      : "") ||
+    String(contract?._id || "") ||
+    null;
 
   useEffect(() => {
     if (!show) {
@@ -1148,10 +1277,14 @@ export default function HistoryModal({
     if (show && contract) {
       setData([]);
       setGlobalUldegdel(null);
+      setModalDateFilterFromUser(false);
       // Sync from parent using stable keys (contractId + pageDateRange),
       // so outside page filter works without being reset by object identity changes.
-      if (pageRangeStart || pageRangeEnd) {
-        setDateRange([pageRangeStart, pageRangeEnd]);
+      if (pageRangeStart != null || pageRangeEnd != null) {
+        setDateRange([
+          coercePickerValueToYmd(pageRangeStart),
+          coercePickerValueToYmd(pageRangeEnd),
+        ]);
       } else {
         setDateRange([null, null]);
       }
@@ -1160,30 +1293,34 @@ export default function HistoryModal({
   }, [show, contractId, pageRangeStart, pageRangeEnd]);
 
   const filteredData = useMemo(() => {
-    const normalizeToDateKey = (v: any): string | null => {
-      const raw = String(v ?? "").trim();
-      if (!raw) return null;
-      // Accept ISO and dotted/slashed forms, then keep only date part.
-      const normalized = raw.replace(/[./]/g, "-");
-      const datePart = normalized.includes("T")
-        ? normalized.split("T")[0]
-        : normalized.split(" ")[0];
-      const m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-      if (!m) return null;
-      const yyyy = m[1];
-      const mm = String(Number(m[2])).padStart(2, "0");
-      const dd = String(Number(m[3])).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd}`;
-    };
+    const [dr0, dr1] = dateRange || [null, null];
+    const m0 = coercePickerValueToYmd(dr0);
+    const m1 = coercePickerValueToYmd(dr1);
+    const pageS = coercePickerValueToYmd(pageDateRange?.[0] ?? null);
+    const pageE = coercePickerValueToYmd(pageDateRange?.[1] ?? null);
 
-    const [start, end] = dateRange || [null, null];
-    const startKey = normalizeToDateKey(start);
-    const endKey = normalizeToDateKey(end);
+    const startNorm = modalDateFilterFromUser ? m0 : (m0 ?? pageS);
+    const endNorm = modalDateFilterFromUser ? m1 : (m1 ?? pageE);
+
+    let startKey = ledgerFilterYmdKey(startNorm);
+    let endKey = ledgerFilterYmdKey(endNorm);
+
+    // Нэг өдөр сонгосон / RangePicker дунд үе: нөгөө тал хоосон бол тухайн сарын эх/төгсгөлөөр нөхнө
+    if (startKey && !endKey) {
+      endKey = ymdEndOfCalendarMonth(startKey);
+    } else if (!startKey && endKey) {
+      startKey = ymdStartOfCalendarMonth(endKey);
+    }
+    if (startKey && endKey && startKey > endKey) {
+      const t = startKey;
+      startKey = endKey;
+      endKey = t;
+    }
 
     const result =
       startKey || endKey
         ? data.filter((item) => {
-            const rowKey = normalizeToDateKey(item.ognoo);
+            const rowKey = ledgerRowKeyMatchingDisplayColumn(item.ognoo);
             if (!rowKey) return false;
             if (startKey && rowKey < startKey) return false;
             if (endKey && rowKey > endKey) return false;
@@ -1193,7 +1330,7 @@ export default function HistoryModal({
 
     // Reverse to show newest first (data is stored oldest-first)
     return [...result].reverse();
-  }, [data, dateRange]);
+  }, [data, dateRange, pageDateRange, modalDateFilterFromUser]);
 
   const handleOpenInvoiceModal = (row: LedgerEntry) => {
     // We need to pass the resident data to InvoiceModal
@@ -1298,6 +1435,7 @@ export default function HistoryModal({
                     getPopupContainer={() => document.body}
                     popupStyle={{ zIndex: 10000050 }}
                     onChange={(date: any, dateString: any) => {
+                      setModalDateFilterFromUser(true);
                       if (Array.isArray(date)) {
                         setDateRange([
                           date[0]?.isValid?.()
@@ -1326,7 +1464,10 @@ export default function HistoryModal({
                 {(dateRange?.[0] || dateRange?.[1]) && (
                   <button
                     onPointerDown={(e) => e.stopPropagation()}
-                    onClick={() => setDateRange([null, null])}
+                    onClick={() => {
+                      setModalDateFilterFromUser(true);
+                      setDateRange([null, null]);
+                    }}
                     className="text-[10px]  text-rose-500 hover:underline"
                   >
                     Арилгах
@@ -1394,7 +1535,7 @@ export default function HistoryModal({
                           className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors"
                         >
                           <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 whitespace-nowrap text-center">
-                            {row.ognoo.split("T")[0].replace(/-/g, ".")}
+                            {formatLedgerOgnooCell(row.ognoo)}
                           </td>
                           <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden sm:table-cell text-center">
                             {row.isSystem ? "Систем" : row.ajiltan}

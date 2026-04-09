@@ -5,31 +5,61 @@
  */
 
 /**
+ * Жагсаалт/Хуулгын огнооны шүүлт: ижил YYYY-MM-DD түлхүүр (цэг, slash, ISO-ийн T өмнөх хэсэг).
+ */
+export function ledgerFilterYmdKey(raw: unknown): string | null {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  const normalized = s.replace(/[./]/g, "-");
+  const datePart = normalized.includes("T")
+    ? normalized.split("T")[0]
+    : normalized.split(" ")[0];
+  const m = datePart.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return null;
+  return `${m[1]}-${String(Number(m[2])).padStart(2, "0")}-${String(Number(m[3])).padStart(2, "0")}`;
+}
+
+/** `2026.01.31` гэх мэт — `new Date()` NaN үед UTC өдрийн эхлэл (ms). */
+function calendarOgnooToUtcMs(raw: unknown): number | null {
+  const key = ledgerFilterYmdKey(raw);
+  if (!key) return null;
+  const [ys, ms, ds] = key.split("-");
+  const y = Number(ys);
+  const mo = Number(ms) - 1;
+  const d = Number(ds);
+  const t = Date.UTC(y, mo, d);
+  return Number.isNaN(t) ? null : t;
+}
+
+function dateFieldToUtcMs(v: unknown): number | null {
+  if (v == null || String(v).trim() === "") return null;
+  const parsed = new Date(v as string).getTime();
+  if (!Number.isNaN(parsed)) return parsed;
+  return calendarOgnooToUtcMs(v);
+}
+
+/**
  * Жагсаалт/шүүлт болон Хуулгатай ойртуулах: төлөлтийн мөрөнд эхлээд `tulsunOgnoo` (бодит төлсөн өдөр),
  * дараа нь `ognoo`. Ингэхгүй бол `ognoo` нь нэхэмжлэхийн огноо байж сарын шүүлтээс гадагш үлдэнэ.
+ * Огнооны string (`2026.01.31` гэх мэт) нь HistoryModal-ийн шүүлттэй ижил үндсээр parse хийнэ.
  */
 export function itemPrimaryDateMs(it: any): number {
   const type = String(it?.turul || it?.type || "").toLowerCase();
   const isPayment =
     type === "tulult" || type === "төлбөр" || type === "төлөлт";
   if (isPayment) {
-    if (it?.tulsunOgnoo != null && String(it.tulsunOgnoo).trim() !== "") {
-      const tPay = new Date(it.tulsunOgnoo).getTime();
-      if (!Number.isNaN(tPay)) return tPay;
-    }
-    if (it?.ognoo != null && String(it.ognoo).trim() !== "") {
-      const tOg = new Date(it.ognoo).getTime();
-      if (!Number.isNaN(tOg)) return tOg;
-    }
+    const tPay = dateFieldToUtcMs(it?.tulsunOgnoo);
+    if (tPay != null) return tPay;
+    const tOg = dateFieldToUtcMs(it?.ognoo);
+    if (tOg != null) return tOg;
     const tCr = new Date(it?.createdAt || 0).getTime();
     return Number.isNaN(tCr) ? 0 : tCr;
   }
-  const raw = it?.ognoo;
-  if (raw != null && String(raw).trim() !== "") {
-    const t = new Date(raw).getTime();
-    if (!Number.isNaN(t)) return t;
-  }
-  const t2 = new Date(it?.tulsunOgnoo || it?.createdAt || 0).getTime();
+  const tMain = dateFieldToUtcMs(it?.ognoo);
+  if (tMain != null) return tMain;
+  const tAlt = dateFieldToUtcMs(it?.tulsunOgnoo);
+  if (tAlt != null) return tAlt;
+  const t2 = new Date(it?.createdAt || 0).getTime();
   return Number.isNaN(t2) ? 0 : t2;
 }
 

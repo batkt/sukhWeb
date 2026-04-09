@@ -15,8 +15,9 @@ const { RangePicker } = DatePicker;
 // Define common props for our standardized DatePicker
 export interface StandardDatePickerProps extends Omit<
   DatePickerProps,
-  "value" | "onChange"
+  "value" | "onChange" | "placeholder"
 > {
+  placeholder?: string | [string, string];
   value?:
     | string
     | Date

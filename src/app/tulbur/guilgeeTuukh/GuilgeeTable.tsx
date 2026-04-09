@@ -6,7 +6,6 @@ import { Eye, History, Banknote } from "lucide-react";
 import formatNumber from "../../../../tools/function/formatNumber";
 import { getPaymentStatusLabel } from "@/lib/utils";
 import { pickMonthSlice } from "./guilgeeMonthMatrix";
-import { resolveTotalPaidFromLedgerThenApi } from "./guilgeePaidDisplay";
 
 const formatDate = (d?: string) =>
   d ? new Date(d).toLocaleDateString("mn-MN") : "-";
@@ -20,7 +19,8 @@ interface GuilgeeTableProps {
   contractsById: Record<string, any>;
   contractsByNumber: Record<string, any>;
   residentsById: Record<string, any>;
-  paidSummaryByGereeId: Record<string, number>;
+  /** Сонгосон сарын төлсөн дүн (Гүйцэтгэл) — `monthlyMatrixRange`-тай нийцнэ */
+  monthPaidByGereeId: Record<string, number>;
   bestKnownBalances: Record<string, number>;
   sortField: string | null;
   sortOrder: "asc" | "desc";
@@ -33,7 +33,7 @@ interface GuilgeeTableProps {
   monthlyPeriods?: string[];
   /** YYYY-MM from the date picker — must match matrix `months` keys for the selected month */
   matrixMonthKey?: string;
-  /** When set, жагсаалтын түүх огноогоор таслагдсан — matrix-т мөр байвал тухайн сарын billed/paid ашиглана */
+  /** Үлдэгдэл/түүх шүүлтэнд л хэрэглэнэ; Гүйцэтгэл үргэлж `monthPaidByGereeId` */
   historyScopedByDate?: boolean;
   onViewInvoice: (resident: any) => void;
   onViewHistory: (resident: any) => void;
@@ -50,7 +50,7 @@ export default function GuilgeeTable({
   contractsById,
   contractsByNumber,
   residentsById,
-  paidSummaryByGereeId,
+  monthPaidByGereeId,
   bestKnownBalances,
   sortField,
   sortOrder,
@@ -328,15 +328,9 @@ export default function GuilgeeTable({
             ...baseColumn,
             render: (_: any, record: any) => {
               const gid = getGereeId(record);
-              // Огноогоор тасалсан үед Гүйцэтгэл = `buildingHistoryItems`-аас нийлбэрлэсэн `_totalTulsun` (Хуулгатай ижил).
-              // `/tailan/resident-monthly-matrix`-ийн `paid` заримдаа 0/хоцорсон тул энд ашиглахгүй.
-              const paidDisplay = historyScopedByDate
-                ? Number(record?._totalTulsun ?? 0)
-                : resolveTotalPaidFromLedgerThenApi(
-                    record,
-                    gid || undefined,
-                    paidSummaryByGereeId,
-                  );
+              const paidDisplay = gid
+                ? Number(monthPaidByGereeId[gid] ?? 0)
+                : 0;
               return (
                 <span className="text-gray-900 dark:text-white">
                   {formatNumber(paidDisplay, 2)}
@@ -409,13 +403,9 @@ export default function GuilgeeTable({
                 ? (bestKnownBalances[gid] ?? historyAggregate)
                 : (bestKnownBalances[gid] ??
                   (historyAggregate || Number(record?.uldegdel ?? 0)));
-              const paidForTuluv = historyScopedByDate
-                ? Number(record?._totalTulsun ?? 0)
-                : resolveTotalPaidFromLedgerThenApi(
-                    record,
-                    gid || undefined,
-                    paidSummaryByGereeId,
-                  );
+              const paidForTuluv = gid
+                ? Number(monthPaidByGereeId[gid] ?? 0)
+                : 0;
               const itForTuluv = {
                 ...record,
                 uldegdel: remainingValue,
@@ -605,7 +595,7 @@ export default function GuilgeeTable({
     contractsById,
     contractsByNumber,
     residentsById,
-    paidSummaryByGereeId,
+    monthPaidByGereeId,
     bestKnownBalances,
     getGereeId,
     deduplicatedResidents,
@@ -696,13 +686,9 @@ export default function GuilgeeTable({
               const total = deduplicatedResidents.reduce(
                 (sum: number, it: any) => {
                   const gid = getGereeId(it);
-                  const v = historyScopedByDate
-                    ? Number(it?._totalTulsun ?? 0)
-                    : resolveTotalPaidFromLedgerThenApi(
-                        it,
-                        gid || undefined,
-                        paidSummaryByGereeId,
-                      );
+                  const v = gid
+                    ? Number(monthPaidByGereeId[gid] ?? 0)
+                    : 0;
                   return sum + v;
                 },
                 0,
@@ -820,6 +806,9 @@ export default function GuilgeeTable({
             const itForTuluv = {
               ...record,
               uldegdel: remainingValue,
+              _paidFromSummary: gid
+                ? Number(monthPaidByGereeId[gid] ?? 0)
+                : 0,
             };
             let tuluvLabel: string = getPaymentStatusLabel(itForTuluv);
             if (record?.tuluv === "Цуцалсан" || record?.status === "Цуцалсан") {
