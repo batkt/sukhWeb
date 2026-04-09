@@ -1196,16 +1196,6 @@ export default function Khynalt() {
       show: showTulbur,
     },
     {
-      title: "Төлөлт орсон гэрээ",
-      value: formatNumber(paymentEngagementStats.uniquePayers, 0),
-      subtitle: "Гүйлгээ хийгдсэн",
-      color: "from-emerald-500 to-teal-600",
-      href: "/tulbur",
-      icon: UserCheck,
-      delay: 200,
-      show: showTulbur,
-    },
-    {
       title: "Сарын төлбөр",
       value: formatCurrency(currentMonthTotalComputed.total),
       subtitle: "Сарын нийт төлбөр",
@@ -1232,6 +1222,16 @@ export default function Khynalt() {
       href: "/tulbur",
       icon: CircleDollarSign,
       delay: 500,
+      show: showTulbur,
+    },
+    {
+      title: "Сарын гүйцэтгэл",
+      value: formatCurrency(currentMonthTotalComputed.paid),
+      subtitle: "Сарын төлсөн дүн",
+      color: "from-emerald-500 to-teal-600",
+      href: "/tulbur",
+      icon: UserCheck,
+      delay: 600,
       show: showTulbur,
     },
   ];
