@@ -77,7 +77,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
 
   const columns: ColumnsType<OrlogoAvlagaItem> = useMemo(() => {
-    return [
+    const baseColumns: ColumnsType<OrlogoAvlagaItem> = [
       {
         title: (
           <span className="text-gray-900 dark:text-white text-center block text-[13px]">
@@ -154,33 +154,115 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           </span>
         ),
       },
-      {
-        title: (
-          <span className="text-gray-900 dark:text-white text-center block text-[13px]">
-            Төлсөн
-          </span>
-        ),
-        key: "paid",
-        width: 150,
-        align: "right",
-        className: headerClassName,
-        render: (_: any, record: OrlogoAvlagaItem) => {
-          const paid = Number(record._periodPaid ?? getPaid(record));
-          return (
-            <button
-              type="button"
-              onClick={() => onRowClick(record)}
-              className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1"
-            >
-              <span className="text-green-600 dark:text-green-400 font-bold text-[14px]">
-                {formatNumber(paid, 2)}
-              </span>
-            </button>
-          );
-        },
-      },
     ];
-  }, [page, pageSize, getPaid, onRowClick]);
+
+    const balanceColumns: ColumnsType<OrlogoAvlagaItem> =
+      activeTab === "tulult"
+        ? [
+            {
+              title: (
+                <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+                  Төлсөн
+                </span>
+              ),
+              key: "paid",
+              width: 150,
+              align: "right",
+              className: headerClassName,
+              render: (_: any, record: OrlogoAvlagaItem) => {
+                const paid = Number(record._periodPaid ?? getPaid(record));
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onRowClick(record)}
+                    className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1 w-full justify-end"
+                  >
+                    <span className="text-green-600 dark:text-green-400 font-bold text-[13px]">
+                      {formatNumber(paid, 2)}
+                    </span>
+                  </button>
+                );
+              },
+            },
+          ]
+        : [
+            {
+              title: (
+                <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+                  Эхний үлдэгдэл
+                </span>
+              ),
+              key: "openingBalance",
+              width: 140,
+              align: "right",
+              className: headerClassName,
+              render: (_: any, record: OrlogoAvlagaItem) => (
+                <span className="text-gray-900 dark:text-white font-medium text-[13px]">
+                  {formatNumber(record._ekhniiUldegdel ?? 0, 2)}
+                </span>
+              ),
+            },
+            {
+              title: (
+                <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+                  Төлөх дүн
+                </span>
+              ),
+              key: "billed",
+              width: 140,
+              align: "right",
+              className: headerClassName,
+              render: (_: any, record: OrlogoAvlagaItem) => (
+                <span className="text-gray-900 dark:text-white font-medium text-[13px]">
+                  {formatNumber(record._periodTulbur ?? 0, 2)}
+                </span>
+              ),
+            },
+            {
+              title: (
+                <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+                  Төлсөн
+                </span>
+              ),
+              key: "paid",
+              width: 150,
+              align: "right",
+              className: headerClassName,
+              render: (_: any, record: OrlogoAvlagaItem) => {
+                const paid = Number(record._periodPaid ?? getPaid(record));
+                return (
+                  <button
+                    type="button"
+                    onClick={() => onRowClick(record)}
+                    className="text-gray-900 dark:text-white underline underline-offset-2 decoration-current cursor-pointer inline-flex items-center gap-1 w-full justify-end"
+                  >
+                    <span className="text-green-600 dark:text-green-400 font-bold text-[13px]">
+                      {formatNumber(paid, 2)}
+                    </span>
+                  </button>
+                );
+              },
+            },
+            {
+              title: (
+                <span className="text-gray-900 dark:text-white text-center block text-[13px]">
+                  Эцсийн үлдэгдэл
+                </span>
+              ),
+              key: "finalBalance",
+              width: 140,
+              align: "right",
+              className: headerClassName,
+              render: (_: any, record: OrlogoAvlagaItem) => (
+                <span className="text-red-600 dark:text-red-400 font-bold text-[13px]">
+                  {formatNumber(record._finalUldegdel ?? getUldegdel(record), 2)}
+                </span>
+              ),
+            },
+          ];
+
+    return [...baseColumns, ...balanceColumns];
+  }, [page, pageSize, activeTab, getPaid, getUldegdel, onRowClick]);
 
   const modalContent = () => {
     if (!selectedRecord) return null;
@@ -467,15 +549,46 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         }}
         summary={() => {
           const finalPaid = grandTotalPaid ?? 0;
+          const finalUldegdel = grandTotalUldegdel ?? 0;
+          const finalEkhniiUldegdel = grandTotalEkhniiUldegdel ?? 0;
+          const finalTulbur = grandTotalTulbur ?? 0;
+
+          if (activeTab === "tulult") {
+            return (
+              <Table.Summary fixed>
+                <Table.Summary.Row className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
+                  <Table.Summary.Cell
+                    index={0}
+                    colSpan={5}
+                    align="center"
+                    className="bg-gray-50 dark:bg-gray-900 py-3"
+                  >
+                    <span className="font-bold text-gray-900 dark:!text-white force-bold text-[13px]">
+                      Нийт
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell
+                    index={1}
+                    align="right"
+                    className="bg-gray-50 dark:bg-gray-900 py-3"
+                  >
+                    <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px]">
+                      {formatNumber(finalPaid, 2)}
+                    </span>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              </Table.Summary>
+            );
+          }
 
           return (
             <Table.Summary fixed>
-              <Table.Summary.Row className="bg-gray-50 dark:bg-gray-900">
+              <Table.Summary.Row className="bg-gray-50 dark:bg-gray-900 border-t-2 border-gray-200 dark:border-gray-700">
                 <Table.Summary.Cell
                   index={0}
                   colSpan={5}
                   align="center"
-                  className="bg-gray-50 dark:bg-gray-900 py-2"
+                  className="bg-gray-50 dark:bg-gray-900 py-3"
                 >
                   <span className="font-bold text-gray-900 dark:!text-white force-bold text-[13px]">
                     Нийт
@@ -484,10 +597,37 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                 <Table.Summary.Cell
                   index={1}
                   align="right"
-                  className="bg-gray-50 dark:bg-gray-900 py-2"
+                  className="bg-gray-50 dark:bg-gray-900 py-3"
                 >
-                  <span className="font-bold text-green-600 dark:!text-white force-bold text-[14px]">
-                    {formatNumber(finalPaid, 2)} ₮
+                  <span className="font-bold text-gray-900 dark:!text-white force-bold text-[13px]">
+                    {formatNumber(finalEkhniiUldegdel, 2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  index={2}
+                  align="right"
+                  className="bg-gray-50 dark:bg-gray-900 py-3"
+                >
+                  <span className="font-bold text-gray-900 dark:!text-white force-bold text-[13px]">
+                    {formatNumber(finalTulbur, 2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  index={3}
+                  align="right"
+                  className="bg-gray-50 dark:bg-gray-900 py-3"
+                >
+                  <span className="font-bold text-green-600 dark:text-green-400 force-bold text-[13px]">
+                    {formatNumber(finalPaid, 2)}
+                  </span>
+                </Table.Summary.Cell>
+                <Table.Summary.Cell
+                  index={4}
+                  align="right"
+                  className="bg-gray-50 dark:bg-gray-900 py-3"
+                >
+                  <span className="font-bold text-red-600 dark:text-red-400 force-bold text-[13px]">
+                    {formatNumber(finalUldegdel, 2)}
                   </span>
                 </Table.Summary.Cell>
               </Table.Summary.Row>
