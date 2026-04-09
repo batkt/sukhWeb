@@ -22,6 +22,8 @@ interface EmployeesTableProps {
   onDelete?: (employee: EmployeeItem) => void;
   onManagePermissions?: (employee: EmployeeItem) => void;
   onCredentialsUpdate?: (employee: EmployeeItem) => void;
+  /** Viewport-based scroll height (same idea as UnitsTable) */
+  maxHeight?: string | number;
 }
 
 export const EmployeesTable: React.FC<EmployeesTableProps> = ({
@@ -33,6 +35,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   onDelete,
   onManagePermissions,
   onCredentialsUpdate,
+  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<EmployeeItem> = useMemo(
     () => [
@@ -159,7 +162,7 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         bordered
         loading={loading}
         className="guilgee-table dark:bg-gray-900 dark:text-gray-100"
-        scroll={{ x: "max-content", y: 400 }}
+        scroll={{ x: "max-content", y: maxHeight as any }}
         rowClassName={(record, index) => `
           ${index % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"}
           text-gray-900 dark:text-white

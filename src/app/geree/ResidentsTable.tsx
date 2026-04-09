@@ -50,7 +50,7 @@ export const ResidentsTable: React.FC<ResidentsTableProps> = ({
   onEdit,
   onDelete,
   onSort,
-  maxHeight = "calc(100vh - 420px)",
+  maxHeight = "calc(100vh - 460px)",
 }) => {
   const columns: ColumnsType<ResidentItem> = useMemo(
     () => [
