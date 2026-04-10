@@ -14,9 +14,23 @@ import useBaiguullaga from "@/lib/useBaiguullaga";
 import useJagsaalt from "@/lib/useJagsaalt";
 import { DANS_ENDPOINT } from "@/lib/endpoints";
 import { useAshiglaltiinZardluud } from "@/lib/useAshiglaltiinZardluud";
+import { ledgerFilterYmdKey } from "@/app/tulbur/guilgeeTuukh/ledgerRunningBalances";
 import { Search, Calendar, Printer, X, Eye } from "lucide-react";
 import { StandardDatePicker } from "@/components/ui/StandardDatePicker";
 import Button from "@/components/ui/Button";
+
+/** .env: NEXT_PUBLIC_NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS=id1,id2 */
+const NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS = new Set(
+  String(
+    typeof process !== "undefined"
+      ? process.env.NEXT_PUBLIC_NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS ??
+          ""
+      : "",
+  )
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean),
+);
 
 interface InvoiceModalProps {
   isOpen: boolean;
@@ -27,6 +41,10 @@ interface InvoiceModalProps {
   liftFloors?: string[];
   barilgiinId?: string | null;
   refreshTrigger?: number;
+  /** Хуулгын «Нийт» үлдэгдэл — HistoryModal-ын `ledgerFooterTotals.balance` */
+  historyLedgerBalance?: number | null;
+  /** Хуулгын нийт төлсөн — `ledgerFooterTotals.totalPayments` */
+  historyLedgerTotalPayments?: number | null;
 }
 
 interface Zardal {
@@ -165,8 +183,254 @@ const PrintStyles = () => (
   `}</style>
 );
 
-const formatDate = (d?: string) =>
-  d ? new Date(d).toLocaleDateString("en-GB") : "-";
+/** Нэхэмжлэхийн «өөрийн» огноо — API өөр талбарт хадгалж болно. */
+function pickInvoiceOgnoo(inv: any): string {
+  if (!inv) return "";
+  const v =
+    inv.ognoo ??
+    inv.nekhemjlekhiinOgnoo ??
+    inv.medeelel?.ognoo ??
+    inv.medeelel?.nekhemjlekhiinOgnoo;
+  const s = v != null ? String(v).trim() : "";
+  return s;
+}
+
+/**
+ * 2026-02-04 гэх мэтийг локалын хуанлийн өдөр болгон уншина (UTC 00:00-ийн алдаанаас зайлсхийх).
+ */
+function parseInvoiceOgnooToLocalDate(raw: string): Date | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  const isoDate = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (isoDate) {
+    const y = Number(isoDate[1]);
+    const mo = Number(isoDate[2]) - 1;
+    const d = Number(isoDate[3]);
+    if (Number.isFinite(y) && mo >= 0 && d >= 1)
+      return new Date(y, mo, d, 12, 0, 0, 0);
+  }
+  const dot = s.replace(/\//g, ".").match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+  if (dot) {
+    const y = Number(dot[1]);
+    const mo = Number(dot[2]) - 1;
+    const d = Number(dot[3]);
+    if (Number.isFinite(y) && mo >= 0 && d >= 1)
+      return new Date(y, mo, d, 12, 0, 0, 0);
+  }
+  const t = new Date(s).getTime();
+  return Number.isNaN(t) ? null : new Date(t);
+}
+
+/** Баримт, жагсаалт: `YYYY.MM.DD` — slash формат 04/02 гэх мэтийг сар/өдөр солихгүй гэж ойлгодог */
+function formatInvoiceOgnooMn(inv: any): string {
+  const raw = pickInvoiceOgnoo(inv);
+  if (!raw) return "-";
+  const d = parseInvoiceOgnooToLocalDate(raw);
+  if (!d) return "-";
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${mo}.${day}`;
+}
+
+/** Шүүлт: YYYY-MM-DD түлхүүрээр харьцуулах */
+function ymdKeyFromString(raw: string | null | undefined): string | null {
+  if (raw == null || String(raw).trim() === "") return null;
+  const s = String(raw).trim();
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) {
+    return `${m[1]}-${String(Number(m[2])).padStart(2, "0")}-${String(Number(m[3])).padStart(2, "0")}`;
+  }
+  const d = parseInvoiceOgnooToLocalDate(s);
+  if (!d) return null;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function invoiceOgnooSortMs(inv: any): number {
+  const raw = pickInvoiceOgnoo(inv);
+  if (!raw) return 0;
+  const d = parseInvoiceOgnooToLocalDate(raw);
+  return d ? d.getTime() : 0;
+}
+
+/** Нэхэмжлэх/invoice-тай холбогдсон төлбөр: давталтад баримтын огноогоор (ognoo) оноох — tulsunOgnoo өмнөх сар байвал алдагдана. */
+function ledgerRowIsInvoiceAnchoredPayment(row: any): boolean {
+  const t = String(row?.turul || row?.type || "").toLowerCase();
+  if (t.includes("invoice_payment")) return true;
+  const kh = String(row?.khelber || "").toLowerCase();
+  if (kh.includes("invoice_payment")) return true;
+  const src = String(row?.sourceCollection || "").toLowerCase();
+  if (
+    src.includes("nekhemjlekhiintuukh") ||
+    src.includes("nekhemjlekhiin_tuukh")
+  ) {
+    return true;
+  }
+  const isPayTurul =
+    t === "tulult" ||
+    t.includes("tulult") ||
+    t.includes("төлөлт") ||
+    t.includes("төлбөр");
+  if (
+    isPayTurul &&
+    String(row?.parentInvoiceId ?? row?.nekhemjlekhiinTuukhId ?? "").trim()
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Хуулгын сарын шүүлт / баганын огноо.
+ * Ерөнхий төлөлт: эхлээд tulsunOgnoo. Invoice-тай төлбөр: эхлээд ognoo (баримтын өдөр).
+ */
+function ledgerRowYmdKeyForMonth(row: any): string | null {
+  const type = String(row?.turul || row?.type || "").toLowerCase();
+  const fromRow = () =>
+    ledgerFilterYmdKey(row?.ognoo) ||
+    ledgerFilterYmdKey(row?.tulsunOgnoo) ||
+    ledgerFilterYmdKey(row?.burtgesenOgnoo) ||
+    null;
+
+  if (ledgerRowIsInvoiceAnchoredPayment(row)) {
+    return fromRow();
+  }
+
+  const isPayment =
+    type === "tulult" ||
+    type === "төлбөр" ||
+    type === "төлөлт" ||
+    type.includes("төлөлт") ||
+    type.includes("төлбөр");
+  if (isPayment) {
+    const p = ledgerFilterYmdKey(row?.tulsunOgnoo);
+    if (p) return p;
+  }
+  return fromRow();
+}
+
+function endOfMonthYmd(ym: string): string {
+  const parts = ym.split("-");
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) {
+    return `${ym}-31`;
+  }
+  const last = new Date(y, m, 0).getDate();
+  return `${y}-${String(m).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+}
+
+/**
+ * Нэхэмжлэхийн «сарын» түлхүүр: cycleStartDay-оос дараа сарын (cycleStartDay-1) хүртэл.
+ * cycleStartDay <= 1 бол хуанлийн YYYY-MM (огнооны сар).
+ */
+function invoiceBillingYmFromYmdKey(
+  ymd: string | null,
+  cycleStartDay: number,
+): string | null {
+  if (!ymd || ymd.length < 7) return null;
+  if (!Number.isFinite(cycleStartDay) || cycleStartDay <= 1) {
+    return ymd.slice(0, 7);
+  }
+  const m = ymd.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return ymd.slice(0, 7);
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || !Number.isFinite(d)) {
+    return ymd.slice(0, 7);
+  }
+  if (d >= cycleStartDay) {
+    return `${y}-${String(mo).padStart(2, "0")}`;
+  }
+  const pm = mo === 1 ? 12 : mo - 1;
+  const py = mo === 1 ? y - 1 : y;
+  return `${py}-${String(pm).padStart(2, "0")}`;
+}
+
+function ledgerRowBillingYmFromRow(
+  row: any,
+  cycleStartDay: number,
+): string | null {
+  const k = ledgerRowYmdKeyForMonth(row);
+  return invoiceBillingYmFromYmdKey(k, cycleStartDay);
+}
+
+/** Тухайн нэхэмжлэхийн давталтын сүүлийн өдөр (YYYY-MM-DD), үлдэгдлийг энэ огноо хүртэл авна. */
+function billingPeriodEndYmd(cycleYm: string, cycleStartDay: number): string {
+  if (!Number.isFinite(cycleStartDay) || cycleStartDay <= 1) {
+    return endOfMonthYmd(cycleYm);
+  }
+  const parts = cycleYm.split("-");
+  const y = Number(parts[0]);
+  const mo = Number(parts[1]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || mo < 1 || mo > 12) {
+    return endOfMonthYmd(cycleYm);
+  }
+  let nm = mo + 1;
+  let ny = y;
+  if (nm > 12) {
+    nm = 1;
+    ny += 1;
+  }
+  const endDay = cycleStartDay - 1;
+  if (endDay < 1) return endOfMonthYmd(cycleYm);
+  const lastInMonth = new Date(ny, nm, 0).getDate();
+  const d = Math.min(endDay, lastInMonth);
+  return `${ny}-${String(nm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+/** Дараагийн нэхэмжлэхийн давталтын YYYY-MM (жишээ нь 2026-01 → 2026-02). */
+function nextBillingCycleYm(ym: string): string | null {
+  const parts = ym.split("-");
+  const y = Number(parts[0]);
+  const mo = Number(parts[1]);
+  if (!Number.isFinite(y) || !Number.isFinite(mo) || mo < 1 || mo > 12) {
+    return null;
+  }
+  let nm = mo + 1;
+  let ny = y;
+  if (nm > 12) {
+    nm = 1;
+    ny += 1;
+  }
+  return `${ny}-${String(nm).padStart(2, "0")}`;
+}
+
+function compareHistoryLedgerRowsChrono(a: any, b: any): number {
+  const ak = ledgerRowYmdKeyForMonth(a);
+  const bk = ledgerRowYmdKeyForMonth(b);
+  if (ak && bk && ak !== bk) return ak.localeCompare(bk);
+  if (ak && !bk) return -1;
+  if (!ak && bk) return 1;
+  const timeA = new Date(
+    a?.burtgesenOgnoo && a.burtgesenOgnoo !== "-"
+      ? a.burtgesenOgnoo
+      : a?.createdAt || a?.ognoo || 0,
+  ).getTime();
+  const timeB = new Date(
+    b?.burtgesenOgnoo && b.burtgesenOgnoo !== "-"
+      ? b.burtgesenOgnoo
+      : b?.createdAt || b?.ognoo || 0,
+  ).getTime();
+  if (timeA !== timeB) return timeA - timeB;
+  return String(a?._id || "").localeCompare(String(b?._id || ""));
+}
+
+/** HistoryModal backend ledger: ashiglalt мөр талбарууд заримдаа эсрэгээр ирнэ. */
+function pickInvoiceModalLedgerTulukhTulsun(r: any): {
+  tulukh: number;
+  tulsun: number;
+} {
+  let tulukh = Number(r.tulukhDun ?? r.dun ?? r.niitDun ?? 0) || 0;
+  let tulsun = Number(r.tulsunDun ?? r.tulsun ?? 0) || 0;
+  const rowTurul = String(r.turul || "").toLowerCase();
+  if (rowTurul === "ashiglalt" && tulukh > 0 && tulsun === 0) {
+    tulsun = tulukh;
+    tulukh = 0;
+  }
+  return { tulukh, tulsun };
+}
 
 /**
  * Converts a number to Mongolian words
@@ -318,6 +582,7 @@ function numberToMongolianWords(n: number): string {
 function buildNekhemjlekhiinSenderDisplay(
   dansRow: any | null,
   baiguullaga: any | null | undefined,
+  invoiceBaiguullagiinNer?: string | null,
 ) {
   const d = dansRow;
   const b = baiguullaga;
@@ -345,15 +610,18 @@ function buildNekhemjlekhiinSenderDisplay(
     pickStr(b?.bankNer);
 
   return {
-    ner: pickStr(d?.baiguullagiinNer, d?.ner, d?.dansniiNer, b?.ner) || "-",
+    ner:
+      pickStr(
+        b?.ner,
+        invoiceBaiguullagiinNer,
+        d?.baiguullagiinNer,
+        d?.dansniiNer,
+        d?.ner,
+      ) || "-",
     khayag: pickStr(d?.khayag, d?.hayag, b?.khayag) || "-",
     utas:
-      pickStr(
-        pickUtas(d?.utas),
-        d?.utasFaks,
-        d?.faks,
-        pickUtas(b?.utas),
-      ) || "-",
+      pickStr(pickUtas(d?.utas), d?.utasFaks, d?.faks, pickUtas(b?.utas)) ||
+      "-",
     email: pickStr(d?.email, b?.email) || "-",
     bankNer: bankNer || "-",
     dans: pickStr(d?.dugaar, d?.dans, b?.dans) || "-",
@@ -368,6 +636,218 @@ function buildNekhemjlekhiinSenderDisplay(
   };
 }
 
+/** Same criteria as HistoryModal nekhemjlekhiin rows (`isSystem` → table shows «Систем»). */
+function nekhemjlekhiinTuukhIsSystem(inv: Record<string, unknown>): boolean {
+  const med = inv.medeelel as Record<string, unknown> | undefined;
+  const source = String(
+    med?.uusgegsenEsekh ?? inv.uusgegsenEsekh ?? "garan",
+  ).trim();
+  return (
+    source === "automataar" ||
+    source === "cron" ||
+    !String(inv.maililgeesenAjiltniiId ?? "").trim()
+  );
+}
+
+function nekhemjlekhiinSkipResidentStaffName(
+  label: string,
+  resident?: { ner?: string; ovog?: string } | null,
+): boolean {
+  const resNer = String(resident?.ner ?? "").trim();
+  const ovog = String(resident?.ovog ?? "").trim();
+  const resFull = [ovog, resNer].filter(Boolean).join(" ").trim();
+  if (!resNer && !resFull) return false;
+  if (resNer && label === resNer) return true;
+  if (resFull && label === resFull) return true;
+  if (resNer && ovog && label === `${resNer} ${ovog}`.trim()) return true;
+  return false;
+}
+
+/**
+ * Sidebar «Ажилтан»: system-generated → «Систем»; else staff fields (not оршин суугч).
+ * Some payloads duplicate resident in ajiltanNer — skip those matches.
+ */
+function nekhemjlekhiinTuukhSidebarAjiltanDisplay(
+  inv: Record<string, unknown>,
+  resident?: { ner?: string; ovog?: string } | null,
+): string {
+  if (nekhemjlekhiinTuukhIsSystem(inv)) return "Систем";
+
+  const pick = (v: unknown): string | null => {
+    const s = v != null ? String(v).trim() : "";
+    if (!s || nekhemjlekhiinSkipResidentStaffName(s, resident)) return null;
+    return s;
+  };
+
+  for (const v of [
+    inv.maililgeesenAjiltniiNer,
+    inv.burtgesenAjiltaniiNer,
+    inv.guilgeeKhiisenAjiltniiNer,
+    inv.ajiltan,
+    inv.ajiltanNer,
+  ]) {
+    const p = pick(v);
+    if (p) return p;
+  }
+  return "—";
+}
+
+/**
+ * Printed «Нэхэмжлэл бичсэн» — align with HistoryModal Ажилтан for нэхэмжлэх мөрүүд.
+ */
+function nekhemjlekhiinBichsenDisplay(
+  inv: Record<string, unknown> | null | undefined,
+  resident?: { ner?: string; ovog?: string } | null,
+): string {
+  if (!inv) return "—";
+  if (nekhemjlekhiinTuukhIsSystem(inv)) return "Систем";
+
+  const pick = (v: unknown): string | null => {
+    const s = v != null ? String(v).trim() : "";
+    if (!s || nekhemjlekhiinSkipResidentStaffName(s, resident)) return null;
+    return s;
+  };
+
+  for (const v of [
+    inv.burtgesenAjiltaniiNer,
+    inv.guilgeeKhiisenAjiltniiNer,
+    inv.maililgeesenAjiltniiNer,
+    inv.ajiltan,
+    inv.ajiltanNer,
+  ]) {
+    const p = pick(v);
+    if (p) return p;
+  }
+
+  const org = String(inv.baiguullagiinNer ?? "").trim();
+  return org ? `${org} СӨХ` : "—";
+}
+
+function nekhemjlekhiinTuukhSidebarSearchHaystack(
+  inv: Record<string, unknown>,
+) {
+  const med = inv.medeelel as Record<string, unknown> | undefined;
+  return [
+    inv.maililgeesenAjiltniiNer,
+    inv.burtgesenAjiltaniiNer,
+    inv.guilgeeKhiisenAjiltniiNer,
+    inv.ajiltan,
+    inv.ajiltanNer,
+    inv.nekhemjlekhiinDugaar,
+    inv.zagvar,
+    inv.nekhemjlekhiinTurul,
+    inv.ner,
+    inv.ognoo,
+    inv.nekhemjlekhiinOgnoo,
+    med?.ognoo,
+    med?.nekhemjlekhiinOgnoo,
+  ]
+    .map((x) => (x != null ? String(x) : ""))
+    .join(" ")
+    .toLowerCase();
+}
+
+/** Same 2dp rounding as HistoryModal ledger (`roundLedgerRunningStep`). */
+function roundInvoiceMoney(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+function pickInvoiceStoredTulsun(inv: any): number | null {
+  if (!inv) return null;
+  const raw =
+    inv.tulsunDun ??
+    inv.niitTulsun ??
+    inv.medeelel?.tulsunDun ??
+    inv.medeelel?.niitTulsun;
+  if (raw === null || raw === undefined || raw === "") return null;
+  const t = Number(raw);
+  return Number.isFinite(t) && t >= 0 ? roundInvoiceMoney(t) : null;
+}
+
+function normInvoiceDateKey(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const head = s.includes("T") ? s.split("T")[0]! : s.split(" ")[0]!;
+  return head.replace(/\./g, "-").slice(0, 10);
+}
+
+/** paymentHistory нийлбэр (sync мөр орхино) — баримтын нийт дүнтэй харьцуулах. */
+function sumPaymentHistoryPhAmount(list: any[]): number {
+  return roundInvoiceMoney(
+    (Array.isArray(list) ? list : []).reduce((s: number, p: any) => {
+      const pt = String(p?.turul || "").toLowerCase();
+      if (
+        pt === "system_sync" ||
+        pt.includes("system_sync") ||
+        pt.includes("sync_neg") ||
+        pt.includes("sync_pos") ||
+        pt === "sync"
+      ) {
+        return s;
+      }
+      const v = Math.abs(
+        Number(p?.dun ?? p?.tulsunDun ?? p?.tulukhDun ?? p?.undsenDun ?? 0) ||
+          0,
+      );
+      return s + (Number.isFinite(v) ? v : 0);
+    }, 0),
+  );
+}
+
+/**
+ * HistoryModal / nekhemjlekh-той ойролцоо: API заримдаа turul=tulbur, дүнг dun/tulukhDun-д өгнө.
+ */
+function guilgeeDocumentPaymentAmount(g: any): number {
+  const t = String(g.turul || g.type || "")
+    .trim()
+    .toLowerCase();
+  if (t === "avlaga" || t === "авлага") return 0;
+
+  const tulsun = Number(g.tulsunDun ?? g.tulsun ?? 0);
+  if (Number.isFinite(tulsun) && tulsun > 0) return Math.abs(tulsun);
+
+  if (t === "ashiglalt" || t.includes("ашиглалт")) {
+    const c = Number(g.tulukhDun ?? g.dun ?? 0);
+    return Number.isFinite(c) && c > 0 ? Math.abs(c) : 0;
+  }
+
+  const isPayTurul =
+    t.includes("төлөлт") ||
+    t.includes("төлбөр") ||
+    t.includes("invoice_payment") ||
+    t === "tulult" ||
+    t.includes("tulult") ||
+    t === "tulbur" ||
+    t.includes("tulbur") ||
+    t === "prepayment" ||
+    t.includes("prepayment");
+  if (!isPayTurul) return 0;
+
+  const dun = Number(g.dun ?? 0);
+  const tul = Number(g.tulukhDun ?? 0);
+  const fallback =
+    dun > 0 ? dun : tul > 0 ? tul : Number(g.undsenDun ?? 0) || 0;
+  return Number.isFinite(fallback) && fallback > 0
+    ? Math.abs(fallback)
+    : 0;
+}
+
+function resolveGereeIdForHistoryLedger(resident: any): string {
+  if (!resident) return "";
+  const explicit = String(
+    resident.gereeniiId || resident.gereeId || resident._gereeniiId || "",
+  ).trim();
+  const looksNekh = Boolean(
+    resident?.medeelel?.zardluud ||
+    resident?.medeelel?.guilgeenuud ||
+    (Array.isArray(resident?.zardluud) && resident.zardluud.length > 0) ||
+    (Array.isArray(resident?.guilgeenuud) && resident.guilgeenuud.length > 0),
+  );
+  return (
+    explicit || (!looksNekh && resident._id ? String(resident._id).trim() : "")
+  );
+}
+
 export default function InvoiceModal({
   isOpen,
   onClose,
@@ -377,6 +857,7 @@ export default function InvoiceModal({
   liftFloors = [],
   barilgiinId,
   refreshTrigger = 0,
+  historyLedgerBalance,
 }: InvoiceModalProps) {
   const dragControls = useDragControls();
   const constraintsRef = useRef<HTMLDivElement | null>(null);
@@ -389,6 +870,42 @@ export default function InvoiceModal({
 
   const { selectedBuildingId } = useBuilding();
   const { baiguullaga } = useBaiguullaga(token, baiguullagiinId);
+
+  /** 1 = хуанлийн сар; 20 = сарын 20–дараа сарын 19 гэх мэт давталт. */
+  const nekhemjlekhiinCycleStartDay = useMemo(() => {
+    const raw = baiguullaga?.tokhirgoo?.nekhemjlekhiinDavlaliinEkhlekhUdur;
+    if (raw != null && String(raw).trim() !== "") {
+      const n = Number(raw);
+      if (Number.isFinite(n) && n >= 1 && n <= 28) return Math.floor(n);
+    }
+    const gid = String(baiguullagiinId || "").trim();
+    if (gid && NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS.has(gid)) {
+      return 20;
+    }
+    if (String(baiguullaga?.ner || "").trim() === "Найрамдал") {
+      return 20;
+    }
+    return 1;
+  }, [
+    baiguullagiinId,
+    baiguullaga?.ner,
+    baiguullaga?.tokhirgoo?.nekhemjlekhiinDavlaliinEkhlekhUdur,
+  ]);
+
+  const gereeIdForLedgerFetch = useMemo(
+    () => resolveGereeIdForHistoryLedger(resident),
+    [
+      resident?._id,
+      resident?.gereeniiId,
+      resident?.gereeId,
+      resident?._gereeniiId,
+    ],
+  );
+
+  const [ledgerBalanceFromFetch, setLedgerBalanceFromFetch] = useState<
+    number | null
+  >(null);
+  const [ledgerRawRows, setLedgerRawRows] = useState<any[]>([]);
 
   const dansOrgQuery = useMemo(() => {
     const q: Record<string, any> = {};
@@ -406,17 +923,6 @@ export default function InvoiceModal({
     token,
   );
 
-  const nekhemjlekhiinSender = useMemo(
-    () =>
-      buildNekhemjlekhiinSenderDisplay(
-        Array.isArray(dansJagsaalt) && dansJagsaalt.length > 0
-          ? dansJagsaalt[0]
-          : null,
-        baiguullaga,
-      ),
-    [dansJagsaalt, baiguullaga],
-  );
-
   const [invoices, setInvoices] = useState<any[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const [loadingInvoices, setLoadingInvoices] = useState(false);
@@ -425,6 +931,91 @@ export default function InvoiceModal({
     null,
     null,
   ]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setLedgerRawRows([]);
+      setLedgerBalanceFromFetch(null);
+      return;
+    }
+    if (
+      !selectedInvoice?._id ||
+      !token ||
+      !baiguullagiinId ||
+      !gereeIdForLedgerFetch
+    ) {
+      setLedgerRawRows([]);
+      setLedgerBalanceFromFetch(null);
+      return;
+    }
+    let cancelled = false;
+    const gid = gereeIdForLedgerFetch;
+    uilchilgee(token)
+      .get(`/geree/${gid}/history-ledger`, {
+        params: {
+          baiguullagiinId,
+          barilgiinId: selectedBuildingId || barilgiinId || null,
+          _t: Date.now(),
+        },
+      })
+      .then((resp) => {
+        if (cancelled) return;
+        const rows = Array.isArray(resp.data?.jagsaalt)
+          ? resp.data.jagsaalt
+          : Array.isArray(resp.data?.ledger)
+            ? resp.data.ledger
+            : Array.isArray(resp.data)
+              ? resp.data
+              : [];
+        setLedgerRawRows(rows);
+
+        const g = resp.data?.globalUldegdel;
+        if (g != null && Number.isFinite(Number(g))) {
+          setLedgerBalanceFromFetch(roundInvoiceMoney(Number(g)));
+          return;
+        }
+        const sorted = [...rows].sort(compareHistoryLedgerRowsChrono);
+        const last = sorted[sorted.length - 1];
+        const u = last?.uldegdel != null ? Number(last.uldegdel) : NaN;
+        setLedgerBalanceFromFetch(
+          Number.isFinite(u) ? roundInvoiceMoney(u) : null,
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLedgerRawRows([]);
+          setLedgerBalanceFromFetch(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isOpen,
+    selectedInvoice?._id,
+    token,
+    baiguullagiinId,
+    barilgiinId,
+    selectedBuildingId,
+    refreshTrigger,
+    gereeIdForLedgerFetch,
+  ]);
+
+  useEffect(() => {
+    if (isOpen) setDateRange([null, null]);
+  }, [isOpen, resident?._id, resident?.gereeniiId]);
+
+  const nekhemjlekhiinSender = useMemo(
+    () =>
+      buildNekhemjlekhiinSenderDisplay(
+        Array.isArray(dansJagsaalt) && dansJagsaalt.length > 0
+          ? dansJagsaalt[0]
+          : null,
+        baiguullaga,
+        selectedInvoice?.baiguullagiinNer,
+      ),
+    [dansJagsaalt, baiguullaga, selectedInvoice?.baiguullagiinNer],
+  );
 
   const fetchInvoices = async () => {
     if (!token || !baiguullagiinId || !resident?._id) return;
@@ -457,10 +1048,10 @@ export default function InvoiceModal({
       });
 
       const sorted = [...residentInvoices].sort((a: any, b: any) => {
-        const aOgnoo = a?.ognoo ? new Date(a.ognoo).getTime() : 0;
-        const bOgnoo = b?.ognoo ? new Date(b.ognoo).getTime() : 0;
-        return bOgnoo !== aOgnoo
-          ? bOgnoo - aOgnoo
+        const aMs = invoiceOgnooSortMs(a);
+        const bMs = invoiceOgnooSortMs(b);
+        return bMs !== aMs
+          ? bMs - aMs
           : new Date(b?.createdAt || 0).getTime() -
               new Date(a?.createdAt || 0).getTime();
       });
@@ -509,7 +1100,6 @@ export default function InvoiceModal({
 
   const [expenseRows, setExpenseRows] = useState<any[]>([]);
   const [paymentRows, setPaymentRows] = useState<any[]>([]);
-  const [totalPaidFromApi, setTotalPaidFromApi] = useState<number | null>(null);
 
   useEffect(() => {
     if (!selectedInvoice) {
@@ -519,8 +1109,6 @@ export default function InvoiceModal({
     }
 
     const run = async () => {
-      setTotalPaidFromApi(null);
-
       // Use the data specifically saved within this invoice record to show accurate month-by-month details
       const zRows = Array.isArray(selectedInvoice?.medeelel?.zardluud)
         ? selectedInvoice.medeelel.zardluud
@@ -555,7 +1143,19 @@ export default function InvoiceModal({
         const t = String(g.turul || "").toLowerCase();
 
         // Treat anything non-payment in guilgeenuud as an Avlaga/Charge if it has a positive amount
-        if (t.includes("төлөлт") || t.includes("төлбөр")) return;
+        if (
+          t.includes("төлөлт") ||
+          t.includes("төлбөр") ||
+          t.includes("invoice_payment") ||
+          t === "tulbur" ||
+          t.includes("tulbur") ||
+          t === "tulult" ||
+          t.includes("tulult") ||
+          t === "prepayment" ||
+          t.includes("prepayment")
+        )
+          return;
+        if (t === "ashiglalt" || t.includes("ашиглалт")) return;
         const ner = String(
           g.tailbar || g.medeelel?.tailbar || "Нэмэлт төлбөр",
         ).trim();
@@ -571,9 +1171,20 @@ export default function InvoiceModal({
       });
 
       // Include internal paymentHistory as PAYMENT rows (do not affect charges table)
-      const phRows = Array.isArray(selectedInvoice?.paymentHistory)
+      const phRaw = Array.isArray(selectedInvoice?.paymentHistory)
         ? selectedInvoice.paymentHistory
         : [];
+      const invIdForPayments = String(selectedInvoice?._id || "").trim();
+      const paymentParentKey = (p: any) =>
+        String(
+          p?.parentInvoiceId ??
+            p?.nekhemjlekhiinTuukhId ??
+            p?.invoiceId ??
+            "",
+        ).trim();
+      const phHasExplicitInvoiceLink = phRaw.some(
+        (p: any) => paymentParentKey(p) !== "",
+      );
       const paymentMap = new Map<string, any>();
       const addPaymentRow = (
         ognoo: any,
@@ -583,11 +1194,19 @@ export default function InvoiceModal({
       ) => {
         const amt = Math.abs(Number(amount ?? 0));
         if (!Number.isFinite(amt) || amt === 0) return;
-        const key = String(
-          id || `${String(tailbar || "Төлөлт")}::${String(ognoo || "")}`,
-        );
+        const idStr = id != null ? String(id).trim() : "";
+        const key =
+          idStr !== ""
+            ? `id:${idStr}`
+            : `m:${roundInvoiceMoney(amt)}|${normInvoiceDateKey(ognoo)}|${String(
+                tailbar || "Төлөлт",
+              )
+                .trim()
+                .toLowerCase()
+                .slice(0, 120)}`;
+        if (paymentMap.has(key)) return;
         paymentMap.set(key, {
-          _id: id || key,
+          _id: idStr || key,
           ognoo,
           tailbar: String(tailbar || "Төлөлт").trim(),
           dun: amt,
@@ -618,13 +1237,37 @@ export default function InvoiceModal({
         selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
       );
       const diff = officialNiitTulbur - mapTotal;
-
-      if (officialNiitTulbur !== 0 && Math.abs(diff) > 0) {
+      if (officialNiitTulbur !== 0 && diff > 0) {
         expenseMap.set("Бусад төлбөр (Авлага)", {
           ner: "Авлага",
           dun: diff,
           _id: "discrepancy-fill",
         });
+      }
+
+      let chargesAfterFill = 0;
+      expenseMap.forEach((val) => {
+        chargesAfterFill += Number(val.dun || 0);
+      });
+      chargesAfterFill = roundInvoiceMoney(chargesAfterFill);
+      const refInvoiceTotal =
+        officialNiitTulbur !== 0 && Number.isFinite(officialNiitTulbur)
+          ? roundInvoiceMoney(officialNiitTulbur)
+          : chargesAfterFill;
+
+      let phRows: any[];
+      if (phHasExplicitInvoiceLink) {
+        phRows = phRaw.filter(
+          (p: any) => paymentParentKey(p) === invIdForPayments,
+        );
+      } else {
+        const sumPh = sumPaymentHistoryPhAmount(phRaw);
+        const generousCeiling =
+          refInvoiceTotal > 0.005
+            ? roundInvoiceMoney(refInvoiceTotal * 1.18 + 300)
+            : Number.POSITIVE_INFINITY;
+        phRows =
+          sumPh <= generousCeiling + 0.005 || sumPh < 0.005 ? phRaw : [];
       }
 
       const suulchiinVal = Number(
@@ -642,22 +1285,13 @@ export default function InvoiceModal({
 
       // Fetch historical readings for the specific month of the invoice
       try {
-        const invDate = selectedInvoice?.ognoo
-          ? new Date(selectedInvoice.ognoo)
-          : new Date();
-        const startOfMonth = new Date(
-          invDate.getFullYear(),
-          invDate.getMonth(),
-          1,
-        ).toISOString();
-        const endOfMonth = new Date(
-          invDate.getFullYear(),
-          invDate.getMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-        ).toISOString();
+        const invDate =
+          parseInvoiceOgnooToLocalDate(pickInvoiceOgnoo(selectedInvoice)) ??
+          new Date();
+        const y = invDate.getFullYear();
+        const m = invDate.getMonth();
+        const startOfMonth = new Date(y, m, 1, 0, 0, 0, 0).toISOString();
+        const endOfMonth = new Date(y, m + 1, 0, 23, 59, 59, 999).toISOString();
 
         const readingResp = await uilchilgee(token).get("/zaaltJagsaaltAvya", {
           params: {
@@ -701,23 +1335,32 @@ export default function InvoiceModal({
         console.error("Historical reading fetch error:", err);
       }
 
-      setExpenseRows(Array.from(expenseMap.values()));
+      const expenseList = Array.from(expenseMap.values()).filter((r: any) => {
+        const dun = Number(r.dun || 0);
+        const ner = String(r.ner || "").trim();
+        if (ner === "Авлага" && dun < 0) return false;
+        if (r._id === "discrepancy-fill" && dun < 0) return false;
+        return true;
+      });
+      setExpenseRows(expenseList);
 
       const pRowsFromGuilgee = gRows
-        .filter((g: any) => {
-          const t = String(g.turul || "").toLowerCase();
-          return (
-            t !== "avlaga" &&
-            t !== "авлага" &&
-            (Number(g.tulsunDun || 0) > 0 || Number(g.dun || 0) > 0)
-          );
+        .map((g: any, idx: number) => {
+          const amt = guilgeeDocumentPaymentAmount(g);
+          if (amt <= 0) return null;
+          return {
+            _id: g._id ? String(g._id) : `pay-${idx}`,
+            ognoo: g.ognoo || g.tulsunOgnoo || g.createdAt,
+            tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
+            dun: amt,
+          };
         })
-        .map((g: any, idx: number) => ({
-          _id: g._id || `pay-${idx}`,
-          ognoo: g.ognoo || g.tulsunOgnoo || g.createdAt,
-          tailbar: g.tailbar || g.medeelel?.tailbar || "Төлөлт",
-          dun: Math.abs(Number(g.tulsunDun || g.dun || 0)),
-        }));
+        .filter(Boolean) as {
+        _id: string;
+        ognoo: any;
+        tailbar: string;
+        dun: number;
+      }[];
 
       // paymentHistory rows
       phRows.forEach((p: any) => {
@@ -734,7 +1377,7 @@ export default function InvoiceModal({
         addPaymentRow(
           p.ognoo || p.tulsunOgnoo || p.createdAt,
           p.tailbar || "Төлөлт",
-          p.dun || p.tulsunDun || 0,
+          p.dun ?? p.tulsunDun ?? p.tulukhDun ?? p.undsenDun ?? 0,
           p._id,
         );
       });
@@ -742,24 +1385,6 @@ export default function InvoiceModal({
         addPaymentRow(r.ognoo, r.tailbar, r.dun, r._id),
       );
       setPaymentRows(Array.from(paymentMap.values()));
-
-      // We can still fetch the total paid summary if needed, but the row data MUST come from the invoice
-      const gereeId =
-        selectedInvoice?.gereeniiId ||
-        selectedInvoice?.gereeId ||
-        resident?.gereeniiId;
-      if (token && baiguullagiinId && gereeId) {
-        uilchilgee(token)
-          .post("/tulsunSummary", { baiguullagiinId, gereeniiId: gereeId })
-          .then((r) =>
-            setTotalPaidFromApi(
-              Number(
-                r.data?.totalTulsunDun ?? r.data?.totalInvoicePayment ?? 0,
-              ),
-            ),
-          )
-          .catch(() => setTotalPaidFromApi(null));
-      }
     };
 
     run();
@@ -772,65 +1397,205 @@ export default function InvoiceModal({
   ]);
 
   const filteredInvoices = useMemo(() => {
+    const q = searchTerm.toLowerCase();
+    const startKey = ymdKeyFromString(dateRange[0]);
+    const endKey = ymdKeyFromString(dateRange[1]);
     return invoices.filter((inv) => {
-      const matchSearch = String(
-        inv.ajiltanNer || inv.nekhemjlekhiinDugaar || inv.zagvar || "",
-      )
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      const date = inv.ognoo ? new Date(inv.ognoo) : null;
+      const matchSearch =
+        !q || nekhemjlekhiinTuukhSidebarSearchHaystack(inv).includes(q);
+      const invKey = ymdKeyFromString(pickInvoiceOgnoo(inv));
       let matchDate = true;
-      if (dateRange[0]) {
-        matchDate =
-          matchDate && date !== null && date >= new Date(dateRange[0]);
-      }
-      if (dateRange[1]) {
-        const end = new Date(dateRange[1]);
-        end.setHours(23, 59, 59, 999);
-        matchDate = matchDate && date !== null && date <= end;
-      }
+      if (startKey && invKey && invKey < startKey) matchDate = false;
+      if (endKey && invKey && invKey > endKey) matchDate = false;
+      if ((startKey || endKey) && !invKey) matchDate = false;
       return matchSearch && matchDate;
     });
   }, [invoices, searchTerm, dateRange]);
 
-  // Contract-wide remaining across ALL invoices shown in the list (invoice-scoped uldegdel summed).
-  // This makes the "Үлдэгдэл" in invoice screen reflect all months, not only the latest invoice.
-  const totalInvoiceUldegdel = useMemo(() => {
-    return (filteredInvoices || []).reduce((sum: number, inv: any) => {
-      const v = Number(inv?.uldegdel ?? 0);
-      return sum + (Number.isFinite(v) ? v : 0);
-    }, 0);
-  }, [filteredInvoices]);
-
   const invoiceTotal = useMemo(() => {
+    const linesSum = expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
     const official = Number(
       selectedInvoice?.niitTulbur ?? selectedInvoice?.niitDun ?? 0,
     );
+    // Хүснэгтэнд харагдаж буй мөрүүдийн нийлбэр = Нийт дүн (төлбөр аль хэдийн тусдаа баганад).
+    // niitTulbur заримдаа гэрээний үлдэгдэл мэт буруу утга орсон байвал «Төлсөн»-ийг давтан хасна.
+    if (linesSum > 0) return Math.round(linesSum * 100) / 100;
     if (Number.isFinite(official) && official !== 0) return official;
-    return expenseRows.reduce((s, r) => s + (Number(r?.dun) || 0), 0);
+    return 0;
   }, [selectedInvoice, expenseRows]);
 
-  const paidTotal = useMemo(() => {
-    return (paymentRows || []).reduce((s: number, r: any) => {
-      const v = Number(r?.dun ?? 0);
-      return s + (Number.isFinite(v) ? Math.abs(v) : 0);
-    }, 0);
+  const paidTotalFromRows = useMemo(() => {
+    return roundInvoiceMoney(
+      (paymentRows || []).reduce((s: number, r: any) => {
+        const v = Number(r?.dun ?? 0);
+        return s + (Number.isFinite(v) ? Math.abs(v) : 0);
+      }, 0),
+    );
   }, [paymentRows]);
 
-  // For display: don't show "paid > total" on the invoice itself
-  const paidDisplay = useMemo(
-    () => Math.min(invoiceTotal, paidTotal),
-    [invoiceTotal, paidTotal],
+  const resolvedHistoryLedgerBalance = useMemo(() => {
+    if (
+      historyLedgerBalance != null &&
+      Number.isFinite(Number(historyLedgerBalance))
+    ) {
+      return roundInvoiceMoney(Number(historyLedgerBalance));
+    }
+    if (
+      ledgerBalanceFromFetch != null &&
+      Number.isFinite(ledgerBalanceFromFetch)
+    ) {
+      return ledgerBalanceFromFetch;
+    }
+    return null;
+  }, [historyLedgerBalance, ledgerBalanceFromFetch]);
+
+  const invoiceLedgerBreakdown = useMemo(() => {
+    const sortedAsc = [...ledgerRawRows].sort(compareHistoryLedgerRowsChrono);
+    const fullYmd = ymdKeyFromString(pickInvoiceOgnoo(selectedInvoice));
+    const invoiceYm = fullYmd
+      ? invoiceBillingYmFromYmdKey(fullYmd, nekhemjlekhiinCycleStartDay)
+      : null;
+
+    const invDayMatch = fullYmd?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const invDay = invDayMatch ? Number(invDayMatch[3]) : NaN;
+    const mergeNextBillingCycle =
+      nekhemjlekhiinCycleStartDay > 1 &&
+      invoiceYm != null &&
+      Number.isFinite(invDay) &&
+      invDay < nekhemjlekhiinCycleStartDay;
+    const bridgeNextYm =
+      mergeNextBillingCycle && invoiceYm
+        ? nextBillingCycleYm(invoiceYm)
+        : null;
+    const bridgeEndYmdKey =
+      bridgeNextYm != null
+        ? billingPeriodEndYmd(bridgeNextYm, nekhemjlekhiinCycleStartDay)
+        : null;
+
+    const monthRows = invoiceYm
+      ? sortedAsc.filter((r) => {
+          const rowYm = ledgerRowBillingYmFromRow(
+            r,
+            nekhemjlekhiinCycleStartDay,
+          );
+          if (rowYm === invoiceYm) return true;
+          if (
+            mergeNextBillingCycle &&
+            bridgeNextYm &&
+            bridgeEndYmdKey &&
+            rowYm === bridgeNextYm
+          ) {
+            const rk = ledgerRowYmdKeyForMonth(r);
+            return rk != null && rk <= bridgeEndYmdKey;
+          }
+          return false;
+        })
+      : [];
+
+    const monthTulukh = roundInvoiceMoney(
+      monthRows.reduce((s, r) => {
+        const { tulukh } = pickInvoiceModalLedgerTulukhTulsun(r);
+        return s + tulukh;
+      }, 0),
+    );
+    const monthTulsun = roundInvoiceMoney(
+      monthRows.reduce((s, r) => {
+        const { tulsun } = pickInvoiceModalLedgerTulukhTulsun(r);
+        return s + tulsun;
+      }, 0),
+    );
+
+    let balEndMonth: number | null = null;
+    if (invoiceYm && sortedAsc.length) {
+      const endKey =
+        mergeNextBillingCycle && bridgeEndYmdKey
+          ? bridgeEndYmdKey
+          : billingPeriodEndYmd(invoiceYm, nekhemjlekhiinCycleStartDay);
+      for (const r of sortedAsc) {
+        const rk = ledgerRowYmdKeyForMonth(r);
+        if (rk && rk <= endKey) {
+          const u = Number(r.uldegdel);
+          if (Number.isFinite(u)) balEndMonth = roundInvoiceMoney(u);
+        }
+      }
+    }
+
+    const ledgerCycleHint =
+      nekhemjlekhiinCycleStartDay > 1
+        ? `${nekhemjlekhiinCycleStartDay}–${nekhemjlekhiinCycleStartDay - 1}`
+        : null;
+
+    const invoiceYmLabel =
+      mergeNextBillingCycle && bridgeNextYm
+        ? bridgeNextYm.replace("-", ".")
+        : invoiceYm
+          ? invoiceYm.replace("-", ".")
+          : null;
+
+    return {
+      invoiceYm,
+      invoiceYmLabel,
+      ledgerCycleHint,
+      monthRows,
+      monthTulukh,
+      monthTulsun,
+      balEndMonth,
+      sortedAsc,
+    };
+  }, [
+    ledgerRawRows,
+    selectedInvoice,
+    nekhemjlekhiinCycleStartDay,
+  ]);
+
+  const showLedgerSummaryRows = Boolean(
+    selectedInvoice &&
+      (resolvedHistoryLedgerBalance != null || ledgerRawRows.length > 0),
   );
 
-  const remainingDisplay = useMemo(
-    () => Math.max(0, invoiceTotal - paidTotal),
-    [invoiceTotal, paidTotal],
-  );
-  const currentUldegdel = useMemo(
-    () => Number(resident?.uldegdel ?? 0),
-    [resident?.uldegdel],
-  );
+  /**
+   * Баримтын Төлсөн/Үлдэгдэл: хуулгын «сарын эцсийн үлдэгдэл» (balEndMonth) байвал түүнийг
+   * эх сурвалж болгоно — нэхэмжлэхийн мөр + буруу paymentHistory-ийн 181k нийлбэрээс сална.
+   */
+  const { paidDisplay, remainingDisplay } = useMemo(() => {
+    const inv = selectedInvoice;
+    const total = roundInvoiceMoney(Number(invoiceTotal) || 0);
+    const balEnd = invoiceLedgerBreakdown.balEndMonth;
+
+    if (
+      balEnd != null &&
+      Number.isFinite(balEnd) &&
+      ledgerRawRows.length > 0
+    ) {
+      const rem = roundInvoiceMoney(balEnd);
+      const paid = roundInvoiceMoney(total - rem);
+      return {
+        paidDisplay: paid,
+        remainingDisplay: rem,
+      };
+    }
+
+    let paid = paidTotalFromRows;
+    const storedTulsun = pickInvoiceStoredTulsun(inv);
+    const rowsEmpty = paidTotalFromRows < 0.005;
+    if (
+      storedTulsun != null &&
+      paidTotalFromRows < storedTulsun - 0.005 &&
+      (rowsEmpty || storedTulsun <= total + 0.02)
+    ) {
+      paid = storedTulsun;
+    }
+    return {
+      paidDisplay: roundInvoiceMoney(paid),
+      remainingDisplay: roundInvoiceMoney(total - paid),
+    };
+  }, [
+    selectedInvoice,
+    invoiceTotal,
+    paidTotalFromRows,
+    invoiceLedgerBreakdown.balEndMonth,
+    ledgerRawRows.length,
+  ]);
 
   if (!isOpen) return null;
 
@@ -918,27 +1683,30 @@ export default function InvoiceModal({
                           : "bg-transparent border-transparent hover:bg-[color:var(--surface-hover)] hover:border-[color:var(--surface-border)] text-theme dark:text-white"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="text-sm font-bold text-theme dark:text-white">
+                      <div className="mb-1">
+                        <span className="text-sm font-bold text-theme dark:text-white block">
                           {inv.zagvar ||
                             inv.nekhemjlekhiinTurul ||
                             "Үндсэн загвар"}
                         </span>
-                        <span className="text-sm font-bold text-theme dark:text-white">
-                          {formatNumber(inv.niitTulbur || inv.niitDun || 0, 2)}
-                        </span>
+                        {inv.nekhemjlekhiinDugaar ? (
+                          <span className="text-[11px] text-[color:var(--panel-text)] font-medium">
+                            {inv.nekhemjlekhiinDugaar}
+                          </span>
+                        ) : null}
                       </div>
-                      <div className="flex justify-between items-end">
-                        <div className="text-[11px] text-[color:var(--panel-text)]  font-medium">
-                          <div className="flex items-center gap-1 mb-0.5">
-                            <Calendar className="w-3 h-3" />
-                            {inv.ognoo
-                              ? new Date(inv.ognoo).toLocaleString("mn-MN")
-                              : "-"}
+                      <div className="flex justify-between items-end gap-2">
+                        <div className="text-[11px] text-[color:var(--panel-text)] font-medium min-w-0">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3 shrink-0" />
+                            {formatInvoiceOgnooMn(inv)}
                           </div>
                         </div>
-                        <span className="text-[11px] text-[color:var(--theme)] font-semibold">
-                          {inv.ajiltanNer || "CAdmin"}
+                        <span className="text-[11px] text-[color:var(--theme)] font-semibold shrink-0 text-right max-w-[50%] truncate">
+                          {nekhemjlekhiinTuukhSidebarAjiltanDisplay(
+                            inv,
+                            resident,
+                          )}
                         </span>
                       </div>
                     </button>
@@ -1102,7 +1870,7 @@ export default function InvoiceModal({
                               Нэхэмжилсэн огноо:
                             </span>
                             <span className=" text-right text-theme dark:text-white">
-                              {formatDate(selectedInvoice?.ognoo)}
+                              {formatInvoiceOgnooMn(selectedInvoice)}
                             </span>
                           </div>
                         </div>
@@ -1195,7 +1963,9 @@ export default function InvoiceModal({
                                 colSpan={4}
                                 className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
                               >
-                                Төлсөн дүн
+                                {showLedgerSummaryRows
+                                  ? "Төлсөн дүн (баримт)"
+                                  : "Төлсөн дүн"}
                               </td>
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
                                 {formatNumber(Number(paidDisplay), 2)}
@@ -1206,15 +1976,198 @@ export default function InvoiceModal({
                                 colSpan={4}
                                 className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
                               >
-                                Үлдэгдэл
+                                {showLedgerSummaryRows
+                                  ? "Үлдэгдэл (баримт)"
+                                  : "Үлдэгдэл"}
                               </td>
                               <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
                                 {formatNumber(Number(remainingDisplay), 2)}
                               </td>
                             </tr>
+                            {showLedgerSummaryRows ? (
+                              <>
+                                {invoiceLedgerBreakdown.invoiceYm &&
+                                invoiceLedgerBreakdown.invoiceYmLabel ? (
+                                  <>
+                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                      <td
+                                        colSpan={4}
+                                        className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
+                                      >
+                                        Хуулга (
+                                        {invoiceLedgerBreakdown.invoiceYmLabel}
+                                        ) — төлөх нийт
+                                      </td>
+                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                        {formatNumber(
+                                          invoiceLedgerBreakdown.monthTulukh,
+                                          2,
+                                        )}
+                                      </td>
+                                    </tr>
+                                    <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                      <td
+                                        colSpan={4}
+                                        className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
+                                      >
+                                        Хуулга (
+                                        {invoiceLedgerBreakdown.invoiceYmLabel}
+                                        ) — төлсөн нийт
+                                      </td>
+                                      <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                        {formatNumber(
+                                          invoiceLedgerBreakdown.monthTulsun,
+                                          2,
+                                        )}
+                                      </td>
+                                    </tr>
+                                    {invoiceLedgerBreakdown.balEndMonth !=
+                                    null ? (
+                                      <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                        <td
+                                          colSpan={4}
+                                          className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
+                                        >
+                                          Хуулга (
+                                          {
+                                            invoiceLedgerBreakdown.invoiceYmLabel
+                                          }
+                                          ) — сарын эцсийн үлдэгдэл
+                                        </td>
+                                        <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
+                                          {formatNumber(
+                                            invoiceLedgerBreakdown.balEndMonth,
+                                            2,
+                                          )}
+                                        </td>
+                                      </tr>
+                                    ) : null}
+                                  </>
+                                ) : null}
+                                {resolvedHistoryLedgerBalance != null ? (
+                                  <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
+                                    <td
+                                      colSpan={4}
+                                      className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
+                                    >
+                                      {resolvedHistoryLedgerBalance < -0.005
+                                        ? "Одоогийн үлдэгдөл (хуулга, илүү төлөлт)"
+                                        : "Одоогийн үлдэгдөл (хуулга)"}
+                                    </td>
+                                    <td
+                                      className={`border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold ${
+                                        resolvedHistoryLedgerBalance < -0.005
+                                          ? "text-emerald-600 dark:text-emerald-400"
+                                          : "text-theme dark:text-white"
+                                      }`}
+                                    >
+                                      {formatNumber(
+                                        resolvedHistoryLedgerBalance,
+                                        2,
+                                      )}
+                                    </td>
+                                  </tr>
+                                ) : null}
+                              </>
+                            ) : null}
                           </tfoot>
                         </table>
                       </div>
+
+                      {invoiceLedgerBreakdown.invoiceYm &&
+                      ledgerRawRows.length > 0 ? (
+                        <div className="mb-4 border border-[color:var(--surface-border)] overflow-hidden">
+                          <div className="bg-[color:var(--surface-hover)]/50 px-2 py-1.5 font-bold text-center text-[11px] border-b border-[color:var(--surface-border)]">
+                            Хуулга — {invoiceLedgerBreakdown.invoiceYmLabel}{" "}
+                            сарын гүйлгээ
+                            {invoiceLedgerBreakdown.ledgerCycleHint
+                              ? ` (${invoiceLedgerBreakdown.ledgerCycleHint})`
+                              : ""}
+                          </div>
+                          <table className="w-full border-collapse text-[10px]">
+                            <thead>
+                              <tr className="bg-[color:var(--surface-hover)]/30 border-b border-[color:var(--surface-border)] font-bold text-center">
+                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20">
+                                  Огноо
+                                </td>
+                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-left">
+                                  Тайлбар
+                                </td>
+                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20 text-right">
+                                  Төлөх
+                                </td>
+                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20 text-right">
+                                  Төлсөн
+                                </td>
+                                <td className="py-1 px-1 w-24 text-right">
+                                  Үлдэгдэл
+                                </td>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {invoiceLedgerBreakdown.monthRows.length ===
+                              0 ? (
+                                <tr>
+                                  <td
+                                    colSpan={5}
+                                    className="py-2 px-2 text-center text-[color:var(--panel-text)]"
+                                  >
+                                    Энэ сард хуулгын мөр бүртгэгдээгүй
+                                  </td>
+                                </tr>
+                              ) : (
+                                invoiceLedgerBreakdown.monthRows.map(
+                                  (r: any, idx: number) => {
+                                    const { tulukh, tulsun } =
+                                      pickInvoiceModalLedgerTulukhTulsun(r);
+                                    const ymd = ledgerRowYmdKeyForMonth(r);
+                                    const ognooCell = ymd
+                                      ? ymd.replace(/-/g, ".")
+                                      : "-";
+                                    const aj = String(r.ajiltan ?? "").trim();
+                                    const tailRest = String(
+                                      r.tailbar ?? r.ner ?? r.khelber ?? "",
+                                    ).trim();
+                                    const tail =
+                                      aj && tailRest
+                                        ? `${aj} · ${tailRest}`
+                                        : aj || tailRest || "—";
+                                    const u = Number(r.uldegdel);
+                                    return (
+                                      <tr
+                                        key={`lm-${idx}-${String(r._id ?? "")}`}
+                                        className="border-b border-[color:var(--surface-border)] last:border-0"
+                                      >
+                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-center">
+                                          {ognooCell}
+                                        </td>
+                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-left">
+                                          {tail}
+                                        </td>
+                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-right">
+                                          {tulukh > 0.005
+                                            ? formatNumber(tulukh, 2)
+                                            : ""}
+                                        </td>
+                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-right">
+                                          {tulsun > 0.005
+                                            ? formatNumber(tulsun, 2)
+                                            : ""}
+                                        </td>
+                                        <td className="py-1 px-1 text-right font-medium">
+                                          {Number.isFinite(u)
+                                            ? formatNumber(u, 2)
+                                            : ""}
+                                        </td>
+                                      </tr>
+                                    );
+                                  },
+                                )
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
 
                       {/* Signatures & Stamp Area */}
                       <div className="flex justify-between items-start mt-4">
@@ -1232,7 +2185,10 @@ export default function InvoiceModal({
                               Нэхэмжлэл бичсэн:
                             </span>
                             <span className="font-bold text-theme dark:text-white border-b border-[color:var(--surface-border)] min-w-[150px] inline-block text-center">
-                              {selectedInvoice?.baiguullagiinNer + " " + "СӨХ"}
+                              {nekhemjlekhiinBichsenDisplay(
+                                selectedInvoice as Record<string, unknown>,
+                                resident,
+                              )}
                             </span>
                           </div>
                         </div>

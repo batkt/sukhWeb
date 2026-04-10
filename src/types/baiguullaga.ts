@@ -117,6 +117,13 @@ export interface BaiguullagaTokhirgoo {
   dotorGadnaTsagEsekh: boolean;
   merchantTin?: string;
 
+  /**
+   * Нэхэмжлэхийн давталтын эхлэх өдөр (хуанлийн сарын дотор).
+   * 1 эсвэл байхгүй = хуанлийн сар (1-ээс сарын эцэс хүртэл).
+   * Жишээ нь 20 = тухайн сарын 20-ноос дараа сарын 19 хүртэл нэг «сар» (2-р сарын давталт = 2.20–3.19).
+   */
+  nekhemjlekhiinDavlaliinEkhlekhUdur?: number;
+
   districtCode?: string;
   duuregNer?: string;
   horoo?: {

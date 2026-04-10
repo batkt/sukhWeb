@@ -309,11 +309,46 @@ type LedgerMonthBreakdownRow = {
   balanceEnd: number;
 };
 
+/** Эхний мөрийн өмнөх үлдэгдэл: row.uldegdel = өмнөх + tulukhDun - tulsunDun */
+function ledgerOpeningBeforeFirstEntry(first: LedgerEntry): number {
+  const u = Number(first.uldegdel);
+  if (!Number.isFinite(u)) return 0;
+  return roundLedgerRunningStep(
+    u - Number(first.tulukhDun || 0) + Number(first.tulsunDun || 0),
+  );
+}
+
+type LedgerRunningMode = "fromZero" | "fromFirstRowPostedBalance";
+
+/**
+ * Давхар мөр хассаны дараа үлдэгдлийг дахин тооцно.
+ * history-ledger: эхний мөрийн backend uldegdel-ээс өмнөх үлдэгдлийг нэхээд running гүйцүүлнэ.
+ * invoice fallback: uldegdel placeholder 0 — тэгээс эхэлнэ.
+ */
+function recomputeLedgerRunningBalances(
+  rows: LedgerEntry[],
+  mode: LedgerRunningMode,
+): void {
+  if (rows.length === 0) return;
+  let running =
+    mode === "fromFirstRowPostedBalance"
+      ? ledgerOpeningBeforeFirstEntry(rows[0])
+      : 0;
+  rows.forEach((row) => {
+    running = roundLedgerRunningStep(
+      running + Number(row.tulukhDun || 0) - Number(row.tulsunDun || 0),
+    );
+    row.uldegdel = running;
+  });
+}
+
 /** Бүх гүйлгээг хуанлийн дарааллаар сар бүрээр нэгтгэж, үлдэгдлийг мөр мөрөөр тооцно. */
 function buildLedgerMonthBreakdown(
   entries: LedgerEntry[],
 ): LedgerMonthBreakdownRow[] {
   const sorted = [...entries].sort(compareLedgerEntriesChrono);
+  if (sorted.length === 0) return [];
+
   const monthOrder: string[] = [];
   const monthRows = new Map<string, LedgerEntry[]>();
   for (const row of sorted) {
@@ -325,7 +360,7 @@ function buildLedgerMonthBreakdown(
     monthRows.get(ym)!.push(row);
   }
 
-  let running = 0;
+  let running = ledgerOpeningBeforeFirstEntry(sorted[0]);
   const out: LedgerMonthBreakdownRow[] = [];
 
   for (const ym of monthOrder) {
@@ -340,13 +375,18 @@ function buildLedgerMonthBreakdown(
       tulsun += tTsu;
       running = roundLedgerRunningStep(running + tTul - tTsu);
     }
+    const balanceEnd = running;
+    const tulsunRounded = roundLedgerRunningStep(tulsun);
+    const tulukhDisplay = roundLedgerRunningStep(
+      balanceEnd - balanceStart + tulsunRounded,
+    );
     out.push({
       ym,
       displayMonth: formatYmDisplayLabel(ym),
-      tulukh: roundLedgerRunningStep(tulukh),
-      tulsun: roundLedgerRunningStep(tulsun),
+      tulukh: tulukhDisplay,
+      tulsun: tulsunRounded,
       balanceStart,
-      balanceEnd: running,
+      balanceEnd,
     });
   }
 
@@ -1681,20 +1721,6 @@ export default function HistoryModal({
         });
       };
 
-      const applyFrontendRunningBalance = (rows: typeof flatLedger) => {
-        let running = 0;
-        rows.forEach((row: any) => {
-          running =
-            Math.round(
-              (running +
-                Number(row.tulukhDun || 0) -
-                Number(row.tulsunDun || 0)) *
-                100,
-            ) / 100;
-          row.uldegdel = running;
-        });
-      };
-
       // Sort chronological Oldest -> Newest, then drop duplicate display rows (recompute үлдэгдэл)
       sortLedger(flatLedger);
       const flatLedgerDeduped =
@@ -1767,7 +1793,10 @@ export default function HistoryModal({
             }
             sortLedger(mapped);
             const mappedDeduped = dedupeSemanticallyIdenticalLedgerRows(mapped);
-            applyFrontendRunningBalance(mappedDeduped);
+            recomputeLedgerRunningBalances(
+              mappedDeduped,
+              "fromFirstRowPostedBalance",
+            );
             setData(mappedDeduped);
             setLoading(false);
             return;
@@ -1777,7 +1806,7 @@ export default function HistoryModal({
         }
       }
 
-      applyFrontendRunningBalance(flatLedgerDeduped);
+      recomputeLedgerRunningBalances(flatLedgerDeduped, "fromZero");
 
       // Reset globalUldegdel when using frontend calculation
       setGlobalUldegdel(null);
@@ -1986,6 +2015,47 @@ export default function HistoryModal({
     () => buildLedgerMonthBreakdown(chronologicalFilteredEntries),
     [chronologicalFilteredEntries],
   );
+
+  /**
+   * Жагсаалтын «Нийт» мөрийн төлөх/төлсөн = мөрүүдийн нийлбэр.
+   * Үлдэгдэл = `monthlyBreakdownFiltered`-ийн сүүлийн сарын эцсийн үлдэгдэлтэй яг ижил (мөрийн дарааллаар тооцсон running).
+   */
+  const ledgerFooterTotals = useMemo(() => {
+    const totalCharges = roundLedgerRunningStep(
+      filteredData.reduce((sum, row) => sum + Number(row.tulukhDun || 0), 0),
+    );
+    const totalPayments = roundLedgerRunningStep(
+      filteredData.reduce((sum, row) => sum + Number(row.tulsunDun || 0), 0),
+    );
+    if (chronologicalFilteredEntries.length === 0) {
+      const fallback =
+        globalUldegdel != null && Number.isFinite(Number(globalUldegdel))
+          ? Number(globalUldegdel)
+          : Number(contract?.uldegdel ?? 0);
+      return {
+        totalCharges,
+        totalPayments,
+        balance: roundLedgerRunningStep(fallback),
+      };
+    }
+    const lastMonth =
+      monthlyBreakdownFiltered[monthlyBreakdownFiltered.length - 1];
+    const balance =
+      lastMonth != null
+        ? lastMonth.balanceEnd
+        : roundLedgerRunningStep(
+            ledgerOpeningBeforeFirstEntry(chronologicalFilteredEntries[0]) +
+              totalCharges -
+              totalPayments,
+          );
+    return { totalCharges, totalPayments, balance };
+  }, [
+    filteredData,
+    chronologicalFilteredEntries,
+    monthlyBreakdownFiltered,
+    globalUldegdel,
+    contract?.uldegdel,
+  ]);
 
   const ledgerDetailHighlightYm =
     ledgerDetailSelection?.kind === "row"
@@ -2324,26 +2394,10 @@ export default function HistoryModal({
                               </td>
                             </tr>
                           ))}
-                          {/* Total Summary Row - uldegdel from main page data */}
+                          {/* Total Summary Row — үлдэгдэл = эхний мөрийн өмнөх үлдэгдэл + Нийт төлөх - Нийт төлсөн (сарын задралын эцсийн дүнтэй ижил) */}
                           {(() => {
-                            const totalCharges = filteredData.reduce(
-                              (sum, row) => sum + (row.tulukhDun || 0),
-                              0,
-                            );
-                            const totalPayments = filteredData.reduce(
-                              (sum, row) => sum + (row.tulsunDun || 0),
-                              0,
-                            );
-                            // Use latest row's uldegdel (first row since data is reversed - newest first)
-                            // Fall back to globalUldegdel or contract.uldegdel if no rows
-                            const latestRowUldegdel =
-                              filteredData.length > 0 &&
-                              filteredData[0]?.uldegdel != null
-                                ? Number(filteredData[0].uldegdel)
-                                : globalUldegdel != null
-                                  ? globalUldegdel
-                                  : Number(contract?.uldegdel ?? 0);
-                            const balance = latestRowUldegdel;
+                            const { totalCharges, totalPayments, balance } =
+                              ledgerFooterTotals;
                             const balanceClass =
                               balance < 0.01
                                 ? "no-underline !text-emerald-600 dark:!text-emerald-400"
@@ -2555,6 +2609,10 @@ export default function HistoryModal({
                     baiguullagiinId={baiguullagiinId || ""}
                     token={token || ""}
                     barilgiinId={barilgiinId}
+                    historyLedgerBalance={ledgerFooterTotals.balance}
+                    historyLedgerTotalPayments={
+                      ledgerFooterTotals.totalPayments
+                    }
                   />
                 </div>
               </div>
