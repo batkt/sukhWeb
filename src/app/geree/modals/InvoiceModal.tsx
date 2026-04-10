@@ -23,8 +23,8 @@ import Button from "@/components/ui/Button";
 const NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS = new Set(
   String(
     typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS ??
-          ""
+      ? (process.env.NEXT_PUBLIC_NEKHEMJLEKHIIN_DAVLAL_20_BAIGUULLAGIIN_IDS ??
+          "")
       : "",
   )
     .split(/[,;\s]+/)
@@ -827,9 +827,7 @@ function guilgeeDocumentPaymentAmount(g: any): number {
   const tul = Number(g.tulukhDun ?? 0);
   const fallback =
     dun > 0 ? dun : tul > 0 ? tul : Number(g.undsenDun ?? 0) || 0;
-  return Number.isFinite(fallback) && fallback > 0
-    ? Math.abs(fallback)
-    : 0;
+  return Number.isFinite(fallback) && fallback > 0 ? Math.abs(fallback) : 0;
 }
 
 function resolveGereeIdForHistoryLedger(resident: any): string {
@@ -1177,10 +1175,7 @@ export default function InvoiceModal({
       const invIdForPayments = String(selectedInvoice?._id || "").trim();
       const paymentParentKey = (p: any) =>
         String(
-          p?.parentInvoiceId ??
-            p?.nekhemjlekhiinTuukhId ??
-            p?.invoiceId ??
-            "",
+          p?.parentInvoiceId ?? p?.nekhemjlekhiinTuukhId ?? p?.invoiceId ?? "",
         ).trim();
       const phHasExplicitInvoiceLink = phRaw.some(
         (p: any) => paymentParentKey(p) !== "",
@@ -1266,8 +1261,7 @@ export default function InvoiceModal({
           refInvoiceTotal > 0.005
             ? roundInvoiceMoney(refInvoiceTotal * 1.18 + 300)
             : Number.POSITIVE_INFINITY;
-        phRows =
-          sumPh <= generousCeiling + 0.005 || sumPh < 0.005 ? phRaw : [];
+        phRows = sumPh <= generousCeiling + 0.005 || sumPh < 0.005 ? phRaw : [];
       }
 
       const suulchiinVal = Number(
@@ -1464,9 +1458,7 @@ export default function InvoiceModal({
       Number.isFinite(invDay) &&
       invDay < nekhemjlekhiinCycleStartDay;
     const bridgeNextYm =
-      mergeNextBillingCycle && invoiceYm
-        ? nextBillingCycleYm(invoiceYm)
-        : null;
+      mergeNextBillingCycle && invoiceYm ? nextBillingCycleYm(invoiceYm) : null;
     const bridgeEndYmdKey =
       bridgeNextYm != null
         ? billingPeriodEndYmd(bridgeNextYm, nekhemjlekhiinCycleStartDay)
@@ -1542,15 +1534,11 @@ export default function InvoiceModal({
       balEndMonth,
       sortedAsc,
     };
-  }, [
-    ledgerRawRows,
-    selectedInvoice,
-    nekhemjlekhiinCycleStartDay,
-  ]);
+  }, [ledgerRawRows, selectedInvoice, nekhemjlekhiinCycleStartDay]);
 
   const showLedgerSummaryRows = Boolean(
     selectedInvoice &&
-      (resolvedHistoryLedgerBalance != null || ledgerRawRows.length > 0),
+    (resolvedHistoryLedgerBalance != null || ledgerRawRows.length > 0),
   );
 
   /**
@@ -1562,11 +1550,7 @@ export default function InvoiceModal({
     const total = roundInvoiceMoney(Number(invoiceTotal) || 0);
     const balEnd = invoiceLedgerBreakdown.balEndMonth;
 
-    if (
-      balEnd != null &&
-      Number.isFinite(balEnd) &&
-      ledgerRawRows.length > 0
-    ) {
+    if (balEnd != null && Number.isFinite(balEnd) && ledgerRawRows.length > 0) {
       const rem = roundInvoiceMoney(balEnd);
       const paid = roundInvoiceMoney(total - rem);
       return {
@@ -1958,32 +1942,7 @@ export default function InvoiceModal({
                                 {formatNumber(Number(invoiceTotal), 2)}
                               </td>
                             </tr>
-                            <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/10">
-                              <td
-                                colSpan={4}
-                                className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
-                              >
-                                {showLedgerSummaryRows
-                                  ? "Төлсөн дүн (баримт)"
-                                  : "Төлсөн дүн"}
-                              </td>
-                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
-                                {formatNumber(Number(paidDisplay), 2)}
-                              </td>
-                            </tr>
-                            <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/10">
-                              <td
-                                colSpan={4}
-                                className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center font-bold-f"
-                              >
-                                {showLedgerSummaryRows
-                                  ? "Үлдэгдэл (баримт)"
-                                  : "Үлдэгдэл"}
-                              </td>
-                              <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right">
-                                {formatNumber(Number(remainingDisplay), 2)}
-                              </td>
-                            </tr>
+
                             {showLedgerSummaryRows ? (
                               <>
                                 {invoiceLedgerBreakdown.invoiceYm &&
@@ -1994,9 +1953,7 @@ export default function InvoiceModal({
                                         colSpan={4}
                                         className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
                                       >
-                                        Хуулга (
-                                        {invoiceLedgerBreakdown.invoiceYmLabel}
-                                        ) — төлөх нийт
+                                        Төлөх дүн
                                       </td>
                                       <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
                                         {formatNumber(
@@ -2010,9 +1967,7 @@ export default function InvoiceModal({
                                         colSpan={4}
                                         className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
                                       >
-                                        Хуулга (
-                                        {invoiceLedgerBreakdown.invoiceYmLabel}
-                                        ) — төлсөн нийт
+                                        Төлсөн дүн
                                       </td>
                                       <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
                                         {formatNumber(
@@ -2028,11 +1983,7 @@ export default function InvoiceModal({
                                           colSpan={4}
                                           className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
                                         >
-                                          Хуулга (
-                                          {
-                                            invoiceLedgerBreakdown.invoiceYmLabel
-                                          }
-                                          ) — сарын эцсийн үлдэгдэл
+                                          Үлдэгдэл
                                         </td>
                                         <td className="border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold text-theme dark:text-white">
                                           {formatNumber(
@@ -2044,130 +1995,11 @@ export default function InvoiceModal({
                                     ) : null}
                                   </>
                                 ) : null}
-                                {resolvedHistoryLedgerBalance != null ? (
-                                  <tr className="border-t border-[color:var(--surface-border)] bg-[color:var(--surface-hover)]/5">
-                                    <td
-                                      colSpan={4}
-                                      className="border-r border-[color:var(--surface-border)] py-2 px-2 text-center text-[12px] text-[color:var(--panel-text)]"
-                                    >
-                                      {resolvedHistoryLedgerBalance < -0.005
-                                        ? "Одоогийн үлдэгдөл (хуулга, илүү төлөлт)"
-                                        : "Одоогийн үлдэгдөл (хуулга)"}
-                                    </td>
-                                    <td
-                                      className={`border-r border-[color:var(--surface-border)] py-2 px-2 text-right font-semibold ${
-                                        resolvedHistoryLedgerBalance < -0.005
-                                          ? "text-emerald-600 dark:text-emerald-400"
-                                          : "text-theme dark:text-white"
-                                      }`}
-                                    >
-                                      {formatNumber(
-                                        resolvedHistoryLedgerBalance,
-                                        2,
-                                      )}
-                                    </td>
-                                  </tr>
-                                ) : null}
                               </>
                             ) : null}
                           </tfoot>
                         </table>
                       </div>
-
-                      {invoiceLedgerBreakdown.invoiceYm &&
-                      ledgerRawRows.length > 0 ? (
-                        <div className="mb-4 border border-[color:var(--surface-border)] overflow-hidden">
-                          <div className="bg-[color:var(--surface-hover)]/50 px-2 py-1.5 font-bold text-center text-[11px] border-b border-[color:var(--surface-border)]">
-                            Хуулга — {invoiceLedgerBreakdown.invoiceYmLabel}{" "}
-                            сарын гүйлгээ
-                            {invoiceLedgerBreakdown.ledgerCycleHint
-                              ? ` (${invoiceLedgerBreakdown.ledgerCycleHint})`
-                              : ""}
-                          </div>
-                          <table className="w-full border-collapse text-[10px]">
-                            <thead>
-                              <tr className="bg-[color:var(--surface-hover)]/30 border-b border-[color:var(--surface-border)] font-bold text-center">
-                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20">
-                                  Огноо
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-left">
-                                  Тайлбар
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20 text-right">
-                                  Төлөх
-                                </td>
-                                <td className="border-r border-[color:var(--surface-border)] py-1 px-1 w-20 text-right">
-                                  Төлсөн
-                                </td>
-                                <td className="py-1 px-1 w-24 text-right">
-                                  Үлдэгдэл
-                                </td>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {invoiceLedgerBreakdown.monthRows.length ===
-                              0 ? (
-                                <tr>
-                                  <td
-                                    colSpan={5}
-                                    className="py-2 px-2 text-center text-[color:var(--panel-text)]"
-                                  >
-                                    Энэ сард хуулгын мөр бүртгэгдээгүй
-                                  </td>
-                                </tr>
-                              ) : (
-                                invoiceLedgerBreakdown.monthRows.map(
-                                  (r: any, idx: number) => {
-                                    const { tulukh, tulsun } =
-                                      pickInvoiceModalLedgerTulukhTulsun(r);
-                                    const ymd = ledgerRowYmdKeyForMonth(r);
-                                    const ognooCell = ymd
-                                      ? ymd.replace(/-/g, ".")
-                                      : "-";
-                                    const aj = String(r.ajiltan ?? "").trim();
-                                    const tailRest = String(
-                                      r.tailbar ?? r.ner ?? r.khelber ?? "",
-                                    ).trim();
-                                    const tail =
-                                      aj && tailRest
-                                        ? `${aj} · ${tailRest}`
-                                        : aj || tailRest || "—";
-                                    const u = Number(r.uldegdel);
-                                    return (
-                                      <tr
-                                        key={`lm-${idx}-${String(r._id ?? "")}`}
-                                        className="border-b border-[color:var(--surface-border)] last:border-0"
-                                      >
-                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-center">
-                                          {ognooCell}
-                                        </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-left">
-                                          {tail}
-                                        </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-right">
-                                          {tulukh > 0.005
-                                            ? formatNumber(tulukh, 2)
-                                            : ""}
-                                        </td>
-                                        <td className="border-r border-[color:var(--surface-border)] py-1 px-1 text-right">
-                                          {tulsun > 0.005
-                                            ? formatNumber(tulsun, 2)
-                                            : ""}
-                                        </td>
-                                        <td className="py-1 px-1 text-right font-medium">
-                                          {Number.isFinite(u)
-                                            ? formatNumber(u, 2)
-                                            : ""}
-                                        </td>
-                                      </tr>
-                                    );
-                                  },
-                                )
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      ) : null}
 
                       {/* Signatures & Stamp Area */}
                       <div className="flex justify-between items-start mt-4">
