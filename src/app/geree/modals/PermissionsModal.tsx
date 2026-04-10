@@ -123,8 +123,23 @@ export default function PermissionsModal({
           removeChildren(item.children);
         }
       } else {
-        // Add this permission
         next.push(permissionId);
+        if (item.children) {
+          const addChildren = (children: PermissionItem[]) => {
+            children.forEach((child) => {
+              if (!next.includes(child.id)) {
+                const childMod = getModuleInfo(child.id);
+                if (!childMod || childMod.odoogiin < childMod.bolomjit) {
+                  next.push(child.id);
+                }
+              }
+              if (child.children) {
+                addChildren(child.children);
+              }
+            });
+          };
+          addChildren(item.children);
+        }
       }
 
       return next;

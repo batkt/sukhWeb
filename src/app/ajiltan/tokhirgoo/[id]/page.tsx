@@ -4,9 +4,20 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/lib/useAuth";
 import GolContent from "../../../../../components/golContent";
-import { Shield, Building2, Settings, ArrowLeft, Save } from "lucide-react";
-import { ALL_PERMISSIONS } from "@/lib/permissions";
-import { Check } from "lucide-react";
+import {
+  Shield,
+  Building2,
+  Settings,
+  ArrowLeft,
+  Save,
+  Check,
+  Minus,
+} from "lucide-react";
+import {
+  ALL_PERMISSIONS,
+  getChildPermissionIds,
+  getAllPermissionIds,
+} from "@/lib/permissions";
 import { useGereeContext } from "@/app/geree/GereeContext";
 import updateMethod from "../../../../../tools/function/updateMethod";
 import { openSuccessOverlay } from "@/components/ui/SuccessOverlay";
@@ -64,6 +75,55 @@ export default function EmployeeSettingsPage() {
     return [];
   }, [baiguullaga]);
 
+  const allModulePermissionIds = useMemo(() => getAllPermissionIds(), []);
+  const allSettingsPermissionIds = useMemo(
+    () => SETTINGS_PERMISSIONS.map((s) => s.id),
+    []
+  );
+
+  const allBuildingsSelected =
+    buildings.length === 0 ||
+    selectedBuildings.length === buildings.length;
+  const allModsSelected =
+    allModulePermissionIds.length > 0 &&
+    allModulePermissionIds.every((id) => selectedPermissions.includes(id));
+  const allSettingsSelectedState =
+    allSettingsPermissionIds.length > 0 &&
+    allSettingsPermissionIds.every((id) => selectedSettings.includes(id));
+  const isEverythingSelected =
+    allBuildingsSelected && allModsSelected && allSettingsSelectedState;
+  const hasAnySelection =
+    selectedBuildings.length > 0 ||
+    selectedPermissions.length > 0 ||
+    selectedSettings.length > 0;
+  const globalSelectIndeterminate = hasAnySelection && !isEverythingSelected;
+
+  const buildingsColumnAllSelected =
+    buildings.length > 0 &&
+    selectedBuildings.length === buildings.length;
+  const buildingsColumnIndeterminate =
+    buildings.length > 0 &&
+    selectedBuildings.length > 0 &&
+    selectedBuildings.length < buildings.length;
+
+  const modulesColumnIndeterminate =
+    selectedPermissions.length > 0 && !allModsSelected;
+
+  const settingsColumnIndeterminate =
+    selectedSettings.length > 0 && !allSettingsSelectedState;
+
+  const toggleSelectAllGlobal = () => {
+    if (isEverythingSelected) {
+      setSelectedBuildings([]);
+      setSelectedPermissions([]);
+      setSelectedSettings([]);
+    } else {
+      setSelectedBuildings(buildings.map((b: any) => b._id));
+      setSelectedPermissions([...allModulePermissionIds]);
+      setSelectedSettings([...allSettingsPermissionIds]);
+    }
+  };
+
   // Initialize permissions when employee is loaded
   useEffect(() => {
     if (employee) {
@@ -99,11 +159,17 @@ export default function EmployeeSettingsPage() {
   };
 
   const togglePermission = (permissionId: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(permissionId)
-        ? prev.filter((id) => id !== permissionId)
-        : [...prev, permissionId]
-    );
+    const childIds = getChildPermissionIds(permissionId);
+    setSelectedPermissions((prev) => {
+      if (prev.includes(permissionId)) {
+        const remove = new Set([permissionId, ...childIds]);
+        return prev.filter((id) => !remove.has(id));
+      }
+      const next = new Set(prev);
+      next.add(permissionId);
+      childIds.forEach((id) => next.add(id));
+      return [...next];
+    });
   };
 
   const toggleSetting = (settingId: string) => {
@@ -190,6 +256,38 @@ export default function EmployeeSettingsPage() {
           </button>
         </div>
 
+        {/* Global select all (барилга + модулиуд + тохиргооны эрх) */}
+        <div className="neu-panel rounded-2xl p-4 border border-[color:var(--surface-border)]">
+          <button
+            type="button"
+            onClick={toggleSelectAllGlobal}
+            aria-label="Бүгдийг сонгох эсвэл цэвэрлэх"
+            className="flex w-full items-center gap-3 text-left rounded-xl p-2 transition-colors hover:bg-[color:var(--surface-hover)]"
+          >
+            <div
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded border-2 transition-all ${
+                isEverythingSelected
+                  ? "border-emerald-500 bg-emerald-500"
+                  : globalSelectIndeterminate
+                    ? "border-emerald-500 bg-emerald-500/25"
+                    : "border-[color:var(--surface-border)]"
+              }`}
+            >
+              {isEverythingSelected ? (
+                <Check className="h-3.5 w-3.5 text-white" />
+              ) : globalSelectIndeterminate ? (
+                <Minus className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className=" text-theme font-medium">Бүгдийг сонгох</span>
+              <p className="text-xs text-subtle mt-0.5">
+                Барилга, модулиуд, тохиргооны эрх
+              </p>
+            </div>
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-4 lg:h-[calc(100vh-200px)] lg:min-h-[400px]">
           {/* Section 1: Building Assignment */}
           <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
@@ -203,16 +301,38 @@ export default function EmployeeSettingsPage() {
                   </span>
                 </h2>
               </div>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={selectAllBuildings}
-                  className="px-2 py-1 text-xs  text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                  type="button"
+                  onClick={() =>
+                    buildingsColumnAllSelected
+                      ? deselectAllBuildings()
+                      : selectAllBuildings()
+                  }
+                  disabled={buildings.length === 0}
+                  aria-label="Бүх барилгыг сонгох эсвэл цэвэрлэх"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Бүгд
+                  <div
+                    className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                      buildingsColumnAllSelected
+                        ? "border-blue-500 bg-blue-500"
+                        : buildingsColumnIndeterminate
+                          ? "border-blue-500 bg-blue-500/25"
+                          : "border-[color:var(--surface-border)]"
+                    }`}
+                  >
+                    {buildingsColumnAllSelected ? (
+                      <Check className="h-3 w-3 text-white" />
+                    ) : buildingsColumnIndeterminate ? (
+                      <Minus className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                    ) : null}
+                  </div>
                 </button>
                 <button
+                  type="button"
                   onClick={deselectAllBuildings}
-                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -265,25 +385,37 @@ export default function EmployeeSettingsPage() {
                   </span>
                 </h2>
               </div>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => {
-                    const allIds: string[] = [];
-                    ALL_PERMISSIONS.forEach(p => {
-                      allIds.push(p.id);
-                      if (p.children) {
-                        p.children.forEach(c => allIds.push(c.id));
-                      }
-                    });
-                    setSelectedPermissions(allIds);
-                  }}
-                  className="px-2 py-1 text-xs  text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors"
+                  type="button"
+                  onClick={() =>
+                    allModsSelected
+                      ? setSelectedPermissions([])
+                      : setSelectedPermissions([...allModulePermissionIds])
+                  }
+                  aria-label="Бүх модулийг сонгох эсвэл цэвэрлэх"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent hover:bg-green-50 dark:hover:bg-green-900/20"
                 >
-                  Бүгд
+                  <div
+                    className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                      allModsSelected
+                        ? "border-green-500 bg-green-500"
+                        : modulesColumnIndeterminate
+                          ? "border-green-500 bg-green-500/25"
+                          : "border-[color:var(--surface-border)]"
+                    }`}
+                  >
+                    {allModsSelected ? (
+                      <Check className="h-3 w-3 text-white" />
+                    ) : modulesColumnIndeterminate ? (
+                      <Minus className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    ) : null}
+                  </div>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setSelectedPermissions([])}
-                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
@@ -364,16 +496,37 @@ export default function EmployeeSettingsPage() {
                   </span>
                 </h2>
               </div>
-              <div className="flex gap-1">
+              <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setSelectedSettings(SETTINGS_PERMISSIONS.map(s => s.id))}
-                  className="px-2 py-1 text-xs  text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                  type="button"
+                  onClick={() =>
+                    allSettingsSelectedState
+                      ? setSelectedSettings([])
+                      : setSelectedSettings([...allSettingsPermissionIds])
+                  }
+                  aria-label="Бүх тохиргооны эрхийг сонгох эсвэл цэвэрлэх"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent hover:bg-purple-50 dark:hover:bg-purple-900/20"
                 >
-                  Бүгд
+                  <div
+                    className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${
+                      allSettingsSelectedState
+                        ? "border-purple-500 bg-purple-500"
+                        : settingsColumnIndeterminate
+                          ? "border-purple-500 bg-purple-500/25"
+                          : "border-[color:var(--surface-border)]"
+                    }`}
+                  >
+                    {allSettingsSelectedState ? (
+                      <Check className="h-3 w-3 text-white" />
+                    ) : settingsColumnIndeterminate ? (
+                      <Minus className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                    ) : null}
+                  </div>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setSelectedSettings([])}
-                  className="px-2 py-1 text-xs  text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
+                  className="px-2 py-1 text-xs text-subtle hover:bg-[color:var(--hover-bg)] rounded transition-colors"
                 >
                   Цэвэрлэх
                 </button>
