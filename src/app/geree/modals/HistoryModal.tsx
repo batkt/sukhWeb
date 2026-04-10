@@ -1954,49 +1954,42 @@ export default function HistoryModal({
   }, [show, contractId, pageRangeStart, pageRangeEnd]);
 
   const filteredData = useMemo(() => {
-    const [dr0, dr1] = dateRange || [null, null];
-    const m0 = coercePickerValueToYmd(dr0);
-    const m1 = coercePickerValueToYmd(dr1);
-    const pageS = coercePickerValueToYmd(pageDateRange?.[0] ?? null);
-    const pageE = coercePickerValueToYmd(pageDateRange?.[1] ?? null);
+    // 1. Get raw string boundaries
+    const dr0 = dateRange?.[0] || null;
+    const dr1 = dateRange?.[1] || null;
+    const pS = pageDateRange?.[0] || null;
+    const pE = pageDateRange?.[1] || null;
 
-    // «Арилгах»: modalDateFilterFromUser + хоёул null → жагсаалтын огноог үл тоомсорлож бүх түүх
-    const clearedInModal =
-      Boolean(modalDateFilterFromUser) && m0 == null && m1 == null;
-    // RangePicker заримдаа нэг талыг null өгдөг; нөгөө талыг жагсаалтын сонголтоос нөхнө
-    const startNorm = clearedInModal ? null : (m0 ?? pageS ?? null);
-    const endNorm = clearedInModal ? null : (m1 ?? pageE ?? null);
+    // «Арилгах»: modalDateFilterFromUser + хоёул null → бүх түүх
+    const clearedInModal = Boolean(modalDateFilterFromUser) && !dr0 && !dr1;
+    let startStr = clearedInModal ? null : (dr0 || pS);
+    let endStr = clearedInModal ? null : (dr1 || pE);
 
-    let { startKey, endKey } = pickerBoundsToYmdKeys(startNorm, endNorm);
+    // 2. Normalize boundaries to YYYY-MM-DD
+    let startKey = startStr ? ledgerFilterYmdKey(startStr) : null;
+    let endKey = endStr ? ledgerFilterYmdKey(endStr) : null;
 
-    // Нэг өдөр сонгосон / RangePicker дунд үе: нөгөө тал хоосон бол тухайн сарын эх/төгсгөлөөр нөхнө
-    if (startKey && !endKey) {
-      endKey = ymdEndOfCalendarMonth(startKey);
-    } else if (!startKey && endKey) {
-      startKey = ymdStartOfCalendarMonth(endKey);
-    }
+    // Fill missing halves
+    if (startKey && !endKey) endKey = ymdEndOfCalendarMonth(startKey);
+    else if (!startKey && endKey) startKey = ymdStartOfCalendarMonth(endKey);
+
+    // Swap if crossed
     if (startKey && endKey && startKey > endKey) {
       const t = startKey;
       startKey = endKey;
       endKey = t;
     }
 
-    const startN = ymdKeyToSortNumber(startKey);
-    const endN = ymdKeyToSortNumber(endKey);
+    const result = data.filter((item) => {
+      if (!startKey && !endKey) return true;
+      const rowKey = ledgerInstantToUtcYmd(item.ognoo) || ledgerFilterYmdKey(item.ognoo);
+      if (!rowKey) return false;
+      if (startKey && rowKey < startKey) return false;
+      if (endKey && rowKey > endKey) return false;
+      return true;
+    });
 
-    const result =
-      startKey || endKey
-        ? data.filter((item) => {
-            const rowKey = ledgerRowKeyMatchingDisplayColumn(item.ognoo);
-            const rowN = ymdKeyToSortNumber(rowKey);
-            if (rowN == null) return false;
-            if (startN != null && rowN < startN) return false;
-            if (endN != null && rowN > endN) return false;
-            return true;
-          })
-        : data;
-
-    // Reverse to show newest first (data is stored oldest-first)
+    // Reverse to show newest first
     return [...result].reverse();
   }, [data, dateRange, pageDateRange, modalDateFilterFromUser]);
 
@@ -2198,8 +2191,9 @@ export default function HistoryModal({
                         size="small"
                         placeholder="Огноо"
                         classNames={{
-                          input: "border-none h-8 text-[13px] ",
+                          input: "border-none h-8 text-[13px]",
                         }}
+                        className="dark:text-white"
                       />
                     </div>
                     {(dateRange?.[0] || dateRange?.[1]) && (
@@ -2209,7 +2203,7 @@ export default function HistoryModal({
                           setModalDateFilterFromUser(true);
                           setDateRange([null, null]);
                         }}
-                        className="text-[10px]  text-rose-500 hover:underline"
+                        className="text-[10px] text-gray-500 hover:text-gray-700 dark:text-gray-400 hover:underline"
                       >
                         Арилгах
                       </button>
@@ -2324,7 +2318,7 @@ export default function HistoryModal({
                                     ? formatCurrency(Number(row.uldegdel))
                                     : "-"}
                               </td>
-                              <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell print:table-cell text-center">
+                              <td className="py-2 px-2 text-[13px] border-r text-slate-500 dark:text-slate-400 hidden md:table-cell print:table-cell text-center capitalize">
                                 {row.khelber || "-"}
                               </td>
                               <td className="py-2 px-2 text-[13px] border-r text-slate-600 dark:text-slate-300 hidden md:table-cell print:table-cell">
@@ -2402,9 +2396,27 @@ export default function HistoryModal({
                               balance < 0.01
                                 ? "no-underline !text-emerald-600 dark:!text-emerald-400"
                                 : "underline underline-offset-2 decoration-red-500 dark:decoration-red-400 !text-red-500 dark:!text-red-400";
+                            
+                            const isFiltered = filteredData.length < data.length;
+                            const openingBalance = balance - totalCharges + totalPayments;
+
                             return (
-                              <tr className="history-print-total-row bg-slate-100 dark:bg-slate-800/50">
-                                <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-1.5 text-[13px] text-slate-700 dark:text-slate-200 text-center border-t-2 border-slate-300 dark:border-slate-600 tabular-nums print:text-black">
+                              <>
+                                {isFiltered && filteredData.length > 0 && (
+                                  <tr className="history-print-total-row bg-slate-50/70 dark:bg-slate-800/60 print:bg-transparent italic">
+                                    <td className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-1.5 border-t border-slate-200 dark:border-slate-700"></td>
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-2 text-[12px] text-slate-500 text-right border-t border-slate-200 dark:border-slate-700">
+                                      Хугацааны эхний үлдэгдэл:
+                                    </td>
+                                    <td colSpan={2} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700"></td>
+                                    <td className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 py-1 px-2 text-[12px] font-medium text-slate-600 dark:text-slate-400 text-right border-t border-slate-200 dark:border-slate-700">
+                                      {formatCurrency(openingBalance)} ₮
+                                    </td>
+                                    <td colSpan={4} className="sticky bottom-[37px] z-10 bg-slate-50 dark:bg-slate-800/90 border-t border-slate-200 dark:border-slate-700"></td>
+                                  </tr>
+                                )}
+                                <tr className="history-print-total-row bg-slate-100 dark:bg-slate-800/50">
+                                  <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-1.5 text-[13px] text-slate-700 dark:text-slate-200 text-center border-t-2 border-slate-300 dark:border-slate-600 tabular-nums print:text-black">
                                   —
                                 </td>
                                 <td
@@ -2455,11 +2467,12 @@ export default function HistoryModal({
                                   className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 border-t-2 border-slate-300 dark:border-slate-600"
                                 ></td>
                               </tr>
-                            );
-                          })()}
-                        </>
-                      )}
-                    </tbody>
+                            </>
+                          );
+                        })()}
+                      </>
+                    )}
+                  </tbody>
                   </table>
                 </div>
 

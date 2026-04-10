@@ -165,7 +165,7 @@ export default function OrlogoAvlagaPage() {
 
   const baiguullagiinId = ajiltan?.baiguullagiinId ?? null;
 
-  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [activeTab, setActiveTab] = useState<TabType>("avlaga");
   const [dateRange, setDateRange] = useState<DateRangeValue>(getDefaultDateRange);
   const { searchTerm } = useSearch();
   const [filters, setFilters] = useState({
@@ -495,8 +495,11 @@ export default function OrlogoAvlagaPage() {
           ? Number(ledgerBalances[gid])
           : Number(ct.globalUldegdel ?? ct.uldegdel ?? 0);
 
-      // 4. Эхний үлдэгдэл (Opening Balance) to match Negtgel Нийт үлдэгдэл: Paid + Balance
-      const ekhBal = periodPaid + finalBal;
+      // 4. Эхний үлдэгдэл (Opening Balance) from Ledger
+      const ekhBal = 
+        footerTotals.ekhniiUldegdelByGereeId[gid] != null
+          ? Number(footerTotals.ekhniiUldegdelByGereeId[gid])
+          : finalBal - periodBilled + periodPaid;
 
       map.set(gid, {
         ...ct,
@@ -596,12 +599,7 @@ export default function OrlogoAvlagaPage() {
     [deduplicatedResidents, debouncedFilters, searchTerm],
   );
 
-  const displayList =
-    activeTab === "tulult"
-      ? paidList
-      : activeTab === "avlaga"
-        ? avlagaList
-        : allList;
+  const displayList = activeTab === "tulult" ? paidList : avlagaList;
 
   // Use authoritative grand totals from useTulburFooterTotals (same as tulbur page)
   const totalOrlogo = footerTotals.totalPaid;
@@ -609,17 +607,24 @@ export default function OrlogoAvlagaPage() {
   const totalTulbur = footerTotals.totalBilled;
 
   // Per-row derived totals for display
-  const totalEkhniiUldegdel = useMemo(
-    () =>
-      deduplicatedResidents
-        .filter(matchesFilters)
-        .reduce(
-          (s, it) =>
-            s + Number(it?._ekhniiUldegdelAmount ?? it?._ekhniiUldegdel ?? 0),
-          0,
-        ),
-    [deduplicatedResidents, searchTerm, debouncedFilters],
-  );
+  const localTotals = useMemo(() => {
+    let billedSum = 0;
+    let paidSum = 0;
+    let finalBalSum = 0;
+
+    displayList.forEach((record) => {
+      billedSum += record._periodTulbur ?? 0;
+      paidSum += Number(record._periodPaid ?? getPaid(record));
+      finalBalSum += record._finalUldegdel ?? getUldegdel(record);
+    });
+
+    const billed = Math.round(billedSum * 100) / 100;
+    const paid = Math.round(paidSum * 100) / 100;
+    const finalBalance = Math.round(finalBalSum * 100) / 100;
+    const ekhniiUldegdel = Math.round((finalBalance - billed + paid) * 100) / 100;
+
+    return { ekhniiUldegdel, billed, paid, finalBalance };
+  }, [displayList, getPaid, getUldegdel]);
 
   const handleRowClick = async (it: any) => {
     setSelectedRecord(it);
@@ -687,7 +692,7 @@ export default function OrlogoAvlagaPage() {
 
         if (activeTab !== "tulult") {
           row.ekhniiUldegdel = parseFloat(String(it._ekhniiUldegdel ?? 0)).toFixed(2);
-          row.periodTulbur = parseFloat(String(it._periodTulbur ?? it.gereeniiTulukhDun ?? 0)).toFixed(2);
+          row.periodTulbur = parseFloat(String(it._periodTulbur ?? 0)).toFixed(2);
           row.paid = parseFloat(String(getPaid(it))).toFixed(2);
           row.uldegdel = parseFloat(String(it._finalUldegdel ?? getUldegdel(it))).toFixed(2);
         } else {
@@ -819,7 +824,6 @@ export default function OrlogoAvlagaPage() {
           <div className="flex gap-2">
             {(
               [
-                ["all", "Бүгд"],
                 ["avlaga", "Авлага"],
                 ["tulult", "Орлого"],
               ] as [TabType, string][]
@@ -920,10 +924,10 @@ export default function OrlogoAvlagaPage() {
             modalOpen={modalOpen}
             onModalClose={handleModalClose}
             selectedRecord={selectedRecord}
-            grandTotalPaid={totalOrlogo}
-            grandTotalUldegdel={totalUldegdel}
-            grandTotalEkhniiUldegdel={totalEkhniiUldegdel}
-            grandTotalTulbur={totalTulbur}
+            grandTotalPaid={localTotals.paid}
+            grandTotalUldegdel={localTotals.finalBalance}
+            grandTotalEkhniiUldegdel={localTotals.ekhniiUldegdel}
+            grandTotalTulbur={localTotals.billed}
             dateRange={dateRange}
           />
       </div>

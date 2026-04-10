@@ -191,7 +191,7 @@ export default function NegtgelTailanPage() {
 
       {/* ── Table ───────────────────────────────────────────────── */}
       <div className="w-full no-print">
-        <NegtgelTailanTable data={pagedData} loading={isLoading} authoritativeTotalUldegdel={(footerTotals.totalUldegdel || 0) + (footerTotals.totalPaid || 0)} />
+        <NegtgelTailanTable data={pagedData} loading={isLoading} authoritativeTotalUldegdel={footerTotals.totalUldegdel || 0} />
       </div>
 
       {/* ── Pagination ──────────────────────────────────────────── */}

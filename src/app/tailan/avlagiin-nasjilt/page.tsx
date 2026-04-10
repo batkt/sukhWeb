@@ -355,7 +355,7 @@ export default function AvlagiinNasjiltPage() {
               Насжилтын тайлан
             </h1>
             <p className="text-sm text-theme/60">
-              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(footerTotals?.totalUldegdel || 0, 0)} ₮ авлага
+              {summary?.count || 0} хэрэглэгчийн нийт {formatNumber(totals?.uldegdel || 0, 0)} ₮ авлага
             </p>
           </div>
         </div>

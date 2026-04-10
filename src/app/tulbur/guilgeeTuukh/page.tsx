@@ -850,52 +850,7 @@ export default function DansniiKhuulga() {
     });
 
     return buildingHistoryItems.filter((it: any) => {
-      const gid =
-        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
-        (it?.gereeniiDugaar &&
-          String(
-            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
-          )) ||
-        "";
-
-      const currentBalance =
-        tableDisplayBalances[gid] ?? Number(it?.uldegdel ?? 0);
-
-      const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
-
-      // Use a consistent epsilon (0.01 MNT) for balance checks
-      // Any balance >= 0.01 MNT is considered unpaid.
-      const isResidentPaid = currentBalance < 0.01;
-      const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
-
-      if (tuluvFilter === "paid") {
-        return isResidentPaid;
-      }
-      if (tuluvFilter === "partiallyPaid") {
-        return isPartiallyPaid;
-      }
-      if (tuluvFilter === "unpaid") {
-        // Full Unpaid: balance > 0 AND has paid nothing (<= 0.1)
-        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
-        const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const isLinkedToCancelledGeree =
-          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
-          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
-
-        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
-      }
-      if (tuluvFilter === "overdue") {
-        // Filter for cancelled receivables: must have balance > 0 AND be linked to cancelled contract
-        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
-        const itGereeDugaar = String(it?.gereeniiDugaar || "");
-        const isLinkedToCancelledGeree =
-          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
-          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
-
-        return !isResidentPaid && isLinkedToCancelledGeree;
-      }
-
-      // Additional filters: Орц and Давхар
+      // 1. Static Profile Filters (Orts, Davkhar, Toot) - MUST BE FIRST
       if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
 
@@ -939,9 +894,8 @@ export default function DansniiKhuulga() {
         }
       }
 
+      // 2. Search Filter - MUST BE SECOND
       if (searchTerm) {
-        // Augment item with resident/contract data so invoices match search even when
-        // they only have orshinSuugchId/gereeniiId (ner/utas come from lookup)
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
         const contract = cId ? (contractsById as any)[cId] : undefined;
         const rId = String(
@@ -959,6 +913,48 @@ export default function DansniiKhuulga() {
           _searchGereeDugaar: contract?.gereeniiDugaar ?? it?.gereeniiDugaar,
         };
         if (!matchesSearch(augmented, searchTerm)) return false;
+      }
+
+      // 3. Status Filters (tuluvFilter)
+      const gid =
+        String(it?.gereeniiId ?? it?.gereeId ?? "").trim() ||
+        (it?.gereeniiDugaar &&
+          String(
+            (contractsByNumber as any)[String(it.gereeniiDugaar)]?._id || "",
+          )) ||
+        "";
+
+      const currentBalance =
+        tableDisplayBalances[gid] ?? Number(it?.uldegdel ?? 0);
+
+      const paidAmount = gid ? Number(monthPaidByGereeId[gid] ?? 0) : 0;
+
+      const isResidentPaid = currentBalance < 0.01;
+      const isPartiallyPaid = !isResidentPaid && paidAmount > 0.1;
+
+      if (tuluvFilter === "paid") {
+        return isResidentPaid;
+      }
+      if (tuluvFilter === "partiallyPaid") {
+        return isPartiallyPaid;
+      }
+      if (tuluvFilter === "unpaid") {
+        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+        return !isResidentPaid && !isPartiallyPaid && !isLinkedToCancelledGeree;
+      }
+      if (tuluvFilter === "overdue") {
+        const itGereeId = String(it?.gereeniiId || it?.gereeId || "");
+        const itGereeDugaar = String(it?.gereeniiDugaar || "");
+        const isLinkedToCancelledGeree =
+          (itGereeId && cancelledGereeIds.has(itGereeId)) ||
+          (itGereeDugaar && cancelledGereeDugaars.has(itGereeDugaar));
+
+        return !isResidentPaid && isLinkedToCancelledGeree;
       }
 
       return true;
@@ -1001,7 +997,7 @@ export default function DansniiKhuulga() {
     });
 
     return buildingHistoryItems.filter((it: any) => {
-      // Skip tuluvFilter - include all items for stats
+      // 1. Static Profile Filters (Orts, Davkhar, Toot)
       if (selectedOrtsFilter || selectedDavkharFilter || selectedTootFilter) {
         const toStr = (v: any) => (v == null ? "" : String(v).trim());
         const cId = toStr(
@@ -1040,6 +1036,8 @@ export default function DansniiKhuulga() {
             return false;
         }
       }
+
+      // 2. Search Filter
       if (searchTerm) {
         const cId = String(it?.gereeniiId ?? it?.gereeId ?? "").trim();
         const contract = cId ? (contractsById as any)[cId] : undefined;
@@ -1540,7 +1538,39 @@ export default function DansniiKhuulga() {
       }
     });
 
-    // Also factor in buildingHistoryItems
+    // Also include any residents found in filteredItemsAll (ensures consistency with deduplicatedResidents)
+    filteredItemsAll.forEach((it: any) => {
+      const residentId = String(it?.orshinSuugchId || "").trim();
+      const gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
+      const gereeDugaar = String(it?.gereeniiDugaar || "").trim();
+      const ner = String(it?.ner || "")
+        .trim()
+        .toLowerCase();
+      const utas = (() => {
+        if (Array.isArray(it?.utas) && it.utas.length > 0) {
+          return String(it.utas[0] || "").trim();
+        }
+        return String(it?.utas || "").trim();
+      })();
+      const toot = String(it?.toot || it?.medeelel?.toot || "").trim();
+      const key =
+        gereeId || residentId || gereeDugaar || `${ner}|${utas}|${toot}`;
+      if (key && key !== "||") {
+        residentKeysFromProfile.add(key);
+        if (!map.has(key)) {
+          map.set(key, {
+            ...it,
+            _historyCount: 0,
+            _totalTulbur: 0,
+            _totalTulsun: 0,
+            _hasEkhniiUldegdel: false,
+            _ekhniiUldegdelAmount: 0,
+          });
+        }
+      }
+    });
+
+    // Also factor in buildingHistoryItems for the full aggregation (ensures deleted contracts with balance/history are counted correctly in stats)
     buildingHistoryItems.forEach((it: any) => {
       const residentId = String(it?.orshinSuugchId || "").trim();
       let gereeId = String(it?.gereeniiId || it?.gereeId || "").trim();
@@ -1574,9 +1604,7 @@ export default function DansniiKhuulga() {
 
       // Handle standalone ekhniiUldegdel double-counting
       if (isStandaloneEkhniiUldegdel) {
-        // ... simplified check: we just want to avoid double counting if map already aggregated from invoices
-        // BUT logic depends on knowing if ANY invoice for this contract has ekhniiUldegdel.
-        // For stats, we assume the same aggregation as the main table.
+        // Double-counting check logic
       }
 
       let itemAmount = isStandaloneEkhniiUldegdel
@@ -1612,12 +1640,12 @@ export default function DansniiKhuulga() {
             ? it.zardluud
             : [];
         const fromZardluud = zardluud.reduce((s: number, z: any) => {
-          const ner = String(z?.ner || "").toLowerCase();
+          const nerVal = String(z?.ner || "").toLowerCase();
           const isEkh =
             z?.isEkhniiUldegdel === true ||
-            ner.includes("эхний үлдэгдэл") ||
-            ner.includes("ekhniuldegdel") ||
-            ner.includes("ekhnii uldegdel");
+            nerVal.includes("эхний үлдэгдэл") ||
+            nerVal.includes("ekhniuldegdel") ||
+            nerVal.includes("ekhnii uldegdel");
           if (!isEkh) return s;
           const amt = Number(z?.dun ?? z?.tariff ?? 0);
           return s + (amt !== 0 ? amt : 0);

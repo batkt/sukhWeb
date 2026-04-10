@@ -113,11 +113,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
       case "davkhar": return record._davkhar || "-";
       case "toot": return record._toot || "-";
       case "ekhniiUldegdel": return formatNumber(record._ekhniiUldegdel ?? 0, 2);
-      case "tulbur": {
-        const ekh = record._ekhniiUldegdel ?? 0;
-        const paid = Number(record._periodPaid ?? getPaid(record));
-        return formatNumber(ekh - paid, 2);
-      }
+      case "tulbur": return formatNumber(record._periodTulbur ?? 0, 2);
       case "paid": return formatNumber(Number(record._periodPaid ?? getPaid(record)), 2);
       case "finalBalance": return formatNumber(record._finalUldegdel ?? getUldegdel(record), 2);
       default: return "-";
@@ -133,7 +129,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   const getTotalValue = (key: string) => {
     switch (key) {
       case "ekhniiUldegdel": return formatNumber(grandTotalEkhniiUldegdel ?? 0, 2);
-      case "tulbur": return formatNumber((grandTotalEkhniiUldegdel ?? 0) - (grandTotalPaid ?? 0), 2);
+      case "tulbur": return formatNumber(grandTotalTulbur ?? 0, 2);
       case "paid": return formatNumber(grandTotalPaid ?? 0, 2);
       case "finalBalance": return formatNumber(grandTotalUldegdel ?? 0, 2);
       default: return null;
@@ -169,9 +165,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const headerClassName = "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
 
     const ledgerColumns: ColumnsType<any> = [
-      { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, __: any, i: number) => i + 1 },
+      { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, row: any) => row._absIdx },
       { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 100, className: headerClassName,
-        render: (val: string) => <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-"}</span> },
+        render: (val: string) => <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit"}) : "-"}</span> },
       { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", width: 200, className: headerClassName,
         render: (val: string, row: any) => <span className="text-gray-900 dark:text-white max-w-[280px] truncate text-[13px]" title={val || row?.ner || "-"}>{val || row?.ner || row?.turul || "-"}</span> },
       { title: "Төлөх дүн", dataIndex: "tulukhDun", key: "tulukhDun", width: 120, align: "right", className: headerClassName,
@@ -186,9 +182,9 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const totalTulsun = filteredLedger.reduce((s: number, row: any) => s + Number(row?.tulsunDun ?? 0), 0);
 
     return (
-      <div className="p-4">
-        <div onPointerDown={(e) => dragControls.start(e)} className="mb-4 pb-3 border-b border-gray-200 dark:border-gray-700 cursor-move select-none">
-          <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Дэлгэрэнгүй мэдээлэл</h4>
+      <div className="flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-2xl overflow-hidden">
+        <div onPointerDown={(e) => dragControls.start(e)} className="p-4 border-b border-gray-200 dark:border-gray-700 cursor-move select-none bg-gray-50 dark:bg-gray-800">
+          <h2 className="text-xl   text-gray-900 dark:text-white">Дэлгэрэнгүй мэдээлэл</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{titleInfo || gd}</p>
         </div>
         {expandedLoading ? (
@@ -199,7 +195,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           <div className="py-4 text-center text-gray-500 dark:text-gray-400">Тэмдэглэл алга байна</div>
         ) : (
           <Table
-            dataSource={filteredLedger}
+            dataSource={filteredLedger.map((r: any, i: number) => ({ ...r, _absIdx: i + 1 }))}
             columns={ledgerColumns}
             rowKey={(r) => r._id || Math.random().toString()}
             pagination={{ pageSize: 20, showSizeChanger: false }}
@@ -211,29 +207,29 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
             rowClassName={(_, i) => `${i % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700/50"} text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-200`}
             summary={() => (
               <Table.Summary fixed="bottom">
-                <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800 font-bold">
+                <Table.Summary.Row className="bg-gray-100 dark:bg-gray-800  ">
                   <Table.Summary.Cell index={0} colSpan={3} align="center">
-                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">Нийт</span>
+                    <span className="  text-gray-900 dark:!text-white text-[13px]">Нийт</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={1} align="right">
-                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulukh, 2)}</span>
+                    <span className="  text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulukh, 2)}</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} align="right">
-                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulsun, 2)}</span>
+                    <span className="  text-gray-900 dark:!text-white text-[13px]">{formatNumber(totalTulsun, 2)}</span>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={3} align="right">
-                    <span className="font-bold text-gray-900 dark:!text-white text-[13px]">
+                    <span className="  text-gray-900 dark:!text-white text-[13px]">
                       {filteredLedger.length > 0 ? formatNumber(Number(filteredLedger[filteredLedger.length - 1]?.uldegdel ?? 0), 2) : "0.00"}
                     </span>
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
                 {expandedGlobalUldegdel !== null && (
-                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20 font-bold">
+                  <Table.Summary.Row className="bg-red-50 dark:bg-red-900/20  ">
                     <Table.Summary.Cell index={0} colSpan={3} align="right">
-                      <span className="font-bold text-red-600 dark:text-red-400 text-[13px]">Нийт үлдэгдэл:</span>
+                      <span className="  text-red-600 dark:text-red-400 text-[13px]">Нийт үлдэгдэл:</span>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={1} colSpan={2} align="right">
-                      <span className="font-bold text-red-600 dark:text-red-400 text-[15px]">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
+                      <span className="  text-red-600 dark:text-red-400 text-[15px]">{formatNumber(expandedGlobalUldegdel, 2)} ₮</span>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
                 )}
@@ -271,7 +267,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           className="overflow-auto custom-scrollbar"
           style={{ maxHeight: "calc(100vh - 320px)" }}
         >
-          <table className="w-full border-collapse" style={{ minWidth: activeTab === "tulult" ? "800px" : "1200px" }}>
+          <table className="w-full text-[13px] border-collapse bg-white dark:bg-gray-900" style={{ minWidth: activeTab === "tulult" ? "800px" : "1200px" }}>
             {/* Header */}
             <thead className="sticky top-0 z-20">
               <tr className="bg-gray-50 dark:bg-gray-800/90 backdrop-blur-sm">
@@ -279,7 +275,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                   <th
                     key={col.key}
                     className={`
-                      px-3 py-3 text-[13px] font-bold tracking-tight whitespace-nowrap
+                      px-3 py-3 text-[13px]   tracking-tight whitespace-nowrap
                       border-b-2 border-gray-200 dark:border-gray-600
                       text-gray-700 dark:text-gray-200
                       ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
@@ -308,7 +304,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     <td
                       key={col.key}
                       className={`
-                        px-3 py-2.5 text-[13px] font-medium whitespace-nowrap
+                        px-3 py-2.5 text-[13px] whitespace-nowrap
                         border-b border-gray-100 dark:border-gray-800
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                         ${getCellClassName(col.key)}
@@ -339,7 +335,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
                     <td
                       key={col.key}
                       className={`
-                        px-3 py-3 text-[13px] font-bold whitespace-nowrap
+                        px-3 py-3 text-[13px] font-semibold   whitespace-nowrap
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                         ${col.key === "paid" ? "text-emerald-600 dark:text-emerald-400" : ""}
                         ${col.key === "finalBalance" ? "text-red-600 dark:text-red-400" : ""}
@@ -365,12 +361,23 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
         onCancel={onModalClose}
         footer={null}
         width={1400}
-        maskStyle={{ background: "transparent" }}
+        mask={true}
+        maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.45)" }}
+        wrapClassName="pointer-events-none"
+        className="pointer-events-auto"
+        rootClassName="!bg-transparent"
         closeIcon={<X className="w-5 h-5" />}
-        className="dark:bg-gray-900"
         modalRender={(node) => (
-          <motion.div drag dragListener={false} dragControls={dragControls} dragMomentum={false}>
-            {node}
+          <motion.div 
+            drag 
+            dragListener={false} 
+            dragControls={dragControls} 
+            dragMomentum={false}
+            className="outline-none focus:outline-none focus-visible:outline-none"
+          >
+            {React.cloneElement(node as React.ReactElement<any>, {
+              style: { ...(((node as React.ReactElement<any>).props.style as React.CSSProperties) || {}), background: 'transparent', padding: 0, boxShadow: 'none', outline: 'none' }
+            })}
           </motion.div>
         )}
       >

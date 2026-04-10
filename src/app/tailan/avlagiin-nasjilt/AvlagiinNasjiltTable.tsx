@@ -59,7 +59,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     { key: "ner", label: "Оршин суугч", width: "160px", align: "left" as const, fixed: true },
     { key: "davkhar", label: "Давхар", width: "70px", align: "center" as const },
     { key: "toot", label: "Тоот", width: "70px", align: "center" as const },
-    { key: "undsenDun", label: "₮ Төлөх", width: "120px", align: "right" as const },
+    { key: "undsenDun", label: "Төлөх", width: "120px", align: "right" as const },
     { key: "tulsunDun", label: "Төлсөн", width: "120px", align: "right" as const },
     { key: "uldegdel", label: "Нийт үлдэгдэл", width: "140px", align: "right" as const },
     { key: "p0_30", label: "0-30", width: "100px", align: "right" as const },
@@ -117,13 +117,9 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
 
   const getTotalValue = (key: string) => {
     switch (key) {
-      case "undsenDun": {
-        const totalPaid = authoritativeTotals?.totalPaid ?? 0;
-        const totalUldegdel = authoritativeTotals?.totalUldegdel ?? 0;
-        return formatNumber(totalPaid + totalUldegdel, 2);
-      }
-      case "tulsunDun": return formatNumber(authoritativeTotals?.totalPaid ?? totals?.tulsunDun ?? 0, 2);
-      case "uldegdel": return formatNumber(authoritativeTotals?.totalUldegdel ?? totals?.uldegdel ?? 0, 2);
+      case "undsenDun": return formatNumber(totals?.undsenDun ?? 0, 2);
+      case "tulsunDun": return formatNumber(totals?.tulsunDun ?? 0, 2);
+      case "uldegdel": return formatNumber(totals?.uldegdel ?? 0, 2);
       case "p0_30": return formatNumber(totals?.p0_30 || 0, 2);
       case "p31_60": return formatNumber(totals?.p31_60 || 0, 2);
       case "p61_90": return formatNumber(totals?.p61_90 || 0, 2);
@@ -165,7 +161,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                 <th
                   key={col.key}
                   className={`
-                    px-3 py-3 text-[13px] font-bold tracking-tight whitespace-nowrap
+                    px-3 py-3 text-[13px] tracking-tight whitespace-nowrap
                     border-b-2 border-gray-200 dark:border-gray-600
                     text-gray-700 dark:text-gray-200
                     ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
@@ -202,7 +198,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                   <td
                     key={col.key}
                     className={`
-                      px-3 py-2.5 text-[13px] font-medium whitespace-nowrap
+                      px-3 py-2.5 text-[13px] whitespace-nowrap
                       border-b border-gray-100 dark:border-gray-800
                       ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                       ${getCellClassName(col.key)}
@@ -234,7 +230,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                     <td
                       key={col.key}
                       className={`
-                        px-3 py-3 text-[13px] font-bold whitespace-nowrap
+                        px-3 py-3 text-[13px] font-medium whitespace-nowrap
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
                         ${col.key === "tulsunDun" ? "text-emerald-600 dark:text-emerald-400" : ""}
                         ${col.key === "uldegdel" ? "text-red-500 dark:text-red-400" : ""}

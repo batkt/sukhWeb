@@ -1107,7 +1107,9 @@ export default function InvoicingZardluud() {
           gereeniiId: invoice.gereeniiId || "",
           gereeniiDugaar: invoice.gereeniiDugaar || "",
           tuluv: invoice.tuluv || "",
-          niitTulbur: invoice.niitTulbur || 0,
+          niitTulbur: invoice.niitTulbur || invoice.niitDun || 0,
+          uldegdel: invoice.uldegdel ?? (invoice.niitTulbur ? invoice.niitTulbur - (invoice.tulsunDun || 0) : 0),
+          tulsunDun: invoice.tulsunDun || 0,
           createdAt: invoice.createdAt || invoice.ognoo || "",
           // Keep reference to the invoice for payment status
           _invoice: invoice,
@@ -1327,42 +1329,19 @@ export default function InvoicingZardluud() {
     // Clear previous items to avoid stale display while loading
     setHistoryItems([]);
     try {
-      // Use nekhemjlekhiinTuukh response which already contains all contract data
-      const resp = await uilchilgee(token).get(`/nekhemjlekhiinTuukh`, {
+      const gid = resident.gereeniiId || resident.gereeId || "";
+      if (!gid) {
+        setHistoryItems([]);
+        return;
+      }
+      const resp = await uilchilgee(token).get(`/geree/${gid}/history-ledger`, {
         params: {
           baiguullagiinId: ajiltan.baiguullagiinId,
           barilgiinId: selectedBuildingId || barilgiinId || null,
-          khuudasniiDugaar: 1,
-          khuudasniiKhemjee: 500,
         },
       });
       const data = resp.data;
-
-      let list = Array.isArray(data?.jagsaalt)
-        ? data.jagsaalt
-        : Array.isArray(data)
-          ? data
-          : [];
-
-      // Filter by resident to show only their invoices
-      const residentInvoices = list.filter((item: any) => {
-        const ovogMatch =
-          !resident?.ovog ||
-          !item?.ovog ||
-          String(item.ovog).trim() === String(resident.ovog).trim();
-        const nerMatch =
-          !resident?.ner ||
-          !item?.ner ||
-          String(item.ner).trim() === String(resident.ner).trim();
-        const utasMatch =
-          !resident?.utas?.[0] ||
-          !item?.utas?.[0] ||
-          String(item.utas?.[0] || "").trim() ===
-            String(resident.utas?.[0] || "").trim();
-        return ovogMatch && nerMatch && utasMatch;
-      });
-
-      setHistoryItems(residentInvoices.length > 0 ? residentInvoices : list);
+      setHistoryItems(data.jagsaalt || []);
     } catch (e) {
       openErrorOverlay(getErrorMessage(e));
       setHistoryItems([]);
@@ -1916,25 +1895,9 @@ export default function InvoicingZardluud() {
                                 : [];
                             const rows = [...zardluudRows, ...guilgeenuudRows];
 
-                            const total = (() => {
-                              const ekhniiUldegdel = Number(
-                                item?.medeelel?.ekhniiUldegdel ??
-                                  item?.ekhniiUldegdel ??
-                                  0,
-                              );
-
-                              const tariffSum = rows.reduce(
-                                (sum: number, z: any) => {
-                                  const tariff = Number(z?.tariff);
-                                  return (
-                                    sum + (Number.isNaN(tariff) ? 0 : tariff)
-                                  );
-                                },
-                                0,
-                              );
-
-                              return ekhniiUldegdel + tariffSum;
-                            })();
+                            const total = Number(item.tulukhDun ?? 0);
+                            const tulsun = Number(item.tulsunDun ?? 0);
+                            const uldegdel = Number(item.uldegdel ?? 0);
 
                             return (
                               <div
@@ -1973,7 +1936,7 @@ export default function InvoicingZardluud() {
                                             : "badge-unpaid"
                                         }`}
                                       >
-                                        {total === 0
+                                        {uldegdel < 0.01
                                           ? "Төлөгдсөн"
                                           : "Төлөгдөөгүй"}
                                       </span>

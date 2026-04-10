@@ -43,7 +43,7 @@ interface NegtgelTailanTableProps {
   authoritativeTotalUldegdel?: number;
 }
 
-const headerTitleClassName = "text-gray-900 dark:text-white text-center block text-[13px] font-bold tracking-tight";
+const headerTitleClassName = "text-gray-900 dark:text-white text-center block text-[13px]   tracking-tight";
 const cellClassName = "text-[13px] text-gray-900 dark:text-white font-medium";
 
 export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }: NegtgelTailanTableProps) {
@@ -68,18 +68,8 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
 
         zardluud.forEach((z) => {
           if (z.dun <= 0) return;
-          const zName = z.ner || z.turul || "Бусад";
+          const zName = z.ner || "Бусад";
 
-          if (zName.includes("Менежментийн төлбөр")) {
-            const key = `${ym}|Менежмент нэгж`;
-            if (!avlagaMap.has(key)) {
-              avlagaMap.set(key, {
-                tailbar: "Менежмент нэгж",
-                ognoo: ym,
-                index: Number(ym.split("-")[1]),
-              });
-            }
-          }
           const key = `${ym}|${zName}`;
           if (!avlagaMap.has(key)) {
             avlagaMap.set(key, {
@@ -93,9 +83,15 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
     });
 
     const months = Array.from(monthSet).sort();
-    const avlagaTypes = Array.from(avlagaMap.values()).sort(
-      (a, b) => a.ognoo.localeCompare(b.ognoo) || a.index - b.index,
-    );
+    const avlagaTypes = Array.from(avlagaMap.values()).sort((a, b) => {
+      if (a.ognoo !== b.ognoo) return a.ognoo.localeCompare(b.ognoo);
+      
+      const isEkhA = a.tailbar.includes("Эхний үлдэгдэл") ? 0 : 1;
+      const isEkhB = b.tailbar.includes("Эхний үлдэгдэл") ? 0 : 1;
+      if (isEkhA !== isEkhB) return isEkhA - isEkhB;
+      
+      return a.index - b.index;
+    });
 
     return { months, avlagaTypes };
   }, [data]);
@@ -120,17 +116,14 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
 
               zardluud.forEach((z) => {
                 if (z.dun <= 0) return;
-                const zName = z.ner || z.turul || "Бусад";
-                if (assessment.tailbar === "Менежмент нэгж" && zName.includes("Менежментийн төлбөр")) {
-                  total += z.dun;
-                } else if (zName === assessment.tailbar) {
+                const zName = z.ner || "Бусад";
+                if (zName === assessment.tailbar) {
                   total += z.dun;
                 }
               });
             }
           });
-          const isSpecialCategory = assessment.tailbar === "Орон сууцны ашиглалт хариуцсан ажилтан, орлогын байцаагч";
-          return isSpecialCategory ? total * 0.4 : total;
+          return total;
         };
 
         cols.push({
@@ -149,7 +142,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
   // Use authoritative total from parent if available; fallback to local calculation
   const localTotalUldegdel = useMemo(() => {
     return (Array.isArray(data) ? data : []).reduce(
-      (s, record) => s + Number(record.niitTulukhDun ?? record.globalUldegdel ?? record.niitUldegdel ?? 0), 0
+      (s, record) => s + Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0), 0
     );
   }, [data]);
 
@@ -195,7 +188,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
           {/* Two-row header: month groups + individual columns */}
           <thead className="sticky top-0 z-20">
             <tr className="bg-gray-100 dark:bg-gray-800/95 backdrop-blur-sm">
-              <th colSpan={4} className="px-3 py-2 text-[12px] font-bold text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 sticky left-0 z-40">
+              <th colSpan={4} className="px-3 py-2 text-[12px]   text-gray-500 dark:text-gray-400 border-b border-r border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 sticky left-0 z-40">
                 Харилцагч
               </th>
               {/* Month groups */}
@@ -203,47 +196,43 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
                 <th
                   key={mg.ym}
                   colSpan={mg.colCount}
-                  className="px-3 py-2 text-[12px] font-bold text-center text-gray-600 dark:text-gray-300 border-b border-r border-gray-200 dark:border-gray-600"
+                  className="px-3 py-2 text-[12px]   text-center text-gray-600 dark:text-gray-300 border-b border-r border-gray-200 dark:border-gray-600"
                 >
                   {mg.ym}
                 </th>
               ))}
-              {/* Uldegdel */}
-              <th className="px-3 py-2 text-[12px] font-bold text-center text-red-600 dark:text-red-400 border-b border-gray-200 dark:border-gray-600 sticky right-0 z-40 bg-gray-100 dark:bg-gray-800">
-                Үлдэгдэл
+              {/* Empty placeholder to match 'Харилцагч' and '2026-04' top groupings */}
+              <th className="px-3 py-2 text-[13px]   text-center text-gray-900 dark:text-white border-b border-l-2 border-gray-200 dark:border-gray-600 sticky right-0 z-40 bg-gray-100 dark:bg-gray-800">
+                
               </th>
             </tr>
 
             {/* Detail columns row */}
             <tr className="bg-gray-50 dark:bg-gray-800/90 backdrop-blur-sm">
-              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky left-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "50px", minWidth: "50px" }}>
+              <th className="px-3 py-2.5 text-[13px]   text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky left-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "50px", minWidth: "50px" }}>
                 №
               </th>
-              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "160px", minWidth: "160px", left: "50px" }}>
+              <th className="px-3 py-2.5 text-[13px]   text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "160px", minWidth: "160px", left: "50px" }}>
                 Нэр
               </th>
-              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "80px", minWidth: "80px", left: "210px" }}>
+              <th className="px-3 py-2.5 text-[13px]   text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "80px", minWidth: "80px", left: "210px" }}>
                 Тоот
               </th>
-              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-r border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "110px", minWidth: "110px", left: "290px" }}>
+              <th className="px-3 py-2.5 text-[13px]   text-center border-b-2 border-r border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 sticky z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "110px", minWidth: "110px", left: "290px" }}>
                 Утас
               </th>
-              {/* Dynamic columns */}
               {dynamicColumns.map((col) => (
                 <th
                   key={col.key}
-                  className="px-2 py-2.5 text-[11px] text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 max-w-[140px] truncate"
+                  className="px-2 py-2.5 text-[11px] text-center border-b-2 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 whitespace-normal leading-tight"
                   style={{ width: col.width, minWidth: "120px" }}
-                  title={col.label}
                 >
-                  <Tooltip title={col.label}>
-                    <span className="truncate block">{col.label}</span>
-                  </Tooltip>
+                  {col.label}
                 </th>
               ))}
-              {/* Нийт үлдэгдэл */}
-              <th className="px-3 py-2.5 text-[13px] font-bold text-center border-b-2 border-l-2 border-gray-200 dark:border-gray-600 text-red-600 dark:text-red-400 sticky right-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "140px", minWidth: "140px" }}>
-                Нийт үлдэгдэл
+              {/* Үлдэгдэл (Second row alignment) */}
+              <th className="px-3 py-2.5 text-[13px]   text-center border-b-2 border-l-2 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white sticky right-0 z-40 bg-gray-50 dark:bg-gray-800" style={{ width: "140px", minWidth: "140px" }}>
+                Үлдэгдэл
               </th>
             </tr>
           </thead>
@@ -258,8 +247,8 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
               const toot = record._id?.toot || record.toot || "-";
               const u = record._id?.utas || record.utas;
               const utas = Array.isArray(u) ? u[0] || "-" : u || "-";
-              // 'Нийт үлдэгдэл' in this view should show the total charges (Billed) without payments, as requested
-              const globalBal = Number(record.niitTulukhDun ?? record.globalUldegdel ?? record.niitUldegdel ?? 0);
+              // Prioritize true balance fields over just the billed amount so old balances show up even without current month invoices.
+              const globalBal = Number(record.niitUldegdel ?? record.globalUldegdel ?? record.niitTulukhDun ?? 0);
 
               return (
                 <tr
@@ -296,7 +285,7 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
                     );
                   })}
                   {/* Нийт үлдэгдэл */}
-                  <td className={`px-3 py-2.5 text-[13px] font-bold text-right whitespace-nowrap border-b border-l-2 border-gray-100 dark:border-gray-800 text-red-600 dark:text-red-400 sticky right-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "140px" }}>
+                  <td className={`px-3 py-2.5 text-[13px]   text-right whitespace-nowrap border-b border-l-2 border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white sticky right-0 z-10 ${index % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-gray-50 dark:bg-gray-800"} group-hover:bg-blue-50 dark:group-hover:bg-blue-950`} style={{ width: "140px" }}>
                     {formatNumber(globalBal, 2)}
                   </td>
                 </tr>
@@ -307,13 +296,19 @@ export function NegtgelTailanTable({ data, loading, authoritativeTotalUldegdel }
           {/* Footer */}
           <tfoot className="sticky bottom-0 z-20">
             <tr className="bg-gray-100/95 dark:bg-gray-800/95 backdrop-blur-sm border-t-2 border-gray-300 dark:border-gray-600 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-              <td colSpan={4} className="px-3 py-3 text-[13px] font-bold text-center text-gray-900 dark:text-white sticky left-0 z-30 bg-gray-100 dark:bg-gray-800">
-                Нийт
-              </td>
-              {dynamicColumns.map((col) => (
-                <td key={col.key} className="px-2 py-3 text-[13px] border-gray-200 dark:border-gray-600" />
-              ))}
-              <td className="px-3 py-3 text-[13px] font-bold text-right text-red-600 dark:text-red-400 border-l-2 border-gray-200 dark:border-gray-600 sticky right-0 z-30 bg-gray-100 dark:bg-gray-800">
+                <td colSpan={4} className="px-3 py-3 text-[13px]   text-center text-gray-900 dark:text-white sticky left-0 z-30 bg-gray-100 dark:bg-gray-800">
+                  
+                </td>
+              {dynamicColumns.length > 0 ? (
+                <td colSpan={dynamicColumns.length} className="px-3 py-3 text-[13px] font-semibold  text-right text-gray-900 dark:text-white border-gray-200 dark:border-gray-600">
+                  Нийт
+                </td>
+              ) : (
+                <td className="px-3 py-3 text-[13px] font-semibold   text-right text-gray-900 dark:text-white border-gray-200 dark:border-gray-600">
+                  Нийт
+                </td>
+              )}
+              <td className="px-3 py-3 text-[13px] font-semibold   text-right text-gray-900 dark:text-white border-l-2 border-gray-200 dark:border-gray-600 sticky right-0 z-30 bg-gray-100 dark:bg-gray-800">
                 {formatNumber(totalUldegdel, 2)}
               </td>
             </tr>
