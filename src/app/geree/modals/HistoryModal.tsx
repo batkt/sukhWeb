@@ -1827,7 +1827,34 @@ export default function HistoryModal({
   const handleDeleteConfirm = async () => {
     const { id } = deleteConfirm;
     const entry = data.find((e) => e._id === id);
-    const source = entry?.sourceCollection || "nekhemjlekhiinTuukh";
+    const inferSourceCollection = (row: any): string => {
+      const explicit = String(row?.sourceCollection || "").trim();
+      if (explicit) return explicit;
+      const khelber = String(row?.khelber || "").toLowerCase();
+      const ner = String(row?.ner || "").toLowerCase();
+      const tul = Number(row?.tulukhDun || 0);
+      const tsu = Number(row?.tulsunDun || 0);
+      // history-ledger rows sometimes omit sourceCollection; infer from economic direction.
+      if (
+        tsu > 0 &&
+        tul <= 0 &&
+        (khelber.includes("төлбөр") ||
+          khelber.includes("төлөлт") ||
+          ner.includes("төлөлт") ||
+          ner.includes("ашиглалт"))
+      ) {
+        return "gereeniiTulsunAvlaga";
+      }
+      if (
+        tul > 0 &&
+        tsu <= 0 &&
+        (khelber.includes("авлага") || ner.includes("эхний үлдэгдэл"))
+      ) {
+        return "gereeniiTulukhAvlaga";
+      }
+      return "nekhemjlekhiinTuukh";
+    };
+    const source = inferSourceCollection(entry);
 
     setDeleteConfirm({ show: false, id: "", type: "" });
 
@@ -1872,29 +1899,42 @@ export default function HistoryModal({
         response.status === 200 ||
         response.status === 204
       ) {
-        // Cascade delete related records when deleting from nekhemjlekhiinTuukh
+        // Cascade delete related records when deleting from nekhemjlekhiinTuukh.
+        // Delete only by exact row ids; never call broad query-only DELETE.
         if (source === "nekhemjlekhiinTuukh" && contract?.gereeniiId) {
-          // Delete related records from gereeniiTulsunAvlaga
-          await uilchilgee(token || undefined)
-            .delete(`/gereeniiTulsunAvlaga`, {
-              params: {
-                baiguullagiinId: baiguullagiinId || undefined,
-                gereeniiId: contract.gereeniiId,
-                nekhemjlekhiinId: id,
-              },
-            })
-            .catch(() => {}); // Silently ignore if no records exist
-
-          // Delete related records from gereeniiTulukhAvlaga
-          await uilchilgee(token || undefined)
-            .delete(`/gereeniiTulukhAvlaga`, {
-              params: {
-                baiguullagiinId: baiguullagiinId || undefined,
-                gereeniiId: contract.gereeniiId,
-                nekhemjlekhiinId: id,
-              },
-            })
-            .catch(() => {}); // Silently ignore if no records exist
+          const deleteRelatedByInvoice = async (basePath: string) => {
+            try {
+              const listResp = await uilchilgee(token || undefined).get(basePath, {
+                params: {
+                  baiguullagiinId: baiguullagiinId || undefined,
+                  gereeniiId: contract.gereeniiId,
+                  nekhemjlekhiinId: id,
+                },
+              });
+              const rows = Array.isArray(listResp.data?.jagsaalt)
+                ? listResp.data.jagsaalt
+                : Array.isArray(listResp.data?.data)
+                  ? listResp.data.data
+                  : Array.isArray(listResp.data)
+                    ? listResp.data
+                    : [];
+              for (const row of rows) {
+                const rid = String(row?._id || "").trim();
+                if (!rid) continue;
+                await uilchilgee(token || undefined)
+                  .delete(`${basePath}/${rid}`, {
+                    params: {
+                      baiguullagiinId: baiguullagiinId || undefined,
+                    },
+                  })
+                  .catch(() => {});
+              }
+            } catch {
+              // best-effort only
+            }
+          };
+          await deleteRelatedByInvoice("/gereeniiTulsunAvlaga");
+          await deleteRelatedByInvoice("/gereeniiTulukhAvlaga");
         }
 
         // Show success message
