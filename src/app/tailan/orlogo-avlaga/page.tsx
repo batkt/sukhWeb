@@ -611,17 +611,19 @@ export default function OrlogoAvlagaPage() {
     let billedSum = 0;
     let paidSum = 0;
     let finalBalSum = 0;
+    let ekhniiUldegdelSum = 0;
 
     displayList.forEach((record) => {
       billedSum += record._periodTulbur ?? 0;
       paidSum += Number(record._periodPaid ?? getPaid(record));
       finalBalSum += record._finalUldegdel ?? getUldegdel(record);
+      ekhniiUldegdelSum += Number(record._ekhniiUldegdel ?? 0);
     });
 
     const billed = Math.round(billedSum * 100) / 100;
     const paid = Math.round(paidSum * 100) / 100;
     const finalBalance = Math.round(finalBalSum * 100) / 100;
-    const ekhniiUldegdel = Math.round((finalBalance - billed + paid) * 100) / 100;
+    const ekhniiUldegdel = Math.round(ekhniiUldegdelSum * 100) / 100;
 
     return { ekhniiUldegdel, billed, paid, finalBalance };
   }, [displayList, getPaid, getUldegdel]);

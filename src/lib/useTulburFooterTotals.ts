@@ -260,49 +260,45 @@ export function useTulburFooterTotals(
         const ledger = resp.data?.jagsaalt || resp.data?.ledger || resp.data || [];
         
         let filteredLedger = ledger;
-        if (endDate || startDate) {
-          const startMs = startDate ? new Date(startDate as string).getTime() : 0;
-          const endObj = new Date((endDate || startDate) as string);
-          endObj.setHours(23, 59, 59, 999);
-          const endMs = endObj.getTime();
+        const startMs = startDate ? new Date(startDate as string).getTime() : 0;
+        const endMs = endDate || startDate
+          ? (() => { const d = new Date((endDate || startDate) as string); d.setHours(23, 59, 59, 999); return d.getTime(); })()
+          : Number.MAX_SAFE_INTEGER;
           
-          let pBilled = 0;
-          let pPaid = 0;
+        let pBilled = 0;
+        let pPaid = 0;
 
-          // Full ledger is sorted by backend. Identify rows within range.
-          const inRangeRows = ledger.filter((row: any) => {
-            if (!row?.ognoo) return false;
-            const ms = new Date(row.ognoo).getTime();
-            return ms >= startMs && ms <= endMs;
-          });
+        // Full ledger is sorted by backend. Identify rows within range.
+        const inRangeRows = ledger.filter((row: any) => {
+          if (!row?.ognoo) return false;
+          const ms = new Date(row.ognoo).getTime();
+          return ms >= startMs && ms <= endMs;
+        });
 
-          inRangeRows.forEach((row: any) => {
-             const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
-             if (!isEkh) pBilled += Number(row.tulukhDun ?? 0);
-             pPaid += Number(row.tulsunDun ?? 0);
-          });
+        inRangeRows.forEach((row: any) => {
+           const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
+           if (!isEkh) pBilled += Number(row.tulukhDun ?? 0);
+           pPaid += Number(row.tulsunDun ?? 0);
+        });
 
-          setLedgerBilledByGid(prev => ({ ...prev, [gid]: pBilled }));
-          setLedgerPaidByGid(prev => ({ ...prev, [gid]: pPaid }));
+        setLedgerBilledByGid(prev => ({ ...prev, [gid]: pBilled }));
+        setLedgerPaidByGid(prev => ({ ...prev, [gid]: pPaid }));
 
-          // Opening Balance is the running balance BEFORE the first row of the period
-          const firstIdx = ledger.findIndex((row: any) => row?.ognoo && new Date(row.ognoo).getTime() >= startMs);
-          if (firstIdx !== -1) {
-            const row = ledger[firstIdx];
-            const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
-            // ekhnii = balance_after_this_row - this_row_impact
-            const chargeImpact = !isEkh ? Number(row.tulukhDun ?? 0) : 0;
-            const payImpact = Number(row.tulsunDun ?? 0);
-            const ekhnii = Number(row.uldegdel ?? 0) - chargeImpact + payImpact;
-            setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: ekhnii }));
-          } else if (ledger.length > 0) {
-            // All rows are before startMs
-            setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: Number(ledger[ledger.length - 1].uldegdel ?? 0) }));
-          }
-
-          const latestRow = inRangeRows.length > 0 ? inRangeRows[inRangeRows.length - 1] : null;
-          setUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestRow ? latestRow.uldegdel : (ledger[ledger.length - 1]?.uldegdel ?? 0) }));
+        // Opening Balance is the running balance BEFORE the first row of the period
+        const firstIdx = ledger.findIndex((row: any) => row?.ognoo && new Date(row.ognoo).getTime() >= startMs);
+        if (firstIdx !== -1) {
+          const row = ledger[firstIdx];
+          const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
+          const chargeImpact = !isEkh ? Number(row.tulukhDun ?? 0) : 0;
+          const payImpact = Number(row.tulsunDun ?? 0);
+          const ekhnii = Number(row.uldegdel ?? 0) - chargeImpact + payImpact;
+          setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: ekhnii }));
+        } else if (ledger.length > 0) {
+          setEkhniiUldegdelByGereeId(prev => ({ ...prev, [gid]: Number(ledger[ledger.length - 1].uldegdel ?? 0) }));
         }
+
+        const latestRow = inRangeRows.length > 0 ? inRangeRows[inRangeRows.length - 1] : null;
+        setUldegdelByGereeId((prev) => ({ ...prev, [gid]: latestRow ? latestRow.uldegdel : (ledger[ledger.length - 1]?.uldegdel ?? 0) }));
       }).catch(() => { uldegdelRequestedRef.current.delete(gid); });
     });
   }, [token, baiguullagiinId, deduplicatedResidents]);
@@ -328,11 +324,10 @@ export function useTulburFooterTotals(
     let tuluvUnpaidCount = 0;
     let totalEkhniiUldegdel = 0;
 
-    const [defaultStart, defaultEnd] = getDefaultDateRange();
-    const startMs = new Date(startDate || defaultStart).getTime();
-    const endObj = new Date(endDate || defaultEnd);
-    endObj.setHours(23, 59, 59, 999);
-    const endMs = endObj.getTime();
+    const startMs = startDate ? new Date(startDate).getTime() : 0;
+    const endMs = endDate || startDate
+      ? (() => { const d = new Date((endDate || startDate) as string); d.setHours(23, 59, 59, 999); return d.getTime(); })()
+      : Number.MAX_SAFE_INTEGER;
 
     const aggregatePaidMap = aggregateLedgerTulsunByGereeIdInRange(buildingHistoryItems, contractsByNumber, startMs, endMs);
     const aggregateBilledMap: Record<string, number> = {};
@@ -347,11 +342,8 @@ export function useTulburFooterTotals(
       const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
       const type = String(it?.turul || it?.type || "").toLowerCase();
       const isPayment = type === "tulult" || type === "төлбөр" || type === "төлөлт" || (amount < 0 && !isStandaloneEkh);
-      if (isPayment) {
-        aggregatePaidMap[gid] = (aggregatePaidMap[gid] || 0) + (fromTulsun || Math.abs(amount));
-      } else {
+      if (!isPayment) {
         aggregateBilledMap[gid] = (aggregateBilledMap[gid] || 0) + Math.abs(amount);
-        aggregatePaidMap[gid] = (aggregatePaidMap[gid] || 0) + Math.abs(fromTulsun);
       }
     });
 
