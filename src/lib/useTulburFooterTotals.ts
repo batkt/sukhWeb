@@ -276,7 +276,10 @@ export function useTulburFooterTotals(
         });
 
         inRangeRows.forEach((row: any) => {
-           const isEkh = row.ner === "Эхний үлдэгдэл" || (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл"));
+           const isEkh = row.ner === "Эхний үлдэгдэл" || 
+                        (row.tailbar && row.tailbar.includes("Эхний үлдэгдэл")) ||
+                        row.ner === "Opening Balance" ||
+                        (row.tailbar && row.tailbar.toLowerCase().includes("opening"));
            if (!isEkh) pBilled += Number(row.tulukhDun ?? 0);
            pPaid += Number(row.tulsunDun ?? 0);
         });
@@ -339,10 +342,18 @@ export function useTulburFooterTotals(
       if (!gid) return;
       const amount = Number(it?.niitTulbur ?? it?.niitDun ?? it?.total ?? it?.tulukhDun ?? it?.undsenDun ?? it?.dun ?? 0);
       const fromTulsun = Number(it?.tulsunDun ?? 0);
-      const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
       const type = String(it?.turul || it?.type || "").toLowerCase();
+      const ner = String(it?.ner || "").toLowerCase();
+      const tailbar = String(it?.tailbar || it?.medeelel?.tailbar || "").toLowerCase();
+      const isStandaloneEkh = it?.ekhniiUldegdelEsekh === true;
+      const isOpening = isStandaloneEkh || 
+                       ner.includes("эхний") || 
+                       ner.includes("opening") ||
+                       tailbar.includes("эхний") ||
+                       tailbar.includes("opening");
       const isPayment = type === "tulult" || type === "төлбөр" || type === "төлөлт" || (amount < 0 && !isStandaloneEkh);
-      if (!isPayment) {
+
+      if (!isPayment && !isOpening) {
         aggregateBilledMap[gid] = (aggregateBilledMap[gid] || 0) + Math.abs(amount);
       }
     });

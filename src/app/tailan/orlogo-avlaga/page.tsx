@@ -499,7 +499,9 @@ export default function OrlogoAvlagaPage() {
       const ekhBal = 
         footerTotals.ekhniiUldegdelByGereeId[gid] != null
           ? Number(footerTotals.ekhniiUldegdelByGereeId[gid])
-          : finalBal - periodBilled + periodPaid;
+          : !effectiveDateFilter.hasDateFilter
+            ? Number(ct.ekhniiUldegdel ?? 0)
+            : finalBal - periodBilled + periodPaid;
 
       map.set(gid, {
         ...ct,
@@ -726,7 +728,7 @@ export default function OrlogoAvlagaPage() {
       const body = {
         data: tableData,
         headers,
-        fileName: `${activeTab === "tulult" ? "orlogo" : "avlaga"}_report_${new Date().toISOString().split("T")[0]}`,
+        fileName: `Төлбөр_тооцооны_тайлан_${activeTab === "tulult" ? "орлого" : "авлага"}_${new Date().toISOString().split("T")[0]}`,
         sheetName: "Орлого авлагын тайлан",
       };
 

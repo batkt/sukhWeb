@@ -428,10 +428,10 @@ function LedgerMonthlyBreakdownTable({
               Өмнөх үлдэгдэл
             </th>
             <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
-              Төлөх нийт
+              Төлөх
             </th>
             <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
-              Төлсөн нийт
+              Төлсөн
             </th>
             <th className="py-3 px-3 font-semibold whitespace-nowrap text-center">
               Сарын эцсийн үлдэгдэл
@@ -471,17 +471,17 @@ function LedgerMonthlyBreakdownTable({
           <tr className="history-print-total-row border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
             <td
               colSpan={2}
-              className="py-3 px-3 text-center text-slate-800 dark:text-slate-100 font-bold"
+              className="py-3 px-3 text-left text-slate-800 dark:text-slate-100 font-bold"
             >
               Нийт
             </td>
-            <td className="py-3 px-3 text-right tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
               {formatCurrency(totalTulukh)} ₮
             </td>
-            <td className="py-3 px-3 text-right tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
               {formatCurrency(totalTulsun)} ₮
             </td>
-            <td className="py-3 px-3 text-right tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
+            <td className="py-3 px-3 text-left tabular-nums text-slate-800 dark:text-slate-100 whitespace-nowrap font-bold">
               {formatCurrency(finalUldegdel)} ₮
             </td>
           </tr>
@@ -2456,12 +2456,10 @@ export default function HistoryModal({
                                   </tr>
                                 )}
                                 <tr className="history-print-total-row bg-slate-100 dark:bg-slate-800/50">
-                                  <td className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-1.5 text-[13px] text-slate-700 dark:text-slate-200 text-center border-t-2 border-slate-300 dark:border-slate-600 tabular-nums print:text-black">
-                                  —
-                                </td>
+                                  
                                 <td
                                   colSpan={2}
-                                  className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-right border-t-2 border-slate-300 dark:border-slate-600"
+                                  className="sticky bottom-0 z-10 bg-slate-100 dark:bg-slate-800 py-2 px-2 text-[13px]  text-slate-700 dark:text-slate-200 text-left border-t-2 border-slate-300 dark:border-slate-600"
                                 >
                                   Нийт
                                 </td>

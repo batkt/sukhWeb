@@ -144,7 +144,7 @@ export default function NegtgelTailanPage() {
       link.href = url;
       link.setAttribute(
         "download",
-        `negtgel_tailan_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        `Нэгтгэл_Тайлан_${new Date().toISOString().slice(0, 10)}.xlsx`,
       );
       document.body.appendChild(link);
       link.click();

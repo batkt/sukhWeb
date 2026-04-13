@@ -109,9 +109,16 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
     }
   };
 
-  const getCellClassName = (key: string) => {
+  const getCellClassName = (key: string, record?: AvlagiinNasjiltItem, value?: number) => {
     if (key === "tulsunDun") return "text-emerald-600 dark:text-emerald-400";
-    if (key === "uldegdel") return "text-red-500 dark:text-red-400";
+    if (key === "uldegdel") {
+      const val = record ? Number(record.uldegdel ?? record.tulukhDun ?? 0) : (value ?? 0);
+      return val < 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400";
+    }
+    const val = record ? Number(record[key] || 0) : (value ?? 0);
+    if (["p0_30", "p31_60", "p61_90", "p120plus"].includes(key) && val < 0) {
+      return "text-emerald-600 dark:text-emerald-400";
+    }
     return "text-gray-900 dark:text-white";
   };
 
@@ -201,7 +208,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                       px-3 py-2.5 text-[13px] whitespace-nowrap
                       border-b border-gray-100 dark:border-gray-800
                       ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                      ${getCellClassName(col.key)}
+                      ${getCellClassName(col.key, record)}
                       ${col.fixed ? "sticky left-0 z-10 bg-inherit" : ""}
                     `}
                     style={{
@@ -232,9 +239,7 @@ export const AvlagiinNasjiltTable: React.FC<AvlagiinNasjiltTableProps> = ({
                       className={`
                         px-3 py-3 text-[13px] font-medium whitespace-nowrap
                         ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : "text-left"}
-                        ${col.key === "tulsunDun" ? "text-emerald-600 dark:text-emerald-400" : ""}
-                        ${col.key === "uldegdel" ? "text-red-500 dark:text-red-400" : ""}
-                        ${!["tulsunDun", "uldegdel"].includes(col.key) ? "text-gray-900 dark:text-white" : ""}
+                        ${getCellClassName(col.key, undefined, totals?.[col.key as keyof typeof totals] || 0)}
                         ${col.fixed ? "sticky left-0 z-30 bg-gray-100 dark:bg-gray-800" : ""}
                       `}
                       style={{

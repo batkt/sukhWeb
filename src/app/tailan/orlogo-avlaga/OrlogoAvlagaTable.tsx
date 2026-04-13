@@ -73,6 +73,13 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
   dateRange,
 }) => {
   const dragControls = useDragControls();
+  const [ledgerPage, setLedgerPage] = React.useState(1);
+
+  React.useEffect(() => {
+    if (modalOpen) {
+      setLedgerPage(1);
+    }
+  }, [modalOpen, selectedRecord]);
 
   const baseColumns = useMemo(() => [
     { key: "index", label: "№", width: "50px", align: "center" as const },
@@ -165,7 +172,7 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
     const headerClassName = "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white font-semibold text-[13px]";
 
     const ledgerColumns: ColumnsType<any> = [
-      { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, row: any) => row._absIdx },
+      { title: "№", key: "index", width: 50, align: "center", className: headerClassName, render: (_: any, __: any, index: number) => (ledgerPage - 1) * 50 + index + 1 },
       { title: "Огноо", dataIndex: "ognoo", key: "ognoo", width: 100, className: headerClassName,
         render: (val: string) => <span className="text-gray-900 dark:text-white whitespace-nowrap text-[13px]">{val ? new Date(val).toLocaleString("mn-MN", { year: "numeric", month: "2-digit", day: "2-digit"}) : "-"}</span> },
       { title: "Тайлбар", dataIndex: "tailbar", key: "tailbar", width: 200, className: headerClassName,
@@ -195,10 +202,15 @@ export const OrlogoAvlagaTable: React.FC<OrlogoAvlagaTableProps> = ({
           <div className="py-4 text-center text-gray-500 dark:text-gray-400">Тэмдэглэл алга байна</div>
         ) : (
           <Table
-            dataSource={filteredLedger.map((r: any, i: number) => ({ ...r, _absIdx: i + 1 }))}
+            dataSource={filteredLedger}
             columns={ledgerColumns}
             rowKey={(r) => r._id || Math.random().toString()}
-            pagination={{ pageSize: 20, showSizeChanger: false }}
+            pagination={{
+              pageSize: 50,
+              showSizeChanger: false,
+              current: ledgerPage,
+              onChange: (p) => setLedgerPage(p)
+            }}
             size="small"
             bordered
             sticky

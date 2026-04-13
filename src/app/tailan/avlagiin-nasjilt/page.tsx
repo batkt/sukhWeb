@@ -290,7 +290,7 @@ export default function AvlagiinNasjiltPage() {
       const url = window.URL.createObjectURL(new Blob([resp.data]));
       const a = document.createElement("a");
       a.href = url;
-      a.download = `avlagiin_nasjilt_${dayjs().format("YYYY-MM-DD")}.xlsx`;
+      a.download = `Авлагын_насжилтын_тайлан_${dayjs().format("YYYY-MM-DD")}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
