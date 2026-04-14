@@ -8,6 +8,7 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 // import KhungulultPage from "../khungulult/page";
 import { useAuth } from "@/lib/useAuth";
+import { hasPermission } from "@/lib/permissionUtils";
 import { useOrshinSuugchJagsaalt } from "@/lib/useOrshinSuugch";
 import { useGereeJagsaalt } from "@/lib/useGeree";
 import uilchilgee from "@/lib/uilchilgee";
@@ -128,6 +129,10 @@ export default function DansniiKhuulga() {
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const { searchTerm } = useSearch();
   const { token, ajiltan, barilgiinId } = useAuth();
+  const canCreateTransaction =
+    ajiltan?.erkh?.toLowerCase?.() === "admin" ||
+    hasPermission(ajiltan, "/tulbur/guilgeeHiikh") ||
+    hasPermission(ajiltan, "tulbur.guilgeeHiikh");
   const { selectedBuildingId } = useBuilding();
   const effectiveBarilgiinId = selectedBuildingId || barilgiinId || undefined;
   const { baiguullaga, baiguullagaMutate } = useBaiguullaga(
@@ -3321,6 +3326,7 @@ export default function DansniiKhuulga() {
               monthlyPeriods={monthlyPeriods}
               matrixMonthKey={monthlyMatrixRange.monthKey}
               historyScopedByDate={historyScopedByDate}
+              canCreateTransaction={canCreateTransaction}
               maxHeight="calc(100vh - 550px)"
               onViewInvoice={(residentData: any) => {
                 setSelectedResident(residentData);

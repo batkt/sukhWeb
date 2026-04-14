@@ -229,7 +229,7 @@ export default function EmployeeSettingsPage() {
 
   return (
     <GolContent>
-      <div className="max-w-7xl mx-auto space-y-4">
+      <div className="w-full max-w-[1800px] mx-auto px-2 space-y-4 h-[calc(100vh-160px)] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -241,9 +241,6 @@ export default function EmployeeSettingsPage() {
             </button>
             <div>
               <h1 className="text-2xl  text-theme">Ажилтны тохиргоо</h1>
-              <p className="text-sm text-subtle">
-                {employee.ner || employee.nevtrekhNer} - {employee.albanTushaal}
-              </p>
             </div>
           </div>
           <button
@@ -288,9 +285,9 @@ export default function EmployeeSettingsPage() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-4 lg:h-[calc(100vh-200px)] lg:min-h-[400px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-2 flex-1 min-h-0">
           {/* Section 1: Building Assignment */}
-          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Building2 className="w-5 h-5 text-blue-500" />
@@ -338,7 +335,10 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 flex-1 min-h-0 max-h-[260px] lg:max-h-none overflow-y-auto custom-scrollbar">
+            <div
+              className="space-y-2 flex-1 min-h-0 max-h-[260px] lg:max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar"
+              tabIndex={0}
+            >
               {buildings.length === 0 ? (
                 <div className="text-center py-8 text-subtle text-sm">
                   Барилга олдсонгүй
@@ -374,7 +374,7 @@ export default function EmployeeSettingsPage() {
           </div>
 
           {/* Section 2: Window Permissions (Modules) */}
-          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-500" />
@@ -421,7 +421,10 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-none overflow-y-auto custom-scrollbar">
+            <div
+              className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar"
+              tabIndex={0}
+            >
               {ALL_PERMISSIONS.map((perm) => {
                 const isSelected = selectedPermissions.includes(perm.id);
                 const hasChildren = perm.children && perm.children.length > 0;
@@ -485,7 +488,7 @@ export default function EmployeeSettingsPage() {
           </div>
 
           {/* Section 3: Settings Permissions */}
-          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0">
+          <div className="neu-panel rounded-2xl p-4 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Settings className="w-5 h-5 text-purple-500" />
@@ -532,7 +535,10 @@ export default function EmployeeSettingsPage() {
                 </button>
               </div>
             </div>
-            <div className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-none overflow-y-auto custom-scrollbar">
+            <div
+              className="space-y-2 flex-1 min-h-0 max-h-[280px] lg:max-h-[calc(100vh-320px)] overflow-y-auto custom-scrollbar"
+              tabIndex={0}
+            >
               {SETTINGS_PERMISSIONS.map((setting) => {
                 const isSelected = selectedSettings.includes(setting.id);
                 return (

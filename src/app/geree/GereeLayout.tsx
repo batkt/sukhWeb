@@ -24,6 +24,58 @@ export default function GereeLayout({ children, activeTab }: GereeLayoutProps) {
     router.push(routes[tab]);
   };
 
+  const handleOpenResidentModal = React.useCallback(() => {
+    state.setEditingResident(null);
+    state.setNewResident({
+      ovog: "",
+      ner: "",
+      register: "",
+      utas: [""],
+      khayag: "",
+      aimag: "Улаанбаатар",
+      duureg: "",
+      horoo: "",
+      orts: "",
+      toot: "",
+      davkhar: "",
+      tsahilgaaniiZaalt: "",
+      turul: "Үндсэн",
+      tailbar: "",
+      ekhniiUldegdel: 0,
+    });
+    state.setShowResidentModal(true);
+  }, [state]);
+
+  React.useEffect(() => {
+    const isTypingTarget = (el: EventTarget | null): boolean => {
+      const node = el as HTMLElement | null;
+      if (!node) return false;
+      const tag = (node.tagName || "").toLowerCase();
+      return (
+        tag === "input" ||
+        tag === "textarea" ||
+        tag === "select" ||
+        node.isContentEditable
+      );
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (activeTab !== "residents") return;
+      if (state.showResidentModal) return;
+      if (isTypingTarget(e.target)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const isPlus = e.key === "+" || e.code === "NumpadAdd";
+      if (!isPlus) return;
+
+      e.preventDefault();
+      handleOpenResidentModal();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeTab, state.showResidentModal, handleOpenResidentModal]);
+
   return (
     <div className="w-full pb-6" style={{ minHeight: "calc(100vh - 140px)" }}>
       <GereeHeader
@@ -52,7 +104,7 @@ export default function GereeLayout({ children, activeTab }: GereeLayoutProps) {
         onShowAvlagaModal={() => state.setShowAvlagaModal(true)}
         onShowList2Modal={() => state.setShowList2Modal(true)}
         onSendInvoices={() => actions.handleSendInvoices(state.selectedContracts)}
-        onShowResidentModal={actions.handleShowResidentModal}
+        onShowResidentModal={handleOpenResidentModal}
         onExportResidentsExcel={actions.handleExportResidentsExcel}
         onDownloadResidentsTemplate={actions.handleDownloadResidentsTemplate}
         onResidentsExcelImportClick={actions.handleResidentsExcelImportClick}

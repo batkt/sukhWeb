@@ -9,20 +9,34 @@ import { hasPermission } from "@/lib/permissionUtils";
 export default function AjiltanPage() {
   const router = useRouter();
   const { state, data, actions, ajiltan } = useGereeContext();
+  const hasGereeBase =
+    hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
+  const canViewEmployees =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/ajiltan") ||
+    hasPermission(ajiltan, "geree.ajiltan") ||
+    hasPermission(ajiltan, "/geree/ajiltan/harah") ||
+    hasPermission(ajiltan, "geree.ajiltan.harah");
+  const canEditEmployees =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/ajiltan/zasah") ||
+    hasPermission(ajiltan, "geree.ajiltan.zasah");
+  const canDeleteEmployees =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/ajiltan/ustgah") ||
+    hasPermission(ajiltan, "geree.ajiltan.ustgah");
+  const canManageEmployeePermissions =
+    hasGereeBase ||
+    hasPermission(ajiltan, "/geree/ajiltan/erkhTokhirgoo") ||
+    hasPermission(ajiltan, "geree.ajiltan.erkhTokhirgoo");
 
   useEffect(() => {
     if (ajiltan) {
-      const hasGereeBase =
-        hasPermission(ajiltan, "/geree") || hasPermission(ajiltan, "geree");
-      const allowed =
-        hasGereeBase ||
-        hasPermission(ajiltan, "/geree/ajiltan") ||
-        hasPermission(ajiltan, "geree.ajiltan");
-      if (!allowed) {
+      if (!canViewEmployees) {
         router.push("/geree");
       }
     }
-  }, [ajiltan, router]);
+  }, [ajiltan, canViewEmployees, router]);
 
   return (
     <EmployeesSection
@@ -34,6 +48,9 @@ export default function AjiltanPage() {
       empTotalPages={data.empTotalPages}
       setEmpPage={state.setEmpPage}
       setEmpPageSize={state.setEmpPageSize}
+      canEdit={canEditEmployees}
+      canDelete={canDeleteEmployees}
+      canManagePermissions={canManageEmployeePermissions}
       onEdit={actions.handleEditEmployee}
       onDelete={(e) => {
         state.setEmployeeToDelete(e);

@@ -38,6 +38,7 @@ interface GuilgeeTableProps {
   onViewInvoice: (resident: any) => void;
   onViewHistory: (resident: any) => void;
   onTransaction: (resident: any, remainingValue: number) => void;
+  canCreateTransaction?: boolean;
   maxHeight?: string | number;
 }
 
@@ -66,6 +67,7 @@ export default function GuilgeeTable({
   onViewInvoice,
   onViewHistory,
   onTransaction,
+  canCreateTransaction = true,
   maxHeight = "calc(100vh - 500px)",
 }: GuilgeeTableProps) {
   // Check if checkbox column is visible
@@ -559,13 +561,15 @@ export default function GuilgeeTable({
 
               return (
                 <div className="flex items-center justify-around">
-                  <button
-                    onClick={() => onTransaction(residentData, remainingValue)}
-                    className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
-                    title="Гүйлгээ хийх"
-                  >
-                    <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
-                  </button>
+                  {canCreateTransaction && (
+                    <button
+                      onClick={() => onTransaction(residentData, remainingValue)}
+                      className="p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors group"
+                      title="Гүйлгээ хийх"
+                    >
+                      <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300" />
+                    </button>
+                  )}
                   <button
                     onClick={() => onViewHistory(residentData)}
                     className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
@@ -603,6 +607,7 @@ export default function GuilgeeTable({
     monthlyPeriods,
     matrixMonthKey,
     historyScopedByDate,
+    canCreateTransaction,
   ]);
 
   // Handle table change (sorting)

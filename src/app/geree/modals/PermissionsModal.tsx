@@ -335,7 +335,7 @@ export default function PermissionsModal({
             dragConstraints={constraintsRef}
             dragMomentum={false}
             onClick={(e) => e.stopPropagation()}
-            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface w-[800px] max-w-[95vw] h-[650px] max-h-[90vh] rounded-xl shadow-2xl p-0 flex flex-col"
+            className="fixed left-1/2 top-1/2 z-[12001] -translate-x-1/2 -translate-y-1/2 modal-surface w-[800px] max-w-[95vw] h-[650px] max-h-[90vh] rounded-xl shadow-2xl p-0 flex flex-col min-h-0"
           >
             {/* Header */}
             <div
@@ -396,7 +396,10 @@ export default function PermissionsModal({
             </div>
 
             {/* Permissions List */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-1.5 custom-scrollbar">
+            <div
+              className="flex-1 min-h-0 overflow-y-auto p-2 sm:p-3 space-y-1.5 custom-scrollbar"
+              tabIndex={0}
+            >
               {ALL_PERMISSIONS.map((item) => {
                 const isExpanded = expandedSections.has(item.id);
                 const isSelected = isPermissionSelected(item.id);

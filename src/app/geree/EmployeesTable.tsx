@@ -18,6 +18,9 @@ interface EmployeesTableProps {
   loading?: boolean;
   page?: number;
   pageSize?: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  canManagePermissions?: boolean;
   onEdit?: (employee: EmployeeItem) => void;
   onDelete?: (employee: EmployeeItem) => void;
   onManagePermissions?: (employee: EmployeeItem) => void;
@@ -31,6 +34,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
   loading = false,
   page = 1,
   pageSize = 10,
+  canEdit = true,
+  canDelete = true,
+  canManagePermissions = true,
   onEdit,
   onDelete,
   onManagePermissions,
@@ -105,14 +111,16 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
         className: "bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white",
         render: (_: any, record: EmployeeItem) => (
           <div className="flex gap-2 justify-center">
-            <button
-              type="button"
-              onClick={() => onManagePermissions?.(record)}
-              className="p-2 rounded-2xl action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
-              title="Эрх удирдлага"
-            >
-              <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            </button>
+            {canManagePermissions && (
+              <button
+                type="button"
+                onClick={() => onManagePermissions?.(record)}
+                className="p-2 rounded-2xl action-primary hover-surface transition-colors hover:bg-purple-100 dark:hover:bg-purple-900/30"
+                title="Эрх удирдлага"
+              >
+                <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </button>
+            )}
             <button
               type="button"
               onClick={() => onCredentialsUpdate?.(record)}
@@ -121,22 +129,26 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
             >
               <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             </button>
-            <button
-              type="button"
-              onClick={() => onEdit?.(record)}
-              className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
-              title="Засах"
-            >
-              <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete?.(record)}
-              className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
-              title="Устгах"
-            >
-              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
-            </button>
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit?.(record)}
+                className="p-2 rounded-2xl action-edit hover-surface transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                title="Засах"
+              >
+                <Edit className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete?.(record)}
+                className="p-2 rounded-2xl action-delete hover-surface transition-colors hover:bg-red-100 dark:hover:bg-red-900/30"
+                title="Устгах"
+              >
+                <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </button>
+            )}
           </div>
         ),
       },
@@ -148,6 +160,9 @@ export const EmployeesTable: React.FC<EmployeesTableProps> = ({
       onDelete,
       onManagePermissions,
       onCredentialsUpdate,
+      canEdit,
+      canDelete,
+      canManagePermissions,
     ],
   );
 

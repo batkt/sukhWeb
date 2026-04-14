@@ -13,6 +13,9 @@ interface EmployeesSectionProps {
   empTotalPages: number;
   setEmpPage: (page: number) => void;
   setEmpPageSize: (size: number) => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  canManagePermissions: boolean;
   onEdit: (employee: any) => void;
   onDelete: (employee: any) => void;
   onManagePermissions: (employee: any) => void;
@@ -28,6 +31,9 @@ export default function EmployeesSection({
   empTotalPages,
   setEmpPage,
   setEmpPageSize,
+  canEdit,
+  canDelete,
+  canManagePermissions,
   onEdit,
   onDelete,
   onManagePermissions,
@@ -49,6 +55,9 @@ export default function EmployeesSection({
           loading={isValidatingAjiltan}
           page={empPage}
           pageSize={empPageSize}
+          canEdit={canEdit}
+          canDelete={canDelete}
+          canManagePermissions={canManagePermissions}
           onEdit={onEdit}
           onDelete={onDelete}
           onManagePermissions={onManagePermissions}

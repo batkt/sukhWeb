@@ -32,8 +32,23 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
       },
       {
         id: "geree.ajiltan",
-        label: "Ажилтан",
-        description: "Ажилтан харах эрх",
+        label: "Ажилтан (харах)",
+        description: "Ажилтны жагсаалт харах эрх",
+      },
+      {
+        id: "geree.ajiltan.zasah",
+        label: "Ажилтан засах",
+        description: "Ажилтны мэдээлэл засах эрх",
+      },
+      {
+        id: "geree.ajiltan.ustgah",
+        label: "Ажилтан устгах",
+        description: "Ажилтныг устгах эрх",
+      },
+      {
+        id: "geree.ajiltan.erkhTokhirgoo",
+        label: "Ажилтны эрх тохируулах",
+        description: "Ажилтны эрх/нэвтрэх эрх тохируулах эрх",
       },
     ],
   },
@@ -56,6 +71,11 @@ export const ALL_PERMISSIONS: PermissionItem[] = [
         id: "tulbur.guilgeeTuukh",
         label: "Гүйлгээний түүх",
         description: "Гүйлгээний түүх харах",
+      },
+      {
+        id: "tulbur.guilgeeHiikh",
+        label: "Гүйлгээ хийх",
+        description: "Гүйлгээ үүсгэх/бүртгэх эрх",
       },
       {
         id: "tulbur.ebarimt",

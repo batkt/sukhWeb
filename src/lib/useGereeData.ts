@@ -72,7 +72,9 @@ export function useGereeData(
   } = useAjiltniiJagsaalt(
     token || "",
     ajiltan?.baiguullagiinId || "",
-    effectiveBarilgiinId,
+    // Keep employee management org-wide. If this is tied to selected building,
+    // an employee can disappear from list immediately after unassigning that building.
+    undefined,
     {},
   );
 
