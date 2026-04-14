@@ -4643,13 +4643,17 @@ a:active {
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
-/* Scroll background and corner fix */
+/* Scroll background and corner — match zebra row base (gray-800) so filler below last row is not darker than cells */
 .dark .guilgee-table .ant-table-body,
 .dark .guilgee-table .ant-table-header,
 .dark .guilgee-table .ant-table-footer,
 .dark .guilgee-table .ant-table-sticky-holder,
 .dark .guilgee-table .ant-table-body::-webkit-scrollbar-corner {
-  background-color: rgb(11, 15, 25) !important;
+  background-color: rgb(
+    31,
+    41,
+    55
+  ) !important; /* gray-800, same as even row cells */
 }
 
 .dark .ant-table,
@@ -4657,9 +4661,36 @@ a:active {
 .dark .ant-table-content,
 .dark .ant-table-body,
 .dark .ant-table-tbody {
-  background-color: rgb(11, 15, 25) !important;
+  background-color: rgb(17, 24, 39) !important;
+} /* Guilgee tables default tone */
+.dark .guilgee-table .ant-table,
+.dark .guilgee-table .ant-table-container,
+.dark .guilgee-table .ant-table-content,
+.dark .guilgee-table .ant-table-tbody {
+  background-color: rgb(17, 24, 39) !important;
 }
 
+/* Residents table only: middle data area should be one plain dark tone */
+.dark #residents-table,
+.dark #residents-table .ant-table,
+.dark #residents-table .ant-table-container,
+.dark #residents-table .ant-table-content,
+.dark #residents-table .ant-table-body,
+.dark #residents-table .ant-table-tbody,
+.dark #residents-table .ant-table-body::-webkit-scrollbar-corner {
+  background-color: rgb(17, 24, 39) !important;
+}
+
+/* Residents table only: middle data area should be one plain dark tone */
+.dark #geree-table,
+.dark #geree-table .ant-table,
+.dark #geree-table .ant-table-container,
+.dark #geree-table .ant-table-content,
+.dark #geree-table .ant-table-body,
+.dark #geree-table .ant-table-tbody,
+.dark #geree-table .ant-table-body::-webkit-scrollbar-corner {
+  background-color: rgb(17, 24, 39) !important;
+}
 .dark .ant-table-tbody > tr:hover > td {
   background-color: rgb(31, 41, 55) !important; /* bg-gray-800 */
 }

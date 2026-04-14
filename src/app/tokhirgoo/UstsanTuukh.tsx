@@ -395,8 +395,8 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
   const [pageSize, setPageSize] = useState(10);
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [dateRange, setDateRange] = useState<[string | null, string | null]>([
-    dayjs().subtract(30, "days").format("YYYY-MM-DD"),
-    dayjs().format("YYYY-MM-DD"),
+    dayjs().startOf("month").format("YYYY-MM-DD"),
+    dayjs().endOf("month").format("YYYY-MM-DD"),
   ]);
   const [selectedRecord, setSelectedRecord] = useState<DeleteRecord | null>(
     null,
@@ -531,8 +531,21 @@ export default function UstsanTuukh({ token, baiguullaga, ajiltan }: Props) {
 
   const totalRecords = filteredRecords.length;
 
-  const handleDateChange = (dates: any) => {
-    setDateRange(dates || [null, null]);
+  const handleDateChange = (
+    dates: any,
+    dateStrings?: [string, string] | string[],
+  ) => {
+    const ds = dateStrings as [string, string] | undefined;
+    if (Array.isArray(ds) && ds[0] && ds[1]) {
+      setDateRange([ds[0], ds[1]]);
+    } else if (dates?.[0] && dates?.[1]) {
+      setDateRange([
+        dayjs(dates[0]).format("YYYY-MM-DD"),
+        dayjs(dates[1]).format("YYYY-MM-DD"),
+      ]);
+    } else {
+      setDateRange([null, null]);
+    }
     setPage(1);
   };
 
