@@ -56,18 +56,23 @@ export function getPaymentStatusLabel(
   // If there are paid signals and it's NOT explicitly returning a >0 uldegdel, it's Paid
   if (paidSignals.some(Boolean) && !isPartiallyPaidOrUnpaid) return "Төлсөн";
 
-  // If we reach here, it's either Unpaid, Overdue, or Unknown
-  
-  if (due && !Number.isNaN(due.getTime()) && now > due) {
-    return "Хугацаа хэтэрсэн";
-  }
+  // Respect explicit backend tuluv BEFORE doing date-based calculations.
+  // If the backend says "Төлөөгүй", trust it — don't override with overdue logic.
+  if (rawTuluv === "Төлөөгүй") return "Төлөөгүй";
+  if (rawTuluv === "Хугацаа хэтэрсэн") return "Хугацаа хэтэрсэн";
 
   // If it explicitly has an unpaid balance, it's Unpaid
   if (isPartiallyPaidOrUnpaid) return "Төлөөгүй";
 
-  // Respect explicit backend tuluv if present
-  if (rawTuluv === "Төлөөгүй") return "Төлөөгүй";
-  if (rawTuluv === "Хугацаа хэтэрсэн") return "Хугацаа хэтэрсэн";
+  // Only calculate overdue status when the backend has NOT provided an explicit status
+  if (due && !Number.isNaN(due.getTime())) {
+    const startOfNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+
+    if (startOfNow > startOfDue) {
+      return "Хугацаа хэтэрсэн";
+    }
+  }
 
   // Derive unpaid if looks like an issued invoice or has amount
   const looksIssued =

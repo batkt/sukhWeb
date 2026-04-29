@@ -169,6 +169,8 @@ export function useGereeActions(
           sohNer: selectedBarilga?.tokhirgoo?.sohNer || "",
           khonogoorBodokhEsekh: newResident.khonogoorBodokhEsekh || false,
           bodokhKhonog: Number(newResident.bodokhKhonog) || 0,
+          // Temporary contract end date
+          duusakhOgnoo: newResident.turul === "Түр" ? (newResident.duusakhOgnoo || null) : null,
         };
 
         if (editingResident?._id) {
@@ -355,6 +357,9 @@ export function useGereeActions(
         ekhniiUldegdel: p.ekhniiUldegdel || 0,
         khonogoorBodokhEsekh: p.khonogoorBodokhEsekh || false,
         bodokhKhonog: p.bodokhKhonog || 0,
+        duusakhOgnoo: p.duusakhOgnoo
+          ? new Date(p.duusakhOgnoo).toISOString().split("T")[0]
+          : "",
         units: Array.isArray(p.toots) && p.toots.length > 0 
           ? p.toots.map((t: any) => ({
               orts: t.orts || "1",

@@ -103,6 +103,11 @@ export default function ResidentModal({
       });
     }
 
+    // Require end date for temporary contracts
+    if (newResident.turul === "Түр" && !newResident.duusakhOgnoo?.trim()) {
+      newErrors.push("duusakhOgnoo");
+    }
+
     setErrors(newErrors);
 
     if (newErrors.length > 0) {
@@ -112,6 +117,7 @@ export default function ResidentModal({
         orts: "Орц",
         davkhar: "Давхар",
         toot: "Тоот",
+        duusakhOgnoo: "Гэрээ дуусах огноо",
       };
       
       const missingFields = newErrors
@@ -582,7 +588,12 @@ export default function ResidentModal({
                         <TusgaiZagvar
                           value={newResident.turul || "Үндсэн"}
                           onChange={(val: string) => {
-                            setNewResident((p: any) => ({ ...p, turul: val }));
+                            setNewResident((p: any) => ({
+                              ...p,
+                              turul: val,
+                              // Clear end date when switching back to permanent
+                              duusakhOgnoo: val === "Үндсэн" ? "" : p.duusakhOgnoo,
+                            }));
                           }}
                           options={[
                             { value: "Үндсэн", label: "Үндсэн" },
@@ -593,6 +604,23 @@ export default function ResidentModal({
                         />
                       </div>
                     </div>
+
+                    {/* Гэрээ дуусах огноо - only shown for Түр гэрээ */}
+                    {(newResident.turul === "Түр") && (
+                      <div>
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1 transition-colors">
+                          Гэрээ дуусах огноо <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="date"
+                          value={newResident.duusakhOgnoo || ""}
+                          onChange={(e) =>
+                            setNewResident((p: any) => ({ ...p, duusakhOgnoo: e.target.value }))
+                          }
+                          className={`modern-input w-full ${errors.includes("duusakhOgnoo") ? "input-error" : ""}`}
+                        />
+                      </div>
+                    )}
 
                     {/* Овог */}
                     <div>
